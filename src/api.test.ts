@@ -2,10 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   authenticate,
   changePassword,
+  createPaciente,
   createUser,
+  deletePaciente,
+  deletePacienteArquivo,
   deleteUser,
+  getPacientes,
   getUsers,
+  updatePaciente,
   updateUser,
+  uploadPacienteArquivo,
 } from './api';
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -62,6 +68,86 @@ describe('api client', () => {
     });
   });
 
+  it('monta os payloads de CRUD de pacientes', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse({ id: 10 }))
+      .mockResolvedValueOnce(jsonResponse({ id: 10 }))
+      .mockResolvedValueOnce(jsonResponse({ id: 1, nomeOriginal: 'laudo.pdf' }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const payload = {
+      data: null,
+      nomePaciente: 'Paciente Hemodinks',
+      cpf: '52998224725',
+      email: 'paciente@hemodinks.com',
+      telefone: '+5581999999999',
+      fotoPerfil: null,
+      dataNascimento: '1990-01-01',
+      hospital: 'Hospital Central',
+      medico: 'Dra. Ana',
+      convenio: 'Particular',
+      procedimento: 'Consulta',
+      autorizacao: '',
+      pagamento: 'Pix',
+      repasseGlosa: '',
+      statusPago: true,
+      ativo: true,
+    };
+
+    await getPacientes('jwt-token');
+    await createPaciente(payload, 'jwt-token');
+    await updatePaciente(10, payload, 'jwt-token');
+    await uploadPacienteArquivo(10, new File(['laudo'], 'laudo.pdf', { type: 'application/pdf' }), 'jwt-token');
+    await expect(deletePacienteArquivo(10, 1, 'jwt-token')).resolves.toBeUndefined();
+    await expect(deletePaciente(10, 'jwt-token')).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:5000/api/pacientes/', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:5000/api/pacientes/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://localhost:5000/api/pacientes/10', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://localhost:5000/api/pacientes/10/arquivos', expect.objectContaining({
+      method: 'POST',
+      body: expect.any(FormData),
+      headers: {
+        Authorization: 'Bearer jwt-token',
+      },
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://localhost:5000/api/pacientes/10/arquivos/1', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(6, 'http://localhost:5000/api/pacientes/10', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+  });
+
   it('monta os payloads de CRUD e troca de senha', async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ id: 1 }))
@@ -73,6 +159,7 @@ describe('api client', () => {
       nome: 'Ana Hemodinks',
       email: 'ana@hemodinks.com',
       telefone: '+5581999999999',
+      cpf: '52998224725',
       fotoPerfil: null,
       dataNascimento: '1990-01-01',
       ativo: true,

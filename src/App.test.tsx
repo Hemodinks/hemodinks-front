@@ -3,12 +3,18 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import * as api from './api';
-import type { AuthSession, User } from './types';
+import type { AuthSession, Paciente, User } from './types';
 
 vi.mock('./api', () => ({
   authenticate: vi.fn(),
   getUsers: vi.fn(),
+  getPacientes: vi.fn(),
   createUser: vi.fn(),
+  createPaciente: vi.fn(),
+  updatePaciente: vi.fn(),
+  deletePaciente: vi.fn(),
+  uploadPacienteArquivo: vi.fn(),
+  deletePacienteArquivo: vi.fn(),
   updateUser: vi.fn(),
   deleteUser: vi.fn(),
   changePassword: vi.fn(),
@@ -21,6 +27,7 @@ const baseUser: User = {
   nome: 'Ana Hemodinks',
   email: 'ana@hemodinks.com',
   telefone: '+5581999999999',
+  cpf: '52998224725',
   fotoPerfil: 'data:image/png;base64,ana',
   dataCadastro: '2026-06-01T00:00:00Z',
   dataNascimento: '1990-01-01T00:00:00Z',
@@ -30,6 +37,28 @@ const baseUser: User = {
   perfilNome: 'Médicos',
 };
 
+const basePaciente: Paciente = {
+  id: 10,
+  userId: 20,
+  data: '2026-06-01T00:00:00Z',
+  nomePaciente: 'Paciente Hemodinks',
+  hospital: 'Hospital Central',
+  medico: 'Dra. Ana',
+  convenio: 'Particular',
+  procedimento: 'Consulta',
+  autorizacao: 'AUT-1',
+  pagamento: 'Pix',
+  repasseGlosa: 'Sem glosa',
+  statusPago: true,
+  cpf: '11144477735',
+  email: 'paciente@hemodinks.com',
+  telefone: '+5581998888888',
+  fotoPerfil: null,
+  dataNascimento: '1992-05-10T00:00:00Z',
+  ativo: true,
+  arquivos: [],
+};
+
 function mockSession(overrides?: Partial<AuthSession['user']>) {
   const session: AuthSession = {
     token: 'jwt-token',
@@ -37,6 +66,7 @@ function mockSession(overrides?: Partial<AuthSession['user']>) {
       id: 99,
       nome: 'George Marcone',
       email: 'gmarcone@gmail.com',
+      cpf: '00000000191',
       fotoPerfil: null,
       precisaTrocarSenha: false,
       perfilId: 1,
@@ -54,6 +84,7 @@ describe('App', () => {
     localStorage.clear();
     vi.clearAllMocks();
     vi.mocked(api.getUsers).mockResolvedValue([baseUser]);
+    vi.mocked(api.getPacientes).mockResolvedValue([basePaciente]);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
@@ -64,6 +95,7 @@ describe('App', () => {
       nome: 'George Marcone',
       email: 'gmarcone@gmail.com',
       token: 'jwt-token',
+      cpf: '00000000191',
       fotoPerfil: 'data:image/png;base64,george',
       precisaTrocarSenha: false,
       perfilId: 1,
@@ -99,6 +131,7 @@ describe('App', () => {
       nome: 'George Marcone',
       email: 'gmarcone@gmail.com',
       token: 'jwt-token',
+      cpf: '00000000191',
       fotoPerfil: null,
       precisaTrocarSenha: true,
       perfilId: 1,
@@ -142,6 +175,7 @@ describe('App', () => {
       nome: 'Bruno Hemodinks',
       email: 'bruno@hemodinks.com',
       telefone: '+5581888888888',
+      cpf: '11144477735',
       fotoPerfil: null,
       dataNascimento: '1992-05-10T00:00:00Z',
       precisaTrocarSenha: true,
@@ -156,6 +190,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Nome completo'), 'Bruno Hemodinks');
     await user.type(screen.getByLabelText('Email'), 'bruno@hemodinks.com');
     await user.type(screen.getByLabelText('Telefone'), '81988888888');
+    await user.type(screen.getByLabelText('CPF'), '11144477735');
     await user.type(screen.getByLabelText('Data de nascimento'), '10051992');
     expect(screen.getByLabelText('Perfil')).toHaveValue('2');
     await user.click(screen.getByRole('button', { name: /cadastrar usuario/i }));
@@ -164,6 +199,7 @@ describe('App', () => {
       nome: 'Bruno Hemodinks',
       email: 'bruno@hemodinks.com',
       telefone: '+5581988888888',
+      cpf: '11144477735',
       fotoPerfil: null,
       dataNascimento: '1992-05-10',
       ativo: true,
@@ -182,6 +218,7 @@ describe('App', () => {
       nome: 'Clara Hemodinks',
       email: 'clara@hemodinks.com',
       telefone: '+5581997777777',
+      cpf: '93541134780',
       fotoPerfil: 'data:image/png;base64,YXZhdGFy',
       dataNascimento: '1991-03-12T00:00:00Z',
       precisaTrocarSenha: true,
@@ -194,6 +231,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Nome completo'), 'Clara Hemodinks');
     await user.type(screen.getByLabelText('Email'), 'clara@hemodinks.com');
     await user.type(screen.getByLabelText('Telefone'), '81997777777');
+    await user.type(screen.getByLabelText('CPF'), '93541134780');
     await user.type(screen.getByLabelText('Data de nascimento'), '12031991');
     await user.upload(
       screen.getByLabelText('Foto do perfil'),
@@ -208,6 +246,7 @@ describe('App', () => {
       nome: 'Clara Hemodinks',
       email: 'clara@hemodinks.com',
       telefone: '+5581997777777',
+      cpf: '93541134780',
       fotoPerfil: 'data:image/png;base64,YXZhdGFy',
       dataNascimento: '1991-03-12',
       ativo: true,
@@ -240,6 +279,58 @@ describe('App', () => {
     expect(screen.getByText('Carlos Hemodinks')).toBeInTheDocument();
   });
 
+  it('lista e cadastra pacientes', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    vi.mocked(api.createPaciente).mockResolvedValue({
+      ...basePaciente,
+      id: 11,
+      nomePaciente: 'Novo Paciente',
+      email: 'novo.paciente@hemodinks.com',
+      telefone: '+5581997777777',
+      cpf: '93541134780',
+      statusPago: false,
+    });
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: /pacientes/i }));
+
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+    expect(screen.getByText('Pago')).toBeInTheDocument();
+    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token');
+
+    await user.type(screen.getByLabelText('Nome do paciente'), 'Novo Paciente');
+    await user.type(screen.getByLabelText('CPF'), '93541134780');
+    await user.type(screen.getByLabelText('Email'), 'novo.paciente@hemodinks.com');
+    await user.type(screen.getByLabelText('Telefone'), '81997777777');
+    await user.type(screen.getByLabelText('Nascimento'), '10051992');
+    await user.type(screen.getByLabelText('Hospital'), 'Hospital Norte');
+    await user.type(screen.getByLabelText('Medico'), 'Dr. Carlos');
+    await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
+    await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
+
+    expect(api.createPaciente).toHaveBeenCalledWith({
+      data: null,
+      nomePaciente: 'Novo Paciente',
+      cpf: '93541134780',
+      email: 'novo.paciente@hemodinks.com',
+      telefone: '+5581997777777',
+      fotoPerfil: null,
+      dataNascimento: '1992-05-10',
+      hospital: 'Hospital Norte',
+      medico: 'Dr. Carlos',
+      convenio: '',
+      procedimento: 'Consulta',
+      autorizacao: '',
+      pagamento: '',
+      repasseGlosa: '',
+      statusPago: false,
+      ativo: true,
+    }, 'jwt-token');
+    expect(await screen.findByText('Paciente cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
+  });
+
   it('abre popup de informacoes, preenche o formulario ao editar e exclui usuario', async () => {
     const user = userEvent.setup();
     mockSession();
@@ -268,6 +359,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Editar usuario' })).toBeInTheDocument();
     expect(screen.getByLabelText('Nome completo')).toHaveValue('Ana Hemodinks');
     expect(screen.getByLabelText('Telefone')).toHaveValue('+55 (81) 99999-9999');
+    expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
     expect(screen.getByLabelText('Data de nascimento')).toHaveValue('01/01/1990');
     expect(screen.getByLabelText('Perfil')).toHaveValue('2');
 

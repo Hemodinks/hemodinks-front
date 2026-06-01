@@ -353,6 +353,33 @@ select:focus {
   font-weight: 800;
 }
 
+.view-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.view-switch button {
+  min-height: 32px;
+  border: 0;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  background: transparent;
+  padding: 0 10px;
+  font-weight: 900;
+}
+
+.view-switch button.active {
+  color: #fff;
+  background: var(--blood);
+}
+
 .current-user > span:not(.user-avatar) {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -446,6 +473,12 @@ img.user-avatar {
   width: 18px;
   height: 18px;
   accent-color: var(--teal);
+}
+
+.two-column-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .profile-photo-field {
@@ -742,6 +775,57 @@ tbody tr:last-child td {
   width: auto;
 }
 
+.full-width {
+  width: 100%;
+}
+
+.file-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-list li,
+.attachment-count {
+  display: inline-flex;
+  align-items: center;
+}
+
+.file-list li {
+  min-width: 0;
+  gap: 8px;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: var(--panel-strong);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.file-list span,
+.file-list a {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon-button.mini {
+  width: 28px;
+  min-height: 28px;
+}
+
+.attachment-count {
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
 @media (max-width: 980px) {
   .workspace {
     grid-template-columns: 1fr;
@@ -789,6 +873,10 @@ tbody tr:last-child td {
   .pagination-bar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .two-column-fields {
+    grid-template-columns: 1fr;
   }
 
   .theme-toggle.floating {

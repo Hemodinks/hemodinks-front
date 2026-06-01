@@ -5,6 +5,9 @@ import {
   ChevronRight,
   CircleCheck,
   CircleX,
+  ClipboardList,
+  FileText,
+  FileUp,
   Info,
   ImagePlus,
   KeyRound,
@@ -18,17 +21,24 @@ import {
   Search,
   Sun,
   Trash2,
+  Users,
   X,
 } from 'lucide-react';
 import {
   authenticate,
   changePassword,
   createUser,
+  createPaciente,
+  deletePaciente,
+  deletePacienteArquivo,
   deleteUser,
+  getPacientes,
   getUsers,
+  updatePaciente,
   updateUser,
+  uploadPacienteArquivo,
 } from './api';
-import type { AuthSession, User, UserFormData } from './types';
+import type { AuthSession, Paciente, PacienteFormData, User, UserFormData } from './types';
 import brandImage from '../imagem candidata hemodinks.jpg';
 
 const SESSION_KEY = 'hemodinks.session';
@@ -38,11 +48,22 @@ const PAGE_SIZE = 10;
 const MAX_NAME_LENGTH = 255;
 const MAX_EMAIL_LENGTH = 255;
 const MAX_PHONE_LENGTH = 20;
+const MAX_CPF_LENGTH = 14;
 const MAX_PASSWORD_LENGTH = 500;
 const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
+const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
 const DEFAULT_PROFILE_ID = 2;
 
 const ALLOWED_PROFILE_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_PATIENT_FILE_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+]);
 
 const PROFILE_OPTIONS = [
   { id: 1, nome: 'Administrador' },
@@ -66,13 +87,34 @@ const emptyUserForm: UserFormData = {
   nome: '',
   email: '',
   telefone: '+55 ',
+  cpf: '',
   fotoPerfil: null,
   dataNascimento: '',
   ativo: true,
   perfilId: DEFAULT_PROFILE_ID,
 };
 
+const emptyPacienteForm: PacienteFormData = {
+  data: '',
+  nomePaciente: '',
+  cpf: '',
+  email: '',
+  telefone: '+55 ',
+  fotoPerfil: null,
+  dataNascimento: '',
+  hospital: '',
+  medico: '',
+  convenio: '',
+  procedimento: '',
+  autorizacao: '',
+  pagamento: '',
+  repasseGlosa: '',
+  statusPago: false,
+  ativo: true,
+};
+
 type Theme = 'light' | 'dark';
+type AppView = 'users' | 'patients';
 
 function loadStoredSession(): AuthSession | null {
   const rawSession = localStorage.getItem(SESSION_KEY);
@@ -117,6 +159,53 @@ function getUserInitials(name: string) {
 
 function onlyDigits(value: string) {
   return value.replace(/\D/g, '');
+}
+
+function formatCpfInput(value: string) {
+  const digits = onlyDigits(value).slice(0, 11);
+  const part1 = digits.slice(0, 3);
+  const part2 = digits.slice(3, 6);
+  const part3 = digits.slice(6, 9);
+  const part4 = digits.slice(9, 11);
+
+  if (digits.length <= 3) {
+    return part1;
+  }
+
+  if (digits.length <= 6) {
+    return `${part1}.${part2}`;
+  }
+
+  if (digits.length <= 9) {
+    return `${part1}.${part2}.${part3}`;
+  }
+
+  return `${part1}.${part2}.${part3}-${part4}`;
+}
+
+function normalizeCpfForPayload(value: string) {
+  return onlyDigits(value).slice(0, 11);
+}
+
+function isValidCpf(value: string) {
+  const cpf = normalizeCpfForPayload(value);
+
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+    return false;
+  }
+
+  const getDigit = (length: number) => {
+    let sum = 0;
+
+    for (let index = 0; index < length; index += 1) {
+      sum += Number(cpf[index]) * (length + 1 - index);
+    }
+
+    const remainder = sum % 11;
+    return remainder < 2 ? 0 : 11 - remainder;
+  };
+
+  return getDigit(9) === Number(cpf[9]) && getDigit(10) === Number(cpf[10]);
 }
 
 function getLocalBrazilPhoneDigits(value: string) {
@@ -280,6 +369,10 @@ function validateUserForm(data: UserFormData) {
     return 'Informe um celular valido com DDD e 9 digitos.';
   }
 
+  if (!isValidCpf(data.cpf)) {
+    return 'Informe um CPF valido.';
+  }
+
   if (!isValidBirthDate(data.dataNascimento)) {
     return 'Informe a data de nascimento no formato dd/mm/yyyy.';
   }
@@ -296,6 +389,7 @@ function toUserPayload(data: UserFormData): UserFormData {
     nome: data.nome.trim(),
     email: data.email.trim(),
     telefone: normalizePhoneForPayload(data.telefone),
+    cpf: normalizeCpfForPayload(data.cpf),
     fotoPerfil: data.fotoPerfil || null,
     dataNascimento: parseDisplayDate(data.dataNascimento),
     ativo: data.ativo,
@@ -303,9 +397,59 @@ function toUserPayload(data: UserFormData): UserFormData {
   };
 }
 
+function validatePacienteForm(data: PacienteFormData) {
+  if (!data.nomePaciente.trim()) {
+    return 'Informe o nome do paciente.';
+  }
+
+  if (!isValidCpf(data.cpf)) {
+    return 'Informe um CPF valido.';
+  }
+
+  if (!isValidEmail(data.email)) {
+    return 'Informe um email valido.';
+  }
+
+  if (!isValidBrazilMobilePhone(data.telefone)) {
+    return 'Informe um celular valido com DDD e 9 digitos.';
+  }
+
+  if (!isValidBirthDate(data.dataNascimento)) {
+    return 'Informe a data de nascimento no formato dd/mm/yyyy.';
+  }
+
+  if (data.data && !isValidBirthDate(data.data)) {
+    return 'Informe a data do cadastro no formato dd/mm/yyyy.';
+  }
+
+  return '';
+}
+
+function toPacientePayload(data: PacienteFormData): PacienteFormData {
+  return {
+    data: data.data ? parseDisplayDate(data.data) : null,
+    nomePaciente: data.nomePaciente.trim(),
+    cpf: normalizeCpfForPayload(data.cpf),
+    email: data.email.trim(),
+    telefone: normalizePhoneForPayload(data.telefone),
+    fotoPerfil: data.fotoPerfil || null,
+    dataNascimento: parseDisplayDate(data.dataNascimento),
+    hospital: data.hospital.trim(),
+    medico: data.medico.trim(),
+    convenio: data.convenio.trim(),
+    procedimento: data.procedimento.trim(),
+    autorizacao: data.autorizacao.trim(),
+    pagamento: data.pagamento.trim(),
+    repasseGlosa: data.repasseGlosa.trim(),
+    statusPago: data.statusPago,
+    ativo: data.ativo,
+  };
+}
+
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => loadStoredSession());
   const [theme, setTheme] = useState<Theme>(() => loadStoredTheme());
+  const [activeView, setActiveView] = useState<AppView>('users');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -325,6 +469,20 @@ export default function App() {
   const [photoInputKey, setPhotoInputKey] = useState(0);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedInfoUser, setSelectedInfoUser] = useState<User | null>(null);
+
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [pacientesLoading, setPacientesLoading] = useState(false);
+  const [pacientesError, setPacientesError] = useState('');
+  const [pacienteSuccessMessage, setPacienteSuccessMessage] = useState('');
+  const [pacienteSearchTerm, setPacienteSearchTerm] = useState('');
+  const [pacienteCurrentPage, setPacienteCurrentPage] = useState(1);
+  const [pacienteFormData, setPacienteFormData] = useState<PacienteFormData>(emptyPacienteForm);
+  const [editingPacienteId, setEditingPacienteId] = useState<number | null>(null);
+  const [pacienteFormLoading, setPacienteFormLoading] = useState(false);
+  const [pacienteFormError, setPacienteFormError] = useState('');
+  const [patientPhotoInputKey, setPatientPhotoInputKey] = useState(0);
+  const [patientFileInputKey, setPatientFileInputKey] = useState(0);
+  const [pendingPatientFiles, setPendingPatientFiles] = useState<File[]>([]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -365,11 +523,35 @@ export default function App() {
     }
   };
 
+  const loadPacientes = async (token = session?.token) => {
+    if (!token) {
+      return;
+    }
+
+    setPacientesLoading(true);
+    setPacientesError('');
+
+    try {
+      const result = await getPacientes(token);
+      setPacientes(result);
+    } catch (error) {
+      setPacientesError(getErrorMessage(error));
+    } finally {
+      setPacientesLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (session && !session.user.precisaTrocarSenha) {
       void loadUsers(session.token);
     }
   }, [session?.token, session?.user.precisaTrocarSenha]);
+
+  useEffect(() => {
+    if (session && !session.user.precisaTrocarSenha && activeView === 'patients') {
+      void loadPacientes(session.token);
+    }
+  }, [activeView, session?.token, session?.user.precisaTrocarSenha]);
 
   const filteredUsers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -381,11 +563,33 @@ export default function App() {
     return users.filter((user) => (
       user.nome.toLowerCase().includes(term)
       || user.email.toLowerCase().includes(term)
+      || (!!onlyDigits(term) && normalizeCpfForPayload(user.cpf || '').includes(onlyDigits(term)))
+      || formatCpfInput(user.cpf || '').toLowerCase().includes(term)
       || (user.perfilNome || getProfileName(user.perfilId)).toLowerCase().includes(term)
       || user.telefone.toLowerCase().includes(term)
       || formatPhoneInput(user.telefone).toLowerCase().includes(term)
     ));
   }, [searchTerm, users]);
+
+  const filteredPacientes = useMemo(() => {
+    const term = pacienteSearchTerm.trim().toLowerCase();
+
+    if (!term) {
+      return pacientes;
+    }
+
+    return pacientes.filter((paciente) => (
+      paciente.nomePaciente.toLowerCase().includes(term)
+      || paciente.email.toLowerCase().includes(term)
+      || (!!onlyDigits(term) && normalizeCpfForPayload(paciente.cpf || '').includes(onlyDigits(term)))
+      || formatCpfInput(paciente.cpf || '').toLowerCase().includes(term)
+      || formatPhoneInput(paciente.telefone).toLowerCase().includes(term)
+      || (paciente.hospital || '').toLowerCase().includes(term)
+      || (paciente.medico || '').toLowerCase().includes(term)
+      || (paciente.convenio || '').toLowerCase().includes(term)
+      || (paciente.procedimento || '').toLowerCase().includes(term)
+    ));
+  }, [pacienteSearchTerm, pacientes]);
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
   const pageStart = (currentPage - 1) * PAGE_SIZE;
@@ -393,16 +597,36 @@ export default function App() {
   const paginatedUsers = filteredUsers.slice(pageStart, pageEnd);
   const visibleStart = filteredUsers.length ? pageStart + 1 : 0;
   const visibleEnd = Math.min(pageEnd, filteredUsers.length);
+  const pacienteTotalPages = Math.max(1, Math.ceil(filteredPacientes.length / PAGE_SIZE));
+  const pacientePageStart = (pacienteCurrentPage - 1) * PAGE_SIZE;
+  const pacientePageEnd = pacientePageStart + PAGE_SIZE;
+  const paginatedPacientes = filteredPacientes.slice(pacientePageStart, pacientePageEnd);
+  const pacienteVisibleStart = filteredPacientes.length ? pacientePageStart + 1 : 0;
+  const pacienteVisibleEnd = Math.min(pacientePageEnd, filteredPacientes.length);
+  const editingPaciente = useMemo(
+    () => pacientes.find((paciente) => paciente.id === editingPacienteId) ?? null,
+    [editingPacienteId, pacientes],
+  );
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
   useEffect(() => {
+    setPacienteCurrentPage(1);
+  }, [pacienteSearchTerm]);
+
+  useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    if (pacienteCurrentPage > pacienteTotalPages) {
+      setPacienteCurrentPage(pacienteTotalPages);
+    }
+  }, [pacienteCurrentPage, pacienteTotalPages]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -423,6 +647,7 @@ export default function App() {
           id: result.id,
           nome: result.nome,
           email: result.email,
+          cpf: result.cpf ?? null,
           fotoPerfil: result.fotoPerfil ?? null,
           precisaTrocarSenha: result.precisaTrocarSenha,
           perfilId: result.perfilId || DEFAULT_PROFILE_ID,
@@ -451,6 +676,7 @@ export default function App() {
       nome: user.nome,
       email: user.email,
       telefone: formatPhoneInput(user.telefone),
+      cpf: formatCpfInput(user.cpf || ''),
       fotoPerfil: user.fotoPerfil ?? null,
       dataNascimento: toDisplayDate(user.dataNascimento),
       ativo: user.ativo,
@@ -491,6 +717,165 @@ export default function App() {
     setPhotoInputKey((key) => key + 1);
   };
 
+  const resetPacienteForm = () => {
+    setPacienteFormData(emptyPacienteForm);
+    setEditingPacienteId(null);
+    setPacienteFormError('');
+    setPendingPatientFiles([]);
+    setPatientPhotoInputKey((key) => key + 1);
+    setPatientFileInputKey((key) => key + 1);
+  };
+
+  const handleEditPaciente = (paciente: Paciente) => {
+    setEditingPacienteId(paciente.id);
+    setPacienteFormError('');
+    setPacienteSuccessMessage('');
+    setPendingPatientFiles([]);
+    setPacienteFormData({
+      data: toDisplayDate(paciente.data || ''),
+      nomePaciente: paciente.nomePaciente,
+      cpf: formatCpfInput(paciente.cpf || ''),
+      email: paciente.email,
+      telefone: formatPhoneInput(paciente.telefone),
+      fotoPerfil: paciente.fotoPerfil ?? null,
+      dataNascimento: toDisplayDate(paciente.dataNascimento),
+      hospital: paciente.hospital || '',
+      medico: paciente.medico || '',
+      convenio: paciente.convenio || '',
+      procedimento: paciente.procedimento || '',
+      autorizacao: paciente.autorizacao || '',
+      pagamento: paciente.pagamento || '',
+      repasseGlosa: paciente.repasseGlosa || '',
+      statusPago: paciente.statusPago,
+      ativo: paciente.ativo,
+    });
+    setPatientPhotoInputKey((key) => key + 1);
+    setPatientFileInputKey((key) => key + 1);
+  };
+
+  const handlePacientePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    if (!ALLOWED_PROFILE_PHOTO_TYPES.has(file.type)) {
+      setPacienteFormError('Use uma foto PNG, JPG ou WEBP.');
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
+      setPacienteFormError('A foto deve ter no maximo 1 MB.');
+      return;
+    }
+
+    try {
+      const fotoPerfil = await readProfilePhoto(file);
+      setPacienteFormData((current) => ({ ...current, fotoPerfil }));
+      setPacienteFormError('');
+    } catch (error) {
+      setPacienteFormError(getErrorMessage(error));
+    }
+  };
+
+  const handlePacienteFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+
+    if (!files.length) {
+      return;
+    }
+
+    const invalidFile = files.find((file) => !ALLOWED_PATIENT_FILE_TYPES.has(file.type) || file.size > MAX_PATIENT_FILE_BYTES);
+
+    if (invalidFile) {
+      setPacienteFormError('Use PDF, DOC, DOCX, JPG, JPEG, PNG, XLS ou XLSX de ate 10 MB.');
+      return;
+    }
+
+    setPendingPatientFiles((current) => [...current, ...files]);
+    setPacienteFormError('');
+  };
+
+  const removePendingPatientFile = (indexToRemove: number) => {
+    setPendingPatientFiles((current) => current.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleSubmitPaciente = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!session) {
+      return;
+    }
+
+    const validationError = validatePacienteForm(pacienteFormData);
+
+    if (validationError) {
+      setPacienteFormError(validationError);
+      return;
+    }
+
+    const payload = toPacientePayload(pacienteFormData);
+
+    setPacienteFormLoading(true);
+    setPacienteFormError('');
+    setPacienteSuccessMessage('');
+
+    try {
+      const savedPaciente = editingPacienteId
+        ? await updatePaciente(editingPacienteId, payload, session.token)
+        : await createPaciente(payload, session.token);
+
+      for (const file of pendingPatientFiles) {
+        await uploadPacienteArquivo(savedPaciente.id, file, session.token);
+      }
+
+      setPacienteSuccessMessage(editingPacienteId ? 'Paciente atualizado.' : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
+      resetPacienteForm();
+      await loadPacientes(session.token);
+      await loadUsers(session.token);
+    } catch (error) {
+      setPacienteFormError(getErrorMessage(error));
+    } finally {
+      setPacienteFormLoading(false);
+    }
+  };
+
+  const handleDeletePaciente = async (paciente: Paciente) => {
+    if (!session || !window.confirm(`Excluir ${paciente.nomePaciente}?`)) {
+      return;
+    }
+
+    setPacientesError('');
+    setPacienteSuccessMessage('');
+
+    try {
+      await deletePaciente(paciente.id, session.token);
+      setPacienteSuccessMessage('Paciente excluido.');
+      await loadPacientes(session.token);
+      await loadUsers(session.token);
+    } catch (error) {
+      setPacientesError(getErrorMessage(error));
+    }
+  };
+
+  const handleDeletePacienteArquivo = async (paciente: Paciente, arquivoId: number) => {
+    if (!session) {
+      return;
+    }
+
+    setPacientesError('');
+
+    try {
+      await deletePacienteArquivo(paciente.id, arquivoId, session.token);
+      await loadPacientes(session.token);
+    } catch (error) {
+      setPacientesError(getErrorMessage(error));
+    }
+  };
+
   const handleSubmitUser = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -529,6 +914,7 @@ export default function App() {
             ...session.user,
             nome: savedUser.nome,
             email: savedUser.email,
+            cpf: savedUser.cpf ?? null,
             fotoPerfil: savedUser.fotoPerfil ?? null,
             perfilId: savedUser.perfilId || DEFAULT_PROFILE_ID,
             perfilNome: savedUser.perfilNome || getProfileName(savedUser.perfilId || DEFAULT_PROFILE_ID),
@@ -670,11 +1056,29 @@ export default function App() {
           <img src={brandImage} alt="Hemodinks" className="topbar-logo" />
           <div>
             <span className="eyebrow">Hemodinks</span>
-            <h1>Usuarios</h1>
+            <h1>{activeView === 'users' ? 'Usuarios' : 'Pacientes'}</h1>
           </div>
         </div>
 
         <div className="topbar-actions">
+          <div className="view-switch" role="tablist" aria-label="Modulo">
+            <button
+              type="button"
+              className={activeView === 'users' ? 'active' : ''}
+              onClick={() => setActiveView('users')}
+            >
+              <Users size={16} />
+              Usuarios
+            </button>
+            <button
+              type="button"
+              className={activeView === 'patients' ? 'active' : ''}
+              onClick={() => setActiveView('patients')}
+            >
+              <ClipboardList size={16} />
+              Pacientes
+            </button>
+          </div>
           <div className="current-user">
             <UserAvatar name={session.user.nome} photo={session.user.fotoPerfil} size="sm" />
             <span>{session.user.nome}</span>
@@ -690,6 +1094,7 @@ export default function App() {
         </div>
       </header>
 
+      {activeView === 'users' ? (
       <section className="workspace">
         <aside className="form-panel">
           <div className="panel-title">
@@ -739,6 +1144,19 @@ export default function App() {
                 inputMode="numeric"
                 maxLength={MAX_PHONE_LENGTH}
                 placeholder="+55 (81) 99999-9999"
+                required
+              />
+            </label>
+
+            <label>
+              CPF
+              <input
+                type="text"
+                value={formData.cpf}
+                onChange={(event) => setFormData((current) => ({ ...current, cpf: formatCpfInput(event.target.value) }))}
+                inputMode="numeric"
+                maxLength={MAX_CPF_LENGTH}
+                placeholder="000.000.000-00"
                 required
               />
             </label>
@@ -853,6 +1271,7 @@ export default function App() {
                   <th>Nome</th>
                   <th>Email</th>
                   <th>Telefone</th>
+                  <th>CPF</th>
                   <th>Perfil</th>
                   <th>Info</th>
                   <th aria-label="Acoes" />
@@ -861,7 +1280,7 @@ export default function App() {
               <tbody>
                 {usersLoading ? (
                   <tr>
-                    <td colSpan={6} className="empty-row">Carregando usuarios...</td>
+                    <td colSpan={7} className="empty-row">Carregando usuarios...</td>
                   </tr>
                 ) : paginatedUsers.length ? (
                   paginatedUsers.map((user) => (
@@ -874,6 +1293,7 @@ export default function App() {
                       </td>
                       <td>{user.email}</td>
                       <td>{formatPhoneInput(user.telefone)}</td>
+                      <td>{formatCpfInput(user.cpf || '')}</td>
                       <td>{user.perfilNome || getProfileName(user.perfilId)}</td>
                       <td>
                         <button
@@ -901,7 +1321,7 @@ export default function App() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="empty-row">Nenhum usuario encontrado.</td>
+                    <td colSpan={7} className="empty-row">Nenhum usuario encontrado.</td>
                   </tr>
                 )}
               </tbody>
@@ -936,6 +1356,398 @@ export default function App() {
           </div>
         </section>
       </section>
+      ) : (
+      <section className="workspace patients-workspace">
+        <aside className="form-panel">
+          <div className="panel-title">
+            <div>
+              <span className="eyebrow">{editingPacienteId ? 'Edicao' : 'Cadastro'}</span>
+              <h2>{editingPacienteId ? 'Editar paciente' : 'Novo paciente'}</h2>
+            </div>
+            {editingPacienteId ? (
+              <button type="button" className="icon-button muted" onClick={resetPacienteForm} title="Cancelar edicao">
+                <X size={18} />
+              </button>
+            ) : (
+              <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>
+            )}
+          </div>
+
+          <form className="stack" onSubmit={handleSubmitPaciente}>
+            <label>
+              Nome do paciente
+              <input
+                type="text"
+                value={pacienteFormData.nomePaciente}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, nomePaciente: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
+                maxLength={MAX_NAME_LENGTH}
+                required
+              />
+            </label>
+
+            <label>
+              CPF
+              <input
+                type="text"
+                value={pacienteFormData.cpf}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, cpf: formatCpfInput(event.target.value) }))}
+                inputMode="numeric"
+                maxLength={MAX_CPF_LENGTH}
+                placeholder="000.000.000-00"
+                required
+              />
+            </label>
+
+            <label>
+              Email
+              <input
+                type="email"
+                value={pacienteFormData.email}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, email: event.target.value.slice(0, MAX_EMAIL_LENGTH) }))}
+                maxLength={MAX_EMAIL_LENGTH}
+                required
+              />
+            </label>
+
+            <label>
+              Telefone
+              <input
+                type="tel"
+                value={pacienteFormData.telefone}
+                onFocus={() => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(event.target.value) }))}
+                inputMode="numeric"
+                maxLength={MAX_PHONE_LENGTH}
+                placeholder="+55 (81) 99999-9999"
+                required
+              />
+            </label>
+
+            <div className="two-column-fields">
+              <label>
+                Data
+                <input
+                  type="text"
+                  value={pacienteFormData.data || ''}
+                  onChange={(event) => setPacienteFormData((current) => ({ ...current, data: formatDateInput(event.target.value) }))}
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="dd/mm/yyyy"
+                />
+              </label>
+
+              <label>
+                Nascimento
+                <input
+                  type="text"
+                  value={pacienteFormData.dataNascimento}
+                  onChange={(event) => setPacienteFormData((current) => ({ ...current, dataNascimento: formatDateInput(event.target.value) }))}
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="dd/mm/yyyy"
+                  required
+                />
+              </label>
+            </div>
+
+            <label>
+              Hospital
+              <input
+                type="text"
+                value={pacienteFormData.hospital}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, hospital: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
+                maxLength={MAX_NAME_LENGTH}
+              />
+            </label>
+
+            <label>
+              Medico
+              <input
+                type="text"
+                value={pacienteFormData.medico}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, medico: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
+                maxLength={MAX_NAME_LENGTH}
+              />
+            </label>
+
+            <label>
+              Convenio
+              <input
+                type="text"
+                value={pacienteFormData.convenio}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, convenio: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
+                maxLength={MAX_NAME_LENGTH}
+              />
+            </label>
+
+            <label>
+              Procedimento
+              <input
+                type="text"
+                value={pacienteFormData.procedimento}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, procedimento: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
+                maxLength={MAX_NAME_LENGTH}
+              />
+            </label>
+
+            <label>
+              Autorizacao
+              <input
+                type="text"
+                value={pacienteFormData.autorizacao}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, autorizacao: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
+                maxLength={MAX_NAME_LENGTH}
+              />
+            </label>
+
+            <div className="two-column-fields">
+              <label>
+                Pagamento
+                <input
+                  type="text"
+                  value={pacienteFormData.pagamento}
+                  onChange={(event) => setPacienteFormData((current) => ({ ...current, pagamento: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
+                  maxLength={MAX_NAME_LENGTH}
+                />
+              </label>
+
+              <label>
+                Repasse/Glosa
+                <input
+                  type="text"
+                  value={pacienteFormData.repasseGlosa}
+                  onChange={(event) => setPacienteFormData((current) => ({ ...current, repasseGlosa: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
+                  maxLength={MAX_NAME_LENGTH}
+                />
+              </label>
+            </div>
+
+            <div className="profile-photo-field">
+              <label className="field-label" htmlFor="patient-photo-input">
+                Foto
+              </label>
+              <div className="photo-uploader">
+                <UserAvatar name={pacienteFormData.nomePaciente || 'Paciente'} photo={pacienteFormData.fotoPerfil} size="lg" />
+                <div className="photo-actions">
+                  <label className="ghost-button file-action" htmlFor="patient-photo-input">
+                    <ImagePlus size={17} />
+                    {pacienteFormData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
+                  </label>
+                  {pacienteFormData.fotoPerfil && (
+                    <button type="button" className="ghost-button danger-text" onClick={() => setPacienteFormData((current) => ({ ...current, fotoPerfil: null }))}>
+                      <Trash2 size={17} />
+                      Remover
+                    </button>
+                  )}
+                </div>
+              </div>
+              <input
+                key={patientPhotoInputKey}
+                id="patient-photo-input"
+                className="sr-only"
+                type="file"
+                aria-label="Foto do paciente"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => void handlePacientePhotoChange(event)}
+              />
+            </div>
+
+            <div className="profile-photo-field">
+              <label className="field-label" htmlFor="patient-file-input">
+                Arquivos
+              </label>
+              <label className="ghost-button file-action full-width" htmlFor="patient-file-input">
+                <FileUp size={17} />
+                Selecionar arquivos
+              </label>
+              <input
+                key={patientFileInputKey}
+                id="patient-file-input"
+                className="sr-only"
+                type="file"
+                aria-label="Arquivos do paciente"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+                multiple
+                onChange={handlePacienteFilesChange}
+              />
+
+              {pendingPatientFiles.length > 0 && (
+                <ul className="file-list">
+                  {pendingPatientFiles.map((file, index) => (
+                    <li key={`${file.name}-${index}`}>
+                      <FileText size={15} />
+                      <span>{file.name}</span>
+                      <button type="button" className="icon-button muted mini" onClick={() => removePendingPatientFile(index)} title="Remover arquivo">
+                        <X size={14} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {editingPaciente?.arquivos.length ? (
+                <ul className="file-list">
+                  {editingPaciente.arquivos.map((arquivo) => (
+                    <li key={arquivo.id}>
+                      <FileText size={15} />
+                      <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
+                      <button type="button" className="icon-button muted mini" onClick={() => void handleDeletePacienteArquivo(editingPaciente, arquivo.id)} title="Excluir arquivo">
+                        <Trash2 size={14} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+
+            <label className="toggle-row">
+              <input
+                type="checkbox"
+                checked={pacienteFormData.statusPago}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, statusPago: event.target.checked }))}
+              />
+              Status Pago
+            </label>
+
+            <label className="toggle-row">
+              <input
+                type="checkbox"
+                checked={pacienteFormData.ativo}
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, ativo: event.target.checked }))}
+              />
+              Paciente ativo
+            </label>
+
+            {pacienteFormError && <p className="alert error">{pacienteFormError}</p>}
+
+            <button className="primary-action" type="submit" disabled={pacienteFormLoading}>
+              {editingPacienteId ? <Save size={18} /> : <Plus size={18} />}
+              {pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar paciente' : 'Cadastrar paciente'}
+            </button>
+          </form>
+        </aside>
+
+        <section className="data-panel">
+          <div className="data-header">
+            <div>
+              <span className="eyebrow">Cadastro de pacientes</span>
+              <h2>{pacientes.length} cadastrados</h2>
+            </div>
+
+            <div className="table-tools">
+              <label className="search-box">
+                <Search size={17} />
+                <input
+                  type="search"
+                  value={pacienteSearchTerm}
+                  onChange={(event) => setPacienteSearchTerm(event.target.value)}
+                  placeholder="Buscar"
+                />
+              </label>
+              <button type="button" className="icon-button" onClick={() => void loadPacientes()} title="Atualizar lista">
+                <RefreshCw size={18} />
+              </button>
+            </div>
+          </div>
+
+          {pacienteSuccessMessage && <p className="alert success"><CheckCircle2 size={17} />{pacienteSuccessMessage}</p>}
+          {pacientesError && <p className="alert error">{pacientesError}</p>}
+
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>CPF</th>
+                  <th>Hospital</th>
+                  <th>Medico</th>
+                  <th>Convenio</th>
+                  <th>Procedimento</th>
+                  <th>Status Pago</th>
+                  <th>Arquivos</th>
+                  <th aria-label="Acoes" />
+                </tr>
+              </thead>
+              <tbody>
+                {pacientesLoading ? (
+                  <tr>
+                    <td colSpan={9} className="empty-row">Carregando pacientes...</td>
+                  </tr>
+                ) : paginatedPacientes.length ? (
+                  paginatedPacientes.map((paciente) => (
+                    <tr key={paciente.id}>
+                      <td>
+                        <div className="name-cell">
+                          <UserAvatar name={paciente.nomePaciente} photo={paciente.fotoPerfil} size="sm" />
+                          <span>{paciente.nomePaciente}</span>
+                        </div>
+                      </td>
+                      <td>{formatCpfInput(paciente.cpf || '')}</td>
+                      <td>{paciente.hospital || '-'}</td>
+                      <td>{paciente.medico || '-'}</td>
+                      <td>{paciente.convenio || '-'}</td>
+                      <td>{paciente.procedimento || '-'}</td>
+                      <td>
+                        <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
+                          {paciente.statusPago ? 'Pago' : 'Pendente'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="attachment-count">
+                          <FileText size={15} />
+                          {paciente.arquivos.length}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="row-actions">
+                          <button type="button" className="icon-button muted" onClick={() => handleEditPaciente(paciente)} title="Editar">
+                            <Pencil size={17} />
+                          </button>
+                          <button type="button" className="icon-button danger" onClick={() => void handleDeletePaciente(paciente)} title="Excluir">
+                            <Trash2 size={17} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="empty-row">Nenhum paciente encontrado.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="pagination-bar">
+            <span>
+              {pacienteVisibleStart}-{pacienteVisibleEnd} de {filteredPacientes.length}
+            </span>
+            <div className="pagination-actions">
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setPacienteCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={pacienteCurrentPage === 1}
+                title="Pagina anterior"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <span className="page-indicator">Pagina {pacienteCurrentPage} de {pacienteTotalPages}</span>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setPacienteCurrentPage((page) => Math.min(pacienteTotalPages, page + 1))}
+                disabled={pacienteCurrentPage === pacienteTotalPages}
+                title="Proxima pagina"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+      )}
 
       {selectedInfoUser && (
         <InfoModal user={selectedInfoUser} onClose={() => setSelectedInfoUser(null)} />
@@ -1032,6 +1844,10 @@ function InfoModal({ user, onClose }: InfoModalProps) {
           <div>
             <dt>Perfil</dt>
             <dd>{user.perfilNome || getProfileName(user.perfilId)}</dd>
+          </div>
+          <div>
+            <dt>CPF</dt>
+            <dd>{formatCpfInput(user.cpf || '')}</dd>
           </div>
           <div>
             <dt>Data de nascimento</dt>
