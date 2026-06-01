@@ -1461,17 +1461,17 @@ export default function App() {
                 ) : paginatedUsers.length ? (
                   paginatedUsers.map((user) => (
                     <tr key={user.id}>
-                      <td>
+                      <td data-label="Nome">
                         <div className="name-cell">
                           <UserAvatar name={user.nome} photo={user.fotoPerfil} size="sm" />
                           <span>{user.nome}</span>
                         </div>
                       </td>
-                      <td>{user.email}</td>
-                      <td>{formatPhoneInput(user.telefone)}</td>
-                      <td>{formatCpfInput(user.cpf || '')}</td>
-                      <td>{user.perfilNome || getProfileName(user.perfilId)}</td>
-                      <td>
+                      <td data-label="Email">{user.email}</td>
+                      <td data-label="Telefone">{formatPhoneInput(user.telefone)}</td>
+                      <td data-label="CPF">{formatCpfInput(user.cpf || '')}</td>
+                      <td data-label="Perfil">{user.perfilNome || getProfileName(user.perfilId)}</td>
+                      <td data-label="Info">
                         <button
                           type="button"
                           className={`status-info-button ${user.ativo ? 'active' : 'inactive'}`}
@@ -1483,7 +1483,7 @@ export default function App() {
                           <Info size={15} />
                         </button>
                       </td>
-                      <td>
+                      <td data-label="Acoes">
                         <div className="row-actions">
                           <button type="button" className="icon-button muted" onClick={() => handleEditUser(user)} title="Editar">
                             <Pencil size={17} />
@@ -1850,29 +1850,29 @@ export default function App() {
                 ) : paginatedPacientes.length ? (
                   paginatedPacientes.map((paciente) => (
                     <tr key={paciente.id}>
-                      <td>
+                      <td data-label="Paciente">
                         <div className="name-cell">
                           <UserAvatar name={paciente.nomePaciente} photo={paciente.fotoPerfil} size="sm" />
                           <span>{paciente.nomePaciente}</span>
                         </div>
                       </td>
-                      <td>{formatCpfInput(paciente.cpf || '')}</td>
-                      <td>{paciente.hospital || '-'}</td>
-                      <td>{paciente.medico || '-'}</td>
-                      <td>{paciente.convenio || '-'}</td>
-                      <td>{paciente.procedimento || '-'}</td>
-                      <td>
+                      <td data-label="CPF">{formatCpfInput(paciente.cpf || '')}</td>
+                      <td data-label="Hospital">{paciente.hospital || '-'}</td>
+                      <td data-label="Medico">{paciente.medico || '-'}</td>
+                      <td data-label="Convenio">{paciente.convenio || '-'}</td>
+                      <td data-label="Procedimento">{paciente.procedimento || '-'}</td>
+                      <td data-label="Status Pago">
                         <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
                           {paciente.statusPago ? 'Pago' : 'Pendente'}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Arquivos">
                         <span className="attachment-count">
                           <FileText size={15} />
                           {paciente.arquivos.length}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Acoes">
                         <div className="row-actions">
                           <button type="button" className="icon-button muted" onClick={() => handleEditPaciente(paciente)} title="Editar">
                             <Pencil size={17} />
