@@ -1,14 +1,21 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+  CircleX,
+  Info,
   KeyRound,
   LogIn,
   LogOut,
+  Moon,
   Pencil,
   Plus,
   RefreshCw,
   Save,
   Search,
+  Sun,
   Trash2,
   UserRound,
   Users,
@@ -26,15 +33,35 @@ import type { AuthSession, User, UserFormData } from './types';
 import brandImage from '../imagem candidata hemodinks.jpg';
 
 const SESSION_KEY = 'hemodinks.session';
+const THEME_KEY = 'hemodinks.theme';
 const DEFAULT_PASSWORD = 'Senha@123';
+const PAGE_SIZE = 10;
+const MAX_NAME_LENGTH = 255;
+const MAX_EMAIL_LENGTH = 255;
+const MAX_PHONE_LENGTH = 20;
+const MAX_PASSWORD_LENGTH = 500;
+
+const VALID_BRAZIL_AREA_CODES = new Set([
+  '11', '12', '13', '14', '15', '16', '17', '18', '19',
+  '21', '22', '24', '27', '28',
+  '31', '32', '33', '34', '35', '37', '38',
+  '41', '42', '43', '44', '45', '46', '47', '48', '49',
+  '51', '53', '54', '55',
+  '61', '62', '63', '64', '65', '66', '67', '68', '69',
+  '71', '73', '74', '75', '77', '79',
+  '81', '82', '83', '84', '85', '86', '87', '88', '89',
+  '91', '92', '93', '94', '95', '96', '97', '98', '99',
+]);
 
 const emptyUserForm: UserFormData = {
   nome: '',
   email: '',
-  telefone: '',
+  telefone: '+55 ',
   dataNascimento: '',
   ativo: true,
 };
+
+type Theme = 'light' | 'dark';
 
 function loadStoredSession(): AuthSession | null {
   const rawSession = localStorage.getItem(SESSION_KEY);
@@ -51,27 +78,181 @@ function loadStoredSession(): AuthSession | null {
   }
 }
 
+function loadStoredTheme(): Theme {
+  return localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light';
+}
+
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Erro inesperado.';
 }
 
-function toDateInput(value: string) {
-  return value ? value.split('T')[0] : '';
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '');
 }
 
-function formatDate(value: string) {
-  const date = toDateInput(value);
+function getLocalBrazilPhoneDigits(value: string) {
+  const digits = onlyDigits(value);
+  const localDigits = digits.startsWith('55') ? digits.slice(2) : digits;
+  return localDigits.slice(0, 11);
+}
 
-  if (!date) {
-    return '-';
+function formatPhoneInput(value: string) {
+  const localDigits = getLocalBrazilPhoneDigits(value);
+  const ddd = localDigits.slice(0, 2);
+  const firstPart = localDigits.slice(2, 7);
+  const secondPart = localDigits.slice(7, 11);
+
+  if (!localDigits) {
+    return '+55 ';
   }
 
-  const [year, month, day] = date.split('-');
+  if (localDigits.length <= 2) {
+    return `+55 (${ddd}`;
+  }
+
+  if (localDigits.length <= 7) {
+    return `+55 (${ddd}) ${firstPart}`;
+  }
+
+  return `+55 (${ddd}) ${firstPart}-${secondPart}`;
+}
+
+function normalizePhoneForPayload(value: string) {
+  return `+55${getLocalBrazilPhoneDigits(value)}`;
+}
+
+function isValidBrazilMobilePhone(value: string) {
+  const localDigits = getLocalBrazilPhoneDigits(value);
+  const areaCode = localDigits.slice(0, 2);
+  const number = localDigits.slice(2);
+
+  return localDigits.length === 11
+    && VALID_BRAZIL_AREA_CODES.has(areaCode)
+    && number.startsWith('9')
+    && !/^(\d)\1{10}$/.test(localDigits);
+}
+
+function isValidEmail(value: string) {
+  const email = value.trim();
+  return email.length <= MAX_EMAIL_LENGTH
+    && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email);
+}
+
+function formatDateInput(value: string) {
+  const digits = onlyDigits(value).slice(0, 8);
+  const day = digits.slice(0, 2);
+  const month = digits.slice(2, 4);
+  const year = digits.slice(4, 8);
+
+  if (digits.length <= 2) {
+    return day;
+  }
+
+  if (digits.length <= 4) {
+    return `${day}/${month}`;
+  }
+
   return `${day}/${month}/${year}`;
+}
+
+function toDisplayDate(value: string) {
+  if (!value) {
+    return '';
+  }
+
+  if (value.includes('/')) {
+    return formatDateInput(value);
+  }
+
+  const [year, month, day] = value.split('T')[0].split('-');
+
+  if (!year || !month || !day) {
+    return '';
+  }
+
+  return `${day}/${month}/${year}`;
+}
+
+function parseDisplayDate(value: string) {
+  const [day, month, year] = value.split('/');
+  return `${year}-${month}-${day}`;
+}
+
+function isValidBirthDate(value: string) {
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+    return false;
+  }
+
+  const [dayText, monthText, yearText] = value.split('/');
+  const day = Number(dayText);
+  const month = Number(monthText);
+  const year = Number(yearText);
+  const date = new Date(year, month - 1, day);
+  const today = new Date();
+
+  today.setHours(0, 0, 0, 0);
+
+  return year >= 1900
+    && date.getFullYear() === year
+    && date.getMonth() === month - 1
+    && date.getDate() === day
+    && date <= today;
+}
+
+function getPasswordStrength(password: string) {
+  if (!password || password === DEFAULT_PASSWORD) {
+    return { score: 0, label: 'Muito fraca' };
+  }
+
+  let score = 0;
+
+  if (password.length >= 8) score += 1;
+  if (password.length >= 12) score += 1;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  const labels = ['Muito fraca', 'Fraca', 'Regular', 'Boa', 'Forte', 'Muito forte'];
+  return { score, label: labels[score] };
+}
+
+function validateUserForm(data: UserFormData) {
+  if (!data.nome.trim()) {
+    return 'Informe o nome completo.';
+  }
+
+  if (data.nome.trim().length > MAX_NAME_LENGTH) {
+    return `O nome deve ter no maximo ${MAX_NAME_LENGTH} caracteres.`;
+  }
+
+  if (!isValidEmail(data.email)) {
+    return 'Informe um email valido.';
+  }
+
+  if (!isValidBrazilMobilePhone(data.telefone)) {
+    return 'Informe um celular valido com DDD e 9 digitos.';
+  }
+
+  if (!isValidBirthDate(data.dataNascimento)) {
+    return 'Informe a data de nascimento no formato dd/mm/yyyy.';
+  }
+
+  return '';
+}
+
+function toUserPayload(data: UserFormData): UserFormData {
+  return {
+    nome: data.nome.trim(),
+    email: data.email.trim(),
+    telefone: normalizePhoneForPayload(data.telefone),
+    dataNascimento: parseDisplayDate(data.dataNascimento),
+    ativo: data.ativo,
+  };
 }
 
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => loadStoredSession());
+  const [theme, setTheme] = useState<Theme>(() => loadStoredTheme());
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -82,12 +263,23 @@ export default function App() {
   const [usersError, setUsersError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [formData, setFormData] = useState<UserFormData>(emptyUserForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [selectedInfoUser, setSelectedInfoUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((current) => current === 'light' ? 'dark' : 'light');
+  };
 
   const persistSession = (nextSession: AuthSession) => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
@@ -136,16 +328,40 @@ export default function App() {
       user.nome.toLowerCase().includes(term)
       || user.email.toLowerCase().includes(term)
       || user.telefone.toLowerCase().includes(term)
+      || formatPhoneInput(user.telefone).toLowerCase().includes(term)
     ));
   }, [searchTerm, users]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageEnd = pageStart + PAGE_SIZE;
+  const paginatedUsers = filteredUsers.slice(pageStart, pageEnd);
+  const visibleStart = filteredUsers.length ? pageStart + 1 : 0;
+  const visibleEnd = Math.min(pageEnd, filteredUsers.length);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoginError('');
+
+    if (!isValidEmail(loginEmail)) {
+      setLoginError('Informe um email valido.');
+      return;
+    }
+
     setLoginLoading(true);
 
     try {
-      const result = await authenticate(loginEmail, loginPassword);
+      const result = await authenticate(loginEmail.trim(), loginPassword);
       persistSession({
         token: result.token,
         user: {
@@ -175,8 +391,8 @@ export default function App() {
     setFormData({
       nome: user.nome,
       email: user.email,
-      telefone: user.telefone,
-      dataNascimento: toDateInput(user.dataNascimento),
+      telefone: formatPhoneInput(user.telefone),
+      dataNascimento: toDisplayDate(user.dataNascimento),
       ativo: user.ativo,
     });
   };
@@ -188,16 +404,25 @@ export default function App() {
       return;
     }
 
+    const validationError = validateUserForm(formData);
+
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
+    const payload = toUserPayload(formData);
+
     setFormLoading(true);
     setFormError('');
     setSuccessMessage('');
 
     try {
       if (editingId) {
-        await updateUser(editingId, formData, session.token);
+        await updateUser(editingId, payload, session.token);
         setSuccessMessage('Usuario atualizado.');
       } else {
-        await createUser(formData, session.token);
+        await createUser(payload, session.token);
         setSuccessMessage(`Usuario cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
       }
 
@@ -255,6 +480,7 @@ export default function App() {
     return (
       <main className="auth-screen">
         <TechCredit />
+        <ThemeToggle theme={theme} onToggle={toggleTheme} floating />
         <section className="auth-panel">
           <div className="brand-block">
             <img src={brandImage} alt="Hemodinks" className="brand-mark" />
@@ -270,8 +496,9 @@ export default function App() {
               <input
                 type="email"
                 value={loginEmail}
-                onChange={(event) => setLoginEmail(event.target.value)}
+                onChange={(event) => setLoginEmail(event.target.value.slice(0, MAX_EMAIL_LENGTH))}
                 autoComplete="email"
+                maxLength={MAX_EMAIL_LENGTH}
                 required
               />
             </label>
@@ -283,6 +510,7 @@ export default function App() {
                 value={loginPassword}
                 onChange={(event) => setLoginPassword(event.target.value)}
                 autoComplete="current-password"
+                maxLength={MAX_PASSWORD_LENGTH}
                 required
               />
             </label>
@@ -303,6 +531,7 @@ export default function App() {
     return (
       <main className="auth-screen compact">
         <TechCredit />
+        <ThemeToggle theme={theme} onToggle={toggleTheme} floating />
         <section className="auth-panel password-required">
           <div className="brand-block">
             <KeyRound size={36} strokeWidth={1.8} />
@@ -340,6 +569,7 @@ export default function App() {
             <UserRound size={18} />
             <span>{session.user.nome}</span>
           </div>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
           <button type="button" className="ghost-button" onClick={() => setShowPasswordModal(true)}>
             <KeyRound size={17} />
             Mudar senha
@@ -372,7 +602,8 @@ export default function App() {
               <input
                 type="text"
                 value={formData.nome}
-                onChange={(event) => setFormData((current) => ({ ...current, nome: event.target.value }))}
+                onChange={(event) => setFormData((current) => ({ ...current, nome: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
+                maxLength={MAX_NAME_LENGTH}
                 required
               />
             </label>
@@ -382,7 +613,8 @@ export default function App() {
               <input
                 type="email"
                 value={formData.email}
-                onChange={(event) => setFormData((current) => ({ ...current, email: event.target.value }))}
+                onChange={(event) => setFormData((current) => ({ ...current, email: event.target.value.slice(0, MAX_EMAIL_LENGTH) }))}
+                maxLength={MAX_EMAIL_LENGTH}
                 required
               />
             </label>
@@ -392,8 +624,11 @@ export default function App() {
               <input
                 type="tel"
                 value={formData.telefone}
-                onChange={(event) => setFormData((current) => ({ ...current, telefone: event.target.value }))}
-                placeholder="+5581999999999"
+                onFocus={() => setFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
+                onChange={(event) => setFormData((current) => ({ ...current, telefone: formatPhoneInput(event.target.value) }))}
+                inputMode="numeric"
+                maxLength={MAX_PHONE_LENGTH}
+                placeholder="+55 (81) 99999-9999"
                 required
               />
             </label>
@@ -401,9 +636,12 @@ export default function App() {
             <label>
               Data de nascimento
               <input
-                type="date"
+                type="text"
                 value={formData.dataNascimento}
-                onChange={(event) => setFormData((current) => ({ ...current, dataNascimento: event.target.value }))}
+                onChange={(event) => setFormData((current) => ({ ...current, dataNascimento: formatDateInput(event.target.value) }))}
+                inputMode="numeric"
+                maxLength={10}
+                placeholder="dd/mm/yyyy"
                 required
               />
             </label>
@@ -459,19 +697,17 @@ export default function App() {
                   <th>Nome</th>
                   <th>Email</th>
                   <th>Telefone</th>
-                  <th>Nascimento</th>
-                  <th>Status</th>
-                  <th>Senha</th>
+                  <th>Info</th>
                   <th aria-label="Acoes" />
                 </tr>
               </thead>
               <tbody>
                 {usersLoading ? (
                   <tr>
-                    <td colSpan={7} className="empty-row">Carregando usuarios...</td>
+                    <td colSpan={5} className="empty-row">Carregando usuarios...</td>
                   </tr>
-                ) : filteredUsers.length ? (
-                  filteredUsers.map((user) => (
+                ) : paginatedUsers.length ? (
+                  paginatedUsers.map((user) => (
                     <tr key={user.id}>
                       <td>
                         <div className="name-cell">
@@ -480,17 +716,18 @@ export default function App() {
                         </div>
                       </td>
                       <td>{user.email}</td>
-                      <td>{user.telefone}</td>
-                      <td>{formatDate(user.dataNascimento)}</td>
+                      <td>{formatPhoneInput(user.telefone)}</td>
                       <td>
-                        <span className={`status-pill ${user.ativo ? 'active' : 'inactive'}`}>
-                          {user.ativo ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`status-pill ${user.precisaTrocarSenha ? 'warning' : 'ok'}`}>
-                          {user.precisaTrocarSenha ? 'Inicial' : 'Alterada'}
-                        </span>
+                        <button
+                          type="button"
+                          className={`status-info-button ${user.ativo ? 'active' : 'inactive'}`}
+                          title={`${user.ativo ? 'Ativo' : 'Inativo'} - clique para ver detalhes`}
+                          aria-label={`Detalhes de ${user.nome}`}
+                          onClick={() => setSelectedInfoUser(user)}
+                        >
+                          {user.ativo ? <CircleCheck size={19} /> : <CircleX size={19} />}
+                          <Info size={15} />
+                        </button>
                       </td>
                       <td>
                         <div className="row-actions">
@@ -506,14 +743,45 @@ export default function App() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="empty-row">Nenhum usuario encontrado.</td>
+                    <td colSpan={5} className="empty-row">Nenhum usuario encontrado.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          <div className="pagination-bar">
+            <span>
+              {visibleStart}-{visibleEnd} de {filteredUsers.length}
+            </span>
+            <div className="pagination-actions">
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+                title="Pagina anterior"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <span className="page-indicator">Pagina {currentPage} de {totalPages}</span>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+                title="Proxima pagina"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
         </section>
       </section>
+
+      {selectedInfoUser && (
+        <InfoModal user={selectedInfoUser} onClose={() => setSelectedInfoUser(null)} />
+      )}
 
       {showPasswordModal && (
         <div className="modal-backdrop" role="presentation">
@@ -543,6 +811,69 @@ function TechCredit() {
   return <div className="tech-credit">GM Tech Solutions</div>;
 }
 
+type ThemeToggleProps = {
+  theme: Theme;
+  onToggle: () => void;
+  floating?: boolean;
+};
+
+function ThemeToggle({ theme, onToggle, floating = false }: ThemeToggleProps) {
+  const isDark = theme === 'dark';
+
+  return (
+    <button
+      type="button"
+      className={`ghost-button theme-toggle ${floating ? 'floating' : ''}`}
+      onClick={onToggle}
+      title={isDark ? 'Usar tema claro' : 'Usar tema escuro'}
+    >
+      {isDark ? <Sun size={17} /> : <Moon size={17} />}
+      {isDark ? 'Tema claro' : 'Tema escuro'}
+    </button>
+  );
+}
+
+type InfoModalProps = {
+  user: User;
+  onClose: () => void;
+};
+
+function InfoModal({ user, onClose }: InfoModalProps) {
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-panel info-modal" role="dialog" aria-modal="true" aria-labelledby="info-title">
+        <div className="panel-title">
+          <div>
+            <span className="eyebrow">Informacoes</span>
+            <h2 id="info-title">{user.nome}</h2>
+          </div>
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+            <X size={18} />
+          </button>
+        </div>
+
+        <dl className="info-list">
+          <div>
+            <dt>Data de nascimento</dt>
+            <dd>{toDisplayDate(user.dataNascimento)}</dd>
+          </div>
+          <div>
+            <dt>Troca de senha</dt>
+            <dd>{user.precisaTrocarSenha ? 'Senha inicial' : 'Senha alterada'}</dd>
+          </div>
+          <div>
+            <dt>Situacao</dt>
+            <dd className={user.ativo ? 'detail-active' : 'detail-inactive'}>
+              {user.ativo ? <CircleCheck size={17} /> : <CircleX size={17} />}
+              {user.ativo ? 'Ativo' : 'Inativo'}
+            </dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  );
+}
+
 type PasswordFormProps = {
   session: AuthSession;
   forced?: boolean;
@@ -556,6 +887,7 @@ function PasswordForm({ session, forced = false, onChanged, onCancel }: Password
   const [confirmacao, setConfirmacao] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const passwordStrength = useMemo(() => getPasswordStrength(novaSenha), [novaSenha]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -598,6 +930,7 @@ function PasswordForm({ session, forced = false, onChanged, onCancel }: Password
           value={senhaAtual}
           onChange={(event) => setSenhaAtual(event.target.value)}
           autoComplete="current-password"
+          maxLength={MAX_PASSWORD_LENGTH}
           required
         />
       </label>
@@ -610,9 +943,17 @@ function PasswordForm({ session, forced = false, onChanged, onCancel }: Password
           onChange={(event) => setNovaSenha(event.target.value)}
           autoComplete="new-password"
           minLength={8}
+          maxLength={MAX_PASSWORD_LENGTH}
           required
         />
       </label>
+
+      <div className={`password-strength strength-${passwordStrength.score}`} aria-live="polite">
+        <div className="strength-track">
+          <span style={{ width: `${Math.max(1, passwordStrength.score) * 20}%` }} />
+        </div>
+        <span>Forca da senha: {passwordStrength.label}</span>
+      </div>
 
       <label>
         Confirmar nova senha
@@ -622,6 +963,7 @@ function PasswordForm({ session, forced = false, onChanged, onCancel }: Password
           onChange={(event) => setConfirmacao(event.target.value)}
           autoComplete="new-password"
           minLength={8}
+          maxLength={MAX_PASSWORD_LENGTH}
           required
         />
       </label>

@@ -71,6 +71,7 @@ describe('App', () => {
 
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
+    expect(screen.getByText('+55 (81) 99999-9999')).toBeInTheDocument();
     expect(api.getUsers).toHaveBeenCalledWith('jwt-token');
 
     const storedSession = JSON.parse(localStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
@@ -135,14 +136,14 @@ describe('App', () => {
 
     await user.type(screen.getByLabelText('Nome completo'), 'Bruno Hemodinks');
     await user.type(screen.getByLabelText('Email'), 'bruno@hemodinks.com');
-    await user.type(screen.getByLabelText('Telefone'), '+5581888888888');
-    await user.type(screen.getByLabelText('Data de nascimento'), '1992-05-10');
+    await user.type(screen.getByLabelText('Telefone'), '81988888888');
+    await user.type(screen.getByLabelText('Data de nascimento'), '10051992');
     await user.click(screen.getByRole('button', { name: /cadastrar usuario/i }));
 
     expect(api.createUser).toHaveBeenCalledWith({
       nome: 'Bruno Hemodinks',
       email: 'bruno@hemodinks.com',
-      telefone: '+5581888888888',
+      telefone: '+5581988888888',
       dataNascimento: '1992-05-10',
       ativo: true,
     }, 'jwt-token');
@@ -175,7 +176,7 @@ describe('App', () => {
     expect(screen.getByText('Carlos Hemodinks')).toBeInTheDocument();
   });
 
-  it('preenche o formulario ao editar e exclui usuario com confirmacao', async () => {
+  it('abre popup de informacoes, preenche o formulario ao editar e exclui usuario', async () => {
     const user = userEvent.setup();
     mockSession();
     vi.mocked(api.updateUser).mockResolvedValue(baseUser);
@@ -186,15 +187,66 @@ describe('App', () => {
     const row = await screen.findByText('Ana Hemodinks');
     const tableRow = row.closest('tr')!;
 
+    await user.click(within(tableRow).getByLabelText('Detalhes de Ana Hemodinks'));
+
+    const infoDialog = screen.getByRole('dialog', { name: 'Ana Hemodinks' });
+    expect(infoDialog).toBeInTheDocument();
+    expect(within(infoDialog).getByText('Data de nascimento')).toBeInTheDocument();
+    expect(within(infoDialog).getByText('01/01/1990')).toBeInTheDocument();
+    expect(within(infoDialog).getByText('Senha alterada')).toBeInTheDocument();
+    expect(within(infoDialog).getByText('Ativo')).toBeInTheDocument();
+    await user.click(screen.getByTitle('Fechar'));
+
     await user.click(within(tableRow).getByTitle('Editar'));
 
     expect(screen.getByRole('heading', { name: 'Editar usuario' })).toBeInTheDocument();
     expect(screen.getByLabelText('Nome completo')).toHaveValue('Ana Hemodinks');
+    expect(screen.getByLabelText('Telefone')).toHaveValue('+55 (81) 99999-9999');
+    expect(screen.getByLabelText('Data de nascimento')).toHaveValue('01/01/1990');
 
     await user.click(within(tableRow).getByTitle('Excluir'));
 
     expect(window.confirm).toHaveBeenCalledWith('Excluir Ana Hemodinks?');
     expect(api.deleteUser).toHaveBeenCalledWith(1, 'jwt-token');
     expect(await screen.findByText('Usuario excluido.')).toBeInTheDocument();
+  });
+
+  it('pagina a lista com 10 registros por tela', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    vi.mocked(api.getUsers).mockResolvedValue(Array.from({ length: 12 }, (_, index) => ({
+      ...baseUser,
+      id: index + 1,
+      nome: `Usuario ${index + 1}`,
+      email: `usuario${index + 1}@hemodinks.com`,
+      telefone: '+5581999999999',
+    })));
+
+    render(<App />);
+
+    expect(await screen.findByText('Usuario 1')).toBeInTheDocument();
+    expect(screen.getByText('Usuario 10')).toBeInTheDocument();
+    expect(screen.queryByText('Usuario 11')).not.toBeInTheDocument();
+    expect(screen.getByText('1-10 de 12')).toBeInTheDocument();
+
+    await user.click(screen.getByTitle('Proxima pagina'));
+
+    expect(screen.queryByText('Usuario 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Usuario 11')).toBeInTheDocument();
+    expect(screen.getByText('11-12 de 12')).toBeInTheDocument();
+  });
+
+  it('alterna tema claro e escuro', async () => {
+    const user = userEvent.setup();
+    mockSession();
+
+    render(<App />);
+
+    expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /tema escuro/i }));
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(screen.getByRole('button', { name: /tema claro/i })).toBeInTheDocument();
   });
 });

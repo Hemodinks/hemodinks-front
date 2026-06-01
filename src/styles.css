@@ -11,13 +11,43 @@
   --muted: #667085;
   --line: #d8ded8;
   --panel: #ffffff;
+  --panel-strong: #ffffff;
   --soft: #eef4ef;
   --blood: #b42335;
   --blood-dark: #8f1d2d;
   --teal: #0f766e;
   --amber: #b7791f;
   --danger: #b42318;
+  --background: #f6f7f4;
+  --background-overlay: rgba(246, 247, 244, 0.5);
+  --input-bg: #ffffff;
+  --table-head: #f8faf8;
+  --row-hover: #fbfcfb;
+  --topbar-bg: rgba(255, 255, 255, 0.92);
   --shadow: 0 18px 45px rgba(24, 33, 47, 0.14);
+}
+
+:root[data-theme="dark"] {
+  color: #edf2f7;
+  background: #111827;
+  --ink: #f8fafc;
+  --muted: #cbd5e1;
+  --line: #334155;
+  --panel: rgba(15, 23, 42, 0.94);
+  --panel-strong: #111827;
+  --soft: #243143;
+  --blood: #fb7185;
+  --blood-dark: #f43f5e;
+  --teal: #2dd4bf;
+  --amber: #fbbf24;
+  --danger: #f87171;
+  --background: #111827;
+  --background-overlay: rgba(15, 23, 42, 0.58);
+  --input-bg: #0f172a;
+  --table-head: #172033;
+  --row-hover: rgba(30, 41, 59, 0.72);
+  --topbar-bg: rgba(15, 23, 42, 0.92);
+  --shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
 }
 
 * {
@@ -28,9 +58,10 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f6f7f4;
+  color: var(--ink);
+  background-color: var(--background);
   background-image:
-    linear-gradient(rgba(246, 247, 244, 0.5), rgba(246, 247, 244, 0.5)),
+    linear-gradient(var(--background-overlay), var(--background-overlay)),
     url("../imagem candidata hemodinks.jpg");
   background-position: center;
   background-repeat: no-repeat;
@@ -69,7 +100,7 @@ button:disabled {
   padding: 30px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--panel);
   box-shadow: var(--shadow);
 }
 
@@ -148,7 +179,7 @@ h2 {
 label {
   display: grid;
   gap: 7px;
-  color: #344054;
+  color: var(--ink);
   font-size: 0.9rem;
   font-weight: 700;
 }
@@ -159,7 +190,7 @@ input {
   border: 1px solid #cbd5d0;
   border-radius: 8px;
   color: var(--ink);
-  background: #fff;
+  background: var(--input-bg);
   padding: 10px 12px;
   outline: none;
 }
@@ -197,7 +228,7 @@ input:focus {
 
 .ghost-button {
   color: var(--ink);
-  background: #fff;
+  background: var(--input-bg);
   border-color: var(--line);
   padding: 0 13px;
 }
@@ -210,7 +241,7 @@ input:focus {
 .icon-button {
   width: 40px;
   color: var(--ink);
-  background: #fff;
+  background: var(--input-bg);
   border-color: var(--line);
 }
 
@@ -271,11 +302,22 @@ input:focus {
   gap: 18px;
   padding: 18px clamp(18px, 4vw, 42px);
   padding-top: 44px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--topbar-bg);
   border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.theme-toggle {
+  min-width: 140px;
+}
+
+.theme-toggle.floating {
+  position: fixed;
+  top: 18px;
+  right: clamp(16px, 2.5vw, 40px);
+  z-index: 40;
 }
 
 .topbar-brand {
@@ -366,7 +408,7 @@ input:focus {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 0 10px;
-  background: #fff;
+  background: var(--input-bg);
   color: var(--muted);
 }
 
@@ -387,7 +429,7 @@ input:focus {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 860px;
+  min-width: 760px;
 }
 
 th,
@@ -401,7 +443,7 @@ td {
 
 th {
   color: #566170;
-  background: #f8faf8;
+  background: var(--table-head);
   font-size: 0.76rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -409,7 +451,7 @@ th {
 }
 
 tbody tr:hover {
-  background: #fbfcfb;
+  background: var(--row-hover);
 }
 
 tbody tr:last-child td {
@@ -422,10 +464,14 @@ tbody tr:last-child td {
   font-weight: 800;
 }
 
-.status-pill {
+.status-pill,
+.status-info-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.status-pill {
   min-width: 72px;
   border-radius: 8px;
   padding: 5px 8px;
@@ -447,6 +493,27 @@ tbody tr:last-child td {
 .status-pill.warning {
   color: #845700;
   background: #fff3cf;
+}
+
+.status-info-button {
+  width: 42px;
+  height: 38px;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.status-info-button.active {
+  color: #047857;
+}
+
+.status-info-button.inactive {
+  color: var(--danger);
+}
+
+.status-info-button:hover {
+  background: var(--soft);
 }
 
 .row-actions {
@@ -473,6 +540,111 @@ tbody tr:last-child td {
 .modal-panel {
   width: min(470px, 100%);
   padding: 22px;
+}
+
+.info-modal {
+  width: min(520px, 100%);
+}
+
+.info-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.info-list div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+.info-list dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.info-list dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: var(--ink);
+  font-weight: 900;
+  text-align: right;
+}
+
+.detail-active {
+  color: #047857 !important;
+}
+
+.detail-inactive {
+  color: var(--danger) !important;
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.page-indicator {
+  min-width: 104px;
+  color: var(--ink);
+  text-align: center;
+}
+
+.password-strength {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.strength-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--soft);
+}
+
+.strength-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 180ms ease, background 180ms ease;
+}
+
+.strength-0 .strength-track span,
+.strength-1 .strength-track span {
+  background: var(--danger);
+}
+
+.strength-2 .strength-track span,
+.strength-3 .strength-track span {
+  background: var(--amber);
+}
+
+.strength-4 .strength-track span,
+.strength-5 .strength-track span {
+  background: var(--teal);
 }
 
 .button-row {
@@ -526,6 +698,17 @@ tbody tr:last-child td {
 
   .topbar-actions .ghost-button {
     flex: 1 1 160px;
+  }
+
+  .pagination-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .theme-toggle.floating {
+    top: auto;
+    right: 16px;
+    bottom: 16px;
   }
 
   h1 {
