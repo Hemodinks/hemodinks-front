@@ -35,6 +35,8 @@ describe('api client', () => {
       email: 'gmarcone@gmail.com',
       token: 'jwt-token',
       precisaTrocarSenha: false,
+      perfilId: 1,
+      perfilNome: 'Administrador',
     }));
 
     const result = await authenticate('gmarcone@gmail.com', 'Senha@123');
@@ -73,6 +75,7 @@ describe('api client', () => {
       telefone: '+5581999999999',
       dataNascimento: '1990-01-01',
       ativo: true,
+      perfilId: 2,
     };
 
     await createUser(payload, 'jwt-token');

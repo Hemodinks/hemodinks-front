@@ -25,6 +25,8 @@ const baseUser: User = {
   dataNascimento: '1990-01-01T00:00:00Z',
   ativo: true,
   precisaTrocarSenha: false,
+  perfilId: 2,
+  perfilNome: 'Médicos',
 };
 
 function mockSession(overrides?: Partial<AuthSession['user']>) {
@@ -35,6 +37,8 @@ function mockSession(overrides?: Partial<AuthSession['user']>) {
       nome: 'George Marcone',
       email: 'gmarcone@gmail.com',
       precisaTrocarSenha: false,
+      perfilId: 1,
+      perfilNome: 'Administrador',
       ...overrides,
     },
   };
@@ -59,6 +63,8 @@ describe('App', () => {
       email: 'gmarcone@gmail.com',
       token: 'jwt-token',
       precisaTrocarSenha: false,
+      perfilId: 1,
+      perfilNome: 'Administrador',
     });
 
     render(<App />);
@@ -77,6 +83,7 @@ describe('App', () => {
     const storedSession = JSON.parse(localStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
     expect(storedSession.token).toBe('jwt-token');
     expect(storedSession.user.precisaTrocarSenha).toBe(false);
+    expect(storedSession.user.perfilNome).toBe('Administrador');
   });
 
   it('bloqueia o primeiro acesso ate a troca da senha padrao', async () => {
@@ -87,6 +94,8 @@ describe('App', () => {
       email: 'gmarcone@gmail.com',
       token: 'jwt-token',
       precisaTrocarSenha: true,
+      perfilId: 1,
+      perfilNome: 'Administrador',
     });
     vi.mocked(api.changePassword).mockResolvedValue({
       id: 99,
@@ -128,6 +137,8 @@ describe('App', () => {
       telefone: '+5581888888888',
       dataNascimento: '1992-05-10T00:00:00Z',
       precisaTrocarSenha: true,
+      perfilId: 2,
+      perfilNome: 'Médicos',
     });
 
     render(<App />);
@@ -138,6 +149,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Email'), 'bruno@hemodinks.com');
     await user.type(screen.getByLabelText('Telefone'), '81988888888');
     await user.type(screen.getByLabelText('Data de nascimento'), '10051992');
+    expect(screen.getByLabelText('Perfil')).toHaveValue('2');
     await user.click(screen.getByRole('button', { name: /cadastrar usuario/i }));
 
     expect(api.createUser).toHaveBeenCalledWith({
@@ -146,6 +158,7 @@ describe('App', () => {
       telefone: '+5581988888888',
       dataNascimento: '1992-05-10',
       ativo: true,
+      perfilId: 2,
     }, 'jwt-token');
     expect(await screen.findByText('Usuario cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
     expect(api.getUsers).toHaveBeenCalledTimes(2);
@@ -192,6 +205,8 @@ describe('App', () => {
     const infoDialog = screen.getByRole('dialog', { name: 'Ana Hemodinks' });
     expect(infoDialog).toBeInTheDocument();
     expect(within(infoDialog).getByText('Data de nascimento')).toBeInTheDocument();
+    expect(within(infoDialog).getByText('Perfil')).toBeInTheDocument();
+    expect(within(infoDialog).getByText('Médicos')).toBeInTheDocument();
     expect(within(infoDialog).getByText('01/01/1990')).toBeInTheDocument();
     expect(within(infoDialog).getByText('Senha alterada')).toBeInTheDocument();
     expect(within(infoDialog).getByText('Ativo')).toBeInTheDocument();
@@ -203,6 +218,7 @@ describe('App', () => {
     expect(screen.getByLabelText('Nome completo')).toHaveValue('Ana Hemodinks');
     expect(screen.getByLabelText('Telefone')).toHaveValue('+55 (81) 99999-9999');
     expect(screen.getByLabelText('Data de nascimento')).toHaveValue('01/01/1990');
+    expect(screen.getByLabelText('Perfil')).toHaveValue('2');
 
     await user.click(within(tableRow).getByTitle('Excluir'));
 

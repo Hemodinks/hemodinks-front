@@ -7,6 +7,8 @@ export type User = {
   dataNascimento: string;
   ativo: boolean;
   precisaTrocarSenha: boolean;
+  perfilId: number;
+  perfilNome: string;
 };
 
 export type LoginResponse = {
@@ -15,9 +17,11 @@ export type LoginResponse = {
   email: string;
   token: string;
   precisaTrocarSenha: boolean;
+  perfilId: number;
+  perfilNome: string;
 };
 
-export type SessionUser = Pick<LoginResponse, 'id' | 'nome' | 'email' | 'precisaTrocarSenha'>;
+export type SessionUser = Pick<LoginResponse, 'id' | 'nome' | 'email' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome'>;
 
 export type AuthSession = {
   token: string;
@@ -30,6 +34,7 @@ export type UserFormData = {
   telefone: string;
   dataNascimento: string;
   ativo: boolean;
+  perfilId: number;
 };
 
 export type ChangePasswordPayload = {

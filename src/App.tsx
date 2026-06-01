@@ -40,6 +40,13 @@ const MAX_NAME_LENGTH = 255;
 const MAX_EMAIL_LENGTH = 255;
 const MAX_PHONE_LENGTH = 20;
 const MAX_PASSWORD_LENGTH = 500;
+const DEFAULT_PROFILE_ID = 2;
+
+const PROFILE_OPTIONS = [
+  { id: 1, nome: 'Administrador' },
+  { id: 2, nome: 'Médicos' },
+  { id: 3, nome: 'Pacientes' },
+] as const;
 
 const VALID_BRAZIL_AREA_CODES = new Set([
   '11', '12', '13', '14', '15', '16', '17', '18', '19',
@@ -59,6 +66,7 @@ const emptyUserForm: UserFormData = {
   telefone: '+55 ',
   dataNascimento: '',
   ativo: true,
+  perfilId: DEFAULT_PROFILE_ID,
 };
 
 type Theme = 'light' | 'dark';
@@ -84,6 +92,14 @@ function loadStoredTheme(): Theme {
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Erro inesperado.';
+}
+
+function isValidProfileId(perfilId: number) {
+  return PROFILE_OPTIONS.some((profile) => profile.id === perfilId);
+}
+
+function getProfileName(perfilId: number) {
+  return PROFILE_OPTIONS.find((profile) => profile.id === perfilId)?.nome ?? 'Médicos';
 }
 
 function onlyDigits(value: string) {
@@ -237,6 +253,10 @@ function validateUserForm(data: UserFormData) {
     return 'Informe a data de nascimento no formato dd/mm/yyyy.';
   }
 
+  if (!isValidProfileId(data.perfilId)) {
+    return 'Selecione um perfil valido.';
+  }
+
   return '';
 }
 
@@ -247,6 +267,7 @@ function toUserPayload(data: UserFormData): UserFormData {
     telefone: normalizePhoneForPayload(data.telefone),
     dataNascimento: parseDisplayDate(data.dataNascimento),
     ativo: data.ativo,
+    perfilId: data.perfilId,
   };
 }
 
@@ -327,6 +348,7 @@ export default function App() {
     return users.filter((user) => (
       user.nome.toLowerCase().includes(term)
       || user.email.toLowerCase().includes(term)
+      || (user.perfilNome || getProfileName(user.perfilId)).toLowerCase().includes(term)
       || user.telefone.toLowerCase().includes(term)
       || formatPhoneInput(user.telefone).toLowerCase().includes(term)
     ));
@@ -369,6 +391,8 @@ export default function App() {
           nome: result.nome,
           email: result.email,
           precisaTrocarSenha: result.precisaTrocarSenha,
+          perfilId: result.perfilId || DEFAULT_PROFILE_ID,
+          perfilNome: result.perfilNome || getProfileName(result.perfilId || DEFAULT_PROFILE_ID),
         },
       });
     } catch (error) {
@@ -394,6 +418,7 @@ export default function App() {
       telefone: formatPhoneInput(user.telefone),
       dataNascimento: toDisplayDate(user.dataNascimento),
       ativo: user.ativo,
+      perfilId: user.perfilId || DEFAULT_PROFILE_ID,
     });
   };
 
@@ -646,6 +671,21 @@ export default function App() {
               />
             </label>
 
+            <label>
+              Perfil
+              <select
+                value={formData.perfilId}
+                onChange={(event) => setFormData((current) => ({ ...current, perfilId: Number(event.target.value) }))}
+                required
+              >
+                {PROFILE_OPTIONS.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <label className="toggle-row">
               <input
                 type="checkbox"
@@ -697,6 +737,7 @@ export default function App() {
                   <th>Nome</th>
                   <th>Email</th>
                   <th>Telefone</th>
+                  <th>Perfil</th>
                   <th>Info</th>
                   <th aria-label="Acoes" />
                 </tr>
@@ -704,7 +745,7 @@ export default function App() {
               <tbody>
                 {usersLoading ? (
                   <tr>
-                    <td colSpan={5} className="empty-row">Carregando usuarios...</td>
+                    <td colSpan={6} className="empty-row">Carregando usuarios...</td>
                   </tr>
                 ) : paginatedUsers.length ? (
                   paginatedUsers.map((user) => (
@@ -717,6 +758,7 @@ export default function App() {
                       </td>
                       <td>{user.email}</td>
                       <td>{formatPhoneInput(user.telefone)}</td>
+                      <td>{user.perfilNome || getProfileName(user.perfilId)}</td>
                       <td>
                         <button
                           type="button"
@@ -743,7 +785,7 @@ export default function App() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="empty-row">Nenhum usuario encontrado.</td>
+                    <td colSpan={6} className="empty-row">Nenhum usuario encontrado.</td>
                   </tr>
                 )}
               </tbody>
@@ -853,6 +895,10 @@ function InfoModal({ user, onClose }: InfoModalProps) {
         </div>
 
         <dl className="info-list">
+          <div>
+            <dt>Perfil</dt>
+            <dd>{user.perfilNome || getProfileName(user.perfilId)}</dd>
+          </div>
           <div>
             <dt>Data de nascimento</dt>
             <dd>{toDisplayDate(user.dataNascimento)}</dd>
