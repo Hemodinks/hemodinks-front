@@ -79,6 +79,16 @@ function mockSession(overrides?: Partial<AuthSession['user']>) {
   return session;
 }
 
+async function openUsersModule(user: ReturnType<typeof userEvent.setup>) {
+  expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: /abrir usuarios/i }));
+}
+
+async function openPatientsModule(user: ReturnType<typeof userEvent.setup>) {
+  expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
+}
+
 describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -111,6 +121,13 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir usuarios/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
+    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token');
+
+    await user.click(screen.getByRole('button', { name: /abrir usuarios/i }));
+
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
     expect(screen.getByAltText('Foto de Ana Hemodinks')).toBeInTheDocument();
     expect(screen.getByAltText('Foto de George Marcone')).toBeInTheDocument();
@@ -163,6 +180,10 @@ describe('App', () => {
       'jwt-token',
     );
     expect(await screen.findByText('Senha alterada com sucesso')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /abrir usuarios/i }));
+
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
   });
 
@@ -185,7 +206,9 @@ describe('App', () => {
 
     render(<App />);
 
+    await openUsersModule(user);
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /novo usuario/i }));
 
     await user.type(screen.getByLabelText('Nome completo'), 'Bruno Hemodinks');
     await user.type(screen.getByLabelText('Email'), 'bruno@hemodinks.com');
@@ -226,7 +249,9 @@ describe('App', () => {
 
     render(<App />);
 
+    await openUsersModule(user);
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /novo usuario/i }));
 
     await user.type(screen.getByLabelText('Nome completo'), 'Clara Hemodinks');
     await user.type(screen.getByLabelText('Email'), 'clara@hemodinks.com');
@@ -270,6 +295,7 @@ describe('App', () => {
 
     render(<App />);
 
+    await openUsersModule(user);
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
     expect(screen.getByText('Carlos Hemodinks')).toBeInTheDocument();
 
@@ -294,11 +320,13 @@ describe('App', () => {
 
     render(<App />);
 
-    await user.click(screen.getByRole('button', { name: /pacientes/i }));
+    await openPatientsModule(user);
 
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(screen.getByText('Pago')).toBeInTheDocument();
     expect(api.getPacientes).toHaveBeenCalledWith('jwt-token');
+
+    await user.click(screen.getByRole('button', { name: /novo paciente/i }));
 
     await user.type(screen.getByLabelText('Nome do paciente'), 'Novo Paciente');
     await user.type(screen.getByLabelText('CPF'), '93541134780');
@@ -339,6 +367,7 @@ describe('App', () => {
 
     render(<App />);
 
+    await openUsersModule(user);
     const row = await screen.findByText('Ana Hemodinks');
     const tableRow = row.closest('tr')!;
 
@@ -363,7 +392,9 @@ describe('App', () => {
     expect(screen.getByLabelText('Data de nascimento')).toHaveValue('01/01/1990');
     expect(screen.getByLabelText('Perfil')).toHaveValue('2');
 
-    await user.click(within(tableRow).getByTitle('Excluir'));
+    await user.click(screen.getByTitle('Voltar para lista'));
+    const deleteRow = (await screen.findByText('Ana Hemodinks')).closest('tr')!;
+    await user.click(within(deleteRow).getByTitle('Excluir'));
 
     expect(window.confirm).toHaveBeenCalledWith('Excluir Ana Hemodinks?');
     expect(api.deleteUser).toHaveBeenCalledWith(1, 'jwt-token');
@@ -383,6 +414,7 @@ describe('App', () => {
 
     render(<App />);
 
+    await openUsersModule(user);
     expect(await screen.findByText('Usuario 1')).toBeInTheDocument();
     expect(screen.getByText('Usuario 10')).toBeInTheDocument();
     expect(screen.queryByText('Usuario 11')).not.toBeInTheDocument();
@@ -401,7 +433,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /tema escuro/i }));
 

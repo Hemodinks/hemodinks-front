@@ -355,6 +355,7 @@ select:focus {
 
 .view-switch {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--line);
@@ -425,9 +426,68 @@ img.user-avatar {
   margin: 0 auto;
   padding: clamp(18px, 4vw, 36px);
   display: grid;
-  grid-template-columns: minmax(280px, 390px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   align-items: start;
+}
+
+.dashboard-workspace {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: clamp(18px, 4vw, 36px);
+}
+
+.dashboard-header {
+  margin-bottom: 18px;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.module-card {
+  min-height: 150px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 22px;
+  color: var(--ink);
+  background: var(--panel);
+  box-shadow: 0 10px 26px rgba(24, 33, 47, 0.08);
+  text-align: left;
+}
+
+.module-card:hover {
+  border-color: var(--teal);
+  background: var(--panel-strong);
+}
+
+.module-icon {
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--teal);
+  background: var(--soft);
+}
+
+.module-title {
+  color: var(--ink);
+  font-size: 1.18rem;
+  font-weight: 900;
+}
+
+.module-metric {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
 }
 
 .form-panel,
@@ -444,11 +504,34 @@ img.user-avatar {
   padding: 22px;
 }
 
+.module-form-panel {
+  width: min(980px, 100%);
+  margin: 0 auto;
+}
+
 .panel-title,
 .data-header {
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 18px;
+}
+
+.panel-title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.module-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.module-form-grid .profile-photo-field,
+.module-form-grid .two-column-fields,
+.module-form-grid .toggle-row,
+.module-form-grid .alert,
+.module-form-grid .primary-action {
+  grid-column: 1 / -1;
 }
 
 .password-chip {
@@ -859,6 +942,11 @@ tbody tr:last-child td {
   .data-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .module-grid,
+  .module-form-grid {
+    grid-template-columns: 1fr;
   }
 
   .table-tools,

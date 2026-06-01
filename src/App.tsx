@@ -11,6 +11,7 @@ import {
   Info,
   ImagePlus,
   KeyRound,
+  LayoutDashboard,
   LogIn,
   LogOut,
   Moon,
@@ -114,7 +115,8 @@ const emptyPacienteForm: PacienteFormData = {
 };
 
 type Theme = 'light' | 'dark';
-type AppView = 'users' | 'patients';
+type AppView = 'dashboard' | 'users' | 'patients';
+type ModuleMode = 'list' | 'form';
 
 function loadStoredSession(): AuthSession | null {
   const rawSession = localStorage.getItem(SESSION_KEY);
@@ -449,7 +451,8 @@ function toPacientePayload(data: PacienteFormData): PacienteFormData {
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => loadStoredSession());
   const [theme, setTheme] = useState<Theme>(() => loadStoredTheme());
-  const [activeView, setActiveView] = useState<AppView>('users');
+  const [activeView, setActiveView] = useState<AppView>('dashboard');
+  const [moduleMode, setModuleMode] = useState<ModuleMode>('list');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -502,6 +505,9 @@ export default function App() {
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
     setUsers([]);
+    setPacientes([]);
+    setActiveView('dashboard');
+    setModuleMode('list');
     setLoginPassword('');
   };
 
@@ -544,14 +550,9 @@ export default function App() {
   useEffect(() => {
     if (session && !session.user.precisaTrocarSenha) {
       void loadUsers(session.token);
-    }
-  }, [session?.token, session?.user.precisaTrocarSenha]);
-
-  useEffect(() => {
-    if (session && !session.user.precisaTrocarSenha && activeView === 'patients') {
       void loadPacientes(session.token);
     }
-  }, [activeView, session?.token, session?.user.precisaTrocarSenha]);
+  }, [session?.token, session?.user.precisaTrocarSenha]);
 
   const filteredUsers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -672,6 +673,8 @@ export default function App() {
     setEditingId(user.id);
     setFormError('');
     setSuccessMessage('');
+    setActiveView('users');
+    setModuleMode('form');
     setFormData({
       nome: user.nome,
       email: user.email,
@@ -730,6 +733,8 @@ export default function App() {
     setEditingPacienteId(paciente.id);
     setPacienteFormError('');
     setPacienteSuccessMessage('');
+    setActiveView('patients');
+    setModuleMode('form');
     setPendingPatientFiles([]);
     setPacienteFormData({
       data: toDisplayDate(paciente.data || ''),
@@ -834,6 +839,7 @@ export default function App() {
 
       setPacienteSuccessMessage(editingPacienteId ? 'Paciente atualizado.' : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
       resetPacienteForm();
+      setModuleMode('list');
       await loadPacientes(session.token);
       await loadUsers(session.token);
     } catch (error) {
@@ -923,6 +929,7 @@ export default function App() {
       }
 
       resetUserForm();
+      setModuleMode('list');
       await loadUsers(session.token);
     } catch (error) {
       setFormError(getErrorMessage(error));
@@ -970,6 +977,49 @@ export default function App() {
     persistSession(nextSession);
     setShowPasswordModal(false);
     setSuccessMessage(message);
+  };
+
+  const appTitle = activeView === 'dashboard'
+    ? 'Painel inicial'
+    : activeView === 'users' ? 'Usuarios' : 'Pacientes';
+
+  const openDashboard = () => {
+    setActiveView('dashboard');
+    setModuleMode('list');
+  };
+
+  const openUsersList = () => {
+    setActiveView('users');
+    setModuleMode('list');
+  };
+
+  const openPatientsList = () => {
+    setActiveView('patients');
+    setModuleMode('list');
+  };
+
+  const openNewUserForm = () => {
+    resetUserForm();
+    setSuccessMessage('');
+    setActiveView('users');
+    setModuleMode('form');
+  };
+
+  const closeUserForm = () => {
+    resetUserForm();
+    setModuleMode('list');
+  };
+
+  const openNewPacienteForm = () => {
+    resetPacienteForm();
+    setPacienteSuccessMessage('');
+    setActiveView('patients');
+    setModuleMode('form');
+  };
+
+  const closePacienteForm = () => {
+    resetPacienteForm();
+    setModuleMode('list');
   };
 
   if (!session) {
@@ -1056,7 +1106,7 @@ export default function App() {
           <img src={brandImage} alt="Hemodinks" className="topbar-logo" />
           <div>
             <span className="eyebrow">Hemodinks</span>
-            <h1>{activeView === 'users' ? 'Usuarios' : 'Pacientes'}</h1>
+            <h1>{appTitle}</h1>
           </div>
         </div>
 
@@ -1064,8 +1114,16 @@ export default function App() {
           <div className="view-switch" role="tablist" aria-label="Modulo">
             <button
               type="button"
+              className={activeView === 'dashboard' ? 'active' : ''}
+              onClick={openDashboard}
+            >
+              <LayoutDashboard size={16} />
+              Painel
+            </button>
+            <button
+              type="button"
               className={activeView === 'users' ? 'active' : ''}
-              onClick={() => setActiveView('users')}
+              onClick={openUsersList}
             >
               <Users size={16} />
               Usuarios
@@ -1073,7 +1131,7 @@ export default function App() {
             <button
               type="button"
               className={activeView === 'patients' ? 'active' : ''}
-              onClick={() => setActiveView('patients')}
+              onClick={openPatientsList}
             >
               <ClipboardList size={16} />
               Pacientes
@@ -1094,24 +1152,49 @@ export default function App() {
         </div>
       </header>
 
-      {activeView === 'users' ? (
+      {activeView === 'dashboard' ? (
+        <section className="dashboard-workspace">
+          <div className="dashboard-header">
+            <div>
+              <span className="eyebrow">Modulos</span>
+              <h2>Funcionalidades</h2>
+            </div>
+          </div>
+
+          {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
+
+          <div className="module-grid">
+            <button type="button" className="module-card" onClick={openUsersList} aria-label="Abrir usuarios">
+              <span className="module-icon"><Users size={24} /></span>
+              <span className="module-title">Usuarios</span>
+              <span className="module-metric">{users.length} cadastrados</span>
+            </button>
+
+            <button type="button" className="module-card" onClick={openPatientsList} aria-label="Abrir pacientes">
+              <span className="module-icon"><ClipboardList size={24} /></span>
+              <span className="module-title">Pacientes</span>
+              <span className="module-metric">{pacientes.length} cadastrados</span>
+            </button>
+          </div>
+        </section>
+      ) : activeView === 'users' ? (
       <section className="workspace">
-        <aside className="form-panel">
+        {moduleMode === 'form' ? (
+        <aside className="form-panel module-form-panel">
           <div className="panel-title">
             <div>
               <span className="eyebrow">{editingId ? 'Edicao' : 'Cadastro'}</span>
               <h2>{editingId ? 'Editar usuario' : 'Novo usuario'}</h2>
             </div>
-            {editingId ? (
-              <button type="button" className="icon-button muted" onClick={resetUserForm} title="Cancelar edicao">
+            <div className="panel-title-actions">
+              {!editingId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
+              <button type="button" className="icon-button muted" onClick={closeUserForm} title="Voltar para lista">
                 <X size={18} />
               </button>
-            ) : (
-              <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>
-            )}
+            </div>
           </div>
 
-          <form className="stack" onSubmit={handleSubmitUser}>
+          <form className="stack module-form-grid" onSubmit={handleSubmitUser}>
             <label>
               Nome completo
               <input
@@ -1237,6 +1320,7 @@ export default function App() {
             </button>
           </form>
         </aside>
+        ) : (
 
         <section className="data-panel">
           <div className="data-header">
@@ -1246,6 +1330,10 @@ export default function App() {
             </div>
 
             <div className="table-tools">
+              <button type="button" className="ghost-button" onClick={openNewUserForm}>
+                <Plus size={17} />
+                Novo usuario
+              </button>
               <label className="search-box">
                 <Search size={17} />
                 <input
@@ -1355,25 +1443,26 @@ export default function App() {
             </div>
           </div>
         </section>
+        )}
       </section>
       ) : (
       <section className="workspace patients-workspace">
-        <aside className="form-panel">
+        {moduleMode === 'form' ? (
+        <aside className="form-panel module-form-panel">
           <div className="panel-title">
             <div>
               <span className="eyebrow">{editingPacienteId ? 'Edicao' : 'Cadastro'}</span>
               <h2>{editingPacienteId ? 'Editar paciente' : 'Novo paciente'}</h2>
             </div>
-            {editingPacienteId ? (
-              <button type="button" className="icon-button muted" onClick={resetPacienteForm} title="Cancelar edicao">
+            <div className="panel-title-actions">
+              {!editingPacienteId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
+              <button type="button" className="icon-button muted" onClick={closePacienteForm} title="Voltar para lista">
                 <X size={18} />
               </button>
-            ) : (
-              <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>
-            )}
+            </div>
           </div>
 
-          <form className="stack" onSubmit={handleSubmitPaciente}>
+          <form className="stack module-form-grid" onSubmit={handleSubmitPaciente}>
             <label>
               Nome do paciente
               <input
@@ -1626,6 +1715,7 @@ export default function App() {
             </button>
           </form>
         </aside>
+        ) : (
 
         <section className="data-panel">
           <div className="data-header">
@@ -1635,6 +1725,10 @@ export default function App() {
             </div>
 
             <div className="table-tools">
+              <button type="button" className="ghost-button" onClick={openNewPacienteForm}>
+                <Plus size={17} />
+                Novo paciente
+              </button>
               <label className="search-box">
                 <Search size={17} />
                 <input
@@ -1746,6 +1840,7 @@ export default function App() {
             </div>
           </div>
         </section>
+        )}
       </section>
       )}
 
