@@ -53,7 +53,8 @@ const MAX_CPF_LENGTH = 14;
 const MAX_PASSWORD_LENGTH = 500;
 const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
 const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
-const DEFAULT_PROFILE_ID = 2;
+const MEDICAL_PROFILE_ID = 2;
+const DEFAULT_PROFILE_ID = MEDICAL_PROFILE_ID;
 
 const ALLOWED_PROFILE_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_PATIENT_FILE_TYPES = new Set([
@@ -147,6 +148,15 @@ function isValidProfileId(perfilId: number) {
 
 function getProfileName(perfilId: number) {
   return PROFILE_OPTIONS.find((profile) => profile.id === perfilId)?.nome ?? 'Médicos';
+}
+
+function isMedicalProfileUser(user: User) {
+  const profileName = (user.perfilNome || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  return user.perfilId === MEDICAL_PROFILE_ID || profileName.includes('medico');
 }
 
 function getUserInitials(name: string) {
@@ -592,6 +602,7 @@ export default function App() {
     ));
   }, [pacienteSearchTerm, pacientes]);
 
+  const medicalUsers = useMemo(() => users.filter(isMedicalProfileUser), [users]);
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
   const pageStart = (currentPage - 1) * PAGE_SIZE;
   const pageEnd = pageStart + PAGE_SIZE;
@@ -823,6 +834,11 @@ export default function App() {
 
     if (validationError) {
       setPacienteFormError(validationError);
+      return;
+    }
+
+    if (pacienteFormData.medico && !medicalUsers.some((user) => user.nome === pacienteFormData.medico)) {
+      setPacienteFormError('Selecione um medico cadastrado com perfil Medicos.');
       return;
     }
 
@@ -1608,12 +1624,23 @@ export default function App() {
 
             <label>
               Medico
-              <input
-                type="text"
+              <select
                 value={pacienteFormData.medico}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, medico: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-                maxLength={MAX_NAME_LENGTH}
-              />
+                onChange={(event) => setPacienteFormData((current) => ({ ...current, medico: event.target.value }))}
+                disabled={!medicalUsers.length && !pacienteFormData.medico}
+              >
+                <option value="">{medicalUsers.length ? 'Selecione um medico' : 'Nenhum medico cadastrado'}</option>
+                {pacienteFormData.medico && !medicalUsers.some((user) => user.nome === pacienteFormData.medico) && (
+                  <option value={pacienteFormData.medico}>
+                    {pacienteFormData.medico} (fora do cadastro)
+                  </option>
+                )}
+                {medicalUsers.map((user) => (
+                  <option key={user.id} value={user.nome}>
+                    {user.nome}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label>

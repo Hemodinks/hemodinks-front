@@ -315,6 +315,17 @@ describe('App', () => {
   it('lista e cadastra pacientes', async () => {
     const user = userEvent.setup();
     mockSession();
+    vi.mocked(api.getUsers).mockResolvedValue([
+      baseUser,
+      {
+        ...baseUser,
+        id: 2,
+        nome: 'Admin Hemodinks',
+        email: 'admin@hemodinks.com',
+        perfilId: 1,
+        perfilNome: 'Administrador',
+      },
+    ]);
     vi.mocked(api.createPaciente).mockResolvedValue({
       ...basePaciente,
       id: 11,
@@ -341,7 +352,9 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Telefone'), '81997777777');
     await user.type(screen.getByLabelText('Nascimento'), '10051992');
     await user.type(screen.getByLabelText('Hospital'), 'Hospital Norte');
-    await user.type(screen.getByLabelText('Medico'), 'Dr. Carlos');
+    expect(screen.getByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Admin Hemodinks' })).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Medico'), 'Ana Hemodinks');
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
@@ -354,7 +367,7 @@ describe('App', () => {
       fotoPerfil: null,
       dataNascimento: '1992-05-10',
       hospital: 'Hospital Norte',
-      medico: 'Dr. Carlos',
+      medico: 'Ana Hemodinks',
       convenio: '',
       procedimento: 'Consulta',
       autorizacao: '',
