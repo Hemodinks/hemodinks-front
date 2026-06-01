@@ -73,6 +73,7 @@ describe('api client', () => {
       nome: 'Ana Hemodinks',
       email: 'ana@hemodinks.com',
       telefone: '+5581999999999',
+      fotoPerfil: null,
       dataNascimento: '1990-01-01',
       ativo: true,
       perfilId: 2,

@@ -3,6 +3,7 @@ export type User = {
   nome: string;
   email: string;
   telefone: string;
+  fotoPerfil?: string | null;
   dataCadastro: string;
   dataNascimento: string;
   ativo: boolean;
@@ -16,12 +17,13 @@ export type LoginResponse = {
   nome: string;
   email: string;
   token: string;
+  fotoPerfil?: string | null;
   precisaTrocarSenha: boolean;
   perfilId: number;
   perfilNome: string;
 };
 
-export type SessionUser = Pick<LoginResponse, 'id' | 'nome' | 'email' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome'>;
+export type SessionUser = Pick<LoginResponse, 'id' | 'nome' | 'email' | 'fotoPerfil' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome'>;
 
 export type AuthSession = {
   token: string;
@@ -32,6 +34,7 @@ export type UserFormData = {
   nome: string;
   email: string;
   telefone: string;
+  fotoPerfil?: string | null;
   dataNascimento: string;
   ativo: boolean;
   perfilId: number;

@@ -21,6 +21,7 @@ const baseUser: User = {
   nome: 'Ana Hemodinks',
   email: 'ana@hemodinks.com',
   telefone: '+5581999999999',
+  fotoPerfil: 'data:image/png;base64,ana',
   dataCadastro: '2026-06-01T00:00:00Z',
   dataNascimento: '1990-01-01T00:00:00Z',
   ativo: true,
@@ -36,6 +37,7 @@ function mockSession(overrides?: Partial<AuthSession['user']>) {
       id: 99,
       nome: 'George Marcone',
       email: 'gmarcone@gmail.com',
+      fotoPerfil: null,
       precisaTrocarSenha: false,
       perfilId: 1,
       perfilNome: 'Administrador',
@@ -62,6 +64,7 @@ describe('App', () => {
       nome: 'George Marcone',
       email: 'gmarcone@gmail.com',
       token: 'jwt-token',
+      fotoPerfil: 'data:image/png;base64,george',
       precisaTrocarSenha: false,
       perfilId: 1,
       perfilNome: 'Administrador',
@@ -77,12 +80,15 @@ describe('App', () => {
 
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
+    expect(screen.getByAltText('Foto de Ana Hemodinks')).toBeInTheDocument();
+    expect(screen.getByAltText('Foto de George Marcone')).toBeInTheDocument();
     expect(screen.getByText('+55 (81) 99999-9999')).toBeInTheDocument();
     expect(api.getUsers).toHaveBeenCalledWith('jwt-token');
 
     const storedSession = JSON.parse(localStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
     expect(storedSession.token).toBe('jwt-token');
     expect(storedSession.user.precisaTrocarSenha).toBe(false);
+    expect(storedSession.user.fotoPerfil).toBe('data:image/png;base64,george');
     expect(storedSession.user.perfilNome).toBe('Administrador');
   });
 
@@ -93,6 +99,7 @@ describe('App', () => {
       nome: 'George Marcone',
       email: 'gmarcone@gmail.com',
       token: 'jwt-token',
+      fotoPerfil: null,
       precisaTrocarSenha: true,
       perfilId: 1,
       perfilNome: 'Administrador',
@@ -135,6 +142,7 @@ describe('App', () => {
       nome: 'Bruno Hemodinks',
       email: 'bruno@hemodinks.com',
       telefone: '+5581888888888',
+      fotoPerfil: null,
       dataNascimento: '1992-05-10T00:00:00Z',
       precisaTrocarSenha: true,
       perfilId: 2,
@@ -156,12 +164,55 @@ describe('App', () => {
       nome: 'Bruno Hemodinks',
       email: 'bruno@hemodinks.com',
       telefone: '+5581988888888',
+      fotoPerfil: null,
       dataNascimento: '1992-05-10',
       ativo: true,
       perfilId: 2,
     }, 'jwt-token');
     expect(await screen.findByText('Usuario cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
     expect(api.getUsers).toHaveBeenCalledTimes(2);
+  });
+
+  it('permite anexar foto de perfil no cadastro', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    vi.mocked(api.createUser).mockResolvedValue({
+      ...baseUser,
+      id: 3,
+      nome: 'Clara Hemodinks',
+      email: 'clara@hemodinks.com',
+      telefone: '+5581997777777',
+      fotoPerfil: 'data:image/png;base64,YXZhdGFy',
+      dataNascimento: '1991-03-12T00:00:00Z',
+      precisaTrocarSenha: true,
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Nome completo'), 'Clara Hemodinks');
+    await user.type(screen.getByLabelText('Email'), 'clara@hemodinks.com');
+    await user.type(screen.getByLabelText('Telefone'), '81997777777');
+    await user.type(screen.getByLabelText('Data de nascimento'), '12031991');
+    await user.upload(
+      screen.getByLabelText('Foto do perfil'),
+      new File(['avatar'], 'avatar.png', { type: 'image/png' }),
+    );
+
+    expect(await screen.findByAltText('Foto de Clara Hemodinks')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /cadastrar usuario/i }));
+
+    expect(api.createUser).toHaveBeenCalledWith({
+      nome: 'Clara Hemodinks',
+      email: 'clara@hemodinks.com',
+      telefone: '+5581997777777',
+      fotoPerfil: 'data:image/png;base64,YXZhdGFy',
+      dataNascimento: '1991-03-12',
+      ativo: true,
+      perfilId: 2,
+    }, 'jwt-token');
   });
 
   it('filtra usuarios pelo campo de busca', async () => {

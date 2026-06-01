@@ -203,6 +203,15 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 .primary-action,
 .ghost-button,
 .icon-button {
@@ -253,6 +262,10 @@ select:focus {
 }
 
 .icon-button.danger {
+  color: var(--danger);
+}
+
+.danger-text {
   color: var(--danger);
 }
 
@@ -340,10 +353,44 @@ select:focus {
   font-weight: 800;
 }
 
-.current-user span {
+.current-user > span:not(.user-avatar) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.user-avatar {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--soft);
+  color: var(--teal);
+  font-weight: 900;
+}
+
+.user-avatar.sm {
+  width: 34px;
+  height: 34px;
+  font-size: 0.74rem;
+}
+
+.user-avatar.lg {
+  width: 76px;
+  height: 76px;
+  font-size: 1.15rem;
+}
+
+.user-avatar.fallback {
+  text-transform: uppercase;
+}
+
+img.user-avatar {
+  display: inline-block;
 }
 
 .workspace {
@@ -399,6 +446,42 @@ select:focus {
   width: 18px;
   height: 18px;
   accent-color: var(--teal);
+}
+
+.profile-photo-field {
+  display: grid;
+  gap: 9px;
+}
+
+.field-label {
+  display: block;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.photo-uploader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.file-action {
+  width: auto;
+  min-height: 38px;
+}
+
+.file-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .table-tools {

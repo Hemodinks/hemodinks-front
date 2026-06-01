@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
   ChevronLeft,
@@ -6,6 +6,7 @@ import {
   CircleCheck,
   CircleX,
   Info,
+  ImagePlus,
   KeyRound,
   LogIn,
   LogOut,
@@ -17,8 +18,6 @@ import {
   Search,
   Sun,
   Trash2,
-  UserRound,
-  Users,
   X,
 } from 'lucide-react';
 import {
@@ -40,7 +39,10 @@ const MAX_NAME_LENGTH = 255;
 const MAX_EMAIL_LENGTH = 255;
 const MAX_PHONE_LENGTH = 20;
 const MAX_PASSWORD_LENGTH = 500;
+const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
 const DEFAULT_PROFILE_ID = 2;
+
+const ALLOWED_PROFILE_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 const PROFILE_OPTIONS = [
   { id: 1, nome: 'Administrador' },
@@ -64,6 +66,7 @@ const emptyUserForm: UserFormData = {
   nome: '',
   email: '',
   telefone: '+55 ',
+  fotoPerfil: null,
   dataNascimento: '',
   ativo: true,
   perfilId: DEFAULT_PROFILE_ID,
@@ -100,6 +103,16 @@ function isValidProfileId(perfilId: number) {
 
 function getProfileName(perfilId: number) {
   return PROFILE_OPTIONS.find((profile) => profile.id === perfilId)?.nome ?? 'Médicos';
+}
+
+function getUserInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+
+  if (!parts.length) {
+    return 'US';
+  }
+
+  return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase();
 }
 
 function onlyDigits(value: string) {
@@ -152,6 +165,24 @@ function isValidEmail(value: string) {
   const email = value.trim();
   return email.length <= MAX_EMAIL_LENGTH
     && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email);
+}
+
+function readProfilePhoto(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error('Nao foi possivel carregar a foto.'));
+    };
+
+    reader.onerror = () => reject(new Error('Nao foi possivel carregar a foto.'));
+    reader.readAsDataURL(file);
+  });
 }
 
 function formatDateInput(value: string) {
@@ -265,6 +296,7 @@ function toUserPayload(data: UserFormData): UserFormData {
     nome: data.nome.trim(),
     email: data.email.trim(),
     telefone: normalizePhoneForPayload(data.telefone),
+    fotoPerfil: data.fotoPerfil || null,
     dataNascimento: parseDisplayDate(data.dataNascimento),
     ativo: data.ativo,
     perfilId: data.perfilId,
@@ -290,6 +322,7 @@ export default function App() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
+  const [photoInputKey, setPhotoInputKey] = useState(0);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedInfoUser, setSelectedInfoUser] = useState<User | null>(null);
 
@@ -390,6 +423,7 @@ export default function App() {
           id: result.id,
           nome: result.nome,
           email: result.email,
+          fotoPerfil: result.fotoPerfil ?? null,
           precisaTrocarSenha: result.precisaTrocarSenha,
           perfilId: result.perfilId || DEFAULT_PROFILE_ID,
           perfilNome: result.perfilNome || getProfileName(result.perfilId || DEFAULT_PROFILE_ID),
@@ -406,6 +440,7 @@ export default function App() {
     setFormData(emptyUserForm);
     setEditingId(null);
     setFormError('');
+    setPhotoInputKey((key) => key + 1);
   };
 
   const handleEditUser = (user: User) => {
@@ -416,10 +451,44 @@ export default function App() {
       nome: user.nome,
       email: user.email,
       telefone: formatPhoneInput(user.telefone),
+      fotoPerfil: user.fotoPerfil ?? null,
       dataNascimento: toDisplayDate(user.dataNascimento),
       ativo: user.ativo,
       perfilId: user.perfilId || DEFAULT_PROFILE_ID,
     });
+    setPhotoInputKey((key) => key + 1);
+  };
+
+  const handleProfilePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    if (!ALLOWED_PROFILE_PHOTO_TYPES.has(file.type)) {
+      setFormError('Use uma foto PNG, JPG ou WEBP.');
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
+      setFormError('A foto deve ter no maximo 1 MB.');
+      return;
+    }
+
+    try {
+      const fotoPerfil = await readProfilePhoto(file);
+      setFormData((current) => ({ ...current, fotoPerfil }));
+      setFormError('');
+    } catch (error) {
+      setFormError(getErrorMessage(error));
+    }
+  };
+
+  const handleRemoveProfilePhoto = () => {
+    setFormData((current) => ({ ...current, fotoPerfil: null }));
+    setPhotoInputKey((key) => key + 1);
   };
 
   const handleSubmitUser = async (event: FormEvent<HTMLFormElement>) => {
@@ -443,12 +512,28 @@ export default function App() {
     setSuccessMessage('');
 
     try {
+      let savedUser: User;
+
       if (editingId) {
-        await updateUser(editingId, payload, session.token);
+        savedUser = await updateUser(editingId, payload, session.token);
         setSuccessMessage('Usuario atualizado.');
       } else {
-        await createUser(payload, session.token);
+        savedUser = await createUser(payload, session.token);
         setSuccessMessage(`Usuario cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
+      }
+
+      if (editingId && savedUser.id === session.user.id) {
+        persistSession({
+          ...session,
+          user: {
+            ...session.user,
+            nome: savedUser.nome,
+            email: savedUser.email,
+            fotoPerfil: savedUser.fotoPerfil ?? null,
+            perfilId: savedUser.perfilId || DEFAULT_PROFILE_ID,
+            perfilNome: savedUser.perfilNome || getProfileName(savedUser.perfilId || DEFAULT_PROFILE_ID),
+          },
+        });
       }
 
       resetUserForm();
@@ -591,7 +676,7 @@ export default function App() {
 
         <div className="topbar-actions">
           <div className="current-user">
-            <UserRound size={18} />
+            <UserAvatar name={session.user.nome} photo={session.user.fotoPerfil} size="sm" />
             <span>{session.user.nome}</span>
           </div>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -686,6 +771,37 @@ export default function App() {
               </select>
             </label>
 
+            <div className="profile-photo-field">
+              <label className="field-label" htmlFor="profile-photo-input">
+                Foto do perfil
+              </label>
+              <div className="photo-uploader">
+                <UserAvatar name={formData.nome || 'Usuario'} photo={formData.fotoPerfil} size="lg" />
+                <div className="photo-actions">
+                  <label className="ghost-button file-action" htmlFor="profile-photo-input">
+                    <ImagePlus size={17} />
+                    {formData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
+                  </label>
+                  {formData.fotoPerfil && (
+                    <button type="button" className="ghost-button danger-text" onClick={handleRemoveProfilePhoto}>
+                      <Trash2 size={17} />
+                      Remover
+                    </button>
+                  )}
+                </div>
+              </div>
+              <input
+                key={photoInputKey}
+                id="profile-photo-input"
+                className="sr-only"
+                type="file"
+                aria-label="Foto do perfil"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => void handleProfilePhotoChange(event)}
+              />
+              <span className="file-hint">PNG, JPG ou WEBP ate 1 MB.</span>
+            </div>
+
             <label className="toggle-row">
               <input
                 type="checkbox"
@@ -752,7 +868,7 @@ export default function App() {
                     <tr key={user.id}>
                       <td>
                         <div className="name-cell">
-                          <Users size={17} />
+                          <UserAvatar name={user.nome} photo={user.fotoPerfil} size="sm" />
                           <span>{user.nome}</span>
                         </div>
                       </td>
@@ -872,6 +988,24 @@ function ThemeToggle({ theme, onToggle, floating = false }: ThemeToggleProps) {
       {isDark ? <Sun size={17} /> : <Moon size={17} />}
       {isDark ? 'Tema claro' : 'Tema escuro'}
     </button>
+  );
+}
+
+type UserAvatarProps = {
+  name: string;
+  photo?: string | null;
+  size?: 'sm' | 'lg';
+};
+
+function UserAvatar({ name, photo, size = 'sm' }: UserAvatarProps) {
+  if (photo) {
+    return <img className={`user-avatar ${size}`} src={photo} alt={`Foto de ${name}`} />;
+  }
+
+  return (
+    <span className={`user-avatar fallback ${size}`} aria-label={`Sem foto de ${name}`} title={name}>
+      {getUserInitials(name)}
+    </span>
   );
 }
 
