@@ -253,7 +253,7 @@ export default function App() {
 
   if (!session) {
     return (
-      <main className="auth-screen" style={{ backgroundImage: `linear-gradient(90deg, rgba(18, 24, 38, 0.88), rgba(18, 24, 38, 0.46)), url("${brandImage}")` }}>
+      <main className="auth-screen">
         <section className="auth-panel">
           <div className="brand-block">
             <img src={brandImage} alt="Hemodinks" className="brand-mark" />
@@ -300,7 +300,7 @@ export default function App() {
 
   if (session.user.precisaTrocarSenha) {
     return (
-      <main className="auth-screen compact" style={{ backgroundImage: `linear-gradient(90deg, rgba(18, 24, 38, 0.86), rgba(83, 29, 39, 0.42)), url("${brandImage}")` }}>
+      <main className="auth-screen compact">
         <section className="auth-panel password-required">
           <div className="brand-block">
             <KeyRound size={36} strokeWidth={1.8} />

@@ -28,6 +28,26 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background: #f6f7f4;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image: url("../imagem candidata hemodinks.jpg");
+  background-position: center;
+  background-size: cover;
+  opacity: 0.5;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(246, 247, 244, 0.54);
 }
 
 button,
@@ -49,8 +69,6 @@ button:disabled {
   display: grid;
   align-items: center;
   padding: 32px;
-  background-position: center;
-  background-size: cover;
 }
 
 .auth-screen.compact {
@@ -244,9 +262,6 @@ input:focus {
 
 .app-shell {
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(246, 247, 244, 0.92)),
-    #f6f7f4;
 }
 
 .topbar {
