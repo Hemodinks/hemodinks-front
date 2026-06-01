@@ -1,0 +1,82 @@
+name: Deploy Vercel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: vercel-production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Production deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: vercel-production
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Check Vercel secrets
+        id: vercel_secrets
+        shell: bash
+        run: |
+          missing=()
+          [ -n "$VERCEL_TOKEN" ] || missing+=("VERCEL_TOKEN")
+          [ -n "$VERCEL_ORG_ID" ] || missing+=("VERCEL_ORG_ID")
+          [ -n "$VERCEL_PROJECT_ID" ] || missing+=("VERCEL_PROJECT_ID")
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::notice::Skipping Vercel deploy. Missing secrets: ${missing[*]}"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Install Vercel CLI
+        if: steps.vercel_secrets.outputs.ready == 'true'
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel environment
+        if: steps.vercel_secrets.outputs.ready == 'true'
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build Vercel output
+        if: steps.vercel_secrets.outputs.ready == 'true'
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy Vercel output
+        if: steps.vercel_secrets.outputs.ready == 'true'
+        id: deploy
+        shell: bash
+        run: |
+          url="$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "$url"
