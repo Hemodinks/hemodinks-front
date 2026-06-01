@@ -28,26 +28,14 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #f6f7f4;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background-image: url("../imagem candidata hemodinks.jpg");
+  background-color: #f6f7f4;
+  background-image:
+    linear-gradient(rgba(246, 247, 244, 0.5), rgba(246, 247, 244, 0.5)),
+    url("../imagem candidata hemodinks.jpg");
   background-position: center;
+  background-repeat: no-repeat;
   background-size: cover;
-  opacity: 0.5;
-}
-
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: rgba(246, 247, 244, 0.54);
+  background-attachment: fixed;
 }
 
 button,
@@ -68,6 +56,7 @@ button:disabled {
   min-height: 100vh;
   display: grid;
   align-items: center;
+  justify-items: center;
   padding: 32px;
 }
 
@@ -264,12 +253,24 @@ input:focus {
   min-height: 100vh;
 }
 
+.tech-credit {
+  position: fixed;
+  top: 18px;
+  left: clamp(16px, 2.5vw, 40px);
+  z-index: 40;
+  color: var(--blood);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
   padding: 18px clamp(18px, 4vw, 42px);
+  padding-top: 44px;
   background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid var(--line);
   position: sticky;
@@ -501,7 +502,7 @@ tbody tr:last-child td {
 
 @media (max-width: 620px) {
   .auth-screen {
-    align-items: end;
+    align-items: center;
     padding: 16px;
   }
 

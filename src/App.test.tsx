@@ -63,6 +63,8 @@ describe('App', () => {
 
     render(<App />);
 
+    expect(screen.getByText('GM Tech Solutions')).toBeInTheDocument();
+
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'Senha@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));

@@ -254,6 +254,7 @@ export default function App() {
   if (!session) {
     return (
       <main className="auth-screen">
+        <TechCredit />
         <section className="auth-panel">
           <div className="brand-block">
             <img src={brandImage} alt="Hemodinks" className="brand-mark" />
@@ -301,6 +302,7 @@ export default function App() {
   if (session.user.precisaTrocarSenha) {
     return (
       <main className="auth-screen compact">
+        <TechCredit />
         <section className="auth-panel password-required">
           <div className="brand-block">
             <KeyRound size={36} strokeWidth={1.8} />
@@ -323,6 +325,7 @@ export default function App() {
 
   return (
     <main className="app-shell">
+      <TechCredit />
       <header className="topbar">
         <div className="topbar-brand">
           <img src={brandImage} alt="Hemodinks" className="topbar-logo" />
@@ -534,6 +537,10 @@ export default function App() {
       )}
     </main>
   );
+}
+
+function TechCredit() {
+  return <div className="tech-credit">GM Tech Solutions</div>;
 }
 
 type PasswordFormProps = {
