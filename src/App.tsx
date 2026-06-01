@@ -1115,35 +1115,14 @@ export default function App() {
         </div>
 
         <div className="topbar-actions">
-          <div className="view-switch" role="tablist" aria-label="Modulo">
-            <button
-              type="button"
-              className={activeView === 'dashboard' ? 'active' : ''}
-              onClick={openDashboard}
-            >
-              <LayoutDashboard size={16} />
-              Painel
-            </button>
-            <button
-              type="button"
-              className={activeView === 'users' ? 'active' : ''}
-              onClick={openUsersList}
-            >
-              <Users size={16} />
-              Usuarios
-            </button>
-            <button
-              type="button"
-              className={activeView === 'patients' ? 'active' : ''}
-              onClick={openPatientsList}
-            >
-              <ClipboardList size={16} />
-              Pacientes
-            </button>
-          </div>
-          <div className="current-user">
+          <div className="current-user" aria-label="Usuario logado">
             <UserAvatar name={session.user.nome} photo={session.user.fotoPerfil} size="sm" />
-            <span>{session.user.nome}</span>
+            <div className="current-user-copy">
+              <span className="current-user-name">{session.user.nome}</span>
+              <span className="current-user-meta">
+                {session.user.perfilNome || getProfileName(session.user.perfilId)} | {session.user.email}
+              </span>
+            </div>
           </div>
           <div className="topbar-info-panel" aria-label="Resumo rapido">
             <span>
@@ -1166,6 +1145,40 @@ export default function App() {
         </div>
       </header>
 
+      <div className="app-layout">
+        <aside className="sidebar-panel" aria-label="Navegacao principal">
+          <div className="sidebar-card">
+            <span className="eyebrow">Menu</span>
+            <nav className="side-nav" role="tablist" aria-label="Modulo">
+              <button
+                type="button"
+                className={activeView === 'dashboard' ? 'active' : ''}
+                onClick={openDashboard}
+              >
+                <LayoutDashboard size={18} />
+                Painel
+              </button>
+              <button
+                type="button"
+                className={activeView === 'users' ? 'active' : ''}
+                onClick={openUsersList}
+              >
+                <Users size={18} />
+                Usuarios
+              </button>
+              <button
+                type="button"
+                className={activeView === 'patients' ? 'active' : ''}
+                onClick={openPatientsList}
+              >
+                <ClipboardList size={18} />
+                Pacientes
+              </button>
+            </nav>
+          </div>
+        </aside>
+
+        <div className="app-content">
       {activeView === 'dashboard' ? (
         <section className="dashboard-workspace">
           <div className="dashboard-header">
@@ -1887,6 +1900,8 @@ export default function App() {
         )}
       </section>
       )}
+        </div>
+      </div>
 
       {selectedInfoUser && (
         <InfoModal user={selectedInfoUser} onClose={() => setSelectedInfoUser(null)} />

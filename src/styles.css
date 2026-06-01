@@ -347,9 +347,39 @@ select:focus {
 }
 
 .current-user {
-  gap: 8px;
+  min-height: 42px;
+  gap: 10px;
+  max-width: 360px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--input-bg);
+  font-weight: 800;
+}
+
+.current-user-copy {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.current-user-name,
+.current-user-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-user-name {
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.current-user-meta {
   max-width: 280px;
   color: var(--muted);
+  font-size: 0.74rem;
   font-weight: 800;
 }
 
@@ -406,12 +436,6 @@ select:focus {
   background: var(--blood);
 }
 
-.current-user > span:not(.user-avatar) {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .user-avatar {
   flex: 0 0 auto;
   display: inline-flex;
@@ -446,10 +470,72 @@ img.user-avatar {
   display: inline-block;
 }
 
-.workspace {
-  width: min(1500px, 100%);
+.app-layout {
+  width: min(1640px, 100%);
   margin: 0 auto;
-  padding: clamp(18px, 4vw, 36px);
+  padding: clamp(18px, 3vw, 36px);
+  display: grid;
+  grid-template-columns: minmax(210px, 250px) minmax(0, 1fr);
+  gap: clamp(18px, 2.5vw, 28px);
+  align-items: start;
+}
+
+.sidebar-panel {
+  position: sticky;
+  top: 132px;
+  align-self: start;
+}
+
+.sidebar-card {
+  min-height: calc(100vh - 180px);
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 10px 26px rgba(24, 33, 47, 0.08);
+}
+
+.side-nav {
+  display: grid;
+  gap: 10px;
+}
+
+.side-nav button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 14px;
+  color: var(--muted);
+  background: var(--input-bg);
+  font-weight: 900;
+  text-align: left;
+}
+
+.side-nav button.active {
+  color: #fff;
+  border-color: var(--blood);
+  background: var(--blood);
+}
+
+.side-nav button:not(.active):hover {
+  border-color: var(--teal);
+  color: var(--ink);
+}
+
+.app-content {
+  min-width: 0;
+}
+
+.workspace {
+  width: 100%;
+  margin: 0;
+  padding: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 22px;
@@ -457,9 +543,9 @@ img.user-avatar {
 }
 
 .dashboard-workspace {
-  width: min(1180px, 100%);
-  margin: 0 auto;
-  padding: clamp(18px, 4vw, 36px);
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .dashboard-header {
@@ -1006,6 +1092,18 @@ tbody tr:last-child td {
 }
 
 @media (max-width: 980px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-panel {
+    position: static;
+  }
+
+  .sidebar-card {
+    min-height: auto;
+  }
+
   .workspace {
     grid-template-columns: 1fr;
   }
@@ -1018,6 +1116,10 @@ tbody tr:last-child td {
   .topbar-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .current-user {
+    flex: 1 1 320px;
   }
 
   .dashboard-info-panel {
@@ -1065,6 +1167,15 @@ tbody tr:last-child td {
 
   .topbar-actions .ghost-button {
     flex: 1 1 160px;
+  }
+
+  .current-user {
+    width: 100%;
+    max-width: none;
+  }
+
+  .current-user-meta {
+    max-width: none;
   }
 
   .topbar-info-panel {

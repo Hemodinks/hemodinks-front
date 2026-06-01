@@ -122,6 +122,7 @@ describe('App', () => {
 
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.getByText('Administrador | gmarcone@gmail.com')).toBeInTheDocument();
     expect(screen.getByText('Painel informativo')).toBeInTheDocument();
     expect(screen.getByText('Resumo geral')).toBeInTheDocument();
     expect(screen.getByText('Usuarios ativos')).toBeInTheDocument();
