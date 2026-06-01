@@ -122,6 +122,12 @@ describe('App', () => {
 
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.getByText('Painel informativo')).toBeInTheDocument();
+    expect(screen.getByText('Resumo geral')).toBeInTheDocument();
+    expect(screen.getByText('Usuarios ativos')).toBeInTheDocument();
+    expect(screen.getByText('Pacientes ativos')).toBeInTheDocument();
+    expect(screen.getByText('Pendencias')).toBeInTheDocument();
+    expect(screen.getByText('Arquivos')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir usuarios/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
     expect(api.getPacientes).toHaveBeenCalledWith('jwt-token');

@@ -604,6 +604,10 @@ export default function App() {
   const paginatedPacientes = filteredPacientes.slice(pacientePageStart, pacientePageEnd);
   const pacienteVisibleStart = filteredPacientes.length ? pacientePageStart + 1 : 0;
   const pacienteVisibleEnd = Math.min(pacientePageEnd, filteredPacientes.length);
+  const activeUsersCount = users.filter((user) => user.ativo).length;
+  const activePatientsCount = pacientes.filter((paciente) => paciente.ativo).length;
+  const pendingPaymentsCount = pacientes.filter((paciente) => !paciente.statusPago).length;
+  const patientFilesCount = pacientes.reduce((total, paciente) => total + (paciente.arquivos?.length ?? 0), 0);
   const editingPaciente = useMemo(
     () => pacientes.find((paciente) => paciente.id === editingPacienteId) ?? null,
     [editingPacienteId, pacientes],
@@ -1141,6 +1145,16 @@ export default function App() {
             <UserAvatar name={session.user.nome} photo={session.user.fotoPerfil} size="sm" />
             <span>{session.user.nome}</span>
           </div>
+          <div className="topbar-info-panel" aria-label="Resumo rapido">
+            <span>
+              <Users size={15} />
+              {users.length}
+            </span>
+            <span>
+              <ClipboardList size={15} />
+              {pacientes.length}
+            </span>
+          </div>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
           <button type="button" className="ghost-button" onClick={() => setShowPasswordModal(true)}>
             <KeyRound size={17} />
@@ -1160,6 +1174,36 @@ export default function App() {
               <h2>Funcionalidades</h2>
             </div>
           </div>
+
+          <section className="dashboard-info-panel" aria-label="Painel informativo">
+            <div className="dashboard-info-title">
+              <span className="eyebrow">Painel informativo</span>
+              <h3>Resumo geral</h3>
+            </div>
+
+            <div className="info-summary-grid">
+              <div className="info-summary-item">
+                <span className="info-summary-icon"><Users size={18} /></span>
+                <span className="info-summary-label">Usuarios ativos</span>
+                <strong>{activeUsersCount}</strong>
+              </div>
+              <div className="info-summary-item">
+                <span className="info-summary-icon"><CircleCheck size={18} /></span>
+                <span className="info-summary-label">Pacientes ativos</span>
+                <strong>{activePatientsCount}</strong>
+              </div>
+              <div className="info-summary-item">
+                <span className="info-summary-icon amber"><Info size={18} /></span>
+                <span className="info-summary-label">Pendencias</span>
+                <strong>{pendingPaymentsCount}</strong>
+              </div>
+              <div className="info-summary-item">
+                <span className="info-summary-icon"><FileText size={18} /></span>
+                <span className="info-summary-label">Arquivos</span>
+                <strong>{patientFilesCount}</strong>
+              </div>
+            </div>
+          </section>
 
           {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
 
