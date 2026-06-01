@@ -350,7 +350,9 @@ describe('App', () => {
     await user.type(screen.getByLabelText('CPF'), '93541134780');
     await user.type(screen.getByLabelText('Email'), 'novo.paciente@hemodinks.com');
     await user.type(screen.getByLabelText('Telefone'), '81997777777');
-    await user.type(screen.getByLabelText('Nascimento'), '10051992');
+    expect(screen.queryByLabelText('Data')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Selecionar data de nascimento')).toHaveAttribute('type', 'date');
+    await user.type(screen.getByLabelText('Data de nascimento'), '10051992');
     await user.type(screen.getByLabelText('Hospital'), 'Hospital Norte');
     expect(screen.getByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Admin Hemodinks' })).not.toBeInTheDocument();

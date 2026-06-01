@@ -5,6 +5,7 @@ import {
   ChevronRight,
   CircleCheck,
   CircleX,
+  CalendarDays,
   ClipboardList,
   FileText,
   FileUp,
@@ -326,6 +327,29 @@ function parseDisplayDate(value: string) {
   return `${year}-${month}-${day}`;
 }
 
+function toDatePickerValue(value: string) {
+  return isValidBirthDate(value) ? parseDisplayDate(value) : '';
+}
+
+function fromDatePickerValue(value: string) {
+  const [year, month, day] = value.split('-');
+
+  if (!year || !month || !day) {
+    return '';
+  }
+
+  return `${day}/${month}/${year}`;
+}
+
+function getTodayPickerValue() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
 function isValidBirthDate(value: string) {
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
     return false;
@@ -430,16 +454,12 @@ function validatePacienteForm(data: PacienteFormData) {
     return 'Informe a data de nascimento no formato dd/mm/yyyy.';
   }
 
-  if (data.data && !isValidBirthDate(data.data)) {
-    return 'Informe a data do cadastro no formato dd/mm/yyyy.';
-  }
-
   return '';
 }
 
 function toPacientePayload(data: PacienteFormData): PacienteFormData {
   return {
-    data: data.data ? parseDisplayDate(data.data) : null,
+    data: data.data && isValidBirthDate(data.data) ? parseDisplayDate(data.data) : null,
     nomePaciente: data.nomePaciente.trim(),
     cpf: normalizeCpfForPayload(data.cpf),
     email: data.email.trim(),
@@ -1317,18 +1337,13 @@ export default function App() {
               />
             </label>
 
-            <label>
-              Data de nascimento
-              <input
-                type="text"
-                value={formData.dataNascimento}
-                onChange={(event) => setFormData((current) => ({ ...current, dataNascimento: formatDateInput(event.target.value) }))}
-                inputMode="numeric"
-                maxLength={10}
-                placeholder="dd/mm/yyyy"
-                required
-              />
-            </label>
+            <DateInput
+              id="user-birth-date"
+              label="Data de nascimento"
+              value={formData.dataNascimento}
+              onChange={(value) => setFormData((current) => ({ ...current, dataNascimento: value }))}
+              required
+            />
 
             <label>
               Perfil
@@ -1585,32 +1600,13 @@ export default function App() {
               />
             </label>
 
-            <div className="two-column-fields">
-              <label>
-                Data
-                <input
-                  type="text"
-                  value={pacienteFormData.data || ''}
-                  onChange={(event) => setPacienteFormData((current) => ({ ...current, data: formatDateInput(event.target.value) }))}
-                  inputMode="numeric"
-                  maxLength={10}
-                  placeholder="dd/mm/yyyy"
-                />
-              </label>
-
-              <label>
-                Nascimento
-                <input
-                  type="text"
-                  value={pacienteFormData.dataNascimento}
-                  onChange={(event) => setPacienteFormData((current) => ({ ...current, dataNascimento: formatDateInput(event.target.value) }))}
-                  inputMode="numeric"
-                  maxLength={10}
-                  placeholder="dd/mm/yyyy"
-                  required
-                />
-              </label>
-            </div>
+            <DateInput
+              id="patient-birth-date"
+              label="Data de nascimento"
+              value={pacienteFormData.dataNascimento}
+              onChange={(value) => setPacienteFormData((current) => ({ ...current, dataNascimento: value }))}
+              required
+            />
 
             <label>
               Hospital
@@ -1981,6 +1977,44 @@ function ThemeToggle({ theme, onToggle, floating = false }: ThemeToggleProps) {
       {isDark ? <Sun size={17} /> : <Moon size={17} />}
       {isDark ? 'Tema claro' : 'Tema escuro'}
     </button>
+  );
+}
+
+type DateInputProps = {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+};
+
+function DateInput({ id, label, value, onChange, required = false }: DateInputProps) {
+  return (
+    <div className="date-field">
+      <label htmlFor={id}>{label}</label>
+      <div className="date-input-control">
+        <input
+          id={id}
+          type="text"
+          value={value}
+          onChange={(event) => onChange(formatDateInput(event.target.value))}
+          inputMode="numeric"
+          maxLength={10}
+          placeholder="dd/mm/yyyy"
+          required={required}
+        />
+        <span className="date-picker-button" title={`Selecionar ${label.toLowerCase()}`}>
+          <CalendarDays size={17} />
+          <input
+            type="date"
+            value={toDatePickerValue(value)}
+            onChange={(event) => onChange(fromDatePickerValue(event.target.value))}
+            max={getTodayPickerValue()}
+            aria-label={`Selecionar ${label.toLowerCase()}`}
+          />
+        </span>
+      </div>
+    </div>
   );
 }
 
