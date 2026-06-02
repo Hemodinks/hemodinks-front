@@ -193,6 +193,14 @@ label {
   font-weight: 700;
 }
 
+.password-field {
+  display: grid;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 input,
 select {
   width: 100%;
@@ -217,6 +225,35 @@ select:focus {
 
 .date-input-control > input[type="text"] {
   padding-right: 48px;
+}
+
+.password-input-control {
+  position: relative;
+}
+
+.password-input-control input {
+  padding-right: 48px;
+}
+
+.password-visibility-button {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  width: 34px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  background: transparent;
+  transform: translateY(-50%);
+}
+
+.password-visibility-button:hover {
+  color: var(--teal);
+  background: var(--soft);
 }
 
 .date-picker-button {
@@ -1493,6 +1530,20 @@ tbody tr:last-child td {
   width: auto;
 }
 
+.login-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.92fr);
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.login-actions .ghost-button,
+.login-actions .primary-action {
+  width: 100%;
+  min-width: 0;
+}
+
 .full-width {
   width: 100%;
 }
@@ -1932,6 +1983,10 @@ tbody tr:last-child td {
   .button-row {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .login-actions {
+    grid-template-columns: 1fr;
   }
 
   td {
