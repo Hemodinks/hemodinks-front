@@ -139,10 +139,10 @@ describe('App', () => {
     expect(screen.getByText('GM Tech Solutions')).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
-    await user.type(screen.getByLabelText('Senha'), 'Senha@123');
+    await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
-    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
+    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123');
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(screen.getByText('Administrador | gmarcone@gmail.com')).toBeInTheDocument();
     expect(screen.getByText('Painel informativo')).toBeInTheDocument();
@@ -169,6 +169,52 @@ describe('App', () => {
     expect(storedSession.user.precisaTrocarSenha).toBe(false);
     expect(storedSession.user.fotoPerfil).toBe('data:image/png;base64,george');
     expect(storedSession.user.perfilNome).toBe('Administrador');
+  });
+
+  it('permite visualizar e ocultar a senha no login', async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const passwordInput = screen.getByLabelText('Senha');
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    await user.type(passwordInput, 'Senha@123');
+    await user.click(screen.getByRole('button', { name: /mostrar senha/i }));
+
+    expect(passwordInput).toHaveAttribute('type', 'text');
+
+    await user.click(screen.getByRole('button', { name: /ocultar senha/i }));
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+
+  it('reseta para a senha padrao e exige troca ao entrar', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.authenticate).mockResolvedValue({
+      id: 99,
+      nome: 'George Marcone',
+      email: 'gmarcone@gmail.com',
+      token: 'jwt-token',
+      cpf: '00000000191',
+      fotoPerfil: null,
+      precisaTrocarSenha: false,
+      perfilId: 1,
+      perfilNome: 'Administrador',
+    });
+
+    render(<App />);
+
+    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
+
+    expect(screen.getByLabelText('Senha')).toHaveValue('Senha@123');
+
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
+
+    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
+    expect(await screen.findByRole('heading', { name: 'Troque sua senha' })).toBeInTheDocument();
+    expect(api.getDashboardSummary).not.toHaveBeenCalled();
   });
 
   it('bloqueia o primeiro acesso ate a troca da senha padrao', async () => {
