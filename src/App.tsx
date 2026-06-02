@@ -10,6 +10,7 @@ import {
   CircleX,
   CalendarDays,
   ClipboardList,
+  Copy,
   Eye,
   EyeOff,
   FileText,
@@ -22,8 +23,10 @@ import {
   LayoutDashboard,
   LogIn,
   LogOut,
+  Mail,
   Moon,
   Pencil,
+  Phone,
   Plus,
   RefreshCw,
   Save,
@@ -536,6 +539,7 @@ export default function App() {
   const [photoInputKey, setPhotoInputKey] = useState(0);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedInfoUser, setSelectedInfoUser] = useState<User | null>(null);
+  const [selectedContactUser, setSelectedContactUser] = useState<User | null>(null);
 
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [pacientesLoading, setPacientesLoading] = useState(false);
@@ -1615,22 +1619,20 @@ export default function App() {
           {usersError && <p className="alert error">{usersError}</p>}
 
           <div className="table-wrap">
-            <table>
+            <table className="users-table">
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Email</th>
-                  <th>Telefone</th>
-                  <th>CPF</th>
                   <th>Perfil</th>
                   <th>Info</th>
+                  <th>Contato</th>
                   <th aria-label="Acoes" />
                 </tr>
               </thead>
               <tbody>
                 {usersLoading ? (
                   <tr>
-                    <td colSpan={7} className="empty-row">Carregando usuarios...</td>
+                    <td colSpan={5} className="empty-row">Carregando usuarios...</td>
                   </tr>
                 ) : paginatedUsers.length ? (
                   paginatedUsers.map((user) => (
@@ -1641,9 +1643,6 @@ export default function App() {
                           <span>{user.nome}</span>
                         </div>
                       </td>
-                      <td data-label="Email">{user.email}</td>
-                      <td data-label="Telefone">{formatPhoneInput(user.telefone)}</td>
-                      <td data-label="CPF">{formatCpfInput(user.cpf || '')}</td>
                       <td data-label="Perfil">{user.perfilNome || getProfileName(user.perfilId)}</td>
                       <td data-label="Info">
                         <button
@@ -1655,6 +1654,18 @@ export default function App() {
                         >
                           {user.ativo ? <CircleCheck size={19} /> : <CircleX size={19} />}
                           <Info size={15} />
+                        </button>
+                      </td>
+                      <td data-label="Contato">
+                        <button
+                          type="button"
+                          className="status-info-button contact"
+                          title="Ver informacoes de contato"
+                          aria-label={`Contato de ${user.nome}`}
+                          onClick={() => setSelectedContactUser(user)}
+                        >
+                          <Mail size={18} />
+                          <Phone size={14} />
                         </button>
                       </td>
                       <td data-label="Acoes">
@@ -1671,7 +1682,7 @@ export default function App() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="empty-row">Nenhum usuario encontrado.</td>
+                    <td colSpan={5} className="empty-row">Nenhum usuario encontrado.</td>
                   </tr>
                 )}
               </tbody>
@@ -2104,6 +2115,10 @@ export default function App() {
         <InfoModal user={selectedInfoUser} onClose={() => setSelectedInfoUser(null)} />
       )}
 
+      {selectedContactUser && (
+        <ContactModal user={selectedContactUser} onClose={() => setSelectedContactUser(null)} />
+      )}
+
       {showPasswordModal && (
         <div className="modal-backdrop" role="presentation">
           <section className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="password-title">
@@ -2255,7 +2270,64 @@ type InfoModalProps = {
   onClose: () => void;
 };
 
+async function copyText(value: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  const textArea = document.createElement('textarea');
+  textArea.value = value;
+  textArea.setAttribute('readonly', '');
+  textArea.style.position = 'fixed';
+  textArea.style.opacity = '0';
+  document.body.appendChild(textArea);
+  textArea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textArea);
+}
+
+type CopyValueProps = {
+  label: string;
+  value: string;
+  displayValue?: string;
+};
+
+function CopyValue({ label, value, displayValue = value }: CopyValueProps) {
+  const [copied, setCopied] = useState(false);
+  const valueToShow = displayValue || '-';
+  const valueToCopy = value || valueToShow;
+
+  const handleCopy = async () => {
+    if (!valueToCopy || valueToCopy === '-') {
+      return;
+    }
+
+    await copyText(valueToCopy);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  return (
+    <span className="copyable-value">
+      <span>{valueToShow}</span>
+      <button
+        type="button"
+        className="copy-button"
+        onClick={() => void handleCopy()}
+        title={`Copiar ${label} (Ctrl+C)`}
+        aria-label={`Copiar ${label}`}
+      >
+        <Copy size={15} />
+      </button>
+      {copied && <span className="copied-label">Copiado</span>}
+    </span>
+  );
+}
+
 function InfoModal({ user, onClose }: InfoModalProps) {
+  const formattedCpf = formatCpfInput(user.cpf || '');
+
   return (
     <div className="modal-backdrop" role="presentation">
       <section className="modal-panel info-modal" role="dialog" aria-modal="true" aria-labelledby="info-title">
@@ -2276,7 +2348,7 @@ function InfoModal({ user, onClose }: InfoModalProps) {
           </div>
           <div>
             <dt>CPF</dt>
-            <dd>{formatCpfInput(user.cpf || '')}</dd>
+            <dd><CopyValue label="CPF" value={formattedCpf} /></dd>
           </div>
           <div>
             <dt>Data de nascimento</dt>
@@ -2292,6 +2364,42 @@ function InfoModal({ user, onClose }: InfoModalProps) {
               {user.ativo ? <CircleCheck size={17} /> : <CircleX size={17} />}
               {user.ativo ? 'Ativo' : 'Inativo'}
             </dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  );
+}
+
+type ContactModalProps = {
+  user: User;
+  onClose: () => void;
+};
+
+function ContactModal({ user, onClose }: ContactModalProps) {
+  const formattedPhone = formatPhoneInput(user.telefone || '');
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-panel info-modal contact-modal" role="dialog" aria-modal="true" aria-labelledby="contact-title">
+        <div className="panel-title">
+          <div>
+            <span className="eyebrow">Contato</span>
+            <h2 id="contact-title">{user.nome}</h2>
+          </div>
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+            <X size={18} />
+          </button>
+        </div>
+
+        <dl className="info-list">
+          <div>
+            <dt>Email</dt>
+            <dd><CopyValue label="email" value={user.email} /></dd>
+          </div>
+          <div>
+            <dt>Telefone</dt>
+            <dd><CopyValue label="telefone" value={formattedPhone} /></dd>
           </div>
         </dl>
       </section>

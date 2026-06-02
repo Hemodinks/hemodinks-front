@@ -1306,6 +1306,10 @@ table {
   min-width: 760px;
 }
 
+.users-table {
+  min-width: 620px;
+}
+
 th,
 td {
   padding: 13px 14px;
@@ -1386,6 +1390,10 @@ tbody tr:last-child td {
   color: var(--danger);
 }
 
+.status-info-button.contact {
+  color: var(--teal);
+}
+
 .status-info-button:hover {
   background: var(--soft);
 }
@@ -1420,6 +1428,10 @@ tbody tr:last-child td {
   width: min(520px, 100%);
 }
 
+.contact-modal {
+  width: min(500px, 100%);
+}
+
 .info-list {
   display: grid;
   gap: 12px;
@@ -1451,6 +1463,41 @@ tbody tr:last-child td {
   color: var(--ink);
   font-weight: 900;
   text-align: right;
+}
+
+.copyable-value {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.copyable-value > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.copy-button {
+  width: 30px;
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--teal);
+  background: var(--input-bg);
+}
+
+.copy-button:hover {
+  background: var(--soft);
+}
+
+.copied-label {
+  color: var(--teal);
+  font-size: 0.75rem;
+  font-weight: 900;
 }
 
 .detail-active {
