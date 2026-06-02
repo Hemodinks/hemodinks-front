@@ -345,32 +345,173 @@ select:focus {
   z-index: 60;
   display: grid;
   place-items: center;
-  background: rgba(15, 23, 42, 0.35);
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(4, 12, 25, 0.86), rgba(4, 35, 45, 0.82)),
+    linear-gradient(90deg, rgba(93, 248, 234, 0.06) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(93, 248, 234, 0.05) 1px, transparent 1px);
+  background-size: auto, 26px 26px, 26px 26px;
+  backdrop-filter: blur(8px);
 }
 
 .loading-overlay-panel {
-  display: inline-flex;
+  position: relative;
+  width: min(430px, 100%);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
-  padding: 18px 20px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 18px 45px rgba(24, 33, 47, 0.18);
-  color: var(--ink);
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid rgba(93, 248, 234, 0.34);
+  border-radius: 8px;
+  color: #eef6ff;
+  background: rgba(7, 20, 36, 0.94);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
 }
 
-.loading-spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(15, 118, 110, 0.25);
-  border-top-color: var(--teal);
+.health-loader {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+}
+
+.loader-ring,
+.loader-orbit,
+.loader-core {
+  position: absolute;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+}
+
+.loader-ring {
+  inset: 0;
+  background:
+    conic-gradient(from 90deg, rgba(93, 248, 234, 0), #5df8ea, rgba(255, 90, 31, 0.95), rgba(93, 248, 234, 0));
+  animation: spin 1.2s linear infinite;
+}
+
+.loader-ring::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: #071424;
+}
+
+.loader-orbit {
+  width: 9px;
+  height: 9px;
+  background: #5df8ea;
+  box-shadow: 0 0 16px rgba(93, 248, 234, 0.9);
+  animation: orbit 1.4s ease-in-out infinite;
+}
+
+.orbit-one {
+  top: 6px;
+  right: 18px;
+}
+
+.orbit-two {
+  bottom: 8px;
+  left: 16px;
+  animation-delay: 0.3s;
+  background: #ff5a1f;
+  box-shadow: 0 0 16px rgba(255, 90, 31, 0.8);
+}
+
+.loader-core {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  color: #5df8ea;
+  background: rgba(93, 248, 234, 0.1);
+  border: 1px solid rgba(93, 248, 234, 0.32);
+  animation: healthPulse 1.2s ease-in-out infinite;
+}
+
+.loading-copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.loading-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #5df8ea;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.loading-copy strong {
+  color: #eef6ff;
+  font-size: 1.08rem;
+}
+
+.loading-copy > span:last-child {
+  color: #b8c6d8;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.vital-line {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 0.42fr 0.16fr 1fr;
+  align-items: center;
+  gap: 8px;
+  height: 18px;
+}
+
+.vital-line span {
+  display: block;
+  height: 2px;
+  border-radius: 999px;
+  background: #5df8ea;
+  box-shadow: 0 0 12px rgba(93, 248, 234, 0.6);
+  animation: vitalPulse 1.1s ease-in-out infinite;
+}
+
+.vital-line span:nth-child(2) {
+  height: 14px;
+  clip-path: polygon(0 50%, 18% 50%, 33% 0, 50% 100%, 68% 32%, 82% 50%, 100% 50%, 100% 62%, 78% 62%, 65% 46%, 50% 100%, 32% 28%, 22% 62%, 0 62%);
+  animation-delay: 0.18s;
+}
+
+.vital-line span:nth-child(3) {
+  animation-delay: 0.34s;
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes orbit {
+  50% {
+    transform: scale(1.35);
+  }
+}
+
+@keyframes healthPulse {
+  50% {
+    color: #ffffff;
+    box-shadow: 0 0 28px rgba(93, 248, 234, 0.36);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes vitalPulse {
+  50% {
+    opacity: 0.42;
+    transform: scaleX(0.96);
   }
 }
 
@@ -441,6 +582,30 @@ select:focus {
 .topbar-brand {
   min-width: 0;
   gap: 12px;
+}
+
+.brand-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.company-name,
+.product-name {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  color: var(--blood);
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.product-name {
+  color: var(--teal);
 }
 
 .topbar-brand h1 {

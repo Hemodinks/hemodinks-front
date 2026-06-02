@@ -1,5 +1,6 @@
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
 import {
+  Activity,
   ArrowRight,
   Bell,
   CheckCircle2,
@@ -12,6 +13,7 @@ import {
   FileText,
   FileUp,
   GripVertical,
+  HeartPulse,
   Info,
   ImagePlus,
   KeyRound,
@@ -1285,11 +1287,13 @@ export default function App() {
   return (
     <main className="app-shell">
       <LoadingOverlay active={isBusy} />
-      <TechCredit />
       <header className="topbar">
         <div className="topbar-brand">
           <div>
-            <span className="eyebrow">Hemodinks</span>
+            <div className="brand-kicker">
+              <span className="company-name">GM Tech Solutions</span>
+              <span className="product-name">Hemodinks</span>
+            </div>
             <h1>{appTitle}</h1>
             <Breadcrumbs items={breadcrumbItems} />
           </div>
@@ -2413,12 +2417,30 @@ function LoadingOverlay({ active }: { active: boolean }) {
   }
 
   return (
-    <div className="loading-overlay" aria-live="polite">
-      <div className="loading-overlay-panel">
-        <span className="loading-spinner" aria-hidden="true" />
-        <div>
-          <strong>Aguarde...</strong>
-          <span>Processando sua solicitação.</span>
+    <div className="loading-overlay" aria-live="polite" aria-busy="true">
+      <div className="loading-overlay-panel" role="status">
+        <div className="health-loader" aria-hidden="true">
+          <span className="loader-ring" />
+          <span className="loader-orbit orbit-one" />
+          <span className="loader-orbit orbit-two" />
+          <span className="loader-core">
+            <HeartPulse size={34} />
+          </span>
+        </div>
+
+        <div className="loading-copy">
+          <span className="loading-eyebrow">
+            <Activity size={15} />
+            Saude digital
+          </span>
+          <strong>Sincronizando dados</strong>
+          <span>Conectando atendimento, arquivos e prontuario.</span>
+        </div>
+
+        <div className="vital-line" aria-hidden="true">
+          <span />
+          <span />
+          <span />
         </div>
       </div>
     </div>
