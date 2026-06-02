@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -7,7 +7,9 @@ import type { AuthSession, Paciente, User } from './types';
 
 vi.mock('./api', () => ({
   authenticate: vi.fn(),
+  getDashboardSummary: vi.fn(),
   getUsers: vi.fn(),
+  getPaciente: vi.fn(),
   getPacientes: vi.fn(),
   createUser: vi.fn(),
   createPaciente: vi.fn(),
@@ -56,8 +58,19 @@ const basePaciente: Paciente = {
   fotoPerfil: null,
   dataNascimento: '1992-05-10T00:00:00Z',
   ativo: true,
+  arquivosCount: 0,
   arquivos: [],
 };
+
+function paged<T>(items: T[], page = 1, pageSize = 10, totalItems = items.length) {
+  return {
+    items,
+    page,
+    pageSize,
+    totalItems,
+    totalPages: Math.max(1, Math.ceil(totalItems / pageSize)),
+  };
+}
 
 function mockSession(overrides?: Partial<AuthSession['user']>) {
   const session: AuthSession = {
@@ -93,8 +106,17 @@ describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-    vi.mocked(api.getUsers).mockResolvedValue([baseUser]);
-    vi.mocked(api.getPacientes).mockResolvedValue([basePaciente]);
+    vi.mocked(api.getDashboardSummary).mockResolvedValue({
+      usersCount: 1,
+      activeUsersCount: 1,
+      pacientesCount: 1,
+      activePatientsCount: 1,
+      pendingPaymentsCount: 0,
+      patientFilesCount: 0,
+    });
+    vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
+    vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
+    vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
     vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
@@ -131,7 +153,8 @@ describe('App', () => {
     expect(screen.getByText('Arquivos')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir usuarios/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
-    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token');
+    expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
+    expect(api.getPacientes).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: /abrir usuarios/i }));
 
@@ -139,7 +162,7 @@ describe('App', () => {
     expect(screen.getByAltText('Foto de Ana Hemodinks')).toBeInTheDocument();
     expect(screen.getByAltText('Foto de George Marcone')).toBeInTheDocument();
     expect(screen.getByText('+55 (81) 99999-9999')).toBeInTheDocument();
-    expect(api.getUsers).toHaveBeenCalledWith('jwt-token');
+    expect(api.getUsers).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '' });
 
     const storedSession = JSON.parse(localStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
     expect(storedSession.token).toBe('jwt-token');
@@ -289,7 +312,8 @@ describe('App', () => {
   it('filtra usuarios pelo campo de busca', async () => {
     const user = userEvent.setup();
     mockSession();
-    vi.mocked(api.getUsers).mockResolvedValue([
+    vi.mocked(api.getUsers)
+      .mockResolvedValueOnce(paged([
       baseUser,
       {
         ...baseUser,
@@ -298,7 +322,16 @@ describe('App', () => {
         email: 'carlos@hemodinks.com',
         telefone: '+5581777777777',
       },
-    ]);
+    ]))
+      .mockResolvedValueOnce(paged([
+        {
+          ...baseUser,
+          id: 2,
+          nome: 'Carlos Hemodinks',
+          email: 'carlos@hemodinks.com',
+          telefone: '+5581777777777',
+        },
+      ]));
 
     render(<App />);
 
@@ -308,24 +341,18 @@ describe('App', () => {
 
     await user.type(screen.getByPlaceholderText('Buscar'), 'carlos');
 
+    await waitFor(() => {
+      expect(api.getUsers).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: 'carlos' });
+    });
+
+    expect(await screen.findByText('Carlos Hemodinks')).toBeInTheDocument();
     expect(screen.queryByText('Ana Hemodinks')).not.toBeInTheDocument();
-    expect(screen.getByText('Carlos Hemodinks')).toBeInTheDocument();
   });
 
   it('lista e cadastra pacientes', async () => {
     const user = userEvent.setup();
     mockSession();
-    vi.mocked(api.getUsers).mockResolvedValue([
-      baseUser,
-      {
-        ...baseUser,
-        id: 2,
-        nome: 'Admin Hemodinks',
-        email: 'admin@hemodinks.com',
-        perfilId: 1,
-        perfilNome: 'Administrador',
-      },
-    ]);
+    vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
     vi.mocked(api.createPaciente).mockResolvedValue({
       ...basePaciente,
       id: 11,
@@ -342,7 +369,7 @@ describe('App', () => {
 
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(screen.getByText('Pago')).toBeInTheDocument();
-    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token');
+    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '' });
 
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
 
@@ -355,7 +382,6 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Data de nascimento'), '10051992');
     await user.type(screen.getByLabelText('Hospital'), 'Hospital Norte');
     expect(screen.getByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'Admin Hemodinks' })).not.toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Medico'), 'Ana Hemodinks');
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
@@ -426,13 +452,16 @@ describe('App', () => {
   it('pagina a lista com 10 registros por tela', async () => {
     const user = userEvent.setup();
     mockSession();
-    vi.mocked(api.getUsers).mockResolvedValue(Array.from({ length: 12 }, (_, index) => ({
+    const allUsers = Array.from({ length: 12 }, (_, index) => ({
       ...baseUser,
       id: index + 1,
       nome: `Usuario ${index + 1}`,
       email: `usuario${index + 1}@hemodinks.com`,
       telefone: '+5581999999999',
-    })));
+    }));
+    vi.mocked(api.getUsers)
+      .mockResolvedValueOnce(paged(allUsers.slice(0, 10), 1, 10, 12))
+      .mockResolvedValueOnce(paged(allUsers.slice(10), 2, 10, 12));
 
     render(<App />);
 
@@ -444,8 +473,8 @@ describe('App', () => {
 
     await user.click(screen.getByTitle('Proxima pagina'));
 
+    expect(await screen.findByText('Usuario 11')).toBeInTheDocument();
     expect(screen.queryByText('Usuario 1')).not.toBeInTheDocument();
-    expect(screen.getByText('Usuario 11')).toBeInTheDocument();
     expect(screen.getByText('11-12 de 12')).toBeInTheDocument();
   });
 

@@ -1,9 +1,12 @@
 import type {
   ChangePasswordPayload,
+  DashboardSummary,
+  ListQuery,
   LoginResponse,
   Paciente,
   PacienteArquivo,
   PacienteFormData,
+  PagedResult,
   User,
   UserFormData,
 } from './types';
@@ -60,6 +63,29 @@ async function uploadRequest<T>(path: string, body: FormData, token: string): Pr
   return response.json() as Promise<T>;
 }
 
+function toQueryString(query?: ListQuery) {
+  const params = new URLSearchParams();
+
+  if (query?.page) {
+    params.set('page', String(query.page));
+  }
+
+  if (query?.pageSize) {
+    params.set('pageSize', String(query.pageSize));
+  }
+
+  if (query?.search?.trim()) {
+    params.set('search', query.search.trim());
+  }
+
+  if (query?.profileId) {
+    params.set('profileId', String(query.profileId));
+  }
+
+  const value = params.toString();
+  return value ? `?${value}` : '';
+}
+
 export function authenticate(email: string, senha: string) {
   return request<LoginResponse>('/api/users/authenticate', {
     method: 'POST',
@@ -67,8 +93,12 @@ export function authenticate(email: string, senha: string) {
   });
 }
 
-export function getUsers(token: string) {
-  return request<User[]>('/api/users/', {}, token);
+export function getDashboardSummary(token: string) {
+  return request<DashboardSummary>('/api/dashboard/summary', {}, token);
+}
+
+export function getUsers(token: string, query?: ListQuery) {
+  return request<PagedResult<User>>(`/api/users/${toQueryString(query)}`, {}, token);
 }
 
 export function createUser(payload: UserFormData, token: string) {
@@ -98,8 +128,12 @@ export function changePassword(id: number, payload: ChangePasswordPayload, token
   }, token);
 }
 
-export function getPacientes(token: string) {
-  return request<Paciente[]>('/api/pacientes/', {}, token);
+export function getPacientes(token: string, query?: ListQuery) {
+  return request<PagedResult<Paciente>>(`/api/pacientes/${toQueryString(query)}`, {}, token);
+}
+
+export function getPaciente(id: number, token: string) {
+  return request<Paciente>(`/api/pacientes/${id}`, {}, token);
 }
 
 export function createPaciente(payload: PacienteFormData, token: string) {

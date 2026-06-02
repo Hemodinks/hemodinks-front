@@ -13,6 +13,30 @@ export type User = {
   perfilNome: string;
 };
 
+export type PagedResult<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+};
+
+export type ListQuery = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  profileId?: number;
+};
+
+export type DashboardSummary = {
+  usersCount: number;
+  activeUsersCount: number;
+  pacientesCount: number;
+  activePatientsCount: number;
+  pendingPaymentsCount: number;
+  patientFilesCount: number;
+};
+
 export type LoginResponse = {
   id: number;
   nome: string;
@@ -76,6 +100,7 @@ export type Paciente = {
   fotoPerfil?: string | null;
   dataNascimento: string;
   ativo: boolean;
+  arquivosCount: number;
   arquivos: PacienteArquivo[];
 };
 

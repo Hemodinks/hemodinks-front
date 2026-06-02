@@ -34,19 +34,22 @@ import {
   deletePaciente,
   deletePacienteArquivo,
   deleteUser,
+  getDashboardSummary,
+  getPaciente,
   getPacientes,
   getUsers,
   updatePaciente,
   updateUser,
   uploadPacienteArquivo,
 } from './api';
-import type { AuthSession, Paciente, PacienteFormData, User, UserFormData } from './types';
+import type { AuthSession, DashboardSummary, Paciente, PacienteFormData, User, UserFormData } from './types';
 import brandImage from '../imagem candidata hemodinks.jpg';
 
 const SESSION_KEY = 'hemodinks.session';
 const THEME_KEY = 'hemodinks.theme';
 const DEFAULT_PASSWORD = 'Senha@123';
 const PAGE_SIZE = 10;
+const LOOKUP_PAGE_SIZE = 100;
 const MAX_NAME_LENGTH = 255;
 const MAX_EMAIL_LENGTH = 255;
 const MAX_PHONE_LENGTH = 20;
@@ -478,6 +481,18 @@ function toPacientePayload(data: PacienteFormData): PacienteFormData {
   };
 }
 
+function getPagedItems<T>(result: { items: T[] } | T[]) {
+  return Array.isArray(result) ? result : result.items;
+}
+
+function getPagedTotal<T>(result: { totalItems: number } | T[]) {
+  return Array.isArray(result) ? result.length : result.totalItems;
+}
+
+function getPagedTotalPages<T>(result: { totalPages: number } | T[]) {
+  return Array.isArray(result) ? Math.max(1, Math.ceil(result.length / PAGE_SIZE)) : result.totalPages;
+}
+
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => loadStoredSession());
   const [theme, setTheme] = useState<Theme>(() => loadStoredTheme());
@@ -488,12 +503,19 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
+  const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
+  const [dashboardError, setDashboardError] = useState('');
+
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [usersTotalItems, setUsersTotalItems] = useState(0);
+  const [usersTotalPages, setUsersTotalPages] = useState(1);
+  const [medicalUsers, setMedicalUsers] = useState<User[]>([]);
 
   const [formData, setFormData] = useState<UserFormData>(emptyUserForm);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -508,9 +530,13 @@ export default function App() {
   const [pacientesError, setPacientesError] = useState('');
   const [pacienteSuccessMessage, setPacienteSuccessMessage] = useState('');
   const [pacienteSearchTerm, setPacienteSearchTerm] = useState('');
+  const [debouncedPacienteSearchTerm, setDebouncedPacienteSearchTerm] = useState('');
   const [pacienteCurrentPage, setPacienteCurrentPage] = useState(1);
+  const [pacientesTotalItems, setPacientesTotalItems] = useState(0);
+  const [pacientesTotalPages, setPacientesTotalPages] = useState(1);
   const [pacienteFormData, setPacienteFormData] = useState<PacienteFormData>(emptyPacienteForm);
   const [editingPacienteId, setEditingPacienteId] = useState<number | null>(null);
+  const [editingPacienteDetails, setEditingPacienteDetails] = useState<Paciente | null>(null);
   const [pacienteFormLoading, setPacienteFormLoading] = useState(false);
   const [pacienteFormError, setPacienteFormError] = useState('');
   const [patientPhotoInputKey, setPatientPhotoInputKey] = useState(0);
@@ -534,14 +560,39 @@ export default function App() {
   const logout = () => {
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
+    setDashboardSummary(null);
     setUsers([]);
+    setUsersTotalItems(0);
+    setUsersTotalPages(1);
+    setMedicalUsers([]);
     setPacientes([]);
+    setPacientesTotalItems(0);
+    setPacientesTotalPages(1);
     setActiveView('dashboard');
     setModuleMode('list');
     setLoginPassword('');
   };
 
-  const loadUsers = async (token = session?.token) => {
+  const loadDashboardSummary = async (token = session?.token) => {
+    if (!token) {
+      return;
+    }
+
+    setDashboardError('');
+
+    try {
+      const result = await getDashboardSummary(token);
+      setDashboardSummary(result);
+    } catch (error) {
+      setDashboardError(getErrorMessage(error));
+    }
+  };
+
+  const loadUsers = async (
+    token = session?.token,
+    page = currentPage,
+    search = debouncedSearchTerm,
+  ) => {
     if (!token) {
       return;
     }
@@ -550,8 +601,14 @@ export default function App() {
     setUsersError('');
 
     try {
-      const result = await getUsers(token);
-      setUsers(result);
+      const result = await getUsers(token, {
+        page,
+        pageSize: PAGE_SIZE,
+        search,
+      });
+      setUsers(getPagedItems(result));
+      setUsersTotalItems(getPagedTotal(result));
+      setUsersTotalPages(getPagedTotalPages(result));
     } catch (error) {
       setUsersError(getErrorMessage(error));
     } finally {
@@ -559,7 +616,28 @@ export default function App() {
     }
   };
 
-  const loadPacientes = async (token = session?.token) => {
+  const loadMedicalUsers = async (token = session?.token) => {
+    if (!token) {
+      return;
+    }
+
+    try {
+      const result = await getUsers(token, {
+        page: 1,
+        pageSize: LOOKUP_PAGE_SIZE,
+        profileId: MEDICAL_PROFILE_ID,
+      });
+      setMedicalUsers(getPagedItems(result));
+    } catch (error) {
+      setPacientesError(getErrorMessage(error));
+    }
+  };
+
+  const loadPacientes = async (
+    token = session?.token,
+    page = pacienteCurrentPage,
+    search = debouncedPacienteSearchTerm,
+  ) => {
     if (!token) {
       return;
     }
@@ -568,8 +646,14 @@ export default function App() {
     setPacientesError('');
 
     try {
-      const result = await getPacientes(token);
-      setPacientes(result);
+      const result = await getPacientes(token, {
+        page,
+        pageSize: PAGE_SIZE,
+        search,
+      });
+      setPacientes(getPagedItems(result));
+      setPacientesTotalItems(getPagedTotal(result));
+      setPacientesTotalPages(getPagedTotalPages(result));
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     } finally {
@@ -579,78 +663,66 @@ export default function App() {
 
   useEffect(() => {
     if (session && !session.user.precisaTrocarSenha) {
-      void loadUsers(session.token);
-      void loadPacientes(session.token);
+      void loadDashboardSummary(session.token);
     }
   }, [session?.token, session?.user.precisaTrocarSenha]);
 
-  const filteredUsers = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-
-    if (!term) {
-      return users;
-    }
-
-    return users.filter((user) => (
-      user.nome.toLowerCase().includes(term)
-      || user.email.toLowerCase().includes(term)
-      || (!!onlyDigits(term) && normalizeCpfForPayload(user.cpf || '').includes(onlyDigits(term)))
-      || formatCpfInput(user.cpf || '').toLowerCase().includes(term)
-      || (user.perfilNome || getProfileName(user.perfilId)).toLowerCase().includes(term)
-      || user.telefone.toLowerCase().includes(term)
-      || formatPhoneInput(user.telefone).toLowerCase().includes(term)
-    ));
-  }, [searchTerm, users]);
-
-  const filteredPacientes = useMemo(() => {
-    const term = pacienteSearchTerm.trim().toLowerCase();
-
-    if (!term) {
-      return pacientes;
-    }
-
-    return pacientes.filter((paciente) => (
-      paciente.nomePaciente.toLowerCase().includes(term)
-      || paciente.email.toLowerCase().includes(term)
-      || (!!onlyDigits(term) && normalizeCpfForPayload(paciente.cpf || '').includes(onlyDigits(term)))
-      || formatCpfInput(paciente.cpf || '').toLowerCase().includes(term)
-      || formatPhoneInput(paciente.telefone).toLowerCase().includes(term)
-      || (paciente.hospital || '').toLowerCase().includes(term)
-      || (paciente.medico || '').toLowerCase().includes(term)
-      || (paciente.convenio || '').toLowerCase().includes(term)
-      || (paciente.procedimento || '').toLowerCase().includes(term)
-    ));
-  }, [pacienteSearchTerm, pacientes]);
-
-  const medicalUsers = useMemo(() => users.filter(isMedicalProfileUser), [users]);
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const totalPages = Math.max(1, usersTotalPages);
   const pageStart = (currentPage - 1) * PAGE_SIZE;
   const pageEnd = pageStart + PAGE_SIZE;
-  const paginatedUsers = filteredUsers.slice(pageStart, pageEnd);
-  const visibleStart = filteredUsers.length ? pageStart + 1 : 0;
-  const visibleEnd = Math.min(pageEnd, filteredUsers.length);
-  const pacienteTotalPages = Math.max(1, Math.ceil(filteredPacientes.length / PAGE_SIZE));
+  const paginatedUsers = users;
+  const visibleStart = usersTotalItems ? pageStart + 1 : 0;
+  const visibleEnd = Math.min(pageEnd, usersTotalItems);
+  const pacienteTotalPages = Math.max(1, pacientesTotalPages);
   const pacientePageStart = (pacienteCurrentPage - 1) * PAGE_SIZE;
   const pacientePageEnd = pacientePageStart + PAGE_SIZE;
-  const paginatedPacientes = filteredPacientes.slice(pacientePageStart, pacientePageEnd);
-  const pacienteVisibleStart = filteredPacientes.length ? pacientePageStart + 1 : 0;
-  const pacienteVisibleEnd = Math.min(pacientePageEnd, filteredPacientes.length);
-  const activeUsersCount = users.filter((user) => user.ativo).length;
-  const activePatientsCount = pacientes.filter((paciente) => paciente.ativo).length;
-  const pendingPaymentsCount = pacientes.filter((paciente) => !paciente.statusPago).length;
-  const patientFilesCount = pacientes.reduce((total, paciente) => total + (paciente.arquivos?.length ?? 0), 0);
+  const paginatedPacientes = pacientes;
+  const pacienteVisibleStart = pacientesTotalItems ? pacientePageStart + 1 : 0;
+  const pacienteVisibleEnd = Math.min(pacientePageEnd, pacientesTotalItems);
+  const activeUsersCount = dashboardSummary?.activeUsersCount ?? 0;
+  const activePatientsCount = dashboardSummary?.activePatientsCount ?? 0;
+  const pendingPaymentsCount = dashboardSummary?.pendingPaymentsCount ?? 0;
+  const patientFilesCount = dashboardSummary?.patientFilesCount ?? 0;
+  const usersCount = dashboardSummary?.usersCount ?? usersTotalItems;
+  const pacientesCount = dashboardSummary?.pacientesCount ?? pacientesTotalItems;
   const editingPaciente = useMemo(
-    () => pacientes.find((paciente) => paciente.id === editingPacienteId) ?? null,
-    [editingPacienteId, pacientes],
+    () => editingPacienteDetails ?? pacientes.find((paciente) => paciente.id === editingPacienteId) ?? null,
+    [editingPacienteDetails, editingPacienteId, pacientes],
   );
 
   useEffect(() => {
-    setCurrentPage(1);
+    const timeoutId = window.setTimeout(() => {
+      setCurrentPage(1);
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
   }, [searchTerm]);
 
   useEffect(() => {
-    setPacienteCurrentPage(1);
+    const timeoutId = window.setTimeout(() => {
+      setPacienteCurrentPage(1);
+      setDebouncedPacienteSearchTerm(pacienteSearchTerm);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
   }, [pacienteSearchTerm]);
+
+  useEffect(() => {
+    if (session && !session.user.precisaTrocarSenha && activeView === 'users' && moduleMode === 'list') {
+      void loadUsers(session.token, currentPage, debouncedSearchTerm);
+    }
+  }, [session?.token, session?.user.precisaTrocarSenha, activeView, moduleMode, currentPage, debouncedSearchTerm]);
+
+  useEffect(() => {
+    if (session && !session.user.precisaTrocarSenha && activeView === 'patients') {
+      if (moduleMode === 'list') {
+        void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm);
+      }
+
+      void loadMedicalUsers(session.token);
+    }
+  }, [session?.token, session?.user.precisaTrocarSenha, activeView, moduleMode, pacienteCurrentPage, debouncedPacienteSearchTerm]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -758,14 +830,20 @@ export default function App() {
   const resetPacienteForm = () => {
     setPacienteFormData(emptyPacienteForm);
     setEditingPacienteId(null);
+    setEditingPacienteDetails(null);
     setPacienteFormError('');
     setPendingPatientFiles([]);
     setPatientPhotoInputKey((key) => key + 1);
     setPatientFileInputKey((key) => key + 1);
   };
 
-  const handleEditPaciente = (paciente: Paciente) => {
+  const handleEditPaciente = async (paciente: Paciente) => {
+    if (!session) {
+      return;
+    }
+
     setEditingPacienteId(paciente.id);
+    setEditingPacienteDetails(paciente);
     setPacienteFormError('');
     setPacienteSuccessMessage('');
     setActiveView('patients');
@@ -791,6 +869,13 @@ export default function App() {
     });
     setPatientPhotoInputKey((key) => key + 1);
     setPatientFileInputKey((key) => key + 1);
+
+    try {
+      const details = await getPaciente(paciente.id, session.token);
+      setEditingPacienteDetails(details);
+    } catch (error) {
+      setPacienteFormError(getErrorMessage(error));
+    }
   };
 
   const handlePacientePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -880,8 +965,7 @@ export default function App() {
       setPacienteSuccessMessage(editingPacienteId ? 'Paciente atualizado.' : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
       resetPacienteForm();
       setModuleMode('list');
-      await loadPacientes(session.token);
-      await loadUsers(session.token);
+      await loadDashboardSummary(session.token);
     } catch (error) {
       setPacienteFormError(getErrorMessage(error));
     } finally {
@@ -900,8 +984,8 @@ export default function App() {
     try {
       await deletePaciente(paciente.id, session.token);
       setPacienteSuccessMessage('Paciente excluido.');
-      await loadPacientes(session.token);
-      await loadUsers(session.token);
+      await loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm);
+      await loadDashboardSummary(session.token);
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     }
@@ -916,7 +1000,10 @@ export default function App() {
 
     try {
       await deletePacienteArquivo(paciente.id, arquivoId, session.token);
-      await loadPacientes(session.token);
+      const details = await getPaciente(paciente.id, session.token);
+      setEditingPacienteDetails(details);
+      await loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm);
+      await loadDashboardSummary(session.token);
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     }
@@ -970,7 +1057,7 @@ export default function App() {
 
       resetUserForm();
       setModuleMode('list');
-      await loadUsers(session.token);
+      await loadDashboardSummary(session.token);
     } catch (error) {
       setFormError(getErrorMessage(error));
     } finally {
@@ -995,7 +1082,8 @@ export default function App() {
       }
 
       setSuccessMessage('Usuario excluido.');
-      await loadUsers(session.token);
+      await loadUsers(session.token, currentPage, debouncedSearchTerm);
+      await loadDashboardSummary(session.token);
     } catch (error) {
       setUsersError(getErrorMessage(error));
     }
@@ -1055,6 +1143,10 @@ export default function App() {
     setPacienteSuccessMessage('');
     setActiveView('patients');
     setModuleMode('form');
+
+    if (session) {
+      void loadMedicalUsers(session.token);
+    }
   };
 
   const closePacienteForm = () => {
@@ -1163,11 +1255,11 @@ export default function App() {
           <div className="topbar-info-panel" aria-label="Resumo rapido">
             <span>
               <Users size={15} />
-              {users.length}
+              {usersCount}
             </span>
             <span>
               <ClipboardList size={15} />
-              {pacientes.length}
+              {pacientesCount}
             </span>
           </div>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -1255,18 +1347,19 @@ export default function App() {
           </section>
 
           {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
+          {dashboardError && <p className="alert error">{dashboardError}</p>}
 
           <div className="module-grid">
             <button type="button" className="module-card" onClick={openUsersList} aria-label="Abrir usuarios">
               <span className="module-icon"><Users size={24} /></span>
               <span className="module-title">Usuarios</span>
-              <span className="module-metric">{users.length} cadastrados</span>
+              <span className="module-metric">{usersCount} cadastrados</span>
             </button>
 
             <button type="button" className="module-card" onClick={openPatientsList} aria-label="Abrir pacientes">
               <span className="module-icon"><ClipboardList size={24} /></span>
               <span className="module-title">Pacientes</span>
-              <span className="module-metric">{pacientes.length} cadastrados</span>
+              <span className="module-metric">{pacientesCount} cadastrados</span>
             </button>
           </div>
         </section>
@@ -1414,7 +1507,7 @@ export default function App() {
           <div className="data-header">
             <div>
               <span className="eyebrow">Base de usuarios</span>
-              <h2>{users.length} cadastrados</h2>
+              <h2>{usersTotalItems} cadastrados</h2>
             </div>
 
             <div className="table-tools">
@@ -1431,7 +1524,7 @@ export default function App() {
                   placeholder="Buscar"
                 />
               </label>
-              <button type="button" className="icon-button" onClick={() => void loadUsers()} title="Atualizar lista">
+              <button type="button" className="icon-button" onClick={() => void loadUsers(session.token, currentPage, debouncedSearchTerm)} title="Atualizar lista">
                 <RefreshCw size={18} />
               </button>
             </div>
@@ -1506,7 +1599,7 @@ export default function App() {
 
           <div className="pagination-bar">
             <span>
-              {visibleStart}-{visibleEnd} de {filteredUsers.length}
+              {visibleStart}-{visibleEnd} de {usersTotalItems}
             </span>
             <div className="pagination-actions">
               <button
@@ -1801,7 +1894,7 @@ export default function App() {
           <div className="data-header">
             <div>
               <span className="eyebrow">Cadastro de pacientes</span>
-              <h2>{pacientes.length} cadastrados</h2>
+              <h2>{pacientesTotalItems} cadastrados</h2>
             </div>
 
             <div className="table-tools">
@@ -1818,7 +1911,7 @@ export default function App() {
                   placeholder="Buscar"
                 />
               </label>
-              <button type="button" className="icon-button" onClick={() => void loadPacientes()} title="Atualizar lista">
+              <button type="button" className="icon-button" onClick={() => void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm)} title="Atualizar lista">
                 <RefreshCw size={18} />
               </button>
             </div>
@@ -1869,12 +1962,12 @@ export default function App() {
                       <td data-label="Arquivos">
                         <span className="attachment-count">
                           <FileText size={15} />
-                          {paciente.arquivos.length}
+                          {paciente.arquivosCount ?? paciente.arquivos.length}
                         </span>
                       </td>
                       <td data-label="Acoes">
                         <div className="row-actions">
-                          <button type="button" className="icon-button muted" onClick={() => handleEditPaciente(paciente)} title="Editar">
+                          <button type="button" className="icon-button muted" onClick={() => void handleEditPaciente(paciente)} title="Editar">
                             <Pencil size={17} />
                           </button>
                           <button type="button" className="icon-button danger" onClick={() => void handleDeletePaciente(paciente)} title="Excluir">
@@ -1895,7 +1988,7 @@ export default function App() {
 
           <div className="pagination-bar">
             <span>
-              {pacienteVisibleStart}-{pacienteVisibleEnd} de {filteredPacientes.length}
+              {pacienteVisibleStart}-{pacienteVisibleEnd} de {pacientesTotalItems}
             </span>
             <div className="pagination-actions">
               <button
