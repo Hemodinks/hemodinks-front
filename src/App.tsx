@@ -10,6 +10,8 @@ import {
   CircleX,
   CalendarDays,
   ClipboardList,
+  Eye,
+  EyeOff,
   FileText,
   FileUp,
   GripVertical,
@@ -770,7 +772,7 @@ export default function App() {
           email: result.email,
           cpf: result.cpf ?? null,
           fotoPerfil: result.fotoPerfil ?? null,
-          precisaTrocarSenha: result.precisaTrocarSenha ?? loginPassword === DEFAULT_PASSWORD,
+          precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
           perfilId: result.perfilId || DEFAULT_PROFILE_ID,
           perfilNome: result.perfilNome || getProfileName(result.perfilId || DEFAULT_PROFILE_ID),
         },
@@ -1208,22 +1210,20 @@ export default function App() {
               />
             </label>
 
-            <label>
-              Senha
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(event) => setLoginPassword(event.target.value)}
-                autoComplete="current-password"
-                maxLength={MAX_PASSWORD_LENGTH}
-                required
-              />
-            </label>
+            <PasswordInput
+              id="login-password"
+              label="Senha"
+              value={loginPassword}
+              onChange={setLoginPassword}
+              autoComplete="current-password"
+              maxLength={MAX_PASSWORD_LENGTH}
+              required
+            />
 
             {loginError && <p className="alert error">{loginError}</p>}
             {loginInfo && <p className="alert success">{loginInfo}</p>}
 
-            <div className="button-row">
+            <div className="button-row login-actions">
               <button type="button" className="ghost-button" onClick={handleResetPassword}>
                 Esqueci minha senha
               </button>
@@ -2306,6 +2306,58 @@ type PasswordFormProps = {
   onCancel?: () => void;
 };
 
+type PasswordInputProps = {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  autoComplete: string;
+  maxLength: number;
+  minLength?: number;
+  required?: boolean;
+};
+
+function PasswordInput({
+  id,
+  label,
+  value,
+  onChange,
+  autoComplete,
+  maxLength,
+  minLength,
+  required = false,
+}: PasswordInputProps) {
+  const [visible, setVisible] = useState(false);
+  const toggleLabel = visible ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`;
+
+  return (
+    <div className="password-field">
+      <label htmlFor={id}>{label}</label>
+      <div className="password-input-control">
+        <input
+          id={id}
+          type={visible ? 'text' : 'password'}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          autoComplete={autoComplete}
+          minLength={minLength}
+          maxLength={maxLength}
+          required={required}
+        />
+        <button
+          type="button"
+          className="password-visibility-button"
+          onClick={() => setVisible((current) => !current)}
+          aria-label={toggleLabel}
+          title={toggleLabel}
+        >
+          {visible ? <EyeOff size={17} /> : <Eye size={17} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PasswordForm({ session, forced = false, onChanged, onCancel }: PasswordFormProps) {
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -2348,30 +2400,26 @@ function PasswordForm({ session, forced = false, onChanged, onCancel }: Password
         </p>
       )}
 
-      <label>
-        Senha atual
-        <input
-          type="password"
-          value={senhaAtual}
-          onChange={(event) => setSenhaAtual(event.target.value)}
-          autoComplete="current-password"
-          maxLength={MAX_PASSWORD_LENGTH}
-          required
-        />
-      </label>
+      <PasswordInput
+        id="current-password"
+        label="Senha atual"
+        value={senhaAtual}
+        onChange={setSenhaAtual}
+        autoComplete="current-password"
+        maxLength={MAX_PASSWORD_LENGTH}
+        required
+      />
 
-      <label>
-        Nova senha
-        <input
-          type="password"
-          value={novaSenha}
-          onChange={(event) => setNovaSenha(event.target.value)}
-          autoComplete="new-password"
-          minLength={8}
-          maxLength={MAX_PASSWORD_LENGTH}
-          required
-        />
-      </label>
+      <PasswordInput
+        id="new-password"
+        label="Nova senha"
+        value={novaSenha}
+        onChange={setNovaSenha}
+        autoComplete="new-password"
+        minLength={8}
+        maxLength={MAX_PASSWORD_LENGTH}
+        required
+      />
 
       <div className={`password-strength strength-${passwordStrength.score}`} aria-live="polite">
         <div className="strength-track">
@@ -2380,18 +2428,16 @@ function PasswordForm({ session, forced = false, onChanged, onCancel }: Password
         <span>Forca da senha: {passwordStrength.label}</span>
       </div>
 
-      <label>
-        Confirmar nova senha
-        <input
-          type="password"
-          value={confirmacao}
-          onChange={(event) => setConfirmacao(event.target.value)}
-          autoComplete="new-password"
-          minLength={8}
-          maxLength={MAX_PASSWORD_LENGTH}
-          required
-        />
-      </label>
+      <PasswordInput
+        id="confirm-password"
+        label="Confirmar nova senha"
+        value={confirmacao}
+        onChange={setConfirmacao}
+        autoComplete="new-password"
+        minLength={8}
+        maxLength={MAX_PASSWORD_LENGTH}
+        required
+      />
 
       {error && <p className="alert error">{error}</p>}
 
