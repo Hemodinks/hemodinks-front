@@ -158,11 +158,18 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /abrir usuarios/i }));
 
-    expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
+    const userRow = (await screen.findByText('Ana Hemodinks')).closest('tr')!;
     expect(screen.getByAltText('Foto de Ana Hemodinks')).toBeInTheDocument();
     expect(screen.getByAltText('Foto de George Marcone')).toBeInTheDocument();
-    expect(screen.getByText('+55 (81) 99999-9999')).toBeInTheDocument();
+    expect(within(userRow).queryByText('+55 (81) 99999-9999')).not.toBeInTheDocument();
+    expect(within(userRow).queryByText('529.982.247-25')).not.toBeInTheDocument();
     expect(api.getUsers).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '' });
+
+    await user.click(within(userRow).getByLabelText('Contato de Ana Hemodinks'));
+
+    const contactDialog = screen.getByRole('dialog', { name: 'Ana Hemodinks' });
+    expect(within(contactDialog).getByText('ana@hemodinks.com')).toBeInTheDocument();
+    expect(within(contactDialog).getByText('+55 (81) 99999-9999')).toBeInTheDocument();
 
     const storedSession = JSON.parse(localStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
     expect(storedSession.token).toBe('jwt-token');
@@ -455,6 +462,13 @@ describe('App', () => {
 
   it('abre popup de informacoes, preenche o formulario ao editar e exclui usuario', async () => {
     const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+
     mockSession();
     vi.mocked(api.updateUser).mockResolvedValue(baseUser);
     vi.mocked(api.deleteUser).mockResolvedValue(undefined);
@@ -475,6 +489,18 @@ describe('App', () => {
     expect(within(infoDialog).getByText('01/01/1990')).toBeInTheDocument();
     expect(within(infoDialog).getByText('Senha alterada')).toBeInTheDocument();
     expect(within(infoDialog).getByText('Ativo')).toBeInTheDocument();
+    await user.click(within(infoDialog).getByRole('button', { name: /copiar cpf/i }));
+    expect(writeText).toHaveBeenCalledWith('529.982.247-25');
+    await user.click(screen.getByTitle('Fechar'));
+
+    await user.click(within(tableRow).getByLabelText('Contato de Ana Hemodinks'));
+
+    const contactDialog = screen.getByRole('dialog', { name: 'Ana Hemodinks' });
+    expect(within(contactDialog).getByText('Email')).toBeInTheDocument();
+    expect(within(contactDialog).getByText('Telefone')).toBeInTheDocument();
+    expect(within(contactDialog).getByText('ana@hemodinks.com')).toBeInTheDocument();
+    await user.click(within(contactDialog).getByRole('button', { name: /copiar email/i }));
+    expect(writeText).toHaveBeenCalledWith('ana@hemodinks.com');
     await user.click(screen.getByTitle('Fechar'));
 
     await user.click(within(tableRow).getByTitle('Editar'));
@@ -505,9 +531,11 @@ describe('App', () => {
       email: `usuario${index + 1}@hemodinks.com`,
       telefone: '+5581999999999',
     }));
+    vi.mocked(api.getUsers).mockReset();
     vi.mocked(api.getUsers)
       .mockResolvedValueOnce(paged(allUsers.slice(0, 10), 1, 10, 12))
-      .mockResolvedValueOnce(paged(allUsers.slice(10), 2, 10, 12));
+      .mockResolvedValueOnce(paged(allUsers.slice(10), 2, 10, 12))
+      .mockResolvedValue(paged(allUsers.slice(10), 2, 10, 12));
 
     render(<App />);
 
