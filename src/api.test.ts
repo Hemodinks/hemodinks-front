@@ -9,6 +9,7 @@ import {
   deleteUser,
   getPacientes,
   getUsers,
+  resetPassword,
   updatePaciente,
   updateUser,
   uploadPacienteArquivo,
@@ -153,6 +154,7 @@ describe('api client', () => {
       .mockResolvedValueOnce(jsonResponse({ id: 1 }))
       .mockResolvedValueOnce(jsonResponse({ id: 1 }))
       .mockResolvedValueOnce(jsonResponse({ id: 1, precisaTrocarSenha: false, message: 'Senha alterada com sucesso' }))
+      .mockResolvedValueOnce(jsonResponse({ id: 1, precisaTrocarSenha: true, message: 'Senha resetada para a senha padrao' }))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
 
     const payload = {
@@ -169,6 +171,7 @@ describe('api client', () => {
     await createUser(payload, 'jwt-token');
     await updateUser(1, payload, 'jwt-token');
     await changePassword(1, { senhaAtual: 'Senha@123', novaSenha: 'NovaSenha@123' }, 'jwt-token');
+    await resetPassword('ana@hemodinks.com');
     await expect(deleteUser(1, 'jwt-token')).resolves.toBeUndefined();
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:5000/api/users/', {
@@ -195,7 +198,14 @@ describe('api client', () => {
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://localhost:5000/api/users/1', {
+    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://localhost:5000/api/users/password/reset', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'ana@hemodinks.com' }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://localhost:5000/api/users/1', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

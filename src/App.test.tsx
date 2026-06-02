@@ -20,6 +20,7 @@ vi.mock('./api', () => ({
   updateUser: vi.fn(),
   deleteUser: vi.fn(),
   changePassword: vi.fn(),
+  resetPassword: vi.fn(),
 }));
 
 const SESSION_KEY = 'hemodinks.session';
@@ -133,6 +134,11 @@ describe('App', () => {
       perfilId: 1,
       perfilNome: 'Administrador',
     });
+    vi.mocked(api.resetPassword).mockResolvedValue({
+      id: 99,
+      precisaTrocarSenha: true,
+      message: 'Senha resetada para a senha padrao',
+    });
 
     render(<App />);
 
@@ -214,6 +220,10 @@ describe('App', () => {
 
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
+
+    await waitFor(() => {
+      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com');
+    });
 
     expect(screen.getByLabelText('Senha')).toHaveValue('Senha@123');
 

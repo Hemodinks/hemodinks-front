@@ -48,6 +48,7 @@ import {
   getPaciente,
   getPacientes,
   getUsers,
+  resetPassword,
   updatePaciente,
   updateUser,
   uploadPacienteArquivo,
@@ -517,6 +518,7 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
   const [loginInfo, setLoginInfo] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
 
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
   const [dashboardError, setDashboardError] = useState('');
@@ -573,7 +575,7 @@ export default function App() {
     setSession(nextSession);
   };
 
-  const isBusy = loginLoading || usersLoading || formLoading || pacientesLoading || pacienteFormLoading;
+  const isBusy = loginLoading || resetPasswordLoading || usersLoading || formLoading || pacientesLoading || pacienteFormLoading;
 
   const logout = () => {
     localStorage.removeItem(SESSION_KEY);
@@ -788,7 +790,7 @@ export default function App() {
     }
   };
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     setLoginError('');
     setLoginInfo('');
 
@@ -797,8 +799,17 @@ export default function App() {
       return;
     }
 
-    setLoginPassword(DEFAULT_PASSWORD);
-    setLoginInfo(`Senha redefinida para ${DEFAULT_PASSWORD}. Use-a para entrar e altere a seguir.`);
+    setResetPasswordLoading(true);
+
+    try {
+      await resetPassword(loginEmail.trim());
+      setLoginPassword(DEFAULT_PASSWORD);
+      setLoginInfo(`Senha redefinida para ${DEFAULT_PASSWORD}. Use-a para entrar e altere a seguir.`);
+    } catch (error) {
+      setLoginError(getErrorMessage(error));
+    } finally {
+      setResetPasswordLoading(false);
+    }
   };
 
   const resetUserForm = () => {
@@ -1228,8 +1239,8 @@ export default function App() {
             {loginInfo && <p className="alert success">{loginInfo}</p>}
 
             <div className="button-row login-actions">
-              <button type="button" className="ghost-button" onClick={handleResetPassword}>
-                Esqueci minha senha
+              <button type="button" className="ghost-button" onClick={() => void handleResetPassword()} disabled={resetPasswordLoading}>
+                {resetPasswordLoading ? 'Resetando...' : 'Esqueci minha senha'}
               </button>
               <button className="primary-action" type="submit" disabled={loginLoading}>
                 <LogIn size={18} />

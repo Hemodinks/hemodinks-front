@@ -128,6 +128,13 @@ export function changePassword(id: number, payload: ChangePasswordPayload, token
   }, token);
 }
 
+export function resetPassword(email: string) {
+  return request<{ id: number; precisaTrocarSenha: boolean; message: string }>('/api/users/password/reset', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
 export function getPacientes(token: string, query?: ListQuery) {
   return request<PagedResult<Paciente>>(`/api/pacientes/${toQueryString(query)}`, {}, token);
 }
