@@ -1,5 +1,7 @@
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
 import {
+  ArrowRight,
+  Bell,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -9,6 +11,7 @@ import {
   ClipboardList,
   FileText,
   FileUp,
+  GripVertical,
   Info,
   ImagePlus,
   KeyRound,
@@ -122,6 +125,10 @@ const emptyPacienteForm: PacienteFormData = {
 type Theme = 'light' | 'dark';
 type AppView = 'dashboard' | 'users' | 'patients';
 type ModuleMode = 'list' | 'form';
+type BreadcrumbItem = {
+  label: string;
+  onClick?: () => void;
+};
 
 function loadStoredSession(): AuthSession | null {
   const rawSession = localStorage.getItem(SESSION_KEY);
@@ -761,7 +768,7 @@ export default function App() {
           email: result.email,
           cpf: result.cpf ?? null,
           fotoPerfil: result.fotoPerfil ?? null,
-          precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
+          precisaTrocarSenha: result.precisaTrocarSenha ?? loginPassword === DEFAULT_PASSWORD,
           perfilId: result.perfilId || DEFAULT_PROFILE_ID,
           perfilNome: result.perfilNome || getProfileName(result.perfilId || DEFAULT_PROFILE_ID),
         },
@@ -1255,62 +1262,94 @@ export default function App() {
     );
   }
 
+  const currentUserProfile = session.user.perfilNome || getProfileName(session.user.perfilId);
+  const formBreadcrumbLabel = activeView === 'users'
+    ? editingId ? 'Editar usuario' : 'Novo usuario'
+    : editingPacienteId ? 'Editar paciente' : 'Novo paciente';
+  const activeModuleLabel = activeView === 'users' ? 'Usuarios' : 'Pacientes';
+  const openActiveModuleList = activeView === 'users' ? openUsersList : openPatientsList;
+  const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
+    ? [
+      { label: 'Inicio', onClick: openDashboard },
+      { label: 'Painel inicial' },
+    ]
+    : [
+      { label: 'Inicio', onClick: openDashboard },
+      {
+        label: activeModuleLabel,
+        onClick: moduleMode === 'form' ? openActiveModuleList : undefined,
+      },
+      ...(moduleMode === 'form' ? [{ label: formBreadcrumbLabel }] : []),
+    ];
+
   return (
     <main className="app-shell">
       <LoadingOverlay active={isBusy} />
       <TechCredit />
       <header className="topbar">
         <div className="topbar-brand">
-          <img src={brandImage} alt="Hemodinks" className="topbar-logo" />
           <div>
             <span className="eyebrow">Hemodinks</span>
             <h1>{appTitle}</h1>
+            <Breadcrumbs items={breadcrumbItems} />
           </div>
         </div>
 
-        <div className="topbar-actions">
-          <div className="current-user" aria-label="Usuario logado">
+        <div className="topbar-right">
+          <div className="current-user topbar-user" aria-label="Usuario logado">
             <UserAvatar name={session.user.nome} photo={session.user.fotoPerfil} size="sm" />
-            <div className="current-user-copy">
-              <span className="current-user-name">{session.user.nome}</span>
-              <span className="current-user-meta">
-                {session.user.perfilNome || getProfileName(session.user.perfilId)} | {session.user.email}
-              </span>
+            <span className="current-user-name">{session.user.nome}</span>
+          </div>
+
+          <div className="topbar-actions">
+            <div className="topbar-info-panel notification-chip" aria-label="Resumo rapido">
+              <Bell size={17} />
+              <span className="notification-label">Notificacoes</span>
+              <span className="notification-count">{pendingPaymentsCount}</span>
             </div>
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            <button type="button" className="ghost-button" onClick={() => setShowPasswordModal(true)}>
+              <KeyRound size={17} />
+              Alterar senha
+            </button>
+            <button type="button" className="ghost-button logout-button" onClick={logout}>
+              <LogOut size={18} />
+              Sair
+            </button>
           </div>
-          <div className="topbar-info-panel" aria-label="Resumo rapido">
-            <span>
-              <Users size={15} />
-              {usersCount}
-            </span>
-            <span>
-              <ClipboardList size={15} />
-              {pacientesCount}
-            </span>
-          </div>
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
-          <button type="button" className="ghost-button" onClick={() => setShowPasswordModal(true)}>
-            <KeyRound size={17} />
-            Mudar senha
-          </button>
-          <button type="button" className="icon-button" onClick={logout} title="Sair">
-            <LogOut size={18} />
-          </button>
         </div>
       </header>
 
       <div className="app-layout">
-        <aside className="sidebar-panel" aria-label="Navegacao principal">
+        <aside className="sidebar-panel" aria-label="Sessao ativa">
           <div className="sidebar-card">
-            <span className="eyebrow">Menu</span>
-            <nav className="side-nav" role="tablist" aria-label="Modulo">
+            <div className="sidebar-heading">
+              <span className="eyebrow">Painel</span>
+              <h2>Sessao ativa</h2>
+            </div>
+
+            <div className="session-card">
+              <span className="session-label">Usuario</span>
+              <div className="session-user-row">
+                <UserAvatar name={session.user.nome} photo={session.user.fotoPerfil} size="sm" decorative />
+                <strong>{session.user.nome}</strong>
+              </div>
+            </div>
+
+            <div className="session-card">
+              <span className="session-label">Perfil</span>
+              <strong>{currentUserProfile}</strong>
+              <span className="session-meta">{currentUserProfile} | {session.user.email}</span>
+            </div>
+
+            <nav className="side-nav" role="tablist" aria-label="Navegacao principal">
               <button
                 type="button"
                 className={activeView === 'dashboard' ? 'active' : ''}
                 onClick={openDashboard}
               >
                 <LayoutDashboard size={18} />
-                Painel
+                <span>Painel</span>
               </button>
               <button
                 type="button"
@@ -1318,7 +1357,8 @@ export default function App() {
                 onClick={openUsersList}
               >
                 <Users size={18} />
-                Usuarios
+                <span>Usuarios</span>
+                <span className="side-nav-count">{usersCount}</span>
               </button>
               <button
                 type="button"
@@ -1326,20 +1366,48 @@ export default function App() {
                 onClick={openPatientsList}
               >
                 <ClipboardList size={18} />
-                Pacientes
+                <span>Pacientes</span>
+                <span className="side-nav-count">{pacientesCount}</span>
               </button>
             </nav>
           </div>
         </aside>
 
-        <div className="app-content">
+        <div className={`app-content ${activeView === 'dashboard' ? 'dashboard-content' : ''}`}>
       {activeView === 'dashboard' ? (
         <section className="dashboard-workspace">
           <div className="dashboard-header">
             <div>
               <span className="eyebrow">Modulos</span>
-              <h2>Funcionalidades</h2>
+              <h2>Cadastros Hemodinks</h2>
             </div>
+          </div>
+
+          {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
+          {dashboardError && <p className="alert error">{dashboardError}</p>}
+
+          <div className="module-grid">
+            <button type="button" className="module-card" onClick={openUsersList} aria-label="Abrir usuarios">
+              <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
+              <span className="module-icon"><Users size={24} /></span>
+              <span className="module-title">Usuarios</span>
+              <span className="module-metric">Gerenciar usuarios</span>
+              <span className="module-card-foot">
+                <span>{usersCount} cadastrados</span>
+                <ArrowRight size={20} />
+              </span>
+            </button>
+
+            <button type="button" className="module-card" onClick={openPatientsList} aria-label="Abrir pacientes">
+              <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
+              <span className="module-icon"><ClipboardList size={24} /></span>
+              <span className="module-title">Pacientes</span>
+              <span className="module-metric">Administrar atendimentos</span>
+              <span className="module-card-foot">
+                <span>{pacientesCount} cadastrados</span>
+                <ArrowRight size={20} />
+              </span>
+            </button>
           </div>
 
           <section className="dashboard-info-panel" aria-label="Painel informativo">
@@ -1371,23 +1439,6 @@ export default function App() {
               </div>
             </div>
           </section>
-
-          {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
-          {dashboardError && <p className="alert error">{dashboardError}</p>}
-
-          <div className="module-grid">
-            <button type="button" className="module-card" onClick={openUsersList} aria-label="Abrir usuarios">
-              <span className="module-icon"><Users size={24} /></span>
-              <span className="module-title">Usuarios</span>
-              <span className="module-metric">{usersCount} cadastrados</span>
-            </button>
-
-            <button type="button" className="module-card" onClick={openPatientsList} aria-label="Abrir pacientes">
-              <span className="module-icon"><ClipboardList size={24} /></span>
-              <span className="module-title">Pacientes</span>
-              <span className="module-metric">{pacientesCount} cadastrados</span>
-            </button>
-          </div>
         </section>
       ) : activeView === 'users' ? (
       <section className="workspace">
@@ -2099,6 +2150,33 @@ function ThemeToggle({ theme, onToggle, floating = false }: ThemeToggleProps) {
   );
 }
 
+function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
+  return (
+    <nav className="breadcrumbs" aria-label="Breadcrumbs">
+      <ol>
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+
+          return (
+            <li key={`${item.label}-${index}`}>
+              {item.onClick && !isLast ? (
+                <button type="button" className="breadcrumb-button" onClick={item.onClick}>
+                  {item.label}
+                </button>
+              ) : (
+                <span className="breadcrumb-current" aria-current={isLast ? 'page' : undefined}>
+                  {item.label}
+                </span>
+              )}
+              {!isLast && <ChevronRight size={14} aria-hidden="true" />}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
 type DateInputProps = {
   id: string;
   label: string;
@@ -2141,15 +2219,28 @@ type UserAvatarProps = {
   name: string;
   photo?: string | null;
   size?: 'sm' | 'lg';
+  decorative?: boolean;
 };
 
-function UserAvatar({ name, photo, size = 'sm' }: UserAvatarProps) {
+function UserAvatar({ name, photo, size = 'sm', decorative = false }: UserAvatarProps) {
   if (photo) {
-    return <img className={`user-avatar ${size}`} src={photo} alt={`Foto de ${name}`} />;
+    return (
+      <img
+        className={`user-avatar ${size}`}
+        src={photo}
+        alt={decorative ? '' : `Foto de ${name}`}
+        aria-hidden={decorative ? true : undefined}
+      />
+    );
   }
 
   return (
-    <span className={`user-avatar fallback ${size}`} aria-label={`Sem foto de ${name}`} title={name}>
+    <span
+      className={`user-avatar fallback ${size}`}
+      aria-hidden={decorative ? true : undefined}
+      aria-label={decorative ? undefined : `Sem foto de ${name}`}
+      title={name}
+    >
       {getUserInitials(name)}
     </span>
   );
