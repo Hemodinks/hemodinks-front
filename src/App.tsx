@@ -501,6 +501,7 @@ export default function App() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [loginInfo, setLoginInfo] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
@@ -556,6 +557,8 @@ export default function App() {
     localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
     setSession(nextSession);
   };
+
+  const isBusy = loginLoading || usersLoading || formLoading || pacientesLoading || pacienteFormLoading;
 
   const logout = () => {
     localStorage.removeItem(SESSION_KEY);
@@ -739,6 +742,7 @@ export default function App() {
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoginError('');
+    setLoginInfo('');
 
     if (!isValidEmail(loginEmail)) {
       setLoginError('Informe um email valido.');
@@ -757,7 +761,7 @@ export default function App() {
           email: result.email,
           cpf: result.cpf ?? null,
           fotoPerfil: result.fotoPerfil ?? null,
-          precisaTrocarSenha: result.precisaTrocarSenha,
+          precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
           perfilId: result.perfilId || DEFAULT_PROFILE_ID,
           perfilNome: result.perfilNome || getProfileName(result.perfilId || DEFAULT_PROFILE_ID),
         },
@@ -767,6 +771,19 @@ export default function App() {
     } finally {
       setLoginLoading(false);
     }
+  };
+
+  const handleResetPassword = () => {
+    setLoginError('');
+    setLoginInfo('');
+
+    if (!isValidEmail(loginEmail)) {
+      setLoginError('Informe um email valido para resetar a senha.');
+      return;
+    }
+
+    setLoginPassword(DEFAULT_PASSWORD);
+    setLoginInfo(`Senha redefinida para ${DEFAULT_PASSWORD}. Use-a para entrar e altere a seguir.`);
   };
 
   const resetUserForm = () => {
@@ -1157,6 +1174,7 @@ export default function App() {
   if (!session) {
     return (
       <main className="auth-screen">
+        <LoadingOverlay active={isBusy} />
         <TechCredit />
         <ThemeToggle theme={theme} onToggle={toggleTheme} floating />
         <section className="auth-panel">
@@ -1194,11 +1212,17 @@ export default function App() {
             </label>
 
             {loginError && <p className="alert error">{loginError}</p>}
+            {loginInfo && <p className="alert success">{loginInfo}</p>}
 
-            <button className="primary-action" type="submit" disabled={loginLoading}>
-              <LogIn size={18} />
-              {loginLoading ? 'Entrando...' : 'Entrar'}
-            </button>
+            <div className="button-row">
+              <button type="button" className="ghost-button" onClick={handleResetPassword}>
+                Esqueci minha senha
+              </button>
+              <button className="primary-action" type="submit" disabled={loginLoading}>
+                <LogIn size={18} />
+                {loginLoading ? 'Entrando...' : 'Entrar'}
+              </button>
+            </div>
           </form>
         </section>
       </main>
@@ -1208,6 +1232,7 @@ export default function App() {
   if (session.user.precisaTrocarSenha) {
     return (
       <main className="auth-screen compact">
+        <LoadingOverlay active={isBusy} />
         <TechCredit />
         <ThemeToggle theme={theme} onToggle={toggleTheme} floating />
         <section className="auth-panel password-required">
@@ -1232,6 +1257,7 @@ export default function App() {
 
   return (
     <main className="app-shell">
+      <LoadingOverlay active={isBusy} />
       <TechCredit />
       <header className="topbar">
         <div className="topbar-brand">
@@ -2287,5 +2313,23 @@ function PasswordForm({ session, forced = false, onChanged, onCancel }: Password
         </button>
       </div>
     </form>
+  );
+}
+
+function LoadingOverlay({ active }: { active: boolean }) {
+  if (!active) {
+    return null;
+  }
+
+  return (
+    <div className="loading-overlay" aria-live="polite">
+      <div className="loading-overlay-panel">
+        <span className="loading-spinner" aria-hidden="true" />
+        <div>
+          <strong>Aguarde...</strong>
+          <span>Processando sua solicitação.</span>
+        </div>
+      </div>
+    </div>
   );
 }
