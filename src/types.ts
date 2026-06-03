@@ -11,6 +11,17 @@ export type User = {
   precisaTrocarSenha: boolean;
   perfilId: number;
   perfilNome: string;
+  arquivosCount?: number;
+  arquivos?: UserArquivo[];
+};
+
+export type UserArquivo = {
+  id: number;
+  nomeOriginal: string;
+  contentType: string;
+  tamanhoBytes: number;
+  url: string;
+  dataUpload: string;
 };
 
 export type PagedResult<T> = {

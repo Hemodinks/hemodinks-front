@@ -7,12 +7,15 @@ import {
   deletePaciente,
   deletePacienteArquivo,
   deleteUser,
+  deleteUserArquivo,
+  getUser,
   getPacientes,
   getUsers,
   resetPassword,
   updatePaciente,
   updateUser,
   uploadPacienteArquivo,
+  uploadUserArquivo,
 } from './api';
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -206,6 +209,38 @@ describe('api client', () => {
       },
     });
     expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://localhost:5000/api/users/1', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+  });
+
+  it('monta as chamadas de documentos do cadastro medico', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ id: 2, arquivos: [] }))
+      .mockResolvedValueOnce(jsonResponse({ id: 7, nomeOriginal: 'crm.pdf' }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await getUser(2, 'jwt-token');
+    await uploadUserArquivo(2, new File(['crm'], 'crm.pdf', { type: 'application/pdf' }), 'jwt-token');
+    await expect(deleteUserArquivo(2, 7, 'jwt-token')).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:5000/api/users/2', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:5000/api/users/2/arquivos', expect.objectContaining({
+      method: 'POST',
+      body: expect.any(FormData),
+      headers: {
+        Authorization: 'Bearer jwt-token',
+      },
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://localhost:5000/api/users/2/arquivos/7', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
