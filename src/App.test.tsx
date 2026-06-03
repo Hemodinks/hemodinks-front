@@ -74,6 +74,11 @@ function paged<T>(items: T[], page = 1, pageSize = 10, totalItems = items.length
   };
 }
 
+function getVisibleFirstColumnValues() {
+  const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+  return rows.map((row) => within(row).getAllByRole('cell')[0].textContent?.trim() ?? '');
+}
+
 function mockSession(overrides?: Partial<AuthSession['user']>) {
   const session: AuthSession = {
     token: 'jwt-token',
@@ -476,6 +481,43 @@ describe('App', () => {
     expect(screen.queryByText('Ana Hemodinks')).not.toBeInTheDocument();
   });
 
+  it('ordena usuarios por registro recente e nome', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    vi.mocked(api.getUsers).mockResolvedValue(paged([
+      {
+        ...baseUser,
+        id: 3,
+        nome: 'Carlos Antigo',
+        email: 'carlos@hemodinks.com',
+        dataCadastro: '2026-05-20T09:00:00Z',
+        dataAtualizacao: '2026-05-21T09:00:00Z',
+      },
+      {
+        ...baseUser,
+        id: 2,
+        nome: 'Bruno Recente',
+        email: 'bruno@hemodinks.com',
+        dataCadastro: '2026-06-01T09:00:00Z',
+        dataAtualizacao: '2026-06-03T09:00:00Z',
+      },
+      {
+        ...baseUser,
+        id: 1,
+        nome: 'Ana Recente',
+        email: 'ana.recente@hemodinks.com',
+        dataCadastro: '2026-06-01T08:00:00Z',
+        dataAtualizacao: '2026-06-03T09:00:00Z',
+      },
+    ]));
+
+    render(<App />);
+
+    await openUsersModule(user);
+    expect(await screen.findByText('Ana Recente')).toBeInTheDocument();
+    expect(getVisibleFirstColumnValues()).toEqual(['Ana Recente', 'Bruno Recente', 'Carlos Antigo']);
+  });
+
   it('lista e cadastra pacientes', async () => {
     const user = userEvent.setup();
     mockSession();
@@ -532,6 +574,47 @@ describe('App', () => {
       ativo: true,
     }, 'jwt-token');
     expect(await screen.findByText('Paciente cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
+  });
+
+  it('ordena pacientes por registro recente e nome', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
+    vi.mocked(api.getPacientes).mockResolvedValue(paged([
+      {
+        ...basePaciente,
+        id: 13,
+        nomePaciente: 'Zelia Antiga',
+        email: 'zelia@hemodinks.com',
+        cpf: '93541134780',
+        fotoPerfil: 'data:image/png;base64,zelia',
+        dataAtualizacao: '2026-05-20T09:00:00Z',
+      },
+      {
+        ...basePaciente,
+        id: 12,
+        nomePaciente: 'Bruno Recente',
+        email: 'bruno.paciente@hemodinks.com',
+        cpf: '52998224725',
+        fotoPerfil: 'data:image/png;base64,bruno',
+        dataAtualizacao: '2026-06-03T09:00:00Z',
+      },
+      {
+        ...basePaciente,
+        id: 11,
+        nomePaciente: 'Ana Recente',
+        email: 'ana.paciente@hemodinks.com',
+        cpf: '11144477735',
+        fotoPerfil: 'data:image/png;base64,ana',
+        dataAtualizacao: '2026-06-03T09:00:00Z',
+      },
+    ]));
+
+    render(<App />);
+
+    await openPatientsModule(user);
+    expect(await screen.findByText('Ana Recente')).toBeInTheDocument();
+    expect(getVisibleFirstColumnValues()).toEqual(['Ana Recente', 'Bruno Recente', 'Zelia Antiga']);
   });
 
   it('abre popup de informacoes, preenche o formulario ao editar e exclui usuario', async () => {

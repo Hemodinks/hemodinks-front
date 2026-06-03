@@ -531,6 +531,61 @@ function getPagedTotalPages<T>(result: { totalPages: number } | T[]) {
   return Array.isArray(result) ? Math.max(1, Math.ceil(result.length / PAGE_SIZE)) : result.totalPages;
 }
 
+const listingNameCollator = new Intl.Collator('pt-BR', {
+  numeric: true,
+  sensitivity: 'base',
+});
+
+const updateDateFields = ['dataAtualizacao', 'dataAlteracao', 'updatedAt', 'modifiedAt'] as const;
+const creationDateFields = ['dataCadastro', 'dataCriacao', 'createdAt'] as const;
+
+function getDateFieldTime(item: Record<string, unknown>, fields: readonly string[]) {
+  return fields.reduce((latest, field) => {
+    const value = item[field];
+
+    if (typeof value !== 'string' || !value) {
+      return latest;
+    }
+
+    const time = new Date(value).getTime();
+    return Number.isNaN(time) ? latest : Math.max(latest, time);
+  }, 0);
+}
+
+function getRecordActivityTime(item: Record<string, unknown> & { id: number }) {
+  const updatedTime = getDateFieldTime(item, updateDateFields);
+  const createdTime = getDateFieldTime(item, creationDateFields);
+  return Math.max(updatedTime, createdTime) || item.id;
+}
+
+function compareByRecentActivityThenName<T extends Record<string, unknown> & { id: number }>(
+  first: T,
+  second: T,
+  getName: (item: T) => string,
+) {
+  const activityDiff = getRecordActivityTime(second) - getRecordActivityTime(first);
+
+  if (activityDiff !== 0) {
+    return activityDiff;
+  }
+
+  const nameDiff = listingNameCollator.compare(getName(first), getName(second));
+
+  if (nameDiff !== 0) {
+    return nameDiff;
+  }
+
+  return second.id - first.id;
+}
+
+function sortUsersForListing(items: User[]) {
+  return [...items].sort((first, second) => compareByRecentActivityThenName(first, second, (user) => user.nome));
+}
+
+function sortPacientesForListing(items: Paciente[]) {
+  return [...items].sort((first, second) => compareByRecentActivityThenName(first, second, (paciente) => paciente.nomePaciente));
+}
+
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => loadStoredSession());
   const [theme, setTheme] = useState<Theme>(() => loadStoredTheme());
@@ -706,7 +761,7 @@ export default function App() {
         pageSize: PAGE_SIZE,
         search,
       });
-      setUsers(getPagedItems(result));
+      setUsers(sortUsersForListing(getPagedItems(result)));
       setUsersTotalItems(getPagedTotal(result));
       setUsersTotalPages(getPagedTotalPages(result));
     } catch (error) {
@@ -751,7 +806,7 @@ export default function App() {
         pageSize: PAGE_SIZE,
         search,
       });
-      setPacientes(getPagedItems(result));
+      setPacientes(sortPacientesForListing(getPagedItems(result)));
       setPacientesTotalItems(getPagedTotal(result));
       setPacientesTotalPages(getPagedTotalPages(result));
     } catch (error) {
@@ -792,22 +847,30 @@ export default function App() {
   );
 
   useEffect(() => {
+    if (searchTerm === debouncedSearchTerm) {
+      return undefined;
+    }
+
     const timeoutId = window.setTimeout(() => {
       setCurrentPage(1);
       setDebouncedSearchTerm(searchTerm);
     }, 300);
 
     return () => window.clearTimeout(timeoutId);
-  }, [searchTerm]);
+  }, [searchTerm, debouncedSearchTerm]);
 
   useEffect(() => {
+    if (pacienteSearchTerm === debouncedPacienteSearchTerm) {
+      return undefined;
+    }
+
     const timeoutId = window.setTimeout(() => {
       setPacienteCurrentPage(1);
       setDebouncedPacienteSearchTerm(pacienteSearchTerm);
     }, 300);
 
     return () => window.clearTimeout(timeoutId);
-  }, [pacienteSearchTerm]);
+  }, [pacienteSearchTerm, debouncedPacienteSearchTerm]);
 
   useEffect(() => {
     if (session && !session.user.precisaTrocarSenha && canAccessUsers && activeView === 'users' && moduleMode === 'list') {
@@ -1164,6 +1227,7 @@ export default function App() {
 
       setPacienteSuccessMessage(editingPacienteId ? 'Paciente atualizado.' : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
       resetPacienteForm();
+      setPacienteCurrentPage(1);
       setModuleMode('list');
       await loadDashboardSummary(session.token);
     } catch (error) {
@@ -1302,6 +1366,7 @@ export default function App() {
       }
 
       resetUserForm();
+      setCurrentPage(1);
       setModuleMode('list');
       if (!isAdmin) {
         setActiveView('dashboard');
