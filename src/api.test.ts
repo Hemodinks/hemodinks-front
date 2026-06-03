@@ -8,6 +8,7 @@ import {
   deletePacienteArquivo,
   deleteUser,
   deleteUserArquivo,
+  getDashboardNotifications,
   getUser,
   getPacientes,
   getUsers,
@@ -65,6 +66,19 @@ describe('api client', () => {
     await getUsers('jwt-token');
 
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/users/', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+  });
+
+  it('busca notificacoes do dashboard com token bearer', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse([]));
+
+    await getDashboardNotifications('jwt-token');
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/dashboard/notifications', {
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
