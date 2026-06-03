@@ -623,10 +623,10 @@ select:focus {
 
 .brand-kicker {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 5px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 7px;
 }
 
 .company-name,
@@ -643,6 +643,9 @@ select:focus {
 
 .product-name {
   color: var(--teal);
+  min-height: 20px;
+  font-size: 0.92rem;
+  font-weight: 950;
 }
 
 .topbar-brand h1 {
