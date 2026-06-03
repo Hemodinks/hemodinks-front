@@ -6,6 +6,12 @@ export type User = {
   cpf?: string | null;
   fotoPerfil?: string | null;
   dataCadastro: string;
+  dataCriacao?: string | null;
+  dataAtualizacao?: string | null;
+  dataAlteracao?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  modifiedAt?: string | null;
   dataNascimento: string;
   ativo: boolean;
   precisaTrocarSenha: boolean;
@@ -108,6 +114,13 @@ export type Paciente = {
   id: number;
   userId: number;
   data?: string | null;
+  dataCadastro?: string | null;
+  dataCriacao?: string | null;
+  dataAtualizacao?: string | null;
+  dataAlteracao?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  modifiedAt?: string | null;
   nomePaciente: string;
   hospital?: string | null;
   medico?: string | null;
