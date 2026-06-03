@@ -1,5 +1,6 @@
 import type {
   ChangePasswordPayload,
+  DashboardNotification,
   DashboardSummary,
   ListQuery,
   LoginResponse,
@@ -96,6 +97,10 @@ export function authenticate(email: string, senha: string) {
 
 export function getDashboardSummary(token: string) {
   return request<DashboardSummary>('/api/dashboard/summary', {}, token);
+}
+
+export function getDashboardNotifications(token: string) {
+  return request<DashboardNotification[]>('/api/dashboard/notifications', {}, token);
 }
 
 export function getUsers(token: string, query?: ListQuery) {

@@ -48,6 +48,18 @@ export type DashboardSummary = {
   patientFilesCount: number;
 };
 
+export type DashboardNotification = {
+  id: number;
+  tipo: string;
+  titulo: string;
+  mensagem: string;
+  pacienteId: number;
+  nomePaciente: string;
+  medico?: string | null;
+  procedimento?: string | null;
+  data?: string | null;
+};
+
 export type LoginResponse = {
   id: number;
   nome: string;

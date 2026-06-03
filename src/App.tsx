@@ -11,6 +11,7 @@ import {
   CalendarDays,
   ClipboardList,
   Copy,
+  Download,
   Eye,
   EyeOff,
   FileText,
@@ -45,6 +46,7 @@ import {
   deletePacienteArquivo,
   deleteUser,
   deleteUserArquivo,
+  getDashboardNotifications,
   getDashboardSummary,
   getPaciente,
   getPacientes,
@@ -56,7 +58,7 @@ import {
   uploadPacienteArquivo,
   uploadUserArquivo,
 } from './api';
-import type { AuthSession, DashboardSummary, Paciente, PacienteFormData, User, UserFormData } from './types';
+import type { AuthSession, DashboardNotification, DashboardSummary, Paciente, PacienteFormData, User, UserFormData } from './types';
 import brandImage from '../imagem candidata hemodinks.jpg';
 
 const SESSION_KEY = 'hemodinks.session';
@@ -347,6 +349,20 @@ function toDisplayDate(value: string) {
   return `${day}/${month}/${year}`;
 }
 
+function toNotificationDate(value?: string | null) {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return toDisplayDate(value);
+  }
+
+  return new Intl.DateTimeFormat('pt-BR').format(date);
+}
+
 function parseDisplayDate(value: string) {
   const [day, month, year] = value.split('/');
   return `${year}-${month}-${day}`;
@@ -529,6 +545,10 @@ export default function App() {
 
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
   const [dashboardError, setDashboardError] = useState('');
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState('');
 
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -570,9 +590,20 @@ export default function App() {
   const [patientPhotoInputKey, setPatientPhotoInputKey] = useState(0);
   const [patientFileInputKey, setPatientFileInputKey] = useState(0);
   const [pendingPatientFiles, setPendingPatientFiles] = useState<File[]>([]);
+  const [selectedPatientInfo, setSelectedPatientInfo] = useState<Paciente | null>(null);
+  const [selectedPatientFiles, setSelectedPatientFiles] = useState<Paciente | null>(null);
+  const [patientFilesModalLoading, setPatientFilesModalLoading] = useState(false);
+  const [patientFilesModalError, setPatientFilesModalError] = useState('');
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+    if (theme === 'dark') {
+      document.documentElement.dataset.theme = 'dark';
+      document.documentElement.style.colorScheme = 'dark';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.documentElement.style.colorScheme = 'light';
+    }
+
     localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
@@ -602,6 +633,9 @@ export default function App() {
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
     setDashboardSummary(null);
+    setNotificationsOpen(false);
+    setNotifications([]);
+    setNotificationsError('');
     setUsers([]);
     setUsersTotalItems(0);
     setUsersTotalPages(1);
@@ -626,6 +660,31 @@ export default function App() {
       setDashboardSummary(result);
     } catch (error) {
       setDashboardError(getErrorMessage(error));
+    }
+  };
+
+  const handleToggleNotifications = async () => {
+    if (!session) {
+      return;
+    }
+
+    const nextOpen = !notificationsOpen;
+    setNotificationsOpen(nextOpen);
+
+    if (!nextOpen) {
+      return;
+    }
+
+    setNotificationsLoading(true);
+    setNotificationsError('');
+
+    try {
+      const result = await getDashboardNotifications(session.token);
+      setNotifications(result);
+    } catch (error) {
+      setNotificationsError(getErrorMessage(error));
+    } finally {
+      setNotificationsLoading(false);
     }
   };
 
@@ -724,6 +783,7 @@ export default function App() {
   const activePatientsCount = dashboardSummary?.activePatientsCount ?? 0;
   const pendingPaymentsCount = dashboardSummary?.pendingPaymentsCount ?? 0;
   const patientFilesCount = dashboardSummary?.patientFilesCount ?? 0;
+  const notificationCount = pendingPaymentsCount || notifications.length;
   const usersCount = dashboardSummary?.usersCount ?? usersTotalItems;
   const pacientesCount = dashboardSummary?.pacientesCount ?? pacientesTotalItems;
   const editingPaciente = useMemo(
@@ -1159,6 +1219,31 @@ export default function App() {
     }
   };
 
+  const handleOpenPacienteFiles = async (paciente: Paciente) => {
+    if (!session) {
+      return;
+    }
+
+    const filesCount = paciente.arquivosCount ?? paciente.arquivos.length;
+
+    if (!filesCount) {
+      return;
+    }
+
+    setSelectedPatientFiles(paciente);
+    setPatientFilesModalError('');
+    setPatientFilesModalLoading(true);
+
+    try {
+      const details = await getPaciente(paciente.id, session.token);
+      setSelectedPatientFiles(details);
+    } catch (error) {
+      setPatientFilesModalError(getErrorMessage(error));
+    } finally {
+      setPatientFilesModalLoading(false);
+    }
+  };
+
   const handleSubmitUser = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -1486,11 +1571,17 @@ export default function App() {
           </div>
 
           <div className="topbar-actions">
-            <div className="topbar-info-panel notification-chip" aria-label="Resumo rapido">
+            <button
+              type="button"
+              className="topbar-info-panel notification-chip"
+              onClick={() => void handleToggleNotifications()}
+              aria-expanded={notificationsOpen}
+              aria-haspopup="dialog"
+            >
               <Bell size={17} />
               <span className="notification-label">Notificacoes</span>
-              <span className="notification-count">{pendingPaymentsCount}</span>
-            </div>
+              <span className="notification-count">{notificationCount}</span>
+            </button>
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <button type="button" className="ghost-button" onClick={() => setShowPasswordModal(true)}>
               <KeyRound size={17} />
@@ -1671,6 +1762,37 @@ export default function App() {
           </div>
 
           <form className="stack module-form-grid" onSubmit={handleSubmitUser}>
+            <div className="profile-photo-field">
+              <label className="field-label" htmlFor="profile-photo-input">
+                Foto do perfil
+              </label>
+              <div className="photo-uploader">
+                <UserAvatar name={formData.nome || 'Usuario'} photo={formData.fotoPerfil} size="lg" />
+                <div className="photo-actions">
+                  <label className="ghost-button file-action" htmlFor="profile-photo-input">
+                    <ImagePlus size={17} />
+                    {formData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
+                  </label>
+                  {formData.fotoPerfil && (
+                    <button type="button" className="ghost-button danger-text" onClick={handleRemoveProfilePhoto}>
+                      <Trash2 size={17} />
+                      Remover
+                    </button>
+                  )}
+                </div>
+              </div>
+              <input
+                key={photoInputKey}
+                id="profile-photo-input"
+                className="sr-only"
+                type="file"
+                aria-label="Foto do perfil"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => void handleProfilePhotoChange(event)}
+              />
+              <span className="file-hint">PNG, JPG ou WEBP ate 1 MB.</span>
+            </div>
+
             <label>
               Nome completo
               <input
@@ -1743,37 +1865,6 @@ export default function App() {
                 ))}
               </select>
             </label>
-
-            <div className="profile-photo-field">
-              <label className="field-label" htmlFor="profile-photo-input">
-                Foto do perfil
-              </label>
-              <div className="photo-uploader">
-                <UserAvatar name={formData.nome || 'Usuario'} photo={formData.fotoPerfil} size="lg" />
-                <div className="photo-actions">
-                  <label className="ghost-button file-action" htmlFor="profile-photo-input">
-                    <ImagePlus size={17} />
-                    {formData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
-                  </label>
-                  {formData.fotoPerfil && (
-                    <button type="button" className="ghost-button danger-text" onClick={handleRemoveProfilePhoto}>
-                      <Trash2 size={17} />
-                      Remover
-                    </button>
-                  )}
-                </div>
-              </div>
-              <input
-                key={photoInputKey}
-                id="profile-photo-input"
-                className="sr-only"
-                type="file"
-                aria-label="Foto do perfil"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={(event) => void handleProfilePhotoChange(event)}
-              />
-              <span className="file-hint">PNG, JPG ou WEBP ate 1 MB.</span>
-            </div>
 
             {formData.perfilId === MEDICAL_PROFILE_ID && canUseUserForm && (
               <div className="profile-photo-field">
@@ -1995,6 +2086,38 @@ export default function App() {
 
           <form className="stack module-form-grid" onSubmit={handleSubmitPaciente}>
             <fieldset className="form-fieldset" disabled={patientReadOnly}>
+            <div className="profile-photo-field">
+              <label className="field-label" htmlFor="patient-photo-input">
+                Foto
+              </label>
+              <div className="photo-uploader">
+                <UserAvatar name={pacienteFormData.nomePaciente || 'Paciente'} photo={pacienteFormData.fotoPerfil} size="lg" />
+                {!patientReadOnly && (
+                  <div className="photo-actions">
+                    <label className="ghost-button file-action" htmlFor="patient-photo-input">
+                      <ImagePlus size={17} />
+                      {pacienteFormData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
+                    </label>
+                    {pacienteFormData.fotoPerfil && (
+                      <button type="button" className="ghost-button danger-text" onClick={() => setPacienteFormData((current) => ({ ...current, fotoPerfil: null }))}>
+                        <Trash2 size={17} />
+                        Remover
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              <input
+                key={patientPhotoInputKey}
+                id="patient-photo-input"
+                className="sr-only"
+                type="file"
+                aria-label="Foto do paciente"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => void handlePacientePhotoChange(event)}
+              />
+            </div>
+
             <label>
               Nome do paciente
               <input
@@ -2136,38 +2259,6 @@ export default function App() {
             </div>
 
             <div className="profile-photo-field">
-              <label className="field-label" htmlFor="patient-photo-input">
-                Foto
-              </label>
-              <div className="photo-uploader">
-                <UserAvatar name={pacienteFormData.nomePaciente || 'Paciente'} photo={pacienteFormData.fotoPerfil} size="lg" />
-                {!patientReadOnly && (
-                  <div className="photo-actions">
-                    <label className="ghost-button file-action" htmlFor="patient-photo-input">
-                      <ImagePlus size={17} />
-                      {pacienteFormData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
-                    </label>
-                    {pacienteFormData.fotoPerfil && (
-                      <button type="button" className="ghost-button danger-text" onClick={() => setPacienteFormData((current) => ({ ...current, fotoPerfil: null }))}>
-                        <Trash2 size={17} />
-                        Remover
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-              <input
-                key={patientPhotoInputKey}
-                id="patient-photo-input"
-                className="sr-only"
-                type="file"
-                aria-label="Foto do paciente"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={(event) => void handlePacientePhotoChange(event)}
-              />
-            </div>
-
-            <div className="profile-photo-field">
               <label className="field-label" htmlFor="patient-file-input">
                 Arquivos
               </label>
@@ -2289,11 +2380,10 @@ export default function App() {
               <thead>
                 <tr>
                   <th>Paciente</th>
-                  <th>CPF</th>
+                  <th>Info</th>
                   <th>Hospital</th>
                   <th>Medico</th>
                   <th>Convenio</th>
-                  <th>Procedimento</th>
                   <th>Status Pago</th>
                   <th>Arquivos</th>
                   <th aria-label="Acoes" />
@@ -2302,7 +2392,7 @@ export default function App() {
               <tbody>
                 {pacientesLoading ? (
                   <tr>
-                    <td colSpan={9} className="empty-row">Carregando pacientes...</td>
+                    <td colSpan={8} className="empty-row">Carregando pacientes...</td>
                   </tr>
                 ) : paginatedPacientes.length ? (
                   paginatedPacientes.map((paciente) => (
@@ -2313,21 +2403,43 @@ export default function App() {
                           <span>{paciente.nomePaciente}</span>
                         </div>
                       </td>
-                      <td data-label="CPF">{formatCpfInput(paciente.cpf || '')}</td>
+                      <td data-label="Info">
+                        <button
+                          type="button"
+                          className="status-info-button"
+                          title="Ver informacoes adicionais"
+                          aria-label={`Informacoes adicionais de ${paciente.nomePaciente}`}
+                          onClick={() => setSelectedPatientInfo(paciente)}
+                        >
+                          <Info size={18} />
+                        </button>
+                      </td>
                       <td data-label="Hospital">{paciente.hospital || '-'}</td>
                       <td data-label="Medico">{paciente.medico || '-'}</td>
                       <td data-label="Convenio">{paciente.convenio || '-'}</td>
-                      <td data-label="Procedimento">{paciente.procedimento || '-'}</td>
                       <td data-label="Status Pago">
                         <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
                           {paciente.statusPago ? 'Pago' : 'Pendente'}
                         </span>
                       </td>
                       <td data-label="Arquivos">
-                        <span className="attachment-count">
-                          <FileText size={15} />
-                          {paciente.arquivosCount ?? paciente.arquivos.length}
-                        </span>
+                        {(paciente.arquivosCount ?? paciente.arquivos.length) > 0 ? (
+                          <button
+                            type="button"
+                            className="attachment-count attachment-button"
+                            onClick={() => void handleOpenPacienteFiles(paciente)}
+                            title="Ver arquivos anexos"
+                            aria-label={`Arquivos anexos de ${paciente.nomePaciente}`}
+                          >
+                            <FileText size={15} />
+                            {paciente.arquivosCount ?? paciente.arquivos.length}
+                          </button>
+                        ) : (
+                          <span className="attachment-count">
+                            <FileText size={15} />
+                            0
+                          </span>
+                        )}
                       </td>
                       <td data-label="Acoes">
                         <div className="row-actions">
@@ -2345,7 +2457,7 @@ export default function App() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="empty-row">Nenhum paciente encontrado.</td>
+                    <td colSpan={8} className="empty-row">Nenhum paciente encontrado.</td>
                   </tr>
                 )}
               </tbody>
@@ -2391,6 +2503,32 @@ export default function App() {
 
       {selectedContactUser && (
         <ContactModal user={selectedContactUser} onClose={() => setSelectedContactUser(null)} />
+      )}
+
+      {notificationsOpen && (
+        <NotificationsModal
+          notifications={notifications}
+          loading={notificationsLoading}
+          error={notificationsError}
+          totalCount={notificationCount}
+          onClose={() => setNotificationsOpen(false)}
+        />
+      )}
+
+      {selectedPatientInfo && (
+        <PatientInfoModal paciente={selectedPatientInfo} onClose={() => setSelectedPatientInfo(null)} />
+      )}
+
+      {selectedPatientFiles && (
+        <PatientFilesModal
+          paciente={selectedPatientFiles}
+          loading={patientFilesModalLoading}
+          error={patientFilesModalError}
+          onClose={() => {
+            setSelectedPatientFiles(null);
+            setPatientFilesModalError('');
+          }}
+        />
       )}
 
       {showPasswordModal && (
@@ -2676,6 +2814,156 @@ function ContactModal({ user, onClose }: ContactModalProps) {
             <dd><CopyValue label="telefone" value={formattedPhone} /></dd>
           </div>
         </dl>
+      </section>
+    </div>
+  );
+}
+
+type NotificationsModalProps = {
+  notifications: DashboardNotification[];
+  loading: boolean;
+  error: string;
+  totalCount: number;
+  onClose: () => void;
+};
+
+function NotificationsModal({ notifications, loading, error, totalCount, onClose }: NotificationsModalProps) {
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-panel notifications-modal" role="dialog" aria-modal="true" aria-labelledby="notifications-title">
+        <div className="panel-title">
+          <div>
+            <span className="eyebrow">Central de avisos</span>
+            <h2 id="notifications-title">Notificacoes</h2>
+          </div>
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="notification-summary-line">
+          <Bell size={17} />
+          <span>{totalCount === 1 ? '1 pendencia encontrada' : `${totalCount} pendencias encontradas`}</span>
+        </div>
+
+        {loading && <p className="alert success"><Bell size={17} />Carregando notificacoes...</p>}
+        {error && <p className="alert error">{error}</p>}
+
+        {notifications.length ? (
+          <ul className="notifications-list">
+            {notifications.map((notification) => {
+              const date = toNotificationDate(notification.data);
+
+              return (
+                <li key={`${notification.tipo}-${notification.id}`}>
+                  <span className="notification-item-icon"><Bell size={17} /></span>
+                  <div className="notification-item-body">
+                    <strong>{notification.titulo}</strong>
+                    <p>{notification.mensagem}</p>
+                    <div className="notification-meta-row">
+                      <span>{notification.nomePaciente}</span>
+                      {notification.medico && <span>Medico: {notification.medico}</span>}
+                      {notification.procedimento && <span>Procedimento: {notification.procedimento}</span>}
+                      {date && <span>{date}</span>}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : !loading && !error ? (
+          <p className="empty-row">Nenhuma notificacao para este usuario.</p>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
+type PatientInfoModalProps = {
+  paciente: Paciente;
+  onClose: () => void;
+};
+
+function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
+  const formattedCpf = formatCpfInput(paciente.cpf || '');
+  const formattedPhone = formatPhoneInput(paciente.telefone || '');
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-panel info-modal" role="dialog" aria-modal="true" aria-labelledby="patient-info-title">
+        <div className="panel-title">
+          <div>
+            <span className="eyebrow">Informacoes adicionais</span>
+            <h2 id="patient-info-title">{paciente.nomePaciente}</h2>
+          </div>
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+            <X size={18} />
+          </button>
+        </div>
+
+        <dl className="info-list">
+          <div>
+            <dt>Procedimento medico</dt>
+            <dd><CopyValue label="procedimento medico" value={paciente.procedimento || '-'} /></dd>
+          </div>
+          <div>
+            <dt>CPF</dt>
+            <dd><CopyValue label="CPF" value={formattedCpf || '-'} /></dd>
+          </div>
+          <div>
+            <dt>Telefone</dt>
+            <dd><CopyValue label="telefone" value={formattedPhone || '-'} /></dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd><CopyValue label="email" value={paciente.email || '-'} /></dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  );
+}
+
+type PatientFilesModalProps = {
+  paciente: Paciente;
+  loading: boolean;
+  error: string;
+  onClose: () => void;
+};
+
+function PatientFilesModal({ paciente, loading, error, onClose }: PatientFilesModalProps) {
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-panel info-modal files-modal" role="dialog" aria-modal="true" aria-labelledby="patient-files-title">
+        <div className="panel-title">
+          <div>
+            <span className="eyebrow">Arquivos anexos</span>
+            <h2 id="patient-files-title">{paciente.nomePaciente}</h2>
+          </div>
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+            <X size={18} />
+          </button>
+        </div>
+
+        {loading && <p className="alert success"><FileText size={17} />Carregando arquivos...</p>}
+        {error && <p className="alert error">{error}</p>}
+
+        {paciente.arquivos?.length ? (
+          <ul className="file-list modal-file-list">
+            {paciente.arquivos.map((arquivo) => (
+              <li key={arquivo.id}>
+                <FileText size={16} />
+                <span>{arquivo.nomeOriginal}</span>
+                <a className="download-link" href={arquivo.url} target="_blank" rel="noreferrer" download={arquivo.nomeOriginal}>
+                  <Download size={15} />
+                  Baixar
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : !loading && !error ? (
+          <p className="empty-row">Nenhum arquivo anexado.</p>
+        ) : null}
       </section>
     </div>
   );

@@ -7,6 +7,7 @@ import type { AuthSession, Paciente, User } from './types';
 
 vi.mock('./api', () => ({
   authenticate: vi.fn(),
+  getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
   getUsers: vi.fn(),
   getPaciente: vi.fn(),
@@ -106,6 +107,8 @@ async function openPatientsModule(user: ReturnType<typeof userEvent.setup>) {
 describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
+    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.style.colorScheme = '';
     vi.clearAllMocks();
     vi.mocked(api.getDashboardSummary).mockResolvedValue({
       usersCount: 1,
@@ -115,6 +118,7 @@ describe('App', () => {
       pendingPaymentsCount: 0,
       patientFilesCount: 0,
     });
+    vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
@@ -182,6 +186,66 @@ describe('App', () => {
     expect(storedSession.user.precisaTrocarSenha).toBe(false);
     expect(storedSession.user.fotoPerfil).toBe('data:image/png;base64,george');
     expect(storedSession.user.perfilNome).toBe('Administrador');
+  });
+
+  it('alterna entre tema claro e escuro no painel logado', async () => {
+    const user = userEvent.setup();
+    mockSession();
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(document.documentElement).not.toHaveAttribute('data-theme');
+
+    await user.click(screen.getByRole('button', { name: /tema escuro/i }));
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    expect(localStorage.getItem('hemodinks.theme')).toBe('dark');
+
+    await user.click(screen.getByRole('button', { name: /tema claro/i }));
+
+    expect(document.documentElement).not.toHaveAttribute('data-theme');
+    expect(localStorage.getItem('hemodinks.theme')).toBe('light');
+  });
+
+  it('abre as notificacoes do usuario logado', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    vi.mocked(api.getDashboardSummary).mockResolvedValue({
+      usersCount: 1,
+      activeUsersCount: 1,
+      pacientesCount: 1,
+      activePatientsCount: 1,
+      pendingPaymentsCount: 1,
+      patientFilesCount: 0,
+    });
+    vi.mocked(api.getDashboardNotifications).mockResolvedValue([
+      {
+        id: 10,
+        tipo: 'PagamentoPendente',
+        titulo: 'Pagamento pendente',
+        mensagem: 'Paciente Paciente Hemodinks possui pagamento pendente.',
+        pacienteId: 10,
+        nomePaciente: 'Paciente Hemodinks',
+        medico: 'Dra. Ana',
+        procedimento: 'Consulta',
+        data: '2026-06-01T00:00:00Z',
+      },
+    ]);
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /notificacoes/i }));
+
+    expect(api.getDashboardNotifications).toHaveBeenCalledWith('jwt-token');
+
+    const dialog = await screen.findByRole('dialog', { name: 'Notificacoes' });
+    expect(within(dialog).getByText('1 pendencia encontrada')).toBeInTheDocument();
+    expect(within(dialog).getByText('Pagamento pendente')).toBeInTheDocument();
+    expect(within(dialog).getByText('Paciente Hemodinks')).toBeInTheDocument();
+    expect(within(dialog).getByText('Medico: Dra. Ana')).toBeInTheDocument();
+    expect(within(dialog).getByText('Procedimento: Consulta')).toBeInTheDocument();
   });
 
   it('permite visualizar e ocultar a senha no login', async () => {
@@ -559,7 +623,9 @@ describe('App', () => {
 
     expect(await screen.findByText('Usuario 11')).toBeInTheDocument();
     expect(screen.queryByText('Usuario 1')).not.toBeInTheDocument();
-    expect(screen.getByText('11-12 de 12')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('11-12 de 12')).toBeInTheDocument();
+    });
   });
 
   it('alterna tema claro e escuro', async () => {
@@ -572,7 +638,7 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /tema escuro/i }));
 
-    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
     expect(screen.getByRole('button', { name: /tema claro/i })).toBeInTheDocument();
   });
 });
