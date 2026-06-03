@@ -1201,6 +1201,13 @@ img.user-avatar {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.form-fieldset {
+  display: contents;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 .module-form-grid .profile-photo-field,
 .module-form-grid .two-column-fields,
 .module-form-grid .toggle-row,

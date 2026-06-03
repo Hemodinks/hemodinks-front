@@ -44,14 +44,17 @@ import {
   deletePaciente,
   deletePacienteArquivo,
   deleteUser,
+  deleteUserArquivo,
   getDashboardSummary,
   getPaciente,
   getPacientes,
+  getUser,
   getUsers,
   resetPassword,
   updatePaciente,
   updateUser,
   uploadPacienteArquivo,
+  uploadUserArquivo,
 } from './api';
 import type { AuthSession, DashboardSummary, Paciente, PacienteFormData, User, UserFormData } from './types';
 import brandImage from '../imagem candidata hemodinks.jpg';
@@ -80,6 +83,10 @@ const ALLOWED_PATIENT_FILE_TYPES = new Set([
   'image/png',
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain',
+  'text/csv',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 ]);
 
 const PROFILE_OPTIONS = [
@@ -536,9 +543,12 @@ export default function App() {
 
   const [formData, setFormData] = useState<UserFormData>(emptyUserForm);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingUserDetails, setEditingUserDetails] = useState<User | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
   const [photoInputKey, setPhotoInputKey] = useState(0);
+  const [userFileInputKey, setUserFileInputKey] = useState(0);
+  const [pendingUserFiles, setPendingUserFiles] = useState<File[]>([]);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedInfoUser, setSelectedInfoUser] = useState<User | null>(null);
   const [selectedContactUser, setSelectedContactUser] = useState<User | null>(null);
@@ -576,6 +586,17 @@ export default function App() {
   };
 
   const isBusy = loginLoading || resetPasswordLoading || usersLoading || formLoading || pacientesLoading || pacienteFormLoading;
+  const currentPerfilId = session?.user.perfilId ?? 0;
+  const isAdmin = currentPerfilId === 1;
+  const isMedical = currentPerfilId === MEDICAL_PROFILE_ID;
+  const isPatient = currentPerfilId === 3;
+  const canAccessUsers = isAdmin;
+  const canEditOwnUser = isMedical;
+  const canCreatePatients = isAdmin || isMedical;
+  const canEditPatients = isAdmin || isMedical;
+  const canDeletePatients = isAdmin;
+  const patientReadOnly = isPatient;
+  const canUseUserForm = isAdmin || (canEditOwnUser && editingId === session?.user.id);
 
   const logout = () => {
     localStorage.removeItem(SESSION_KEY);
@@ -729,10 +750,10 @@ export default function App() {
   }, [pacienteSearchTerm]);
 
   useEffect(() => {
-    if (session && !session.user.precisaTrocarSenha && activeView === 'users' && moduleMode === 'list') {
+    if (session && !session.user.precisaTrocarSenha && canAccessUsers && activeView === 'users' && moduleMode === 'list') {
       void loadUsers(session.token, currentPage, debouncedSearchTerm);
     }
-  }, [session?.token, session?.user.precisaTrocarSenha, activeView, moduleMode, currentPage, debouncedSearchTerm]);
+  }, [session?.token, session?.user.precisaTrocarSenha, canAccessUsers, activeView, moduleMode, currentPage, debouncedSearchTerm]);
 
   useEffect(() => {
     if (session && !session.user.precisaTrocarSenha && activeView === 'patients') {
@@ -740,9 +761,11 @@ export default function App() {
         void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm);
       }
 
-      void loadMedicalUsers(session.token);
+      if (isAdmin) {
+        void loadMedicalUsers(session.token);
+      }
     }
-  }, [session?.token, session?.user.precisaTrocarSenha, activeView, moduleMode, pacienteCurrentPage, debouncedPacienteSearchTerm]);
+  }, [session?.token, session?.user.precisaTrocarSenha, isAdmin, activeView, moduleMode, pacienteCurrentPage, debouncedPacienteSearchTerm]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -815,16 +838,15 @@ export default function App() {
   const resetUserForm = () => {
     setFormData(emptyUserForm);
     setEditingId(null);
+    setEditingUserDetails(null);
     setFormError('');
+    setPendingUserFiles([]);
     setPhotoInputKey((key) => key + 1);
+    setUserFileInputKey((key) => key + 1);
   };
 
-  const handleEditUser = (user: User) => {
+  const applyUserToForm = (user: User) => {
     setEditingId(user.id);
-    setFormError('');
-    setSuccessMessage('');
-    setActiveView('users');
-    setModuleMode('form');
     setFormData({
       nome: user.nome,
       email: user.email,
@@ -836,6 +858,32 @@ export default function App() {
       perfilId: user.perfilId || DEFAULT_PROFILE_ID,
     });
     setPhotoInputKey((key) => key + 1);
+    setUserFileInputKey((key) => key + 1);
+  };
+
+  const handleEditUser = async (user: User) => {
+    if (!session) {
+      return;
+    }
+
+    applyUserToForm(user);
+    setEditingUserDetails(user);
+    setFormError('');
+    setSuccessMessage('');
+    setPendingUserFiles([]);
+    setActiveView('users');
+    setModuleMode('form');
+
+    try {
+      setFormLoading(true);
+      const details = await getUser(user.id, session.token);
+      setEditingUserDetails(details);
+      applyUserToForm(details);
+    } catch (error) {
+      setFormError(getErrorMessage(error));
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   const handleProfilePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -868,6 +916,46 @@ export default function App() {
   const handleRemoveProfilePhoto = () => {
     setFormData((current) => ({ ...current, fotoPerfil: null }));
     setPhotoInputKey((key) => key + 1);
+  };
+
+  const handleUserFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+
+    if (!files.length) {
+      return;
+    }
+
+    const invalidFile = files.find((file) => !ALLOWED_PATIENT_FILE_TYPES.has(file.type) || file.size > MAX_PATIENT_FILE_BYTES);
+
+    if (invalidFile) {
+      setFormError('Use PDF, DOC, DOCX, JPG, JPEG, PNG, XLS, XLSX, TXT, CSV, PPT ou PPTX de ate 10 MB.');
+      return;
+    }
+
+    setPendingUserFiles((current) => [...current, ...files]);
+    setFormError('');
+  };
+
+  const removePendingUserFile = (indexToRemove: number) => {
+    setPendingUserFiles((current) => current.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleDeleteUserArquivo = async (user: User, arquivoId: number) => {
+    if (!session) {
+      return;
+    }
+
+    setFormError('');
+
+    try {
+      await deleteUserArquivo(user.id, arquivoId, session.token);
+      const details = await getUser(user.id, session.token);
+      setEditingUserDetails(details);
+      applyUserToForm(details);
+    } catch (error) {
+      setFormError(getErrorMessage(error));
+    }
   };
 
   const resetPacienteForm = () => {
@@ -952,6 +1040,10 @@ export default function App() {
     const files = Array.from(event.target.files ?? []);
     event.target.value = '';
 
+    if (patientReadOnly) {
+      return;
+    }
+
     if (!files.length) {
       return;
     }
@@ -959,7 +1051,7 @@ export default function App() {
     const invalidFile = files.find((file) => !ALLOWED_PATIENT_FILE_TYPES.has(file.type) || file.size > MAX_PATIENT_FILE_BYTES);
 
     if (invalidFile) {
-      setPacienteFormError('Use PDF, DOC, DOCX, JPG, JPEG, PNG, XLS ou XLSX de ate 10 MB.');
+      setPacienteFormError('Use PDF, DOC, DOCX, JPG, JPEG, PNG, XLS, XLSX, TXT, CSV, PPT ou PPTX de ate 10 MB.');
       return;
     }
 
@@ -978,6 +1070,11 @@ export default function App() {
       return;
     }
 
+    if (patientReadOnly) {
+      setPacienteFormError('Pacientes podem apenas visualizar o cadastro.');
+      return;
+    }
+
     const validationError = validatePacienteForm(pacienteFormData);
 
     if (validationError) {
@@ -985,7 +1082,7 @@ export default function App() {
       return;
     }
 
-    if (pacienteFormData.medico && !medicalUsers.some((user) => user.nome === pacienteFormData.medico)) {
+    if (isAdmin && pacienteFormData.medico && !medicalUsers.some((user) => user.nome === pacienteFormData.medico)) {
       setPacienteFormError('Selecione um medico cadastrado com perfil Medicos.');
       return;
     }
@@ -1021,6 +1118,11 @@ export default function App() {
       return;
     }
 
+    if (!canDeletePatients) {
+      setPacientesError('Apenas administradores podem excluir pacientes.');
+      return;
+    }
+
     setPacientesError('');
     setPacienteSuccessMessage('');
 
@@ -1036,6 +1138,11 @@ export default function App() {
 
   const handleDeletePacienteArquivo = async (paciente: Paciente, arquivoId: number) => {
     if (!session) {
+      return;
+    }
+
+    if (!canEditPatients) {
+      setPacientesError('Sem permissao para excluir arquivo do paciente.');
       return;
     }
 
@@ -1056,6 +1163,11 @@ export default function App() {
     event.preventDefault();
 
     if (!session) {
+      return;
+    }
+
+    if (!canUseUserForm && !isAdmin) {
+      setFormError('Sem permissao para editar este cadastro.');
       return;
     }
 
@@ -1083,6 +1195,12 @@ export default function App() {
         setSuccessMessage(`Usuario cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
       }
 
+      if (savedUser.perfilId === MEDICAL_PROFILE_ID) {
+        for (const file of pendingUserFiles) {
+          await uploadUserArquivo(savedUser.id, file, session.token);
+        }
+      }
+
       if (editingId && savedUser.id === session.user.id) {
         persistSession({
           ...session,
@@ -1100,6 +1218,9 @@ export default function App() {
 
       resetUserForm();
       setModuleMode('list');
+      if (!isAdmin) {
+        setActiveView('dashboard');
+      }
       await loadDashboardSummary(session.token);
     } catch (error) {
       setFormError(getErrorMessage(error));
@@ -1152,7 +1273,7 @@ export default function App() {
 
   const appTitle = activeView === 'dashboard'
     ? 'Painel inicial'
-    : activeView === 'users' ? 'Usuarios' : 'Pacientes';
+    : activeView === 'users' ? canAccessUsers ? 'Usuarios' : 'Meu cadastro' : 'Pacientes';
 
   const openDashboard = () => {
     setActiveView('dashboard');
@@ -1160,6 +1281,12 @@ export default function App() {
   };
 
   const openUsersList = () => {
+    if (!canAccessUsers) {
+      setActiveView('dashboard');
+      setModuleMode('list');
+      return;
+    }
+
     setActiveView('users');
     setModuleMode('list');
   };
@@ -1170,6 +1297,10 @@ export default function App() {
   };
 
   const openNewUserForm = () => {
+    if (!canAccessUsers) {
+      return;
+    }
+
     resetUserForm();
     setSuccessMessage('');
     setActiveView('users');
@@ -1179,15 +1310,49 @@ export default function App() {
   const closeUserForm = () => {
     resetUserForm();
     setModuleMode('list');
+
+    if (!canAccessUsers) {
+      setActiveView('dashboard');
+    }
+  };
+
+  const openMyProfile = () => {
+    if (!session || !canEditOwnUser) {
+      return;
+    }
+
+    void handleEditUser({
+      id: session.user.id,
+      nome: session.user.nome,
+      email: session.user.email,
+      telefone: '',
+      cpf: session.user.cpf ?? null,
+      fotoPerfil: session.user.fotoPerfil ?? null,
+      dataCadastro: '',
+      dataNascimento: '',
+      ativo: true,
+      precisaTrocarSenha: session.user.precisaTrocarSenha,
+      perfilId: session.user.perfilId,
+      perfilNome: session.user.perfilNome,
+      arquivosCount: 0,
+      arquivos: [],
+    });
   };
 
   const openNewPacienteForm = () => {
+    if (!canCreatePatients) {
+      return;
+    }
+
     resetPacienteForm();
+    if (isMedical && session) {
+      setPacienteFormData((current) => ({ ...current, medico: session.user.nome }));
+    }
     setPacienteSuccessMessage('');
     setActiveView('patients');
     setModuleMode('form');
 
-    if (session) {
+    if (session && isAdmin) {
       void loadMedicalUsers(session.token);
     }
   };
@@ -1281,9 +1446,9 @@ export default function App() {
 
   const currentUserProfile = session.user.perfilNome || getProfileName(session.user.perfilId);
   const formBreadcrumbLabel = activeView === 'users'
-    ? editingId ? 'Editar usuario' : 'Novo usuario'
-    : editingPacienteId ? 'Editar paciente' : 'Novo paciente';
-  const activeModuleLabel = activeView === 'users' ? 'Usuarios' : 'Pacientes';
+    ? canAccessUsers ? editingId ? 'Editar usuario' : 'Novo usuario' : 'Meu cadastro'
+    : editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente';
+  const activeModuleLabel = activeView === 'users' ? canAccessUsers ? 'Usuarios' : 'Meu cadastro' : 'Pacientes';
   const openActiveModuleList = activeView === 'users' ? openUsersList : openPatientsList;
   const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
     ? [
@@ -1370,15 +1535,27 @@ export default function App() {
                 <LayoutDashboard size={18} />
                 <span>Painel</span>
               </button>
-              <button
-                type="button"
-                className={activeView === 'users' ? 'active' : ''}
-                onClick={openUsersList}
-              >
-                <Users size={18} />
-                <span>Usuarios</span>
-                <span className="side-nav-count">{usersCount}</span>
-              </button>
+              {canAccessUsers && (
+                <button
+                  type="button"
+                  className={activeView === 'users' ? 'active' : ''}
+                  onClick={openUsersList}
+                >
+                  <Users size={18} />
+                  <span>Usuarios</span>
+                  <span className="side-nav-count">{usersCount}</span>
+                </button>
+              )}
+              {canEditOwnUser && (
+                <button
+                  type="button"
+                  className={activeView === 'users' ? 'active' : ''}
+                  onClick={openMyProfile}
+                >
+                  <FileText size={18} />
+                  <span>Meu cadastro</span>
+                </button>
+              )}
               <button
                 type="button"
                 className={activeView === 'patients' ? 'active' : ''}
@@ -1406,22 +1583,37 @@ export default function App() {
           {dashboardError && <p className="alert error">{dashboardError}</p>}
 
           <div className="module-grid">
-            <button type="button" className="module-card" onClick={openUsersList} aria-label="Abrir usuarios">
-              <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
-              <span className="module-icon"><Users size={24} /></span>
-              <span className="module-title">Usuarios</span>
-              <span className="module-metric">Gerenciar usuarios</span>
-              <span className="module-card-foot">
-                <span>{usersCount} cadastrados</span>
-                <ArrowRight size={20} />
-              </span>
-            </button>
+            {canAccessUsers && (
+              <button type="button" className="module-card" onClick={openUsersList} aria-label="Abrir usuarios">
+                <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
+                <span className="module-icon"><Users size={24} /></span>
+                <span className="module-title">Usuarios</span>
+                <span className="module-metric">Gerenciar usuarios</span>
+                <span className="module-card-foot">
+                  <span>{usersCount} cadastrados</span>
+                  <ArrowRight size={20} />
+                </span>
+              </button>
+            )}
+
+            {canEditOwnUser && (
+              <button type="button" className="module-card" onClick={openMyProfile} aria-label="Abrir meu cadastro">
+                <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
+                <span className="module-icon"><FileText size={24} /></span>
+                <span className="module-title">Meu cadastro</span>
+                <span className="module-metric">Dados e documentos</span>
+                <span className="module-card-foot">
+                  <span>Editar registro</span>
+                  <ArrowRight size={20} />
+                </span>
+              </button>
+            )}
 
             <button type="button" className="module-card" onClick={openPatientsList} aria-label="Abrir pacientes">
               <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
               <span className="module-icon"><ClipboardList size={24} /></span>
               <span className="module-title">Pacientes</span>
-              <span className="module-metric">Administrar atendimentos</span>
+              <span className="module-metric">{patientReadOnly ? 'Visualizar cadastro' : 'Administrar atendimentos'}</span>
               <span className="module-card-foot">
                 <span>{pacientesCount} cadastrados</span>
                 <ArrowRight size={20} />
@@ -1436,11 +1628,13 @@ export default function App() {
             </div>
 
             <div className="info-summary-grid">
-              <div className="info-summary-item">
-                <span className="info-summary-icon"><Users size={18} /></span>
-                <span className="info-summary-label">Usuarios ativos</span>
-                <strong>{activeUsersCount}</strong>
-              </div>
+              {canAccessUsers && (
+                <div className="info-summary-item">
+                  <span className="info-summary-icon"><Users size={18} /></span>
+                  <span className="info-summary-label">Usuarios ativos</span>
+                  <strong>{activeUsersCount}</strong>
+                </div>
+              )}
               <div className="info-summary-item">
                 <span className="info-summary-icon"><CircleCheck size={18} /></span>
                 <span className="info-summary-label">Pacientes ativos</span>
@@ -1465,11 +1659,11 @@ export default function App() {
         <aside className="form-panel module-form-panel">
           <div className="panel-title">
             <div>
-              <span className="eyebrow">{editingId ? 'Edicao' : 'Cadastro'}</span>
-              <h2>{editingId ? 'Editar usuario' : 'Novo usuario'}</h2>
+              <span className="eyebrow">{canAccessUsers ? editingId ? 'Edicao' : 'Cadastro' : 'Perfil'}</span>
+              <h2>{canAccessUsers ? editingId ? 'Editar usuario' : 'Novo usuario' : 'Meu cadastro'}</h2>
             </div>
             <div className="panel-title-actions">
-              {!editingId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
+              {canAccessUsers && !editingId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
               <button type="button" className="icon-button muted" onClick={closeUserForm} title="Voltar para lista">
                 <X size={18} />
               </button>
@@ -1539,6 +1733,7 @@ export default function App() {
               <select
                 value={formData.perfilId}
                 onChange={(event) => setFormData((current) => ({ ...current, perfilId: Number(event.target.value) }))}
+                disabled={!canAccessUsers}
                 required
               >
                 {PROFILE_OPTIONS.map((profile) => (
@@ -1580,11 +1775,63 @@ export default function App() {
               <span className="file-hint">PNG, JPG ou WEBP ate 1 MB.</span>
             </div>
 
+            {formData.perfilId === MEDICAL_PROFILE_ID && canUseUserForm && (
+              <div className="profile-photo-field">
+                <label className="field-label" htmlFor="user-file-input">
+                  Documentos
+                </label>
+                <label className="ghost-button file-action full-width" htmlFor="user-file-input">
+                  <FileUp size={17} />
+                  Selecionar documentos
+                </label>
+                <input
+                  key={userFileInputKey}
+                  id="user-file-input"
+                  className="sr-only"
+                  type="file"
+                  aria-label="Documentos do medico"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt,.csv,.ppt,.pptx"
+                  multiple
+                  onChange={handleUserFilesChange}
+                />
+                <span className="file-hint">PDF, Office, imagens, TXT ou CSV ate 10 MB.</span>
+
+                {pendingUserFiles.length > 0 && (
+                  <ul className="file-list">
+                    {pendingUserFiles.map((file, index) => (
+                      <li key={`${file.name}-${index}`}>
+                        <FileText size={15} />
+                        <span>{file.name}</span>
+                        <button type="button" className="icon-button muted mini" onClick={() => removePendingUserFile(index)} title="Remover arquivo">
+                          <X size={14} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {editingUserDetails?.arquivos?.length ? (
+                  <ul className="file-list">
+                    {editingUserDetails.arquivos.map((arquivo) => (
+                      <li key={arquivo.id}>
+                        <FileText size={15} />
+                        <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
+                        <button type="button" className="icon-button muted mini" onClick={() => void handleDeleteUserArquivo(editingUserDetails, arquivo.id)} title="Excluir arquivo">
+                          <Trash2 size={14} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            )}
+
             <label className="toggle-row">
               <input
                 type="checkbox"
                 checked={formData.ativo}
                 onChange={(event) => setFormData((current) => ({ ...current, ativo: event.target.checked }))}
+                disabled={!canAccessUsers}
               />
               Usuario ativo
             </label>
@@ -1681,7 +1928,7 @@ export default function App() {
                       </td>
                       <td data-label="Acoes">
                         <div className="row-actions">
-                          <button type="button" className="icon-button muted" onClick={() => handleEditUser(user)} title="Editar">
+                          <button type="button" className="icon-button muted" onClick={() => void handleEditUser(user)} title="Editar">
                             <Pencil size={17} />
                           </button>
                           <button type="button" className="icon-button danger" onClick={() => void handleDeleteUser(user)} title="Excluir">
@@ -1735,8 +1982,8 @@ export default function App() {
         <aside className="form-panel module-form-panel">
           <div className="panel-title">
             <div>
-              <span className="eyebrow">{editingPacienteId ? 'Edicao' : 'Cadastro'}</span>
-              <h2>{editingPacienteId ? 'Editar paciente' : 'Novo paciente'}</h2>
+              <span className="eyebrow">{editingPacienteId ? patientReadOnly ? 'Visualizacao' : 'Edicao' : 'Cadastro'}</span>
+              <h2>{editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'}</h2>
             </div>
             <div className="panel-title-actions">
               {!editingPacienteId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
@@ -1747,6 +1994,7 @@ export default function App() {
           </div>
 
           <form className="stack module-form-grid" onSubmit={handleSubmitPaciente}>
+            <fieldset className="form-fieldset" disabled={patientReadOnly}>
             <label>
               Nome do paciente
               <input
@@ -1819,9 +2067,9 @@ export default function App() {
               <select
                 value={pacienteFormData.medico}
                 onChange={(event) => setPacienteFormData((current) => ({ ...current, medico: event.target.value }))}
-                disabled={!medicalUsers.length && !pacienteFormData.medico}
+                disabled={patientReadOnly || isMedical || (!medicalUsers.length && !pacienteFormData.medico)}
               >
-                <option value="">{medicalUsers.length ? 'Selecione um medico' : 'Nenhum medico cadastrado'}</option>
+                <option value="">{isMedical ? session.user.nome : medicalUsers.length ? 'Selecione um medico' : 'Nenhum medico cadastrado'}</option>
                 {pacienteFormData.medico && !medicalUsers.some((user) => user.nome === pacienteFormData.medico) && (
                   <option value={pacienteFormData.medico}>
                     {pacienteFormData.medico} (fora do cadastro)
@@ -1893,18 +2141,20 @@ export default function App() {
               </label>
               <div className="photo-uploader">
                 <UserAvatar name={pacienteFormData.nomePaciente || 'Paciente'} photo={pacienteFormData.fotoPerfil} size="lg" />
-                <div className="photo-actions">
-                  <label className="ghost-button file-action" htmlFor="patient-photo-input">
-                    <ImagePlus size={17} />
-                    {pacienteFormData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
-                  </label>
-                  {pacienteFormData.fotoPerfil && (
-                    <button type="button" className="ghost-button danger-text" onClick={() => setPacienteFormData((current) => ({ ...current, fotoPerfil: null }))}>
-                      <Trash2 size={17} />
-                      Remover
-                    </button>
-                  )}
-                </div>
+                {!patientReadOnly && (
+                  <div className="photo-actions">
+                    <label className="ghost-button file-action" htmlFor="patient-photo-input">
+                      <ImagePlus size={17} />
+                      {pacienteFormData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
+                    </label>
+                    {pacienteFormData.fotoPerfil && (
+                      <button type="button" className="ghost-button danger-text" onClick={() => setPacienteFormData((current) => ({ ...current, fotoPerfil: null }))}>
+                        <Trash2 size={17} />
+                        Remover
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
               <input
                 key={patientPhotoInputKey}
@@ -1921,33 +2171,37 @@ export default function App() {
               <label className="field-label" htmlFor="patient-file-input">
                 Arquivos
               </label>
-              <label className="ghost-button file-action full-width" htmlFor="patient-file-input">
-                <FileUp size={17} />
-                Selecionar arquivos
-              </label>
-              <input
-                key={patientFileInputKey}
-                id="patient-file-input"
-                className="sr-only"
-                type="file"
-                aria-label="Arquivos do paciente"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
-                multiple
-                onChange={handlePacienteFilesChange}
-              />
+              {canEditPatients && (
+                <>
+                  <label className="ghost-button file-action full-width" htmlFor="patient-file-input">
+                    <FileUp size={17} />
+                    Selecionar arquivos
+                  </label>
+                  <input
+                    key={patientFileInputKey}
+                    id="patient-file-input"
+                    className="sr-only"
+                    type="file"
+                    aria-label="Arquivos do paciente"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt,.csv,.ppt,.pptx"
+                    multiple
+                    onChange={handlePacienteFilesChange}
+                  />
 
-              {pendingPatientFiles.length > 0 && (
-                <ul className="file-list">
-                  {pendingPatientFiles.map((file, index) => (
-                    <li key={`${file.name}-${index}`}>
-                      <FileText size={15} />
-                      <span>{file.name}</span>
-                      <button type="button" className="icon-button muted mini" onClick={() => removePendingPatientFile(index)} title="Remover arquivo">
-                        <X size={14} />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                  {pendingPatientFiles.length > 0 && (
+                    <ul className="file-list">
+                      {pendingPatientFiles.map((file, index) => (
+                        <li key={`${file.name}-${index}`}>
+                          <FileText size={15} />
+                          <span>{file.name}</span>
+                          <button type="button" className="icon-button muted mini" onClick={() => removePendingPatientFile(index)} title="Remover arquivo">
+                            <X size={14} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
               )}
 
               {editingPaciente?.arquivos.length ? (
@@ -1956,9 +2210,11 @@ export default function App() {
                     <li key={arquivo.id}>
                       <FileText size={15} />
                       <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
-                      <button type="button" className="icon-button muted mini" onClick={() => void handleDeletePacienteArquivo(editingPaciente, arquivo.id)} title="Excluir arquivo">
-                        <Trash2 size={14} />
-                      </button>
+                      {canEditPatients && (
+                        <button type="button" className="icon-button muted mini" onClick={() => void handleDeletePacienteArquivo(editingPaciente, arquivo.id)} title="Excluir arquivo">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -1982,13 +2238,16 @@ export default function App() {
               />
               Paciente ativo
             </label>
+            </fieldset>
 
             {pacienteFormError && <p className="alert error">{pacienteFormError}</p>}
 
-            <button className="primary-action" type="submit" disabled={pacienteFormLoading}>
-              {editingPacienteId ? <Save size={18} /> : <Plus size={18} />}
-              {pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar paciente' : 'Cadastrar paciente'}
-            </button>
+            {!patientReadOnly && (
+              <button className="primary-action" type="submit" disabled={pacienteFormLoading}>
+                {editingPacienteId ? <Save size={18} /> : <Plus size={18} />}
+                {pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar paciente' : 'Cadastrar paciente'}
+              </button>
+            )}
           </form>
         </aside>
         ) : (
@@ -2001,10 +2260,12 @@ export default function App() {
             </div>
 
             <div className="table-tools">
-              <button type="button" className="ghost-button" onClick={openNewPacienteForm}>
-                <Plus size={17} />
-                Novo paciente
-              </button>
+              {canCreatePatients && (
+                <button type="button" className="ghost-button" onClick={openNewPacienteForm}>
+                  <Plus size={17} />
+                  Novo paciente
+                </button>
+              )}
               <label className="search-box">
                 <Search size={17} />
                 <input
@@ -2070,12 +2331,14 @@ export default function App() {
                       </td>
                       <td data-label="Acoes">
                         <div className="row-actions">
-                          <button type="button" className="icon-button muted" onClick={() => void handleEditPaciente(paciente)} title="Editar">
-                            <Pencil size={17} />
+                          <button type="button" className="icon-button muted" onClick={() => void handleEditPaciente(paciente)} title={patientReadOnly ? 'Visualizar' : 'Editar'}>
+                            {patientReadOnly ? <Eye size={17} /> : <Pencil size={17} />}
                           </button>
-                          <button type="button" className="icon-button danger" onClick={() => void handleDeletePaciente(paciente)} title="Excluir">
-                            <Trash2 size={17} />
-                          </button>
+                          {canDeletePatients && (
+                            <button type="button" className="icon-button danger" onClick={() => void handleDeletePaciente(paciente)} title="Excluir">
+                              <Trash2 size={17} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

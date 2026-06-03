@@ -8,6 +8,7 @@ import type {
   PacienteFormData,
   PagedResult,
   User,
+  UserArquivo,
   UserFormData,
 } from './types';
 
@@ -101,6 +102,10 @@ export function getUsers(token: string, query?: ListQuery) {
   return request<PagedResult<User>>(`/api/users/${toQueryString(query)}`, {}, token);
 }
 
+export function getUser(id: number, token: string) {
+  return request<User>(`/api/users/${id}`, {}, token);
+}
+
 export function createUser(payload: UserFormData, token: string) {
   return request<User>('/api/users/', {
     method: 'POST',
@@ -117,6 +122,18 @@ export function updateUser(id: number, payload: UserFormData, token: string) {
 
 export function deleteUser(id: number, token: string) {
   return request<void>(`/api/users/${id}`, {
+    method: 'DELETE',
+  }, token);
+}
+
+export function uploadUserArquivo(id: number, file: File, token: string) {
+  const body = new FormData();
+  body.append('file', file);
+  return uploadRequest<UserArquivo>(`/api/users/${id}/arquivos`, body, token);
+}
+
+export function deleteUserArquivo(id: number, arquivoId: number, token: string) {
+  return request<void>(`/api/users/${id}/arquivos/${arquivoId}`, {
     method: 'DELETE',
   }, token);
 }
