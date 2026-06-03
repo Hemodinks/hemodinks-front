@@ -556,6 +556,32 @@ select:focus {
   min-height: 100vh;
   padding-bottom: clamp(18px, 3vw, 34px);
   color: var(--ink);
+  --panel: rgba(255, 255, 255, 0.82);
+  --panel-strong: rgba(255, 255, 255, 0.94);
+  --soft: rgba(15, 118, 110, 0.1);
+  --blood: #ff5a1f;
+  --blood-dark: #e64b12;
+  --teal: #0f766e;
+  --amber: #b7791f;
+  --input-bg: rgba(255, 255, 255, 0.9);
+  --table-head: rgba(241, 245, 249, 0.94);
+  --row-hover: rgba(236, 253, 245, 0.76);
+  --app-overlay: linear-gradient(110deg, rgba(246, 249, 250, 0.92), rgba(219, 246, 242, 0.78));
+  --app-glass: rgba(255, 255, 255, 0.7);
+  --app-glass-strong: rgba(255, 255, 255, 0.84);
+  --app-chip-bg: rgba(255, 255, 255, 0.9);
+  --app-chip-border: rgba(15, 118, 110, 0.22);
+  background-color: var(--background);
+  background-image:
+    var(--app-overlay),
+    url("../imagem candidata hemodinks.jpg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+:root[data-theme="dark"] .app-shell {
   --ink: #eef6ff;
   --muted: #b8c6d8;
   --line: rgba(104, 151, 205, 0.34);
@@ -572,14 +598,11 @@ select:focus {
   --table-head: rgba(14, 31, 53, 0.94);
   --row-hover: rgba(28, 49, 76, 0.7);
   --shadow: 0 22px 60px rgba(0, 0, 0, 0.32);
-  background-color: #061726;
-  background-image:
-    linear-gradient(110deg, rgba(5, 14, 28, 0.96), rgba(7, 58, 65, 0.78)),
-    url("../imagem candidata hemodinks.jpg");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-attachment: fixed;
+  --app-overlay: linear-gradient(110deg, rgba(5, 14, 28, 0.96), rgba(7, 58, 65, 0.78));
+  --app-glass: rgba(8, 22, 39, 0.7);
+  --app-glass-strong: rgba(8, 22, 39, 0.66);
+  --app-chip-bg: rgba(12, 28, 49, 0.92);
+  --app-chip-border: rgba(82, 121, 174, 0.32);
 }
 
 .tech-credit {
@@ -671,8 +694,8 @@ select:focus {
 .topbar-info-panel {
   min-height: 44px;
   color: var(--teal);
-  background: rgba(12, 28, 49, 0.92);
-  border-color: rgba(82, 121, 174, 0.32);
+  background: var(--app-chip-bg);
+  border-color: var(--app-chip-border);
 }
 
 .logout-button {
@@ -871,7 +894,7 @@ img.user-avatar {
   align-items: stretch;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(8, 22, 39, 0.7);
+  background: var(--app-glass);
   box-shadow: var(--shadow);
   backdrop-filter: blur(8px);
 }
@@ -888,7 +911,7 @@ img.user-avatar {
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(8, 22, 39, 0.66);
+  background: var(--app-glass-strong);
   box-shadow: none;
 }
 
@@ -907,7 +930,7 @@ img.user-avatar {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(9, 23, 41, 0.7);
+  background: var(--input-bg);
 }
 
 .session-label {
@@ -994,7 +1017,7 @@ img.user-avatar {
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(8, 22, 39, 0.62);
+  background: var(--app-glass-strong);
 }
 
 .workspace {
@@ -1029,7 +1052,7 @@ img.user-avatar {
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
-  background: rgba(9, 23, 41, 0.64);
+  background: var(--panel);
   box-shadow: none;
 }
 
@@ -1108,7 +1131,7 @@ img.user-avatar {
   padding: 22px;
   padding-right: 58px;
   color: var(--ink);
-  background: rgba(9, 23, 41, 0.72);
+  background: var(--panel);
   box-shadow: none;
   text-align: left;
 }
@@ -1129,7 +1152,7 @@ img.user-avatar {
   justify-content: center;
   border-radius: 8px;
   color: var(--muted);
-  background: rgba(88, 112, 148, 0.34);
+  background: var(--soft);
 }
 
 .module-icon {
@@ -1456,6 +1479,10 @@ tbody tr:last-child td {
 
 .notifications-modal {
   width: min(620px, 100%);
+  max-height: min(82vh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .info-list {
@@ -1540,8 +1567,28 @@ tbody tr:last-child td {
   display: grid;
   gap: 10px;
   margin: 0;
-  padding: 0;
+  padding: 0 6px 0 0;
   list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.notifications-modal .notifications-list {
+  max-height: min(56vh, 520px);
+}
+
+.notifications-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.notifications-list::-webkit-scrollbar-track {
+  background: var(--input-bg);
+  border-radius: 999px;
+}
+
+.notifications-list::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
 }
 
 .notifications-list li {
