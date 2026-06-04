@@ -1549,7 +1549,7 @@ tbody tr:last-child td {
 
 .cbhpm-filters {
   display: grid;
-  grid-template-columns: minmax(120px, 0.75fr) minmax(220px, 1.5fr) minmax(90px, 0.45fr) auto;
+  grid-template-columns: minmax(170px, 0.7fr) minmax(320px, 1.8fr) minmax(120px, 0.45fr) 44px;
   gap: 10px;
   align-items: end;
   margin-bottom: 14px;
@@ -1561,11 +1561,37 @@ tbody tr:last-child td {
 }
 
 .cbhpm-table {
-  min-width: 760px;
+  table-layout: fixed;
+  min-width: 820px;
+}
+
+.cbhpm-table th:nth-child(1),
+.cbhpm-table td:nth-child(1) {
+  width: 150px;
+}
+
+.cbhpm-table th:nth-child(3),
+.cbhpm-table td:nth-child(3) {
+  width: 88px;
+}
+
+.cbhpm-table th:nth-child(4),
+.cbhpm-table td:nth-child(4) {
+  width: 154px;
+}
+
+.cbhpm-table td:nth-child(1) {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cbhpm-table td:nth-child(2) {
+  overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 
 .select-procedure-action {
-  width: auto;
+  width: 126px;
   min-height: 36px;
 }
 
