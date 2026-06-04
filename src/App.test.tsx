@@ -9,6 +9,7 @@ vi.mock('./api', () => ({
   authenticate: vi.fn(),
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
+  getCbhpmGeral: vi.fn(),
   getUsers: vi.fn(),
   getPaciente: vi.fn(),
   getPacientes: vi.fn(),
@@ -49,6 +50,8 @@ const basePaciente: Paciente = {
   hospital: 'Hospital Central',
   medico: 'Dra. Ana',
   convenio: 'Particular',
+  cbhpmCodigo: '1.01.01.01-2',
+  cbhpmPorte: '2B',
   procedimento: 'Consulta',
   autorizacao: 'AUT-1',
   pagamento: 'Pix',
@@ -522,6 +525,14 @@ describe('App', () => {
     const user = userEvent.setup();
     mockSession();
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
+    vi.mocked(api.getCbhpmGeral).mockResolvedValue(paged([
+      {
+        id: 1,
+        codigo: '1.01.01.01-2',
+        procedimento: 'Consulta',
+        porte: '2B',
+      },
+    ]));
     vi.mocked(api.createPaciente).mockResolvedValue({
       ...basePaciente,
       id: 11,
@@ -552,7 +563,10 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Hospital'), 'Hospital Norte');
     expect(screen.getByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Medico'), 'Ana Hemodinks');
-    await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
+    await user.click(screen.getByRole('button', { name: /selecionar procedimento/i }));
+    const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
+    expect(within(cbhpmDialog).getByText('1.01.01.01-2')).toBeInTheDocument();
+    await user.click(within(cbhpmDialog).getByRole('button', { name: /selecionar/i }));
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
     expect(api.createPaciente).toHaveBeenCalledWith({
@@ -566,6 +580,8 @@ describe('App', () => {
       hospital: 'Hospital Norte',
       medico: 'Ana Hemodinks',
       convenio: '',
+      cbhpmCodigo: '1.01.01.01-2',
+      cbhpmPorte: '2B',
       procedimento: 'Consulta',
       autorizacao: '',
       pagamento: '',

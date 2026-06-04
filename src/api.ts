@@ -1,5 +1,7 @@
 import type {
   ChangePasswordPayload,
+  CbhpmGeral,
+  CbhpmListQuery,
   DashboardNotification,
   DashboardSummary,
   ListQuery,
@@ -65,7 +67,7 @@ async function uploadRequest<T>(path: string, body: FormData, token: string): Pr
   return response.json() as Promise<T>;
 }
 
-function toQueryString(query?: ListQuery) {
+function toQueryString(query?: ListQuery | CbhpmListQuery) {
   const params = new URLSearchParams();
 
   if (query?.page) {
@@ -80,8 +82,20 @@ function toQueryString(query?: ListQuery) {
     params.set('search', query.search.trim());
   }
 
-  if (query?.profileId) {
+  if (query && 'profileId' in query && query.profileId) {
     params.set('profileId', String(query.profileId));
+  }
+
+  if (query && 'codigo' in query && query.codigo?.trim()) {
+    params.set('codigo', query.codigo.trim());
+  }
+
+  if (query && 'procedimento' in query && query.procedimento?.trim()) {
+    params.set('procedimento', query.procedimento.trim());
+  }
+
+  if (query && 'porte' in query && query.porte?.trim()) {
+    params.set('porte', query.porte.trim());
   }
 
   const value = params.toString();
@@ -159,6 +173,10 @@ export function resetPassword(email: string) {
 
 export function getPacientes(token: string, query?: ListQuery) {
   return request<PagedResult<Paciente>>(`/api/pacientes/${toQueryString(query)}`, {}, token);
+}
+
+export function getCbhpmGeral(token: string, query?: CbhpmListQuery) {
+  return request<PagedResult<CbhpmGeral>>(`/api/cbhpm/${toQueryString(query)}`, {}, token);
 }
 
 export function getPaciente(id: number, token: string) {
