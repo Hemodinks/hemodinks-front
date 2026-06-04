@@ -45,6 +45,26 @@ export type ListQuery = {
   profileId?: number;
 };
 
+export type CbhpmListQuery = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  codigo?: string;
+  procedimento?: string;
+  porte?: string;
+};
+
+export type CbhpmGeral = {
+  id: number;
+  codigo: string;
+  procedimento: string;
+  porte?: string | null;
+  custoOperacional?: number | null;
+  capitulo?: string | null;
+  grupo?: string | null;
+  paginaPdf?: number | null;
+};
+
 export type DashboardSummary = {
   usersCount: number;
   activeUsersCount: number;
@@ -125,6 +145,8 @@ export type Paciente = {
   hospital?: string | null;
   medico?: string | null;
   convenio?: string | null;
+  cbhpmCodigo?: string | null;
+  cbhpmPorte?: string | null;
   procedimento?: string | null;
   autorizacao?: string | null;
   pagamento?: string | null;
@@ -151,6 +173,8 @@ export type PacienteFormData = {
   hospital: string;
   medico: string;
   convenio: string;
+  cbhpmCodigo: string;
+  cbhpmPorte: string;
   procedimento: string;
   autorizacao: string;
   pagamento: string;

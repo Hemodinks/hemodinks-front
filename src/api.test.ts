@@ -106,6 +106,8 @@ describe('api client', () => {
       hospital: 'Hospital Central',
       medico: 'Dra. Ana',
       convenio: 'Particular',
+      cbhpmCodigo: '1.01.01.01-2',
+      cbhpmPorte: '2B',
       procedimento: 'Consulta',
       autorizacao: '',
       pagamento: 'Pix',

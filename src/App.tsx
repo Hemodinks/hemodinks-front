@@ -48,6 +48,7 @@ import {
   deleteUserArquivo,
   getDashboardNotifications,
   getDashboardSummary,
+  getCbhpmGeral,
   getPaciente,
   getPacientes,
   getUser,
@@ -58,7 +59,16 @@ import {
   uploadPacienteArquivo,
   uploadUserArquivo,
 } from './api';
-import type { AuthSession, DashboardNotification, DashboardSummary, Paciente, PacienteFormData, User, UserFormData } from './types';
+import type {
+  AuthSession,
+  CbhpmGeral,
+  DashboardNotification,
+  DashboardSummary,
+  Paciente,
+  PacienteFormData,
+  User,
+  UserFormData,
+} from './types';
 import brandImage from '../imagem candidata hemodinks.jpg';
 
 const SESSION_KEY = 'hemodinks.session';
@@ -66,6 +76,7 @@ const THEME_KEY = 'hemodinks.theme';
 const DEFAULT_PASSWORD = 'Senha@123';
 const PAGE_SIZE = 10;
 const LOOKUP_PAGE_SIZE = 100;
+const CBHPM_PAGE_SIZE = 10;
 const MAX_NAME_LENGTH = 255;
 const MAX_EMAIL_LENGTH = 255;
 const MAX_PHONE_LENGTH = 20;
@@ -131,6 +142,8 @@ const emptyPacienteForm: PacienteFormData = {
   hospital: '',
   medico: '',
   convenio: '',
+  cbhpmCodigo: '',
+  cbhpmPorte: '',
   procedimento: '',
   autorizacao: '',
   pagamento: '',
@@ -145,6 +158,17 @@ type ModuleMode = 'list' | 'form';
 type BreadcrumbItem = {
   label: string;
   onClick?: () => void;
+};
+type CbhpmFilters = {
+  codigo: string;
+  procedimento: string;
+  porte: string;
+};
+
+const emptyCbhpmFilters: CbhpmFilters = {
+  codigo: '',
+  procedimento: '',
+  porte: '',
 };
 
 function loadStoredSession(): AuthSession | null {
@@ -510,6 +534,8 @@ function toPacientePayload(data: PacienteFormData): PacienteFormData {
     hospital: data.hospital.trim(),
     medico: data.medico.trim(),
     convenio: data.convenio.trim(),
+    cbhpmCodigo: data.cbhpmCodigo.trim(),
+    cbhpmPorte: data.cbhpmPorte.trim(),
     procedimento: data.procedimento.trim(),
     autorizacao: data.autorizacao.trim(),
     pagamento: data.pagamento.trim(),
@@ -649,6 +675,15 @@ export default function App() {
   const [selectedPatientFiles, setSelectedPatientFiles] = useState<Paciente | null>(null);
   const [patientFilesModalLoading, setPatientFilesModalLoading] = useState(false);
   const [patientFilesModalError, setPatientFilesModalError] = useState('');
+  const [cbhpmModalOpen, setCbhpmModalOpen] = useState(false);
+  const [cbhpmItems, setCbhpmItems] = useState<CbhpmGeral[]>([]);
+  const [cbhpmFilters, setCbhpmFilters] = useState<CbhpmFilters>(emptyCbhpmFilters);
+  const [debouncedCbhpmFilters, setDebouncedCbhpmFilters] = useState<CbhpmFilters>(emptyCbhpmFilters);
+  const [cbhpmCurrentPage, setCbhpmCurrentPage] = useState(1);
+  const [cbhpmTotalItems, setCbhpmTotalItems] = useState(0);
+  const [cbhpmTotalPages, setCbhpmTotalPages] = useState(1);
+  const [cbhpmLoading, setCbhpmLoading] = useState(false);
+  const [cbhpmError, setCbhpmError] = useState('');
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -816,6 +851,36 @@ export default function App() {
     }
   };
 
+  const loadCbhpm = async (
+    token = session?.token,
+    page = cbhpmCurrentPage,
+    filters = debouncedCbhpmFilters,
+  ) => {
+    if (!token) {
+      return;
+    }
+
+    setCbhpmLoading(true);
+    setCbhpmError('');
+
+    try {
+      const result = await getCbhpmGeral(token, {
+        page,
+        pageSize: CBHPM_PAGE_SIZE,
+        codigo: filters.codigo,
+        procedimento: filters.procedimento,
+        porte: filters.porte,
+      });
+      setCbhpmItems(getPagedItems(result));
+      setCbhpmTotalItems(getPagedTotal(result));
+      setCbhpmTotalPages(getPagedTotalPages(result));
+    } catch (error) {
+      setCbhpmError(getErrorMessage(error));
+    } finally {
+      setCbhpmLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (session && !session.user.precisaTrocarSenha) {
       void loadDashboardSummary(session.token);
@@ -834,6 +899,11 @@ export default function App() {
   const paginatedPacientes = pacientes;
   const pacienteVisibleStart = pacientesTotalItems ? pacientePageStart + 1 : 0;
   const pacienteVisibleEnd = Math.min(pacientePageEnd, pacientesTotalItems);
+  const cbhpmTotalPageCount = Math.max(1, cbhpmTotalPages);
+  const cbhpmPageStart = (cbhpmCurrentPage - 1) * CBHPM_PAGE_SIZE;
+  const cbhpmPageEnd = cbhpmPageStart + CBHPM_PAGE_SIZE;
+  const cbhpmVisibleStart = cbhpmTotalItems ? cbhpmPageStart + 1 : 0;
+  const cbhpmVisibleEnd = Math.min(cbhpmPageEnd, cbhpmTotalItems);
   const activeUsersCount = dashboardSummary?.activeUsersCount ?? 0;
   const activePatientsCount = dashboardSummary?.activePatientsCount ?? 0;
   const pendingPaymentsCount = dashboardSummary?.pendingPaymentsCount ?? 0;
@@ -873,6 +943,23 @@ export default function App() {
   }, [pacienteSearchTerm, debouncedPacienteSearchTerm]);
 
   useEffect(() => {
+    if (
+      cbhpmFilters.codigo === debouncedCbhpmFilters.codigo
+      && cbhpmFilters.procedimento === debouncedCbhpmFilters.procedimento
+      && cbhpmFilters.porte === debouncedCbhpmFilters.porte
+    ) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCbhpmCurrentPage(1);
+      setDebouncedCbhpmFilters(cbhpmFilters);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [cbhpmFilters, debouncedCbhpmFilters]);
+
+  useEffect(() => {
     if (session && !session.user.precisaTrocarSenha && canAccessUsers && activeView === 'users' && moduleMode === 'list') {
       void loadUsers(session.token, currentPage, debouncedSearchTerm);
     }
@@ -891,6 +978,12 @@ export default function App() {
   }, [session?.token, session?.user.precisaTrocarSenha, isAdmin, activeView, moduleMode, pacienteCurrentPage, debouncedPacienteSearchTerm]);
 
   useEffect(() => {
+    if (session && !session.user.precisaTrocarSenha && cbhpmModalOpen) {
+      void loadCbhpm(session.token, cbhpmCurrentPage, debouncedCbhpmFilters);
+    }
+  }, [session?.token, session?.user.precisaTrocarSenha, cbhpmModalOpen, cbhpmCurrentPage, debouncedCbhpmFilters]);
+
+  useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
@@ -901,6 +994,12 @@ export default function App() {
       setPacienteCurrentPage(pacienteTotalPages);
     }
   }, [pacienteCurrentPage, pacienteTotalPages]);
+
+  useEffect(() => {
+    if (cbhpmCurrentPage > cbhpmTotalPageCount) {
+      setCbhpmCurrentPage(cbhpmTotalPageCount);
+    }
+  }, [cbhpmCurrentPage, cbhpmTotalPageCount]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1114,6 +1213,8 @@ export default function App() {
       hospital: paciente.hospital || '',
       medico: paciente.medico || '',
       convenio: paciente.convenio || '',
+      cbhpmCodigo: paciente.cbhpmCodigo || '',
+      cbhpmPorte: paciente.cbhpmPorte || '',
       procedimento: paciente.procedimento || '',
       autorizacao: paciente.autorizacao || '',
       pagamento: paciente.pagamento || '',
@@ -1306,6 +1407,35 @@ export default function App() {
     } finally {
       setPatientFilesModalLoading(false);
     }
+  };
+
+  const handleOpenCbhpmModal = () => {
+    if (patientReadOnly) {
+      return;
+    }
+
+    setCbhpmModalOpen(true);
+    setCbhpmError('');
+  };
+
+  const handleSelectCbhpm = (procedimento: CbhpmGeral) => {
+    setPacienteFormData((current) => ({
+      ...current,
+      cbhpmCodigo: procedimento.codigo,
+      cbhpmPorte: procedimento.porte || '',
+      procedimento: procedimento.procedimento,
+    }));
+    setPacienteFormError('');
+    setCbhpmModalOpen(false);
+  };
+
+  const handleClearCbhpm = () => {
+    setPacienteFormData((current) => ({
+      ...current,
+      cbhpmCodigo: '',
+      cbhpmPorte: '',
+      procedimento: '',
+    }));
   };
 
   const handleSubmitUser = async (event: FormEvent<HTMLFormElement>) => {
@@ -2281,15 +2411,39 @@ export default function App() {
               />
             </label>
 
-            <label>
-              Procedimento
-              <input
-                type="text"
-                value={pacienteFormData.procedimento}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, procedimento: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-                maxLength={MAX_NAME_LENGTH}
-              />
-            </label>
+            <div className="procedure-field">
+              <span className="field-label">Procedimento</span>
+              <div className="procedure-selector">
+                <button
+                  type="button"
+                  className="ghost-button procedure-select-button"
+                  onClick={handleOpenCbhpmModal}
+                  disabled={patientReadOnly}
+                >
+                  <Search size={17} />
+                  {pacienteFormData.procedimento ? 'Trocar procedimento' : 'Selecionar procedimento'}
+                </button>
+
+                {pacienteFormData.procedimento ? (
+                  <div className="selected-procedure">
+                    <div className="selected-procedure-main">
+                      <span>{pacienteFormData.cbhpmCodigo || 'Sem codigo'}</span>
+                      <strong>{pacienteFormData.procedimento}</strong>
+                    </div>
+                    <div className="selected-procedure-actions">
+                      {pacienteFormData.cbhpmPorte && <span className="status-pill active">{pacienteFormData.cbhpmPorte}</span>}
+                      {!patientReadOnly && (
+                        <button type="button" className="icon-button muted mini" onClick={handleClearCbhpm} title="Limpar procedimento">
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <span className="file-hint">Nenhum procedimento selecionado.</span>
+                )}
+              </div>
+            </div>
 
             <label>
               Autorizacao
@@ -2577,6 +2731,25 @@ export default function App() {
           error={notificationsError}
           totalCount={notificationCount}
           onClose={() => setNotificationsOpen(false)}
+        />
+      )}
+
+      {cbhpmModalOpen && (
+        <CbhpmLookupModal
+          items={cbhpmItems}
+          filters={cbhpmFilters}
+          loading={cbhpmLoading}
+          error={cbhpmError}
+          currentPage={cbhpmCurrentPage}
+          totalPages={cbhpmTotalPageCount}
+          totalItems={cbhpmTotalItems}
+          visibleStart={cbhpmVisibleStart}
+          visibleEnd={cbhpmVisibleEnd}
+          onFiltersChange={setCbhpmFilters}
+          onPageChange={setCbhpmCurrentPage}
+          onRefresh={() => session && void loadCbhpm(session.token, cbhpmCurrentPage, debouncedCbhpmFilters)}
+          onSelect={handleSelectCbhpm}
+          onClose={() => setCbhpmModalOpen(false)}
         />
       )}
 
@@ -2944,6 +3117,161 @@ function NotificationsModal({ notifications, loading, error, totalCount, onClose
   );
 }
 
+type CbhpmLookupModalProps = {
+  items: CbhpmGeral[];
+  filters: CbhpmFilters;
+  loading: boolean;
+  error: string;
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  visibleStart: number;
+  visibleEnd: number;
+  onFiltersChange: (filters: CbhpmFilters) => void;
+  onPageChange: (page: number | ((current: number) => number)) => void;
+  onRefresh: () => void;
+  onSelect: (procedimento: CbhpmGeral) => void;
+  onClose: () => void;
+};
+
+function CbhpmLookupModal({
+  items,
+  filters,
+  loading,
+  error,
+  currentPage,
+  totalPages,
+  totalItems,
+  visibleStart,
+  visibleEnd,
+  onFiltersChange,
+  onPageChange,
+  onRefresh,
+  onSelect,
+  onClose,
+}: CbhpmLookupModalProps) {
+  const updateFilter = (field: keyof CbhpmFilters, value: string) => {
+    onFiltersChange({ ...filters, [field]: value });
+  };
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-panel cbhpm-modal" role="dialog" aria-modal="true" aria-labelledby="cbhpm-title">
+        <div className="panel-title">
+          <div>
+            <span className="eyebrow">CBHPM</span>
+            <h2 id="cbhpm-title">Selecionar procedimento</h2>
+          </div>
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="cbhpm-filters">
+          <label>
+            Codigo
+            <input
+              type="search"
+              value={filters.codigo}
+              onChange={(event) => updateFilter('codigo', event.target.value)}
+              placeholder="1.01"
+            />
+          </label>
+          <label>
+            Procedimento
+            <input
+              type="search"
+              value={filters.procedimento}
+              onChange={(event) => updateFilter('procedimento', event.target.value)}
+              placeholder="Consulta"
+            />
+          </label>
+          <label>
+            Porte
+            <input
+              type="search"
+              value={filters.porte}
+              onChange={(event) => updateFilter('porte', event.target.value.toUpperCase())}
+              placeholder="2B"
+              maxLength={10}
+            />
+          </label>
+          <button type="button" className="icon-button" onClick={onRefresh} title="Atualizar procedimentos">
+            <RefreshCw size={18} />
+          </button>
+        </div>
+
+        {error && <p className="alert error">{error}</p>}
+
+        <div className="table-wrap cbhpm-table-wrap">
+          <table className="cbhpm-table">
+            <thead>
+              <tr>
+                <th>Codigo</th>
+                <th>Procedimento</th>
+                <th>Porte</th>
+                <th aria-label="Selecionar" />
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="empty-row">Carregando procedimentos...</td>
+                </tr>
+              ) : items.length ? (
+                items.map((item) => (
+                  <tr key={item.id}>
+                    <td data-label="Codigo">{item.codigo}</td>
+                    <td data-label="Procedimento">{item.procedimento}</td>
+                    <td data-label="Porte">{item.porte || '-'}</td>
+                    <td data-label="Selecionar">
+                      <button type="button" className="ghost-button select-procedure-action" onClick={() => onSelect(item)}>
+                        <CheckCircle2 size={17} />
+                        Selecionar
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="empty-row">Nenhum procedimento encontrado.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="pagination-bar cbhpm-pagination">
+          <span>
+            {visibleStart}-{visibleEnd} de {totalItems}
+          </span>
+          <div className="pagination-actions">
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => onPageChange((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+              title="Pagina anterior"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="page-indicator">Pagina {currentPage} de {totalPages}</span>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
+              disabled={currentPage === totalPages}
+              title="Proxima pagina"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 type PatientInfoModalProps = {
   paciente: Paciente;
   onClose: () => void;
@@ -2967,6 +3295,14 @@ function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
         </div>
 
         <dl className="info-list">
+          <div>
+            <dt>Codigo CBHPM</dt>
+            <dd><CopyValue label="codigo CBHPM" value={paciente.cbhpmCodigo || '-'} /></dd>
+          </div>
+          <div>
+            <dt>Porte CBHPM</dt>
+            <dd>{paciente.cbhpmPorte || '-'}</dd>
+          </div>
           <div>
             <dt>Procedimento medico</dt>
             <dd><CopyValue label="procedimento medico" value={paciente.procedimento || '-'} /></dd>
