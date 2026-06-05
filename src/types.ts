@@ -45,6 +45,12 @@ export type ListQuery = {
   profileId?: number;
 };
 
+export type PacienteListQuery = ListQuery & {
+  medico?: string;
+  convenio?: string;
+  procedimento?: string;
+};
+
 export type CbhpmListQuery = {
   page?: number;
   pageSize?: number;

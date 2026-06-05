@@ -592,6 +592,53 @@ describe('App', () => {
     expect(await screen.findByText('Paciente cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
   });
 
+  it('permite ao administrador filtrar pacientes por medico, convenio e procedimento', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    vi.mocked(api.getPacientes)
+      .mockResolvedValueOnce(paged([basePaciente]))
+      .mockResolvedValue(paged([{ ...basePaciente, nomePaciente: 'Paciente Filtrado' }]));
+
+    render(<App />);
+
+    await openPatientsModule(user);
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Medico'), 'Ana');
+    await user.type(screen.getByLabelText('Convenio'), 'Particular');
+    await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
+
+    await waitFor(() => {
+      expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', {
+        page: 1,
+        pageSize: 10,
+        search: '',
+        medico: 'Ana',
+        convenio: 'Particular',
+        procedimento: 'Consulta',
+      });
+    });
+  });
+
+  it('nao exibe filtros administrativos de pacientes para medico', async () => {
+    const user = userEvent.setup();
+    mockSession({
+      perfilId: 2,
+      perfilNome: 'Medicos',
+      nome: 'Dra. Ana',
+    });
+
+    render(<App />);
+
+    await openPatientsModule(user);
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+
+    expect(screen.queryByLabelText('Medico')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Convenio')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Procedimento')).not.toBeInTheDocument();
+    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '' });
+  });
+
   it('ordena pacientes por registro recente e nome', async () => {
     const user = userEvent.setup();
     mockSession();

@@ -164,12 +164,34 @@ type CbhpmFilters = {
   procedimento: string;
   porte: string;
 };
+type PacienteFilters = {
+  medico: string;
+  convenio: string;
+  procedimento: string;
+};
 
 const emptyCbhpmFilters: CbhpmFilters = {
   codigo: '',
   procedimento: '',
   porte: '',
 };
+const emptyPacienteFilters: PacienteFilters = {
+  medico: '',
+  convenio: '',
+  procedimento: '',
+};
+
+function getPacienteFilterQuery(filters: PacienteFilters, enabled: boolean) {
+  if (!enabled) {
+    return {};
+  }
+
+  return {
+    ...(filters.medico.trim() ? { medico: filters.medico.trim() } : {}),
+    ...(filters.convenio.trim() ? { convenio: filters.convenio.trim() } : {}),
+    ...(filters.procedimento.trim() ? { procedimento: filters.procedimento.trim() } : {}),
+  };
+}
 
 function loadStoredSession(): AuthSession | null {
   const rawSession = localStorage.getItem(SESSION_KEY);
@@ -660,6 +682,8 @@ export default function App() {
   const [pacienteSuccessMessage, setPacienteSuccessMessage] = useState('');
   const [pacienteSearchTerm, setPacienteSearchTerm] = useState('');
   const [debouncedPacienteSearchTerm, setDebouncedPacienteSearchTerm] = useState('');
+  const [pacienteFilters, setPacienteFilters] = useState<PacienteFilters>(emptyPacienteFilters);
+  const [debouncedPacienteFilters, setDebouncedPacienteFilters] = useState<PacienteFilters>(emptyPacienteFilters);
   const [pacienteCurrentPage, setPacienteCurrentPage] = useState(1);
   const [pacientesTotalItems, setPacientesTotalItems] = useState(0);
   const [pacientesTotalPages, setPacientesTotalPages] = useState(1);
@@ -731,6 +755,8 @@ export default function App() {
     setUsersTotalPages(1);
     setMedicalUsers([]);
     setPacientes([]);
+    setPacienteFilters(emptyPacienteFilters);
+    setDebouncedPacienteFilters(emptyPacienteFilters);
     setPacientesTotalItems(0);
     setPacientesTotalPages(1);
     setActiveView('dashboard');
@@ -827,6 +853,7 @@ export default function App() {
     token = session?.token,
     page = pacienteCurrentPage,
     search = debouncedPacienteSearchTerm,
+    filters = debouncedPacienteFilters,
   ) => {
     if (!token) {
       return;
@@ -840,6 +867,7 @@ export default function App() {
         page,
         pageSize: PAGE_SIZE,
         search,
+        ...getPacienteFilterQuery(filters, isAdmin),
       });
       setPacientes(sortPacientesForListing(getPagedItems(result)));
       setPacientesTotalItems(getPagedTotal(result));
@@ -944,6 +972,32 @@ export default function App() {
 
   useEffect(() => {
     if (
+      pacienteFilters.medico === debouncedPacienteFilters.medico
+      && pacienteFilters.convenio === debouncedPacienteFilters.convenio
+      && pacienteFilters.procedimento === debouncedPacienteFilters.procedimento
+    ) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPacienteCurrentPage(1);
+      setDebouncedPacienteFilters(pacienteFilters);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [pacienteFilters, debouncedPacienteFilters]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      return;
+    }
+
+    setPacienteFilters(emptyPacienteFilters);
+    setDebouncedPacienteFilters(emptyPacienteFilters);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (
       cbhpmFilters.codigo === debouncedCbhpmFilters.codigo
       && cbhpmFilters.procedimento === debouncedCbhpmFilters.procedimento
       && cbhpmFilters.porte === debouncedCbhpmFilters.porte
@@ -968,14 +1022,14 @@ export default function App() {
   useEffect(() => {
     if (session && !session.user.precisaTrocarSenha && activeView === 'patients') {
       if (moduleMode === 'list') {
-        void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm);
+        void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters);
       }
 
       if (isAdmin) {
         void loadMedicalUsers(session.token);
       }
     }
-  }, [session?.token, session?.user.precisaTrocarSenha, isAdmin, activeView, moduleMode, pacienteCurrentPage, debouncedPacienteSearchTerm]);
+  }, [session?.token, session?.user.precisaTrocarSenha, isAdmin, activeView, moduleMode, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters]);
 
   useEffect(() => {
     if (session && !session.user.precisaTrocarSenha && cbhpmModalOpen) {
@@ -2587,9 +2641,53 @@ export default function App() {
                   placeholder="Buscar"
                 />
               </label>
-              <button type="button" className="icon-button" onClick={() => void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm)} title="Atualizar lista">
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters)}
+                title="Atualizar lista"
+              >
                 <RefreshCw size={18} />
               </button>
+              {isAdmin && (
+                <div className="patient-filter-grid" aria-label="Filtros administrativos de pacientes">
+                  <label className="filter-field">
+                    Medico
+                    <input
+                      type="search"
+                      value={pacienteFilters.medico}
+                      onChange={(event) => setPacienteFilters((current) => ({ ...current, medico: event.target.value }))}
+                      placeholder="Nome do medico"
+                    />
+                  </label>
+                  <label className="filter-field">
+                    Convenio
+                    <input
+                      type="search"
+                      value={pacienteFilters.convenio}
+                      onChange={(event) => setPacienteFilters((current) => ({ ...current, convenio: event.target.value }))}
+                      placeholder="Convenio"
+                    />
+                  </label>
+                  <label className="filter-field">
+                    Procedimento
+                    <input
+                      type="search"
+                      value={pacienteFilters.procedimento}
+                      onChange={(event) => setPacienteFilters((current) => ({ ...current, procedimento: event.target.value }))}
+                      placeholder="Procedimento"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="ghost-button patient-clear-filters"
+                    onClick={() => setPacienteFilters(emptyPacienteFilters)}
+                  >
+                    <X size={17} />
+                    Limpar filtros
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

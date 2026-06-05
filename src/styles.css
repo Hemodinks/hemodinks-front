@@ -1373,6 +1373,31 @@ img.user-avatar {
   gap: 10px;
 }
 
+.patient-filter-grid {
+  flex: 1 1 100%;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.filter-field {
+  min-width: 0;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.filter-field input {
+  min-height: 38px;
+}
+
+.patient-clear-filters {
+  min-height: 38px;
+}
+
 .search-box {
   min-width: min(260px, 54vw);
   gap: 8px;
@@ -2219,6 +2244,10 @@ tbody tr:last-child td {
   .table-tools .ghost-button,
   .table-tools .search-box {
     flex: 1 1 100%;
+  }
+
+  .patient-filter-grid {
+    grid-template-columns: 1fr;
   }
 
   .table-wrap {
