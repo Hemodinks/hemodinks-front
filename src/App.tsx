@@ -1774,17 +1774,19 @@ export default function App() {
               aria-haspopup="dialog"
             >
               <Bell size={17} />
-              <span className="notification-label">Notificacoes</span>
+              <span className="notification-label notification-label-wide">Notificacoes</span>
+              <span className="notification-label notification-label-short">Avisos</span>
               <span className="notification-count">{notificationCount}</span>
             </button>
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
-            <button type="button" className="ghost-button" onClick={() => setShowPasswordModal(true)}>
+            <button type="button" className="ghost-button password-action-button" onClick={() => setShowPasswordModal(true)}>
               <KeyRound size={17} />
-              Alterar senha
+              <span className="action-label-wide">Alterar senha</span>
+              <span className="action-label-short">Senha</span>
             </button>
             <button type="button" className="ghost-button logout-button" onClick={logout}>
               <LogOut size={18} />
-              Sair
+              <span>Sair</span>
             </button>
           </div>
         </div>
@@ -2814,7 +2816,8 @@ function ThemeToggle({ theme, onToggle, floating = false }: ThemeToggleProps) {
       title={isDark ? 'Usar tema claro' : 'Usar tema escuro'}
     >
       {isDark ? <Sun size={17} /> : <Moon size={17} />}
-      {isDark ? 'Tema claro' : 'Tema escuro'}
+      <span className="theme-label-wide">{isDark ? 'Tema claro' : 'Tema escuro'}</span>
+      <span className="theme-label-short">{isDark ? 'Claro' : 'Escuro'}</span>
     </button>
   );
 }
