@@ -9,6 +9,7 @@ import type {
   Paciente,
   PacienteArquivo,
   PacienteFormData,
+  PacienteListQuery,
   PagedResult,
   User,
   UserArquivo,
@@ -67,7 +68,7 @@ async function uploadRequest<T>(path: string, body: FormData, token: string): Pr
   return response.json() as Promise<T>;
 }
 
-function toQueryString(query?: ListQuery | CbhpmListQuery) {
+function toQueryString(query?: ListQuery | PacienteListQuery | CbhpmListQuery) {
   const params = new URLSearchParams();
 
   if (query?.page) {
@@ -84,6 +85,14 @@ function toQueryString(query?: ListQuery | CbhpmListQuery) {
 
   if (query && 'profileId' in query && query.profileId) {
     params.set('profileId', String(query.profileId));
+  }
+
+  if (query && 'medico' in query && query.medico?.trim()) {
+    params.set('medico', query.medico.trim());
+  }
+
+  if (query && 'convenio' in query && query.convenio?.trim()) {
+    params.set('convenio', query.convenio.trim());
   }
 
   if (query && 'codigo' in query && query.codigo?.trim()) {
@@ -171,7 +180,7 @@ export function resetPassword(email: string) {
   });
 }
 
-export function getPacientes(token: string, query?: ListQuery) {
+export function getPacientes(token: string, query?: PacienteListQuery) {
   return request<PagedResult<Paciente>>(`/api/pacientes/${toQueryString(query)}`, {}, token);
 }
 

@@ -168,6 +168,29 @@ describe('api client', () => {
     });
   });
 
+  it('monta filtros administrativos da lista de pacientes', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [], page: 2, pageSize: 10, totalItems: 0, totalPages: 1 }));
+
+    await getPacientes('jwt-token', {
+      page: 2,
+      pageSize: 10,
+      search: 'ana',
+      medico: 'Dra. Ana',
+      convenio: 'Particular',
+      procedimento: 'Consulta',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:5000/api/pacientes/?page=2&pageSize=10&search=ana&medico=Dra.+Ana&convenio=Particular&procedimento=Consulta',
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer jwt-token',
+        },
+      },
+    );
+  });
+
   it('monta os payloads de CRUD e troca de senha', async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ id: 1 }))
