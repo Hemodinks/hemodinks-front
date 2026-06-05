@@ -1,28 +1,42 @@
 # Deploy do Hemodinks Front
 
-Este projeto esta pronto para publicar em Vercel, Render e GitHub Actions.
+Frontend React/Vite publicado como SPA.
+
+## URLs
+
+| Recurso | URL |
+| --- | --- |
+| Desenvolvimento local | `http://localhost:5173` |
+| Producao atual | `https://hemodinks-saude.vercel.app` |
+| API local | `http://localhost:5000` |
+| Swagger API | `https://<api-publica>/swagger` |
+| Scalar API | `https://<api-publica>/scalar` |
 
 ## Variavel da API
 
-Configure a mesma variavel em todos os ambientes:
+Configure:
 
 ```text
-VITE_API_URL=https://sua-api-publica
+VITE_API_URL=https://<api-publica>
 ```
 
-Em desenvolvimento local, copie `.env.example` para `.env.local` se quiser sobrescrever o padrao `http://localhost:5000`.
+Localmente, o padrao do codigo e `http://localhost:5000`. Para sobrescrever:
+
+```powershell
+Copy-Item .env.example .env.local
+```
 
 ## Vercel
 
-O arquivo `vercel.json` define:
+`vercel.json` define:
 
 - framework `vite`
 - install `npm ci`
 - build `npm run build`
 - output `dist`
-- rewrite de SPA para `/index.html`
+- rewrite SPA para `/index.html`
 
-Para deploy pelo GitHub Actions, cadastre estes secrets no repositorio:
+Secrets/variaveis no Vercel ou GitHub Actions:
 
 ```text
 VERCEL_TOKEN
@@ -31,35 +45,52 @@ VERCEL_PROJECT_ID
 VITE_API_URL
 ```
 
-O workflow `.github/workflows/deploy-vercel.yml` roda testes, gera build pelo Vercel CLI e publica em producao quando houver push na `main` ou execucao manual.
+O workflow `.github/workflows/deploy-vercel.yml` roda testes, gera build e publica em producao quando houver push na `main` ou execucao manual.
 
 ## Render
 
-O arquivo `render.yaml` define um Static Site:
+`render.yaml` define um Static Site:
 
-- runtime `static`
-- branch `main`
 - build `npm ci && npm run build`
 - publish path `./dist`
-- rewrite de SPA para `/index.html`
-- deploy automatico somente quando os checks passam
+- rewrite SPA para `/index.html`
 
-Ao sincronizar o Blueprint no Render, preencha `VITE_API_URL` no dashboard.
-
-Para deploy manual via GitHub Actions, crie o secret:
+Variavel obrigatoria:
 
 ```text
-RENDER_DEPLOY_HOOK_URL
+VITE_API_URL=https://<api-publica>
 ```
 
-O workflow `.github/workflows/deploy-render.yml` valida testes/build e chama o deploy hook do Render quando executado manualmente.
+## Validacao
 
-## GitHub Actions
+```powershell
+npm ci
+npm test
+npm run build
+npm run preview
+```
 
-Workflows disponiveis:
+Fluxos que devem ser testados apos deploy:
 
-- `CI`: roda em push, pull request e manualmente com `npm test` e `npm run build`.
-- `Deploy Vercel`: publica em producao na Vercel quando os secrets existirem.
-- `Deploy Render`: dispara deploy hook manual do Render quando o secret existir.
+- login
+- dashboard
+- listagem de usuarios
+- cadastro/edicao de paciente
+- popup CBHPM com filtros por codigo, procedimento e porte
+- selecao de procedimento compondo o payload do paciente
+- upload/listagem/exclusao de arquivos
 
-Se algum secret de deploy ainda nao existir, o workflow correspondente avisa e encerra sem falhar.
+## CORS
+
+A API ja permite por padrao:
+
+```text
+https://hemodinks-saude.vercel.app
+```
+
+Para preview deployments da Vercel ou outros dominios, adicione no backend:
+
+```text
+Cors__AllowedOrigins__0=https://hemodinks-saude.vercel.app
+Cors__AllowedOrigins__1=https://<preview>.vercel.app
+```
