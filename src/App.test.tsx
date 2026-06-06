@@ -52,6 +52,7 @@ const basePaciente: Paciente = {
   nomePaciente: 'Paciente Hemodinks',
   hospitalId: 1,
   hospital: 'Santa Clara - Mater Dei',
+  medicoUserId: 1,
   medico: 'Dra. Ana',
   convenio: 'Particular',
   cbhpmCodigo: '1.01.01.01-2',
@@ -582,7 +583,7 @@ describe('App', () => {
     expect(await screen.findByRole('option', { name: 'Santa Genoveva - Mater Dei' })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Hospital'), '2');
     expect(screen.getByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Médico'), 'Ana Hemodinks');
+    await user.selectOptions(screen.getByLabelText('Médico'), '1');
     await user.click(screen.getByRole('button', { name: /selecionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     expect(within(cbhpmDialog).getByText('1.01.01.01-2')).toBeInTheDocument();
@@ -599,6 +600,7 @@ describe('App', () => {
       dataNascimento: '1900-01-01',
       hospitalId: 2,
       hospital: 'Santa Genoveva - Mater Dei',
+      medicoUserId: 1,
       medico: 'Ana Hemodinks',
       convenio: '',
       cbhpmCodigo: '1.01.01.01-2',
