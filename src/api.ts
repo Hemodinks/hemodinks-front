@@ -4,6 +4,7 @@ import type {
   CbhpmListQuery,
   DashboardNotification,
   DashboardSummary,
+  Hospital,
   ListQuery,
   LoginResponse,
   Paciente,
@@ -186,6 +187,10 @@ export function getPacientes(token: string, query?: PacienteListQuery) {
 
 export function getCbhpmGeral(token: string, query?: CbhpmListQuery) {
   return request<PagedResult<CbhpmGeral>>(`/api/cbhpm/${toQueryString(query)}`, {}, token);
+}
+
+export function getHospitais(token: string) {
+  return request<Hospital[]>('/api/hospitais/', {}, token);
 }
 
 export function getPaciente(id: number, token: string) {

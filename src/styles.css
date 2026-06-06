@@ -1606,6 +1606,11 @@ tbody tr:last-child td {
 
 .cbhpm-table th:nth-child(4),
 .cbhpm-table td:nth-child(4) {
+  width: 142px;
+}
+
+.cbhpm-table th:nth-child(5),
+.cbhpm-table td:nth-child(5) {
   width: 166px;
 }
 
@@ -2188,7 +2193,9 @@ tbody tr:last-child td {
   .cbhpm-table th:nth-child(3),
   .cbhpm-table td:nth-child(3),
   .cbhpm-table th:nth-child(4),
-  .cbhpm-table td:nth-child(4) {
+  .cbhpm-table td:nth-child(4),
+  .cbhpm-table th:nth-child(5),
+  .cbhpm-table td:nth-child(5) {
     width: auto;
   }
 
@@ -2209,7 +2216,7 @@ tbody tr:last-child td {
     align-items: start;
   }
 
-  .cbhpm-table td:nth-child(4) {
+  .cbhpm-table td:nth-child(5) {
     grid-template-columns: 1fr;
   }
 

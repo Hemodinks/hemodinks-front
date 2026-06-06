@@ -9,6 +9,7 @@ import {
   deleteUser,
   deleteUserArquivo,
   getDashboardNotifications,
+  getHospitais,
   getUser,
   getPacientes,
   getUsers,
@@ -89,6 +90,7 @@ describe('api client', () => {
   it('monta os payloads de CRUD de pacientes', async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([{ id: 1, nome: 'Santa Clara - Mater Dei' }]))
       .mockResolvedValueOnce(jsonResponse({ id: 10 }))
       .mockResolvedValueOnce(jsonResponse({ id: 10 }))
       .mockResolvedValueOnce(jsonResponse({ id: 1, nomeOriginal: 'laudo.pdf' }))
@@ -103,7 +105,8 @@ describe('api client', () => {
       telefone: '+5581999999999',
       fotoPerfil: null,
       dataNascimento: '1990-01-01',
-      hospital: 'Hospital Central',
+      hospitalId: 1,
+      hospital: 'Santa Clara - Mater Dei',
       medico: 'Dra. Ana',
       convenio: 'Particular',
       cbhpmCodigo: '1.01.01.01-2',
@@ -117,6 +120,7 @@ describe('api client', () => {
     };
 
     await getPacientes('jwt-token');
+    await getHospitais('jwt-token');
     await createPaciente(payload, 'jwt-token');
     await updatePaciente(10, payload, 'jwt-token');
     await uploadPacienteArquivo(10, new File(['laudo'], 'laudo.pdf', { type: 'application/pdf' }), 'jwt-token');
@@ -129,7 +133,13 @@ describe('api client', () => {
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:5000/api/pacientes/', {
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:5000/api/hospitais/', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://localhost:5000/api/pacientes/', {
       method: 'POST',
       body: JSON.stringify(payload),
       headers: {
@@ -137,7 +147,7 @@ describe('api client', () => {
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://localhost:5000/api/pacientes/10', {
+    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://localhost:5000/api/pacientes/10', {
       method: 'PUT',
       body: JSON.stringify(payload),
       headers: {
@@ -145,21 +155,21 @@ describe('api client', () => {
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://localhost:5000/api/pacientes/10/arquivos', expect.objectContaining({
+    expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://localhost:5000/api/pacientes/10/arquivos', expect.objectContaining({
       method: 'POST',
       body: expect.any(FormData),
       headers: {
         Authorization: 'Bearer jwt-token',
       },
     }));
-    expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://localhost:5000/api/pacientes/10/arquivos/1', {
+    expect(fetchMock).toHaveBeenNthCalledWith(6, 'http://localhost:5000/api/pacientes/10/arquivos/1', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(6, 'http://localhost:5000/api/pacientes/10', {
+    expect(fetchMock).toHaveBeenNthCalledWith(7, 'http://localhost:5000/api/pacientes/10', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
