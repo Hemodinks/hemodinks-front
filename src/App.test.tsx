@@ -33,6 +33,8 @@ const baseUser: User = {
   email: 'ana@hemodinks.com',
   telefone: '+5581999999999',
   cpf: '52998224725',
+  crm: '12345',
+  crmUf: 'PE',
   fotoPerfil: 'data:image/png;base64,ana',
   dataCadastro: '2026-06-01T00:00:00Z',
   dataNascimento: '1990-01-01T00:00:00Z',
@@ -381,6 +383,8 @@ describe('App', () => {
     await user.type(screen.getByLabelText('CPF'), '11144477735');
     await user.type(screen.getByLabelText('Data de nascimento'), '10051992');
     expect(screen.getByLabelText('Perfil')).toHaveValue('2');
+    await user.type(screen.getByLabelText('CRM'), '12345');
+    await user.selectOptions(screen.getByLabelText('UF do CRM'), 'PE');
     await user.click(screen.getByRole('button', { name: /cadastrar usuario/i }));
 
     expect(api.createUser).toHaveBeenCalledWith({
@@ -388,6 +392,8 @@ describe('App', () => {
       email: 'bruno@hemodinks.com',
       telefone: '+5581988888888',
       cpf: '11144477735',
+      crm: '12345',
+      crmUf: 'PE',
       fotoPerfil: null,
       dataNascimento: '1992-05-10',
       ativo: true,
@@ -423,6 +429,8 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Telefone'), '81997777777');
     await user.type(screen.getByLabelText('CPF'), '93541134780');
     await user.type(screen.getByLabelText('Data de nascimento'), '12031991');
+    await user.type(screen.getByLabelText('CRM'), '98765');
+    await user.selectOptions(screen.getByLabelText('UF do CRM'), 'SP');
     await user.upload(
       screen.getByLabelText('Foto do perfil'),
       new File(['avatar'], 'avatar.png', { type: 'image/png' }),
@@ -437,6 +445,8 @@ describe('App', () => {
       email: 'clara@hemodinks.com',
       telefone: '+5581997777777',
       cpf: '93541134780',
+      crm: '98765',
+      crmUf: 'SP',
       fotoPerfil: 'data:image/png;base64,YXZhdGFy',
       dataNascimento: '1991-03-12',
       ativo: true,
@@ -706,6 +716,10 @@ describe('App', () => {
     expect(within(infoDialog).getByText('Data de nascimento')).toBeInTheDocument();
     expect(within(infoDialog).getByText('Perfil')).toBeInTheDocument();
     expect(within(infoDialog).getByText('Médicos')).toBeInTheDocument();
+    expect(within(infoDialog).getByText('CRM')).toBeInTheDocument();
+    expect(within(infoDialog).getByText('12345')).toBeInTheDocument();
+    expect(within(infoDialog).getByText('UF do CRM')).toBeInTheDocument();
+    expect(within(infoDialog).getByText('PE')).toBeInTheDocument();
     expect(within(infoDialog).getByText('01/01/1990')).toBeInTheDocument();
     expect(within(infoDialog).getByText('Senha alterada')).toBeInTheDocument();
     expect(within(infoDialog).getByText('Ativo')).toBeInTheDocument();
@@ -731,6 +745,8 @@ describe('App', () => {
     expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
     expect(screen.getByLabelText('Data de nascimento')).toHaveValue('01/01/1990');
     expect(screen.getByLabelText('Perfil')).toHaveValue('2');
+    expect(screen.getByLabelText('CRM')).toHaveValue('12345');
+    expect(screen.getByLabelText('UF do CRM')).toHaveValue('PE');
 
     await user.click(screen.getByTitle('Voltar para lista'));
     const deleteRow = (await screen.findByText('Ana Hemodinks')).closest('tr')!;

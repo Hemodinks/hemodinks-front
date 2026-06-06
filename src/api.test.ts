@@ -204,6 +204,8 @@ describe('api client', () => {
       email: 'ana@hemodinks.com',
       telefone: '+5581999999999',
       cpf: '52998224725',
+      crm: '12345',
+      crmUf: 'PE',
       fotoPerfil: null,
       dataNascimento: '1990-01-01',
       ativo: true,

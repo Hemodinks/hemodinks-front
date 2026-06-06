@@ -81,6 +81,7 @@ const MAX_NAME_LENGTH = 255;
 const MAX_EMAIL_LENGTH = 255;
 const MAX_PHONE_LENGTH = 20;
 const MAX_CPF_LENGTH = 14;
+const MAX_CRM_LENGTH = 20;
 const MAX_PASSWORD_LENGTH = 500;
 const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
 const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
@@ -108,6 +109,11 @@ const PROFILE_OPTIONS = [
   { id: 3, nome: 'Pacientes' },
 ] as const;
 
+const BRAZIL_UF_OPTIONS = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+  'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+] as const;
+
 const VALID_BRAZIL_AREA_CODES = new Set([
   '11', '12', '13', '14', '15', '16', '17', '18', '19',
   '21', '22', '24', '27', '28',
@@ -125,6 +131,8 @@ const emptyUserForm: UserFormData = {
   email: '',
   telefone: '+55 ',
   cpf: '',
+  crm: '',
+  crmUf: '',
   fotoPerfil: null,
   dataNascimento: '',
   ativo: true,
@@ -218,6 +226,10 @@ function getErrorMessage(error: unknown) {
 
 function isValidProfileId(perfilId: number) {
   return PROFILE_OPTIONS.some((profile) => profile.id === perfilId);
+}
+
+function isMedicalProfileId(perfilId: number) {
+  return perfilId === MEDICAL_PROFILE_ID;
 }
 
 function getProfileName(perfilId: number) {
@@ -504,6 +516,20 @@ function validateUserForm(data: UserFormData) {
     return 'Selecione um perfil valido.';
   }
 
+  if (isMedicalProfileId(data.perfilId)) {
+    if (!data.crm.trim()) {
+      return 'Informe o CRM do medico.';
+    }
+
+    if (data.crm.trim().length > MAX_CRM_LENGTH) {
+      return `O CRM deve ter no maximo ${MAX_CRM_LENGTH} caracteres.`;
+    }
+
+    if (!data.crmUf) {
+      return 'Selecione a UF do CRM.';
+    }
+  }
+
   return '';
 }
 
@@ -513,6 +539,8 @@ function toUserPayload(data: UserFormData): UserFormData {
     email: data.email.trim(),
     telefone: normalizePhoneForPayload(data.telefone),
     cpf: normalizeCpfForPayload(data.cpf),
+    crm: isMedicalProfileId(data.perfilId) ? data.crm.trim() : '',
+    crmUf: isMedicalProfileId(data.perfilId) ? data.crmUf.trim().toUpperCase() : '',
     fotoPerfil: data.fotoPerfil || null,
     dataNascimento: parseDisplayDate(data.dataNascimento),
     ativo: data.ativo,
@@ -1076,6 +1104,8 @@ export default function App() {
           nome: result.nome,
           email: result.email,
           cpf: result.cpf ?? null,
+          crm: result.crm ?? null,
+          crmUf: result.crmUf ?? null,
           fotoPerfil: result.fotoPerfil ?? null,
           precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
           perfilId: result.perfilId || DEFAULT_PROFILE_ID,
@@ -1128,6 +1158,8 @@ export default function App() {
       email: user.email,
       telefone: formatPhoneInput(user.telefone),
       cpf: formatCpfInput(user.cpf || ''),
+      crm: user.crm || '',
+      crmUf: user.crmUf || '',
       fotoPerfil: user.fotoPerfil ?? null,
       dataNascimento: toDisplayDate(user.dataNascimento),
       ativo: user.ativo,
@@ -1542,6 +1574,8 @@ export default function App() {
             nome: savedUser.nome,
             email: savedUser.email,
             cpf: savedUser.cpf ?? null,
+            crm: savedUser.crm ?? null,
+            crmUf: savedUser.crmUf ?? null,
             fotoPerfil: savedUser.fotoPerfil ?? null,
             perfilId: savedUser.perfilId || DEFAULT_PROFILE_ID,
             perfilNome: savedUser.perfilNome || getProfileName(savedUser.perfilId || DEFAULT_PROFILE_ID),
@@ -1661,6 +1695,8 @@ export default function App() {
       email: session.user.email,
       telefone: '',
       cpf: session.user.cpf ?? null,
+      crm: session.user.crm ?? null,
+      crmUf: session.user.crmUf ?? null,
       fotoPerfil: session.user.fotoPerfil ?? null,
       dataCadastro: '',
       dataNascimento: '',
@@ -2105,7 +2141,15 @@ export default function App() {
               Perfil
               <select
                 value={formData.perfilId}
-                onChange={(event) => setFormData((current) => ({ ...current, perfilId: Number(event.target.value) }))}
+                onChange={(event) => {
+                  const perfilId = Number(event.target.value);
+                  setFormData((current) => ({
+                    ...current,
+                    perfilId,
+                    crm: isMedicalProfileId(perfilId) ? current.crm : '',
+                    crmUf: isMedicalProfileId(perfilId) ? current.crmUf : '',
+                  }));
+                }}
                 disabled={!canAccessUsers}
                 required
               >
@@ -2116,6 +2160,38 @@ export default function App() {
                 ))}
               </select>
             </label>
+
+            {isMedicalProfileId(formData.perfilId) && (
+              <div className="two-column-fields medical-registration-fields">
+                <label>
+                  CRM
+                  <input
+                    type="text"
+                    value={formData.crm}
+                    onChange={(event) => setFormData((current) => ({ ...current, crm: event.target.value.slice(0, MAX_CRM_LENGTH) }))}
+                    maxLength={MAX_CRM_LENGTH}
+                    placeholder="Ex.: 12345"
+                    disabled={!canUseUserForm}
+                    required
+                  />
+                </label>
+
+                <label>
+                  UF do CRM
+                  <select
+                    value={formData.crmUf}
+                    onChange={(event) => setFormData((current) => ({ ...current, crmUf: event.target.value }))}
+                    disabled={!canUseUserForm}
+                    required
+                  >
+                    <option value="">Selecione</option>
+                    {BRAZIL_UF_OPTIONS.map((uf) => (
+                      <option key={uf} value={uf}>{uf}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
 
             {formData.perfilId === MEDICAL_PROFILE_ID && canUseUserForm && (
               <div className="profile-photo-field">
@@ -3101,6 +3177,18 @@ function InfoModal({ user, onClose }: InfoModalProps) {
             <dt>CPF</dt>
             <dd><CopyValue label="CPF" value={formattedCpf} /></dd>
           </div>
+          {isMedicalProfileUser(user) && (
+            <>
+              <div>
+                <dt>CRM</dt>
+                <dd><CopyValue label="CRM" value={user.crm || '-'} /></dd>
+              </div>
+              <div>
+                <dt>UF do CRM</dt>
+                <dd>{user.crmUf || '-'}</dd>
+              </div>
+            </>
+          )}
           <div>
             <dt>Data de nascimento</dt>
             <dd>{toDisplayDate(user.dataNascimento)}</dd>
