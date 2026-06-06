@@ -161,6 +161,7 @@ export type Paciente = {
   nomePaciente: string;
   hospitalId?: number | null;
   hospital?: string | null;
+  medicoUserId?: number | null;
   medico?: string | null;
   convenio?: string | null;
   cbhpmCodigo?: string | null;
@@ -190,6 +191,7 @@ export type PacienteFormData = {
   dataNascimento: string;
   hospitalId: number | null;
   hospital: string;
+  medicoUserId: number | null;
   medico: string;
   convenio: string;
   cbhpmCodigo: string;
