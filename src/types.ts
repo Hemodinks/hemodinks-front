@@ -4,6 +4,8 @@ export type User = {
   email: string;
   telefone: string;
   cpf?: string | null;
+  crm?: string | null;
+  crmUf?: string | null;
   fotoPerfil?: string | null;
   dataCadastro: string;
   dataCriacao?: string | null;
@@ -97,6 +99,8 @@ export type LoginResponse = {
   nome: string;
   email: string;
   cpf?: string | null;
+  crm?: string | null;
+  crmUf?: string | null;
   token: string;
   fotoPerfil?: string | null;
   precisaTrocarSenha: boolean;
@@ -104,7 +108,7 @@ export type LoginResponse = {
   perfilNome: string;
 };
 
-export type SessionUser = Pick<LoginResponse, 'id' | 'nome' | 'email' | 'cpf' | 'fotoPerfil' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome'>;
+export type SessionUser = Pick<LoginResponse, 'id' | 'nome' | 'email' | 'cpf' | 'crm' | 'crmUf' | 'fotoPerfil' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome'>;
 
 export type AuthSession = {
   token: string;
@@ -116,6 +120,8 @@ export type UserFormData = {
   email: string;
   telefone: string;
   cpf: string;
+  crm: string;
+  crmUf: string;
   fotoPerfil?: string | null;
   dataNascimento: string;
   ativo: boolean;
