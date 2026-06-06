@@ -107,6 +107,7 @@ describe('api client', () => {
       dataNascimento: '1990-01-01',
       hospitalId: 1,
       hospital: 'Santa Clara - Mater Dei',
+      medicoUserId: 1,
       medico: 'Dra. Ana',
       convenio: 'Particular',
       cbhpmCodigo: '1.01.01.01-2',
