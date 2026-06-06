@@ -58,6 +58,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
   color: var(--ink);
   background-color: var(--background);
   background-image:
@@ -553,6 +554,7 @@ select:focus {
 }
 
 .app-shell {
+  min-width: 0;
   min-height: 100vh;
   padding-bottom: clamp(18px, 3vw, 34px);
   color: var(--ink);
@@ -885,6 +887,7 @@ img.user-avatar {
 
 .app-layout {
   width: min(1216px, calc(100% - clamp(24px, 5vw, 56px)));
+  min-width: 0;
   min-height: calc(100vh - 154px);
   margin: 8px auto 0;
   padding: 20px;
@@ -1022,6 +1025,7 @@ img.user-avatar {
 
 .workspace {
   width: 100%;
+  min-width: 0;
   margin: 0;
   padding: 0;
   display: grid;
@@ -1207,6 +1211,7 @@ img.user-avatar {
 
 .form-panel,
 .data-panel {
+  min-width: 0;
   padding: 22px;
 }
 
@@ -1373,11 +1378,35 @@ img.user-avatar {
   gap: 10px;
 }
 
+.patients-workspace .data-header {
+  align-items: flex-start;
+}
+
+.patients-workspace .table-tools {
+  flex: 1 1 560px;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.patients-workspace .table-tools > .search-box {
+  flex: 1 1 280px;
+  min-width: min(230px, 100%);
+  max-width: 420px;
+}
+
+.patients-workspace .table-tools > .icon-button {
+  flex: 0 0 40px;
+}
+
 .patient-filter-grid {
-  flex: 1 1 100%;
+  flex: 0 0 100%;
   width: 100%;
+  min-width: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(150px, 1fr)) auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(150px, auto);
   gap: 10px;
   align-items: end;
 }
@@ -1391,11 +1420,14 @@ img.user-avatar {
 }
 
 .filter-field input {
+  min-width: 0;
   min-height: 38px;
 }
 
 .patient-clear-filters {
+  width: 100%;
   min-height: 38px;
+  padding-inline: 12px;
 }
 
 .search-box {
@@ -2257,6 +2289,20 @@ tbody tr:last-child td {
     grid-template-columns: 1fr;
   }
 
+  .patients-workspace .table-tools {
+    justify-content: flex-start;
+  }
+
+  .patients-workspace .table-tools > .search-box {
+    flex-basis: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .patients-workspace .table-tools > .icon-button {
+    flex: 0 0 40px;
+  }
+
   .table-wrap {
     overflow: visible;
     border: 0;
@@ -2832,6 +2878,25 @@ tbody tr:last-child td {
 
   .session-card {
     min-height: 76px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  .patients-workspace .table-tools {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+
+  .patients-workspace .table-tools > .search-box {
+    max-width: none;
+  }
+
+  .patient-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .patient-clear-filters {
+    grid-column: 1 / -1;
   }
 }
 
