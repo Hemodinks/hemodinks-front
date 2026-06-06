@@ -10,6 +10,7 @@ vi.mock('./api', () => ({
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
   getCbhpmGeral: vi.fn(),
+  getHospitais: vi.fn(),
   getUsers: vi.fn(),
   getPaciente: vi.fn(),
   getPacientes: vi.fn(),
@@ -49,7 +50,8 @@ const basePaciente: Paciente = {
   userId: 20,
   data: '2026-06-01T00:00:00Z',
   nomePaciente: 'Paciente Hemodinks',
-  hospital: 'Hospital Central',
+  hospitalId: 1,
+  hospital: 'Santa Clara - Mater Dei',
   medico: 'Dra. Ana',
   convenio: 'Particular',
   cbhpmCodigo: '1.01.01.01-2',
@@ -130,6 +132,11 @@ describe('App', () => {
     });
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
+    vi.mocked(api.getHospitais).mockResolvedValue([
+      { id: 1, nome: 'Santa Clara - Mater Dei' },
+      { id: 2, nome: 'Santa Genoveva - Mater Dei' },
+      { id: 3, nome: 'UMC - Complexo Hospitalar' },
+    ]);
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
     vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -547,7 +554,9 @@ describe('App', () => {
       ...basePaciente,
       id: 11,
       nomePaciente: 'Novo Paciente',
-      email: 'novo.paciente@hemodinks.com',
+      hospitalId: 2,
+      hospital: 'Santa Genoveva - Mater Dei',
+      email: 'paciente-93541134780@hemodinks.local',
       telefone: '+5581997777777',
       cpf: '93541134780',
       statusPago: false,
@@ -563,16 +572,17 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
 
-    await user.type(screen.getByLabelText('Nome do paciente'), 'Novo Paciente');
+    await user.type(screen.getByLabelText('Data procedimento'), '04062026');
+    await user.type(screen.getByLabelText('Paciente'), 'Novo Paciente');
     await user.type(screen.getByLabelText('CPF'), '93541134780');
-    await user.type(screen.getByLabelText('Email'), 'novo.paciente@hemodinks.com');
+    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Telefone'), '81997777777');
-    expect(screen.queryByLabelText('Data')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Selecionar data de nascimento')).toHaveAttribute('type', 'date');
-    await user.type(screen.getByLabelText('Data de nascimento'), '10051992');
-    await user.type(screen.getByLabelText('Hospital'), 'Hospital Norte');
+    expect(screen.queryByLabelText('Data de nascimento')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: 'Santa Genoveva - Mater Dei' })).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Hospital'), '2');
     expect(screen.getByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Medico'), 'Ana Hemodinks');
+    await user.selectOptions(screen.getByLabelText('Médico'), 'Ana Hemodinks');
     await user.click(screen.getByRole('button', { name: /selecionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     expect(within(cbhpmDialog).getByText('1.01.01.01-2')).toBeInTheDocument();
@@ -580,14 +590,15 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
     expect(api.createPaciente).toHaveBeenCalledWith({
-      data: null,
+      data: '2026-06-04',
       nomePaciente: 'Novo Paciente',
       cpf: '93541134780',
-      email: 'novo.paciente@hemodinks.com',
+      email: 'paciente-93541134780@hemodinks.local',
       telefone: '+5581997777777',
       fotoPerfil: null,
-      dataNascimento: '1992-05-10',
-      hospital: 'Hospital Norte',
+      dataNascimento: '1900-01-01',
+      hospitalId: 2,
+      hospital: 'Santa Genoveva - Mater Dei',
       medico: 'Ana Hemodinks',
       convenio: '',
       cbhpmCodigo: '1.01.01.01-2',

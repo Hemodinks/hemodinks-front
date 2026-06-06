@@ -49,6 +49,7 @@ import {
   getDashboardNotifications,
   getDashboardSummary,
   getCbhpmGeral,
+  getHospitais,
   getPaciente,
   getPacientes,
   getUser,
@@ -64,6 +65,7 @@ import type {
   CbhpmGeral,
   DashboardNotification,
   DashboardSummary,
+  Hospital,
   Paciente,
   PacienteFormData,
   User,
@@ -74,6 +76,7 @@ import brandImage from '../imagem candidata hemodinks.jpg';
 const SESSION_KEY = 'hemodinks.session';
 const THEME_KEY = 'hemodinks.theme';
 const DEFAULT_PASSWORD = 'Senha@123';
+const DEFAULT_PATIENT_BIRTH_DATE = '1900-01-01';
 const PAGE_SIZE = 10;
 const LOOKUP_PAGE_SIZE = 100;
 const CBHPM_PAGE_SIZE = 10;
@@ -147,6 +150,7 @@ const emptyPacienteForm: PacienteFormData = {
   telefone: '+55 ',
   fotoPerfil: null,
   dataNascimento: '',
+  hospitalId: null,
   hospital: '',
   medico: '',
   convenio: '',
@@ -557,30 +561,34 @@ function validatePacienteForm(data: PacienteFormData) {
     return 'Informe um CPF valido.';
   }
 
-  if (!isValidEmail(data.email)) {
-    return 'Informe um email valido.';
-  }
-
   if (!isValidBrazilMobilePhone(data.telefone)) {
     return 'Informe um celular valido com DDD e 9 digitos.';
   }
 
-  if (!isValidBirthDate(data.dataNascimento)) {
-    return 'Informe a data de nascimento no formato dd/mm/yyyy.';
+  if (!data.hospitalId && !data.hospital.trim()) {
+    return 'Selecione um hospital.';
+  }
+
+  if (!data.procedimento.trim()) {
+    return 'Selecione o procedimento.';
   }
 
   return '';
 }
 
 function toPacientePayload(data: PacienteFormData): PacienteFormData {
+  const cpf = normalizeCpfForPayload(data.cpf);
+  const generatedEmail = `paciente-${cpf}@hemodinks.local`;
+
   return {
     data: data.data && isValidBirthDate(data.data) ? parseDisplayDate(data.data) : null,
     nomePaciente: data.nomePaciente.trim(),
-    cpf: normalizeCpfForPayload(data.cpf),
-    email: data.email.trim(),
+    cpf,
+    email: data.email.trim() || generatedEmail,
     telefone: normalizePhoneForPayload(data.telefone),
     fotoPerfil: data.fotoPerfil || null,
-    dataNascimento: parseDisplayDate(data.dataNascimento),
+    dataNascimento: isValidBirthDate(data.dataNascimento) ? parseDisplayDate(data.dataNascimento) : DEFAULT_PATIENT_BIRTH_DATE,
+    hospitalId: data.hospitalId,
     hospital: data.hospital.trim(),
     medico: data.medico.trim(),
     convenio: data.convenio.trim(),
@@ -632,6 +640,12 @@ function getRecordActivityTime(item: Record<string, unknown> & { id: number }) {
   const updatedTime = getDateFieldTime(item, updateDateFields);
   const createdTime = getDateFieldTime(item, creationDateFields);
   return Math.max(updatedTime, createdTime) || item.id;
+}
+
+function formatCurrency(value?: number | null) {
+  return typeof value === 'number'
+    ? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    : '-';
 }
 
 function compareByRecentActivityThenName<T extends Record<string, unknown> & { id: number }>(
@@ -720,13 +734,14 @@ export default function App() {
   const [editingPacienteDetails, setEditingPacienteDetails] = useState<Paciente | null>(null);
   const [pacienteFormLoading, setPacienteFormLoading] = useState(false);
   const [pacienteFormError, setPacienteFormError] = useState('');
-  const [patientPhotoInputKey, setPatientPhotoInputKey] = useState(0);
   const [patientFileInputKey, setPatientFileInputKey] = useState(0);
   const [pendingPatientFiles, setPendingPatientFiles] = useState<File[]>([]);
   const [selectedPatientInfo, setSelectedPatientInfo] = useState<Paciente | null>(null);
   const [selectedPatientFiles, setSelectedPatientFiles] = useState<Paciente | null>(null);
   const [patientFilesModalLoading, setPatientFilesModalLoading] = useState(false);
   const [patientFilesModalError, setPatientFilesModalError] = useState('');
+  const [hospitais, setHospitais] = useState<Hospital[]>([]);
+  const [hospitaisError, setHospitaisError] = useState('');
   const [cbhpmModalOpen, setCbhpmModalOpen] = useState(false);
   const [cbhpmItems, setCbhpmItems] = useState<CbhpmGeral[]>([]);
   const [cbhpmFilters, setCbhpmFilters] = useState<CbhpmFilters>(emptyCbhpmFilters);
@@ -937,9 +952,24 @@ export default function App() {
     }
   };
 
+  const loadHospitais = async (token = session?.token) => {
+    if (!token) {
+      return;
+    }
+
+    setHospitaisError('');
+
+    try {
+      setHospitais(await getHospitais(token));
+    } catch (error) {
+      setHospitaisError(getErrorMessage(error));
+    }
+  };
+
   useEffect(() => {
     if (session && !session.user.precisaTrocarSenha) {
       void loadDashboardSummary(session.token);
+      void loadHospitais(session.token);
     }
   }, [session?.token, session?.user.precisaTrocarSenha]);
 
@@ -1272,7 +1302,6 @@ export default function App() {
     setEditingPacienteDetails(null);
     setPacienteFormError('');
     setPendingPatientFiles([]);
-    setPatientPhotoInputKey((key) => key + 1);
     setPatientFileInputKey((key) => key + 1);
   };
 
@@ -1296,6 +1325,7 @@ export default function App() {
       telefone: formatPhoneInput(paciente.telefone),
       fotoPerfil: paciente.fotoPerfil ?? null,
       dataNascimento: toDisplayDate(paciente.dataNascimento),
+      hospitalId: paciente.hospitalId ?? null,
       hospital: paciente.hospital || '',
       medico: paciente.medico || '',
       convenio: paciente.convenio || '',
@@ -1308,39 +1338,11 @@ export default function App() {
       statusPago: paciente.statusPago,
       ativo: paciente.ativo,
     });
-    setPatientPhotoInputKey((key) => key + 1);
     setPatientFileInputKey((key) => key + 1);
 
     try {
       const details = await getPaciente(paciente.id, session.token);
       setEditingPacienteDetails(details);
-    } catch (error) {
-      setPacienteFormError(getErrorMessage(error));
-    }
-  };
-
-  const handlePacientePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-
-    if (!file) {
-      return;
-    }
-
-    if (!ALLOWED_PROFILE_PHOTO_TYPES.has(file.type)) {
-      setPacienteFormError('Use uma foto PNG, JPG ou WEBP.');
-      return;
-    }
-
-    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
-      setPacienteFormError('A foto deve ter no maximo 1 MB.');
-      return;
-    }
-
-    try {
-      const fotoPerfil = await readProfilePhoto(file);
-      setPacienteFormData((current) => ({ ...current, fotoPerfil }));
-      setPacienteFormError('');
     } catch (error) {
       setPacienteFormError(getErrorMessage(error));
     }
@@ -1724,6 +1726,10 @@ export default function App() {
 
     if (session && isAdmin) {
       void loadMedicalUsers(session.token);
+    }
+
+    if (session && !hospitais.length) {
+      void loadHospitais(session.token);
     }
   };
 
@@ -2413,40 +2419,15 @@ export default function App() {
 
           <form className="stack module-form-grid" onSubmit={handleSubmitPaciente}>
             <fieldset className="form-fieldset" disabled={patientReadOnly}>
-            <div className="profile-photo-field">
-              <label className="field-label" htmlFor="patient-photo-input">
-                Foto
-              </label>
-              <div className="photo-uploader">
-                <UserAvatar name={pacienteFormData.nomePaciente || 'Paciente'} photo={pacienteFormData.fotoPerfil} size="lg" />
-                {!patientReadOnly && (
-                  <div className="photo-actions">
-                    <label className="ghost-button file-action" htmlFor="patient-photo-input">
-                      <ImagePlus size={17} />
-                      {pacienteFormData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
-                    </label>
-                    {pacienteFormData.fotoPerfil && (
-                      <button type="button" className="ghost-button danger-text" onClick={() => setPacienteFormData((current) => ({ ...current, fotoPerfil: null }))}>
-                        <Trash2 size={17} />
-                        Remover
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-              <input
-                key={patientPhotoInputKey}
-                id="patient-photo-input"
-                className="sr-only"
-                type="file"
-                aria-label="Foto do paciente"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={(event) => void handlePacientePhotoChange(event)}
-              />
-            </div>
+            <DateInput
+              id="patient-procedure-date"
+              label="Data procedimento"
+              value={pacienteFormData.data || ''}
+              onChange={(value) => setPacienteFormData((current) => ({ ...current, data: value }))}
+            />
 
             <label>
-              Nome do paciente
+              Paciente
               <input
                 type="text"
                 value={pacienteFormData.nomePaciente}
@@ -2470,17 +2451,6 @@ export default function App() {
             </label>
 
             <label>
-              Email
-              <input
-                type="email"
-                value={pacienteFormData.email}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, email: event.target.value.slice(0, MAX_EMAIL_LENGTH) }))}
-                maxLength={MAX_EMAIL_LENGTH}
-                required
-              />
-            </label>
-
-            <label>
               Telefone
               <input
                 type="tel"
@@ -2494,26 +2464,35 @@ export default function App() {
               />
             </label>
 
-            <DateInput
-              id="patient-birth-date"
-              label="Data de nascimento"
-              value={pacienteFormData.dataNascimento}
-              onChange={(value) => setPacienteFormData((current) => ({ ...current, dataNascimento: value }))}
-              required
-            />
-
             <label>
               Hospital
-              <input
-                type="text"
-                value={pacienteFormData.hospital}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, hospital: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-                maxLength={MAX_NAME_LENGTH}
-              />
+              <select
+                value={pacienteFormData.hospitalId ?? (pacienteFormData.hospital ? 'legacy' : '')}
+                onChange={(event) => {
+                  if (event.target.value === 'legacy') {
+                    return;
+                  }
+
+                  const hospitalId = event.target.value ? Number(event.target.value) : null;
+                  const hospital = hospitais.find((item) => item.id === hospitalId)?.nome ?? '';
+                  setPacienteFormData((current) => ({ ...current, hospitalId, hospital }));
+                }}
+                disabled={patientReadOnly || !hospitais.length}
+                required
+              >
+                <option value="">{hospitais.length ? 'Selecione um hospital' : 'Nenhum hospital cadastrado'}</option>
+                {pacienteFormData.hospital && !pacienteFormData.hospitalId && (
+                  <option value="legacy">{pacienteFormData.hospital} (fora do cadastro)</option>
+                )}
+                {hospitais.map((hospital) => (
+                  <option key={hospital.id} value={hospital.id}>{hospital.nome}</option>
+                ))}
+              </select>
             </label>
+            {hospitaisError && <p className="alert error">{hospitaisError}</p>}
 
             <label>
-              Medico
+              Médico
               <select
                 value={pacienteFormData.medico}
                 onChange={(event) => setPacienteFormData((current) => ({ ...current, medico: event.target.value }))}
@@ -2534,7 +2513,7 @@ export default function App() {
             </label>
 
             <label>
-              Convenio
+              Convênio
               <input
                 type="text"
                 value={pacienteFormData.convenio}
@@ -2578,7 +2557,7 @@ export default function App() {
             </div>
 
             <label>
-              Autorizacao
+              Autorização
               <input
                 type="text"
                 value={pacienteFormData.autorizacao}
@@ -2589,17 +2568,18 @@ export default function App() {
 
             <div className="two-column-fields">
               <label>
-                Pagamento
+                Valor recebido/pago
                 <input
                   type="text"
                   value={pacienteFormData.pagamento}
                   onChange={(event) => setPacienteFormData((current) => ({ ...current, pagamento: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
                   maxLength={MAX_NAME_LENGTH}
+                  placeholder="R$ 0,00"
                 />
               </label>
 
               <label>
-                Repasse/Glosa
+                Glosa
                 <input
                   type="text"
                   value={pacienteFormData.repasseGlosa}
@@ -3399,13 +3379,14 @@ function CbhpmLookupModal({
                 <th>Codigo</th>
                 <th>Procedimento</th>
                 <th>Porte</th>
+                <th>Custo operacional</th>
                 <th aria-label="Selecionar" />
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="empty-row">Carregando procedimentos...</td>
+                  <td colSpan={5} className="empty-row">Carregando procedimentos...</td>
                 </tr>
               ) : items.length ? (
                 items.map((item) => (
@@ -3413,6 +3394,7 @@ function CbhpmLookupModal({
                     <td data-label="Codigo">{item.codigo}</td>
                     <td data-label="Procedimento">{item.procedimento}</td>
                     <td data-label="Porte">{item.porte || '-'}</td>
+                    <td data-label="Custo operacional">{formatCurrency(item.custoOperacional)}</td>
                     <td data-label="Selecionar">
                       <button type="button" className="ghost-button select-procedure-action" onClick={() => onSelect(item)}>
                         <CheckCircle2 size={17} />
@@ -3423,7 +3405,7 @@ function CbhpmLookupModal({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="empty-row">Nenhum procedimento encontrado.</td>
+                  <td colSpan={5} className="empty-row">Nenhum procedimento encontrado.</td>
                 </tr>
               )}
             </tbody>
@@ -3503,10 +3485,6 @@ function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
           <div>
             <dt>Telefone</dt>
             <dd><CopyValue label="telefone" value={formattedPhone || '-'} /></dd>
-          </div>
-          <div>
-            <dt>Email</dt>
-            <dd><CopyValue label="email" value={paciente.email || '-'} /></dd>
           </div>
         </dl>
       </section>

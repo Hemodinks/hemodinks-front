@@ -73,6 +73,11 @@ export type CbhpmGeral = {
   paginaPdf?: number | null;
 };
 
+export type Hospital = {
+  id: number;
+  nome: string;
+};
+
 export type DashboardSummary = {
   usersCount: number;
   activeUsersCount: number;
@@ -154,6 +159,7 @@ export type Paciente = {
   updatedAt?: string | null;
   modifiedAt?: string | null;
   nomePaciente: string;
+  hospitalId?: number | null;
   hospital?: string | null;
   medico?: string | null;
   convenio?: string | null;
@@ -182,6 +188,7 @@ export type PacienteFormData = {
   telefone: string;
   fotoPerfil?: string | null;
   dataNascimento: string;
+  hospitalId: number | null;
   hospital: string;
   medico: string;
   convenio: string;
