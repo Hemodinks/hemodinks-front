@@ -152,6 +152,7 @@ const emptyPacienteForm: PacienteFormData = {
   dataNascimento: '',
   hospitalId: null,
   hospital: '',
+  medicoUserId: null,
   medico: '',
   convenio: '',
   cbhpmCodigo: '',
@@ -203,6 +204,19 @@ function getPacienteFilterQuery(filters: PacienteFilters, enabled: boolean) {
     ...(filters.convenio.trim() ? { convenio: filters.convenio.trim() } : {}),
     ...(filters.procedimento.trim() ? { procedimento: filters.procedimento.trim() } : {}),
   };
+}
+
+function getMedicoSelectValue(data: PacienteFormData, medicalUsers: User[]) {
+  if (data.medicoUserId != null) {
+    return String(data.medicoUserId);
+  }
+
+  const matchedUser = data.medico ? medicalUsers.find((user) => user.nome === data.medico) : undefined;
+  if (matchedUser) {
+    return String(matchedUser.id);
+  }
+
+  return data.medico ? 'legacy' : '';
 }
 
 function loadStoredSession(): AuthSession | null {
@@ -590,6 +604,7 @@ function toPacientePayload(data: PacienteFormData): PacienteFormData {
     dataNascimento: isValidBirthDate(data.dataNascimento) ? parseDisplayDate(data.dataNascimento) : DEFAULT_PATIENT_BIRTH_DATE,
     hospitalId: data.hospitalId,
     hospital: data.hospital.trim(),
+    medicoUserId: data.medicoUserId,
     medico: data.medico.trim(),
     convenio: data.convenio.trim(),
     cbhpmCodigo: data.cbhpmCodigo.trim(),
@@ -1327,6 +1342,7 @@ export default function App() {
       dataNascimento: toDisplayDate(paciente.dataNascimento),
       hospitalId: paciente.hospitalId ?? null,
       hospital: paciente.hospital || '',
+      medicoUserId: paciente.medicoUserId ?? null,
       medico: paciente.medico || '',
       convenio: paciente.convenio || '',
       cbhpmCodigo: paciente.cbhpmCodigo || '',
@@ -1394,12 +1410,20 @@ export default function App() {
       return;
     }
 
-    if (isAdmin && pacienteFormData.medico && !medicalUsers.some((user) => user.nome === pacienteFormData.medico)) {
+    const selectedMedicoUser = pacienteFormData.medicoUserId != null
+      ? medicalUsers.find((user) => user.id === pacienteFormData.medicoUserId)
+      : medicalUsers.find((user) => user.nome === pacienteFormData.medico);
+
+    if (isAdmin && pacienteFormData.medico && !selectedMedicoUser) {
       setPacienteFormError('Selecione um medico cadastrado com perfil Medicos.');
       return;
     }
 
-    const payload = toPacientePayload(pacienteFormData);
+    const payload = toPacientePayload({
+      ...pacienteFormData,
+      medicoUserId: selectedMedicoUser?.id ?? pacienteFormData.medicoUserId,
+      medico: selectedMedicoUser?.nome ?? pacienteFormData.medico,
+    });
 
     setPacienteFormLoading(true);
     setPacienteFormError('');
@@ -1718,7 +1742,11 @@ export default function App() {
 
     resetPacienteForm();
     if (isMedical && session) {
-      setPacienteFormData((current) => ({ ...current, medico: session.user.nome }));
+      setPacienteFormData((current) => ({
+        ...current,
+        medicoUserId: session.user.id,
+        medico: session.user.nome,
+      }));
     }
     setPacienteSuccessMessage('');
     setActiveView('patients');
@@ -2494,18 +2522,26 @@ export default function App() {
             <label>
               Médico
               <select
-                value={pacienteFormData.medico}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, medico: event.target.value }))}
+                value={getMedicoSelectValue(pacienteFormData, medicalUsers)}
+                onChange={(event) => {
+                  if (event.target.value === 'legacy') {
+                    return;
+                  }
+
+                  const medicoUserId = event.target.value ? Number(event.target.value) : null;
+                  const medico = medicalUsers.find((user) => user.id === medicoUserId)?.nome ?? '';
+                  setPacienteFormData((current) => ({ ...current, medicoUserId, medico }));
+                }}
                 disabled={patientReadOnly || isMedical || (!medicalUsers.length && !pacienteFormData.medico)}
               >
                 <option value="">{isMedical ? session.user.nome : medicalUsers.length ? 'Selecione um medico' : 'Nenhum medico cadastrado'}</option>
-                {pacienteFormData.medico && !medicalUsers.some((user) => user.nome === pacienteFormData.medico) && (
-                  <option value={pacienteFormData.medico}>
+                {pacienteFormData.medico && !pacienteFormData.medicoUserId && !medicalUsers.some((user) => user.nome === pacienteFormData.medico) && (
+                  <option value="legacy">
                     {pacienteFormData.medico} (fora do cadastro)
                   </option>
                 )}
                 {medicalUsers.map((user) => (
-                  <option key={user.id} value={user.nome}>
+                  <option key={user.id} value={user.id}>
                     {user.nome}
                   </option>
                 ))}

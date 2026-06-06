@@ -61,6 +61,32 @@ Variavel obrigatoria:
 VITE_API_URL=https://<api-publica>
 ```
 
+### Homologacao Render: confirmation
+
+O arquivo `render.confirmation.yaml` define um Static Site separado:
+
+- service: `hemodinks-front-confirmation`
+- branch: `developer`
+- build `npm ci && npm run build`
+- publish path `./dist`
+- rewrite SPA para `/index.html`
+
+Variavel esperada:
+
+```text
+VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
+```
+
+Se a API de homologacao receber outra URL no Render, atualize `VITE_API_URL` no ambiente `confirmation`.
+
+O arquivo `.env.confirmation.example` contem o valor de referencia para build local ou configuracao manual.
+
+No backend de homologacao, libere a origem do front:
+
+```text
+Cors__AllowedOrigins__0=https://hemodinks-front-confirmation.onrender.com
+```
+
 ## Validacao
 
 ```powershell
