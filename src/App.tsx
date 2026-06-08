@@ -751,20 +751,55 @@ function getExcelColumnName(index: number) {
 function buildWorksheetXml(rows: Record<string, string>[]) {
   const headers = pacienteExportColumns.map((column) => column.header);
   const sheetRows = [headers, ...rows.map((row) => headers.map((header) => row[header] ?? ''))];
+  const columnsXml = headers.map((header, index) => {
+    const width = Math.min(36, Math.max(14, header.length + 4));
+    const columnNumber = index + 1;
+    return `<col min="${columnNumber}" max="${columnNumber}" width="${width}" customWidth="1"/>`;
+  }).join('');
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <cols>${columnsXml}</cols>
   <sheetData>
     ${sheetRows.map((cells, rowIndex) => {
       const rowNumber = rowIndex + 1;
       const cellXml = cells.map((cell, cellIndex) => {
         const cellReference = `${getExcelColumnName(cellIndex)}${rowNumber}`;
-        return `<c r="${cellReference}" t="inlineStr"><is><t>${escapeXml(String(cell))}</t></is></c>`;
+        const headerStyle = rowIndex === 0 ? ' s="1"' : '';
+        return `<c r="${cellReference}"${headerStyle} t="inlineStr"><is><t>${escapeXml(String(cell))}</t></is></c>`;
       }).join('');
       return `<row r="${rowNumber}">${cellXml}</row>`;
     }).join('\n    ')}
   </sheetData>
 </worksheet>`;
+}
+
+function buildWorkbookStylesXml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="2">
+    <font><sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/></font>
+    <font><b/><sz val="11"/><color rgb="FF0F172A"/><name val="Calibri"/><family val="2"/></font>
+  </fonts>
+  <fills count="3">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFD9FBEA"/><bgColor indexed="64"/></patternFill></fill>
+  </fills>
+  <borders count="1">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+  </borders>
+  <cellStyleXfs count="1">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
+  </cellStyleXfs>
+  <cellXfs count="2">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+  </cellXfs>
+  <cellStyles count="1">
+    <cellStyle name="Normal" xfId="0" builtinId="0"/>
+  </cellStyles>
+</styleSheet>`;
 }
 
 function getCrc32Table() {
@@ -893,6 +928,7 @@ function createXlsxBlob(rows: Record<string, string>[]) {
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
 </Types>`,
     },
@@ -917,7 +953,12 @@ function createXlsxBlob(rows: Record<string, string>[]) {
       content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>`,
+    },
+    {
+      name: 'xl/styles.xml',
+      content: buildWorkbookStylesXml(),
     },
     {
       name: 'xl/worksheets/sheet1.xml',

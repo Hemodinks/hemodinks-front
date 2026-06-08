@@ -1402,18 +1402,25 @@ img.user-avatar {
 }
 
 .patient-export-actions {
+  flex: 0 0 100%;
+  width: 100%;
   min-width: 0;
-  display: inline-flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) auto auto;
   align-items: end;
+  justify-content: flex-start;
   gap: 10px;
 }
 
 .patient-export-actions .ghost-button {
+  width: auto;
+  min-width: 168px;
   min-height: 40px;
+  white-space: nowrap;
 }
 
 .export-scope-field {
+  width: 100%;
   min-width: min(230px, 100%);
   gap: 5px;
   color: var(--muted);
@@ -2334,6 +2341,10 @@ tbody tr:last-child td {
     width: 100%;
   }
 
+  .patient-export-actions {
+    grid-template-columns: 1fr;
+  }
+
   .table-wrap {
     overflow: visible;
     border: 0;
@@ -2924,6 +2935,7 @@ tbody tr:last-child td {
 
   .patient-export-actions {
     flex: 1 1 100%;
+    grid-template-columns: minmax(220px, 1fr) minmax(154px, auto) minmax(154px, auto);
   }
 
   .patient-filter-grid {
