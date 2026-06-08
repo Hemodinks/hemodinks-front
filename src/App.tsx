@@ -46,6 +46,7 @@ import {
   deletePacienteArquivo,
   deleteUser,
   deleteUserArquivo,
+  getConvenios,
   getDashboardNotifications,
   getDashboardSummary,
   getCbhpmGeral,
@@ -63,6 +64,7 @@ import {
 import type {
   AuthSession,
   CbhpmGeral,
+  Convenio,
   DashboardNotification,
   DashboardSummary,
   Hospital,
@@ -88,6 +90,8 @@ const MAX_PHONE_LENGTH = 20;
 const MAX_CPF_LENGTH = 14;
 const MAX_CRM_LENGTH = 20;
 const MAX_PASSWORD_LENGTH = 500;
+const MEDICAL_USERS_DATALIST_ID = 'hemodinks-medical-users-options';
+const CONVENIOS_DATALIST_ID = 'hemodinks-convenios-options';
 const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
 const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
 const MEDICAL_PROFILE_ID = 2;
@@ -156,6 +160,7 @@ const emptyPacienteForm: PacienteFormData = {
   hospital: '',
   medicoUserId: null,
   medico: '',
+  convenioId: null,
   convenio: '',
   cbhpmCodigo: '',
   cbhpmPorte: '',
@@ -211,17 +216,22 @@ function getPacienteFilterQuery(filters: PacienteFilters, enabled: boolean) {
   };
 }
 
-function getMedicoSelectValue(data: PacienteFormData, medicalUsers: User[]) {
-  if (data.medicoUserId != null) {
-    return String(data.medicoUserId);
-  }
+function normalizeLookupText(value: string) {
+  return value.trim().toLocaleLowerCase('pt-BR');
+}
 
-  const matchedUser = data.medico ? medicalUsers.find((user) => user.nome === data.medico) : undefined;
-  if (matchedUser) {
-    return String(matchedUser.id);
-  }
+function findMedicalUserByName(users: User[], name: string) {
+  const normalizedName = normalizeLookupText(name);
+  return normalizedName
+    ? users.find((user) => normalizeLookupText(user.nome) === normalizedName)
+    : undefined;
+}
 
-  return data.medico ? 'legacy' : '';
+function findConvenioByDescription(convenios: Convenio[], descricao: string) {
+  const normalizedDescricao = normalizeLookupText(descricao);
+  return normalizedDescricao
+    ? convenios.find((convenio) => normalizeLookupText(convenio.descricaoConvenio) === normalizedDescricao)
+    : undefined;
 }
 
 function loadStoredSession(): AuthSession | null {
@@ -677,6 +687,7 @@ function toPacientePayload(data: PacienteFormData): PacienteFormData {
     hospital: data.hospital.trim(),
     medicoUserId: data.medicoUserId,
     medico: data.medico.trim(),
+    convenioId: data.convenioId,
     convenio: data.convenio.trim(),
     cbhpmCodigo: firstProcedimento?.cbhpmCodigo || '',
     cbhpmPorte: firstProcedimento?.cbhpmPorte || '',
@@ -761,6 +772,14 @@ function sortUsersForListing(items: User[]) {
 
 function sortPacientesForListing(items: Paciente[]) {
   return [...items].sort((first, second) => compareByRecentActivityThenName(first, second, (paciente) => paciente.nomePaciente));
+}
+
+function sortUsersByName(items: User[]) {
+  return [...items].sort((first, second) => listingNameCollator.compare(first.nome, second.nome));
+}
+
+function sortConveniosByDescription(items: Convenio[]) {
+  return [...items].sort((first, second) => listingNameCollator.compare(first.descricaoConvenio, second.descricaoConvenio));
 }
 
 const pacienteExportColumns = [
@@ -1115,6 +1134,8 @@ export default function App() {
   const [patientFilesModalError, setPatientFilesModalError] = useState('');
   const [hospitais, setHospitais] = useState<Hospital[]>([]);
   const [hospitaisError, setHospitaisError] = useState('');
+  const [convenios, setConvenios] = useState<Convenio[]>([]);
+  const [conveniosError, setConveniosError] = useState('');
   const [cbhpmModalOpen, setCbhpmModalOpen] = useState(false);
   const [cbhpmItems, setCbhpmItems] = useState<CbhpmGeral[]>([]);
   const [cbhpmFilters, setCbhpmFilters] = useState<CbhpmFilters>(emptyCbhpmFilters);
@@ -1170,6 +1191,10 @@ export default function App() {
     setUsersTotalItems(0);
     setUsersTotalPages(1);
     setMedicalUsers([]);
+    setHospitais([]);
+    setHospitaisError('');
+    setConvenios([]);
+    setConveniosError('');
     setPacientes([]);
     setPacienteFilters(emptyPacienteFilters);
     setDebouncedPacienteFilters(emptyPacienteFilters);
@@ -1259,7 +1284,7 @@ export default function App() {
         pageSize: LOOKUP_PAGE_SIZE,
         profileId: MEDICAL_PROFILE_ID,
       });
-      setMedicalUsers(getPagedItems(result));
+      setMedicalUsers(sortUsersByName(getPagedItems(result)));
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     }
@@ -1433,10 +1458,25 @@ export default function App() {
     }
   };
 
+  const loadConvenios = async (token = session?.token) => {
+    if (!token) {
+      return;
+    }
+
+    setConveniosError('');
+
+    try {
+      setConvenios(sortConveniosByDescription(await getConvenios(token)));
+    } catch (error) {
+      setConveniosError(getErrorMessage(error));
+    }
+  };
+
   useEffect(() => {
     if (session && !session.user.precisaTrocarSenha) {
       void loadDashboardSummary(session.token);
       void loadHospitais(session.token);
+      void loadConvenios(session.token);
     }
   }, [session?.token, session?.user.precisaTrocarSenha]);
 
@@ -1797,6 +1837,7 @@ export default function App() {
       hospital: paciente.hospital || '',
       medicoUserId: paciente.medicoUserId ?? null,
       medico: paciente.medico || '',
+      convenioId: paciente.convenioId ?? null,
       convenio: paciente.convenio || '',
       cbhpmCodigo: paciente.cbhpmCodigo || '',
       cbhpmPorte: paciente.cbhpmPorte || '',
@@ -1818,6 +1859,8 @@ export default function App() {
         cbhpmCodigo: details.cbhpmCodigo || '',
         cbhpmPorte: details.cbhpmPorte || '',
         procedimento: details.procedimento || '',
+        convenioId: details.convenioId ?? current.convenioId,
+        convenio: details.convenio || current.convenio,
         procedimentos: getPacienteProcedimentosFromPaciente(details),
       }));
     } catch (error) {
@@ -1873,10 +1916,19 @@ export default function App() {
 
     const selectedMedicoUser = pacienteFormData.medicoUserId != null
       ? medicalUsers.find((user) => user.id === pacienteFormData.medicoUserId)
-      : medicalUsers.find((user) => user.nome === pacienteFormData.medico);
+      : findMedicalUserByName(medicalUsers, pacienteFormData.medico);
 
     if (isAdmin && pacienteFormData.medico && !selectedMedicoUser) {
       setPacienteFormError('Selecione um medico cadastrado com perfil Medicos.');
+      return;
+    }
+
+    const selectedConvenio = pacienteFormData.convenioId != null
+      ? convenios.find((convenio) => convenio.idConvenio === pacienteFormData.convenioId)
+      : findConvenioByDescription(convenios, pacienteFormData.convenio);
+
+    if (pacienteFormData.convenio && !selectedConvenio) {
+      setPacienteFormError('Selecione um convenio cadastrado.');
       return;
     }
 
@@ -1884,6 +1936,8 @@ export default function App() {
       ...pacienteFormData,
       medicoUserId: selectedMedicoUser?.id ?? pacienteFormData.medicoUserId,
       medico: selectedMedicoUser?.nome ?? pacienteFormData.medico,
+      convenioId: selectedConvenio?.idConvenio ?? null,
+      convenio: selectedConvenio?.descricaoConvenio ?? '',
     });
 
     setPacienteFormLoading(true);
@@ -2340,6 +2394,16 @@ export default function App() {
   return (
     <main className="app-shell">
       <LoadingOverlay active={isBusy} />
+      <datalist id={MEDICAL_USERS_DATALIST_ID}>
+        {medicalUsers.map((user) => (
+          <option key={user.id} value={user.nome} />
+        ))}
+      </datalist>
+      <datalist id={CONVENIOS_DATALIST_ID}>
+        {convenios.map((convenio) => (
+          <option key={convenio.idConvenio} value={convenio.descricaoConvenio} />
+        ))}
+      </datalist>
       <header className="topbar">
         <div className="topbar-brand">
           <div>
@@ -2990,42 +3054,42 @@ export default function App() {
 
             <label>
               Médico
-              <select
-                value={getMedicoSelectValue(pacienteFormData, medicalUsers)}
+              <input
+                type="text"
+                list={MEDICAL_USERS_DATALIST_ID}
+                value={isMedical ? session.user.nome : pacienteFormData.medico}
                 onChange={(event) => {
-                  if (event.target.value === 'legacy') {
-                    return;
-                  }
-
-                  const medicoUserId = event.target.value ? Number(event.target.value) : null;
-                  const medico = medicalUsers.find((user) => user.id === medicoUserId)?.nome ?? '';
-                  setPacienteFormData((current) => ({ ...current, medicoUserId, medico }));
+                  const medico = event.target.value.slice(0, MAX_NAME_LENGTH);
+                  const selectedMedicoUser = findMedicalUserByName(medicalUsers, medico);
+                  setPacienteFormData((current) => ({ ...current, medicoUserId: selectedMedicoUser?.id ?? null, medico }));
                 }}
                 disabled={patientReadOnly || isMedical || (!medicalUsers.length && !pacienteFormData.medico)}
-              >
-                <option value="">{isMedical ? session.user.nome : medicalUsers.length ? 'Selecione um medico' : 'Nenhum medico cadastrado'}</option>
-                {pacienteFormData.medico && !pacienteFormData.medicoUserId && !medicalUsers.some((user) => user.nome === pacienteFormData.medico) && (
-                  <option value="legacy">
-                    {pacienteFormData.medico} (fora do cadastro)
-                  </option>
-                )}
-                {medicalUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.nome}
-                  </option>
-                ))}
-              </select>
+                maxLength={MAX_NAME_LENGTH}
+                placeholder={isMedical ? session.user.nome : medicalUsers.length ? 'Selecione ou digite o medico' : 'Nenhum medico cadastrado'}
+              />
             </label>
 
             <label>
               Convênio
               <input
                 type="text"
+                list={CONVENIOS_DATALIST_ID}
                 value={pacienteFormData.convenio}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, convenio: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
+                onChange={(event) => {
+                  const convenio = event.target.value.slice(0, MAX_NAME_LENGTH);
+                  const selectedConvenio = findConvenioByDescription(convenios, convenio);
+                  setPacienteFormData((current) => ({
+                    ...current,
+                    convenioId: selectedConvenio?.idConvenio ?? null,
+                    convenio,
+                  }));
+                }}
+                disabled={patientReadOnly || (!convenios.length && !pacienteFormData.convenio)}
                 maxLength={MAX_NAME_LENGTH}
+                placeholder={convenios.length ? 'Selecione ou digite o convenio' : 'Nenhum convenio cadastrado'}
               />
             </label>
+            {conveniosError && <p className="alert error">{conveniosError}</p>}
 
             <div className="procedure-field">
               <span className="field-label">Procedimento</span>
@@ -3257,26 +3321,24 @@ export default function App() {
                 <div className="patient-filter-grid" aria-label="Filtros administrativos de pacientes">
                   <label className="filter-field">
                     Medico
-                    <select
+                    <input
+                      type="search"
+                      list={MEDICAL_USERS_DATALIST_ID}
                       value={pacienteFilters.medico}
                       onChange={(event) => setPacienteFilters((current) => ({ ...current, medico: event.target.value }))}
                       disabled={!medicalUsers.length}
-                    >
-                      <option value="">{medicalUsers.length ? 'Todos os medicos' : 'Nenhum medico cadastrado'}</option>
-                      {medicalUsers.map((user) => (
-                        <option key={user.id} value={user.nome}>
-                          {user.nome}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder={medicalUsers.length ? 'Todos os medicos' : 'Nenhum medico cadastrado'}
+                    />
                   </label>
                   <label className="filter-field">
                     Convenio
                     <input
                       type="search"
+                      list={CONVENIOS_DATALIST_ID}
                       value={pacienteFilters.convenio}
                       onChange={(event) => setPacienteFilters((current) => ({ ...current, convenio: event.target.value }))}
-                      placeholder="Convenio"
+                      disabled={!convenios.length}
+                      placeholder={convenios.length ? 'Convenio' : 'Nenhum convenio cadastrado'}
                     />
                   </label>
                   <label className="filter-field">

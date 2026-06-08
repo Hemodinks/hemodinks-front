@@ -2,6 +2,7 @@ import type {
   ChangePasswordPayload,
   CbhpmGeral,
   CbhpmListQuery,
+  Convenio,
   DashboardNotification,
   DashboardSummary,
   Hospital,
@@ -191,6 +192,10 @@ export function getCbhpmGeral(token: string, query?: CbhpmListQuery) {
 
 export function getHospitais(token: string) {
   return request<Hospital[]>('/api/hospitais/', {}, token);
+}
+
+export function getConvenios(token: string) {
+  return request<Convenio[]>('/api/convenios/', {}, token);
 }
 
 export function getPaciente(id: number, token: string) {

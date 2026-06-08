@@ -88,6 +88,11 @@ export type Hospital = {
   nome: string;
 };
 
+export type Convenio = {
+  idConvenio: number;
+  descricaoConvenio: string;
+};
+
 export type DashboardSummary = {
   usersCount: number;
   activeUsersCount: number;
@@ -173,6 +178,7 @@ export type Paciente = {
   hospital?: string | null;
   medicoUserId?: number | null;
   medico?: string | null;
+  convenioId?: number | null;
   convenio?: string | null;
   cbhpmCodigo?: string | null;
   cbhpmPorte?: string | null;
@@ -204,6 +210,7 @@ export type PacienteFormData = {
   hospital: string;
   medicoUserId: number | null;
   medico: string;
+  convenioId: number | null;
   convenio: string;
   cbhpmCodigo: string;
   cbhpmPorte: string;

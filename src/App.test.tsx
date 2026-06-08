@@ -10,6 +10,7 @@ vi.mock('./api', () => ({
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
   getCbhpmGeral: vi.fn(),
+  getConvenios: vi.fn(),
   getHospitais: vi.fn(),
   getUsers: vi.fn(),
   getPaciente: vi.fn(),
@@ -54,6 +55,7 @@ const basePaciente: Paciente = {
   hospital: 'Santa Clara - Mater Dei',
   medicoUserId: 1,
   medico: 'Dra. Ana',
+  convenioId: 7,
   convenio: 'Particular',
   cbhpmCodigo: '1.01.01.01-2',
   cbhpmPorte: '2B',
@@ -146,6 +148,11 @@ describe('App', () => {
       { id: 1, nome: 'Santa Clara - Mater Dei' },
       { id: 2, nome: 'Santa Genoveva - Mater Dei' },
       { id: 3, nome: 'UMC - Complexo Hospitalar' },
+    ]);
+    vi.mocked(api.getConvenios).mockResolvedValue([
+      { idConvenio: 1, descricaoConvenio: 'Amil' },
+      { idConvenio: 2, descricaoConvenio: 'Bradesco Saude' },
+      { idConvenio: 7, descricaoConvenio: 'Particular' },
     ]);
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
@@ -599,8 +606,7 @@ describe('App', () => {
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
     expect(await screen.findByRole('option', { name: 'Santa Genoveva - Mater Dei' })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Hospital'), '2');
-    expect(screen.getByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Médico'), '1');
+    await user.type(screen.getByLabelText('Médico'), 'Ana Hemodinks');
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     expect(within(cbhpmDialog).getByText('1.01.01.01-2')).toBeInTheDocument();
@@ -622,6 +628,7 @@ describe('App', () => {
       hospital: 'Santa Genoveva - Mater Dei',
       medicoUserId: 1,
       medico: 'Ana Hemodinks',
+      convenioId: null,
       convenio: '',
       cbhpmCodigo: '1.01.01.01-2',
       cbhpmPorte: '2B',
@@ -661,8 +668,7 @@ describe('App', () => {
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
-    expect(await screen.findByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Medico'), 'Ana Hemodinks');
+    await user.type(screen.getByLabelText('Medico'), 'Ana Hemodinks');
     await user.type(screen.getByLabelText('Convenio'), 'Particular');
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
 
