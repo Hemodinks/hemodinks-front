@@ -1513,6 +1513,14 @@ img.user-avatar {
   background: var(--panel);
 }
 
+.carousel-shell {
+  position: relative;
+}
+
+.carousel-nav {
+  display: none;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -3452,6 +3460,66 @@ tbody tr:last-child td {
     top: auto;
     right: 16px;
     bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .carousel-shell::before,
+  .carousel-shell::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    bottom: 14px;
+    z-index: 2;
+    width: 38px;
+    pointer-events: none;
+  }
+
+  .carousel-shell::before {
+    left: 0;
+    background: linear-gradient(90deg, rgba(173, 216, 230, 0.86), rgba(173, 216, 230, 0));
+  }
+
+  .carousel-shell::after {
+    right: 0;
+    background: linear-gradient(270deg, rgba(173, 216, 230, 0.86), rgba(173, 216, 230, 0));
+  }
+
+  .carousel-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 4;
+    width: 36px;
+    min-height: 46px;
+    border: 1px solid rgba(15, 118, 110, 0.28);
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--teal);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 8px 20px rgba(14, 116, 144, 0.18);
+    transform: translateY(-50%);
+  }
+
+  :root[data-theme="dark"] .carousel-nav {
+    background: rgba(12, 28, 49, 0.94);
+  }
+
+  .carousel-nav:hover,
+  .carousel-nav:focus-visible {
+    color: #fff;
+    background: var(--teal);
+  }
+
+  .carousel-nav-left {
+    left: 6px;
+  }
+
+  .carousel-nav-right {
+    right: 6px;
+  }
+
+  .carousel-nav svg {
+    pointer-events: none;
   }
 
   .list-carousel-wrap {
