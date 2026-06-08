@@ -627,7 +627,8 @@ describe('App', () => {
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Medico'), 'Ana');
+    expect(await screen.findByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Medico'), 'Ana Hemodinks');
     await user.type(screen.getByLabelText('Convenio'), 'Particular');
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
 
@@ -636,7 +637,7 @@ describe('App', () => {
         page: 1,
         pageSize: 10,
         search: '',
-        medico: 'Ana',
+        medico: 'Ana Hemodinks',
         convenio: 'Particular',
         procedimento: 'Consulta',
       });
