@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -298,6 +298,24 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /ocultar senha/i }));
 
     expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+
+  it('normaliza foto de perfil relativa e exibe iniciais se a imagem falhar', async () => {
+    mockSession({
+      nome: 'George Marcone',
+      fotoPerfil: '/profile-photos/george.png',
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+
+    const avatar = screen.getByAltText('Foto de George Marcone');
+    expect(avatar).toHaveAttribute('src', 'http://localhost:5000/profile-photos/george.png');
+
+    fireEvent.error(avatar);
+
+    expect(screen.getByLabelText('Sem foto de George Marcone')).toBeInTheDocument();
   });
 
   it('reseta para a senha padrao e exige troca ao entrar', async () => {
