@@ -1405,10 +1405,23 @@ img.user-avatar {
   min-width: 0;
   display: inline-flex;
   flex-wrap: wrap;
+  align-items: end;
   gap: 10px;
 }
 
 .patient-export-actions .ghost-button {
+  min-height: 40px;
+}
+
+.export-scope-field {
+  min-width: min(230px, 100%);
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.export-scope-field select {
   min-height: 40px;
 }
 
@@ -2316,6 +2329,7 @@ tbody tr:last-child td {
   }
 
   .patient-export-actions,
+  .export-scope-field,
   .patient-export-actions .ghost-button {
     width: 100%;
   }

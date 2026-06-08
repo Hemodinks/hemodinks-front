@@ -184,6 +184,7 @@ type PacienteFilters = {
   procedimento: string;
 };
 type PacienteExportFormat = 'xlsx' | 'pdf';
+type PacienteExportScope = 'all' | 'doctor' | 'visible';
 
 const emptyCbhpmFilters: CbhpmFilters = {
   codigo: '',
@@ -985,6 +986,7 @@ export default function App() {
   const [pacienteSearchTerm, setPacienteSearchTerm] = useState('');
   const [debouncedPacienteSearchTerm, setDebouncedPacienteSearchTerm] = useState('');
   const [pacienteExportLoading, setPacienteExportLoading] = useState<PacienteExportFormat | null>(null);
+  const [pacienteExportScope, setPacienteExportScope] = useState<PacienteExportScope>('visible');
   const [pacienteFilters, setPacienteFilters] = useState<PacienteFilters>(emptyPacienteFilters);
   const [debouncedPacienteFilters, setDebouncedPacienteFilters] = useState<PacienteFilters>(emptyPacienteFilters);
   const [pacienteCurrentPage, setPacienteCurrentPage] = useState(1);
@@ -1183,19 +1185,17 @@ export default function App() {
     }
   };
 
-  const loadPacientesForExport = async () => {
+  const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>) => {
     if (!session) {
       return [];
     }
 
-    const query = {
+    const firstResult = await getPacientes(session.token, {
       page: 1,
       pageSize: PATIENT_EXPORT_PAGE_SIZE,
-      search: debouncedPacienteSearchTerm,
-      ...getPacienteFilterQuery(debouncedPacienteFilters, isAdmin),
-    };
+      ...query,
+    });
 
-    const firstResult = await getPacientes(session.token, query);
     const items = [...getPagedItems(firstResult)];
     const totalPagesForExport = getPagedTotalPages(firstResult);
 
@@ -1203,11 +1203,30 @@ export default function App() {
       const result = await getPacientes(session.token, {
         ...query,
         page,
+        pageSize: PATIENT_EXPORT_PAGE_SIZE,
       });
       items.push(...getPagedItems(result));
     }
 
     return sortPacientesForListing(items);
+  };
+
+  const loadPacientesForExport = async (scope: PacienteExportScope) => {
+    if (scope === 'visible') {
+      return paginatedPacientes;
+    }
+
+    if (scope === 'doctor') {
+      const medico = pacienteFilters.medico.trim();
+
+      if (!medico) {
+        throw new Error('Selecione um medico antes de exportar por medico.');
+      }
+
+      return fetchPacientesForExport({ medico });
+    }
+
+    return fetchPacientesForExport({});
   };
 
   const handleExportPacientes = async (format: PacienteExportFormat) => {
@@ -1219,7 +1238,7 @@ export default function App() {
     setPacientesError('');
 
     try {
-      const exportItems = await loadPacientesForExport();
+      const exportItems = await loadPacientesForExport(pacienteExportScope);
       const rows = getPacienteExportRows(exportItems);
 
       if (format === 'xlsx') {
@@ -3065,6 +3084,17 @@ export default function App() {
                 <RefreshCw size={18} />
               </button>
               <div className="patient-export-actions" aria-label="Exportacoes de pacientes">
+                <label className="export-scope-field">
+                  Exportar
+                  <select
+                    value={pacienteExportScope}
+                    onChange={(event) => setPacienteExportScope(event.target.value as PacienteExportScope)}
+                  >
+                    <option value="all">Todos os pacientes</option>
+                    {isAdmin && <option value="doctor">Medico selecionado</option>}
+                    <option value="visible">Dados da tela</option>
+                  </select>
+                </label>
                 <button
                   type="button"
                   className="ghost-button"
