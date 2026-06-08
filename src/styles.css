@@ -1305,6 +1305,12 @@ img.user-avatar {
   min-height: 43px;
 }
 
+.selected-procedure-list {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
 .selected-procedure {
   min-width: 0;
   display: flex;
@@ -1334,6 +1340,12 @@ img.user-avatar {
   overflow-wrap: anywhere;
   color: var(--ink);
   line-height: 1.35;
+}
+
+.selected-procedure-main small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .selected-procedure-actions {
@@ -1388,7 +1400,7 @@ img.user-avatar {
   max-width: 100%;
   flex-wrap: wrap;
   align-items: flex-start;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .patients-workspace .table-tools > .search-box {
@@ -1399,6 +1411,37 @@ img.user-avatar {
 
 .patients-workspace .table-tools > .icon-button {
   flex: 0 0 40px;
+}
+
+.patient-export-actions {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) auto auto;
+  align-items: end;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.patient-export-actions .ghost-button {
+  width: auto;
+  min-width: 168px;
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.export-scope-field {
+  width: 100%;
+  min-width: min(230px, 100%);
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.export-scope-field select {
+  min-height: 40px;
 }
 
 .patient-filter-grid {
@@ -1419,7 +1462,8 @@ img.user-avatar {
   font-weight: 900;
 }
 
-.filter-field input {
+.filter-field input,
+.filter-field select {
   min-width: 0;
   min-height: 38px;
 }
@@ -1696,6 +1740,24 @@ tbody tr:last-child td {
   color: var(--ink);
   font-weight: 900;
   text-align: right;
+}
+
+.info-procedure-list {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.info-procedure-list li {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
 }
 
 .copyable-value {
@@ -2303,6 +2365,16 @@ tbody tr:last-child td {
     flex: 0 0 40px;
   }
 
+  .patient-export-actions,
+  .export-scope-field,
+  .patient-export-actions .ghost-button {
+    width: 100%;
+  }
+
+  .patient-export-actions {
+    grid-template-columns: 1fr;
+  }
+
   .table-wrap {
     overflow: visible;
     border: 0;
@@ -2889,6 +2961,11 @@ tbody tr:last-child td {
 
   .patients-workspace .table-tools > .search-box {
     max-width: none;
+  }
+
+  .patient-export-actions {
+    flex: 1 1 100%;
+    grid-template-columns: minmax(220px, 1fr) minmax(154px, auto) minmax(154px, auto);
   }
 
   .patient-filter-grid {

@@ -68,6 +68,7 @@ import type {
   Hospital,
   Paciente,
   PacienteFormData,
+  PacienteProcedimento,
   User,
   UserFormData,
 } from './types';
@@ -78,6 +79,7 @@ const THEME_KEY = 'hemodinks.theme';
 const DEFAULT_PASSWORD = 'Senha@123';
 const DEFAULT_PATIENT_BIRTH_DATE = '1900-01-01';
 const PAGE_SIZE = 10;
+const PATIENT_EXPORT_PAGE_SIZE = 100;
 const LOOKUP_PAGE_SIZE = 100;
 const CBHPM_PAGE_SIZE = 10;
 const MAX_NAME_LENGTH = 255;
@@ -158,6 +160,7 @@ const emptyPacienteForm: PacienteFormData = {
   cbhpmCodigo: '',
   cbhpmPorte: '',
   procedimento: '',
+  procedimentos: [],
   autorizacao: '',
   pagamento: '',
   repasseGlosa: '',
@@ -182,6 +185,8 @@ type PacienteFilters = {
   convenio: string;
   procedimento: string;
 };
+type PacienteExportFormat = 'xlsx' | 'pdf';
+type PacienteExportScope = 'all' | 'doctor' | 'visible';
 
 const emptyCbhpmFilters: CbhpmFilters = {
   codigo: '',
@@ -566,6 +571,70 @@ function toUserPayload(data: UserFormData): UserFormData {
   };
 }
 
+function normalizePacienteProcedimentos(procedimentos: PacienteProcedimento[]) {
+  const seen = new Set<string>();
+
+  return procedimentos
+    .map((item) => ({
+      cbhpmCodigo: item.cbhpmCodigo?.trim() || null,
+      cbhpmPorte: item.cbhpmPorte?.trim() || null,
+      procedimento: item.procedimento.trim(),
+      valorReferencia: item.valorReferencia ?? null,
+    }))
+    .filter((item) => item.procedimento)
+    .filter((item) => {
+      const key = item.cbhpmCodigo ? `codigo:${item.cbhpmCodigo}` : `livre:${item.procedimento}:${item.cbhpmPorte || ''}`;
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+}
+
+function getPacienteProcedimentosFromForm(data: PacienteFormData) {
+  const procedimentos = normalizePacienteProcedimentos(data.procedimentos);
+  if (procedimentos.length) {
+    return procedimentos;
+  }
+
+  return normalizePacienteProcedimentos([
+    {
+      cbhpmCodigo: data.cbhpmCodigo,
+      cbhpmPorte: data.cbhpmPorte,
+      procedimento: data.procedimento,
+    },
+  ]);
+}
+
+function getPacienteProcedimentosFromPaciente(paciente: Paciente) {
+  return normalizePacienteProcedimentos(
+    paciente.procedimentos?.length
+      ? paciente.procedimentos
+      : [
+          {
+            cbhpmCodigo: paciente.cbhpmCodigo,
+            cbhpmPorte: paciente.cbhpmPorte,
+            procedimento: paciente.procedimento || '',
+          },
+        ],
+  );
+}
+
+function withPrimaryProcedimento(data: PacienteFormData): PacienteFormData {
+  const procedimentos = getPacienteProcedimentosFromForm(data);
+  const first = procedimentos[0];
+
+  return {
+    ...data,
+    procedimentos,
+    cbhpmCodigo: first?.cbhpmCodigo || '',
+    cbhpmPorte: first?.cbhpmPorte || '',
+    procedimento: first?.procedimento || '',
+  };
+}
+
 function validatePacienteForm(data: PacienteFormData) {
   if (!data.nomePaciente.trim()) {
     return 'Informe o nome do paciente.';
@@ -583,8 +652,8 @@ function validatePacienteForm(data: PacienteFormData) {
     return 'Selecione um hospital.';
   }
 
-  if (!data.procedimento.trim()) {
-    return 'Selecione o procedimento.';
+  if (!getPacienteProcedimentosFromForm(data).length) {
+    return 'Selecione ao menos um procedimento.';
   }
 
   return '';
@@ -593,6 +662,8 @@ function validatePacienteForm(data: PacienteFormData) {
 function toPacientePayload(data: PacienteFormData): PacienteFormData {
   const cpf = normalizeCpfForPayload(data.cpf);
   const generatedEmail = `paciente-${cpf}@hemodinks.local`;
+  const procedimentos = getPacienteProcedimentosFromForm(data);
+  const firstProcedimento = procedimentos[0];
 
   return {
     data: data.data && isValidBirthDate(data.data) ? parseDisplayDate(data.data) : null,
@@ -607,9 +678,10 @@ function toPacientePayload(data: PacienteFormData): PacienteFormData {
     medicoUserId: data.medicoUserId,
     medico: data.medico.trim(),
     convenio: data.convenio.trim(),
-    cbhpmCodigo: data.cbhpmCodigo.trim(),
-    cbhpmPorte: data.cbhpmPorte.trim(),
-    procedimento: data.procedimento.trim(),
+    cbhpmCodigo: firstProcedimento?.cbhpmCodigo || '',
+    cbhpmPorte: firstProcedimento?.cbhpmPorte || '',
+    procedimento: firstProcedimento?.procedimento || '',
+    procedimentos,
     autorizacao: data.autorizacao.trim(),
     pagamento: data.pagamento.trim(),
     repasseGlosa: data.repasseGlosa.trim(),
@@ -691,6 +763,290 @@ function sortPacientesForListing(items: Paciente[]) {
   return [...items].sort((first, second) => compareByRecentActivityThenName(first, second, (paciente) => paciente.nomePaciente));
 }
 
+const pacienteExportColumns = [
+  { header: 'Paciente', getValue: (paciente: Paciente) => paciente.nomePaciente },
+  { header: 'CPF', getValue: (paciente: Paciente) => formatCpfInput(paciente.cpf || '') || '-' },
+  { header: 'Email', getValue: (paciente: Paciente) => paciente.email || '-' },
+  { header: 'Telefone', getValue: (paciente: Paciente) => formatPhoneInput(paciente.telefone || '') || '-' },
+  { header: 'Data nascimento', getValue: (paciente: Paciente) => toDisplayDate(paciente.dataNascimento || '') || '-' },
+  { header: 'Data procedimento', getValue: (paciente: Paciente) => toDisplayDate(paciente.data || '') || '-' },
+  { header: 'Hospital', getValue: (paciente: Paciente) => paciente.hospital || '-' },
+  { header: 'Medico', getValue: (paciente: Paciente) => paciente.medico || '-' },
+  { header: 'Convenio', getValue: (paciente: Paciente) => paciente.convenio || '-' },
+  { header: 'Codigo CBHPM', getValue: (paciente: Paciente) => paciente.cbhpmCodigo || '-' },
+  { header: 'Porte CBHPM', getValue: (paciente: Paciente) => paciente.cbhpmPorte || '-' },
+  { header: 'Procedimento', getValue: (paciente: Paciente) => paciente.procedimento || '-' },
+  { header: 'Autorizacao', getValue: (paciente: Paciente) => paciente.autorizacao || '-' },
+  { header: 'Pagamento', getValue: (paciente: Paciente) => paciente.pagamento || '-' },
+  { header: 'Repasse/Glosa', getValue: (paciente: Paciente) => paciente.repasseGlosa || '-' },
+  { header: 'Status pago', getValue: (paciente: Paciente) => (paciente.statusPago ? 'Pago' : 'Pendente') },
+  { header: 'Ativo', getValue: (paciente: Paciente) => (paciente.ativo ? 'Sim' : 'Nao') },
+  { header: 'Arquivos', getValue: (paciente: Paciente) => String(paciente.arquivosCount ?? paciente.arquivos.length) },
+] as const;
+
+function getPacienteExportRows(items: Paciente[]) {
+  return items.map((paciente) => Object.fromEntries(
+    pacienteExportColumns.map((column) => [column.header, column.getValue(paciente)]),
+  ));
+}
+
+function getPatientExportFileName(extension: 'xlsx' | 'pdf') {
+  const date = new Date().toISOString().slice(0, 10);
+  return `pacientes-hemodinks-${date}.${extension}`;
+}
+
+function escapeXml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function getExcelColumnName(index: number) {
+  let column = '';
+  let value = index + 1;
+
+  while (value > 0) {
+    const remainder = (value - 1) % 26;
+    column = String.fromCharCode(65 + remainder) + column;
+    value = Math.floor((value - 1) / 26);
+  }
+
+  return column;
+}
+
+function buildWorksheetXml(rows: Record<string, string>[]) {
+  const headers = pacienteExportColumns.map((column) => column.header);
+  const sheetRows = [headers, ...rows.map((row) => headers.map((header) => row[header] ?? ''))];
+  const columnsXml = headers.map((header, index) => {
+    const width = Math.min(36, Math.max(14, header.length + 4));
+    const columnNumber = index + 1;
+    return `<col min="${columnNumber}" max="${columnNumber}" width="${width}" customWidth="1"/>`;
+  }).join('');
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <cols>${columnsXml}</cols>
+  <sheetData>
+    ${sheetRows.map((cells, rowIndex) => {
+      const rowNumber = rowIndex + 1;
+      const cellXml = cells.map((cell, cellIndex) => {
+        const cellReference = `${getExcelColumnName(cellIndex)}${rowNumber}`;
+        const headerStyle = rowIndex === 0 ? ' s="1"' : '';
+        return `<c r="${cellReference}"${headerStyle} t="inlineStr"><is><t>${escapeXml(String(cell))}</t></is></c>`;
+      }).join('');
+      return `<row r="${rowNumber}">${cellXml}</row>`;
+    }).join('\n    ')}
+  </sheetData>
+</worksheet>`;
+}
+
+function buildWorkbookStylesXml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="2">
+    <font><sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/></font>
+    <font><b/><sz val="11"/><color rgb="FF0F172A"/><name val="Calibri"/><family val="2"/></font>
+  </fonts>
+  <fills count="3">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFD9FBEA"/><bgColor indexed="64"/></patternFill></fill>
+  </fills>
+  <borders count="1">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+  </borders>
+  <cellStyleXfs count="1">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
+  </cellStyleXfs>
+  <cellXfs count="2">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+  </cellXfs>
+  <cellStyles count="1">
+    <cellStyle name="Normal" xfId="0" builtinId="0"/>
+  </cellStyles>
+</styleSheet>`;
+}
+
+function getCrc32Table() {
+  return Array.from({ length: 256 }, (_, index) => {
+    let value = index;
+
+    for (let bit = 0; bit < 8; bit += 1) {
+      value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+    }
+
+    return value >>> 0;
+  });
+}
+
+const crc32Table = getCrc32Table();
+
+function getCrc32(bytes: Uint8Array) {
+  let crc = 0xffffffff;
+
+  for (const byte of bytes) {
+    crc = crc32Table[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  }
+
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function getDosDateTime(date = new Date()) {
+  const time = (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
+  const dosDate = ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
+  return { time, date: dosDate };
+}
+
+function appendUint16(target: number[], value: number) {
+  target.push(value & 0xff, (value >>> 8) & 0xff);
+}
+
+function appendUint32(target: number[], value: number) {
+  target.push(value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff);
+}
+
+function concatBytes(parts: Uint8Array[]) {
+  const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+
+  for (const part of parts) {
+    result.set(part, offset);
+    offset += part.length;
+  }
+
+  return result;
+}
+
+function createZipBlob(files: Array<{ name: string; content: string }>) {
+  const encoder = new TextEncoder();
+  const { time, date } = getDosDateTime();
+  const zipParts: Uint8Array[] = [];
+  const centralDirectoryParts: Uint8Array[] = [];
+  let offset = 0;
+
+  for (const file of files) {
+    const nameBytes = encoder.encode(file.name);
+    const contentBytes = encoder.encode(file.content);
+    const crc = getCrc32(contentBytes);
+    const localHeader: number[] = [];
+
+    appendUint32(localHeader, 0x04034b50);
+    appendUint16(localHeader, 20);
+    appendUint16(localHeader, 0);
+    appendUint16(localHeader, 0);
+    appendUint16(localHeader, time);
+    appendUint16(localHeader, date);
+    appendUint32(localHeader, crc);
+    appendUint32(localHeader, contentBytes.length);
+    appendUint32(localHeader, contentBytes.length);
+    appendUint16(localHeader, nameBytes.length);
+    appendUint16(localHeader, 0);
+
+    const localHeaderBytes = new Uint8Array(localHeader);
+    zipParts.push(localHeaderBytes, nameBytes, contentBytes);
+
+    const centralHeader: number[] = [];
+    appendUint32(centralHeader, 0x02014b50);
+    appendUint16(centralHeader, 20);
+    appendUint16(centralHeader, 20);
+    appendUint16(centralHeader, 0);
+    appendUint16(centralHeader, 0);
+    appendUint16(centralHeader, time);
+    appendUint16(centralHeader, date);
+    appendUint32(centralHeader, crc);
+    appendUint32(centralHeader, contentBytes.length);
+    appendUint32(centralHeader, contentBytes.length);
+    appendUint16(centralHeader, nameBytes.length);
+    appendUint16(centralHeader, 0);
+    appendUint16(centralHeader, 0);
+    appendUint16(centralHeader, 0);
+    appendUint16(centralHeader, 0);
+    appendUint32(centralHeader, 0);
+    appendUint32(centralHeader, offset);
+
+    centralDirectoryParts.push(new Uint8Array(centralHeader), nameBytes);
+    offset += localHeaderBytes.length + nameBytes.length + contentBytes.length;
+  }
+
+  const centralDirectory = concatBytes(centralDirectoryParts);
+  const endRecord: number[] = [];
+  appendUint32(endRecord, 0x06054b50);
+  appendUint16(endRecord, 0);
+  appendUint16(endRecord, 0);
+  appendUint16(endRecord, files.length);
+  appendUint16(endRecord, files.length);
+  appendUint32(endRecord, centralDirectory.length);
+  appendUint32(endRecord, offset);
+  appendUint16(endRecord, 0);
+
+  const zipBytes = concatBytes([...zipParts, centralDirectory, new Uint8Array(endRecord)]);
+  return new Blob([zipBytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+function createXlsxBlob(rows: Record<string, string>[]) {
+  return createZipBlob([
+    {
+      name: '[Content_Types].xml',
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>`,
+    },
+    {
+      name: '_rels/.rels',
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`,
+    },
+    {
+      name: 'xl/workbook.xml',
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="Pacientes" sheetId="1" r:id="rId1"/>
+  </sheets>
+</workbook>`,
+    },
+    {
+      name: 'xl/_rels/workbook.xml.rels',
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`,
+    },
+    {
+      name: 'xl/styles.xml',
+      content: buildWorkbookStylesXml(),
+    },
+    {
+      name: 'xl/worksheets/sheet1.xml',
+      content: buildWorksheetXml(rows),
+    },
+  ]);
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => loadStoredSession());
   const [theme, setTheme] = useState<Theme>(() => loadStoredTheme());
@@ -739,6 +1095,8 @@ export default function App() {
   const [pacienteSuccessMessage, setPacienteSuccessMessage] = useState('');
   const [pacienteSearchTerm, setPacienteSearchTerm] = useState('');
   const [debouncedPacienteSearchTerm, setDebouncedPacienteSearchTerm] = useState('');
+  const [pacienteExportLoading, setPacienteExportLoading] = useState<PacienteExportFormat | null>(null);
+  const [pacienteExportScope, setPacienteExportScope] = useState<PacienteExportScope>('visible');
   const [pacienteFilters, setPacienteFilters] = useState<PacienteFilters>(emptyPacienteFilters);
   const [debouncedPacienteFilters, setDebouncedPacienteFilters] = useState<PacienteFilters>(emptyPacienteFilters);
   const [pacienteCurrentPage, setPacienteCurrentPage] = useState(1);
@@ -934,6 +1292,100 @@ export default function App() {
       setPacientesError(getErrorMessage(error));
     } finally {
       setPacientesLoading(false);
+    }
+  };
+
+  const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>) => {
+    if (!session) {
+      return [];
+    }
+
+    const firstResult = await getPacientes(session.token, {
+      page: 1,
+      pageSize: PATIENT_EXPORT_PAGE_SIZE,
+      ...query,
+    });
+
+    const items = [...getPagedItems(firstResult)];
+    const totalPagesForExport = getPagedTotalPages(firstResult);
+
+    for (let page = 2; page <= totalPagesForExport; page += 1) {
+      const result = await getPacientes(session.token, {
+        ...query,
+        page,
+        pageSize: PATIENT_EXPORT_PAGE_SIZE,
+      });
+      items.push(...getPagedItems(result));
+    }
+
+    return sortPacientesForListing(items);
+  };
+
+  const loadPacientesForExport = async (scope: PacienteExportScope) => {
+    if (scope === 'visible') {
+      return paginatedPacientes;
+    }
+
+    if (scope === 'doctor') {
+      const medico = pacienteFilters.medico.trim();
+
+      if (!medico) {
+        throw new Error('Selecione um medico antes de exportar por medico.');
+      }
+
+      return fetchPacientesForExport({ medico });
+    }
+
+    return fetchPacientesForExport({});
+  };
+
+  const handleExportPacientes = async (format: PacienteExportFormat) => {
+    if (!session || pacienteExportLoading) {
+      return;
+    }
+
+    setPacienteExportLoading(format);
+    setPacientesError('');
+
+    try {
+      const exportItems = await loadPacientesForExport(pacienteExportScope);
+      const rows = getPacienteExportRows(exportItems);
+
+      if (format === 'xlsx') {
+        downloadBlob(createXlsxBlob(rows), getPatientExportFileName('xlsx'));
+        return;
+      }
+
+      const [{ jsPDF }, autoTableModule] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ]);
+      const autoTable = autoTableModule.default;
+      const document = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      document.setFontSize(14);
+      document.text('Cadastro de pacientes', 40, 34);
+      document.setFontSize(9);
+      document.text(`Gerado em ${new Intl.DateTimeFormat('pt-BR').format(new Date())}`, 40, 50);
+      autoTable(document, {
+        head: [pacienteExportColumns.map((column) => column.header)],
+        body: exportItems.map((paciente) => pacienteExportColumns.map((column) => column.getValue(paciente))),
+        startY: 64,
+        styles: {
+          fontSize: 6.6,
+          cellPadding: 3,
+          overflow: 'linebreak',
+        },
+        headStyles: {
+          fillColor: [15, 118, 110],
+          textColor: 255,
+        },
+        margin: { left: 24, right: 24 },
+      });
+      document.save(getPatientExportFileName('pdf'));
+    } catch (error) {
+      setPacientesError(getErrorMessage(error));
+    } finally {
+      setPacienteExportLoading(null);
     }
   };
 
@@ -1332,7 +1784,8 @@ export default function App() {
     setActiveView('patients');
     setModuleMode('form');
     setPendingPatientFiles([]);
-    setPacienteFormData({
+    const procedimentos = getPacienteProcedimentosFromPaciente(paciente);
+    setPacienteFormData(withPrimaryProcedimento({
       data: toDisplayDate(paciente.data || ''),
       nomePaciente: paciente.nomePaciente,
       cpf: formatCpfInput(paciente.cpf || ''),
@@ -1348,17 +1801,25 @@ export default function App() {
       cbhpmCodigo: paciente.cbhpmCodigo || '',
       cbhpmPorte: paciente.cbhpmPorte || '',
       procedimento: paciente.procedimento || '',
+      procedimentos,
       autorizacao: paciente.autorizacao || '',
       pagamento: paciente.pagamento || '',
       repasseGlosa: paciente.repasseGlosa || '',
       statusPago: paciente.statusPago,
       ativo: paciente.ativo,
-    });
+    }));
     setPatientFileInputKey((key) => key + 1);
 
     try {
       const details = await getPaciente(paciente.id, session.token);
       setEditingPacienteDetails(details);
+      setPacienteFormData((current) => withPrimaryProcedimento({
+        ...current,
+        cbhpmCodigo: details.cbhpmCodigo || '',
+        cbhpmPorte: details.cbhpmPorte || '',
+        procedimento: details.procedimento || '',
+        procedimentos: getPacienteProcedimentosFromPaciente(details),
+      }));
     } catch (error) {
       setPacienteFormError(getErrorMessage(error));
     }
@@ -1531,22 +1992,30 @@ export default function App() {
   };
 
   const handleSelectCbhpm = (procedimento: CbhpmGeral) => {
-    setPacienteFormData((current) => ({
-      ...current,
-      cbhpmCodigo: procedimento.codigo,
-      cbhpmPorte: procedimento.porte || '',
-      procedimento: procedimento.procedimento,
-    }));
+    setPacienteFormData((current) => {
+      const nextProcedimentos = normalizePacienteProcedimentos([
+        ...current.procedimentos,
+        {
+          cbhpmCodigo: procedimento.codigo,
+          cbhpmPorte: procedimento.porte || '',
+          procedimento: procedimento.procedimento,
+          valorReferencia: procedimento.valorReferencia ?? null,
+        },
+      ]);
+
+      return withPrimaryProcedimento({
+        ...current,
+        procedimentos: nextProcedimentos,
+      });
+    });
     setPacienteFormError('');
     setCbhpmModalOpen(false);
   };
 
-  const handleClearCbhpm = () => {
-    setPacienteFormData((current) => ({
+  const handleRemovePacienteProcedimento = (indexToRemove: number) => {
+    setPacienteFormData((current) => withPrimaryProcedimento({
       ...current,
-      cbhpmCodigo: '',
-      cbhpmPorte: '',
-      procedimento: '',
+      procedimentos: current.procedimentos.filter((_, index) => index !== indexToRemove),
     }));
   };
 
@@ -2568,23 +3037,35 @@ export default function App() {
                   disabled={patientReadOnly}
                 >
                   <Search size={17} />
-                  {pacienteFormData.procedimento ? 'Trocar procedimento' : 'Selecionar procedimento'}
+                  Adicionar procedimento
                 </button>
 
-                {pacienteFormData.procedimento ? (
-                  <div className="selected-procedure">
-                    <div className="selected-procedure-main">
-                      <span>{pacienteFormData.cbhpmCodigo || 'Sem codigo'}</span>
-                      <strong>{pacienteFormData.procedimento}</strong>
-                    </div>
-                    <div className="selected-procedure-actions">
-                      {pacienteFormData.cbhpmPorte && <span className="status-pill active">{pacienteFormData.cbhpmPorte}</span>}
-                      {!patientReadOnly && (
-                        <button type="button" className="icon-button muted mini" onClick={handleClearCbhpm} title="Limpar procedimento">
-                          <X size={14} />
-                        </button>
-                      )}
-                    </div>
+                {pacienteFormData.procedimentos.length ? (
+                  <div className="selected-procedure-list">
+                    {pacienteFormData.procedimentos.map((procedimento, index) => (
+                      <div className="selected-procedure" key={`${procedimento.cbhpmCodigo || procedimento.procedimento}-${index}`}>
+                        <div className="selected-procedure-main">
+                          <span>{procedimento.cbhpmCodigo || 'Sem codigo'}</span>
+                          <strong>{procedimento.procedimento}</strong>
+                          {procedimento.valorReferencia != null && (
+                            <small>Valor referência: {formatCurrency(procedimento.valorReferencia)}</small>
+                          )}
+                        </div>
+                        <div className="selected-procedure-actions">
+                          {procedimento.cbhpmPorte && <span className="status-pill active">{procedimento.cbhpmPorte}</span>}
+                          {!patientReadOnly && (
+                            <button
+                              type="button"
+                              className="icon-button muted mini"
+                              onClick={() => handleRemovePacienteProcedimento(index)}
+                              title="Remover procedimento"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <span className="file-hint">Nenhum procedimento selecionado.</span>
@@ -2741,16 +3222,53 @@ export default function App() {
               >
                 <RefreshCw size={18} />
               </button>
+              <div className="patient-export-actions" aria-label="Exportacoes de pacientes">
+                <label className="export-scope-field">
+                  Exportar
+                  <select
+                    value={pacienteExportScope}
+                    onChange={(event) => setPacienteExportScope(event.target.value as PacienteExportScope)}
+                  >
+                    <option value="all">Todos os pacientes</option>
+                    {isAdmin && <option value="doctor">Medico selecionado</option>}
+                    <option value="visible">Dados da tela</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => void handleExportPacientes('xlsx')}
+                  disabled={pacienteExportLoading !== null}
+                >
+                  <Download size={17} />
+                  {pacienteExportLoading === 'xlsx' ? 'Gerando...' : 'Exportar XLSX'}
+                </button>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => void handleExportPacientes('pdf')}
+                  disabled={pacienteExportLoading !== null}
+                >
+                  <FileText size={17} />
+                  {pacienteExportLoading === 'pdf' ? 'Gerando...' : 'Exportar PDF'}
+                </button>
+              </div>
               {isAdmin && (
                 <div className="patient-filter-grid" aria-label="Filtros administrativos de pacientes">
                   <label className="filter-field">
                     Medico
-                    <input
-                      type="search"
+                    <select
                       value={pacienteFilters.medico}
                       onChange={(event) => setPacienteFilters((current) => ({ ...current, medico: event.target.value }))}
-                      placeholder="Nome do medico"
-                    />
+                      disabled={!medicalUsers.length}
+                    >
+                      <option value="">{medicalUsers.length ? 'Todos os medicos' : 'Nenhum medico cadastrado'}</option>
+                      {medicalUsers.map((user) => (
+                        <option key={user.id} value={user.nome}>
+                          {user.nome}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="filter-field">
                     Convenio
@@ -3415,7 +3933,7 @@ function CbhpmLookupModal({
                 <th>Codigo</th>
                 <th>Procedimento</th>
                 <th>Porte</th>
-                <th>Custo operacional</th>
+                <th>Valor referência</th>
                 <th aria-label="Selecionar" />
               </tr>
             </thead>
@@ -3430,11 +3948,11 @@ function CbhpmLookupModal({
                     <td data-label="Codigo">{item.codigo}</td>
                     <td data-label="Procedimento">{item.procedimento}</td>
                     <td data-label="Porte">{item.porte || '-'}</td>
-                    <td data-label="Custo operacional">{formatCurrency(item.custoOperacional)}</td>
+                    <td data-label="Valor referência">{formatCurrency(item.valorReferencia)}</td>
                     <td data-label="Selecionar">
                       <button type="button" className="ghost-button select-procedure-action" onClick={() => onSelect(item)}>
                         <CheckCircle2 size={17} />
-                        Selecionar
+                        Adicionar
                       </button>
                     </td>
                   </tr>
@@ -3487,6 +4005,7 @@ type PatientInfoModalProps = {
 function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
   const formattedCpf = formatCpfInput(paciente.cpf || '');
   const formattedPhone = formatPhoneInput(paciente.telefone || '');
+  const procedimentos = getPacienteProcedimentosFromPaciente(paciente);
 
   return (
     <div className="modal-backdrop" role="presentation">
@@ -3503,16 +4022,21 @@ function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
 
         <dl className="info-list">
           <div>
-            <dt>Codigo CBHPM</dt>
-            <dd><CopyValue label="codigo CBHPM" value={paciente.cbhpmCodigo || '-'} /></dd>
-          </div>
-          <div>
-            <dt>Porte CBHPM</dt>
-            <dd>{paciente.cbhpmPorte || '-'}</dd>
-          </div>
-          <div>
-            <dt>Procedimento medico</dt>
-            <dd><CopyValue label="procedimento medico" value={paciente.procedimento || '-'} /></dd>
+            <dt>Procedimentos</dt>
+            <dd>
+              {procedimentos.length ? (
+                <ol className="info-procedure-list">
+                  {procedimentos.map((procedimento, index) => (
+                    <li key={`${procedimento.cbhpmCodigo || procedimento.procedimento}-${index}`}>
+                      <CopyValue label="procedimento medico" value={`${procedimento.cbhpmCodigo || 'Sem codigo'} - ${procedimento.procedimento}`} />
+                      {procedimento.cbhpmPorte && <span className="status-pill active">{procedimento.cbhpmPorte}</span>}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                '-'
+              )}
+            </dd>
           </div>
           <div>
             <dt>CPF</dt>
