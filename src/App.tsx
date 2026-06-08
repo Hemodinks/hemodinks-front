@@ -54,6 +54,7 @@ import {
   getPaciente,
   getPacientes,
   getUser,
+  getUserProfilePhoto,
   getUsers,
   resetPassword,
   updatePaciente,
@@ -90,6 +91,7 @@ const MAX_PHONE_LENGTH = 20;
 const MAX_CPF_LENGTH = 14;
 const MAX_CRM_LENGTH = 20;
 const MAX_PASSWORD_LENGTH = 500;
+const MAX_CURRENCY_DIGITS = 15;
 const MEDICAL_USERS_DATALIST_ID = 'hemodinks-medical-users-options';
 const CONVENIOS_DATALIST_ID = 'hemodinks-convenios-options';
 const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
@@ -805,6 +807,21 @@ function formatCurrency(value?: number | null) {
   return typeof value === 'number'
     ? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
     : '-';
+}
+
+function formatCurrencyInput(value: string) {
+  const digits = onlyDigits(value).slice(0, MAX_CURRENCY_DIGITS);
+
+  if (!digits) {
+    return '';
+  }
+
+  const padded = digits.padStart(3, '0');
+  const cents = padded.slice(-2);
+  const integerDigits = padded.slice(0, -2).replace(/^0+(?=\d)/, '');
+  const integerPart = integerDigits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  return `R$ ${integerPart},${cents}`;
 }
 
 function compareByRecentActivityThenName<T extends Record<string, unknown> & { id: number }>(
@@ -1905,8 +1922,8 @@ export default function App() {
       procedimento: paciente.procedimento || '',
       procedimentos,
       autorizacao: paciente.autorizacao || '',
-      pagamento: paciente.pagamento || '',
-      repasseGlosa: paciente.repasseGlosa || '',
+      pagamento: formatCurrencyInput(paciente.pagamento || ''),
+      repasseGlosa: formatCurrencyInput(paciente.repasseGlosa || ''),
       statusPago: paciente.statusPago,
       ativo: paciente.ativo,
     }));
@@ -2479,7 +2496,7 @@ export default function App() {
 
         <div className="topbar-right">
           <div className="current-user topbar-user" aria-label="Usuario logado">
-            <UserAvatar name={session.user.nome} photo={session.user.fotoPerfil} size="sm" />
+            <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" />
             <span className="current-user-name">{session.user.nome}</span>
           </div>
 
@@ -2521,7 +2538,7 @@ export default function App() {
             <div className="session-card">
               <span className="session-label">Usuario</span>
               <div className="session-user-row">
-                <UserAvatar name={session.user.nome} photo={session.user.fotoPerfil} size="sm" decorative />
+                <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" decorative />
                 <strong>{session.user.nome}</strong>
               </div>
             </div>
@@ -2682,7 +2699,7 @@ export default function App() {
                 Foto do perfil
               </label>
               <div className="photo-uploader">
-                <UserAvatar name={formData.nome || 'Usuario'} photo={formData.fotoPerfil} size="lg" />
+                <UserAvatar userId={editingId ?? undefined} name={formData.nome || 'Usuario'} photo={formData.fotoPerfil} authToken={session.token} size="lg" />
                 <div className="photo-actions">
                   <label className="ghost-button file-action" htmlFor="profile-photo-input">
                     <ImagePlus size={17} />
@@ -2953,7 +2970,7 @@ export default function App() {
                       <tr key={user.id}>
                         <td data-label="Nome">
                           <div className="name-cell">
-                            <UserAvatar name={user.nome} photo={user.fotoPerfil} size="sm" />
+                            <UserAvatar userId={user.id} name={user.nome} photo={user.fotoPerfil} authToken={session.token} size="sm" />
                             <span>{user.nome}</span>
                           </div>
                         </td>
@@ -3234,8 +3251,9 @@ export default function App() {
                 <input
                   type="text"
                   value={pacienteFormData.pagamento}
-                  onChange={(event) => setPacienteFormData((current) => ({ ...current, pagamento: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-                  maxLength={MAX_NAME_LENGTH}
+                  onChange={(event) => setPacienteFormData((current) => ({ ...current, pagamento: formatCurrencyInput(event.target.value) }))}
+                  inputMode="numeric"
+                  maxLength={24}
                   placeholder="R$ 0,00"
                 />
               </label>
@@ -3245,8 +3263,10 @@ export default function App() {
                 <input
                   type="text"
                   value={pacienteFormData.repasseGlosa}
-                  onChange={(event) => setPacienteFormData((current) => ({ ...current, repasseGlosa: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-                  maxLength={MAX_NAME_LENGTH}
+                  onChange={(event) => setPacienteFormData((current) => ({ ...current, repasseGlosa: formatCurrencyInput(event.target.value) }))}
+                  inputMode="numeric"
+                  maxLength={24}
+                  placeholder="R$ 0,00"
                 />
               </label>
             </div>
@@ -3481,7 +3501,7 @@ export default function App() {
                       <tr key={paciente.id}>
                         <td data-label="Paciente">
                           <div className="name-cell">
-                            <UserAvatar name={paciente.nomePaciente} photo={paciente.fotoPerfil} size="sm" />
+                            <UserAvatar userId={paciente.userId} name={paciente.nomePaciente} photo={paciente.fotoPerfil} authToken={session.token} size="sm" />
                             <span>{paciente.nomePaciente}</span>
                           </div>
                         </td>
@@ -3759,19 +3779,62 @@ function DateInput({ id, label, value, onChange, required = false }: DateInputPr
 }
 
 type UserAvatarProps = {
+  userId?: number;
   name: string;
   photo?: string | null;
+  authToken?: string;
   size?: 'sm' | 'lg';
   decorative?: boolean;
 };
 
-function UserAvatar({ name, photo, size = 'sm', decorative = false }: UserAvatarProps) {
-  const photoSource = resolveProfilePhotoSource(photo);
+function UserAvatar({ userId, name, photo, authToken, size = 'sm', decorative = false }: UserAvatarProps) {
+  const trimmedPhoto = photo?.trim() || '';
+  const canLoadFromApi = Boolean(userId && authToken && trimmedPhoto && !/^(data:image\/|blob:)/i.test(trimmedPhoto));
+  const [photoSource, setPhotoSource] = useState(() => (canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto)));
   const [photoFailed, setPhotoFailed] = useState(false);
 
   useEffect(() => {
+    let objectUrl = '';
+    let active = true;
+
     setPhotoFailed(false);
-  }, [photoSource]);
+
+    if (!trimmedPhoto) {
+      setPhotoSource('');
+      return undefined;
+    }
+
+    if (!canLoadFromApi || !userId || !authToken) {
+      setPhotoSource(resolveProfilePhotoSource(trimmedPhoto));
+      return undefined;
+    }
+
+    setPhotoSource('');
+
+    void getUserProfilePhoto(userId, authToken)
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+
+        if (active) {
+          setPhotoSource(objectUrl);
+        } else {
+          URL.revokeObjectURL(objectUrl);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPhotoFailed(true);
+        }
+      });
+
+    return () => {
+      active = false;
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [authToken, canLoadFromApi, trimmedPhoto, userId]);
 
   if (photoSource && !photoFailed) {
     return (

@@ -136,6 +136,20 @@ export function getUser(id: number, token: string) {
   return request<User>(`/api/users/${id}`, {}, token);
 }
 
+export async function getUserProfilePhoto(id: number, token: string) {
+  const response = await fetch(`${API_URL}/api/users/${id}/foto-perfil`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+
+  return response.blob();
+}
+
 export function createUser(payload: UserFormData, token: string) {
   return request<User>('/api/users/', {
     method: 'POST',
