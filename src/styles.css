@@ -1498,6 +1498,21 @@ img.user-avatar {
   border-radius: 8px;
 }
 
+.list-carousel-wrap {
+  padding: 8px;
+  border-color: rgba(173, 216, 230, 0.75);
+  background: rgba(173, 216, 230, 0.5);
+  box-shadow:
+    inset 0 0 0 1px rgba(173, 216, 230, 0.45),
+    0 10px 24px rgba(14, 116, 144, 0.1);
+}
+
+.list-carousel-wrap table {
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--panel);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -3442,8 +3457,8 @@ tbody tr:last-child td {
   .list-carousel-wrap {
     overflow-x: auto;
     overflow-y: hidden;
-    border: 0;
-    padding: 2px 2px 12px;
+    border: 1px solid rgba(173, 216, 230, 0.75);
+    padding: 10px 10px 14px;
     scroll-padding-inline: 2px;
     scroll-snap-type: x mandatory;
     overscroll-behavior-x: contain;
