@@ -68,6 +68,7 @@ export type CbhpmGeral = {
   procedimento: string;
   porte?: string | null;
   custoOperacional?: number | null;
+  valorReferencia?: number | null;
   capitulo?: string | null;
   grupo?: string | null;
   paginaPdf?: number | null;
