@@ -1388,7 +1388,7 @@ img.user-avatar {
   max-width: 100%;
   flex-wrap: wrap;
   align-items: flex-start;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .patients-workspace .table-tools > .search-box {
@@ -1399,6 +1399,17 @@ img.user-avatar {
 
 .patients-workspace .table-tools > .icon-button {
   flex: 0 0 40px;
+}
+
+.patient-export-actions {
+  min-width: 0;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.patient-export-actions .ghost-button {
+  min-height: 40px;
 }
 
 .patient-filter-grid {
@@ -1419,7 +1430,8 @@ img.user-avatar {
   font-weight: 900;
 }
 
-.filter-field input {
+.filter-field input,
+.filter-field select {
   min-width: 0;
   min-height: 38px;
 }
@@ -2303,6 +2315,11 @@ tbody tr:last-child td {
     flex: 0 0 40px;
   }
 
+  .patient-export-actions,
+  .patient-export-actions .ghost-button {
+    width: 100%;
+  }
+
   .table-wrap {
     overflow: visible;
     border: 0;
@@ -2889,6 +2906,10 @@ tbody tr:last-child td {
 
   .patients-workspace .table-tools > .search-box {
     max-width: none;
+  }
+
+  .patient-export-actions {
+    flex: 1 1 100%;
   }
 
   .patient-filter-grid {
