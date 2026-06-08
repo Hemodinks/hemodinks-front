@@ -68,6 +68,7 @@ import type {
   Hospital,
   Paciente,
   PacienteFormData,
+  PacienteProcedimento,
   User,
   UserFormData,
 } from './types';
@@ -159,6 +160,7 @@ const emptyPacienteForm: PacienteFormData = {
   cbhpmCodigo: '',
   cbhpmPorte: '',
   procedimento: '',
+  procedimentos: [],
   autorizacao: '',
   pagamento: '',
   repasseGlosa: '',
@@ -569,6 +571,70 @@ function toUserPayload(data: UserFormData): UserFormData {
   };
 }
 
+function normalizePacienteProcedimentos(procedimentos: PacienteProcedimento[]) {
+  const seen = new Set<string>();
+
+  return procedimentos
+    .map((item) => ({
+      cbhpmCodigo: item.cbhpmCodigo?.trim() || null,
+      cbhpmPorte: item.cbhpmPorte?.trim() || null,
+      procedimento: item.procedimento.trim(),
+      valorReferencia: item.valorReferencia ?? null,
+    }))
+    .filter((item) => item.procedimento)
+    .filter((item) => {
+      const key = item.cbhpmCodigo ? `codigo:${item.cbhpmCodigo}` : `livre:${item.procedimento}:${item.cbhpmPorte || ''}`;
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+}
+
+function getPacienteProcedimentosFromForm(data: PacienteFormData) {
+  const procedimentos = normalizePacienteProcedimentos(data.procedimentos);
+  if (procedimentos.length) {
+    return procedimentos;
+  }
+
+  return normalizePacienteProcedimentos([
+    {
+      cbhpmCodigo: data.cbhpmCodigo,
+      cbhpmPorte: data.cbhpmPorte,
+      procedimento: data.procedimento,
+    },
+  ]);
+}
+
+function getPacienteProcedimentosFromPaciente(paciente: Paciente) {
+  return normalizePacienteProcedimentos(
+    paciente.procedimentos?.length
+      ? paciente.procedimentos
+      : [
+          {
+            cbhpmCodigo: paciente.cbhpmCodigo,
+            cbhpmPorte: paciente.cbhpmPorte,
+            procedimento: paciente.procedimento || '',
+          },
+        ],
+  );
+}
+
+function withPrimaryProcedimento(data: PacienteFormData): PacienteFormData {
+  const procedimentos = getPacienteProcedimentosFromForm(data);
+  const first = procedimentos[0];
+
+  return {
+    ...data,
+    procedimentos,
+    cbhpmCodigo: first?.cbhpmCodigo || '',
+    cbhpmPorte: first?.cbhpmPorte || '',
+    procedimento: first?.procedimento || '',
+  };
+}
+
 function validatePacienteForm(data: PacienteFormData) {
   if (!data.nomePaciente.trim()) {
     return 'Informe o nome do paciente.';
@@ -586,8 +652,8 @@ function validatePacienteForm(data: PacienteFormData) {
     return 'Selecione um hospital.';
   }
 
-  if (!data.procedimento.trim()) {
-    return 'Selecione o procedimento.';
+  if (!getPacienteProcedimentosFromForm(data).length) {
+    return 'Selecione ao menos um procedimento.';
   }
 
   return '';
@@ -596,6 +662,8 @@ function validatePacienteForm(data: PacienteFormData) {
 function toPacientePayload(data: PacienteFormData): PacienteFormData {
   const cpf = normalizeCpfForPayload(data.cpf);
   const generatedEmail = `paciente-${cpf}@hemodinks.local`;
+  const procedimentos = getPacienteProcedimentosFromForm(data);
+  const firstProcedimento = procedimentos[0];
 
   return {
     data: data.data && isValidBirthDate(data.data) ? parseDisplayDate(data.data) : null,
@@ -610,9 +678,10 @@ function toPacientePayload(data: PacienteFormData): PacienteFormData {
     medicoUserId: data.medicoUserId,
     medico: data.medico.trim(),
     convenio: data.convenio.trim(),
-    cbhpmCodigo: data.cbhpmCodigo.trim(),
-    cbhpmPorte: data.cbhpmPorte.trim(),
-    procedimento: data.procedimento.trim(),
+    cbhpmCodigo: firstProcedimento?.cbhpmCodigo || '',
+    cbhpmPorte: firstProcedimento?.cbhpmPorte || '',
+    procedimento: firstProcedimento?.procedimento || '',
+    procedimentos,
     autorizacao: data.autorizacao.trim(),
     pagamento: data.pagamento.trim(),
     repasseGlosa: data.repasseGlosa.trim(),
@@ -1715,7 +1784,8 @@ export default function App() {
     setActiveView('patients');
     setModuleMode('form');
     setPendingPatientFiles([]);
-    setPacienteFormData({
+    const procedimentos = getPacienteProcedimentosFromPaciente(paciente);
+    setPacienteFormData(withPrimaryProcedimento({
       data: toDisplayDate(paciente.data || ''),
       nomePaciente: paciente.nomePaciente,
       cpf: formatCpfInput(paciente.cpf || ''),
@@ -1731,17 +1801,25 @@ export default function App() {
       cbhpmCodigo: paciente.cbhpmCodigo || '',
       cbhpmPorte: paciente.cbhpmPorte || '',
       procedimento: paciente.procedimento || '',
+      procedimentos,
       autorizacao: paciente.autorizacao || '',
       pagamento: paciente.pagamento || '',
       repasseGlosa: paciente.repasseGlosa || '',
       statusPago: paciente.statusPago,
       ativo: paciente.ativo,
-    });
+    }));
     setPatientFileInputKey((key) => key + 1);
 
     try {
       const details = await getPaciente(paciente.id, session.token);
       setEditingPacienteDetails(details);
+      setPacienteFormData((current) => withPrimaryProcedimento({
+        ...current,
+        cbhpmCodigo: details.cbhpmCodigo || '',
+        cbhpmPorte: details.cbhpmPorte || '',
+        procedimento: details.procedimento || '',
+        procedimentos: getPacienteProcedimentosFromPaciente(details),
+      }));
     } catch (error) {
       setPacienteFormError(getErrorMessage(error));
     }
@@ -1914,22 +1992,30 @@ export default function App() {
   };
 
   const handleSelectCbhpm = (procedimento: CbhpmGeral) => {
-    setPacienteFormData((current) => ({
-      ...current,
-      cbhpmCodigo: procedimento.codigo,
-      cbhpmPorte: procedimento.porte || '',
-      procedimento: procedimento.procedimento,
-    }));
+    setPacienteFormData((current) => {
+      const nextProcedimentos = normalizePacienteProcedimentos([
+        ...current.procedimentos,
+        {
+          cbhpmCodigo: procedimento.codigo,
+          cbhpmPorte: procedimento.porte || '',
+          procedimento: procedimento.procedimento,
+          valorReferencia: procedimento.valorReferencia ?? null,
+        },
+      ]);
+
+      return withPrimaryProcedimento({
+        ...current,
+        procedimentos: nextProcedimentos,
+      });
+    });
     setPacienteFormError('');
     setCbhpmModalOpen(false);
   };
 
-  const handleClearCbhpm = () => {
-    setPacienteFormData((current) => ({
+  const handleRemovePacienteProcedimento = (indexToRemove: number) => {
+    setPacienteFormData((current) => withPrimaryProcedimento({
       ...current,
-      cbhpmCodigo: '',
-      cbhpmPorte: '',
-      procedimento: '',
+      procedimentos: current.procedimentos.filter((_, index) => index !== indexToRemove),
     }));
   };
 
@@ -2951,23 +3037,35 @@ export default function App() {
                   disabled={patientReadOnly}
                 >
                   <Search size={17} />
-                  {pacienteFormData.procedimento ? 'Trocar procedimento' : 'Selecionar procedimento'}
+                  Adicionar procedimento
                 </button>
 
-                {pacienteFormData.procedimento ? (
-                  <div className="selected-procedure">
-                    <div className="selected-procedure-main">
-                      <span>{pacienteFormData.cbhpmCodigo || 'Sem codigo'}</span>
-                      <strong>{pacienteFormData.procedimento}</strong>
-                    </div>
-                    <div className="selected-procedure-actions">
-                      {pacienteFormData.cbhpmPorte && <span className="status-pill active">{pacienteFormData.cbhpmPorte}</span>}
-                      {!patientReadOnly && (
-                        <button type="button" className="icon-button muted mini" onClick={handleClearCbhpm} title="Limpar procedimento">
-                          <X size={14} />
-                        </button>
-                      )}
-                    </div>
+                {pacienteFormData.procedimentos.length ? (
+                  <div className="selected-procedure-list">
+                    {pacienteFormData.procedimentos.map((procedimento, index) => (
+                      <div className="selected-procedure" key={`${procedimento.cbhpmCodigo || procedimento.procedimento}-${index}`}>
+                        <div className="selected-procedure-main">
+                          <span>{procedimento.cbhpmCodigo || 'Sem codigo'}</span>
+                          <strong>{procedimento.procedimento}</strong>
+                          {procedimento.valorReferencia != null && (
+                            <small>Valor referência: {formatCurrency(procedimento.valorReferencia)}</small>
+                          )}
+                        </div>
+                        <div className="selected-procedure-actions">
+                          {procedimento.cbhpmPorte && <span className="status-pill active">{procedimento.cbhpmPorte}</span>}
+                          {!patientReadOnly && (
+                            <button
+                              type="button"
+                              className="icon-button muted mini"
+                              onClick={() => handleRemovePacienteProcedimento(index)}
+                              title="Remover procedimento"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <span className="file-hint">Nenhum procedimento selecionado.</span>
@@ -3854,7 +3952,7 @@ function CbhpmLookupModal({
                     <td data-label="Selecionar">
                       <button type="button" className="ghost-button select-procedure-action" onClick={() => onSelect(item)}>
                         <CheckCircle2 size={17} />
-                        Selecionar
+                        Adicionar
                       </button>
                     </td>
                   </tr>
@@ -3907,6 +4005,7 @@ type PatientInfoModalProps = {
 function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
   const formattedCpf = formatCpfInput(paciente.cpf || '');
   const formattedPhone = formatPhoneInput(paciente.telefone || '');
+  const procedimentos = getPacienteProcedimentosFromPaciente(paciente);
 
   return (
     <div className="modal-backdrop" role="presentation">
@@ -3923,16 +4022,21 @@ function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
 
         <dl className="info-list">
           <div>
-            <dt>Codigo CBHPM</dt>
-            <dd><CopyValue label="codigo CBHPM" value={paciente.cbhpmCodigo || '-'} /></dd>
-          </div>
-          <div>
-            <dt>Porte CBHPM</dt>
-            <dd>{paciente.cbhpmPorte || '-'}</dd>
-          </div>
-          <div>
-            <dt>Procedimento medico</dt>
-            <dd><CopyValue label="procedimento medico" value={paciente.procedimento || '-'} /></dd>
+            <dt>Procedimentos</dt>
+            <dd>
+              {procedimentos.length ? (
+                <ol className="info-procedure-list">
+                  {procedimentos.map((procedimento, index) => (
+                    <li key={`${procedimento.cbhpmCodigo || procedimento.procedimento}-${index}`}>
+                      <CopyValue label="procedimento medico" value={`${procedimento.cbhpmCodigo || 'Sem codigo'} - ${procedimento.procedimento}`} />
+                      {procedimento.cbhpmPorte && <span className="status-pill active">{procedimento.cbhpmPorte}</span>}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                '-'
+              )}
+            </dd>
           </div>
           <div>
             <dt>CPF</dt>

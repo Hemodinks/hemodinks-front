@@ -58,6 +58,15 @@ const basePaciente: Paciente = {
   cbhpmCodigo: '1.01.01.01-2',
   cbhpmPorte: '2B',
   procedimento: 'Consulta',
+  procedimentos: [
+    {
+      cbhpmCodigo: '1.01.01.01-2',
+      cbhpmPorte: '2B',
+      procedimento: 'Consulta',
+      valorReferencia: null,
+      ordem: 1,
+    },
+  ],
   autorizacao: 'AUT-1',
   pagamento: 'Pix',
   repasseGlosa: 'Sem glosa',
@@ -549,6 +558,14 @@ describe('App', () => {
         codigo: '1.01.01.01-2',
         procedimento: 'Consulta',
         porte: '2B',
+        valorReferencia: 120,
+      },
+      {
+        id: 2,
+        codigo: '1.01.02.01-9',
+        procedimento: 'Visita hospitalar',
+        porte: '2A',
+        valorReferencia: 180,
       },
     ]));
     vi.mocked(api.createPaciente).mockResolvedValue({
@@ -584,10 +601,13 @@ describe('App', () => {
     await user.selectOptions(screen.getByLabelText('Hospital'), '2');
     expect(screen.getByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Médico'), '1');
-    await user.click(screen.getByRole('button', { name: /selecionar procedimento/i }));
+    await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     expect(within(cbhpmDialog).getByText('1.01.01.01-2')).toBeInTheDocument();
-    await user.click(within(cbhpmDialog).getByRole('button', { name: /selecionar/i }));
+    await user.click(within(cbhpmDialog).getAllByRole('button', { name: /adicionar/i })[0]);
+    expect(screen.getByText('Valor referência: R$ 120,00')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
+    await user.click(within(await screen.findByRole('dialog', { name: 'Selecionar procedimento' })).getAllByRole('button', { name: /adicionar/i })[1]);
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
     expect(api.createPaciente).toHaveBeenCalledWith({
@@ -606,6 +626,20 @@ describe('App', () => {
       cbhpmCodigo: '1.01.01.01-2',
       cbhpmPorte: '2B',
       procedimento: 'Consulta',
+      procedimentos: [
+        {
+          cbhpmCodigo: '1.01.01.01-2',
+          cbhpmPorte: '2B',
+          procedimento: 'Consulta',
+          valorReferencia: 120,
+        },
+        {
+          cbhpmCodigo: '1.01.02.01-9',
+          cbhpmPorte: '2A',
+          procedimento: 'Visita hospitalar',
+          valorReferencia: 180,
+        },
+      ],
       autorizacao: '',
       pagamento: '',
       repasseGlosa: '',
