@@ -2797,7 +2797,7 @@ export default function App() {
           {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
           {usersError && <p className="alert error">{usersError}</p>}
 
-          <div className="table-wrap">
+          <div className="table-wrap list-carousel-wrap users-carousel-wrap">
             <table className="users-table">
               <thead>
                 <tr>
@@ -3304,8 +3304,8 @@ export default function App() {
           {pacienteSuccessMessage && <p className="alert success"><CheckCircle2 size={17} />{pacienteSuccessMessage}</p>}
           {pacientesError && <p className="alert error">{pacientesError}</p>}
 
-          <div className="table-wrap">
-            <table>
+          <div className="table-wrap list-carousel-wrap patients-carousel-wrap">
+            <table className="patients-table">
               <thead>
                 <tr>
                   <th>Paciente</th>
