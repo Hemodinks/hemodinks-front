@@ -96,6 +96,7 @@ const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
 const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
 const MEDICAL_PROFILE_ID = 2;
 const DEFAULT_PROFILE_ID = MEDICAL_PROFILE_ID;
+const API_ASSET_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
 const ALLOWED_PROFILE_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_PATIENT_FILE_TYPES = new Set([
@@ -286,6 +287,53 @@ function getUserInitials(name: string) {
   }
 
   return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+}
+
+function getBase64ImageContentType(value: string) {
+  if (value.startsWith('/9j/')) {
+    return 'image/jpeg';
+  }
+
+  if (value.startsWith('iVBORw0KGgo')) {
+    return 'image/png';
+  }
+
+  if (value.startsWith('UklGR')) {
+    return 'image/webp';
+  }
+
+  if (value.startsWith('R0lGOD')) {
+    return 'image/gif';
+  }
+
+  return '';
+}
+
+function resolveProfilePhotoSource(photo?: string | null) {
+  const value = photo?.trim();
+
+  if (!value) {
+    return '';
+  }
+
+  if (/^(data:image\/|blob:|https?:\/\/)/i.test(value)) {
+    return value;
+  }
+
+  if (value.startsWith('//')) {
+    return `${window.location.protocol}${value}`;
+  }
+
+  const contentType = getBase64ImageContentType(value);
+  if (contentType) {
+    return `data:${contentType};base64,${value}`;
+  }
+
+  if (value.startsWith('/')) {
+    return `${API_ASSET_BASE_URL}${value}`;
+  }
+
+  return `${API_ASSET_BASE_URL}/${value}`;
 }
 
 function onlyDigits(value: string) {
@@ -3665,13 +3713,21 @@ type UserAvatarProps = {
 };
 
 function UserAvatar({ name, photo, size = 'sm', decorative = false }: UserAvatarProps) {
-  if (photo) {
+  const photoSource = resolveProfilePhotoSource(photo);
+  const [photoFailed, setPhotoFailed] = useState(false);
+
+  useEffect(() => {
+    setPhotoFailed(false);
+  }, [photoSource]);
+
+  if (photoSource && !photoFailed) {
     return (
       <img
         className={`user-avatar ${size}`}
-        src={photo}
+        src={photoSource}
         alt={decorative ? '' : `Foto de ${name}`}
         aria-hidden={decorative ? true : undefined}
+        onError={() => setPhotoFailed(true)}
       />
     );
   }
