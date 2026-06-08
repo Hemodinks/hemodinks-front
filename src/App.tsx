@@ -3835,7 +3835,7 @@ function CbhpmLookupModal({
                 <th>Codigo</th>
                 <th>Procedimento</th>
                 <th>Porte</th>
-                <th>Custo operacional</th>
+                <th>Valor referência</th>
                 <th aria-label="Selecionar" />
               </tr>
             </thead>
@@ -3850,7 +3850,7 @@ function CbhpmLookupModal({
                     <td data-label="Codigo">{item.codigo}</td>
                     <td data-label="Procedimento">{item.procedimento}</td>
                     <td data-label="Porte">{item.porte || '-'}</td>
-                    <td data-label="Custo operacional">{formatCurrency(item.custoOperacional)}</td>
+                    <td data-label="Valor referência">{formatCurrency(item.valorReferencia)}</td>
                     <td data-label="Selecionar">
                       <button type="button" className="ghost-button select-procedure-action" onClick={() => onSelect(item)}>
                         <CheckCircle2 size={17} />
