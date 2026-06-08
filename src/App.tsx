@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, type MouseEvent, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   ArrowRight,
@@ -193,6 +193,19 @@ type PacienteFilters = {
 };
 type PacienteExportFormat = 'xlsx' | 'pdf';
 type PacienteExportScope = 'all' | 'doctor' | 'visible';
+
+function scrollListCarousel(event: MouseEvent<HTMLButtonElement>, direction: 'previous' | 'next') {
+  const carousel = event.currentTarget
+    .closest('.carousel-shell')
+    ?.querySelector<HTMLElement>('.list-carousel-wrap');
+
+  if (!carousel) {
+    return;
+  }
+
+  const delta = carousel.clientWidth * (direction === 'next' ? 0.86 : -0.86);
+  carousel.scrollBy({ left: delta, behavior: 'smooth' });
+}
 
 const emptyCbhpmFilters: CbhpmFilters = {
   codigo: '',
@@ -2909,75 +2922,95 @@ export default function App() {
           {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
           {usersError && <p className="alert error">{usersError}</p>}
 
-          <div className="table-wrap list-carousel-wrap users-carousel-wrap">
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Perfil</th>
-                  <th>Info</th>
-                  <th>Contato</th>
-                  <th aria-label="Acoes" />
-                </tr>
-              </thead>
-              <tbody>
-                {usersLoading ? (
+          <div className="carousel-shell">
+            <button
+              type="button"
+              className="carousel-nav carousel-nav-left"
+              onClick={(event) => scrollListCarousel(event, 'previous')}
+              aria-label="Voltar no carrossel de usuarios"
+              title="Voltar no carrossel"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="table-wrap list-carousel-wrap users-carousel-wrap">
+              <table className="users-table">
+                <thead>
                   <tr>
-                    <td colSpan={5} className="empty-row">Carregando usuarios...</td>
+                    <th>Nome</th>
+                    <th>Perfil</th>
+                    <th>Info</th>
+                    <th>Contato</th>
+                    <th aria-label="Acoes" />
                   </tr>
-                ) : paginatedUsers.length ? (
-                  paginatedUsers.map((user) => (
-                    <tr key={user.id}>
-                      <td data-label="Nome">
-                        <div className="name-cell">
-                          <UserAvatar name={user.nome} photo={user.fotoPerfil} size="sm" />
-                          <span>{user.nome}</span>
-                        </div>
-                      </td>
-                      <td data-label="Perfil">{user.perfilNome || getProfileName(user.perfilId)}</td>
-                      <td data-label="Info">
-                        <button
-                          type="button"
-                          className={`status-info-button ${user.ativo ? 'active' : 'inactive'}`}
-                          title={`${user.ativo ? 'Ativo' : 'Inativo'} - clique para ver detalhes`}
-                          aria-label={`Detalhes de ${user.nome}`}
-                          onClick={() => setSelectedInfoUser(user)}
-                        >
-                          {user.ativo ? <CircleCheck size={19} /> : <CircleX size={19} />}
-                          <Info size={15} />
-                        </button>
-                      </td>
-                      <td data-label="Contato">
-                        <button
-                          type="button"
-                          className="status-info-button contact"
-                          title="Ver informacoes de contato"
-                          aria-label={`Contato de ${user.nome}`}
-                          onClick={() => setSelectedContactUser(user)}
-                        >
-                          <Mail size={18} />
-                          <Phone size={14} />
-                        </button>
-                      </td>
-                      <td data-label="Acoes">
-                        <div className="row-actions">
-                          <button type="button" className="icon-button muted" onClick={() => void handleEditUser(user)} title="Editar">
-                            <Pencil size={17} />
-                          </button>
-                          <button type="button" className="icon-button danger" onClick={() => void handleDeleteUser(user)} title="Excluir">
-                            <Trash2 size={17} />
-                          </button>
-                        </div>
-                      </td>
+                </thead>
+                <tbody>
+                  {usersLoading ? (
+                    <tr>
+                      <td colSpan={5} className="empty-row">Carregando usuarios...</td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="empty-row">Nenhum usuario encontrado.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  ) : paginatedUsers.length ? (
+                    paginatedUsers.map((user) => (
+                      <tr key={user.id}>
+                        <td data-label="Nome">
+                          <div className="name-cell">
+                            <UserAvatar name={user.nome} photo={user.fotoPerfil} size="sm" />
+                            <span>{user.nome}</span>
+                          </div>
+                        </td>
+                        <td data-label="Perfil">{user.perfilNome || getProfileName(user.perfilId)}</td>
+                        <td data-label="Info">
+                          <button
+                            type="button"
+                            className={`status-info-button ${user.ativo ? 'active' : 'inactive'}`}
+                            title={`${user.ativo ? 'Ativo' : 'Inativo'} - clique para ver detalhes`}
+                            aria-label={`Detalhes de ${user.nome}`}
+                            onClick={() => setSelectedInfoUser(user)}
+                          >
+                            {user.ativo ? <CircleCheck size={19} /> : <CircleX size={19} />}
+                            <Info size={15} />
+                          </button>
+                        </td>
+                        <td data-label="Contato">
+                          <button
+                            type="button"
+                            className="status-info-button contact"
+                            title="Ver informacoes de contato"
+                            aria-label={`Contato de ${user.nome}`}
+                            onClick={() => setSelectedContactUser(user)}
+                          >
+                            <Mail size={18} />
+                            <Phone size={14} />
+                          </button>
+                        </td>
+                        <td data-label="Acoes">
+                          <div className="row-actions">
+                            <button type="button" className="icon-button muted" onClick={() => void handleEditUser(user)} title="Editar">
+                              <Pencil size={17} />
+                            </button>
+                            <button type="button" className="icon-button danger" onClick={() => void handleDeleteUser(user)} title="Excluir">
+                              <Trash2 size={17} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="empty-row">Nenhum usuario encontrado.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <button
+              type="button"
+              className="carousel-nav carousel-nav-right"
+              onClick={(event) => scrollListCarousel(event, 'next')}
+              aria-label="Avancar no carrossel de usuarios"
+              title="Avancar no carrossel"
+            >
+              <ChevronRight size={20} />
+            </button>
           </div>
 
           <div className="pagination-bar">
@@ -3414,93 +3447,113 @@ export default function App() {
           {pacienteSuccessMessage && <p className="alert success"><CheckCircle2 size={17} />{pacienteSuccessMessage}</p>}
           {pacientesError && <p className="alert error">{pacientesError}</p>}
 
-          <div className="table-wrap list-carousel-wrap patients-carousel-wrap">
-            <table className="patients-table">
-              <thead>
-                <tr>
-                  <th>Paciente</th>
-                  <th>Info</th>
-                  <th>Hospital</th>
-                  <th>Medico</th>
-                  <th>Convenio</th>
-                  <th>Status Pago</th>
-                  <th>Arquivos</th>
-                  <th aria-label="Acoes" />
-                </tr>
-              </thead>
-              <tbody>
-                {pacientesLoading ? (
+          <div className="carousel-shell">
+            <button
+              type="button"
+              className="carousel-nav carousel-nav-left"
+              onClick={(event) => scrollListCarousel(event, 'previous')}
+              aria-label="Voltar no carrossel de pacientes"
+              title="Voltar no carrossel"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="table-wrap list-carousel-wrap patients-carousel-wrap">
+              <table className="patients-table">
+                <thead>
                   <tr>
-                    <td colSpan={8} className="empty-row">Carregando pacientes...</td>
+                    <th>Paciente</th>
+                    <th>Info</th>
+                    <th>Hospital</th>
+                    <th>Medico</th>
+                    <th>Convenio</th>
+                    <th>Status Pago</th>
+                    <th>Arquivos</th>
+                    <th aria-label="Acoes" />
                   </tr>
-                ) : paginatedPacientes.length ? (
-                  paginatedPacientes.map((paciente) => (
-                    <tr key={paciente.id}>
-                      <td data-label="Paciente">
-                        <div className="name-cell">
-                          <UserAvatar name={paciente.nomePaciente} photo={paciente.fotoPerfil} size="sm" />
-                          <span>{paciente.nomePaciente}</span>
-                        </div>
-                      </td>
-                      <td data-label="Info">
-                        <button
-                          type="button"
-                          className="status-info-button"
-                          title="Ver informacoes adicionais"
-                          aria-label={`Informacoes adicionais de ${paciente.nomePaciente}`}
-                          onClick={() => setSelectedPatientInfo(paciente)}
-                        >
-                          <Info size={18} />
-                        </button>
-                      </td>
-                      <td data-label="Hospital">{paciente.hospital || '-'}</td>
-                      <td data-label="Medico">{paciente.medico || '-'}</td>
-                      <td data-label="Convenio">{paciente.convenio || '-'}</td>
-                      <td data-label="Status Pago">
-                        <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
-                          {paciente.statusPago ? 'Pago' : 'Pendente'}
-                        </span>
-                      </td>
-                      <td data-label="Arquivos">
-                        {(paciente.arquivosCount ?? paciente.arquivos.length) > 0 ? (
+                </thead>
+                <tbody>
+                  {pacientesLoading ? (
+                    <tr>
+                      <td colSpan={8} className="empty-row">Carregando pacientes...</td>
+                    </tr>
+                  ) : paginatedPacientes.length ? (
+                    paginatedPacientes.map((paciente) => (
+                      <tr key={paciente.id}>
+                        <td data-label="Paciente">
+                          <div className="name-cell">
+                            <UserAvatar name={paciente.nomePaciente} photo={paciente.fotoPerfil} size="sm" />
+                            <span>{paciente.nomePaciente}</span>
+                          </div>
+                        </td>
+                        <td data-label="Info">
                           <button
                             type="button"
-                            className="attachment-count attachment-button"
-                            onClick={() => void handleOpenPacienteFiles(paciente)}
-                            title="Ver arquivos anexos"
-                            aria-label={`Arquivos anexos de ${paciente.nomePaciente}`}
+                            className="status-info-button"
+                            title="Ver informacoes adicionais"
+                            aria-label={`Informacoes adicionais de ${paciente.nomePaciente}`}
+                            onClick={() => setSelectedPatientInfo(paciente)}
                           >
-                            <FileText size={15} />
-                            {paciente.arquivosCount ?? paciente.arquivos.length}
+                            <Info size={18} />
                           </button>
-                        ) : (
-                          <span className="attachment-count">
-                            <FileText size={15} />
-                            0
+                        </td>
+                        <td data-label="Hospital">{paciente.hospital || '-'}</td>
+                        <td data-label="Medico">{paciente.medico || '-'}</td>
+                        <td data-label="Convenio">{paciente.convenio || '-'}</td>
+                        <td data-label="Status Pago">
+                          <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
+                            {paciente.statusPago ? 'Pago' : 'Pendente'}
                           </span>
-                        )}
-                      </td>
-                      <td data-label="Acoes">
-                        <div className="row-actions">
-                          <button type="button" className="icon-button muted" onClick={() => void handleEditPaciente(paciente)} title={patientReadOnly ? 'Visualizar' : 'Editar'}>
-                            {patientReadOnly ? <Eye size={17} /> : <Pencil size={17} />}
-                          </button>
-                          {canDeletePatients && (
-                            <button type="button" className="icon-button danger" onClick={() => void handleDeletePaciente(paciente)} title="Excluir">
-                              <Trash2 size={17} />
+                        </td>
+                        <td data-label="Arquivos">
+                          {(paciente.arquivosCount ?? paciente.arquivos.length) > 0 ? (
+                            <button
+                              type="button"
+                              className="attachment-count attachment-button"
+                              onClick={() => void handleOpenPacienteFiles(paciente)}
+                              title="Ver arquivos anexos"
+                              aria-label={`Arquivos anexos de ${paciente.nomePaciente}`}
+                            >
+                              <FileText size={15} />
+                              {paciente.arquivosCount ?? paciente.arquivos.length}
                             </button>
+                          ) : (
+                            <span className="attachment-count">
+                              <FileText size={15} />
+                              0
+                            </span>
                           )}
-                        </div>
-                      </td>
+                        </td>
+                        <td data-label="Acoes">
+                          <div className="row-actions">
+                            <button type="button" className="icon-button muted" onClick={() => void handleEditPaciente(paciente)} title={patientReadOnly ? 'Visualizar' : 'Editar'}>
+                              {patientReadOnly ? <Eye size={17} /> : <Pencil size={17} />}
+                            </button>
+                            {canDeletePatients && (
+                              <button type="button" className="icon-button danger" onClick={() => void handleDeletePaciente(paciente)} title="Excluir">
+                                <Trash2 size={17} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="empty-row">Nenhum paciente encontrado.</td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="empty-row">Nenhum paciente encontrado.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <button
+              type="button"
+              className="carousel-nav carousel-nav-right"
+              onClick={(event) => scrollListCarousel(event, 'next')}
+              aria-label="Avancar no carrossel de pacientes"
+              title="Avancar no carrossel"
+            >
+              <ChevronRight size={20} />
+            </button>
           </div>
 
           <div className="pagination-bar">
