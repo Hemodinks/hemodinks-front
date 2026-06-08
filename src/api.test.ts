@@ -12,6 +12,7 @@ import {
   getConvenios,
   getHospitais,
   getUser,
+  getUserProfilePhoto,
   getPacientes,
   getUsers,
   resetPassword,
@@ -70,6 +71,19 @@ describe('api client', () => {
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/users/', {
       headers: {
         'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+  });
+
+  it('busca a foto de perfil do usuario com token bearer', async () => {
+    const imageBlob = new Blob(['avatar'], { type: 'image/png' });
+    fetchMock.mockResolvedValueOnce(new Response(imageBlob, { status: 200 }));
+
+    await expect(getUserProfilePhoto(1, 'jwt-token')).resolves.toBeInstanceOf(Blob);
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/users/1/foto-perfil', {
+      headers: {
         Authorization: 'Bearer jwt-token',
       },
     });

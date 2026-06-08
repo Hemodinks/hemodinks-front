@@ -13,6 +13,7 @@ vi.mock('./api', () => ({
   getConvenios: vi.fn(),
   getHospitais: vi.fn(),
   getUsers: vi.fn(),
+  getUserProfilePhoto: vi.fn(),
   getPaciente: vi.fn(),
   getPacientes: vi.fn(),
   createUser: vi.fn(),
@@ -144,6 +145,7 @@ describe('App', () => {
     });
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
+    vi.mocked(api.getUserProfilePhoto).mockResolvedValue(new Blob(['avatar'], { type: 'image/png' }));
     vi.mocked(api.getHospitais).mockResolvedValue([
       { id: 1, nome: 'Santa Clara - Mater Dei' },
       { id: 2, nome: 'Santa Genoveva - Mater Dei' },
@@ -157,6 +159,14 @@ describe('App', () => {
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    Object.defineProperty(URL, 'createObjectURL', {
+      value: vi.fn(() => 'blob:hemodinks-avatar'),
+      configurable: true,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      value: vi.fn(),
+      configurable: true,
+    });
   });
 
   it('faz login, salva a sessao JWT e carrega usuarios', async () => {
@@ -300,7 +310,7 @@ describe('App', () => {
     expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  it('normaliza foto de perfil relativa e exibe iniciais se a imagem falhar', async () => {
+  it('carrega foto de perfil pela API e exibe iniciais se a imagem falhar', async () => {
     mockSession({
       nome: 'George Marcone',
       fotoPerfil: '/profile-photos/george.png',
@@ -310,8 +320,12 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
 
-    const avatar = screen.getByAltText('Foto de George Marcone');
-    expect(avatar).toHaveAttribute('src', 'http://localhost:5000/profile-photos/george.png');
+    await waitFor(() => {
+      expect(api.getUserProfilePhoto).toHaveBeenCalledWith(99, 'jwt-token');
+    });
+
+    const avatar = await screen.findByAltText('Foto de George Marcone');
+    expect(avatar).toHaveAttribute('src', 'blob:hemodinks-avatar');
 
     fireEvent.error(avatar);
 
@@ -632,6 +646,10 @@ describe('App', () => {
     expect(screen.getByText('Valor referência: R$ 120,00')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     await user.click(within(await screen.findByRole('dialog', { name: 'Selecionar procedimento' })).getAllByRole('button', { name: /adicionar/i })[1]);
+    await user.type(screen.getByLabelText('Valor recebido/pago'), '200000');
+    await user.type(screen.getByLabelText('Glosa'), '1250');
+    expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 2.000,00');
+    expect(screen.getByLabelText('Glosa')).toHaveValue('R$ 12,50');
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
     expect(api.createPaciente).toHaveBeenCalledWith({
@@ -666,8 +684,8 @@ describe('App', () => {
         },
       ],
       autorizacao: '',
-      pagamento: '',
-      repasseGlosa: '',
+      pagamento: 'R$ 2.000,00',
+      repasseGlosa: 'R$ 12,50',
       statusPago: false,
       ativo: true,
     }, 'jwt-token');
