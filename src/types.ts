@@ -74,6 +74,15 @@ export type CbhpmGeral = {
   paginaPdf?: number | null;
 };
 
+export type PacienteProcedimento = {
+  id?: number;
+  cbhpmCodigo?: string | null;
+  cbhpmPorte?: string | null;
+  procedimento: string;
+  valorReferencia?: number | null;
+  ordem?: number | null;
+};
+
 export type Hospital = {
   id: number;
   nome: string;
@@ -168,6 +177,7 @@ export type Paciente = {
   cbhpmCodigo?: string | null;
   cbhpmPorte?: string | null;
   procedimento?: string | null;
+  procedimentos?: PacienteProcedimento[];
   autorizacao?: string | null;
   pagamento?: string | null;
   repasseGlosa?: string | null;
@@ -198,6 +208,7 @@ export type PacienteFormData = {
   cbhpmCodigo: string;
   cbhpmPorte: string;
   procedimento: string;
+  procedimentos: PacienteProcedimento[];
   autorizacao: string;
   pagamento: string;
   repasseGlosa: string;

@@ -1305,6 +1305,12 @@ img.user-avatar {
   min-height: 43px;
 }
 
+.selected-procedure-list {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
 .selected-procedure {
   min-width: 0;
   display: flex;
@@ -1334,6 +1340,12 @@ img.user-avatar {
   overflow-wrap: anywhere;
   color: var(--ink);
   line-height: 1.35;
+}
+
+.selected-procedure-main small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .selected-procedure-actions {
@@ -1728,6 +1740,24 @@ tbody tr:last-child td {
   color: var(--ink);
   font-weight: 900;
   text-align: right;
+}
+
+.info-procedure-list {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.info-procedure-list li {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
 }
 
 .copyable-value {
