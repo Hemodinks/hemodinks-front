@@ -113,6 +113,14 @@ describe('api client', () => {
       cbhpmCodigo: '1.01.01.01-2',
       cbhpmPorte: '2B',
       procedimento: 'Consulta',
+      procedimentos: [
+        {
+          cbhpmCodigo: '1.01.01.01-2',
+          cbhpmPorte: '2B',
+          procedimento: 'Consulta',
+          valorReferencia: 120,
+        },
+      ],
       autorizacao: '',
       pagamento: 'Pix',
       repasseGlosa: '',
