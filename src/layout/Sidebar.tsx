@@ -64,7 +64,7 @@ export function Sidebar({
           {canAccessUsers && (
             <button
               type="button"
-              className={activeView === 'users' ? 'active' : ''}
+              className={`side-nav-users ${activeView === 'users' ? 'active' : ''}`}
               onClick={onOpenUsersList}
             >
               <Users size={18} />
@@ -84,7 +84,7 @@ export function Sidebar({
           )}
           <button
             type="button"
-            className={activeView === 'patients' ? 'active' : ''}
+            className={`side-nav-patients ${activeView === 'patients' ? 'active' : ''}`}
             onClick={onOpenPatientsList}
           >
             <ClipboardList size={18} />
