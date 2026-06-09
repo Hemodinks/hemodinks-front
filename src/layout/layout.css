@@ -426,25 +426,40 @@ img.user-avatar {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--side-nav-border, var(--line));
+  border-left-width: 4px;
   border-radius: 8px;
   padding: 0 14px;
-  color: var(--muted);
-  background: var(--input-bg);
+  color: var(--side-nav-color, var(--muted));
+  background:
+    linear-gradient(90deg, var(--side-nav-soft, transparent), transparent 78%),
+    var(--input-bg);
   font-weight: 900;
   text-align: left;
 }
 
 .side-nav-count {
   margin-left: auto;
-  color: var(--teal);
+  color: var(--side-nav-color, var(--teal));
   font-size: 0.78rem;
+}
+
+.side-nav-users {
+  --side-nav-color: #0f766e;
+  --side-nav-soft: rgba(15, 118, 110, 0.1);
+  --side-nav-border: rgba(15, 118, 110, 0.3);
+}
+
+.side-nav-patients {
+  --side-nav-color: #2563eb;
+  --side-nav-soft: rgba(37, 99, 235, 0.1);
+  --side-nav-border: rgba(37, 99, 235, 0.3);
 }
 
 .side-nav button.active {
   color: #fff;
-  border-color: var(--blood);
-  background: var(--blood);
+  border-color: var(--side-nav-color, var(--blood));
+  background: var(--side-nav-color, var(--blood));
 }
 
 .side-nav button.active .side-nav-count {
