@@ -1,0 +1,86 @@
+:root {
+  color: #1f2937;
+  background: #f6f7f4;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --ink: #18212f;
+  --muted: #667085;
+  --line: #d8ded8;
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --soft: #eef4ef;
+  --blood: #b42335;
+  --blood-dark: #8f1d2d;
+  --teal: #0f766e;
+  --amber: #b7791f;
+  --danger: #b42318;
+  --background: #f6f7f4;
+  --background-overlay: rgba(246, 247, 244, 0.5);
+  --input-bg: #ffffff;
+  --table-head: #f8faf8;
+  --row-hover: #fbfcfb;
+  --topbar-bg: rgba(255, 255, 255, 0.92);
+  --shadow: 0 18px 45px rgba(24, 33, 47, 0.14);
+}
+
+:root[data-theme="dark"] {
+  color: #edf2f7;
+  background: #111827;
+  --ink: #f8fafc;
+  --muted: #cbd5e1;
+  --line: #334155;
+  --panel: rgba(15, 23, 42, 0.94);
+  --panel-strong: #111827;
+  --soft: #243143;
+  --blood: #fb7185;
+  --blood-dark: #f43f5e;
+  --teal: #2dd4bf;
+  --amber: #fbbf24;
+  --danger: #f87171;
+  --background: #111827;
+  --background-overlay: rgba(15, 23, 42, 0.58);
+  --input-bg: #0f172a;
+  --table-head: #172033;
+  --row-hover: rgba(30, 41, 59, 0.72);
+  --topbar-bg: rgba(15, 23, 42, 0.92);
+  --shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: var(--ink);
+  background-color: var(--background);
+  background-image:
+    linear-gradient(var(--background-overlay), var(--background-overlay)),
+    url("../../imagem candidata hemodinks.jpg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}

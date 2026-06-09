@@ -1,0 +1,136 @@
+import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import type { User, UserFormData } from '../../types';
+import { UserForm } from './UserForm';
+import { UserList } from './UserList';
+
+type UsersPageProps = {
+  moduleMode: 'list' | 'form';
+  canAccessUsers: boolean;
+  canUseUserForm: boolean;
+  editingId: number | null;
+  editingUserDetails: User | null;
+  formData: UserFormData;
+  formError: string;
+  formLoading: boolean;
+  pendingUserFiles: File[];
+  photoInputKey: number;
+  userFileInputKey: number;
+  users: User[];
+  usersLoading: boolean;
+  usersError: string;
+  successMessage: string;
+  usersTotalItems: number;
+  visibleStart: number;
+  visibleEnd: number;
+  currentPage: number;
+  totalPages: number;
+  searchTerm: string;
+  sessionToken: string;
+  setFormData: Dispatch<SetStateAction<UserFormData>>;
+  setSearchTerm: (value: string) => void;
+  setCurrentPage: (page: number | ((current: number) => number)) => void;
+  closeUserForm: () => void;
+  openNewUserForm: () => void;
+  handleSubmitUser: (event: FormEvent<HTMLFormElement>) => void;
+  handleProfilePhotoChange: (event: ChangeEvent<HTMLInputElement>) => void | Promise<void>;
+  handleRemoveProfilePhoto: () => void;
+  handleUserFilesChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  removePendingUserFile: (index: number) => void;
+  handleDeleteUserArquivo: (user: User, arquivoId: number) => void | Promise<void>;
+  handleEditUser: (user: User) => void | Promise<void>;
+  handleDeleteUser: (user: User) => void | Promise<void>;
+  setSelectedInfoUser: (user: User) => void;
+  setSelectedContactUser: (user: User) => void;
+  refreshUsers: () => void;
+};
+
+export function UsersPage({
+  moduleMode,
+  canAccessUsers,
+  canUseUserForm,
+  editingId,
+  editingUserDetails,
+  formData,
+  formError,
+  formLoading,
+  pendingUserFiles,
+  photoInputKey,
+  userFileInputKey,
+  users,
+  usersLoading,
+  usersError,
+  successMessage,
+  usersTotalItems,
+  visibleStart,
+  visibleEnd,
+  currentPage,
+  totalPages,
+  searchTerm,
+  sessionToken,
+  setFormData,
+  setSearchTerm,
+  setCurrentPage,
+  closeUserForm,
+  openNewUserForm,
+  handleSubmitUser,
+  handleProfilePhotoChange,
+  handleRemoveProfilePhoto,
+  handleUserFilesChange,
+  removePendingUserFile,
+  handleDeleteUserArquivo,
+  handleEditUser,
+  handleDeleteUser,
+  setSelectedInfoUser,
+  setSelectedContactUser,
+  refreshUsers,
+}: UsersPageProps) {
+  return (
+    <section className="workspace">
+      {moduleMode === 'form' ? (
+        <UserForm
+          canAccessUsers={canAccessUsers}
+          canUseUserForm={canUseUserForm}
+          editingId={editingId}
+          editingUserDetails={editingUserDetails}
+          formData={formData}
+          formError={formError}
+          formLoading={formLoading}
+          pendingUserFiles={pendingUserFiles}
+          photoInputKey={photoInputKey}
+          userFileInputKey={userFileInputKey}
+          sessionToken={sessionToken}
+          setFormData={setFormData}
+          onClose={closeUserForm}
+          onSubmit={handleSubmitUser}
+          onProfilePhotoChange={handleProfilePhotoChange}
+          onRemoveProfilePhoto={handleRemoveProfilePhoto}
+          onUserFilesChange={handleUserFilesChange}
+          onRemovePendingUserFile={removePendingUserFile}
+          onDeleteUserArquivo={handleDeleteUserArquivo}
+        />
+      ) : (
+        <UserList
+          users={users}
+          usersLoading={usersLoading}
+          usersError={usersError}
+          successMessage={successMessage}
+          usersTotalItems={usersTotalItems}
+          visibleStart={visibleStart}
+          visibleEnd={visibleEnd}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          searchTerm={searchTerm}
+          sessionToken={sessionToken}
+          onSearchChange={setSearchTerm}
+          onPageChange={setCurrentPage}
+          onRefresh={refreshUsers}
+          onOpenNewUserForm={openNewUserForm}
+          onEditUser={handleEditUser}
+          onDeleteUser={handleDeleteUser}
+          onSelectInfoUser={setSelectedInfoUser}
+          onSelectContactUser={setSelectedContactUser}
+        />
+      )}
+    </section>
+  );
+}
