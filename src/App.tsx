@@ -62,6 +62,13 @@ import {
   uploadPacienteArquivo,
   uploadUserArquivo,
 } from './api';
+import { LoginScreen } from './features/auth/LoginScreen';
+import { PasswordRequiredScreen } from './features/auth/PasswordRequiredScreen';
+import { DashboardPage } from './features/dashboard/DashboardPage';
+import { PatientsPage } from './features/patients/PatientsPage';
+import { UsersPage } from './features/users/UsersPage';
+import { AppShell } from './layout/AppShell';
+import { PasswordForm } from './shared/components/PasswordForm';
 import type {
   AuthSession,
   CbhpmGeral,
@@ -2369,83 +2376,34 @@ export default function App() {
 
   if (!session) {
     return (
-      <main className="auth-screen">
-        <LoadingOverlay active={isBusy} />
-        <TechCredit />
-        <ThemeToggle theme={theme} onToggle={toggleTheme} floating />
-        <section className="auth-panel">
-          <div className="brand-block">
-            <img src={brandImage} alt="Hemodinks" className="brand-mark" />
-            <div>
-              <span className="eyebrow">Hemodinks</span>
-              <h1>Acesso ao sistema</h1>
-            </div>
-          </div>
-
-          <form className="stack" onSubmit={handleLogin}>
-            <label>
-              Email
-              <input
-                type="email"
-                value={loginEmail}
-                onChange={(event) => setLoginEmail(event.target.value.slice(0, MAX_EMAIL_LENGTH))}
-                autoComplete="email"
-                maxLength={MAX_EMAIL_LENGTH}
-                required
-              />
-            </label>
-
-            <PasswordInput
-              id="login-password"
-              label="Senha"
-              value={loginPassword}
-              onChange={setLoginPassword}
-              autoComplete="current-password"
-              maxLength={MAX_PASSWORD_LENGTH}
-              required
-            />
-
-            {loginError && <p className="alert error">{loginError}</p>}
-            {loginInfo && <p className="alert success">{loginInfo}</p>}
-
-            <div className="button-row login-actions">
-              <button type="button" className="ghost-button" onClick={() => void handleResetPassword()} disabled={resetPasswordLoading}>
-                {resetPasswordLoading ? 'Resetando...' : 'Esqueci minha senha'}
-              </button>
-              <button className="primary-action" type="submit" disabled={loginLoading}>
-                <LogIn size={18} />
-                {loginLoading ? 'Entrando...' : 'Entrar'}
-              </button>
-            </div>
-          </form>
-        </section>
-      </main>
+      <LoginScreen
+        isBusy={isBusy}
+        theme={theme}
+        loginEmail={loginEmail}
+        loginPassword={loginPassword}
+        loginError={loginError}
+        loginInfo={loginInfo}
+        loginLoading={loginLoading}
+        resetPasswordLoading={resetPasswordLoading}
+        onThemeToggle={toggleTheme}
+        onLoginEmailChange={setLoginEmail}
+        onLoginPasswordChange={setLoginPassword}
+        onSubmit={handleLogin}
+        onResetPassword={() => void handleResetPassword()}
+      />
     );
   }
 
   if (session.user.precisaTrocarSenha) {
     return (
-      <main className="auth-screen compact">
-        <LoadingOverlay active={isBusy} />
-        <TechCredit />
-        <ThemeToggle theme={theme} onToggle={toggleTheme} floating />
-        <section className="auth-panel password-required">
-          <div className="brand-block">
-            <KeyRound size={36} strokeWidth={1.8} />
-            <div>
-              <span className="eyebrow">Primeiro acesso</span>
-              <h1>Troque sua senha</h1>
-            </div>
-          </div>
-
-          <PasswordForm
-            session={session}
-            forced
-            onChanged={handlePasswordChanged}
-            onCancel={logout}
-          />
-        </section>
-      </main>
+      <PasswordRequiredScreen
+        session={session}
+        isBusy={isBusy}
+        theme={theme}
+        onThemeToggle={toggleTheme}
+        onPasswordChanged={handlePasswordChanged}
+        onLogout={logout}
+      />
     );
   }
 
@@ -2469,1146 +2427,125 @@ export default function App() {
       ...(moduleMode === 'form' ? [{ label: formBreadcrumbLabel }] : []),
     ];
 
-  return (
-    <main className="app-shell">
-      <LoadingOverlay active={isBusy} />
-      <datalist id={MEDICAL_USERS_DATALIST_ID}>
-        {medicalUsers.map((user) => (
-          <option key={user.id} value={user.nome} />
-        ))}
-      </datalist>
-      <datalist id={CONVENIOS_DATALIST_ID}>
-        {convenios.map((convenio) => (
-          <option key={convenio.idConvenio} value={convenio.descricaoConvenio} />
-        ))}
-      </datalist>
-      <header className="topbar">
-        <div className="topbar-brand">
-          <div>
-            <div className="brand-kicker">
-              <span className="company-name">GM Tech Solutions</span>
-              <span className="product-name">Hemodinks</span>
-            </div>
-            <h1>{appTitle}</h1>
-            <Breadcrumbs items={breadcrumbItems} />
-          </div>
-        </div>
+  const mainContent = activeView === 'dashboard' ? (
+    <DashboardPage
+      canAccessUsers={canAccessUsers}
+      canEditOwnUser={canEditOwnUser}
+      patientReadOnly={patientReadOnly}
+      usersCount={usersCount}
+      pacientesCount={pacientesCount}
+      activeUsersCount={activeUsersCount}
+      activePatientsCount={activePatientsCount}
+      pendingPaymentsCount={pendingPaymentsCount}
+      patientFilesCount={patientFilesCount}
+      successMessage={successMessage}
+      dashboardError={dashboardError}
+      onOpenUsersList={openUsersList}
+      onOpenMyProfile={openMyProfile}
+      onOpenPatientsList={openPatientsList}
+    />
+  ) : activeView === 'users' ? (
+    <UsersPage
+      moduleMode={moduleMode}
+      canAccessUsers={canAccessUsers}
+      canUseUserForm={canUseUserForm}
+      editingId={editingId}
+      editingUserDetails={editingUserDetails}
+      formData={formData}
+      formError={formError}
+      formLoading={formLoading}
+      pendingUserFiles={pendingUserFiles}
+      photoInputKey={photoInputKey}
+      userFileInputKey={userFileInputKey}
+      users={paginatedUsers}
+      usersLoading={usersLoading}
+      usersError={usersError}
+      successMessage={successMessage}
+      usersTotalItems={usersTotalItems}
+      visibleStart={visibleStart}
+      visibleEnd={visibleEnd}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      searchTerm={searchTerm}
+      sessionToken={session.token}
+      setFormData={setFormData}
+      setSearchTerm={setSearchTerm}
+      setCurrentPage={setCurrentPage}
+      closeUserForm={closeUserForm}
+      openNewUserForm={openNewUserForm}
+      handleSubmitUser={handleSubmitUser}
+      handleProfilePhotoChange={handleProfilePhotoChange}
+      handleRemoveProfilePhoto={handleRemoveProfilePhoto}
+      handleUserFilesChange={handleUserFilesChange}
+      removePendingUserFile={removePendingUserFile}
+      handleDeleteUserArquivo={handleDeleteUserArquivo}
+      handleEditUser={handleEditUser}
+      handleDeleteUser={handleDeleteUser}
+      setSelectedInfoUser={setSelectedInfoUser}
+      setSelectedContactUser={setSelectedContactUser}
+      refreshUsers={() => void loadUsers(session.token, currentPage, debouncedSearchTerm)}
+    />
+  ) : (
+    <PatientsPage
+      moduleMode={moduleMode}
+      canCreatePatients={canCreatePatients}
+      canEditPatients={canEditPatients}
+      canDeletePatients={canDeletePatients}
+      patientReadOnly={patientReadOnly}
+      editingPacienteId={editingPacienteId}
+      editingPaciente={editingPaciente}
+      pacienteFormData={pacienteFormData}
+      pacienteFormError={pacienteFormError}
+      pacienteFormLoading={pacienteFormLoading}
+      pendingPatientFiles={pendingPatientFiles}
+      patientFileInputKey={patientFileInputKey}
+      pacientes={paginatedPacientes}
+      pacientesLoading={pacientesLoading}
+      pacientesError={pacientesError}
+      pacienteSuccessMessage={pacienteSuccessMessage}
+      pacientesTotalItems={pacientesTotalItems}
+      pacienteVisibleStart={pacienteVisibleStart}
+      pacienteVisibleEnd={pacienteVisibleEnd}
+      pacienteCurrentPage={pacienteCurrentPage}
+      pacienteTotalPages={pacienteTotalPages}
+      pacienteSearchTerm={pacienteSearchTerm}
+      pacienteFilters={pacienteFilters}
+      pacienteExportLoading={pacienteExportLoading}
+      pacienteExportScope={pacienteExportScope}
+      hospitais={hospitais}
+      hospitaisError={hospitaisError}
+      medicalUsers={medicalUsers}
+      convenios={convenios}
+      conveniosError={conveniosError}
+      isAdmin={isAdmin}
+      isMedical={isMedical}
+      sessionToken={session.token}
+      sessionUserName={session.user.nome}
+      setPacienteFormData={setPacienteFormData}
+      setPacienteSearchTerm={setPacienteSearchTerm}
+      setPacienteFilters={setPacienteFilters}
+      setPacienteExportScope={setPacienteExportScope}
+      setPacienteCurrentPage={setPacienteCurrentPage}
+      closePacienteForm={closePacienteForm}
+      openNewPacienteForm={openNewPacienteForm}
+      handleSubmitPaciente={handleSubmitPaciente}
+      handleOpenCbhpmModal={handleOpenCbhpmModal}
+      handleRemovePacienteProcedimento={handleRemovePacienteProcedimento}
+      handlePacienteFilesChange={handlePacienteFilesChange}
+      removePendingPatientFile={removePendingPatientFile}
+      handleDeletePacienteArquivo={handleDeletePacienteArquivo}
+      handleExportPacientes={handleExportPacientes}
+      handleEditPaciente={handleEditPaciente}
+      handleDeletePaciente={handleDeletePaciente}
+      handleOpenPacienteFiles={handleOpenPacienteFiles}
+      setSelectedPatientInfo={setSelectedPatientInfo}
+      clearPacienteFilters={() => setPacienteFilters(emptyPacienteFilters)}
+      refreshPacientes={() => void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters)}
+    />
+  );
 
-        <div className="topbar-right">
-          <div className="current-user topbar-user" aria-label="Usuario logado">
-            <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" />
-            <span className="current-user-name">{session.user.nome}</span>
-          </div>
-
-          <div className="topbar-actions">
-            <button
-              type="button"
-              className="topbar-info-panel notification-chip"
-              onClick={() => void handleToggleNotifications()}
-              aria-expanded={notificationsOpen}
-              aria-haspopup="dialog"
-            >
-              <Bell size={17} />
-              <span className="notification-label notification-label-wide">Notificacoes</span>
-              <span className="notification-label notification-label-short">Avisos</span>
-              <span className="notification-count">{notificationCount}</span>
-            </button>
-            <ThemeToggle theme={theme} onToggle={toggleTheme} />
-            <button type="button" className="ghost-button password-action-button" onClick={() => setShowPasswordModal(true)}>
-              <KeyRound size={17} />
-              <span className="action-label-wide">Alterar senha</span>
-              <span className="action-label-short">Senha</span>
-            </button>
-            <button type="button" className="ghost-button logout-button" onClick={logout}>
-              <LogOut size={18} />
-              <span>Sair</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="app-layout">
-        <aside className="sidebar-panel" aria-label="Sessao ativa">
-          <div className="sidebar-card">
-            <div className="sidebar-heading">
-              <span className="eyebrow">Painel</span>
-              <h2>Sessao ativa</h2>
-            </div>
-
-            <div className="session-card">
-              <span className="session-label">Usuario</span>
-              <div className="session-user-row">
-                <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" decorative />
-                <strong>{session.user.nome}</strong>
-              </div>
-            </div>
-
-            <div className="session-card">
-              <span className="session-label">Perfil</span>
-              <strong>{currentUserProfile}</strong>
-              <span className="session-meta">{currentUserProfile} | {session.user.email}</span>
-            </div>
-
-            <nav className="side-nav" role="tablist" aria-label="Navegacao principal">
-              <button
-                type="button"
-                className={activeView === 'dashboard' ? 'active' : ''}
-                onClick={openDashboard}
-              >
-                <LayoutDashboard size={18} />
-                <span>Painel</span>
-              </button>
-              {canAccessUsers && (
-                <button
-                  type="button"
-                  className={activeView === 'users' ? 'active' : ''}
-                  onClick={openUsersList}
-                >
-                  <Users size={18} />
-                  <span>Usuarios</span>
-                  <span className="side-nav-count">{usersCount}</span>
-                </button>
-              )}
-              {canEditOwnUser && (
-                <button
-                  type="button"
-                  className={activeView === 'users' ? 'active' : ''}
-                  onClick={openMyProfile}
-                >
-                  <FileText size={18} />
-                  <span>Meu cadastro</span>
-                </button>
-              )}
-              <button
-                type="button"
-                className={activeView === 'patients' ? 'active' : ''}
-                onClick={openPatientsList}
-              >
-                <ClipboardList size={18} />
-                <span>Pacientes</span>
-                <span className="side-nav-count">{pacientesCount}</span>
-              </button>
-            </nav>
-          </div>
-        </aside>
-
-        <div className={`app-content ${activeView === 'dashboard' ? 'dashboard-content' : ''}`}>
-      {activeView === 'dashboard' ? (
-        <section className="dashboard-workspace">
-          <div className="dashboard-header">
-            <div>
-              <span className="eyebrow">Modulos</span>
-              <h2>Cadastros Hemodinks</h2>
-            </div>
-          </div>
-
-          {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
-          {dashboardError && <p className="alert error">{dashboardError}</p>}
-
-          <div className="module-grid">
-            {canAccessUsers && (
-              <button type="button" className="module-card" onClick={openUsersList} aria-label="Abrir usuarios">
-                <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
-                <span className="module-icon"><Users size={24} /></span>
-                <span className="module-title">Usuarios</span>
-                <span className="module-metric">Gerenciar usuarios</span>
-                <span className="module-card-foot">
-                  <span>{usersCount} cadastrados</span>
-                  <ArrowRight size={20} />
-                </span>
-              </button>
-            )}
-
-            {canEditOwnUser && (
-              <button type="button" className="module-card" onClick={openMyProfile} aria-label="Abrir meu cadastro">
-                <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
-                <span className="module-icon"><FileText size={24} /></span>
-                <span className="module-title">Meu cadastro</span>
-                <span className="module-metric">Dados e documentos</span>
-                <span className="module-card-foot">
-                  <span>Editar registro</span>
-                  <ArrowRight size={20} />
-                </span>
-              </button>
-            )}
-
-            <button type="button" className="module-card" onClick={openPatientsList} aria-label="Abrir pacientes">
-              <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
-              <span className="module-icon"><ClipboardList size={24} /></span>
-              <span className="module-title">Pacientes</span>
-              <span className="module-metric">{patientReadOnly ? 'Visualizar cadastro' : 'Administrar atendimentos'}</span>
-              <span className="module-card-foot">
-                <span>{pacientesCount} cadastrados</span>
-                <ArrowRight size={20} />
-              </span>
-            </button>
-          </div>
-
-          <section className="dashboard-info-panel" aria-label="Painel informativo">
-            <div className="dashboard-info-title">
-              <span className="eyebrow">Painel informativo</span>
-              <h3>Resumo geral</h3>
-            </div>
-
-            <div className="info-summary-grid">
-              {canAccessUsers && (
-                <div className="info-summary-item">
-                  <span className="info-summary-icon"><Users size={18} /></span>
-                  <span className="info-summary-label">Usuarios ativos</span>
-                  <strong>{activeUsersCount}</strong>
-                </div>
-              )}
-              <div className="info-summary-item">
-                <span className="info-summary-icon"><CircleCheck size={18} /></span>
-                <span className="info-summary-label">Pacientes ativos</span>
-                <strong>{activePatientsCount}</strong>
-              </div>
-              <div className="info-summary-item">
-                <span className="info-summary-icon amber"><Info size={18} /></span>
-                <span className="info-summary-label">Pendencias</span>
-                <strong>{pendingPaymentsCount}</strong>
-              </div>
-              <div className="info-summary-item">
-                <span className="info-summary-icon"><FileText size={18} /></span>
-                <span className="info-summary-label">Arquivos</span>
-                <strong>{patientFilesCount}</strong>
-              </div>
-            </div>
-          </section>
-        </section>
-      ) : activeView === 'users' ? (
-      <section className="workspace">
-        {moduleMode === 'form' ? (
-        <aside className="form-panel module-form-panel">
-          <div className="panel-title">
-            <div>
-              <span className="eyebrow">{canAccessUsers ? editingId ? 'Edicao' : 'Cadastro' : 'Perfil'}</span>
-              <h2>{canAccessUsers ? editingId ? 'Editar usuario' : 'Novo usuario' : 'Meu cadastro'}</h2>
-            </div>
-            <div className="panel-title-actions">
-              {canAccessUsers && !editingId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
-              <button type="button" className="icon-button muted" onClick={closeUserForm} title="Voltar para lista">
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-
-          <form className="stack module-form-grid" onSubmit={handleSubmitUser}>
-            <div className="profile-photo-field">
-              <label className="field-label" htmlFor="profile-photo-input">
-                Foto do perfil
-              </label>
-              <div className="photo-uploader">
-                <UserAvatar userId={editingId ?? undefined} name={formData.nome || 'Usuario'} photo={formData.fotoPerfil} authToken={session.token} size="lg" />
-                <div className="photo-actions">
-                  <label className="ghost-button file-action" htmlFor="profile-photo-input">
-                    <ImagePlus size={17} />
-                    {formData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
-                  </label>
-                  {formData.fotoPerfil && (
-                    <button type="button" className="ghost-button danger-text" onClick={handleRemoveProfilePhoto}>
-                      <Trash2 size={17} />
-                      Remover
-                    </button>
-                  )}
-                </div>
-              </div>
-              <input
-                key={photoInputKey}
-                id="profile-photo-input"
-                className="sr-only"
-                type="file"
-                aria-label="Foto do perfil"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={(event) => void handleProfilePhotoChange(event)}
-              />
-              <span className="file-hint">PNG, JPG ou WEBP ate 1 MB.</span>
-            </div>
-
-            <label>
-              Nome completo
-              <input
-                type="text"
-                value={formData.nome}
-                onChange={(event) => setFormData((current) => ({ ...current, nome: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-                maxLength={MAX_NAME_LENGTH}
-                required
-              />
-            </label>
-
-            <label>
-              Email
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(event) => setFormData((current) => ({ ...current, email: event.target.value.slice(0, MAX_EMAIL_LENGTH) }))}
-                maxLength={MAX_EMAIL_LENGTH}
-                required
-              />
-            </label>
-
-            <label>
-              Telefone
-              <input
-                type="tel"
-                value={formData.telefone}
-                onFocus={() => setFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
-                onChange={(event) => setFormData((current) => ({ ...current, telefone: formatPhoneInput(event.target.value) }))}
-                inputMode="numeric"
-                maxLength={MAX_PHONE_LENGTH}
-                placeholder="+55 (81) 99999-9999"
-                required
-              />
-            </label>
-
-            <label>
-              CPF
-              <input
-                type="text"
-                value={formData.cpf}
-                onChange={(event) => setFormData((current) => ({ ...current, cpf: formatCpfInput(event.target.value) }))}
-                inputMode="numeric"
-                maxLength={MAX_CPF_LENGTH}
-                placeholder="000.000.000-00"
-                required
-              />
-            </label>
-
-            <DateInput
-              id="user-birth-date"
-              label="Data de nascimento"
-              value={formData.dataNascimento}
-              onChange={(value) => setFormData((current) => ({ ...current, dataNascimento: value }))}
-              required
-            />
-
-            <label>
-              Perfil
-              <select
-                value={formData.perfilId}
-                onChange={(event) => {
-                  const perfilId = Number(event.target.value);
-                  setFormData((current) => ({
-                    ...current,
-                    perfilId,
-                    crm: isMedicalProfileId(perfilId) ? current.crm : '',
-                    crmUf: isMedicalProfileId(perfilId) ? current.crmUf : '',
-                  }));
-                }}
-                disabled={!canAccessUsers}
-                required
-              >
-                {PROFILE_OPTIONS.map((profile) => (
-                  <option key={profile.id} value={profile.id}>
-                    {profile.nome}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {isMedicalProfileId(formData.perfilId) && (
-              <div className="two-column-fields medical-registration-fields">
-                <label>
-                  CRM
-                  <input
-                    type="text"
-                    value={formData.crm}
-                    onChange={(event) => setFormData((current) => ({ ...current, crm: event.target.value.slice(0, MAX_CRM_LENGTH) }))}
-                    maxLength={MAX_CRM_LENGTH}
-                    placeholder="Ex.: 12345"
-                    disabled={!canUseUserForm}
-                    required
-                  />
-                </label>
-
-                <label>
-                  UF do CRM
-                  <select
-                    value={formData.crmUf}
-                    onChange={(event) => setFormData((current) => ({ ...current, crmUf: event.target.value }))}
-                    disabled={!canUseUserForm}
-                    required
-                  >
-                    <option value="">Selecione</option>
-                    {BRAZIL_UF_OPTIONS.map((uf) => (
-                      <option key={uf} value={uf}>{uf}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            )}
-
-            {formData.perfilId === MEDICAL_PROFILE_ID && canUseUserForm && (
-              <div className="profile-photo-field">
-                <label className="field-label" htmlFor="user-file-input">
-                  Documentos
-                </label>
-                <label className="ghost-button file-action full-width" htmlFor="user-file-input">
-                  <FileUp size={17} />
-                  Selecionar documentos
-                </label>
-                <input
-                  key={userFileInputKey}
-                  id="user-file-input"
-                  className="sr-only"
-                  type="file"
-                  aria-label="Documentos do medico"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt,.csv,.ppt,.pptx"
-                  multiple
-                  onChange={handleUserFilesChange}
-                />
-                <span className="file-hint">PDF, Office, imagens, TXT ou CSV ate 10 MB.</span>
-
-                {pendingUserFiles.length > 0 && (
-                  <ul className="file-list">
-                    {pendingUserFiles.map((file, index) => (
-                      <li key={`${file.name}-${index}`}>
-                        <FileText size={15} />
-                        <span>{file.name}</span>
-                        <button type="button" className="icon-button muted mini" onClick={() => removePendingUserFile(index)} title="Remover arquivo">
-                          <X size={14} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {editingUserDetails?.arquivos?.length ? (
-                  <ul className="file-list">
-                    {editingUserDetails.arquivos.map((arquivo) => (
-                      <li key={arquivo.id}>
-                        <FileText size={15} />
-                        <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
-                        <button type="button" className="icon-button muted mini" onClick={() => void handleDeleteUserArquivo(editingUserDetails, arquivo.id)} title="Excluir arquivo">
-                          <Trash2 size={14} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            )}
-
-            <label className="toggle-row">
-              <input
-                type="checkbox"
-                checked={formData.ativo}
-                onChange={(event) => setFormData((current) => ({ ...current, ativo: event.target.checked }))}
-                disabled={!canAccessUsers}
-              />
-              Usuario ativo
-            </label>
-
-            {formError && <p className="alert error">{formError}</p>}
-
-            <button className="primary-action" type="submit" disabled={formLoading}>
-              {editingId ? <Save size={18} /> : <Plus size={18} />}
-              {formLoading ? 'Salvando...' : editingId ? 'Salvar alteracoes' : 'Cadastrar usuario'}
-            </button>
-          </form>
-        </aside>
-        ) : (
-
-        <section className="data-panel">
-          <div className="data-header">
-            <div>
-              <span className="eyebrow">Base de usuarios</span>
-              <h2>{usersTotalItems} cadastrados</h2>
-            </div>
-
-            <div className="table-tools">
-              <button type="button" className="ghost-button" onClick={openNewUserForm}>
-                <Plus size={17} />
-                Novo usuario
-              </button>
-              <label className="search-box">
-                <Search size={17} />
-                <input
-                  type="search"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Buscar"
-                />
-              </label>
-              <button type="button" className="icon-button" onClick={() => void loadUsers(session.token, currentPage, debouncedSearchTerm)} title="Atualizar lista">
-                <RefreshCw size={18} />
-              </button>
-            </div>
-          </div>
-
-          {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
-          {usersError && <p className="alert error">{usersError}</p>}
-
-          <div className="carousel-shell">
-            <button
-              type="button"
-              className="carousel-nav carousel-nav-left"
-              onClick={(event) => scrollListCarousel(event, 'previous')}
-              aria-label="Voltar no carrossel de usuarios"
-              title="Voltar no carrossel"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <div className="table-wrap list-carousel-wrap users-carousel-wrap">
-              <table className="users-table">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>Perfil</th>
-                    <th>Info</th>
-                    <th>Contato</th>
-                    <th aria-label="Acoes" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {usersLoading ? (
-                    <tr>
-                      <td colSpan={5} className="empty-row">Carregando usuarios...</td>
-                    </tr>
-                  ) : paginatedUsers.length ? (
-                    paginatedUsers.map((user) => (
-                      <tr key={user.id}>
-                        <td data-label="Nome">
-                          <div className="name-cell">
-                            <UserAvatar userId={user.id} name={user.nome} photo={user.fotoPerfil} authToken={session.token} size="sm" />
-                            <span>{user.nome}</span>
-                          </div>
-                        </td>
-                        <td data-label="Perfil">{user.perfilNome || getProfileName(user.perfilId)}</td>
-                        <td data-label="Info">
-                          <button
-                            type="button"
-                            className={`status-info-button ${user.ativo ? 'active' : 'inactive'}`}
-                            title={`${user.ativo ? 'Ativo' : 'Inativo'} - clique para ver detalhes`}
-                            aria-label={`Detalhes de ${user.nome}`}
-                            onClick={() => setSelectedInfoUser(user)}
-                          >
-                            {user.ativo ? <CircleCheck size={19} /> : <CircleX size={19} />}
-                            <Info size={15} />
-                          </button>
-                        </td>
-                        <td data-label="Contato">
-                          <button
-                            type="button"
-                            className="status-info-button contact"
-                            title="Ver informacoes de contato"
-                            aria-label={`Contato de ${user.nome}`}
-                            onClick={() => setSelectedContactUser(user)}
-                          >
-                            <Mail size={18} />
-                            <Phone size={14} />
-                          </button>
-                        </td>
-                        <td data-label="Acoes">
-                          <div className="row-actions">
-                            <button type="button" className="icon-button muted" onClick={() => void handleEditUser(user)} title="Editar">
-                              <Pencil size={17} />
-                            </button>
-                            <button type="button" className="icon-button danger" onClick={() => void handleDeleteUser(user)} title="Excluir">
-                              <Trash2 size={17} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="empty-row">Nenhum usuario encontrado.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <button
-              type="button"
-              className="carousel-nav carousel-nav-right"
-              onClick={(event) => scrollListCarousel(event, 'next')}
-              aria-label="Avancar no carrossel de usuarios"
-              title="Avancar no carrossel"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-
-          <div className="pagination-bar">
-            <span>
-              {visibleStart}-{visibleEnd} de {usersTotalItems}
-            </span>
-            <div className="pagination-actions">
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                disabled={currentPage === 1}
-                title="Pagina anterior"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <span className="page-indicator">Pagina {currentPage} de {totalPages}</span>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                disabled={currentPage === totalPages}
-                title="Proxima pagina"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </div>
-        </section>
-        )}
-      </section>
-      ) : (
-      <section className="workspace patients-workspace">
-        {moduleMode === 'form' ? (
-        <aside className="form-panel module-form-panel">
-          <div className="panel-title">
-            <div>
-              <span className="eyebrow">{editingPacienteId ? patientReadOnly ? 'Visualizacao' : 'Edicao' : 'Cadastro'}</span>
-              <h2>{editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'}</h2>
-            </div>
-            <div className="panel-title-actions">
-              {!editingPacienteId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
-              <button type="button" className="icon-button muted" onClick={closePacienteForm} title="Voltar para lista">
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-
-          <form className="stack module-form-grid" onSubmit={handleSubmitPaciente}>
-            <fieldset className="form-fieldset" disabled={patientReadOnly}>
-            <DateInput
-              id="patient-procedure-date"
-              label="Data procedimento"
-              value={pacienteFormData.data || ''}
-              onChange={(value) => setPacienteFormData((current) => ({ ...current, data: value }))}
-            />
-
-            <label>
-              Paciente
-              <input
-                type="text"
-                value={pacienteFormData.nomePaciente}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, nomePaciente: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-                maxLength={MAX_NAME_LENGTH}
-                required
-              />
-            </label>
-
-            <label>
-              CPF
-              <input
-                type="text"
-                value={pacienteFormData.cpf}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, cpf: formatCpfInput(event.target.value) }))}
-                inputMode="numeric"
-                maxLength={MAX_CPF_LENGTH}
-                placeholder="000.000.000-00"
-                required
-              />
-            </label>
-
-            <label>
-              Telefone
-              <input
-                type="tel"
-                value={pacienteFormData.telefone}
-                onFocus={() => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(event.target.value) }))}
-                inputMode="numeric"
-                maxLength={MAX_PHONE_LENGTH}
-                placeholder="+55 (81) 99999-9999"
-                required
-              />
-            </label>
-
-            <label>
-              Hospital
-              <select
-                value={pacienteFormData.hospitalId ?? (pacienteFormData.hospital ? 'legacy' : '')}
-                onChange={(event) => {
-                  if (event.target.value === 'legacy') {
-                    return;
-                  }
-
-                  const hospitalId = event.target.value ? Number(event.target.value) : null;
-                  const hospital = hospitais.find((item) => item.id === hospitalId)?.nome ?? '';
-                  setPacienteFormData((current) => ({ ...current, hospitalId, hospital }));
-                }}
-                disabled={patientReadOnly || !hospitais.length}
-                required
-              >
-                <option value="">{hospitais.length ? 'Selecione um hospital' : 'Nenhum hospital cadastrado'}</option>
-                {pacienteFormData.hospital && !pacienteFormData.hospitalId && (
-                  <option value="legacy">{pacienteFormData.hospital} (fora do cadastro)</option>
-                )}
-                {hospitais.map((hospital) => (
-                  <option key={hospital.id} value={hospital.id}>{hospital.nome}</option>
-                ))}
-              </select>
-            </label>
-            {hospitaisError && <p className="alert error">{hospitaisError}</p>}
-
-            <label>
-              Médico
-              <input
-                type="text"
-                list={MEDICAL_USERS_DATALIST_ID}
-                value={isMedical ? session.user.nome : pacienteFormData.medico}
-                onChange={(event) => {
-                  const medico = event.target.value.slice(0, MAX_NAME_LENGTH);
-                  const selectedMedicoUser = findMedicalUserByName(medicalUsers, medico);
-                  setPacienteFormData((current) => ({ ...current, medicoUserId: selectedMedicoUser?.id ?? null, medico }));
-                }}
-                disabled={patientReadOnly || isMedical || (!medicalUsers.length && !pacienteFormData.medico)}
-                maxLength={MAX_NAME_LENGTH}
-                placeholder={isMedical ? session.user.nome : medicalUsers.length ? 'Selecione ou digite o medico' : 'Nenhum medico cadastrado'}
-              />
-            </label>
-
-            <label>
-              Convênio
-              <input
-                type="text"
-                list={CONVENIOS_DATALIST_ID}
-                value={pacienteFormData.convenio}
-                onChange={(event) => {
-                  const convenio = event.target.value.slice(0, MAX_NAME_LENGTH);
-                  const selectedConvenio = findConvenioByDescription(convenios, convenio);
-                  setPacienteFormData((current) => ({
-                    ...current,
-                    convenioId: selectedConvenio?.idConvenio ?? null,
-                    convenio,
-                  }));
-                }}
-                disabled={patientReadOnly || (!convenios.length && !pacienteFormData.convenio)}
-                maxLength={MAX_NAME_LENGTH}
-                placeholder={convenios.length ? 'Selecione ou digite o convenio' : 'Nenhum convenio cadastrado'}
-              />
-            </label>
-            {conveniosError && <p className="alert error">{conveniosError}</p>}
-
-            <div className="procedure-field">
-              <span className="field-label">Procedimento</span>
-              <div className="procedure-selector">
-                <button
-                  type="button"
-                  className="ghost-button procedure-select-button"
-                  onClick={handleOpenCbhpmModal}
-                  disabled={patientReadOnly}
-                >
-                  <Search size={17} />
-                  Adicionar procedimento
-                </button>
-
-                {pacienteFormData.procedimentos.length ? (
-                  <div className="selected-procedure-list">
-                    {pacienteFormData.procedimentos.map((procedimento, index) => (
-                      <div className="selected-procedure" key={`${procedimento.cbhpmCodigo || procedimento.procedimento}-${index}`}>
-                        <div className="selected-procedure-main">
-                          <span>{procedimento.cbhpmCodigo || 'Sem codigo'}</span>
-                          <strong>{procedimento.procedimento}</strong>
-                          {procedimento.valorReferencia != null && (
-                            <small>Valor referência: {formatCurrency(procedimento.valorReferencia)}</small>
-                          )}
-                        </div>
-                        <div className="selected-procedure-actions">
-                          {procedimento.cbhpmPorte && <span className="status-pill active">{procedimento.cbhpmPorte}</span>}
-                          {!patientReadOnly && (
-                            <button
-                              type="button"
-                              className="icon-button muted mini"
-                              onClick={() => handleRemovePacienteProcedimento(index)}
-                              title="Remover procedimento"
-                            >
-                              <X size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="file-hint">Nenhum procedimento selecionado.</span>
-                )}
-              </div>
-            </div>
-
-            <label>
-              Autorização
-              <input
-                type="text"
-                value={pacienteFormData.autorizacao}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, autorizacao: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-                maxLength={MAX_NAME_LENGTH}
-              />
-            </label>
-
-            <div className="two-column-fields">
-              <label>
-                Valor recebido/pago
-                <input
-                  type="text"
-                  value={pacienteFormData.pagamento}
-                  onChange={(event) => setPacienteFormData((current) => ({ ...current, pagamento: formatCurrencyInput(event.target.value) }))}
-                  inputMode="numeric"
-                  maxLength={24}
-                  placeholder="R$ 0,00"
-                />
-              </label>
-
-              <label>
-                Glosa
-                <input
-                  type="text"
-                  value={pacienteFormData.repasseGlosa}
-                  onChange={(event) => setPacienteFormData((current) => ({ ...current, repasseGlosa: formatCurrencyInput(event.target.value) }))}
-                  inputMode="numeric"
-                  maxLength={24}
-                  placeholder="R$ 0,00"
-                />
-              </label>
-            </div>
-
-            <div className="profile-photo-field">
-              <label className="field-label" htmlFor="patient-file-input">
-                Arquivos
-              </label>
-              {canEditPatients && (
-                <>
-                  <label className="ghost-button file-action full-width" htmlFor="patient-file-input">
-                    <FileUp size={17} />
-                    Selecionar arquivos
-                  </label>
-                  <input
-                    key={patientFileInputKey}
-                    id="patient-file-input"
-                    className="sr-only"
-                    type="file"
-                    aria-label="Arquivos do paciente"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt,.csv,.ppt,.pptx"
-                    multiple
-                    onChange={handlePacienteFilesChange}
-                  />
-
-                  {pendingPatientFiles.length > 0 && (
-                    <ul className="file-list">
-                      {pendingPatientFiles.map((file, index) => (
-                        <li key={`${file.name}-${index}`}>
-                          <FileText size={15} />
-                          <span>{file.name}</span>
-                          <button type="button" className="icon-button muted mini" onClick={() => removePendingPatientFile(index)} title="Remover arquivo">
-                            <X size={14} />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              )}
-
-              {editingPaciente?.arquivos.length ? (
-                <ul className="file-list">
-                  {editingPaciente.arquivos.map((arquivo) => (
-                    <li key={arquivo.id}>
-                      <FileText size={15} />
-                      <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
-                      {canEditPatients && (
-                        <button type="button" className="icon-button muted mini" onClick={() => void handleDeletePacienteArquivo(editingPaciente, arquivo.id)} title="Excluir arquivo">
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-
-            <label className="toggle-row">
-              <input
-                type="checkbox"
-                checked={pacienteFormData.statusPago}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, statusPago: event.target.checked }))}
-              />
-              Status Pago
-            </label>
-
-            <label className="toggle-row">
-              <input
-                type="checkbox"
-                checked={pacienteFormData.ativo}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, ativo: event.target.checked }))}
-              />
-              Paciente ativo
-            </label>
-            </fieldset>
-
-            {pacienteFormError && <p className="alert error">{pacienteFormError}</p>}
-
-            {!patientReadOnly && (
-              <button className="primary-action" type="submit" disabled={pacienteFormLoading}>
-                {editingPacienteId ? <Save size={18} /> : <Plus size={18} />}
-                {pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar paciente' : 'Cadastrar paciente'}
-              </button>
-            )}
-          </form>
-        </aside>
-        ) : (
-
-        <section className="data-panel">
-          <div className="data-header">
-            <div>
-              <span className="eyebrow">Cadastro de pacientes</span>
-              <h2>{pacientesTotalItems} cadastrados</h2>
-            </div>
-
-            <div className="table-tools">
-              {canCreatePatients && (
-                <button type="button" className="ghost-button" onClick={openNewPacienteForm}>
-                  <Plus size={17} />
-                  Novo paciente
-                </button>
-              )}
-              <label className="search-box">
-                <Search size={17} />
-                <input
-                  type="search"
-                  value={pacienteSearchTerm}
-                  onChange={(event) => setPacienteSearchTerm(event.target.value)}
-                  placeholder="Buscar"
-                />
-              </label>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters)}
-                title="Atualizar lista"
-              >
-                <RefreshCw size={18} />
-              </button>
-              <div className="patient-export-actions" aria-label="Exportacoes de pacientes">
-                <label className="export-scope-field">
-                  Exportar
-                  <select
-                    value={pacienteExportScope}
-                    onChange={(event) => setPacienteExportScope(event.target.value as PacienteExportScope)}
-                  >
-                    <option value="all">Todos os pacientes</option>
-                    {isAdmin && <option value="doctor">Medico selecionado</option>}
-                    <option value="visible">Dados da tela</option>
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  className="ghost-button"
-                  onClick={() => void handleExportPacientes('xlsx')}
-                  disabled={pacienteExportLoading !== null}
-                >
-                  <Download size={17} />
-                  {pacienteExportLoading === 'xlsx' ? 'Gerando...' : 'Exportar XLSX'}
-                </button>
-                <button
-                  type="button"
-                  className="ghost-button"
-                  onClick={() => void handleExportPacientes('pdf')}
-                  disabled={pacienteExportLoading !== null}
-                >
-                  <FileText size={17} />
-                  {pacienteExportLoading === 'pdf' ? 'Gerando...' : 'Exportar PDF'}
-                </button>
-              </div>
-              {isAdmin && (
-                <div className="patient-filter-grid" aria-label="Filtros administrativos de pacientes">
-                  <label className="filter-field">
-                    Medico
-                    <input
-                      type="search"
-                      list={MEDICAL_USERS_DATALIST_ID}
-                      value={pacienteFilters.medico}
-                      onChange={(event) => setPacienteFilters((current) => ({ ...current, medico: event.target.value }))}
-                      disabled={!medicalUsers.length}
-                      placeholder={medicalUsers.length ? 'Todos os medicos' : 'Nenhum medico cadastrado'}
-                    />
-                  </label>
-                  <label className="filter-field">
-                    Convenio
-                    <input
-                      type="search"
-                      list={CONVENIOS_DATALIST_ID}
-                      value={pacienteFilters.convenio}
-                      onChange={(event) => setPacienteFilters((current) => ({ ...current, convenio: event.target.value }))}
-                      disabled={!convenios.length}
-                      placeholder={convenios.length ? 'Convenio' : 'Nenhum convenio cadastrado'}
-                    />
-                  </label>
-                  <label className="filter-field">
-                    Procedimento
-                    <input
-                      type="search"
-                      value={pacienteFilters.procedimento}
-                      onChange={(event) => setPacienteFilters((current) => ({ ...current, procedimento: event.target.value }))}
-                      placeholder="Procedimento"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    className="ghost-button patient-clear-filters"
-                    onClick={() => setPacienteFilters(emptyPacienteFilters)}
-                  >
-                    <X size={17} />
-                    Limpar filtros
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {pacienteSuccessMessage && <p className="alert success"><CheckCircle2 size={17} />{pacienteSuccessMessage}</p>}
-          {pacientesError && <p className="alert error">{pacientesError}</p>}
-
-          <div className="carousel-shell">
-            <button
-              type="button"
-              className="carousel-nav carousel-nav-left"
-              onClick={(event) => scrollListCarousel(event, 'previous')}
-              aria-label="Voltar no carrossel de pacientes"
-              title="Voltar no carrossel"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <div className="table-wrap list-carousel-wrap patients-carousel-wrap">
-              <table className="patients-table">
-                <thead>
-                  <tr>
-                    <th>Paciente</th>
-                    <th>Info</th>
-                    <th>Hospital</th>
-                    <th>Medico</th>
-                    <th>Convenio</th>
-                    <th>Status Pago</th>
-                    <th>Arquivos</th>
-                    <th aria-label="Acoes" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {pacientesLoading ? (
-                    <tr>
-                      <td colSpan={8} className="empty-row">Carregando pacientes...</td>
-                    </tr>
-                  ) : paginatedPacientes.length ? (
-                    paginatedPacientes.map((paciente) => (
-                      <tr key={paciente.id}>
-                        <td data-label="Paciente">
-                          <div className="name-cell">
-                            <UserAvatar userId={paciente.userId} name={paciente.nomePaciente} photo={paciente.fotoPerfil} authToken={session.token} size="sm" />
-                            <span>{paciente.nomePaciente}</span>
-                          </div>
-                        </td>
-                        <td data-label="Info">
-                          <button
-                            type="button"
-                            className="status-info-button"
-                            title="Ver informacoes adicionais"
-                            aria-label={`Informacoes adicionais de ${paciente.nomePaciente}`}
-                            onClick={() => setSelectedPatientInfo(paciente)}
-                          >
-                            <Info size={18} />
-                          </button>
-                        </td>
-                        <td data-label="Hospital">{paciente.hospital || '-'}</td>
-                        <td data-label="Medico">{paciente.medico || '-'}</td>
-                        <td data-label="Convenio">{paciente.convenio || '-'}</td>
-                        <td data-label="Status Pago">
-                          <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
-                            {paciente.statusPago ? 'Pago' : 'Pendente'}
-                          </span>
-                        </td>
-                        <td data-label="Arquivos">
-                          {(paciente.arquivosCount ?? paciente.arquivos.length) > 0 ? (
-                            <button
-                              type="button"
-                              className="attachment-count attachment-button"
-                              onClick={() => void handleOpenPacienteFiles(paciente)}
-                              title="Ver arquivos anexos"
-                              aria-label={`Arquivos anexos de ${paciente.nomePaciente}`}
-                            >
-                              <FileText size={15} />
-                              {paciente.arquivosCount ?? paciente.arquivos.length}
-                            </button>
-                          ) : (
-                            <span className="attachment-count">
-                              <FileText size={15} />
-                              0
-                            </span>
-                          )}
-                        </td>
-                        <td data-label="Acoes">
-                          <div className="row-actions">
-                            <button type="button" className="icon-button muted" onClick={() => void handleEditPaciente(paciente)} title={patientReadOnly ? 'Visualizar' : 'Editar'}>
-                              {patientReadOnly ? <Eye size={17} /> : <Pencil size={17} />}
-                            </button>
-                            {canDeletePatients && (
-                              <button type="button" className="icon-button danger" onClick={() => void handleDeletePaciente(paciente)} title="Excluir">
-                                <Trash2 size={17} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="empty-row">Nenhum paciente encontrado.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <button
-              type="button"
-              className="carousel-nav carousel-nav-right"
-              onClick={(event) => scrollListCarousel(event, 'next')}
-              aria-label="Avancar no carrossel de pacientes"
-              title="Avancar no carrossel"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-
-          <div className="pagination-bar">
-            <span>
-              {pacienteVisibleStart}-{pacienteVisibleEnd} de {pacientesTotalItems}
-            </span>
-            <div className="pagination-actions">
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => setPacienteCurrentPage((page) => Math.max(1, page - 1))}
-                disabled={pacienteCurrentPage === 1}
-                title="Pagina anterior"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <span className="page-indicator">Pagina {pacienteCurrentPage} de {pacienteTotalPages}</span>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => setPacienteCurrentPage((page) => Math.min(pacienteTotalPages, page + 1))}
-                disabled={pacienteCurrentPage === pacienteTotalPages}
-                title="Proxima pagina"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </div>
-        </section>
-        )}
-      </section>
-      )}
-        </div>
-      </div>
-
+  const modals = (
+    <>
       {selectedInfoUser && (
         <InfoModal user={selectedInfoUser} onClose={() => setSelectedInfoUser(null)} />
       )}
@@ -3640,7 +2577,7 @@ export default function App() {
           visibleEnd={cbhpmVisibleEnd}
           onFiltersChange={setCbhpmFilters}
           onPageChange={setCbhpmCurrentPage}
-          onRefresh={() => session && void loadCbhpm(session.token, cbhpmCurrentPage, debouncedCbhpmFilters)}
+          onRefresh={() => void loadCbhpm(session.token, cbhpmCurrentPage, debouncedCbhpmFilters)}
           onSelect={handleSelectCbhpm}
           onClose={() => setCbhpmModalOpen(false)}
         />
@@ -3682,181 +2619,38 @@ export default function App() {
           </section>
         </div>
       )}
-    </main>
+    </>
   );
-}
-
-function TechCredit() {
-  return <div className="tech-credit">GM Tech Solutions</div>;
-}
-
-type ThemeToggleProps = {
-  theme: Theme;
-  onToggle: () => void;
-  floating?: boolean;
-};
-
-function ThemeToggle({ theme, onToggle, floating = false }: ThemeToggleProps) {
-  const isDark = theme === 'dark';
 
   return (
-    <button
-      type="button"
-      className={`ghost-button theme-toggle ${floating ? 'floating' : ''}`}
-      onClick={onToggle}
-      title={isDark ? 'Usar tema claro' : 'Usar tema escuro'}
+    <AppShell
+      session={session}
+      isBusy={isBusy}
+      appTitle={appTitle}
+      activeView={activeView}
+      breadcrumbItems={breadcrumbItems}
+      theme={theme}
+      notificationsOpen={notificationsOpen}
+      notificationCount={notificationCount}
+      currentUserProfile={currentUserProfile}
+      canAccessUsers={canAccessUsers}
+      canEditOwnUser={canEditOwnUser}
+      usersCount={usersCount}
+      pacientesCount={pacientesCount}
+      medicalUsers={medicalUsers}
+      convenios={convenios}
+      onToggleNotifications={() => void handleToggleNotifications()}
+      onToggleTheme={toggleTheme}
+      onOpenPasswordModal={() => setShowPasswordModal(true)}
+      onLogout={logout}
+      onOpenDashboard={openDashboard}
+      onOpenUsersList={openUsersList}
+      onOpenMyProfile={openMyProfile}
+      onOpenPatientsList={openPatientsList}
+      modals={modals}
     >
-      {isDark ? <Sun size={17} /> : <Moon size={17} />}
-      <span className="theme-label-wide">{isDark ? 'Tema claro' : 'Tema escuro'}</span>
-      <span className="theme-label-short">{isDark ? 'Claro' : 'Escuro'}</span>
-    </button>
-  );
-}
-
-function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
-  return (
-    <nav className="breadcrumbs" aria-label="Breadcrumbs">
-      <ol>
-        {items.map((item, index) => {
-          const isLast = index === items.length - 1;
-
-          return (
-            <li key={`${item.label}-${index}`}>
-              {item.onClick && !isLast ? (
-                <button type="button" className="breadcrumb-button" onClick={item.onClick}>
-                  {item.label}
-                </button>
-              ) : (
-                <span className="breadcrumb-current" aria-current={isLast ? 'page' : undefined}>
-                  {item.label}
-                </span>
-              )}
-              {!isLast && <ChevronRight size={14} aria-hidden="true" />}
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
-  );
-}
-
-type DateInputProps = {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  required?: boolean;
-};
-
-function DateInput({ id, label, value, onChange, required = false }: DateInputProps) {
-  return (
-    <div className="date-field">
-      <label htmlFor={id}>{label}</label>
-      <div className="date-input-control">
-        <input
-          id={id}
-          type="text"
-          value={value}
-          onChange={(event) => onChange(formatDateInput(event.target.value))}
-          inputMode="numeric"
-          maxLength={10}
-          placeholder="dd/mm/yyyy"
-          required={required}
-        />
-        <span className="date-picker-button" title={`Selecionar ${label.toLowerCase()}`}>
-          <CalendarDays size={17} />
-          <input
-            type="date"
-            value={toDatePickerValue(value)}
-            onChange={(event) => onChange(fromDatePickerValue(event.target.value))}
-            max={getTodayPickerValue()}
-            aria-label={`Selecionar ${label.toLowerCase()}`}
-          />
-        </span>
-      </div>
-    </div>
-  );
-}
-
-type UserAvatarProps = {
-  userId?: number;
-  name: string;
-  photo?: string | null;
-  authToken?: string;
-  size?: 'sm' | 'lg';
-  decorative?: boolean;
-};
-
-function UserAvatar({ userId, name, photo, authToken, size = 'sm', decorative = false }: UserAvatarProps) {
-  const trimmedPhoto = photo?.trim() || '';
-  const canLoadFromApi = Boolean(userId && authToken && trimmedPhoto && !/^(data:image\/|blob:)/i.test(trimmedPhoto));
-  const [photoSource, setPhotoSource] = useState(() => (canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto)));
-  const [photoFailed, setPhotoFailed] = useState(false);
-
-  useEffect(() => {
-    let objectUrl = '';
-    let active = true;
-
-    setPhotoFailed(false);
-
-    if (!trimmedPhoto) {
-      setPhotoSource('');
-      return undefined;
-    }
-
-    if (!canLoadFromApi || !userId || !authToken) {
-      setPhotoSource(resolveProfilePhotoSource(trimmedPhoto));
-      return undefined;
-    }
-
-    setPhotoSource('');
-
-    void getUserProfilePhoto(userId, authToken)
-      .then((blob) => {
-        objectUrl = URL.createObjectURL(blob);
-
-        if (active) {
-          setPhotoSource(objectUrl);
-        } else {
-          URL.revokeObjectURL(objectUrl);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setPhotoFailed(true);
-        }
-      });
-
-    return () => {
-      active = false;
-
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-  }, [authToken, canLoadFromApi, trimmedPhoto, userId]);
-
-  if (photoSource && !photoFailed) {
-    return (
-      <img
-        className={`user-avatar ${size}`}
-        src={photoSource}
-        alt={decorative ? '' : `Foto de ${name}`}
-        aria-hidden={decorative ? true : undefined}
-        onError={() => setPhotoFailed(true)}
-      />
-    );
-  }
-
-  return (
-    <span
-      className={`user-avatar fallback ${size}`}
-      aria-hidden={decorative ? true : undefined}
-      aria-label={decorative ? undefined : `Sem foto de ${name}`}
-      title={name}
-    >
-      {getUserInitials(name)}
-    </span>
+      {mainContent}
+    </AppShell>
   );
 }
 
@@ -4327,200 +3121,6 @@ function PatientFilesModal({ paciente, loading, error, onClose }: PatientFilesMo
           <p className="empty-row">Nenhum arquivo anexado.</p>
         ) : null}
       </section>
-    </div>
-  );
-}
-
-type PasswordFormProps = {
-  session: AuthSession;
-  forced?: boolean;
-  onChanged: (message: string) => void;
-  onCancel?: () => void;
-};
-
-type PasswordInputProps = {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  autoComplete: string;
-  maxLength: number;
-  minLength?: number;
-  required?: boolean;
-};
-
-function PasswordInput({
-  id,
-  label,
-  value,
-  onChange,
-  autoComplete,
-  maxLength,
-  minLength,
-  required = false,
-}: PasswordInputProps) {
-  const [visible, setVisible] = useState(false);
-  const toggleLabel = visible ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`;
-
-  return (
-    <div className="password-field">
-      <label htmlFor={id}>{label}</label>
-      <div className="password-input-control">
-        <input
-          id={id}
-          type={visible ? 'text' : 'password'}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          autoComplete={autoComplete}
-          minLength={minLength}
-          maxLength={maxLength}
-          required={required}
-        />
-        <button
-          type="button"
-          className="password-visibility-button"
-          onClick={() => setVisible((current) => !current)}
-          aria-label={toggleLabel}
-          title={toggleLabel}
-        >
-          {visible ? <EyeOff size={17} /> : <Eye size={17} />}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function PasswordForm({ session, forced = false, onChanged, onCancel }: PasswordFormProps) {
-  const [senhaAtual, setSenhaAtual] = useState('');
-  const [novaSenha, setNovaSenha] = useState('');
-  const [confirmacao, setConfirmacao] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const passwordStrength = useMemo(() => getPasswordStrength(novaSenha), [novaSenha]);
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError('');
-
-    if (novaSenha !== confirmacao) {
-      setError('A confirmacao precisa ser igual a nova senha.');
-      return;
-    }
-
-    if (novaSenha === DEFAULT_PASSWORD) {
-      setError('Escolha uma senha diferente da senha inicial.');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const result = await changePassword(session.user.id, { senhaAtual, novaSenha }, session.token);
-      onChanged(result.message);
-    } catch (submitError) {
-      setError(getErrorMessage(submitError));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form className="stack" onSubmit={handleSubmit}>
-      {forced && (
-        <p className="alert warning">
-          A senha inicial {DEFAULT_PASSWORD} precisa ser alterada para liberar o acesso.
-        </p>
-      )}
-
-      <PasswordInput
-        id="current-password"
-        label="Senha atual"
-        value={senhaAtual}
-        onChange={setSenhaAtual}
-        autoComplete="current-password"
-        maxLength={MAX_PASSWORD_LENGTH}
-        required
-      />
-
-      <PasswordInput
-        id="new-password"
-        label="Nova senha"
-        value={novaSenha}
-        onChange={setNovaSenha}
-        autoComplete="new-password"
-        minLength={8}
-        maxLength={MAX_PASSWORD_LENGTH}
-        required
-      />
-
-      <div className={`password-strength strength-${passwordStrength.score}`} aria-live="polite">
-        <div className="strength-track">
-          <span style={{ width: `${Math.max(1, passwordStrength.score) * 20}%` }} />
-        </div>
-        <span>Forca da senha: {passwordStrength.label}</span>
-      </div>
-
-      <PasswordInput
-        id="confirm-password"
-        label="Confirmar nova senha"
-        value={confirmacao}
-        onChange={setConfirmacao}
-        autoComplete="new-password"
-        minLength={8}
-        maxLength={MAX_PASSWORD_LENGTH}
-        required
-      />
-
-      {error && <p className="alert error">{error}</p>}
-
-      <div className="button-row">
-        {onCancel && (
-          <button type="button" className="ghost-button" onClick={onCancel}>
-            <X size={17} />
-            {forced ? 'Sair' : 'Cancelar'}
-          </button>
-        )}
-        <button className="primary-action" type="submit" disabled={loading}>
-          <KeyRound size={18} />
-          {loading ? 'Alterando...' : 'Alterar senha'}
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function LoadingOverlay({ active }: { active: boolean }) {
-  if (!active) {
-    return null;
-  }
-
-  return (
-    <div className="loading-overlay" aria-live="polite" aria-busy="true">
-      <div className="loading-overlay-panel" role="status">
-        <div className="health-loader" aria-hidden="true">
-          <span className="loader-ring" />
-          <span className="loader-orbit orbit-one" />
-          <span className="loader-orbit orbit-two" />
-          <span className="loader-core">
-            <HeartPulse size={34} />
-          </span>
-        </div>
-
-        <div className="loading-copy">
-          <span className="loading-eyebrow">
-            <Activity size={15} />
-            Saude digital
-          </span>
-          <strong>Sincronizando dados</strong>
-          <span>Conectando atendimento, arquivos e prontuario.</span>
-        </div>
-
-        <div className="vital-line" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </div>
-      </div>
     </div>
   );
 }

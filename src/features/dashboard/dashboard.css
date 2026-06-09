@@ -1,0 +1,165 @@
+.dashboard-workspace {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.dashboard-header {
+  margin-bottom: 6px;
+}
+
+.dashboard-info-panel {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.55fr) minmax(0, 1.9fr);
+  gap: 14px;
+  align-items: stretch;
+  margin-top: 4px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--panel);
+  box-shadow: none;
+}
+
+.dashboard-info-title {
+  min-height: 104px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+}
+
+.dashboard-info-title h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.info-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.info-summary-item {
+  min-height: 104px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.info-summary-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--teal);
+  background: var(--soft);
+}
+
+.info-summary-icon.amber {
+  color: var(--amber);
+}
+
+.info-summary-label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.info-summary-item strong {
+  color: var(--ink);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.module-card {
+  position: relative;
+  min-height: 142px;
+  display: grid;
+  align-content: stretch;
+  justify-items: start;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 22px;
+  padding-right: 58px;
+  color: var(--ink);
+  background: var(--panel);
+  box-shadow: none;
+  text-align: left;
+}
+
+.module-card:hover {
+  border-color: var(--teal);
+  background: var(--panel-strong);
+}
+
+.module-card-menu {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--soft);
+}
+
+.module-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--teal);
+  background: transparent;
+}
+
+.module-title {
+  color: var(--blood);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.module-metric {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.module-card-foot {
+  width: 100%;
+  display: flex;
+  align-self: end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 8px;
+  color: var(--teal);
+  font-weight: 900;
+}
+
+.module-card-foot span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
