@@ -2,6 +2,7 @@ import type {
   ChangePasswordPayload,
   CbhpmGeral,
   CbhpmListQuery,
+  Convenio,
   DashboardNotification,
   DashboardSummary,
   Hospital,
@@ -135,6 +136,20 @@ export function getUser(id: number, token: string) {
   return request<User>(`/api/users/${id}`, {}, token);
 }
 
+export async function getUserProfilePhoto(id: number, token: string) {
+  const response = await fetch(`${API_URL}/api/users/${id}/foto-perfil`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+
+  return response.blob();
+}
+
 export function createUser(payload: UserFormData, token: string) {
   return request<User>('/api/users/', {
     method: 'POST',
@@ -191,6 +206,10 @@ export function getCbhpmGeral(token: string, query?: CbhpmListQuery) {
 
 export function getHospitais(token: string) {
   return request<Hospital[]>('/api/hospitais/', {}, token);
+}
+
+export function getConvenios(token: string) {
+  return request<Convenio[]>('/api/convenios/', {}, token);
 }
 
 export function getPaciente(id: number, token: string) {

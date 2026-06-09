@@ -1,0 +1,24 @@
+.auth-screen {
+  min-height: 100vh;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  padding: 32px;
+}
+
+.auth-screen.compact {
+  justify-items: center;
+}
+
+.auth-panel {
+  width: min(430px, 100%);
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.password-required {
+  width: min(520px, 100%);
+}

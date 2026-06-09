@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -10,8 +10,10 @@ vi.mock('./api', () => ({
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
   getCbhpmGeral: vi.fn(),
+  getConvenios: vi.fn(),
   getHospitais: vi.fn(),
   getUsers: vi.fn(),
+  getUserProfilePhoto: vi.fn(),
   getPaciente: vi.fn(),
   getPacientes: vi.fn(),
   createUser: vi.fn(),
@@ -54,6 +56,7 @@ const basePaciente: Paciente = {
   hospital: 'Santa Clara - Mater Dei',
   medicoUserId: 1,
   medico: 'Dra. Ana',
+  convenioId: 7,
   convenio: 'Particular',
   cbhpmCodigo: '1.01.01.01-2',
   cbhpmPorte: '2B',
@@ -142,14 +145,28 @@ describe('App', () => {
     });
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
+    vi.mocked(api.getUserProfilePhoto).mockResolvedValue(new Blob(['avatar'], { type: 'image/png' }));
     vi.mocked(api.getHospitais).mockResolvedValue([
       { id: 1, nome: 'Santa Clara - Mater Dei' },
       { id: 2, nome: 'Santa Genoveva - Mater Dei' },
       { id: 3, nome: 'UMC - Complexo Hospitalar' },
     ]);
+    vi.mocked(api.getConvenios).mockResolvedValue([
+      { idConvenio: 1, descricaoConvenio: 'Amil' },
+      { idConvenio: 2, descricaoConvenio: 'Bradesco Saude' },
+      { idConvenio: 7, descricaoConvenio: 'Particular' },
+    ]);
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    Object.defineProperty(URL, 'createObjectURL', {
+      value: vi.fn(() => 'blob:hemodinks-avatar'),
+      configurable: true,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      value: vi.fn(),
+      configurable: true,
+    });
   });
 
   it('faz login, salva a sessao JWT e carrega usuarios', async () => {
@@ -291,6 +308,28 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /ocultar senha/i }));
 
     expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+
+  it('carrega foto de perfil pela API e exibe iniciais se a imagem falhar', async () => {
+    mockSession({
+      nome: 'George Marcone',
+      fotoPerfil: '/profile-photos/george.png',
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(api.getUserProfilePhoto).toHaveBeenCalledWith(99, 'jwt-token');
+    });
+
+    const avatar = await screen.findByAltText('Foto de George Marcone');
+    expect(avatar).toHaveAttribute('src', 'blob:hemodinks-avatar');
+
+    fireEvent.error(avatar);
+
+    expect(screen.getByLabelText('Sem foto de George Marcone')).toBeInTheDocument();
   });
 
   it('reseta para a senha padrao e exige troca ao entrar', async () => {
@@ -599,8 +638,7 @@ describe('App', () => {
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
     expect(await screen.findByRole('option', { name: 'Santa Genoveva - Mater Dei' })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Hospital'), '2');
-    expect(screen.getByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Médico'), '1');
+    await user.type(screen.getByLabelText('Médico'), 'Ana Hemodinks');
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     expect(within(cbhpmDialog).getByText('1.01.01.01-2')).toBeInTheDocument();
@@ -608,6 +646,10 @@ describe('App', () => {
     expect(screen.getByText('Valor referência: R$ 120,00')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     await user.click(within(await screen.findByRole('dialog', { name: 'Selecionar procedimento' })).getAllByRole('button', { name: /adicionar/i })[1]);
+    await user.type(screen.getByLabelText('Valor recebido/pago'), '200000');
+    await user.type(screen.getByLabelText('Glosa'), '1250');
+    expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 2.000,00');
+    expect(screen.getByLabelText('Glosa')).toHaveValue('R$ 12,50');
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
     expect(api.createPaciente).toHaveBeenCalledWith({
@@ -622,6 +664,7 @@ describe('App', () => {
       hospital: 'Santa Genoveva - Mater Dei',
       medicoUserId: 1,
       medico: 'Ana Hemodinks',
+      convenioId: null,
       convenio: '',
       cbhpmCodigo: '1.01.01.01-2',
       cbhpmPorte: '2B',
@@ -641,8 +684,8 @@ describe('App', () => {
         },
       ],
       autorizacao: '',
-      pagamento: '',
-      repasseGlosa: '',
+      pagamento: 'R$ 2.000,00',
+      repasseGlosa: 'R$ 12,50',
       statusPago: false,
       ativo: true,
     }, 'jwt-token');
@@ -661,8 +704,7 @@ describe('App', () => {
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
-    expect(await screen.findByRole('option', { name: 'Ana Hemodinks' })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Medico'), 'Ana Hemodinks');
+    await user.type(screen.getByLabelText('Medico'), 'Ana Hemodinks');
     await user.type(screen.getByLabelText('Convenio'), 'Particular');
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
 
