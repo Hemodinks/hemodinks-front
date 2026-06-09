@@ -29,6 +29,8 @@
 .brand-mark {
   width: 62px;
   height: 62px;
+  background: #000;
+  object-fit: contain;
 }
 
 .topbar-logo {

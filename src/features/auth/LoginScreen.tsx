@@ -1,6 +1,6 @@
 import { type FormEvent } from 'react';
 import { LogIn } from 'lucide-react';
-import brandImage from '../../../imagem candidata hemodinks.jpg';
+import brandImage from '../../../imagem hemodinks github.jpg';
 import type { Theme } from '../../appTypes';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
