@@ -9,8 +9,10 @@ import {
   deleteUser,
   deleteUserArquivo,
   getDashboardNotifications,
+  getConvenios,
   getHospitais,
   getUser,
+  getUserProfilePhoto,
   getPacientes,
   getUsers,
   resetPassword,
@@ -74,6 +76,19 @@ describe('api client', () => {
     });
   });
 
+  it('busca a foto de perfil do usuario com token bearer', async () => {
+    const imageBlob = new Blob(['avatar'], { type: 'image/png' });
+    fetchMock.mockResolvedValueOnce(new Response(imageBlob, { status: 200 }));
+
+    await expect(getUserProfilePhoto(1, 'jwt-token')).resolves.toBeInstanceOf(Blob);
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/users/1/foto-perfil', {
+      headers: {
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+  });
+
   it('busca notificacoes do dashboard com token bearer', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse([]));
 
@@ -91,6 +106,7 @@ describe('api client', () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(jsonResponse([{ id: 1, nome: 'Santa Clara - Mater Dei' }]))
+      .mockResolvedValueOnce(jsonResponse([{ idConvenio: 7, descricaoConvenio: 'Particular' }]))
       .mockResolvedValueOnce(jsonResponse({ id: 10 }))
       .mockResolvedValueOnce(jsonResponse({ id: 10 }))
       .mockResolvedValueOnce(jsonResponse({ id: 1, nomeOriginal: 'laudo.pdf' }))
@@ -109,6 +125,7 @@ describe('api client', () => {
       hospital: 'Santa Clara - Mater Dei',
       medicoUserId: 1,
       medico: 'Dra. Ana',
+      convenioId: 7,
       convenio: 'Particular',
       cbhpmCodigo: '1.01.01.01-2',
       cbhpmPorte: '2B',
@@ -130,6 +147,7 @@ describe('api client', () => {
 
     await getPacientes('jwt-token');
     await getHospitais('jwt-token');
+    await getConvenios('jwt-token');
     await createPaciente(payload, 'jwt-token');
     await updatePaciente(10, payload, 'jwt-token');
     await uploadPacienteArquivo(10, new File(['laudo'], 'laudo.pdf', { type: 'application/pdf' }), 'jwt-token');
@@ -148,7 +166,13 @@ describe('api client', () => {
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://localhost:5000/api/pacientes/', {
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://localhost:5000/api/convenios/', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://localhost:5000/api/pacientes/', {
       method: 'POST',
       body: JSON.stringify(payload),
       headers: {
@@ -156,7 +180,7 @@ describe('api client', () => {
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://localhost:5000/api/pacientes/10', {
+    expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://localhost:5000/api/pacientes/10', {
       method: 'PUT',
       body: JSON.stringify(payload),
       headers: {
@@ -164,21 +188,21 @@ describe('api client', () => {
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://localhost:5000/api/pacientes/10/arquivos', expect.objectContaining({
+    expect(fetchMock).toHaveBeenNthCalledWith(6, 'http://localhost:5000/api/pacientes/10/arquivos', expect.objectContaining({
       method: 'POST',
       body: expect.any(FormData),
       headers: {
         Authorization: 'Bearer jwt-token',
       },
     }));
-    expect(fetchMock).toHaveBeenNthCalledWith(6, 'http://localhost:5000/api/pacientes/10/arquivos/1', {
+    expect(fetchMock).toHaveBeenNthCalledWith(7, 'http://localhost:5000/api/pacientes/10/arquivos/1', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(7, 'http://localhost:5000/api/pacientes/10', {
+    expect(fetchMock).toHaveBeenNthCalledWith(8, 'http://localhost:5000/api/pacientes/10', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

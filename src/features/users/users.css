@@ -1,0 +1,102 @@
+.users-table {
+  min-width: 620px;
+}
+
+th,
+td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #e8ece8;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 0.91rem;
+}
+
+th {
+  color: #566170;
+  background: var(--table-head);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+tbody tr:hover {
+  background: var(--row-hover);
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.name-cell {
+  gap: 9px;
+  min-width: 220px;
+  font-weight: 800;
+}
+
+.status-pill,
+.status-info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-pill {
+  min-width: 72px;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.status-pill.active,
+.status-pill.ok {
+  color: #0f5f46;
+  background: #e8f6ef;
+}
+
+.status-pill.inactive {
+  color: #5f6673;
+  background: #eceff3;
+}
+
+.status-pill.warning {
+  color: #845700;
+  background: #fff3cf;
+}
+
+.status-info-button {
+  width: 42px;
+  height: 38px;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.status-info-button.active {
+  color: #047857;
+}
+
+.status-info-button.inactive {
+  color: var(--danger);
+}
+
+.status-info-button.contact {
+  color: var(--teal);
+}
+
+.status-info-button:hover {
+  background: var(--soft);
+}
+
+.row-actions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.empty-row {
+  color: var(--muted);
+  text-align: center;
+  font-weight: 800;
+}

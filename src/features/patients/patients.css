@@ -1,0 +1,136 @@
+.patients-workspace .data-header {
+  align-items: flex-start;
+}
+
+.patients-workspace .table-tools {
+  flex: 1 1 560px;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.patients-workspace .table-tools > .search-box {
+  flex: 1 1 280px;
+  min-width: min(230px, 100%);
+  max-width: 420px;
+}
+
+.patients-workspace .table-tools > .icon-button {
+  flex: 0 0 40px;
+}
+
+.patient-export-actions {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) auto auto;
+  align-items: end;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.patient-export-actions .ghost-button {
+  width: auto;
+  min-width: 168px;
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.export-scope-field {
+  width: 100%;
+  min-width: min(230px, 100%);
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.export-scope-field select {
+  min-height: 40px;
+}
+
+.patient-filter-grid {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(150px, auto);
+  gap: 10px;
+  align-items: end;
+}
+
+.filter-field {
+  min-width: 0;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.filter-field input,
+.filter-field select {
+  min-width: 0;
+  min-height: 38px;
+}
+
+.patient-clear-filters {
+  width: 100%;
+  min-height: 38px;
+  padding-inline: 12px;
+}
+
+.search-box {
+  min-width: min(260px, 54vw);
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: var(--input-bg);
+  color: var(--muted);
+}
+
+.search-box input {
+  min-height: 38px;
+  border: 0;
+  padding: 8px 0;
+  box-shadow: none;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.list-carousel-wrap {
+  padding: 8px;
+  border-color: rgba(173, 216, 230, 0.75);
+  background: rgba(173, 216, 230, 0.5);
+  box-shadow:
+    inset 0 0 0 1px rgba(173, 216, 230, 0.45),
+    0 10px 24px rgba(14, 116, 144, 0.1);
+}
+
+.list-carousel-wrap table {
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.carousel-shell {
+  position: relative;
+}
+
+.carousel-nav {
+  display: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
