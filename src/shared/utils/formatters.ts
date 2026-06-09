@@ -19,6 +19,7 @@ export const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
 export const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
 export const MEDICAL_PROFILE_ID = 2;
 export const DEFAULT_PROFILE_ID = MEDICAL_PROFILE_ID;
+export const API_ASSET_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
 export const PROFILE_OPTIONS = [
   { id: 1, nome: 'Administrador' },
@@ -60,7 +61,7 @@ const VALID_BRAZIL_AREA_CODES = new Set([
 ]);
 
 export function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Nao foi possivel concluir a operacao.';
+  return error instanceof Error ? error.message : 'Erro inesperado.';
 }
 
 export function normalizeLookupText(value: string) {
@@ -90,23 +91,26 @@ export function isMedicalProfileId(perfilId: number) {
 }
 
 export function getProfileName(perfilId: number) {
-  return PROFILE_OPTIONS.find((profile) => profile.id === perfilId)?.nome || 'Perfil';
+  return PROFILE_OPTIONS.find((profile) => profile.id === perfilId)?.nome ?? 'Médicos';
 }
 
 export function isMedicalProfileUser(user: User) {
-  return user.perfilId === MEDICAL_PROFILE_ID
-    || user.perfilNome?.toLocaleLowerCase('pt-BR') === 'médicos'
-    || user.perfilNome?.toLocaleLowerCase('pt-BR') === 'medicos';
+  const profileName = (user.perfilNome || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  return user.perfilId === MEDICAL_PROFILE_ID || profileName.includes('medico');
 }
 
 export function getUserInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
 
   if (!parts.length) {
-    return '??';
+    return 'US';
   }
 
-  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join('');
+  return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase();
 }
 
 function getBase64ImageContentType(value: string) {
@@ -141,7 +145,7 @@ export function resolveProfilePhotoSource(photo?: string | null) {
   }
 
   if (value.startsWith('//')) {
-    return `https:${value}`;
+    return `${window.location.protocol}${value}`;
   }
 
   const contentType = getBase64ImageContentType(value);
@@ -150,10 +154,10 @@ export function resolveProfilePhotoSource(photo?: string | null) {
   }
 
   if (value.startsWith('/')) {
-    return value;
+    return `${API_ASSET_BASE_URL}${value}`;
   }
 
-  return '';
+  return `${API_ASSET_BASE_URL}/${value}`;
 }
 
 export function onlyDigits(value: string) {
@@ -179,7 +183,7 @@ export function formatCpfInput(value: string) {
 }
 
 export function normalizeCpfForPayload(value: string) {
-  return onlyDigits(value);
+  return onlyDigits(value).slice(0, 11);
 }
 
 export function isValidCpf(value: string) {
@@ -229,8 +233,7 @@ export function formatPhoneInput(value: string) {
 }
 
 export function normalizePhoneForPayload(value: string) {
-  const localDigits = getLocalBrazilPhoneDigits(value);
-  return localDigits ? `+55${localDigits}` : '';
+  return `+55${getLocalBrazilPhoneDigits(value)}`;
 }
 
 export function isValidBrazilMobilePhone(value: string) {
@@ -240,12 +243,14 @@ export function isValidBrazilMobilePhone(value: string) {
 
   return localDigits.length === 11
     && VALID_BRAZIL_AREA_CODES.has(areaCode)
-    && phone.startsWith('9');
+    && phone.startsWith('9')
+    && !/^(\d)\1{10}$/.test(localDigits);
 }
 
 export function isValidEmail(value: string) {
-  const trimmed = value.trim();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) && trimmed.length <= MAX_EMAIL_LENGTH;
+  const email = value.trim();
+  return email.length <= MAX_EMAIL_LENGTH
+    && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email);
 }
 
 export function formatDateInput(value: string) {
@@ -264,17 +269,17 @@ export function formatDateInput(value: string) {
 
 export function toDisplayDate(value: string) {
   if (!value) {
-    return '-';
+    return '';
   }
 
   if (value.includes('/')) {
-    return value;
+    return formatDateInput(value);
   }
 
-  const [year, month, day] = value.split('-');
+  const [year, month, day] = value.split('T')[0].split('-');
 
   if (!year || !month || !day) {
-    return value;
+    return '';
   }
 
   return `${day}/${month}/${year}`;
@@ -291,10 +296,7 @@ export function toNotificationDate(value?: string | null) {
     return toDisplayDate(value);
   }
 
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(date);
+  return new Intl.DateTimeFormat('pt-BR').format(date);
 }
 
 export function parseDisplayDate(value: string) {
@@ -330,19 +332,25 @@ export function isValidBirthDate(value: string) {
     return false;
   }
 
-  const { day, month, year } = parseDisplayDate(value);
-  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  const { day: dayText, month: monthText, year: yearText } = parseDisplayDate(value);
+  const day = Number(dayText);
+  const month = Number(monthText);
+  const year = Number(yearText);
+  const date = new Date(year, month - 1, day);
   const today = new Date();
 
-  return date.getFullYear() === Number(year)
-    && date.getMonth() === Number(month) - 1
-    && date.getDate() === Number(day)
+  today.setHours(0, 0, 0, 0);
+
+  return year >= 1900
+    && date.getFullYear() === year
+    && date.getMonth() === month - 1
+    && date.getDate() === day
     && date <= today;
 }
 
 export function getPasswordStrength(password: string) {
   if (!password || password === DEFAULT_PASSWORD) {
-    return { score: 0, label: 'Fraca' };
+    return { score: 0, label: 'Muito fraca' };
   }
 
   let score = 0;
@@ -352,14 +360,14 @@ export function getPasswordStrength(password: string) {
   if (/\d/.test(password)) score += 1;
   if (/[^A-Za-z0-9]/.test(password)) score += 1;
 
-  const labels = ['Fraca', 'Baixa', 'Media', 'Boa', 'Forte', 'Excelente'];
+  const labels = ['Muito fraca', 'Fraca', 'Regular', 'Boa', 'Forte', 'Muito forte'];
   return { score, label: labels[score] };
 }
 
 export function formatCurrency(value?: number | null) {
-  return value == null
-    ? '-'
-    : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  return typeof value === 'number'
+    ? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    : '-';
 }
 
 export function formatCurrencyInput(value: string) {

@@ -47,7 +47,12 @@ export function UserAvatar({ userId, name, photo, authToken, size = 'sm', decora
       })
       .catch(() => {
         if (active) {
-          setPhotoFailed(true);
+          const fallbackSource = resolveProfilePhotoSource(trimmedPhoto);
+          if (fallbackSource) {
+            setPhotoSource(fallbackSource);
+          } else {
+            setPhotoFailed(true);
+          }
         }
       });
 
