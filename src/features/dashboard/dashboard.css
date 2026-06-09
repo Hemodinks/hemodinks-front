@@ -4,6 +4,21 @@
   padding: 0;
   display: grid;
   gap: 14px;
+  --dashboard-users: #0f766e;
+  --dashboard-users-soft: rgba(15, 118, 110, 0.12);
+  --dashboard-users-border: rgba(15, 118, 110, 0.32);
+  --dashboard-patients: #2563eb;
+  --dashboard-patients-soft: rgba(37, 99, 235, 0.12);
+  --dashboard-patients-border: rgba(37, 99, 235, 0.32);
+  --dashboard-profile: #7c3aed;
+  --dashboard-profile-soft: rgba(124, 58, 237, 0.1);
+  --dashboard-profile-border: rgba(124, 58, 237, 0.28);
+  --dashboard-pending: #b7791f;
+  --dashboard-pending-soft: rgba(183, 121, 31, 0.14);
+  --dashboard-pending-border: rgba(183, 121, 31, 0.34);
+  --dashboard-files: #475569;
+  --dashboard-files-soft: rgba(71, 85, 105, 0.12);
+  --dashboard-files-border: rgba(71, 85, 105, 0.3);
 }
 
 .dashboard-header {
@@ -48,9 +63,12 @@
   align-content: center;
   gap: 8px;
   padding: 14px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--summary-border, var(--line));
+  border-left-width: 5px;
   border-radius: 8px;
-  background: var(--input-bg);
+  background:
+    linear-gradient(135deg, var(--summary-soft, transparent), transparent 72%),
+    var(--input-bg);
 }
 
 .info-summary-icon {
@@ -60,12 +78,12 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  color: var(--teal);
-  background: var(--soft);
+  color: var(--summary-color, var(--teal));
+  background: var(--summary-soft, var(--soft));
 }
 
 .info-summary-icon.amber {
-  color: var(--amber);
+  color: var(--summary-color, var(--amber));
 }
 
 .info-summary-label {
@@ -76,9 +94,33 @@
 }
 
 .info-summary-item strong {
-  color: var(--ink);
+  color: var(--summary-color, var(--ink));
   font-size: 1.35rem;
   line-height: 1;
+}
+
+.info-summary-users {
+  --summary-color: var(--dashboard-users);
+  --summary-soft: var(--dashboard-users-soft);
+  --summary-border: var(--dashboard-users-border);
+}
+
+.info-summary-patients {
+  --summary-color: var(--dashboard-patients);
+  --summary-soft: var(--dashboard-patients-soft);
+  --summary-border: var(--dashboard-patients-border);
+}
+
+.info-summary-pending {
+  --summary-color: var(--dashboard-pending);
+  --summary-soft: var(--dashboard-pending-soft);
+  --summary-border: var(--dashboard-pending-border);
+}
+
+.info-summary-files {
+  --summary-color: var(--dashboard-files);
+  --summary-soft: var(--dashboard-files-soft);
+  --summary-border: var(--dashboard-files-border);
 }
 
 .module-grid {
@@ -94,19 +136,24 @@
   align-content: stretch;
   justify-items: start;
   gap: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--module-border, var(--line));
+  border-left-width: 6px;
   border-radius: 8px;
   padding: 22px;
   padding-right: 58px;
   color: var(--ink);
-  background: var(--panel);
+  background:
+    linear-gradient(135deg, var(--module-soft, transparent), transparent 74%),
+    var(--panel);
   box-shadow: none;
   text-align: left;
 }
 
 .module-card:hover {
-  border-color: var(--teal);
-  background: var(--panel-strong);
+  border-color: var(--module-color, var(--teal));
+  background:
+    linear-gradient(135deg, var(--module-soft, transparent), transparent 68%),
+    var(--panel-strong);
 }
 
 .module-card-menu {
@@ -119,8 +166,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  color: var(--muted);
-  background: var(--soft);
+  color: var(--module-color, var(--muted));
+  background: var(--module-soft, var(--soft));
 }
 
 .module-icon {
@@ -130,12 +177,12 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  color: var(--teal);
-  background: transparent;
+  color: var(--module-color, var(--teal));
+  background: var(--module-soft, transparent);
 }
 
 .module-title {
-  color: var(--blood);
+  color: var(--module-color, var(--blood));
   font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -155,11 +202,29 @@
   justify-content: space-between;
   gap: 14px;
   margin-top: 8px;
-  color: var(--teal);
+  color: var(--module-color, var(--teal));
   font-weight: 900;
 }
 
 .module-card-foot span {
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+.module-card-users {
+  --module-color: var(--dashboard-users);
+  --module-soft: var(--dashboard-users-soft);
+  --module-border: var(--dashboard-users-border);
+}
+
+.module-card-patients {
+  --module-color: var(--dashboard-patients);
+  --module-soft: var(--dashboard-patients-soft);
+  --module-border: var(--dashboard-patients-border);
+}
+
+.module-card-profile {
+  --module-color: var(--dashboard-profile);
+  --module-soft: var(--dashboard-profile-soft);
+  --module-border: var(--dashboard-profile-border);
 }

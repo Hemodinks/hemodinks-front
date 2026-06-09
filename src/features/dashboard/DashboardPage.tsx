@@ -56,7 +56,7 @@ export function DashboardPage({
 
       <div className="module-grid">
         {canAccessUsers && (
-          <button type="button" className="module-card" onClick={onOpenUsersList} aria-label="Abrir usuarios">
+          <button type="button" className="module-card module-card-users" onClick={onOpenUsersList} aria-label="Abrir usuarios">
             <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
             <span className="module-icon"><Users size={24} /></span>
             <span className="module-title">Usuarios</span>
@@ -69,7 +69,7 @@ export function DashboardPage({
         )}
 
         {canEditOwnUser && (
-          <button type="button" className="module-card" onClick={onOpenMyProfile} aria-label="Abrir meu cadastro">
+          <button type="button" className="module-card module-card-profile" onClick={onOpenMyProfile} aria-label="Abrir meu cadastro">
             <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
             <span className="module-icon"><FileText size={24} /></span>
             <span className="module-title">Meu cadastro</span>
@@ -81,7 +81,7 @@ export function DashboardPage({
           </button>
         )}
 
-        <button type="button" className="module-card" onClick={onOpenPatientsList} aria-label="Abrir pacientes">
+        <button type="button" className="module-card module-card-patients" onClick={onOpenPatientsList} aria-label="Abrir pacientes">
           <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
           <span className="module-icon"><ClipboardList size={24} /></span>
           <span className="module-title">Pacientes</span>
@@ -101,23 +101,23 @@ export function DashboardPage({
 
         <div className="info-summary-grid">
           {canAccessUsers && (
-            <div className="info-summary-item">
+            <div className="info-summary-item info-summary-users">
               <span className="info-summary-icon"><Users size={18} /></span>
               <span className="info-summary-label">Usuarios ativos</span>
               <strong>{activeUsersCount}</strong>
             </div>
           )}
-          <div className="info-summary-item">
+          <div className="info-summary-item info-summary-patients">
             <span className="info-summary-icon"><CircleCheck size={18} /></span>
             <span className="info-summary-label">Pacientes ativos</span>
             <strong>{activePatientsCount}</strong>
           </div>
-          <div className="info-summary-item">
+          <div className="info-summary-item info-summary-pending">
             <span className="info-summary-icon amber"><Info size={18} /></span>
             <span className="info-summary-label">Pendencias</span>
             <strong>{pendingPaymentsCount}</strong>
           </div>
-          <div className="info-summary-item">
+          <div className="info-summary-item info-summary-files">
             <span className="info-summary-icon"><FileText size={18} /></span>
             <span className="info-summary-label">Arquivos</span>
             <strong>{patientFilesCount}</strong>
