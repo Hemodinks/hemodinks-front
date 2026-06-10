@@ -1,6 +1,6 @@
 export type Theme = 'light' | 'dark';
 
-export type AppView = 'dashboard' | 'users' | 'patients';
+export type AppView = 'dashboard' | 'users' | 'patients' | 'agenda';
 
 export type ModuleMode = 'list' | 'form';
 

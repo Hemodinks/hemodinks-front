@@ -35,6 +35,7 @@ type AppShellProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenAgenda: () => void;
 };
 
 export function AppShell({
@@ -63,6 +64,7 @@ export function AppShell({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenAgenda,
 }: AppShellProps) {
   return (
     <main className="app-shell">
@@ -104,6 +106,7 @@ export function AppShell({
           onOpenUsersList={onOpenUsersList}
           onOpenMyProfile={onOpenMyProfile}
           onOpenPatientsList={onOpenPatientsList}
+          onOpenAgenda={onOpenAgenda}
         />
 
         <div className={`app-content ${activeView === 'dashboard' ? 'dashboard-content' : ''}`}>

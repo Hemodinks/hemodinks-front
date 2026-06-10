@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  CalendarDays,
   CheckCircle2,
   CircleCheck,
   ClipboardList,
@@ -19,11 +20,13 @@ type DashboardPageProps = {
   activePatientsCount: number;
   pendingPaymentsCount: number;
   patientFilesCount: number;
+  upcomingEventsCount: number;
   successMessage: string;
   dashboardError: string;
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenAgenda: () => void;
 };
 
 export function DashboardPage({
@@ -36,11 +39,13 @@ export function DashboardPage({
   activePatientsCount,
   pendingPaymentsCount,
   patientFilesCount,
+  upcomingEventsCount,
   successMessage,
   dashboardError,
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenAgenda,
 }: DashboardPageProps) {
   return (
     <section className="dashboard-workspace">
@@ -88,6 +93,17 @@ export function DashboardPage({
           <span className="module-metric">{patientReadOnly ? 'Visualizar cadastro' : 'Administrar atendimentos'}</span>
           <span className="module-card-foot">
             <span>{pacientesCount} cadastrados</span>
+            <ArrowRight size={20} />
+          </span>
+        </button>
+
+        <button type="button" className="module-card module-card-agenda" onClick={onOpenAgenda} aria-label="Abrir agenda">
+          <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
+          <span className="module-icon"><CalendarDays size={24} /></span>
+          <span className="module-title">Agenda</span>
+          <span className="module-metric">Eventos e lembretes</span>
+          <span className="module-card-foot">
+            <span>{upcomingEventsCount} proximos</span>
             <ArrowRight size={20} />
           </span>
         </button>

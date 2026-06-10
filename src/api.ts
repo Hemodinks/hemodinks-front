@@ -1,4 +1,7 @@
 import type {
+  AgendaEvent,
+  AgendaEventPayload,
+  AgendaMedicalUser,
   ChangePasswordPayload,
   CbhpmGeral,
   CbhpmListQuery,
@@ -13,6 +16,7 @@ import type {
   PacienteFormData,
   PacienteListQuery,
   PagedResult,
+  PublicHoliday,
   User,
   UserArquivo,
   UserFormData,
@@ -126,6 +130,61 @@ export function getDashboardSummary(token: string) {
 
 export function getDashboardNotifications(token: string) {
   return request<DashboardNotification[]>('/api/dashboard/notifications', {}, token);
+}
+
+export function getAgendaEvents(token: string, from?: string, to?: string) {
+  const params = new URLSearchParams();
+
+  if (from) {
+    params.set('from', from);
+  }
+
+  if (to) {
+    params.set('to', to);
+  }
+
+  const query = params.toString();
+  return request<AgendaEvent[]>(`/api/events/${query ? `?${query}` : ''}`, {}, token);
+}
+
+export function createAgendaEvent(payload: AgendaEventPayload, token: string) {
+  return request<AgendaEvent>('/api/events/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function updateAgendaEvent(id: number, payload: AgendaEventPayload, token: string) {
+  return request<AgendaEvent>(`/api/events/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function completeAgendaEvent(id: number, token: string) {
+  return request<void>(`/api/events/${id}/complete`, {
+    method: 'POST',
+  }, token);
+}
+
+export function deleteAgendaEvent(id: number, token: string) {
+  return request<void>(`/api/events/${id}`, {
+    method: 'DELETE',
+  }, token);
+}
+
+export function getAgendaMedicalUsers(token: string) {
+  return request<AgendaMedicalUser[]>('/api/events/medical-users', {}, token);
+}
+
+export async function getBrazilPublicHolidays(year: number) {
+  const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/BR`);
+
+  if (!response.ok) {
+    throw new Error('Nao foi possivel carregar feriados nacionais.');
+  }
+
+  return response.json() as Promise<PublicHoliday[]>;
 }
 
 export function getUsers(token: string, query?: ListQuery) {
