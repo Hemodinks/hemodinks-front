@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   authenticate,
   createUser,
@@ -25,10 +25,6 @@ import {
 import { LoginScreen } from './features/auth/LoginScreen';
 import { PasswordRequiredScreen } from './features/auth/PasswordRequiredScreen';
 import { DashboardPage } from './features/dashboard/DashboardPage';
-import { NotificationsModal } from './features/dashboard/NotificationsModal';
-import { AgendaPage } from './features/events/AgendaPage';
-import { CbhpmLookupModal } from './features/patients/CbhpmLookupModal';
-import { PatientFilesModal, PatientInfoModal } from './features/patients/PatientModals';
 import {
   createXlsxBlob,
   downloadBlob,
@@ -46,17 +42,14 @@ import {
   validatePacienteForm,
   withPrimaryProcedimento,
 } from './features/patients/patientUtils';
-import { PatientsPage } from './features/patients/PatientsPage';
-import { ContactModal, InfoModal } from './features/users/UserModals';
-import { UsersPage } from './features/users/UsersPage';
 import {
   emptyUserForm,
   getUserFormData,
   toUserPayload,
   validateUserForm,
 } from './features/users/userUtils';
+import { ContactModal, InfoModal } from './features/users/UserModals';
 import { AppShell } from './layout/AppShell';
-import { PasswordModal } from './shared/components/PasswordModal';
 import type {
   AppView,
   BreadcrumbItem,
@@ -95,6 +88,7 @@ import {
   sortUsersByName,
   sortUsersForListing,
 } from './shared/utils/listing';
+import { queryClient } from './queryClient';
 import type {
   AuthSession,
   CbhpmGeral,
@@ -110,6 +104,19 @@ import type {
 
 const SESSION_KEY = 'hemodinks.session';
 const THEME_KEY = 'hemodinks.theme';
+const DASHBOARD_CACHE_TIME_MS = 30 * 1000;
+const LIST_CACHE_TIME_MS = 20 * 1000;
+const LOOKUP_CACHE_TIME_MS = 5 * 60 * 1000;
+const NOTIFICATIONS_CACHE_TIME_MS = 15 * 1000;
+
+const NotificationsModal = lazy(() => import('./features/dashboard/NotificationsModal').then((module) => ({ default: module.NotificationsModal })));
+const AgendaPage = lazy(() => import('./features/events/AgendaPage').then((module) => ({ default: module.AgendaPage })));
+const CbhpmLookupModal = lazy(() => import('./features/patients/CbhpmLookupModal').then((module) => ({ default: module.CbhpmLookupModal })));
+const PatientInfoModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientInfoModal })));
+const PatientFilesModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientFilesModal })));
+const PatientsPage = lazy(() => import('./features/patients/PatientsPage').then((module) => ({ default: module.PatientsPage })));
+const UsersPage = lazy(() => import('./features/users/UsersPage').then((module) => ({ default: module.UsersPage })));
+const PasswordModal = lazy(() => import('./shared/components/PasswordModal').then((module) => ({ default: module.PasswordModal })));
 
 const emptyCbhpmFilters: CbhpmFilters = {
   codigo: '',
@@ -134,6 +141,16 @@ function loadStoredSession(): AuthSession | null {
 
 function loadStoredTheme(): Theme {
   return localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light';
+}
+
+function ModuleFallback() {
+  return (
+    <section className="workspace" aria-live="polite">
+      <section className="data-panel">
+        <p className="agenda-empty" role="status">Carregando modulo...</p>
+      </section>
+    </section>
+  );
 }
 
 export default function App() {
@@ -252,6 +269,7 @@ export default function App() {
 
   const logout = () => {
     localStorage.removeItem(SESSION_KEY);
+    queryClient.clear();
     setSession(null);
     setDashboardSummary(null);
     setNotificationsOpen(false);
@@ -275,7 +293,7 @@ export default function App() {
     setLoginPassword('');
   };
 
-  const loadDashboardSummary = async (token = session?.token) => {
+  const loadDashboardSummary = async (token = session?.token, forceRefresh = false) => {
     if (!token) {
       return;
     }
@@ -283,7 +301,11 @@ export default function App() {
     setDashboardError('');
 
     try {
-      const result = await getDashboardSummary(token);
+      const result = await queryClient.fetchQuery({
+        queryKey: ['dashboardSummary', token],
+        queryFn: () => getDashboardSummary(token),
+        staleTime: forceRefresh ? 0 : DASHBOARD_CACHE_TIME_MS,
+      });
       setDashboardSummary(result);
     } catch (error) {
       setDashboardError(getErrorMessage(error));
@@ -306,7 +328,11 @@ export default function App() {
     setNotificationsError('');
 
     try {
-      const result = await getDashboardNotifications(session.token);
+      const result = await queryClient.fetchQuery({
+        queryKey: ['dashboardNotifications', session.token],
+        queryFn: () => getDashboardNotifications(session.token),
+        staleTime: NOTIFICATIONS_CACHE_TIME_MS,
+      });
       setNotifications(result);
     } catch (error) {
       setNotificationsError(getErrorMessage(error));
@@ -319,6 +345,7 @@ export default function App() {
     token = session?.token,
     page = currentPage,
     search = debouncedSearchTerm,
+    forceRefresh = false,
   ) => {
     if (!token) {
       return;
@@ -328,10 +355,15 @@ export default function App() {
     setUsersError('');
 
     try {
-      const result = await getUsers(token, {
+      const query = {
         page,
         pageSize: PAGE_SIZE,
         search,
+      };
+      const result = await queryClient.fetchQuery({
+        queryKey: ['users', token, query],
+        queryFn: () => getUsers(token, query),
+        staleTime: forceRefresh ? 0 : LIST_CACHE_TIME_MS,
       });
       setUsers(sortUsersForListing(getPagedItems(result)));
       setUsersTotalItems(getPagedTotal(result));
@@ -343,16 +375,21 @@ export default function App() {
     }
   };
 
-  const loadMedicalUsers = async (token = session?.token) => {
+  const loadMedicalUsers = async (token = session?.token, forceRefresh = false) => {
     if (!token) {
       return;
     }
 
     try {
-      const result = await getUsers(token, {
+      const query = {
         page: 1,
         pageSize: LOOKUP_PAGE_SIZE,
         profileId: MEDICAL_PROFILE_ID,
+      };
+      const result = await queryClient.fetchQuery({
+        queryKey: ['medicalUsers', token],
+        queryFn: () => getUsers(token, query),
+        staleTime: forceRefresh ? 0 : LOOKUP_CACHE_TIME_MS,
       });
       setMedicalUsers(sortUsersByName(getPagedItems(result)));
     } catch (error) {
@@ -365,6 +402,7 @@ export default function App() {
     page = pacienteCurrentPage,
     search = debouncedPacienteSearchTerm,
     filters = debouncedPacienteFilters,
+    forceRefresh = false,
   ) => {
     if (!token) {
       return;
@@ -374,11 +412,16 @@ export default function App() {
     setPacientesError('');
 
     try {
-      const result = await getPacientes(token, {
+      const query = {
         page,
         pageSize: PAGE_SIZE,
         search,
         ...getPacienteFilterQuery(filters, isAdmin),
+      };
+      const result = await queryClient.fetchQuery({
+        queryKey: ['pacientes', token, query],
+        queryFn: () => getPacientes(token, query),
+        staleTime: forceRefresh ? 0 : LIST_CACHE_TIME_MS,
       });
       setPacientes(sortPacientesForListing(getPagedItems(result)));
       setPacientesTotalItems(getPagedTotal(result));
@@ -488,6 +531,7 @@ export default function App() {
     token = session?.token,
     page = cbhpmCurrentPage,
     filters = debouncedCbhpmFilters,
+    forceRefresh = false,
   ) => {
     if (!token) {
       return;
@@ -497,12 +541,17 @@ export default function App() {
     setCbhpmError('');
 
     try {
-      const result = await getCbhpmGeral(token, {
+      const query = {
         page,
         pageSize: CBHPM_PAGE_SIZE,
         codigo: filters.codigo,
         procedimento: filters.procedimento,
         porte: filters.porte,
+      };
+      const result = await queryClient.fetchQuery({
+        queryKey: ['cbhpm', token, query],
+        queryFn: () => getCbhpmGeral(token, query),
+        staleTime: forceRefresh ? 0 : LIST_CACHE_TIME_MS,
       });
       setCbhpmItems(getPagedItems(result));
       setCbhpmTotalItems(getPagedTotal(result));
@@ -514,7 +563,7 @@ export default function App() {
     }
   };
 
-  const loadHospitais = async (token = session?.token) => {
+  const loadHospitais = async (token = session?.token, forceRefresh = false) => {
     if (!token) {
       return;
     }
@@ -522,13 +571,18 @@ export default function App() {
     setHospitaisError('');
 
     try {
-      setHospitais(await getHospitais(token));
+      const result = await queryClient.fetchQuery({
+        queryKey: ['hospitais', token],
+        queryFn: () => getHospitais(token),
+        staleTime: forceRefresh ? 0 : LOOKUP_CACHE_TIME_MS,
+      });
+      setHospitais(result);
     } catch (error) {
       setHospitaisError(getErrorMessage(error));
     }
   };
 
-  const loadConvenios = async (token = session?.token) => {
+  const loadConvenios = async (token = session?.token, forceRefresh = false) => {
     if (!token) {
       return;
     }
@@ -536,7 +590,12 @@ export default function App() {
     setConveniosError('');
 
     try {
-      setConvenios(sortConveniosByDescription(await getConvenios(token)));
+      const result = await queryClient.fetchQuery({
+        queryKey: ['convenios', token],
+        queryFn: () => getConvenios(token),
+        staleTime: forceRefresh ? 0 : LOOKUP_CACHE_TIME_MS,
+      });
+      setConvenios(sortConveniosByDescription(result));
     } catch (error) {
       setConveniosError(getErrorMessage(error));
     }
@@ -707,6 +766,7 @@ export default function App() {
 
     try {
       const result = await authenticate(loginEmail.trim(), loginPassword);
+      queryClient.clear();
       persistSession({
         token: result.token,
         user: {
@@ -984,10 +1044,14 @@ export default function App() {
       }
 
       setPacienteSuccessMessage(editingPacienteId ? 'Paciente atualizado.' : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['dashboardSummary', session.token] }),
+        queryClient.invalidateQueries({ queryKey: ['pacientes', session.token] }),
+      ]);
       resetPacienteForm();
       setPacienteCurrentPage(1);
       setModuleMode('list');
-      await loadDashboardSummary(session.token);
+      await loadDashboardSummary(session.token, true);
     } catch (error) {
       setPacienteFormError(getErrorMessage(error));
     } finally {
@@ -1010,9 +1074,13 @@ export default function App() {
 
     try {
       await deletePaciente(paciente.id, session.token);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['dashboardSummary', session.token] }),
+        queryClient.invalidateQueries({ queryKey: ['pacientes', session.token] }),
+      ]);
       setPacienteSuccessMessage('Paciente excluido.');
-      await loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm);
-      await loadDashboardSummary(session.token);
+      await loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
+      await loadDashboardSummary(session.token, true);
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     }
@@ -1032,10 +1100,14 @@ export default function App() {
 
     try {
       await deletePacienteArquivo(paciente.id, arquivoId, session.token);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['dashboardSummary', session.token] }),
+        queryClient.invalidateQueries({ queryKey: ['pacientes', session.token] }),
+      ]);
       const details = await getPaciente(paciente.id, session.token);
       setEditingPacienteDetails(details);
-      await loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm);
-      await loadDashboardSummary(session.token);
+      await loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
+      await loadDashboardSummary(session.token, true);
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     }
@@ -1162,13 +1234,18 @@ export default function App() {
         });
       }
 
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['dashboardSummary', session.token] }),
+        queryClient.invalidateQueries({ queryKey: ['users', session.token] }),
+        queryClient.invalidateQueries({ queryKey: ['medicalUsers', session.token] }),
+      ]);
       resetUserForm();
       setCurrentPage(1);
       setModuleMode('list');
       if (!isAdmin) {
         setActiveView('dashboard');
       }
-      await loadDashboardSummary(session.token);
+      await loadDashboardSummary(session.token, true);
     } catch (error) {
       setFormError(getErrorMessage(error));
     } finally {
@@ -1192,9 +1269,14 @@ export default function App() {
         return;
       }
 
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['dashboardSummary', session.token] }),
+        queryClient.invalidateQueries({ queryKey: ['users', session.token] }),
+        queryClient.invalidateQueries({ queryKey: ['medicalUsers', session.token] }),
+      ]);
       setSuccessMessage('Usuario excluido.');
-      await loadUsers(session.token, currentPage, debouncedSearchTerm);
-      await loadDashboardSummary(session.token);
+      await loadUsers(session.token, currentPage, debouncedSearchTerm, true);
+      await loadDashboardSummary(session.token, true);
     } catch (error) {
       setUsersError(getErrorMessage(error));
     }
@@ -1441,7 +1523,7 @@ export default function App() {
       handleDeleteUser={handleDeleteUser}
       setSelectedInfoUser={setSelectedInfoUser}
       setSelectedContactUser={setSelectedContactUser}
-      refreshUsers={() => void loadUsers(session.token, currentPage, debouncedSearchTerm)}
+      refreshUsers={() => void loadUsers(session.token, currentPage, debouncedSearchTerm, true)}
     />
   ) : activeView === 'patients' ? (
     <PatientsPage
@@ -1498,7 +1580,7 @@ export default function App() {
       handleOpenPacienteFiles={handleOpenPacienteFiles}
       setSelectedPatientInfo={setSelectedPatientInfo}
       clearPacienteFilters={() => setPacienteFilters(emptyPacienteFilters)}
-      refreshPacientes={() => void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters)}
+      refreshPacientes={() => void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters, true)}
     />
   ) : (
     <AgendaPage
@@ -1509,7 +1591,7 @@ export default function App() {
   );
 
   const modals = (
-    <>
+    <Suspense fallback={null}>
       {selectedInfoUser && (
         <InfoModal user={selectedInfoUser} onClose={() => setSelectedInfoUser(null)} />
       )}
@@ -1541,7 +1623,7 @@ export default function App() {
           visibleEnd={cbhpmVisibleEnd}
           onFiltersChange={setCbhpmFilters}
           onPageChange={setCbhpmCurrentPage}
-          onRefresh={() => void loadCbhpm(session.token, cbhpmCurrentPage, debouncedCbhpmFilters)}
+          onRefresh={() => void loadCbhpm(session.token, cbhpmCurrentPage, debouncedCbhpmFilters, true)}
           onSelect={handleSelectCbhpm}
           onClose={() => setCbhpmModalOpen(false)}
         />
@@ -1570,7 +1652,7 @@ export default function App() {
           onClose={() => setShowPasswordModal(false)}
         />
       )}
-    </>
+    </Suspense>
   );
 
   return (
@@ -1601,7 +1683,9 @@ export default function App() {
       onOpenAgenda={openAgenda}
       modals={modals}
     >
-      {mainContent}
+      <Suspense fallback={<ModuleFallback />}>
+        {mainContent}
+      </Suspense>
     </AppShell>
   );
 }
