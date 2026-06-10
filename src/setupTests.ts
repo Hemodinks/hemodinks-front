@@ -6,4 +6,5 @@ import { queryClient } from './queryClient';
 afterEach(() => {
   queryClient.clear();
   cleanup();
+  window.history.replaceState(null, '', '/');
 });

@@ -129,11 +129,13 @@ function mockSession(overrides?: Partial<AuthSession['user']>) {
 async function openUsersModule(user: ReturnType<typeof userEvent.setup>) {
   expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: /abrir usuarios/i }));
+  expect(window.location.pathname).toBe('/usuarios');
 }
 
 async function openPatientsModule(user: ReturnType<typeof userEvent.setup>) {
   expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
+  expect(window.location.pathname).toBe('/pacientes');
 }
 
 describe('App', () => {
@@ -209,6 +211,7 @@ describe('App', () => {
 
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123');
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/dashboard');
     expect(screen.getByText('Administrador | gmarcone@gmail.com')).toBeInTheDocument();
     expect(screen.getByText('Painel informativo')).toBeInTheDocument();
     expect(screen.getByText('Resumo geral')).toBeInTheDocument();
@@ -222,6 +225,7 @@ describe('App', () => {
     expect(api.getPacientes).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: /abrir usuarios/i }));
+    expect(window.location.pathname).toBe('/usuarios');
 
     const userRow = (await screen.findByText('Ana Hemodinks')).closest('tr')!;
     expect(screen.getByAltText('Foto de Ana Hemodinks')).toBeInTheDocument();
@@ -241,6 +245,17 @@ describe('App', () => {
     expect(storedSession.user.precisaTrocarSenha).toBe(false);
     expect(storedSession.user.fotoPerfil).toBe('data:image/png;base64,george');
     expect(storedSession.user.perfilNome).toBe('Administrador');
+  });
+
+  it('abre a agenda por URL direta', async () => {
+    mockSession();
+    window.history.replaceState(null, '', '/agenda');
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Agenda' })).toBeInTheDocument();
+    expect(await screen.findByText('Novo evento')).toBeInTheDocument();
+    expect(api.getAgendaEvents).toHaveBeenCalled();
   });
 
   it('alterna entre tema claro e escuro no painel logado', async () => {
