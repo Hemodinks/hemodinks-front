@@ -184,6 +184,16 @@
     padding: 16px;
   }
 
+  .modal-backdrop {
+    align-items: start;
+    padding: 12px;
+  }
+
+  .modal-panel {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+  }
+
   .panel-title,
   .data-header {
     align-items: flex-start;
@@ -341,7 +351,7 @@
 
   td {
     display: grid;
-    grid-template-columns: minmax(100px, 0.36fr) minmax(0, 1fr);
+    grid-template-columns: minmax(88px, 0.34fr) minmax(0, 1fr);
     gap: 12px;
     align-items: center;
     border-bottom: 1px solid var(--line);

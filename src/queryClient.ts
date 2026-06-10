@@ -8,5 +8,8 @@ export const queryClient = new QueryClient({
       retry: 1,
       staleTime: 30 * 1000,
     },
+    mutations: {
+      retry: 0,
+    },
   },
 });

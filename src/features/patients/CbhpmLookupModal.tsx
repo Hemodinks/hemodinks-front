@@ -1,6 +1,7 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, X } from 'lucide-react';
 import type { CbhpmGeral } from '../../types';
 import type { CbhpmFilters } from '../../appTypes';
+import { Modal } from '../../shared/components/Modal';
 import { formatCurrency } from '../../shared/utils/formatters';
 
 type CbhpmLookupModalProps = {
@@ -41,14 +42,13 @@ export function CbhpmLookupModal({
   };
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <section className="modal-panel cbhpm-modal" role="dialog" aria-modal="true" aria-labelledby="cbhpm-title">
+    <Modal titleId="cbhpm-title" className="cbhpm-modal" onClose={onClose}>
         <div className="panel-title">
           <div>
             <span className="eyebrow">CBHPM</span>
             <h2 id="cbhpm-title">Selecionar procedimento</h2>
           </div>
-          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar" aria-label="Fechar selecao de procedimento">
             <X size={18} />
           </button>
         </div>
@@ -155,7 +155,6 @@ export function CbhpmLookupModal({
             </button>
           </div>
         </div>
-      </section>
-    </div>
+      </Modal>
   );
 }
