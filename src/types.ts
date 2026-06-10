@@ -130,6 +130,7 @@ export type AgendaEvent = {
   notifyUser: boolean;
   reminderPeriodMinutes?: number | null;
   lastReminderSentAt?: string | null;
+  nextReminderAt?: string | null;
   isCompleted: boolean;
   completedAt?: string | null;
   createdAt: string;
