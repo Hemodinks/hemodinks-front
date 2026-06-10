@@ -1,4 +1,5 @@
-import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   createPaciente,
   deletePaciente,
@@ -14,14 +15,11 @@ import {
 } from '../../api';
 import type {
   AppView,
-  CbhpmFilters,
   ModuleMode,
   PacienteExportFormat,
   PacienteExportScope,
-  PacienteFilters,
 } from '../../appTypes';
 import { queryClient } from '../../queryClient';
-import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import {
   ALLOWED_PATIENT_FILE_TYPES,
   CBHPM_PAGE_SIZE,
@@ -46,12 +44,9 @@ import {
 import type {
   AuthSession,
   CbhpmGeral,
-  Convenio,
-  Hospital,
   Paciente,
-  PacienteFormData,
-  User,
 } from '../../types';
+import { queryKeys } from '../../shared/queryKeys';
 import {
   createXlsxBlob,
   downloadBlob,
@@ -61,35 +56,19 @@ import {
 } from './patientExport';
 import {
   emptyPacienteFilters,
-  emptyPacienteForm,
   getPacienteFilterQuery,
-  getPacienteFormData,
   normalizePacienteProcedimentos,
   toPacientePayload,
   validatePacienteForm,
   withPrimaryProcedimento,
 } from './patientUtils';
+import { useCbhpmLookup } from './useCbhpmLookup';
+import { usePatientForm } from './usePatientForm';
+import { usePatientList } from './usePatientList';
+import { usePatientLookups } from './usePatientLookups';
 
 const LIST_CACHE_TIME_MS = 20 * 1000;
 const LOOKUP_CACHE_TIME_MS = 5 * 60 * 1000;
-
-const emptyCbhpmFilters: CbhpmFilters = {
-  codigo: '',
-  procedimento: '',
-  porte: '',
-};
-
-function arePacienteFiltersEqual(current: PacienteFilters, debounced: PacienteFilters) {
-  return current.medico === debounced.medico
-    && current.convenio === debounced.convenio
-    && current.procedimento === debounced.procedimento;
-}
-
-function areCbhpmFiltersEqual(current: CbhpmFilters, debounced: CbhpmFilters) {
-  return current.codigo === debounced.codigo
-    && current.procedimento === debounced.procedimento
-    && current.porte === debounced.porte;
-}
 
 type UsePatientsDomainOptions = {
   session: AuthSession | null;
@@ -120,125 +99,269 @@ export function usePatientsDomain({
   navigateToView,
   loadDashboardSummary,
 }: UsePatientsDomainOptions) {
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [pacientesLoading, setPacientesLoading] = useState(false);
-  const [pacientesError, setPacientesError] = useState('');
-  const [pacienteSuccessMessage, setPacienteSuccessMessage] = useState('');
-  const [pacienteSearchTerm, setPacienteSearchTerm] = useState('');
+  const patientList = usePatientList();
+  const patientForm = usePatientForm(patientList.pacientes);
+  const patientLookups = usePatientLookups();
+  const cbhpmLookup = useCbhpmLookup();
   const [pacienteExportLoading, setPacienteExportLoading] = useState<PacienteExportFormat | null>(null);
   const [pacienteExportScope, setPacienteExportScope] = useState<PacienteExportScope>('visible');
-  const [pacienteFilters, setPacienteFilters] = useState<PacienteFilters>(emptyPacienteFilters);
-  const [pacienteCurrentPage, setPacienteCurrentPage] = useState(1);
-  const resetPacientesPage = useCallback(() => setPacienteCurrentPage(1), []);
-  const [debouncedPacienteSearchTerm] = useDebouncedValue(pacienteSearchTerm, { onCommit: resetPacientesPage });
-  const [debouncedPacienteFilters, setDebouncedPacienteFilters] = useDebouncedValue(pacienteFilters, {
-    isEqual: arePacienteFiltersEqual,
-    onCommit: resetPacientesPage,
-  });
-  const [pacientesTotalItems, setPacientesTotalItems] = useState(0);
-  const [pacientesTotalPages, setPacientesTotalPages] = useState(1);
-  const [pacienteFormData, setPacienteFormData] = useState<PacienteFormData>(emptyPacienteForm);
-  const [editingPacienteId, setEditingPacienteId] = useState<number | null>(null);
-  const [editingPacienteDetails, setEditingPacienteDetails] = useState<Paciente | null>(null);
-  const [pacienteFormLoading, setPacienteFormLoading] = useState(false);
-  const [pacienteFormError, setPacienteFormError] = useState('');
-  const [patientFileInputKey, setPatientFileInputKey] = useState(0);
-  const [pendingPatientFiles, setPendingPatientFiles] = useState<File[]>([]);
   const [selectedPatientInfo, setSelectedPatientInfo] = useState<Paciente | null>(null);
   const [selectedPatientFiles, setSelectedPatientFiles] = useState<Paciente | null>(null);
   const [patientFilesModalLoading, setPatientFilesModalLoading] = useState(false);
   const [patientFilesModalError, setPatientFilesModalError] = useState('');
-  const [medicalUsers, setMedicalUsers] = useState<User[]>([]);
-  const [hospitais, setHospitais] = useState<Hospital[]>([]);
-  const [hospitaisError, setHospitaisError] = useState('');
-  const [convenios, setConvenios] = useState<Convenio[]>([]);
-  const [conveniosError, setConveniosError] = useState('');
-  const [cbhpmModalOpen, setCbhpmModalOpen] = useState(false);
-  const [cbhpmItems, setCbhpmItems] = useState<CbhpmGeral[]>([]);
-  const [cbhpmFilters, setCbhpmFilters] = useState<CbhpmFilters>(emptyCbhpmFilters);
-  const [cbhpmCurrentPage, setCbhpmCurrentPage] = useState(1);
-  const resetCbhpmPage = useCallback(() => setCbhpmCurrentPage(1), []);
-  const [debouncedCbhpmFilters] = useDebouncedValue(cbhpmFilters, {
-    isEqual: areCbhpmFiltersEqual,
-    onCommit: resetCbhpmPage,
-  });
-  const [cbhpmTotalItems, setCbhpmTotalItems] = useState(0);
-  const [cbhpmTotalPages, setCbhpmTotalPages] = useState(1);
-  const [cbhpmLoading, setCbhpmLoading] = useState(false);
-  const [cbhpmError, setCbhpmError] = useState('');
 
-  const pacienteTotalPages = Math.max(1, pacientesTotalPages);
-  const pacientePageStart = (pacienteCurrentPage - 1) * PAGE_SIZE;
-  const pacientePageEnd = pacientePageStart + PAGE_SIZE;
-  const paginatedPacientes = pacientes;
-  const pacienteVisibleStart = pacientesTotalItems ? pacientePageStart + 1 : 0;
-  const pacienteVisibleEnd = Math.min(pacientePageEnd, pacientesTotalItems);
-  const cbhpmTotalPageCount = Math.max(1, cbhpmTotalPages);
-  const cbhpmPageStart = (cbhpmCurrentPage - 1) * CBHPM_PAGE_SIZE;
-  const cbhpmPageEnd = cbhpmPageStart + CBHPM_PAGE_SIZE;
-  const cbhpmVisibleStart = cbhpmTotalItems ? cbhpmPageStart + 1 : 0;
-  const cbhpmVisibleEnd = Math.min(cbhpmPageEnd, cbhpmTotalItems);
-  const editingPaciente = useMemo(
-    () => editingPacienteDetails ?? pacientes.find((paciente) => paciente.id === editingPacienteId) ?? null,
-    [editingPacienteDetails, editingPacienteId, pacientes],
-  );
+  const {
+    pacientes,
+    setPacientes,
+    pacientesLoading,
+    setPacientesLoading,
+    pacientesError,
+    setPacientesError,
+    pacienteSuccessMessage,
+    setPacienteSuccessMessage,
+    pacienteSearchTerm,
+    setPacienteSearchTerm,
+    pacienteFilters,
+    setPacienteFilters,
+    debouncedPacienteSearchTerm,
+    debouncedPacienteFilters,
+    setDebouncedPacienteFilters,
+    pacienteCurrentPage,
+    setPacienteCurrentPage,
+    pacientesTotalItems,
+    setPacientesTotalItems,
+    pacientesTotalPages,
+    setPacientesTotalPages,
+    pacienteTotalPages,
+    paginatedPacientes,
+    pacienteVisibleStart,
+    pacienteVisibleEnd,
+    resetPatientListState,
+  } = patientList;
+  const {
+    pacienteFormData,
+    setPacienteFormData,
+    editingPacienteId,
+    editingPacienteDetails,
+    setEditingPacienteDetails,
+    editingPaciente,
+    pacienteFormLoading,
+    setPacienteFormLoading,
+    pacienteFormError,
+    setPacienteFormError,
+    patientFileInputKey,
+    pendingPatientFiles,
+    setPendingPatientFiles,
+    resetPacienteForm,
+    applyPacienteToForm,
+  } = patientForm;
+  const {
+    medicalUsers,
+    setMedicalUsers,
+    hospitais,
+    setHospitais,
+    hospitaisError,
+    setHospitaisError,
+    convenios,
+    setConvenios,
+    conveniosError,
+    setConveniosError,
+    resetPatientLookups,
+  } = patientLookups;
+  const {
+    cbhpmModalOpen,
+    setCbhpmModalOpen,
+    cbhpmItems,
+    setCbhpmItems,
+    cbhpmFilters,
+    setCbhpmFilters,
+    debouncedCbhpmFilters,
+    cbhpmCurrentPage,
+    setCbhpmCurrentPage,
+    cbhpmTotalItems,
+    setCbhpmTotalItems,
+    cbhpmTotalPageCount,
+    setCbhpmTotalPages,
+    cbhpmLoading,
+    setCbhpmLoading,
+    cbhpmError,
+    setCbhpmError,
+    cbhpmVisibleStart,
+    cbhpmVisibleEnd,
+    resetCbhpmLookup,
+  } = cbhpmLookup;
+
+  const pacientesQueryParams = useMemo(() => ({
+    page: pacienteCurrentPage,
+    pageSize: PAGE_SIZE,
+    search: debouncedPacienteSearchTerm,
+    ...getPacienteFilterQuery(debouncedPacienteFilters, isAdmin),
+  }), [debouncedPacienteFilters, debouncedPacienteSearchTerm, isAdmin, pacienteCurrentPage]);
+  const medicalUsersQueryParams = useMemo(() => ({
+    page: 1,
+    pageSize: LOOKUP_PAGE_SIZE,
+    profileId: MEDICAL_PROFILE_ID,
+  }), []);
+  const cbhpmQueryParams = useMemo(() => ({
+    page: cbhpmCurrentPage,
+    pageSize: CBHPM_PAGE_SIZE,
+    codigo: debouncedCbhpmFilters.codigo,
+    procedimento: debouncedCbhpmFilters.procedimento,
+    porte: debouncedCbhpmFilters.porte,
+  }), [cbhpmCurrentPage, debouncedCbhpmFilters]);
+  const sessionReady = Boolean(session && !session.user.precisaTrocarSenha);
+  const pacientesQuery = useQuery({
+    queryKey: queryKeys.pacientes(session?.token ?? '', pacientesQueryParams),
+    queryFn: () => getPacientes(session?.token ?? '', pacientesQueryParams),
+    enabled: sessionReady && activeView === 'patients' && moduleMode === 'list',
+    staleTime: LIST_CACHE_TIME_MS,
+  });
+  const medicalUsersQuery = useQuery({
+    queryKey: queryKeys.medicalUsers(session?.token ?? ''),
+    queryFn: () => getUsers(session?.token ?? '', medicalUsersQueryParams),
+    enabled: sessionReady && activeView === 'patients' && isAdmin,
+    staleTime: LOOKUP_CACHE_TIME_MS,
+  });
+  const hospitaisQuery = useQuery({
+    queryKey: queryKeys.hospitais(session?.token ?? ''),
+    queryFn: () => getHospitais(session?.token ?? ''),
+    enabled: sessionReady,
+    staleTime: LOOKUP_CACHE_TIME_MS,
+  });
+  const conveniosQuery = useQuery({
+    queryKey: queryKeys.convenios(session?.token ?? ''),
+    queryFn: () => getConvenios(session?.token ?? ''),
+    enabled: sessionReady,
+    staleTime: LOOKUP_CACHE_TIME_MS,
+  });
+  const cbhpmQuery = useQuery({
+    queryKey: queryKeys.cbhpm(session?.token ?? '', cbhpmQueryParams),
+    queryFn: () => getCbhpmGeral(session?.token ?? '', cbhpmQueryParams),
+    enabled: sessionReady && cbhpmModalOpen,
+    staleTime: LIST_CACHE_TIME_MS,
+  });
+  const savePacienteMutation = useMutation({
+    mutationFn: ({ id, payload, token }: { id: number | null; payload: ReturnType<typeof toPacientePayload>; token: string }) => (
+      id ? updatePaciente(id, payload, token) : createPaciente(payload, token)
+    ),
+  });
+  const deletePacienteMutation = useMutation({
+    mutationFn: ({ id, token }: { id: number; token: string }) => deletePaciente(id, token),
+  });
+  const deletePacienteArquivoMutation = useMutation({
+    mutationFn: ({ pacienteId, arquivoId, token }: { pacienteId: number; arquivoId: number; token: string }) => (
+      deletePacienteArquivo(pacienteId, arquivoId, token)
+    ),
+  });
+
+  useEffect(() => {
+    setPacientesLoading(pacientesQuery.isFetching);
+  }, [pacientesQuery.isFetching, setPacientesLoading]);
+
+  useEffect(() => {
+    if (!pacientesQuery.data) {
+      return;
+    }
+
+    setPacientes(sortPacientesForListing(getPagedItems(pacientesQuery.data)));
+    setPacientesTotalItems(getPagedTotal(pacientesQuery.data));
+    setPacientesTotalPages(getPagedTotalPages(pacientesQuery.data));
+    setPacientesError('');
+  }, [pacientesQuery.data, setPacientes, setPacientesError, setPacientesTotalItems, setPacientesTotalPages]);
+
+  useEffect(() => {
+    if (pacientesQuery.error) {
+      setPacientesError(getErrorMessage(pacientesQuery.error));
+    }
+  }, [pacientesQuery.error, setPacientesError]);
+
+  useEffect(() => {
+    if (medicalUsersQuery.data) {
+      setMedicalUsers(sortUsersByName(getPagedItems(medicalUsersQuery.data)));
+    }
+  }, [medicalUsersQuery.data, setMedicalUsers]);
+
+  useEffect(() => {
+    if (medicalUsersQuery.error) {
+      setPacientesError(getErrorMessage(medicalUsersQuery.error));
+    }
+  }, [medicalUsersQuery.error, setPacientesError]);
+
+  useEffect(() => {
+    if (hospitaisQuery.data) {
+      setHospitais(hospitaisQuery.data);
+      setHospitaisError('');
+    }
+  }, [hospitaisQuery.data, setHospitais, setHospitaisError]);
+
+  useEffect(() => {
+    if (hospitaisQuery.error) {
+      setHospitaisError(getErrorMessage(hospitaisQuery.error));
+    }
+  }, [hospitaisQuery.error, setHospitaisError]);
+
+  useEffect(() => {
+    if (conveniosQuery.data) {
+      setConvenios(sortConveniosByDescription(conveniosQuery.data));
+      setConveniosError('');
+    }
+  }, [conveniosQuery.data, setConvenios, setConveniosError]);
+
+  useEffect(() => {
+    if (conveniosQuery.error) {
+      setConveniosError(getErrorMessage(conveniosQuery.error));
+    }
+  }, [conveniosQuery.error, setConveniosError]);
+
+  useEffect(() => {
+    setCbhpmLoading(cbhpmQuery.isFetching);
+  }, [cbhpmQuery.isFetching, setCbhpmLoading]);
+
+  useEffect(() => {
+    if (!cbhpmQuery.data) {
+      return;
+    }
+
+    setCbhpmItems(getPagedItems(cbhpmQuery.data));
+    setCbhpmTotalItems(getPagedTotal(cbhpmQuery.data));
+    setCbhpmTotalPages(getPagedTotalPages(cbhpmQuery.data));
+    setCbhpmError('');
+  }, [cbhpmQuery.data, setCbhpmError, setCbhpmItems, setCbhpmTotalItems, setCbhpmTotalPages]);
+
+  useEffect(() => {
+    if (cbhpmQuery.error) {
+      setCbhpmError(getErrorMessage(cbhpmQuery.error));
+    }
+  }, [cbhpmQuery.error, setCbhpmError]);
 
   const loadMedicalUsers = async (token = session?.token, forceRefresh = false) => {
     if (!token) {
       return;
     }
 
-    try {
-      const query = {
-        page: 1,
-        pageSize: LOOKUP_PAGE_SIZE,
-        profileId: MEDICAL_PROFILE_ID,
-      };
-      const result = await queryClient.fetchQuery({
-        queryKey: ['medicalUsers', token],
-        queryFn: () => getUsers(token, query),
-        staleTime: forceRefresh ? 0 : LOOKUP_CACHE_TIME_MS,
-      });
-      setMedicalUsers(sortUsersByName(getPagedItems(result)));
-    } catch (error) {
-      setPacientesError(getErrorMessage(error));
+    if (forceRefresh) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(token) });
     }
+
+    await medicalUsersQuery.refetch();
   };
 
   const loadPacientes = async (
     token = session?.token,
-    page = pacienteCurrentPage,
-    search = debouncedPacienteSearchTerm,
-    filters = debouncedPacienteFilters,
+    _page = pacienteCurrentPage,
+    _search = debouncedPacienteSearchTerm,
+    _filters = debouncedPacienteFilters,
     forceRefresh = false,
   ) => {
     if (!token) {
       return;
     }
 
-    setPacientesLoading(true);
-    setPacientesError('');
-
-    try {
-      const query = {
-        page,
-        pageSize: PAGE_SIZE,
-        search,
-        ...getPacienteFilterQuery(filters, isAdmin),
-      };
-      const result = await queryClient.fetchQuery({
-        queryKey: ['pacientes', token, query],
-        queryFn: () => getPacientes(token, query),
-        staleTime: forceRefresh ? 0 : LIST_CACHE_TIME_MS,
-      });
-      setPacientes(sortPacientesForListing(getPagedItems(result)));
-      setPacientesTotalItems(getPagedTotal(result));
-      setPacientesTotalPages(getPagedTotalPages(result));
-    } catch (error) {
-      setPacientesError(getErrorMessage(error));
-    } finally {
-      setPacientesLoading(false);
+    if (forceRefresh) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(token) });
     }
+
+    await pacientesQuery.refetch();
   };
 
   const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>) => {
@@ -337,38 +460,19 @@ export function usePatientsDomain({
 
   const loadCbhpm = async (
     token = session?.token,
-    page = cbhpmCurrentPage,
-    filters = debouncedCbhpmFilters,
+    _page = cbhpmCurrentPage,
+    _filters = debouncedCbhpmFilters,
     forceRefresh = false,
   ) => {
     if (!token) {
       return;
     }
 
-    setCbhpmLoading(true);
-    setCbhpmError('');
-
-    try {
-      const query = {
-        page,
-        pageSize: CBHPM_PAGE_SIZE,
-        codigo: filters.codigo,
-        procedimento: filters.procedimento,
-        porte: filters.porte,
-      };
-      const result = await queryClient.fetchQuery({
-        queryKey: ['cbhpm', token, query],
-        queryFn: () => getCbhpmGeral(token, query),
-        staleTime: forceRefresh ? 0 : LIST_CACHE_TIME_MS,
-      });
-      setCbhpmItems(getPagedItems(result));
-      setCbhpmTotalItems(getPagedTotal(result));
-      setCbhpmTotalPages(getPagedTotalPages(result));
-    } catch (error) {
-      setCbhpmError(getErrorMessage(error));
-    } finally {
-      setCbhpmLoading(false);
+    if (forceRefresh) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cbhpm(token, cbhpmQueryParams) });
     }
+
+    await cbhpmQuery.refetch();
   };
 
   const loadHospitais = async (token = session?.token, forceRefresh = false) => {
@@ -376,18 +480,11 @@ export function usePatientsDomain({
       return;
     }
 
-    setHospitaisError('');
-
-    try {
-      const result = await queryClient.fetchQuery({
-        queryKey: ['hospitais', token],
-        queryFn: () => getHospitais(token),
-        staleTime: forceRefresh ? 0 : LOOKUP_CACHE_TIME_MS,
-      });
-      setHospitais(result);
-    } catch (error) {
-      setHospitaisError(getErrorMessage(error));
+    if (forceRefresh) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(token) });
     }
+
+    await hospitaisQuery.refetch();
   };
 
   const loadConvenios = async (token = session?.token, forceRefresh = false) => {
@@ -395,51 +492,21 @@ export function usePatientsDomain({
       return;
     }
 
-    setConveniosError('');
-
-    try {
-      const result = await queryClient.fetchQuery({
-        queryKey: ['convenios', token],
-        queryFn: () => getConvenios(token),
-        staleTime: forceRefresh ? 0 : LOOKUP_CACHE_TIME_MS,
-      });
-      setConvenios(sortConveniosByDescription(result));
-    } catch (error) {
-      setConveniosError(getErrorMessage(error));
+    if (forceRefresh) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.convenios(token) });
     }
-  };
 
-  const resetPacienteForm = () => {
-    setPacienteFormData(emptyPacienteForm);
-    setEditingPacienteId(null);
-    setEditingPacienteDetails(null);
-    setPacienteFormError('');
-    setPendingPatientFiles([]);
-    setPatientFileInputKey((key) => key + 1);
+    await conveniosQuery.refetch();
   };
 
   const resetPatientsState = () => {
-    setPacientes([]);
-    setPacientesError('');
-    setPacienteSuccessMessage('');
-    setPacienteFilters(emptyPacienteFilters);
-    setDebouncedPacienteFilters(emptyPacienteFilters);
-    setPacientesTotalItems(0);
-    setPacientesTotalPages(1);
-    setMedicalUsers([]);
-    setHospitais([]);
-    setHospitaisError('');
-    setConvenios([]);
-    setConveniosError('');
+    resetPatientListState();
+    resetPatientLookups();
     setSelectedPatientInfo(null);
     setSelectedPatientFiles(null);
     setPatientFilesModalError('');
     setPatientFilesModalLoading(false);
-    setCbhpmModalOpen(false);
-    setCbhpmItems([]);
-    setCbhpmFilters(emptyCbhpmFilters);
-    setCbhpmTotalItems(0);
-    setCbhpmTotalPages(1);
+    resetCbhpmLookup();
     resetPacienteForm();
   };
 
@@ -448,20 +515,17 @@ export function usePatientsDomain({
       return;
     }
 
-    setEditingPacienteId(paciente.id);
-    setEditingPacienteDetails(paciente);
+    applyPacienteToForm(paciente);
     setPacienteFormError('');
     setPacienteSuccessMessage('');
     navigateToView('patients');
     setModuleMode('form');
     setPendingPatientFiles([]);
-    setPacienteFormData(getPacienteFormData(paciente));
-    setPatientFileInputKey((key) => key + 1);
 
     try {
       const details = await getPaciente(paciente.id, session.token);
       setEditingPacienteDetails(details);
-      setPacienteFormData(getPacienteFormData(details));
+      applyPacienteToForm(details);
     } catch (error) {
       setPacienteFormError(getErrorMessage(error));
     }
@@ -544,9 +608,11 @@ export function usePatientsDomain({
     setPacienteSuccessMessage('');
 
     try {
-      const savedPaciente = editingPacienteId
-        ? await updatePaciente(editingPacienteId, payload, session.token)
-        : await createPaciente(payload, session.token);
+      const savedPaciente = await savePacienteMutation.mutateAsync({
+        id: editingPacienteId,
+        payload,
+        token: session.token,
+      });
 
       for (const file of pendingPatientFiles) {
         await uploadPacienteArquivo(savedPaciente.id, file, session.token);
@@ -554,8 +620,8 @@ export function usePatientsDomain({
 
       setPacienteSuccessMessage(editingPacienteId ? 'Paciente atualizado.' : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['dashboardSummary', session.token] }),
-        queryClient.invalidateQueries({ queryKey: ['pacientes', session.token] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
       ]);
       resetPacienteForm();
       setPacienteCurrentPage(1);
@@ -582,10 +648,10 @@ export function usePatientsDomain({
     setPacienteSuccessMessage('');
 
     try {
-      await deletePaciente(paciente.id, session.token);
+      await deletePacienteMutation.mutateAsync({ id: paciente.id, token: session.token });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['dashboardSummary', session.token] }),
-        queryClient.invalidateQueries({ queryKey: ['pacientes', session.token] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
       ]);
       setPacienteSuccessMessage('Paciente excluido.');
       await loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
@@ -608,10 +674,10 @@ export function usePatientsDomain({
     setPacientesError('');
 
     try {
-      await deletePacienteArquivo(paciente.id, arquivoId, session.token);
+      await deletePacienteArquivoMutation.mutateAsync({ pacienteId: paciente.id, arquivoId, token: session.token });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['dashboardSummary', session.token] }),
-        queryClient.invalidateQueries({ queryKey: ['pacientes', session.token] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
       ]);
       const details = await getPaciente(paciente.id, session.token);
       setEditingPacienteDetails(details);
@@ -749,24 +815,6 @@ export function usePatientsDomain({
     setPacienteFilters(emptyPacienteFilters);
     setDebouncedPacienteFilters(emptyPacienteFilters);
   }, [isAdmin]);
-
-  useEffect(() => {
-    if (session && !session.user.precisaTrocarSenha && activeView === 'patients') {
-      if (moduleMode === 'list') {
-        void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters);
-      }
-
-      if (isAdmin) {
-        void loadMedicalUsers(session.token);
-      }
-    }
-  }, [session?.token, session?.user.precisaTrocarSenha, isAdmin, activeView, moduleMode, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters]);
-
-  useEffect(() => {
-    if (session && !session.user.precisaTrocarSenha && cbhpmModalOpen) {
-      void loadCbhpm(session.token, cbhpmCurrentPage, debouncedCbhpmFilters);
-    }
-  }, [session?.token, session?.user.precisaTrocarSenha, cbhpmModalOpen, cbhpmCurrentPage, debouncedCbhpmFilters]);
 
   useEffect(() => {
     if (pacienteCurrentPage > pacienteTotalPages) {

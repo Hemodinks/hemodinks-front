@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import type { AuthSession } from '../../types';
+import { Modal } from './Modal';
 import { PasswordForm } from './PasswordForm';
 
 type PasswordModalProps = {
@@ -10,14 +11,13 @@ type PasswordModalProps = {
 
 export function PasswordModal({ session, onChanged, onClose }: PasswordModalProps) {
   return (
-    <div className="modal-backdrop" role="presentation">
-      <section className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="password-title">
+    <Modal titleId="password-title" onClose={onClose}>
         <div className="panel-title">
           <div>
             <span className="eyebrow">Seguranca</span>
             <h2 id="password-title">Mudar senha</h2>
           </div>
-          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar" aria-label="Fechar mudanca de senha">
             <X size={18} />
           </button>
         </div>
@@ -26,7 +26,6 @@ export function PasswordModal({ session, onChanged, onClose }: PasswordModalProp
           onChanged={onChanged}
           onCancel={onClose}
         />
-      </section>
-    </div>
+      </Modal>
   );
 }

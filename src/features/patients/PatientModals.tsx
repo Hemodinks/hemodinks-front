@@ -1,6 +1,7 @@
 import { Download, FileText, X } from 'lucide-react';
 import type { Paciente } from '../../types';
 import { CopyValue } from '../../shared/components/CopyValue';
+import { Modal } from '../../shared/components/Modal';
 import { formatCpfInput, formatPhoneInput } from '../../shared/utils/formatters';
 import { getPacienteProcedimentosFromPaciente } from './patientUtils';
 
@@ -15,14 +16,13 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
   const procedimentos = getPacienteProcedimentosFromPaciente(paciente);
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <section className="modal-panel info-modal" role="dialog" aria-modal="true" aria-labelledby="patient-info-title">
+    <Modal titleId="patient-info-title" className="info-modal" onClose={onClose}>
         <div className="panel-title">
           <div>
             <span className="eyebrow">Informacoes adicionais</span>
             <h2 id="patient-info-title">{paciente.nomePaciente}</h2>
           </div>
-          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar" aria-label="Fechar informacoes do paciente">
             <X size={18} />
           </button>
         </div>
@@ -54,8 +54,7 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
             <dd><CopyValue label="telefone" value={formattedPhone || '-'} /></dd>
           </div>
         </dl>
-      </section>
-    </div>
+      </Modal>
   );
 }
 
@@ -68,14 +67,13 @@ type PatientFilesModalProps = {
 
 export function PatientFilesModal({ paciente, loading, error, onClose }: PatientFilesModalProps) {
   return (
-    <div className="modal-backdrop" role="presentation">
-      <section className="modal-panel info-modal files-modal" role="dialog" aria-modal="true" aria-labelledby="patient-files-title">
+    <Modal titleId="patient-files-title" className="info-modal files-modal" onClose={onClose}>
         <div className="panel-title">
           <div>
             <span className="eyebrow">Arquivos anexos</span>
             <h2 id="patient-files-title">{paciente.nomePaciente}</h2>
           </div>
-          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar" aria-label="Fechar arquivos do paciente">
             <X size={18} />
           </button>
         </div>
@@ -99,7 +97,6 @@ export function PatientFilesModal({ paciente, loading, error, onClose }: Patient
         ) : !loading && !error ? (
           <p className="empty-row">Nenhum arquivo anexado.</p>
         ) : null}
-      </section>
-    </div>
+      </Modal>
   );
 }

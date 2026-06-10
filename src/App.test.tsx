@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import * as api from './api';
+import { queryClient } from './queryClient';
 import type { AuthSession, Paciente, User } from './types';
 
 vi.mock('./api', () => ({
@@ -141,6 +142,7 @@ async function openPatientsModule(user: ReturnType<typeof userEvent.setup>) {
 describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
+    queryClient.clear();
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
     vi.clearAllMocks();
@@ -239,6 +241,8 @@ describe('App', () => {
     const contactDialog = screen.getByRole('dialog', { name: 'Ana Hemodinks' });
     expect(within(contactDialog).getByText('ana@hemodinks.com')).toBeInTheDocument();
     expect(within(contactDialog).getByText('+55 (81) 99999-9999')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ana Hemodinks' })).not.toBeInTheDocument());
 
     const storedSession = JSON.parse(localStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
     expect(storedSession.token).toBe('jwt-token');

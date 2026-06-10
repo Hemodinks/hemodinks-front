@@ -1,4 +1,5 @@
-import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useCallback, useEffect, useState } from 'react';
+import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   createUser,
   deleteUser,
@@ -10,7 +11,7 @@ import {
 } from '../../api';
 import type { AppView, ModuleMode } from '../../appTypes';
 import { queryClient } from '../../queryClient';
-import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
+import { queryKeys } from '../../shared/queryKeys';
 import { readProfilePhoto } from '../../shared/utils/files';
 import {
   ALLOWED_PATIENT_FILE_TYPES,
@@ -32,11 +33,11 @@ import {
 } from '../../shared/utils/listing';
 import type { AuthSession, User, UserFormData } from '../../types';
 import {
-  emptyUserForm,
-  getUserFormData,
   toUserPayload,
   validateUserForm,
 } from './userUtils';
+import { useUserForm } from './useUserForm';
+import { useUserList } from './useUserList';
 
 const LIST_CACHE_TIME_MS = 20 * 1000;
 
@@ -67,98 +68,120 @@ export function useUsersDomain({
   loadDashboardSummary,
   onDeleteCurrentUser,
 }: UseUsersDomainOptions) {
-  const [users, setUsers] = useState<User[]>([]);
-  const [usersLoading, setUsersLoading] = useState(false);
-  const [usersError, setUsersError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const resetUsersPage = useCallback(() => setCurrentPage(1), []);
-  const [debouncedSearchTerm] = useDebouncedValue(searchTerm, { onCommit: resetUsersPage });
-  const [usersTotalItems, setUsersTotalItems] = useState(0);
-  const [usersTotalPages, setUsersTotalPages] = useState(1);
-
-  const [formData, setFormData] = useState<UserFormData>(emptyUserForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editingUserDetails, setEditingUserDetails] = useState<User | null>(null);
-  const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState('');
-  const [photoInputKey, setPhotoInputKey] = useState(0);
-  const [userFileInputKey, setUserFileInputKey] = useState(0);
-  const [pendingUserFiles, setPendingUserFiles] = useState<File[]>([]);
+  const userList = useUserList();
+  const userForm = useUserForm();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedInfoUser, setSelectedInfoUser] = useState<User | null>(null);
   const [selectedContactUser, setSelectedContactUser] = useState<User | null>(null);
 
+  const {
+    users,
+    setUsers,
+    usersLoading,
+    setUsersLoading,
+    usersError,
+    setUsersError,
+    successMessage,
+    setSuccessMessage,
+    searchTerm,
+    setSearchTerm,
+    currentPage,
+    setCurrentPage,
+    debouncedSearchTerm,
+    usersTotalItems,
+    setUsersTotalItems,
+    usersTotalPages,
+    setUsersTotalPages,
+    totalPages,
+    paginatedUsers,
+    visibleStart,
+    visibleEnd,
+    resetUserListState,
+  } = userList;
+  const {
+    formData,
+    setFormData,
+    editingId,
+    editingUserDetails,
+    setEditingUserDetails,
+    formLoading,
+    setFormLoading,
+    formError,
+    setFormError,
+    photoInputKey,
+    setPhotoInputKey,
+    userFileInputKey,
+    pendingUserFiles,
+    setPendingUserFiles,
+    resetUserForm,
+    applyUserToForm,
+  } = userForm;
   const canUseUserForm = isAdmin || (canEditOwnUser && editingId === session?.user.id);
-  const totalPages = Math.max(1, usersTotalPages);
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const pageEnd = pageStart + PAGE_SIZE;
-  const paginatedUsers = users;
-  const visibleStart = usersTotalItems ? pageStart + 1 : 0;
-  const visibleEnd = Math.min(pageEnd, usersTotalItems);
+  const usersQueryParams = useMemo(() => ({
+    page: currentPage,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearchTerm,
+  }), [currentPage, debouncedSearchTerm]);
+  const usersQueryEnabled = Boolean(session && !session.user.precisaTrocarSenha && canAccessUsers && activeView === 'users' && moduleMode === 'list');
+  const usersQuery = useQuery({
+    queryKey: queryKeys.users(session?.token ?? '', usersQueryParams),
+    queryFn: () => getUsers(session?.token ?? '', usersQueryParams),
+    enabled: usersQueryEnabled,
+    staleTime: LIST_CACHE_TIME_MS,
+  });
+  const saveUserMutation = useMutation({
+    mutationFn: ({ id, payload, token }: { id: number | null; payload: UserFormData; token: string }) => (
+      id ? updateUser(id, payload, token) : createUser(payload, token)
+    ),
+  });
+  const deleteUserMutation = useMutation({
+    mutationFn: ({ id, token }: { id: number; token: string }) => deleteUser(id, token),
+  });
+  const deleteUserArquivoMutation = useMutation({
+    mutationFn: ({ userId, arquivoId, token }: { userId: number; arquivoId: number; token: string }) => (
+      deleteUserArquivo(userId, arquivoId, token)
+    ),
+  });
 
-  const loadUsers = async (
-    token = session?.token,
-    page = currentPage,
-    search = debouncedSearchTerm,
-    forceRefresh = false,
-  ) => {
-    if (!token) {
+  useEffect(() => {
+    setUsersLoading(usersQuery.isFetching);
+  }, [setUsersLoading, usersQuery.isFetching]);
+
+  useEffect(() => {
+    if (!usersQuery.data) {
       return;
     }
 
-    setUsersLoading(true);
+    setUsers(sortUsersForListing(getPagedItems(usersQuery.data)));
+    setUsersTotalItems(getPagedTotal(usersQuery.data));
+    setUsersTotalPages(getPagedTotalPages(usersQuery.data));
     setUsersError('');
+  }, [setUsers, setUsersError, setUsersTotalItems, setUsersTotalPages, usersQuery.data]);
 
-    try {
-      const query = {
-        page,
-        pageSize: PAGE_SIZE,
-        search,
-      };
-      const result = await queryClient.fetchQuery({
-        queryKey: ['users', token, query],
-        queryFn: () => getUsers(token, query),
-        staleTime: forceRefresh ? 0 : LIST_CACHE_TIME_MS,
-      });
-      setUsers(sortUsersForListing(getPagedItems(result)));
-      setUsersTotalItems(getPagedTotal(result));
-      setUsersTotalPages(getPagedTotalPages(result));
-    } catch (error) {
-      setUsersError(getErrorMessage(error));
-    } finally {
-      setUsersLoading(false);
+  useEffect(() => {
+    if (usersQuery.error) {
+      setUsersError(getErrorMessage(usersQuery.error));
     }
-  };
+  }, [setUsersError, usersQuery.error]);
 
-  const resetUserForm = () => {
-    setFormData(emptyUserForm);
-    setEditingId(null);
-    setEditingUserDetails(null);
-    setFormError('');
-    setPendingUserFiles([]);
-    setPhotoInputKey((key) => key + 1);
-    setUserFileInputKey((key) => key + 1);
+  const refreshUserList = async (forceRefresh = false) => {
+    if (!session) {
+      return;
+    }
+
+    if (forceRefresh) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token) });
+    }
+
+    await usersQuery.refetch();
   };
 
   const resetUsersState = () => {
-    setUsers([]);
-    setUsersError('');
-    setUsersTotalItems(0);
-    setUsersTotalPages(1);
-    setSuccessMessage('');
+    resetUserListState();
     setSelectedInfoUser(null);
     setSelectedContactUser(null);
     setShowPasswordModal(false);
     resetUserForm();
-  };
-
-  const applyUserToForm = (user: User) => {
-    setEditingId(user.id);
-    setFormData(getUserFormData(user));
-    setPhotoInputKey((key) => key + 1);
-    setUserFileInputKey((key) => key + 1);
   };
 
   const handleEditUser = async (user: User) => {
@@ -249,7 +272,7 @@ export function useUsersDomain({
     setFormError('');
 
     try {
-      await deleteUserArquivo(user.id, arquivoId, session.token);
+      await deleteUserArquivoMutation.mutateAsync({ userId: user.id, arquivoId, token: session.token });
       const details = await getUser(user.id, session.token);
       setEditingUserDetails(details);
       applyUserToForm(details);
@@ -287,10 +310,10 @@ export function useUsersDomain({
       let savedUser: User;
 
       if (editingId) {
-        savedUser = await updateUser(editingId, payload, session.token);
+        savedUser = await saveUserMutation.mutateAsync({ id: editingId, payload, token: session.token });
         setSuccessMessage('Usuario atualizado.');
       } else {
-        savedUser = await createUser(payload, session.token);
+        savedUser = await saveUserMutation.mutateAsync({ id: null, payload, token: session.token });
         setSuccessMessage(`Usuario cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
       }
 
@@ -318,9 +341,9 @@ export function useUsersDomain({
       }
 
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['dashboardSummary', session.token] }),
-        queryClient.invalidateQueries({ queryKey: ['users', session.token] }),
-        queryClient.invalidateQueries({ queryKey: ['medicalUsers', session.token] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(session.token) }),
       ]);
       resetUserForm();
       setCurrentPage(1);
@@ -345,7 +368,7 @@ export function useUsersDomain({
     setSuccessMessage('');
 
     try {
-      await deleteUser(user.id, session.token);
+      await deleteUserMutation.mutateAsync({ id: user.id, token: session.token });
 
       if (user.id === session.user.id) {
         onDeleteCurrentUser();
@@ -353,12 +376,12 @@ export function useUsersDomain({
       }
 
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['dashboardSummary', session.token] }),
-        queryClient.invalidateQueries({ queryKey: ['users', session.token] }),
-        queryClient.invalidateQueries({ queryKey: ['medicalUsers', session.token] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(session.token) }),
       ]);
       setSuccessMessage('Usuario excluido.');
-      await loadUsers(session.token, currentPage, debouncedSearchTerm, true);
+      await refreshUserList(true);
       await loadDashboardSummary(session.token, true);
     } catch (error) {
       setUsersError(getErrorMessage(error));
@@ -440,16 +463,8 @@ export function useUsersDomain({
   };
 
   const refreshUsers = () => {
-    if (session) {
-      void loadUsers(session.token, currentPage, debouncedSearchTerm, true);
-    }
+    void refreshUserList(true);
   };
-
-  useEffect(() => {
-    if (session && !session.user.precisaTrocarSenha && canAccessUsers && activeView === 'users' && moduleMode === 'list') {
-      void loadUsers(session.token, currentPage, debouncedSearchTerm);
-    }
-  }, [session?.token, session?.user.precisaTrocarSenha, canAccessUsers, activeView, moduleMode, currentPage, debouncedSearchTerm]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -490,7 +505,6 @@ export function useUsersDomain({
     selectedContactUser,
     setSelectedContactUser,
     canUseUserForm,
-    loadUsers,
     resetUsersState,
     resetUserForm,
     handleEditUser,

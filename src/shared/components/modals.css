@@ -6,10 +6,14 @@
   place-items: center;
   padding: 20px;
   background: rgba(24, 33, 47, 0.54);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-panel {
   width: min(470px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
   padding: 22px;
 }
 
@@ -39,6 +43,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.modal-panel:focus {
+  outline: none;
 }
 
 .cbhpm-filters {

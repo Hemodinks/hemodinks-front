@@ -110,6 +110,10 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
 }
 
+input::placeholder {
+  color: color-mix(in srgb, var(--muted) 74%, transparent);
+}
+
 .date-input-control {
   position: relative;
 }
@@ -195,6 +199,14 @@ select:focus {
   gap: 8px;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.primary-action:focus-visible,
+.ghost-button:focus-visible,
+.icon-button:focus-visible,
+.copy-button:focus-visible,
+.status-info-button:focus-visible {
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.18);
 }
 
 .primary-action {

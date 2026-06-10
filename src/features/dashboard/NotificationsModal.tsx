@@ -1,5 +1,6 @@
 import { Bell, X } from 'lucide-react';
 import type { DashboardNotification } from '../../types';
+import { Modal } from '../../shared/components/Modal';
 import { toNotificationDate } from '../../shared/utils/formatters';
 
 type NotificationsModalProps = {
@@ -12,14 +13,13 @@ type NotificationsModalProps = {
 
 export function NotificationsModal({ notifications, loading, error, totalCount, onClose }: NotificationsModalProps) {
   return (
-    <div className="modal-backdrop" role="presentation">
-      <section className="modal-panel notifications-modal" role="dialog" aria-modal="true" aria-labelledby="notifications-title">
+    <Modal titleId="notifications-title" className="notifications-modal" onClose={onClose}>
         <div className="panel-title">
           <div>
             <span className="eyebrow">Central de avisos</span>
             <h2 id="notifications-title">Notificacoes</h2>
           </div>
-          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar" aria-label="Fechar notificacoes">
             <X size={18} />
           </button>
         </div>
@@ -57,7 +57,6 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
         ) : !loading && !error ? (
           <p className="empty-row">Nenhuma notificacao para este usuario.</p>
         ) : null}
-      </section>
-    </div>
+      </Modal>
   );
 }

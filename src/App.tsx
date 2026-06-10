@@ -1,4 +1,5 @@
 import { type FormEvent, lazy, Suspense, useEffect, useState } from 'react';
+import { QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import {
   authenticate,
@@ -16,6 +17,7 @@ import { ContactModal, InfoModal } from './features/users/UserModals';
 import { AppShell } from './layout/AppShell';
 import type { BreadcrumbItem, ModuleMode } from './appTypes';
 import { queryClient } from './queryClient';
+import { queryKeys } from './shared/queryKeys';
 import { useRouteView } from './shared/hooks/useRouteView';
 import { useThemePreference } from './shared/hooks/useThemePreference';
 import {
@@ -70,24 +72,60 @@ function AppContent() {
   const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState('');
+  const sessionReady = Boolean(session && !session.user.precisaTrocarSenha);
+  const dashboardSummaryQuery = useQuery({
+    queryKey: queryKeys.dashboardSummary(session?.token ?? ''),
+    queryFn: () => getDashboardSummary(session?.token ?? ''),
+    enabled: sessionReady,
+    staleTime: DASHBOARD_CACHE_TIME_MS,
+  });
+  const notificationsQuery = useQuery({
+    queryKey: queryKeys.dashboardNotifications(session?.token ?? ''),
+    queryFn: () => getDashboardNotifications(session?.token ?? ''),
+    enabled: Boolean(session && notificationsOpen),
+    staleTime: NOTIFICATIONS_CACHE_TIME_MS,
+  });
+
+  useEffect(() => {
+    if (dashboardSummaryQuery.data) {
+      setDashboardSummary(dashboardSummaryQuery.data);
+      setDashboardError('');
+    }
+  }, [dashboardSummaryQuery.data]);
+
+  useEffect(() => {
+    if (dashboardSummaryQuery.error) {
+      setDashboardError(getErrorMessage(dashboardSummaryQuery.error));
+    }
+  }, [dashboardSummaryQuery.error]);
+
+  useEffect(() => {
+    setNotificationsLoading(notificationsQuery.isFetching);
+  }, [notificationsQuery.isFetching]);
+
+  useEffect(() => {
+    if (notificationsQuery.data) {
+      setNotifications(notificationsQuery.data);
+      setNotificationsError('');
+    }
+  }, [notificationsQuery.data]);
+
+  useEffect(() => {
+    if (notificationsQuery.error) {
+      setNotificationsError(getErrorMessage(notificationsQuery.error));
+    }
+  }, [notificationsQuery.error]);
 
   const loadDashboardSummary = async (token = session?.token, forceRefresh = false) => {
     if (!token) {
       return;
     }
 
-    setDashboardError('');
-
-    try {
-      const result = await queryClient.fetchQuery({
-        queryKey: ['dashboardSummary', token],
-        queryFn: () => getDashboardSummary(token),
-        staleTime: forceRefresh ? 0 : DASHBOARD_CACHE_TIME_MS,
-      });
-      setDashboardSummary(result);
-    } catch (error) {
-      setDashboardError(getErrorMessage(error));
+    if (forceRefresh) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(token) });
     }
+
+    await dashboardSummaryQuery.refetch();
   };
 
   const handleToggleNotifications = async () => {
@@ -102,21 +140,7 @@ function AppContent() {
       return;
     }
 
-    setNotificationsLoading(true);
-    setNotificationsError('');
-
-    try {
-      const result = await queryClient.fetchQuery({
-        queryKey: ['dashboardNotifications', session.token],
-        queryFn: () => getDashboardNotifications(session.token),
-        staleTime: NOTIFICATIONS_CACHE_TIME_MS,
-      });
-      setNotifications(result);
-    } catch (error) {
-      setNotificationsError(getErrorMessage(error));
-    } finally {
-      setNotificationsLoading(false);
-    }
+    await notificationsQuery.refetch();
   };
 
   const currentPerfilId = session?.user.perfilId ?? 0;
@@ -256,8 +280,6 @@ function AppContent() {
     cbhpmTotalItems,
     cbhpmVisibleStart,
     cbhpmVisibleEnd,
-    loadHospitais,
-    loadConvenios,
     resetPatientsState,
     handlePacienteFilesChange,
     removePendingPatientFile,
@@ -295,14 +317,6 @@ function AppContent() {
     setModuleMode('list');
     setLoginPassword('');
   }
-
-  useEffect(() => {
-    if (session && !session.user.precisaTrocarSenha) {
-      void loadDashboardSummary(session.token);
-      void loadHospitais(session.token);
-      void loadConvenios(session.token);
-    }
-  }, [session?.token, session?.user.precisaTrocarSenha]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -671,8 +685,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
