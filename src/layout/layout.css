@@ -456,6 +456,12 @@ img.user-avatar {
   --side-nav-border: rgba(37, 99, 235, 0.3);
 }
 
+.side-nav-agenda {
+  --side-nav-color: #b7791f;
+  --side-nav-soft: rgba(183, 121, 31, 0.12);
+  --side-nav-border: rgba(183, 121, 31, 0.34);
+}
+
 .side-nav button.active {
   color: #fff;
   border-color: var(--side-nav-color, var(--blood));

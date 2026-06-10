@@ -26,7 +26,7 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
 
         <div className="notification-summary-line">
           <Bell size={17} />
-          <span>{totalCount === 1 ? '1 pendencia encontrada' : `${totalCount} pendencias encontradas`}</span>
+          <span>{totalCount === 1 ? '1 aviso encontrado' : `${totalCount} avisos encontrados`}</span>
         </div>
 
         {loading && <p className="alert success"><Bell size={17} />Carregando notificacoes...</p>}
@@ -44,7 +44,7 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
                     <strong>{notification.titulo}</strong>
                     <p>{notification.mensagem}</p>
                     <div className="notification-meta-row">
-                      <span>{notification.nomePaciente}</span>
+                      {notification.nomePaciente && <span>{notification.nomePaciente}</span>}
                       {notification.medico && <span>Medico: {notification.medico}</span>}
                       {notification.procedimento && <span>Procedimento: {notification.procedimento}</span>}
                       {date && <span>{date}</span>}

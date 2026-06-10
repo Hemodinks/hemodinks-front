@@ -26,6 +26,7 @@ import { LoginScreen } from './features/auth/LoginScreen';
 import { PasswordRequiredScreen } from './features/auth/PasswordRequiredScreen';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { NotificationsModal } from './features/dashboard/NotificationsModal';
+import { AgendaPage } from './features/events/AgendaPage';
 import { CbhpmLookupModal } from './features/patients/CbhpmLookupModal';
 import { PatientFilesModal, PatientInfoModal } from './features/patients/PatientModals';
 import {
@@ -570,7 +571,10 @@ export default function App() {
   const activePatientsCount = dashboardSummary?.activePatientsCount ?? 0;
   const pendingPaymentsCount = dashboardSummary?.pendingPaymentsCount ?? 0;
   const patientFilesCount = dashboardSummary?.patientFilesCount ?? 0;
-  const notificationCount = pendingPaymentsCount || notifications.length;
+  const upcomingEventsCount = dashboardSummary?.upcomingEventsCount ?? 0;
+  const notificationCount = notificationsOpen && notifications.length
+    ? notifications.length
+    : pendingPaymentsCount + upcomingEventsCount;
   const usersCount = dashboardSummary?.usersCount ?? usersTotalItems;
   const pacientesCount = dashboardSummary?.pacientesCount ?? pacientesTotalItems;
   const editingPaciente = useMemo(
@@ -1216,7 +1220,8 @@ export default function App() {
 
   const appTitle = activeView === 'dashboard'
     ? 'Painel inicial'
-    : activeView === 'users' ? canAccessUsers ? 'Usuarios' : 'Meu cadastro' : 'Pacientes';
+    : activeView === 'users' ? canAccessUsers ? 'Usuarios' : 'Meu cadastro'
+      : activeView === 'patients' ? 'Pacientes' : 'Agenda';
 
   const openDashboard = () => {
     setActiveView('dashboard');
@@ -1236,6 +1241,11 @@ export default function App() {
 
   const openPatientsList = () => {
     setActiveView('patients');
+    setModuleMode('list');
+  };
+
+  const openAgenda = () => {
+    setActiveView('agenda');
     setModuleMode('list');
   };
 
@@ -1351,9 +1361,14 @@ export default function App() {
   const currentUserProfile = session.user.perfilNome || getProfileName(session.user.perfilId);
   const formBreadcrumbLabel = activeView === 'users'
     ? canAccessUsers ? editingId ? 'Editar usuario' : 'Novo usuario' : 'Meu cadastro'
-    : editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente';
-  const activeModuleLabel = activeView === 'users' ? canAccessUsers ? 'Usuarios' : 'Meu cadastro' : 'Pacientes';
-  const openActiveModuleList = activeView === 'users' ? openUsersList : openPatientsList;
+    : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
+      : 'Agenda';
+  const activeModuleLabel = activeView === 'users'
+    ? canAccessUsers ? 'Usuarios' : 'Meu cadastro'
+    : activeView === 'patients' ? 'Pacientes' : 'Agenda';
+  const openActiveModuleList = activeView === 'users'
+    ? openUsersList
+    : activeView === 'patients' ? openPatientsList : openAgenda;
   const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
     ? [
       { label: 'Inicio', onClick: openDashboard },
@@ -1379,11 +1394,13 @@ export default function App() {
       activePatientsCount={activePatientsCount}
       pendingPaymentsCount={pendingPaymentsCount}
       patientFilesCount={patientFilesCount}
+      upcomingEventsCount={upcomingEventsCount}
       successMessage={successMessage}
       dashboardError={dashboardError}
       onOpenUsersList={openUsersList}
       onOpenMyProfile={openMyProfile}
       onOpenPatientsList={openPatientsList}
+      onOpenAgenda={openAgenda}
     />
   ) : activeView === 'users' ? (
     <UsersPage
@@ -1426,7 +1443,7 @@ export default function App() {
       setSelectedContactUser={setSelectedContactUser}
       refreshUsers={() => void loadUsers(session.token, currentPage, debouncedSearchTerm)}
     />
-  ) : (
+  ) : activeView === 'patients' ? (
     <PatientsPage
       moduleMode={moduleMode}
       canCreatePatients={canCreatePatients}
@@ -1482,6 +1499,12 @@ export default function App() {
       setSelectedPatientInfo={setSelectedPatientInfo}
       clearPacienteFilters={() => setPacienteFilters(emptyPacienteFilters)}
       refreshPacientes={() => void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters)}
+    />
+  ) : (
+    <AgendaPage
+      session={session}
+      isAdmin={isAdmin}
+      isMedical={isMedical}
     />
   );
 
@@ -1575,6 +1598,7 @@ export default function App() {
       onOpenUsersList={openUsersList}
       onOpenMyProfile={openMyProfile}
       onOpenPatientsList={openPatientsList}
+      onOpenAgenda={openAgenda}
       modals={modals}
     >
       {mainContent}

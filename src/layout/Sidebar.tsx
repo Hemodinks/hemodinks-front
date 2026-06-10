@@ -1,4 +1,4 @@
-import { ClipboardList, FileText, LayoutDashboard, Users } from 'lucide-react';
+import { CalendarDays, ClipboardList, FileText, LayoutDashboard, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -15,6 +15,7 @@ type SidebarProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenAgenda: () => void;
 };
 
 export function Sidebar({
@@ -29,6 +30,7 @@ export function Sidebar({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenAgenda,
 }: SidebarProps) {
   return (
     <aside className="sidebar-panel" aria-label="Sessao ativa">
@@ -90,6 +92,14 @@ export function Sidebar({
             <ClipboardList size={18} />
             <span>Pacientes</span>
             <span className="side-nav-count">{pacientesCount}</span>
+          </button>
+          <button
+            type="button"
+            className={`side-nav-agenda ${activeView === 'agenda' ? 'active' : ''}`}
+            onClick={onOpenAgenda}
+          >
+            <CalendarDays size={18} />
+            <span>Agenda</span>
           </button>
         </nav>
       </div>

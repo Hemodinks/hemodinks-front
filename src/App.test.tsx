@@ -7,6 +7,13 @@ import type { AuthSession, Paciente, User } from './types';
 
 vi.mock('./api', () => ({
   authenticate: vi.fn(),
+  completeAgendaEvent: vi.fn(),
+  createAgendaEvent: vi.fn(),
+  deleteAgendaEvent: vi.fn(),
+  getAgendaEvents: vi.fn(),
+  getAgendaMedicalUsers: vi.fn(),
+  getBrazilPublicHolidays: vi.fn(),
+  updateAgendaEvent: vi.fn(),
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
   getCbhpmGeral: vi.fn(),
@@ -142,8 +149,12 @@ describe('App', () => {
       activePatientsCount: 1,
       pendingPaymentsCount: 0,
       patientFilesCount: 0,
+      upcomingEventsCount: 0,
     });
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
+    vi.mocked(api.getAgendaEvents).mockResolvedValue([]);
+    vi.mocked(api.getAgendaMedicalUsers).mockResolvedValue([]);
+    vi.mocked(api.getBrazilPublicHolidays).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
     vi.mocked(api.getUserProfilePhoto).mockResolvedValue(new Blob(['avatar'], { type: 'image/png' }));
     vi.mocked(api.getHospitais).mockResolvedValue([
@@ -262,6 +273,7 @@ describe('App', () => {
       activePatientsCount: 1,
       pendingPaymentsCount: 1,
       patientFilesCount: 0,
+      upcomingEventsCount: 0,
     });
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([
       {
@@ -285,7 +297,7 @@ describe('App', () => {
     expect(api.getDashboardNotifications).toHaveBeenCalledWith('jwt-token');
 
     const dialog = await screen.findByRole('dialog', { name: 'Notificacoes' });
-    expect(within(dialog).getByText('1 pendencia encontrada')).toBeInTheDocument();
+    expect(within(dialog).getByText('1 aviso encontrado')).toBeInTheDocument();
     expect(within(dialog).getByText('Pagamento pendente')).toBeInTheDocument();
     expect(within(dialog).getByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(within(dialog).getByText('Medico: Dra. Ana')).toBeInTheDocument();

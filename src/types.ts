@@ -100,6 +100,7 @@ export type DashboardSummary = {
   activePatientsCount: number;
   pendingPaymentsCount: number;
   patientFilesCount: number;
+  upcomingEventsCount: number;
 };
 
 export type DashboardNotification = {
@@ -108,10 +109,57 @@ export type DashboardNotification = {
   titulo: string;
   mensagem: string;
   pacienteId: number;
+  eventId?: number | null;
   nomePaciente: string;
   medico?: string | null;
   procedimento?: string | null;
   data?: string | null;
+};
+
+export type AgendaEvent = {
+  id: number;
+  userId: number;
+  userName: string;
+  medicalUserId?: number | null;
+  medicalUserName?: string | null;
+  title: string;
+  description?: string | null;
+  start: string;
+  end: string;
+  notifyMedicalProfile: boolean;
+  notifyUser: boolean;
+  reminderPeriodMinutes?: number | null;
+  lastReminderSentAt?: string | null;
+  isCompleted: boolean;
+  completedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+};
+
+export type AgendaEventPayload = {
+  userId?: number | null;
+  medicalUserId?: number | null;
+  title: string;
+  description?: string | null;
+  start: string;
+  end: string;
+  notifyMedicalProfile: boolean;
+  notifyUser: boolean;
+  reminderPeriodMinutes?: number | null;
+  isCompleted?: boolean | null;
+};
+
+export type AgendaMedicalUser = {
+  id: number;
+  nome: string;
+};
+
+export type PublicHoliday = {
+  date: string;
+  localName: string;
+  name: string;
+  global: boolean;
+  types: string[];
 };
 
 export type LoginResponse = {
