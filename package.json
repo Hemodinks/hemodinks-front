@@ -16,7 +16,8 @@
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.555.0",
     "react": "^19.2.1",
-    "react-dom": "^19.2.1"
+    "react-dom": "^19.2.1",
+    "react-router-dom": "^7.17.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
