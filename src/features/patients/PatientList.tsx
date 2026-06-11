@@ -9,12 +9,12 @@ import {
   Pencil,
   Plus,
   RefreshCw,
-  Search,
   Trash2,
   X,
 } from 'lucide-react';
 import type { Paciente } from '../../types';
 import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
+import { AlertMessage, Button, DataPanel, IconButton, SearchField, SelectField, TextField } from '../../shared/components/ui';
 import {
   CONVENIOS_DATALIST_ID,
   MEDICAL_USERS_DATALIST_ID,
@@ -92,7 +92,7 @@ export function PatientList({
   onSelectPatientInfo,
 }: PatientListProps) {
   return (
-    <section className="data-panel">
+    <DataPanel>
       <div className="data-header">
         <div>
           <span className="eyebrow">Cadastro de pacientes</span>
@@ -101,107 +101,89 @@ export function PatientList({
 
         <div className="table-tools">
           {canCreatePatients && (
-            <button type="button" className="ghost-button" onClick={onOpenNewPacienteForm}>
+            <Button onClick={onOpenNewPacienteForm}>
               <Plus size={17} />
               Novo paciente
-            </button>
+            </Button>
           )}
-          <label className="search-box">
-            <Search size={17} />
-            <input
-              type="search"
-              value={pacienteSearchTerm}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Buscar"
-            />
-          </label>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={onRefresh}
-            title="Atualizar lista"
-          >
+          <SearchField
+            label="Buscar pacientes"
+            value={pacienteSearchTerm}
+            onValueChange={onSearchChange}
+          />
+          <IconButton label="Atualizar lista de pacientes" onClick={onRefresh} title="Atualizar lista">
             <RefreshCw size={18} />
-          </button>
+          </IconButton>
           <div className="patient-export-actions" aria-label="Exportacoes de pacientes">
-            <label className="export-scope-field">
-              Exportar
-              <select
-                value={pacienteExportScope}
-                onChange={(event) => onExportScopeChange(event.target.value as PacienteExportScope)}
-              >
-                <option value="all">Todos os pacientes</option>
-                {isAdmin && <option value="doctor">Medico selecionado</option>}
-                <option value="visible">Dados da tela</option>
-              </select>
-            </label>
-            <button
-              type="button"
-              className="ghost-button"
+            <SelectField
+              className="export-scope-field"
+              label="Exportar"
+              value={pacienteExportScope}
+              onChange={(event) => onExportScopeChange(event.target.value as PacienteExportScope)}
+            >
+              <option value="all">Todos os pacientes</option>
+              {isAdmin && <option value="doctor">Medico selecionado</option>}
+              <option value="visible">Dados da tela</option>
+            </SelectField>
+            <Button
               onClick={() => void onExportPacientes('xlsx')}
               disabled={pacienteExportLoading !== null}
             >
               <Download size={17} />
               {pacienteExportLoading === 'xlsx' ? 'Gerando...' : 'Exportar XLSX'}
-            </button>
-            <button
-              type="button"
-              className="ghost-button"
+            </Button>
+            <Button
               onClick={() => void onExportPacientes('pdf')}
               disabled={pacienteExportLoading !== null}
             >
               <FileText size={17} />
               {pacienteExportLoading === 'pdf' ? 'Gerando...' : 'Exportar PDF'}
-            </button>
+            </Button>
           </div>
           {isAdmin && (
             <div className="patient-filter-grid" aria-label="Filtros administrativos de pacientes">
-              <label className="filter-field">
-                Medico
-                <input
-                  type="search"
-                  list={MEDICAL_USERS_DATALIST_ID}
-                  value={pacienteFilters.medico}
-                  onChange={(event) => onFiltersChange((current) => ({ ...current, medico: event.target.value }))}
-                  disabled={!hasMedicalUsers}
-                  placeholder={hasMedicalUsers ? 'Todos os medicos' : 'Nenhum medico cadastrado'}
-                />
-              </label>
-              <label className="filter-field">
-                Convenio
-                <input
-                  type="search"
-                  list={CONVENIOS_DATALIST_ID}
-                  value={pacienteFilters.convenio}
-                  onChange={(event) => onFiltersChange((current) => ({ ...current, convenio: event.target.value }))}
-                  disabled={!hasConvenios}
-                  placeholder={hasConvenios ? 'Convenio' : 'Nenhum convenio cadastrado'}
-                />
-              </label>
-              <label className="filter-field">
-                Procedimento
-                <input
-                  type="search"
-                  value={pacienteFilters.procedimento}
-                  onChange={(event) => onFiltersChange((current) => ({ ...current, procedimento: event.target.value }))}
-                  placeholder="Procedimento"
-                />
-              </label>
-              <button
-                type="button"
-                className="ghost-button patient-clear-filters"
+              <TextField
+                className="filter-field"
+                label="Medico"
+                type="search"
+                list={MEDICAL_USERS_DATALIST_ID}
+                value={pacienteFilters.medico}
+                onValueChange={(value) => onFiltersChange((current) => ({ ...current, medico: value }))}
+                disabled={!hasMedicalUsers}
+                placeholder={hasMedicalUsers ? 'Todos os medicos' : 'Nenhum medico cadastrado'}
+              />
+              <TextField
+                className="filter-field"
+                label="Convenio"
+                type="search"
+                list={CONVENIOS_DATALIST_ID}
+                value={pacienteFilters.convenio}
+                onValueChange={(value) => onFiltersChange((current) => ({ ...current, convenio: value }))}
+                disabled={!hasConvenios}
+                placeholder={hasConvenios ? 'Convenio' : 'Nenhum convenio cadastrado'}
+              />
+              <TextField
+                className="filter-field"
+                label="Procedimento"
+                type="search"
+                value={pacienteFilters.procedimento}
+                onValueChange={(value) => onFiltersChange((current) => ({ ...current, procedimento: value }))}
+                placeholder="Procedimento"
+              />
+              <Button
+                className="patient-clear-filters"
                 onClick={onClearFilters}
               >
                 <X size={17} />
                 Limpar filtros
-              </button>
+              </Button>
             </div>
           )}
         </div>
       </div>
 
-      {pacienteSuccessMessage && <p className="alert success"><CheckCircle2 size={17} />{pacienteSuccessMessage}</p>}
-      {pacientesError && <p className="alert error">{pacientesError}</p>}
+      {pacienteSuccessMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{pacienteSuccessMessage}</AlertMessage>}
+      {pacientesError && <AlertMessage type="error">{pacientesError}</AlertMessage>}
 
       <div className="carousel-shell">
         <button
@@ -281,13 +263,23 @@ export function PatientList({
                     </td>
                     <td data-label="Acoes">
                       <div className="row-actions">
-                        <button type="button" className="icon-button muted" onClick={() => void onEditPaciente(paciente)} title={patientReadOnly ? 'Visualizar' : 'Editar'}>
+                        <IconButton
+                          label={`${patientReadOnly ? 'Visualizar' : 'Editar'} ${paciente.nomePaciente}`}
+                          tone="muted"
+                          onClick={() => void onEditPaciente(paciente)}
+                          title={patientReadOnly ? 'Visualizar' : 'Editar'}
+                        >
                           {patientReadOnly ? <Eye size={17} /> : <Pencil size={17} />}
-                        </button>
+                        </IconButton>
                         {canDeletePatients && (
-                          <button type="button" className="icon-button danger" onClick={() => void onDeletePaciente(paciente)} title="Excluir">
+                          <IconButton
+                            label={`Excluir ${paciente.nomePaciente}`}
+                            tone="danger"
+                            onClick={() => void onDeletePaciente(paciente)}
+                            title="Excluir"
+                          >
                             <Trash2 size={17} />
-                          </button>
+                          </IconButton>
                         )}
                       </div>
                     </td>
@@ -317,27 +309,25 @@ export function PatientList({
           {pacienteVisibleStart}-{pacienteVisibleEnd} de {pacientesTotalItems}
         </span>
         <div className="pagination-actions">
-          <button
-            type="button"
-            className="icon-button"
+          <IconButton
+            label="Pagina anterior de pacientes"
             onClick={() => onPageChange((page) => Math.max(1, page - 1))}
             disabled={pacienteCurrentPage === 1}
             title="Pagina anterior"
           >
             <ChevronLeft size={18} />
-          </button>
+          </IconButton>
           <span className="page-indicator">Pagina {pacienteCurrentPage} de {pacienteTotalPages}</span>
-          <button
-            type="button"
-            className="icon-button"
+          <IconButton
+            label="Proxima pagina de pacientes"
             onClick={() => onPageChange((page) => Math.min(pacienteTotalPages, page + 1))}
             disabled={pacienteCurrentPage === pacienteTotalPages}
             title="Proxima pagina"
           >
             <ChevronRight size={18} />
-          </button>
+          </IconButton>
         </div>
       </div>
-    </section>
+    </DataPanel>
   );
 }

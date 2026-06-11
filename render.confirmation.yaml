@@ -4,7 +4,7 @@ services:
     runtime: static
     repo: https://github.com/Hemodinks/hemodinks-front
     branch: developer
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci && npm run build && npm run budget
     staticPublishPath: ./dist
     autoDeployTrigger: checksPass
     envVars:
@@ -12,6 +12,14 @@ services:
         value: 22.12.0
       - key: VITE_API_URL
         value: https://hemodinks-api-confirmation.onrender.com
+      - key: VITE_APP_ENV
+        value: confirmation
+      - key: VITE_APP_VERSION
+        sync: false
+      - key: VITE_SENTRY_DSN
+        sync: false
+      - key: VITE_SENTRY_TRACES_SAMPLE_RATE
+        value: "0"
     routes:
       - type: rewrite
         source: /*

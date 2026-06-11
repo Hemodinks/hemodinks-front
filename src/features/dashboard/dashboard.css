@@ -13,6 +13,9 @@
   --dashboard-profile: #7c3aed;
   --dashboard-profile-soft: rgba(124, 58, 237, 0.1);
   --dashboard-profile-border: rgba(124, 58, 237, 0.28);
+  --dashboard-agenda: #b7791f;
+  --dashboard-agenda-soft: rgba(183, 121, 31, 0.14);
+  --dashboard-agenda-border: rgba(183, 121, 31, 0.34);
   --dashboard-pending: #b7791f;
   --dashboard-pending-soft: rgba(183, 121, 31, 0.14);
   --dashboard-pending-border: rgba(183, 121, 31, 0.34);
@@ -227,4 +230,10 @@
   --module-color: var(--dashboard-profile);
   --module-soft: var(--dashboard-profile-soft);
   --module-border: var(--dashboard-profile-border);
+}
+
+.module-card-agenda {
+  --module-color: var(--dashboard-agenda);
+  --module-soft: var(--dashboard-agenda-soft);
+  --module-border: var(--dashboard-agenda-border);
 }

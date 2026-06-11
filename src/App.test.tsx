@@ -3,10 +3,18 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import * as api from './api';
+import { queryClient } from './queryClient';
 import type { AuthSession, Paciente, User } from './types';
 
 vi.mock('./api', () => ({
   authenticate: vi.fn(),
+  completeAgendaEvent: vi.fn(),
+  createAgendaEvent: vi.fn(),
+  deleteAgendaEvent: vi.fn(),
+  getAgendaEvents: vi.fn(),
+  getAgendaMedicalUsers: vi.fn(),
+  getBrazilPublicHolidays: vi.fn(),
+  updateAgendaEvent: vi.fn(),
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
   getCbhpmGeral: vi.fn(),
@@ -122,16 +130,19 @@ function mockSession(overrides?: Partial<AuthSession['user']>) {
 async function openUsersModule(user: ReturnType<typeof userEvent.setup>) {
   expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: /abrir usuarios/i }));
+  expect(window.location.pathname).toBe('/usuarios');
 }
 
 async function openPatientsModule(user: ReturnType<typeof userEvent.setup>) {
   expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
+  expect(window.location.pathname).toBe('/pacientes');
 }
 
 describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
+    queryClient.clear();
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
     vi.clearAllMocks();
@@ -142,8 +153,12 @@ describe('App', () => {
       activePatientsCount: 1,
       pendingPaymentsCount: 0,
       patientFilesCount: 0,
+      upcomingEventsCount: 0,
     });
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
+    vi.mocked(api.getAgendaEvents).mockResolvedValue([]);
+    vi.mocked(api.getAgendaMedicalUsers).mockResolvedValue([]);
+    vi.mocked(api.getBrazilPublicHolidays).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
     vi.mocked(api.getUserProfilePhoto).mockResolvedValue(new Blob(['avatar'], { type: 'image/png' }));
     vi.mocked(api.getHospitais).mockResolvedValue([
@@ -198,6 +213,7 @@ describe('App', () => {
 
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123');
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/dashboard');
     expect(screen.getByText('Administrador | gmarcone@gmail.com')).toBeInTheDocument();
     expect(screen.getByText('Painel informativo')).toBeInTheDocument();
     expect(screen.getByText('Resumo geral')).toBeInTheDocument();
@@ -211,6 +227,7 @@ describe('App', () => {
     expect(api.getPacientes).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: /abrir usuarios/i }));
+    expect(window.location.pathname).toBe('/usuarios');
 
     const userRow = (await screen.findByText('Ana Hemodinks')).closest('tr')!;
     expect(screen.getByAltText('Foto de Ana Hemodinks')).toBeInTheDocument();
@@ -224,12 +241,25 @@ describe('App', () => {
     const contactDialog = screen.getByRole('dialog', { name: 'Ana Hemodinks' });
     expect(within(contactDialog).getByText('ana@hemodinks.com')).toBeInTheDocument();
     expect(within(contactDialog).getByText('+55 (81) 99999-9999')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ana Hemodinks' })).not.toBeInTheDocument());
 
     const storedSession = JSON.parse(localStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
     expect(storedSession.token).toBe('jwt-token');
     expect(storedSession.user.precisaTrocarSenha).toBe(false);
     expect(storedSession.user.fotoPerfil).toBe('data:image/png;base64,george');
     expect(storedSession.user.perfilNome).toBe('Administrador');
+  });
+
+  it('abre a agenda por URL direta', async () => {
+    mockSession();
+    window.history.replaceState(null, '', '/agenda');
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Agenda' })).toBeInTheDocument();
+    expect(await screen.findByText('Novo evento')).toBeInTheDocument();
+    expect(api.getAgendaEvents).toHaveBeenCalled();
   });
 
   it('alterna entre tema claro e escuro no painel logado', async () => {
@@ -262,6 +292,7 @@ describe('App', () => {
       activePatientsCount: 1,
       pendingPaymentsCount: 1,
       patientFilesCount: 0,
+      upcomingEventsCount: 0,
     });
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([
       {
@@ -285,7 +316,7 @@ describe('App', () => {
     expect(api.getDashboardNotifications).toHaveBeenCalledWith('jwt-token');
 
     const dialog = await screen.findByRole('dialog', { name: 'Notificacoes' });
-    expect(within(dialog).getByText('1 pendencia encontrada')).toBeInTheDocument();
+    expect(within(dialog).getByText('1 aviso encontrado')).toBeInTheDocument();
     expect(within(dialog).getByText('Pagamento pendente')).toBeInTheDocument();
     expect(within(dialog).getByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(within(dialog).getByText('Medico: Dra. Ana')).toBeInTheDocument();

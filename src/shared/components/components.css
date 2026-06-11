@@ -110,6 +110,10 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
 }
 
+input::placeholder {
+  color: color-mix(in srgb, var(--muted) 74%, transparent);
+}
+
 .date-input-control {
   position: relative;
 }
@@ -195,6 +199,14 @@ select:focus {
   gap: 8px;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.primary-action:focus-visible,
+.ghost-button:focus-visible,
+.icon-button:focus-visible,
+.copy-button:focus-visible,
+.status-info-button:focus-visible {
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.18);
 }
 
 .primary-action {
@@ -386,6 +398,39 @@ select:focus {
   color: #b8c6d8;
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.error-boundary-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    linear-gradient(var(--background-overlay), var(--background-overlay)),
+    url("../../../imagem candidata hemodinks.jpg") center / cover no-repeat;
+}
+
+.error-boundary-panel {
+  width: min(520px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.error-boundary-panel > svg {
+  color: var(--danger);
+}
+
+.error-boundary-panel p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .vital-line {
