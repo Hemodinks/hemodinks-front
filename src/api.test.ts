@@ -82,7 +82,11 @@ describe('api client', () => {
       headers: { 'Content-Type': 'image/png' },
     }));
 
-    await expect(getUserProfilePhoto(1, 'jwt-token')).resolves.toBeInstanceOf(Blob);
+    const result = await getUserProfilePhoto(1, 'jwt-token');
+
+    expect(result.size).toBe(6);
+    expect(result.type).toBe('image/png');
+    await expect(result.text()).resolves.toBe('avatar');
 
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/users/1/foto-perfil', {
       headers: {
