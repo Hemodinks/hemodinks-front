@@ -19,6 +19,11 @@ jobs:
   test-and-build:
     name: Test and build
     runs-on: ubuntu-latest
+    env:
+      VITE_APP_ENV: ci
+      VITE_APP_VERSION: ${{ github.sha }}
+      VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+      VITE_SENTRY_TRACES_SAMPLE_RATE: 0
 
     steps:
       - name: Checkout
@@ -33,11 +38,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Run unit tests
         run: npm test
 
       - name: Build
         run: npm run build
+
+      - name: Check bundle budget
+        run: npm run budget
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+      - name: Run Lighthouse audit
+        run: npm run audit:lighthouse
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
@@ -45,3 +62,21 @@ jobs:
           name: hemodinks-front-dist
           path: dist
           if-no-files-found: error
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-report
+          path: reports/lighthouse
+          if-no-files-found: ignore

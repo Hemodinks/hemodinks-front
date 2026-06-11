@@ -142,7 +142,6 @@ export function usePatientsDomain({
     pacienteFormData,
     setPacienteFormData,
     editingPacienteId,
-    editingPacienteDetails,
     setEditingPacienteDetails,
     editingPaciente,
     pacienteFormLoading,
@@ -515,19 +514,21 @@ export function usePatientsDomain({
       return;
     }
 
-    applyPacienteToForm(paciente);
     setPacienteFormError('');
     setPacienteSuccessMessage('');
     navigateToView('patients');
-    setModuleMode('form');
     setPendingPatientFiles([]);
+    setPacienteFormLoading(true);
 
     try {
       const details = await getPaciente(paciente.id, session.token);
-      setEditingPacienteDetails(details);
       applyPacienteToForm(details);
     } catch (error) {
+      applyPacienteToForm(paciente);
       setPacienteFormError(getErrorMessage(error));
+    } finally {
+      setPacienteFormLoading(false);
+      setModuleMode('form');
     }
   };
 
@@ -618,6 +619,14 @@ export function usePatientsDomain({
         await uploadPacienteArquivo(savedPaciente.id, file, session.token);
       }
 
+      setPacientes((current) => sortPacientesForListing(
+        editingPacienteId
+          ? current.map((paciente) => (paciente.id === savedPaciente.id ? savedPaciente : paciente))
+          : [savedPaciente, ...current],
+      ));
+      if (!editingPacienteId) {
+        setPacientesTotalItems((current) => current + 1);
+      }
       setPacienteSuccessMessage(editingPacienteId ? 'Paciente atualizado.' : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
@@ -626,6 +635,7 @@ export function usePatientsDomain({
       resetPacienteForm();
       setPacienteCurrentPage(1);
       setModuleMode('list');
+      await loadPacientes(session.token, 1, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
       await loadDashboardSummary(session.token, true);
     } catch (error) {
       setPacienteFormError(getErrorMessage(error));

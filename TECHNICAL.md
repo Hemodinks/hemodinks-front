@@ -21,6 +21,7 @@ src/
   App.tsx
   appTypes.ts
   main.tsx
+  observability.ts
   queryClient.ts
   routes.ts
   setupTests.ts
@@ -48,7 +49,10 @@ Responsabilidades:
 | `src/App.tsx` | sessao, rotas, layout, modais globais e integracao entre dominios |
 | `src/routes.ts` | mapeamento entre views internas e paths da SPA |
 | `src/queryClient.ts` | configuracao global do TanStack Query |
+| `src/observability.ts` | Sentry opcional e captura centralizada de erros |
 | `src/shared/queryKeys.ts` | chaves padronizadas de cache/invalidation |
+| `src/shared/components/ui.tsx` | componentes base do design system |
+| `src/shared/components/ErrorBoundary.tsx` | fallback para erros inesperados da arvore React |
 | `src/features/auth` | login, troca de senha obrigatoria e persistencia de sessao |
 | `src/features/dashboard` | painel inicial e notificacoes |
 | `src/features/events` | agenda e eventos |
@@ -151,6 +155,40 @@ Fluxo:
 4. arquivos sao validados antes de upload
 5. cache de usuarios, medicos e dashboard e invalidado apos mudancas
 
+## Design System
+
+Componentes base iniciais:
+
+- `Button`
+- `IconButton`
+- `SearchField`
+- `TextField`
+- `SelectField`
+- `CheckboxField`
+- `AlertMessage`
+- `DataPanel`
+- `FormPanel`
+
+Arquivo:
+
+```text
+src/shared/components/ui.tsx
+```
+
+Uso atual:
+
+- lista de usuarios
+- lista de pacientes
+- buscas
+- filtros administrativos
+- exportacao
+- alertas
+- paginacao e acoes por linha
+- `UserForm`
+- `PatientForm`
+- `AgendaPage`
+- modais de informacao/arquivos/notificacoes/CBHPM
+
 ## Pacientes
 
 Arquivos principais:
@@ -210,6 +248,43 @@ Componentes migrados para esse padrao:
 - informacoes/arquivos de paciente
 - busca CBHPM
 
+Auditoria automatizada:
+
+- axe roda dentro do Playwright
+- falha quando encontra violacoes `serious` ou `critical`
+- comando dedicado: `npm run audit:a11y`
+
+Lighthouse:
+
+- configurado via `lighthouserc.cjs`
+- usa `scripts/lighthouse-auth.cjs` para injetar sessao local antes da auditoria
+- mede `/dashboard`, `/usuarios`, `/pacientes` e `/agenda`
+- comando dedicado: `npm run audit:lighthouse`
+- gera relatorios em `reports/lighthouse`
+
+## Observabilidade
+
+Arquivos:
+
+- `src/observability.ts`
+- `src/shared/components/ErrorBoundary.tsx`
+
+Variaveis:
+
+```text
+VITE_APP_ENV=production
+VITE_APP_VERSION=<versao-ou-sha>
+VITE_SENTRY_DSN=<dsn-opcional>
+VITE_SENTRY_TRACES_SAMPLE_RATE=0
+```
+
+Comportamento:
+
+- sem `VITE_SENTRY_DSN`, erros sao registrados apenas no console em desenvolvimento
+- com `VITE_SENTRY_DSN`, excecoes sao enviadas ao Sentry
+- usuario logado e associado ao contexto do Sentry
+- Error Boundary evita tela branca e oferece acao de atualizar pagina
+
 ## Responsividade
 
 Pontos cobertos:
@@ -240,6 +315,7 @@ Otimizacoes atuais:
 - chaves de cache centralizadas
 - lookups cacheados por mais tempo
 - build analyzer configurado
+- budget de bundle configurado
 - lista de pacientes/usuarios paginada no backend
 
 Comando:
@@ -252,6 +328,20 @@ Saida:
 
 ```text
 dist/bundle-stats.html
+```
+
+Budget:
+
+```powershell
+npm run budget
+```
+
+Limites padrao:
+
+```text
+PERF_BUDGET_ENTRY_KB=380
+PERF_BUDGET_ENTRY_GZIP_KB=120
+PERF_BUDGET_CSS_KB=70
 ```
 
 Ao revisar o bundle, observar especialmente:
@@ -279,6 +369,7 @@ Build:
 
 ```powershell
 npm run build
+npm run budget
 ```
 
 Playwright em maquina nova:
@@ -293,15 +384,50 @@ Arquivos principais:
 - `src/App.test.tsx`
 - `e2e/hemodinks.spec.ts`
 - `playwright.config.ts`
+- `scripts/check-bundle-budget.mjs`
+- `lighthouserc.cjs`
 
 Cobertura E2E atual:
 
+- login pelo formulario
 - navegacao autenticada
 - dashboard, pacientes e agenda
 - ausencia de overflow horizontal em mobile
-- cadastro de paciente
-- edicao de paciente
-- exportacao XLSX
+- cadastro e edicao de usuario
+- cadastro e edicao de paciente
+- cadastro de evento na agenda
+- exportacao XLSX e PDF
+- bloqueio de rota de usuarios para perfil paciente
+- auditoria axe nas rotas principais
+- evidencias visuais desktop/mobile por screenshot
+- screenshots de formularios abertos de usuarios e pacientes
+
+## CI
+
+Workflow principal:
+
+```text
+.github/workflows/ci.yml
+```
+
+Passos principais:
+
+- `npm ci`
+- `npx playwright install --with-deps chromium`
+- `npm test`
+- `npm run build`
+- `npm run budget`
+- `npm run test:e2e`
+- `npm run audit:lighthouse`
+
+Artifacts publicados:
+
+- `dist`
+- `playwright-report`
+- `test-results`
+- `reports/lighthouse`
+
+O CI tambem define `VITE_APP_ENV=ci`, `VITE_APP_VERSION` com o SHA do commit e aceita `VITE_SENTRY_DSN` via secret para validar o build com observabilidade habilitada quando desejado.
 
 ## Contratos de API
 
@@ -359,8 +485,11 @@ Endpoints usados:
 - invalidar caches afetados depois de mutacoes
 - manter imports pesados em `import()` dinamico quando forem usados raramente
 - manter controles acessiveis por label, title ou aria-label
+- ao criar controle visual novo, avaliar se ele pertence a `shared/components/ui.tsx`
 - ao mexer em layout mobile, rodar `npm run test:e2e`
 - ao mexer em exportacao ou PDF, rodar `npm run analyze`
+- ao mexer em performance, rodar `npm run budget`
+- ao mexer em rotas/telas, rodar `npm run audit:a11y`
 - ao adicionar rota nova, atualizar `routes.ts`, `README.md` e este documento
 
 ## Checklist Para Mudancas Grandes
@@ -370,8 +499,11 @@ Antes de abrir PR ou publicar:
 ```powershell
 npm test
 npm run build
+npm run budget
 npm run test:e2e
+npm run audit:a11y
 npm run analyze
+npm run audit:lighthouse
 ```
 
 Validar manualmente:

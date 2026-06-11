@@ -1,6 +1,7 @@
 import { Bell, X } from 'lucide-react';
 import type { DashboardNotification } from '../../types';
 import { Modal } from '../../shared/components/Modal';
+import { AlertMessage, IconButton } from '../../shared/components/ui';
 import { toNotificationDate } from '../../shared/utils/formatters';
 
 type NotificationsModalProps = {
@@ -19,9 +20,9 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
             <span className="eyebrow">Central de avisos</span>
             <h2 id="notifications-title">Notificacoes</h2>
           </div>
-          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar" aria-label="Fechar notificacoes">
+          <IconButton label="Fechar notificacoes" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
-          </button>
+          </IconButton>
         </div>
 
         <div className="notification-summary-line">
@@ -29,8 +30,8 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
           <span>{totalCount === 1 ? '1 aviso encontrado' : `${totalCount} avisos encontrados`}</span>
         </div>
 
-        {loading && <p className="alert success"><Bell size={17} />Carregando notificacoes...</p>}
-        {error && <p className="alert error">{error}</p>}
+        {loading && <AlertMessage type="success" icon={<Bell size={17} />}>Carregando notificacoes...</AlertMessage>}
+        {error && <AlertMessage type="error">{error}</AlertMessage>}
 
         {notifications.length ? (
           <ul className="notifications-list">

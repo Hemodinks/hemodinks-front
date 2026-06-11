@@ -26,6 +26,10 @@ jobs:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      VITE_APP_ENV: production
+      VITE_APP_VERSION: ${{ github.sha }}
+      VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+      VITE_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.VITE_SENTRY_TRACES_SAMPLE_RATE }}
 
     steps:
       - name: Checkout
@@ -42,6 +46,12 @@ jobs:
 
       - name: Run unit tests
         run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Check bundle budget
+        run: npm run budget
 
       - name: Check Vercel secrets
         id: vercel_secrets

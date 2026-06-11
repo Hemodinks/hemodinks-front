@@ -11,9 +11,12 @@ Aplicacao web do Hemodinks para administradores, medicos e pacientes. O front e 
 - TanStack Query
 - Vitest + Testing Library
 - Playwright
+- axe-core para auditoria de acessibilidade
 - lucide-react
 - jsPDF + jsPDF AutoTable carregados sob demanda
+- Sentry opcional para rastreamento de erros
 - rollup-plugin-visualizer para auditoria de bundle
+- LHCI para Lighthouse automatizavel
 
 ## URLs
 
@@ -50,12 +53,20 @@ Exemplo local:
 
 ```text
 VITE_API_URL=http://localhost:5000
+VITE_APP_ENV=local
+VITE_APP_VERSION=local
+VITE_SENTRY_DSN=
+VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 Exemplo producao/homologacao:
 
 ```text
 VITE_API_URL=https://<api-publica>
+VITE_APP_ENV=production
+VITE_APP_VERSION=<sha-ou-versao>
+VITE_SENTRY_DSN=<dsn-opcional>
+VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 ## Executar
@@ -73,6 +84,9 @@ O Vite sobe em `http://localhost:5173` por padrao. O script usa `--host 0.0.0.0`
 | `npm run dev` | inicia o Vite em modo desenvolvimento |
 | `npm run build` | roda TypeScript e gera `dist` |
 | `npm run analyze` | gera build com relatorio em `dist/bundle-stats.html` |
+| `npm run budget` | valida limites de tamanho do bundle gerado |
+| `npm run audit:a11y` | roda a auditoria axe nas rotas principais |
+| `npm run audit:lighthouse` | roda build e auditoria Lighthouse via LHCI |
 | `npm test` | roda testes unitarios/integracao com Vitest |
 | `npm run test:e2e` | roda testes E2E com Playwright |
 | `npm run preview` | serve o build gerado em `dist` |
@@ -102,8 +116,11 @@ O Vite sobe em `http://localhost:5173` por padrao. O script usa `--host 0.0.0.0`
 - selecao de procedimentos CBHPM no cadastro/edicao de paciente
 - exportacao de pacientes em XLSX e PDF
 - tema claro/escuro
+- Error Boundary com fallback visual
+- observabilidade opcional via Sentry
 - layout responsivo testado em 360px, 390px e 768px
 - modais com fechamento por ESC, foco inicial e restauracao de foco
+- componentes base aplicados em listas, formularios, agenda e modais principais
 
 ## Arquitetura Resumida
 
@@ -127,7 +144,10 @@ Pontos principais:
 - `src/App.tsx` orquestra sessao, rotas, layout e modais globais.
 - `src/routes.ts` mapeia as rotas da SPA.
 - `src/queryClient.ts` centraliza configuracao do TanStack Query.
+- `src/observability.ts` inicializa Sentry quando `VITE_SENTRY_DSN` existe.
 - `src/shared/queryKeys.ts` centraliza chaves de cache.
+- `src/shared/components/ui.tsx` concentra componentes base de UI.
+- `src/shared/components/ErrorBoundary.tsx` captura erros inesperados da arvore React.
 - `src/features/users/useUsersDomain.ts` coordena o dominio de usuarios.
 - `src/features/patients/usePatientsDomain.ts` coordena o dominio de pacientes.
 - hooks menores (`useUserList`, `useUserForm`, `usePatientList`, `usePatientForm`, `usePatientLookups`, `useCbhpmLookup`) isolam estados de lista, formulario e lookups.
@@ -178,17 +198,27 @@ Rodar a suite principal:
 ```powershell
 npm test
 npm run build
+npm run budget
 npm run test:e2e
 npm run analyze
+npm run audit:lighthouse
 ```
 
 Cobertura atual:
 
 - testes unitarios/integracao para API e App
+- E2E de login pelo formulario
 - E2E de navegacao autenticada
 - E2E de responsividade mobile em telas criticas
+- E2E de cadastro e edicao de usuario
 - E2E de cadastro e edicao de paciente
-- E2E de exportacao XLSX
+- E2E de cadastro de evento na agenda
+- E2E de permissao por perfil
+- E2E de exportacao XLSX e PDF
+- auditoria axe para violacoes serias/criticas de acessibilidade
+- budget de bundle para chunk principal e CSS
+- Lighthouse autenticado via LHCI nas rotas internas principais
+- evidencias visuais desktop/mobile das telas e formularios principais
 - auditoria de bundle via `dist/bundle-stats.html`
 
 ## Deploy

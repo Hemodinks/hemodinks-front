@@ -2,6 +2,7 @@ import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } 
 import { FileText, FileUp, Plus, Save, Search, Trash2, X } from 'lucide-react';
 import type { Convenio, Hospital, Paciente, PacienteFormData, User } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
+import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
 import {
   CONVENIOS_DATALIST_ID,
   DEFAULT_PASSWORD,
@@ -71,7 +72,7 @@ export function PatientForm({
   onDeletePacienteArquivo,
 }: PatientFormProps) {
   return (
-    <aside className="form-panel module-form-panel">
+    <FormPanel className="module-form-panel">
       <div className="panel-title">
         <div>
           <span className="eyebrow">{editingPacienteId ? patientReadOnly ? 'Visualizacao' : 'Edicao' : 'Cadastro'}</span>
@@ -79,9 +80,9 @@ export function PatientForm({
         </div>
         <div className="panel-title-actions">
           {!editingPacienteId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
-          <button type="button" className="icon-button muted" onClick={onClose} title="Voltar para lista">
+          <IconButton label="Voltar para lista" tone="muted" onClick={onClose}>
             <X size={18} />
-          </button>
+          </IconButton>
         </div>
       </div>
 
@@ -94,122 +95,105 @@ export function PatientForm({
             onChange={(value) => setPacienteFormData((current) => ({ ...current, data: value }))}
           />
 
-          <label>
-            Paciente
-            <input
-              type="text"
-              value={pacienteFormData.nomePaciente}
-              onChange={(event) => setPacienteFormData((current) => ({ ...current, nomePaciente: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-              maxLength={MAX_NAME_LENGTH}
-              required
-            />
-          </label>
+          <TextField
+            label="Paciente"
+            type="text"
+            value={pacienteFormData.nomePaciente}
+            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, nomePaciente: value.slice(0, MAX_NAME_LENGTH) }))}
+            maxLength={MAX_NAME_LENGTH}
+            required
+          />
 
-          <label>
-            CPF
-            <input
-              type="text"
-              value={pacienteFormData.cpf}
-              onChange={(event) => setPacienteFormData((current) => ({ ...current, cpf: formatCpfInput(event.target.value) }))}
-              inputMode="numeric"
-              maxLength={MAX_CPF_LENGTH}
-              placeholder="000.000.000-00"
-              required
-            />
-          </label>
+          <TextField
+            label="CPF"
+            type="text"
+            value={pacienteFormData.cpf}
+            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, cpf: formatCpfInput(value) }))}
+            inputMode="numeric"
+            maxLength={MAX_CPF_LENGTH}
+            placeholder="000.000.000-00"
+            required
+          />
 
-          <label>
-            Telefone
-            <input
-              type="tel"
-              value={pacienteFormData.telefone}
-              onFocus={() => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
-              onChange={(event) => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(event.target.value) }))}
-              inputMode="numeric"
-              maxLength={MAX_PHONE_LENGTH}
-              placeholder="+55 (81) 99999-9999"
-              required
-            />
-          </label>
+          <TextField
+            label="Telefone"
+            type="tel"
+            value={pacienteFormData.telefone}
+            onFocus={() => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
+            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(value) }))}
+            inputMode="numeric"
+            maxLength={MAX_PHONE_LENGTH}
+            placeholder="+55 (81) 99999-9999"
+            required
+          />
 
-          <label>
-            Hospital
-            <select
-              value={pacienteFormData.hospitalId ?? (pacienteFormData.hospital ? 'legacy' : '')}
-              onChange={(event) => {
-                if (event.target.value === 'legacy') {
-                  return;
-                }
+          <SelectField
+            label="Hospital"
+            value={pacienteFormData.hospitalId ?? (pacienteFormData.hospital ? 'legacy' : '')}
+            onChange={(event) => {
+              if (event.target.value === 'legacy') {
+                return;
+              }
 
-                const hospitalId = event.target.value ? Number(event.target.value) : null;
-                const hospital = hospitais.find((item) => item.id === hospitalId)?.nome ?? '';
-                setPacienteFormData((current) => ({ ...current, hospitalId, hospital }));
-              }}
-              disabled={patientReadOnly || !hospitais.length}
-              required
-            >
-              <option value="">{hospitais.length ? 'Selecione um hospital' : 'Nenhum hospital cadastrado'}</option>
-              {pacienteFormData.hospital && !pacienteFormData.hospitalId && (
-                <option value="legacy">{pacienteFormData.hospital} (fora do cadastro)</option>
-              )}
-              {hospitais.map((hospital) => (
-                <option key={hospital.id} value={hospital.id}>{hospital.nome}</option>
-              ))}
-            </select>
-          </label>
-          {hospitaisError && <p className="alert error">{hospitaisError}</p>}
+              const hospitalId = event.target.value ? Number(event.target.value) : null;
+              const hospital = hospitais.find((item) => item.id === hospitalId)?.nome ?? '';
+              setPacienteFormData((current) => ({ ...current, hospitalId, hospital }));
+            }}
+            disabled={patientReadOnly || !hospitais.length}
+            required
+          >
+            <option value="">{hospitais.length ? 'Selecione um hospital' : 'Nenhum hospital cadastrado'}</option>
+            {pacienteFormData.hospital && !pacienteFormData.hospitalId && (
+              <option value="legacy">{pacienteFormData.hospital} (fora do cadastro)</option>
+            )}
+            {hospitais.map((hospital) => (
+              <option key={hospital.id} value={hospital.id}>{hospital.nome}</option>
+            ))}
+          </SelectField>
+          {hospitaisError && <AlertMessage type="error">{hospitaisError}</AlertMessage>}
 
-          <label>
-            Médico
-            <input
-              type="text"
-              list={MEDICAL_USERS_DATALIST_ID}
-              value={isMedical ? sessionUserName : pacienteFormData.medico}
-              onChange={(event) => {
-                const medico = event.target.value.slice(0, MAX_NAME_LENGTH);
-                const selectedMedicoUser = findMedicalUserByName(medicalUsers, medico);
-                setPacienteFormData((current) => ({ ...current, medicoUserId: selectedMedicoUser?.id ?? null, medico }));
-              }}
-              disabled={patientReadOnly || isMedical || (!medicalUsers.length && !pacienteFormData.medico)}
-              maxLength={MAX_NAME_LENGTH}
-              placeholder={isMedical ? sessionUserName : medicalUsers.length ? 'Selecione ou digite o medico' : 'Nenhum medico cadastrado'}
-            />
-          </label>
+          <TextField
+            label="Médico"
+            type="text"
+            list={MEDICAL_USERS_DATALIST_ID}
+            value={isMedical ? sessionUserName : pacienteFormData.medico}
+            onValueChange={(value) => {
+              const medico = value.slice(0, MAX_NAME_LENGTH);
+              const selectedMedicoUser = findMedicalUserByName(medicalUsers, medico);
+              setPacienteFormData((current) => ({ ...current, medicoUserId: selectedMedicoUser?.id ?? null, medico }));
+            }}
+            disabled={patientReadOnly || isMedical || (!medicalUsers.length && !pacienteFormData.medico)}
+            maxLength={MAX_NAME_LENGTH}
+            placeholder={isMedical ? sessionUserName : medicalUsers.length ? 'Selecione ou digite o medico' : 'Nenhum medico cadastrado'}
+          />
 
-          <label>
-            Convênio
-            <input
-              type="text"
-              list={CONVENIOS_DATALIST_ID}
-              value={pacienteFormData.convenio}
-              onChange={(event) => {
-                const convenio = event.target.value.slice(0, MAX_NAME_LENGTH);
-                const selectedConvenio = findConvenioByDescription(convenios, convenio);
-                setPacienteFormData((current) => ({
-                  ...current,
-                  convenioId: selectedConvenio?.idConvenio ?? null,
-                  convenio,
-                }));
-              }}
-              disabled={patientReadOnly || (!convenios.length && !pacienteFormData.convenio)}
-              maxLength={MAX_NAME_LENGTH}
-              placeholder={convenios.length ? 'Selecione ou digite o convenio' : 'Nenhum convenio cadastrado'}
-            />
-          </label>
-          {conveniosError && <p className="alert error">{conveniosError}</p>}
+          <TextField
+            label="Convênio"
+            type="text"
+            list={CONVENIOS_DATALIST_ID}
+            value={pacienteFormData.convenio}
+            onValueChange={(value) => {
+              const convenio = value.slice(0, MAX_NAME_LENGTH);
+              const selectedConvenio = findConvenioByDescription(convenios, convenio);
+              setPacienteFormData((current) => ({
+                ...current,
+                convenioId: selectedConvenio?.idConvenio ?? null,
+                convenio,
+              }));
+            }}
+            disabled={patientReadOnly || (!convenios.length && !pacienteFormData.convenio)}
+            maxLength={MAX_NAME_LENGTH}
+            placeholder={convenios.length ? 'Selecione ou digite o convenio' : 'Nenhum convenio cadastrado'}
+          />
+          {conveniosError && <AlertMessage type="error">{conveniosError}</AlertMessage>}
 
           <div className="procedure-field">
             <span className="field-label">Procedimento</span>
             <div className="procedure-selector">
-              <button
-                type="button"
-                className="ghost-button procedure-select-button"
-                onClick={onOpenCbhpmModal}
-                disabled={patientReadOnly}
-              >
+              <Button className="procedure-select-button" onClick={onOpenCbhpmModal} disabled={patientReadOnly}>
                 <Search size={17} />
                 Adicionar procedimento
-              </button>
+              </Button>
 
               {pacienteFormData.procedimentos.length ? (
                 <div className="selected-procedure-list">
@@ -225,14 +209,9 @@ export function PatientForm({
                       <div className="selected-procedure-actions">
                         {procedimento.cbhpmPorte && <span className="status-pill active">{procedimento.cbhpmPorte}</span>}
                         {!patientReadOnly && (
-                          <button
-                            type="button"
-                            className="icon-button muted mini"
-                            onClick={() => onRemovePacienteProcedimento(index)}
-                            title="Remover procedimento"
-                          >
+                          <IconButton label="Remover procedimento" tone="muted" className="mini" onClick={() => onRemovePacienteProcedimento(index)}>
                             <X size={14} />
-                          </button>
+                          </IconButton>
                         )}
                       </div>
                     </div>
@@ -244,40 +223,34 @@ export function PatientForm({
             </div>
           </div>
 
-          <label>
-            Autorização
-            <input
-              type="text"
-              value={pacienteFormData.autorizacao}
-              onChange={(event) => setPacienteFormData((current) => ({ ...current, autorizacao: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-              maxLength={MAX_NAME_LENGTH}
-            />
-          </label>
+          <TextField
+            label="Autorizacao"
+            type="text"
+            value={pacienteFormData.autorizacao}
+            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, autorizacao: value.slice(0, MAX_NAME_LENGTH) }))}
+            maxLength={MAX_NAME_LENGTH}
+          />
 
           <div className="two-column-fields">
-            <label>
-              Valor recebido/pago
-              <input
-                type="text"
-                value={pacienteFormData.pagamento}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, pagamento: formatCurrencyInput(event.target.value) }))}
-                inputMode="numeric"
-                maxLength={24}
-                placeholder="R$ 0,00"
-              />
-            </label>
+            <TextField
+              label="Valor recebido/pago"
+              type="text"
+              value={pacienteFormData.pagamento}
+              onValueChange={(value) => setPacienteFormData((current) => ({ ...current, pagamento: formatCurrencyInput(value) }))}
+              inputMode="numeric"
+              maxLength={24}
+              placeholder="R$ 0,00"
+            />
 
-            <label>
-              Glosa
-              <input
-                type="text"
-                value={pacienteFormData.repasseGlosa}
-                onChange={(event) => setPacienteFormData((current) => ({ ...current, repasseGlosa: formatCurrencyInput(event.target.value) }))}
-                inputMode="numeric"
-                maxLength={24}
-                placeholder="R$ 0,00"
-              />
-            </label>
+            <TextField
+              label="Glosa"
+              type="text"
+              value={pacienteFormData.repasseGlosa}
+              onValueChange={(value) => setPacienteFormData((current) => ({ ...current, repasseGlosa: formatCurrencyInput(value) }))}
+              inputMode="numeric"
+              maxLength={24}
+              placeholder="R$ 0,00"
+            />
           </div>
 
           <div className="profile-photo-field">
@@ -307,9 +280,9 @@ export function PatientForm({
                       <li key={`${file.name}-${index}`}>
                         <FileText size={15} />
                         <span>{file.name}</span>
-                        <button type="button" className="icon-button muted mini" onClick={() => onRemovePendingPatientFile(index)} title="Remover arquivo">
+                        <IconButton label="Remover arquivo" tone="muted" className="mini" onClick={() => onRemovePendingPatientFile(index)}>
                           <X size={14} />
-                        </button>
+                        </IconButton>
                       </li>
                     ))}
                   </ul>
@@ -324,9 +297,9 @@ export function PatientForm({
                     <FileText size={15} />
                     <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
                     {canEditPatients && (
-                      <button type="button" className="icon-button muted mini" onClick={() => void onDeletePacienteArquivo(editingPaciente, arquivo.id)} title="Excluir arquivo">
+                      <IconButton label="Excluir arquivo" tone="muted" className="mini" onClick={() => void onDeletePacienteArquivo(editingPaciente, arquivo.id)}>
                         <Trash2 size={14} />
-                      </button>
+                      </IconButton>
                     )}
                   </li>
                 ))}
@@ -334,34 +307,28 @@ export function PatientForm({
             ) : null}
           </div>
 
-          <label className="toggle-row">
-            <input
-              type="checkbox"
-              checked={pacienteFormData.statusPago}
-              onChange={(event) => setPacienteFormData((current) => ({ ...current, statusPago: event.target.checked }))}
-            />
-            Status Pago
-          </label>
+          <CheckboxField
+            label="Status Pago"
+            checked={pacienteFormData.statusPago}
+            onCheckedChange={(checked) => setPacienteFormData((current) => ({ ...current, statusPago: checked }))}
+          />
 
-          <label className="toggle-row">
-            <input
-              type="checkbox"
-              checked={pacienteFormData.ativo}
-              onChange={(event) => setPacienteFormData((current) => ({ ...current, ativo: event.target.checked }))}
-            />
-            Paciente ativo
-          </label>
+          <CheckboxField
+            label="Paciente ativo"
+            checked={pacienteFormData.ativo}
+            onCheckedChange={(checked) => setPacienteFormData((current) => ({ ...current, ativo: checked }))}
+          />
         </fieldset>
 
-        {pacienteFormError && <p className="alert error">{pacienteFormError}</p>}
+        {pacienteFormError && <AlertMessage type="error">{pacienteFormError}</AlertMessage>}
 
         {!patientReadOnly && (
-          <button className="primary-action" type="submit" disabled={pacienteFormLoading}>
+          <Button variant="primary" type="submit" disabled={pacienteFormLoading}>
             {editingPacienteId ? <Save size={18} /> : <Plus size={18} />}
             {pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar paciente' : 'Cadastrar paciente'}
-          </button>
+          </Button>
         )}
       </form>
-    </aside>
+    </FormPanel>
   );
 }

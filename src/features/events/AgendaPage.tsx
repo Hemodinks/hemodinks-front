@@ -25,6 +25,7 @@ import {
 } from '../../api';
 import type { AgendaEvent, AgendaEventPayload, AgendaMedicalUser, AuthSession, PublicHoliday } from '../../types';
 import { getErrorMessage } from '../../shared/utils/formatters';
+import { AlertMessage, Button, CheckboxField, DataPanel, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
 
 type AgendaPageProps = {
   session: AuthSession;
@@ -349,35 +350,35 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
 
   return (
     <section className="workspace agenda-workspace">
-      <section className="data-panel agenda-panel">
+      <DataPanel className="agenda-panel">
         <div className="data-header agenda-header">
           <div>
             <span className="eyebrow">Agenda</span>
             <h2>{pendingEventsCount} eventos ativos</h2>
           </div>
           <div className="table-tools agenda-tools">
-            <button type="button" className="ghost-button" onClick={handleToday}>
+            <Button onClick={handleToday}>
               <CalendarDays size={17} />
               Hoje
-            </button>
-            <button type="button" className="icon-button" onClick={() => void loadEvents()} title="Atualizar agenda">
+            </Button>
+            <IconButton label="Atualizar agenda" onClick={() => void loadEvents()}>
               <RefreshCw size={18} />
-            </button>
+            </IconButton>
           </div>
         </div>
 
-        {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
-        {error && <p className="alert error">{error}</p>}
-        {holidayError && <p className="alert warning">{holidayError}</p>}
+        {successMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</AlertMessage>}
+        {error && <AlertMessage type="error">{error}</AlertMessage>}
+        {holidayError && <AlertMessage type="warning">{holidayError}</AlertMessage>}
 
         <div className="agenda-monthbar">
-          <button type="button" className="icon-button" onClick={handlePreviousMonth} title="Mes anterior">
+          <IconButton label="Mes anterior" onClick={handlePreviousMonth}>
             <ChevronLeft size={18} />
-          </button>
+          </IconButton>
           <strong>{monthTitle(visibleMonth)}</strong>
-          <button type="button" className="icon-button" onClick={handleNextMonth} title="Proximo mes">
+          <IconButton label="Proximo mes" onClick={handleNextMonth}>
             <ChevronRight size={18} />
-          </button>
+          </IconButton>
         </div>
 
         <div className="agenda-calendar" aria-busy={loading || holidayLoading}>
@@ -449,16 +450,16 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
                     {canManage && (
                       <div className="agenda-event-actions">
                         {!agendaEvent.isCompleted && (
-                          <button type="button" className="icon-button muted" onClick={() => void handleComplete(agendaEvent)} title="Concluir">
+                          <IconButton label="Concluir" tone="muted" onClick={() => void handleComplete(agendaEvent)}>
                             <Check size={17} />
-                          </button>
+                          </IconButton>
                         )}
-                        <button type="button" className="icon-button muted" onClick={() => handleEdit(agendaEvent)} title="Editar">
+                        <IconButton label="Editar" tone="muted" onClick={() => handleEdit(agendaEvent)}>
                           <Pencil size={17} />
-                        </button>
-                        <button type="button" className="icon-button danger" onClick={() => void handleDelete(agendaEvent)} title="Excluir">
+                        </IconButton>
+                        <IconButton label="Excluir" tone="danger" onClick={() => void handleDelete(agendaEvent)}>
                           <Trash2 size={17} />
-                        </button>
+                        </IconButton>
                       </div>
                     )}
                   </article>
@@ -469,140 +470,118 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
             )}
           </div>
         </div>
-      </section>
+      </DataPanel>
 
-      <aside className="form-panel agenda-form-panel">
+      <FormPanel className="agenda-form-panel">
         <div className="panel-title">
           <div>
             <span className="eyebrow">{editingEventId ? 'Edicao' : 'Cadastro'}</span>
             <h2>{editingEventId ? 'Editar evento' : 'Novo evento'}</h2>
           </div>
           {editingEventId && (
-            <button type="button" className="icon-button muted" onClick={() => resetForm()} title="Cancelar edicao">
+            <IconButton label="Cancelar edicao" tone="muted" onClick={() => resetForm()}>
               <X size={18} />
-            </button>
+            </IconButton>
           )}
         </div>
 
         <form className="stack agenda-form" onSubmit={handleSubmit}>
-          <label>
-            Titulo
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(event) => setFormData((current) => ({ ...current, title: event.target.value.slice(0, 255) }))}
-              maxLength={255}
+          <TextField
+            label="Titulo"
+            type="text"
+            value={formData.title}
+            onValueChange={(value) => setFormData((current) => ({ ...current, title: value.slice(0, 255) }))}
+            maxLength={255}
+            required
+          />
+
+          <TextField
+            label="Descricao"
+            type="text"
+            value={formData.description}
+            onValueChange={(value) => setFormData((current) => ({ ...current, description: value.slice(0, 2000) }))}
+            maxLength={2000}
+          />
+
+          <div className="two-column-fields">
+            <TextField
+              label="Inicio"
+              type="date"
+              value={formData.startDate}
+              onValueChange={(value) => setFormData((current) => ({ ...current, startDate: value }))}
               required
             />
-          </label>
-
-          <label>
-            Descricao
-            <input
-              type="text"
-              value={formData.description}
-              onChange={(event) => setFormData((current) => ({ ...current, description: event.target.value.slice(0, 2000) }))}
-              maxLength={2000}
+            <TextField
+              label="Hora"
+              type="time"
+              value={formData.startTime}
+              onValueChange={(value) => setFormData((current) => ({ ...current, startTime: value }))}
+              required
             />
-          </label>
-
-          <div className="two-column-fields">
-            <label>
-              Inicio
-              <input
-                type="date"
-                value={formData.startDate}
-                onChange={(event) => setFormData((current) => ({ ...current, startDate: event.target.value }))}
-                required
-              />
-            </label>
-            <label>
-              Hora
-              <input
-                type="time"
-                value={formData.startTime}
-                onChange={(event) => setFormData((current) => ({ ...current, startTime: event.target.value }))}
-                required
-              />
-            </label>
           </div>
 
           <div className="two-column-fields">
-            <label>
-              Termino
-              <input
-                type="date"
-                value={formData.endDate}
-                onChange={(event) => setFormData((current) => ({ ...current, endDate: event.target.value }))}
-                required
-              />
-            </label>
-            <label>
-              Hora
-              <input
-                type="time"
-                value={formData.endTime}
-                onChange={(event) => setFormData((current) => ({ ...current, endTime: event.target.value }))}
-                required
-              />
-            </label>
+            <TextField
+              label="Termino"
+              type="date"
+              value={formData.endDate}
+              onValueChange={(value) => setFormData((current) => ({ ...current, endDate: value }))}
+              required
+            />
+            <TextField
+              label="Hora"
+              type="time"
+              value={formData.endTime}
+              onValueChange={(value) => setFormData((current) => ({ ...current, endTime: value }))}
+              required
+            />
           </div>
 
-          <label className="toggle-row">
-            <input
-              type="checkbox"
-              checked={formData.notifyMedicalProfile}
-              onChange={(event) => setFormData((current) => ({ ...current, notifyMedicalProfile: event.target.checked }))}
-            />
-            Notificar perfil medico
-          </label>
+          <CheckboxField
+            label="Notificar perfil medico"
+            checked={formData.notifyMedicalProfile}
+            onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyMedicalProfile: checked }))}
+          />
 
           {formData.notifyMedicalProfile && (
-            <label>
-              Medico
-              <select
-                value={formData.medicalUserId}
-                onChange={(event) => setFormData((current) => ({ ...current, medicalUserId: event.target.value }))}
-              >
-                <option value="">Perfil medico</option>
-                {medicalUsers.map((user) => (
-                  <option key={user.id} value={user.id}>{user.nome}</option>
-                ))}
-              </select>
-            </label>
+            <SelectField
+              label="Medico"
+              value={formData.medicalUserId}
+              onChange={(event) => setFormData((current) => ({ ...current, medicalUserId: event.target.value }))}
+            >
+              <option value="">Perfil medico</option>
+              {medicalUsers.map((user) => (
+                <option key={user.id} value={user.id}>{user.nome}</option>
+              ))}
+            </SelectField>
           )}
 
-          <label className="toggle-row">
-            <input
-              type="checkbox"
-              checked={formData.notifyUser}
-              onChange={(event) => setFormData((current) => ({ ...current, notifyUser: event.target.checked }))}
-            />
-            Receber lembretes
-          </label>
+          <CheckboxField
+            label="Receber lembretes"
+            checked={formData.notifyUser}
+            onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyUser: checked }))}
+          />
 
           {(formData.notifyUser || formData.notifyMedicalProfile) && (
-            <label>
-              Intervalo de lembretes
-              <select
-                value={formData.reminderPeriodMinutes}
-                onChange={(event) => setFormData((current) => ({ ...current, reminderPeriodMinutes: event.target.value }))}
-              >
-                <option value="60">A cada 1 hora</option>
-                <option value="360">A cada 6 horas</option>
-                <option value="720">A cada 12 horas</option>
-                <option value="1440">A cada 1 dia</option>
-                <option value="2880">A cada 2 dias</option>
-              </select>
-            </label>
+            <SelectField
+              label="Intervalo de lembretes"
+              value={formData.reminderPeriodMinutes}
+              onChange={(event) => setFormData((current) => ({ ...current, reminderPeriodMinutes: event.target.value }))}
+            >
+              <option value="60">A cada 1 hora</option>
+              <option value="360">A cada 6 horas</option>
+              <option value="720">A cada 12 horas</option>
+              <option value="1440">A cada 1 dia</option>
+              <option value="2880">A cada 2 dias</option>
+            </SelectField>
           )}
 
-          <button className="primary-action" type="submit" disabled={formLoading}>
+          <Button variant="primary" type="submit" disabled={formLoading}>
             {editingEventId ? <Save size={18} /> : <Plus size={18} />}
             {formLoading ? 'Salvando...' : editingEventId ? 'Salvar evento' : 'Cadastrar evento'}
-          </button>
+          </Button>
         </form>
-      </aside>
+      </FormPanel>
     </section>
   );
 }

@@ -6,8 +6,8 @@
   --panel: rgba(255, 255, 255, 0.82);
   --panel-strong: rgba(255, 255, 255, 0.94);
   --soft: rgba(15, 118, 110, 0.1);
-  --blood: #ff5a1f;
-  --blood-dark: #e64b12;
+  --blood: #9a3412;
+  --blood-dark: #7c2d12;
   --teal: #0f766e;
   --amber: #b7791f;
   --input-bg: rgba(255, 255, 255, 0.9);
@@ -35,8 +35,8 @@
   --panel: rgba(8, 22, 39, 0.78);
   --panel-strong: rgba(10, 25, 44, 0.94);
   --soft: rgba(93, 248, 234, 0.12);
-  --blood: #ff5a1f;
-  --blood-dark: #e64b12;
+  --blood: #9a3412;
+  --blood-dark: #7c2d12;
   --teal: #5df8ea;
   --amber: #ffc861;
   --danger: #ff7b7b;
@@ -457,15 +457,15 @@ img.user-avatar {
 }
 
 .side-nav-agenda {
-  --side-nav-color: #b7791f;
+  --side-nav-color: #8a5a15;
   --side-nav-soft: rgba(183, 121, 31, 0.12);
   --side-nav-border: rgba(183, 121, 31, 0.34);
 }
 
 .side-nav button.active {
   color: #fff;
-  border-color: var(--side-nav-color, var(--blood));
-  background: var(--side-nav-color, var(--blood));
+  border-color: var(--side-nav-color, #9a3412);
+  background: var(--side-nav-color, #9a3412);
 }
 
 .side-nav button.active .side-nav-count {

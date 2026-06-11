@@ -1,5 +1,6 @@
-import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Info, Mail, Pencil, Phone, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Info, Mail, Pencil, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { User } from '../../types';
+import { AlertMessage, Button, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
 import { getProfileName } from '../../shared/utils/formatters';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { UserAvatar } from './UserAvatar';
@@ -48,7 +49,7 @@ export function UserList({
   onSelectContactUser,
 }: UserListProps) {
   return (
-    <section className="data-panel">
+    <DataPanel>
       <div className="data-header">
         <div>
           <span className="eyebrow">Base de usuarios</span>
@@ -56,27 +57,23 @@ export function UserList({
         </div>
 
         <div className="table-tools">
-          <button type="button" className="ghost-button" onClick={onOpenNewUserForm}>
+          <Button onClick={onOpenNewUserForm}>
             <Plus size={17} />
             Novo usuario
-          </button>
-          <label className="search-box">
-            <Search size={17} />
-            <input
-              type="search"
-              value={searchTerm}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Buscar"
-            />
-          </label>
-          <button type="button" className="icon-button" onClick={onRefresh} title="Atualizar lista">
+          </Button>
+          <SearchField
+            label="Buscar usuarios"
+            value={searchTerm}
+            onValueChange={onSearchChange}
+          />
+          <IconButton label="Atualizar lista de usuarios" onClick={onRefresh} title="Atualizar lista">
             <RefreshCw size={18} />
-          </button>
+          </IconButton>
         </div>
       </div>
 
-      {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
-      {usersError && <p className="alert error">{usersError}</p>}
+      {successMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</AlertMessage>}
+      {usersError && <AlertMessage type="error">{usersError}</AlertMessage>}
 
       <div className="carousel-shell">
         <button
@@ -140,12 +137,12 @@ export function UserList({
                     </td>
                     <td data-label="Acoes">
                       <div className="row-actions">
-                        <button type="button" className="icon-button muted" onClick={() => void onEditUser(user)} title="Editar">
+                        <IconButton label={`Editar ${user.nome}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
                           <Pencil size={17} />
-                        </button>
-                        <button type="button" className="icon-button danger" onClick={() => void onDeleteUser(user)} title="Excluir">
+                        </IconButton>
+                        <IconButton label={`Excluir ${user.nome}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
                           <Trash2 size={17} />
-                        </button>
+                        </IconButton>
                       </div>
                     </td>
                   </tr>
@@ -174,27 +171,25 @@ export function UserList({
           {visibleStart}-{visibleEnd} de {usersTotalItems}
         </span>
         <div className="pagination-actions">
-          <button
-            type="button"
-            className="icon-button"
+          <IconButton
+            label="Pagina anterior de usuarios"
             onClick={() => onPageChange((page) => Math.max(1, page - 1))}
             disabled={currentPage === 1}
             title="Pagina anterior"
           >
             <ChevronLeft size={18} />
-          </button>
+          </IconButton>
           <span className="page-indicator">Pagina {currentPage} de {totalPages}</span>
-          <button
-            type="button"
-            className="icon-button"
+          <IconButton
+            label="Proxima pagina de usuarios"
             onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
             disabled={currentPage === totalPages}
             title="Proxima pagina"
           >
             <ChevronRight size={18} />
-          </button>
+          </IconButton>
         </div>
       </div>
-    </section>
+    </DataPanel>
   );
 }

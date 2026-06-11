@@ -18,6 +18,10 @@ Variavel obrigatoria em ambientes publicados:
 
 ```text
 VITE_API_URL=https://<api-publica>
+VITE_APP_ENV=production
+VITE_APP_VERSION=<versao-ou-sha>
+VITE_SENTRY_DSN=<dsn-opcional>
+VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 Localmente o fallback do codigo e `http://localhost:5000`, mas o recomendado e manter `.env.local`:
@@ -46,8 +50,11 @@ Checklist local recomendado:
 ```powershell
 npm test
 npm run build
+npm run budget
 npm run test:e2e
+npm run audit:a11y
 npm run analyze
+npm run audit:lighthouse
 ```
 
 O comando `npm run analyze` gera:
@@ -75,7 +82,11 @@ VERCEL_TOKEN
 VERCEL_ORG_ID
 VERCEL_PROJECT_ID
 VITE_API_URL
+VITE_SENTRY_DSN
+VITE_SENTRY_TRACES_SAMPLE_RATE
 ```
+
+`VITE_APP_ENV=production` e `VITE_APP_VERSION=<sha>` sao definidos pelo workflow. Cadastre `VITE_SENTRY_DSN` nos secrets do GitHub e tambem no painel da Vercel caso o build seja disparado diretamente por la.
 
 Workflow atual:
 
@@ -83,9 +94,9 @@ Workflow atual:
 .github/workflows/deploy-vercel.yml
 ```
 
-Ele roda em push para `main` ou `workflow_dispatch`, instala Node 22, executa `npm test` e faz o deploy Vercel quando os secrets existem.
+Ele roda em push para `main` ou `workflow_dispatch`, instala Node 22, executa `npm test`, `npm run build`, `npm run budget` e faz o deploy Vercel quando os secrets existem.
 
-Observacao: o workflow de producao ainda nao roda Playwright E2E. Antes de merge/deploy, rode `npm run test:e2e` localmente ou adicione esse passo ao CI quando o tempo de pipeline permitir.
+O workflow de CI (`.github/workflows/ci.yml`) roda tambem Playwright E2E e Lighthouse. Use esse pipeline como gate principal para pull requests e pushes em `main`/`developer`.
 
 ## Render
 
@@ -93,7 +104,7 @@ Observacao: o workflow de producao ainda nao roda Playwright E2E. Antes de merge
 
 - service: `hemodinks-front`
 - branch: `main`
-- build `npm ci && npm run build`
+- build `npm ci && npm run build && npm run budget`
 - publish path `./dist`
 - rewrite SPA para `/index.html`
 - headers `X-Frame-Options: sameorigin` e `X-Content-Type-Options: nosniff`
@@ -103,6 +114,10 @@ Variaveis:
 ```text
 NODE_VERSION=22.12.0
 VITE_API_URL=https://<api-publica>
+VITE_APP_ENV=production
+VITE_APP_VERSION=<versao-ou-sha>
+VITE_SENTRY_DSN=<dsn-opcional>
+VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 ## Render Homologacao: Confirmation
@@ -111,7 +126,7 @@ VITE_API_URL=https://<api-publica>
 
 - service: `hemodinks-front-confirmation`
 - branch: `developer`
-- build `npm ci && npm run build`
+- build `npm ci && npm run build && npm run budget`
 - publish path `./dist`
 - rewrite SPA para `/index.html`
 
@@ -119,9 +134,15 @@ Variavel de referencia:
 
 ```text
 VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
+VITE_APP_ENV=confirmation
+VITE_APP_VERSION=<versao-ou-sha>
+VITE_SENTRY_DSN=<dsn-opcional>
+VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 O arquivo `.env.confirmation.example` contem o mesmo valor para build local ou configuracao manual.
+
+Para Sentry em Render, cadastre `VITE_SENTRY_DSN` como secret/environment variable no servico. Sem esse valor, o Error Boundary continua funcionando, mas os erros nao sao enviados ao Sentry.
 
 No backend de homologacao, libere a origem do front:
 
@@ -148,6 +169,8 @@ Validar no navegador:
 - tema claro/escuro
 - modais fechando com ESC
 - layout sem scroll horizontal em 360px, 390px e 768px
+- fallback do Error Boundary
+- evento de erro chegando ao Sentry quando `VITE_SENTRY_DSN` estiver configurado
 
 ## CORS
 

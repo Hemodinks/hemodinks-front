@@ -17,6 +17,8 @@ import { ContactModal, InfoModal } from './features/users/UserModals';
 import { AppShell } from './layout/AppShell';
 import type { BreadcrumbItem, ModuleMode } from './appTypes';
 import { queryClient } from './queryClient';
+import { setObservabilityUser } from './observability';
+import { ErrorBoundary } from './shared/components/ErrorBoundary';
 import { queryKeys } from './shared/queryKeys';
 import { useRouteView } from './shared/hooks/useRouteView';
 import { useThemePreference } from './shared/hooks/useThemePreference';
@@ -85,6 +87,14 @@ function AppContent() {
     enabled: Boolean(session && notificationsOpen),
     staleTime: NOTIFICATIONS_CACHE_TIME_MS,
   });
+
+  useEffect(() => {
+    setObservabilityUser(session ? {
+      id: session.user.id,
+      email: session.user.email,
+      nome: session.user.nome,
+    } : null);
+  }, [session?.user.email, session?.user.id, session?.user.nome]);
 
   useEffect(() => {
     if (dashboardSummaryQuery.data) {
@@ -686,9 +696,11 @@ function AppContent() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </ErrorBoundary>
     </QueryClientProvider>
   );
 }
