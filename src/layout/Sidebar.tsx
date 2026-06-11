@@ -1,4 +1,4 @@
-import { ClipboardList, FileText, LayoutDashboard, Users } from 'lucide-react';
+import { CalendarDays, ClipboardList, FileText, LayoutDashboard, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -15,6 +15,7 @@ type SidebarProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenAgenda: () => void;
 };
 
 export function Sidebar({
@@ -29,6 +30,7 @@ export function Sidebar({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenAgenda,
 }: SidebarProps) {
   return (
     <aside className="sidebar-panel" aria-label="Sessao ativa">
@@ -52,10 +54,11 @@ export function Sidebar({
           <span className="session-meta">{currentUserProfile} | {session.user.email}</span>
         </div>
 
-        <nav className="side-nav" role="tablist" aria-label="Navegacao principal">
+        <nav className="side-nav" aria-label="Navegacao principal">
           <button
             type="button"
             className={activeView === 'dashboard' ? 'active' : ''}
+            aria-current={activeView === 'dashboard' ? 'page' : undefined}
             onClick={onOpenDashboard}
           >
             <LayoutDashboard size={18} />
@@ -65,6 +68,7 @@ export function Sidebar({
             <button
               type="button"
               className={`side-nav-users ${activeView === 'users' ? 'active' : ''}`}
+              aria-current={activeView === 'users' ? 'page' : undefined}
               onClick={onOpenUsersList}
             >
               <Users size={18} />
@@ -76,6 +80,7 @@ export function Sidebar({
             <button
               type="button"
               className={activeView === 'users' ? 'active' : ''}
+              aria-current={activeView === 'users' ? 'page' : undefined}
               onClick={onOpenMyProfile}
             >
               <FileText size={18} />
@@ -85,11 +90,21 @@ export function Sidebar({
           <button
             type="button"
             className={`side-nav-patients ${activeView === 'patients' ? 'active' : ''}`}
+            aria-current={activeView === 'patients' ? 'page' : undefined}
             onClick={onOpenPatientsList}
           >
             <ClipboardList size={18} />
             <span>Pacientes</span>
             <span className="side-nav-count">{pacientesCount}</span>
+          </button>
+          <button
+            type="button"
+            className={`side-nav-agenda ${activeView === 'agenda' ? 'active' : ''}`}
+            aria-current={activeView === 'agenda' ? 'page' : undefined}
+            onClick={onOpenAgenda}
+          >
+            <CalendarDays size={18} />
+            <span>Agenda</span>
           </button>
         </nav>
       </div>

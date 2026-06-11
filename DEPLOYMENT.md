@@ -1,30 +1,69 @@
 # Deploy do Hemodinks Front
 
-Frontend React/Vite publicado como SPA.
+Frontend React/Vite publicado como SPA. O build final fica em `dist` e todas as rotas devem reescrever para `/index.html`.
 
-## URLs
+## Ambientes
 
-| Recurso | URL |
+| Ambiente | URL |
 | --- | --- |
-| Desenvolvimento local | `http://localhost:5173` |
-| Producao atual | `https://hemodinks-saude.vercel.app` |
+| Local | `http://localhost:5173` |
+| Producao | `https://hemodinks-saude.vercel.app` |
 | API local | `http://localhost:5000` |
-| Swagger API | `https://<api-publica>/swagger` |
-| Scalar API | `https://<api-publica>/scalar` |
+| Swagger local | `http://localhost:5000/swagger` |
+| Scalar local | `http://localhost:5000/scalar` |
 
-## Variavel da API
+## Variaveis
 
-Configure:
+Variavel obrigatoria em ambientes publicados:
 
 ```text
 VITE_API_URL=https://<api-publica>
+VITE_APP_ENV=production
+VITE_APP_VERSION=<versao-ou-sha>
+VITE_SENTRY_DSN=<dsn-opcional>
+VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
-Localmente, o padrao do codigo e `http://localhost:5000`. Para sobrescrever:
+Localmente o fallback do codigo e `http://localhost:5000`, mas o recomendado e manter `.env.local`:
 
 ```powershell
 Copy-Item .env.example .env.local
 ```
+
+Homologacao de confirmation:
+
+```text
+VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
+```
+
+## Validacao Antes de Deploy
+
+Em uma maquina nova, instale tambem o navegador do Playwright:
+
+```powershell
+npm ci
+npx playwright install chromium
+```
+
+Checklist local recomendado:
+
+```powershell
+npm test
+npm run build
+npm run budget
+npm run test:e2e
+npm run audit:a11y
+npm run analyze
+npm run audit:lighthouse
+```
+
+O comando `npm run analyze` gera:
+
+```text
+dist/bundle-stats.html
+```
+
+Esse arquivo ajuda a confirmar se dependencias pesadas, como `jspdf`, continuam separadas em chunks carregados sob demanda.
 
 ## Vercel
 
@@ -36,50 +75,74 @@ Copy-Item .env.example .env.local
 - output `dist`
 - rewrite SPA para `/index.html`
 
-Secrets/variaveis no Vercel ou GitHub Actions:
+Secrets/variaveis esperadas:
 
 ```text
 VERCEL_TOKEN
 VERCEL_ORG_ID
 VERCEL_PROJECT_ID
 VITE_API_URL
+VITE_SENTRY_DSN
+VITE_SENTRY_TRACES_SAMPLE_RATE
 ```
 
-O workflow `.github/workflows/deploy-vercel.yml` roda testes, gera build e publica em producao quando houver push na `main` ou execucao manual.
+`VITE_APP_ENV=production` e `VITE_APP_VERSION=<sha>` sao definidos pelo workflow. Cadastre `VITE_SENTRY_DSN` nos secrets do GitHub e tambem no painel da Vercel caso o build seja disparado diretamente por la.
+
+Workflow atual:
+
+```text
+.github/workflows/deploy-vercel.yml
+```
+
+Ele roda em push para `main` ou `workflow_dispatch`, instala Node 22, executa `npm test`, `npm run build`, `npm run budget` e faz o deploy Vercel quando os secrets existem.
+
+O workflow de CI (`.github/workflows/ci.yml`) roda tambem Playwright E2E e Lighthouse. Use esse pipeline como gate principal para pull requests e pushes em `main`/`developer`.
 
 ## Render
 
 `render.yaml` define um Static Site:
 
-- build `npm ci && npm run build`
+- service: `hemodinks-front`
+- branch: `main`
+- build `npm ci && npm run build && npm run budget`
 - publish path `./dist`
 - rewrite SPA para `/index.html`
+- headers `X-Frame-Options: sameorigin` e `X-Content-Type-Options: nosniff`
 
-Variavel obrigatoria:
+Variaveis:
 
 ```text
+NODE_VERSION=22.12.0
 VITE_API_URL=https://<api-publica>
+VITE_APP_ENV=production
+VITE_APP_VERSION=<versao-ou-sha>
+VITE_SENTRY_DSN=<dsn-opcional>
+VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
-### Homologacao Render: confirmation
+## Render Homologacao: Confirmation
 
-O arquivo `render.confirmation.yaml` define um Static Site separado:
+`render.confirmation.yaml` define um Static Site separado:
 
 - service: `hemodinks-front-confirmation`
 - branch: `developer`
-- build `npm ci && npm run build`
+- build `npm ci && npm run build && npm run budget`
 - publish path `./dist`
 - rewrite SPA para `/index.html`
 
-Variavel esperada:
+Variavel de referencia:
 
 ```text
 VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
+VITE_APP_ENV=confirmation
+VITE_APP_VERSION=<versao-ou-sha>
+VITE_SENTRY_DSN=<dsn-opcional>
+VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
-Se a API de homologacao receber outra URL no Render, atualize `VITE_API_URL` no ambiente `confirmation`.
+O arquivo `.env.confirmation.example` contem o mesmo valor para build local ou configuracao manual.
 
-O arquivo `.env.confirmation.example` contem o valor de referencia para build local ou configuracao manual.
+Para Sentry em Render, cadastre `VITE_SENTRY_DSN` como secret/environment variable no servico. Sem esse valor, o Error Boundary continua funcionando, mas os erros nao sao enviados ao Sentry.
 
 No backend de homologacao, libere a origem do front:
 
@@ -87,36 +150,66 @@ No backend de homologacao, libere a origem do front:
 Cors__AllowedOrigins__0=https://hemodinks-front-confirmation.onrender.com
 ```
 
-## Validacao
+## Smoke Test Apos Deploy
 
-```powershell
-npm ci
-npm test
-npm run build
-npm run preview
-```
+Validar no navegador:
 
-Fluxos que devem ser testados apos deploy:
-
-- login
-- dashboard
+- login com usuario real
+- dashboard carregando resumo
+- notificacoes abrindo e fechando
 - listagem de usuarios
+- cadastro/edicao de usuario
+- listagem de pacientes
+- filtros de pacientes
 - cadastro/edicao de paciente
-- popup CBHPM com filtros por codigo, procedimento e porte
-- selecao de procedimento compondo o payload do paciente
-- upload/listagem/exclusao de arquivos
+- modal CBHPM com busca e selecao
+- exportacao XLSX
+- exportacao PDF
+- agenda em desktop e mobile
+- tema claro/escuro
+- modais fechando com ESC
+- layout sem scroll horizontal em 360px, 390px e 768px
+- fallback do Error Boundary
+- evento de erro chegando ao Sentry quando `VITE_SENTRY_DSN` estiver configurado
 
 ## CORS
 
-A API ja permite por padrao:
+A API precisa permitir a origem do front publicado.
 
-```text
-https://hemodinks-saude.vercel.app
-```
-
-Para preview deployments da Vercel ou outros dominios, adicione no backend:
+Producao:
 
 ```text
 Cors__AllowedOrigins__0=https://hemodinks-saude.vercel.app
+```
+
+Preview ou outros dominios:
+
+```text
 Cors__AllowedOrigins__1=https://<preview>.vercel.app
 ```
+
+Homologacao Render:
+
+```text
+Cors__AllowedOrigins__0=https://hemodinks-front-confirmation.onrender.com
+```
+
+## Troubleshooting
+
+Se a tela ficar em branco em uma rota direta, verifique a rewrite SPA para `/index.html`.
+
+Se login ou dados falharem em producao, confira `VITE_API_URL` no ambiente publicado e as origens CORS no backend.
+
+Se o E2E falhar em maquina nova, rode:
+
+```powershell
+npx playwright install chromium
+```
+
+Se o bundle crescer, rode:
+
+```powershell
+npm run analyze
+```
+
+Abra `dist/bundle-stats.html` e confira se bibliotecas pesadas continuam em chunks separados.

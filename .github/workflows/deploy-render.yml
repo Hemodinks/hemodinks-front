@@ -20,6 +20,10 @@ jobs:
     env:
       RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      VITE_APP_ENV: production
+      VITE_APP_VERSION: ${{ github.sha }}
+      VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+      VITE_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.VITE_SENTRY_TRACES_SAMPLE_RATE }}
 
     steps:
       - name: Checkout
@@ -39,6 +43,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Check bundle budget
+        run: npm run budget
 
       - name: Trigger Render deploy
         shell: bash

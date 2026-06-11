@@ -1,5 +1,7 @@
 import { Bell, X } from 'lucide-react';
 import type { DashboardNotification } from '../../types';
+import { Modal } from '../../shared/components/Modal';
+import { AlertMessage, IconButton } from '../../shared/components/ui';
 import { toNotificationDate } from '../../shared/utils/formatters';
 
 type NotificationsModalProps = {
@@ -12,25 +14,24 @@ type NotificationsModalProps = {
 
 export function NotificationsModal({ notifications, loading, error, totalCount, onClose }: NotificationsModalProps) {
   return (
-    <div className="modal-backdrop" role="presentation">
-      <section className="modal-panel notifications-modal" role="dialog" aria-modal="true" aria-labelledby="notifications-title">
+    <Modal titleId="notifications-title" className="notifications-modal" onClose={onClose}>
         <div className="panel-title">
           <div>
             <span className="eyebrow">Central de avisos</span>
             <h2 id="notifications-title">Notificacoes</h2>
           </div>
-          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar">
+          <IconButton label="Fechar notificacoes" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
-          </button>
+          </IconButton>
         </div>
 
         <div className="notification-summary-line">
           <Bell size={17} />
-          <span>{totalCount === 1 ? '1 pendencia encontrada' : `${totalCount} pendencias encontradas`}</span>
+          <span>{totalCount === 1 ? '1 aviso encontrado' : `${totalCount} avisos encontrados`}</span>
         </div>
 
-        {loading && <p className="alert success"><Bell size={17} />Carregando notificacoes...</p>}
-        {error && <p className="alert error">{error}</p>}
+        {loading && <AlertMessage type="success" icon={<Bell size={17} />}>Carregando notificacoes...</AlertMessage>}
+        {error && <AlertMessage type="error">{error}</AlertMessage>}
 
         {notifications.length ? (
           <ul className="notifications-list">
@@ -44,7 +45,7 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
                     <strong>{notification.titulo}</strong>
                     <p>{notification.mensagem}</p>
                     <div className="notification-meta-row">
-                      <span>{notification.nomePaciente}</span>
+                      {notification.nomePaciente && <span>{notification.nomePaciente}</span>}
                       {notification.medico && <span>Medico: {notification.medico}</span>}
                       {notification.procedimento && <span>Procedimento: {notification.procedimento}</span>}
                       {date && <span>{date}</span>}
@@ -57,7 +58,6 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
         ) : !loading && !error ? (
           <p className="empty-row">Nenhuma notificacao para este usuario.</p>
         ) : null}
-      </section>
-    </div>
+      </Modal>
   );
 }

@@ -2,6 +2,7 @@ import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } 
 import { FileText, FileUp, ImagePlus, Plus, Save, Trash2, X } from 'lucide-react';
 import type { User, UserFormData } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
+import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
 import {
   BRAZIL_UF_OPTIONS,
   DEFAULT_PASSWORD,
@@ -62,7 +63,7 @@ export function UserForm({
   onDeleteUserArquivo,
 }: UserFormProps) {
   return (
-    <aside className="form-panel module-form-panel">
+    <FormPanel className="module-form-panel">
       <div className="panel-title">
         <div>
           <span className="eyebrow">{canAccessUsers ? editingId ? 'Edicao' : 'Cadastro' : 'Perfil'}</span>
@@ -70,9 +71,9 @@ export function UserForm({
         </div>
         <div className="panel-title-actions">
           {canAccessUsers && !editingId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
-          <button type="button" className="icon-button muted" onClick={onClose} title="Voltar para lista">
+          <IconButton label="Voltar para lista" tone="muted" onClick={onClose}>
             <X size={18} />
-          </button>
+          </IconButton>
         </div>
       </div>
 
@@ -89,10 +90,10 @@ export function UserForm({
                 {formData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
               </label>
               {formData.fotoPerfil && (
-                <button type="button" className="ghost-button danger-text" onClick={onRemoveProfilePhoto}>
+                <Button variant="danger-ghost" onClick={onRemoveProfilePhoto}>
                   <Trash2 size={17} />
                   Remover
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -108,54 +109,46 @@ export function UserForm({
           <span className="file-hint">PNG, JPG ou WEBP ate 1 MB.</span>
         </div>
 
-        <label>
-          Nome completo
-          <input
-            type="text"
-            value={formData.nome}
-            onChange={(event) => setFormData((current) => ({ ...current, nome: event.target.value.slice(0, MAX_NAME_LENGTH) }))}
-            maxLength={MAX_NAME_LENGTH}
-            required
-          />
-        </label>
+        <TextField
+          label="Nome completo"
+          type="text"
+          value={formData.nome}
+          onValueChange={(value) => setFormData((current) => ({ ...current, nome: value.slice(0, MAX_NAME_LENGTH) }))}
+          maxLength={MAX_NAME_LENGTH}
+          required
+        />
 
-        <label>
-          Email
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(event) => setFormData((current) => ({ ...current, email: event.target.value.slice(0, MAX_EMAIL_LENGTH) }))}
-            maxLength={MAX_EMAIL_LENGTH}
-            required
-          />
-        </label>
+        <TextField
+          label="Email"
+          type="email"
+          value={formData.email}
+          onValueChange={(value) => setFormData((current) => ({ ...current, email: value.slice(0, MAX_EMAIL_LENGTH) }))}
+          maxLength={MAX_EMAIL_LENGTH}
+          required
+        />
 
-        <label>
-          Telefone
-          <input
-            type="tel"
-            value={formData.telefone}
-            onFocus={() => setFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
-            onChange={(event) => setFormData((current) => ({ ...current, telefone: formatPhoneInput(event.target.value) }))}
-            inputMode="numeric"
-            maxLength={MAX_PHONE_LENGTH}
-            placeholder="+55 (81) 99999-9999"
-            required
-          />
-        </label>
+        <TextField
+          label="Telefone"
+          type="tel"
+          value={formData.telefone}
+          onFocus={() => setFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
+          onValueChange={(value) => setFormData((current) => ({ ...current, telefone: formatPhoneInput(value) }))}
+          inputMode="numeric"
+          maxLength={MAX_PHONE_LENGTH}
+          placeholder="+55 (81) 99999-9999"
+          required
+        />
 
-        <label>
-          CPF
-          <input
-            type="text"
-            value={formData.cpf}
-            onChange={(event) => setFormData((current) => ({ ...current, cpf: formatCpfInput(event.target.value) }))}
-            inputMode="numeric"
-            maxLength={MAX_CPF_LENGTH}
-            placeholder="000.000.000-00"
-            required
-          />
-        </label>
+        <TextField
+          label="CPF"
+          type="text"
+          value={formData.cpf}
+          onValueChange={(value) => setFormData((current) => ({ ...current, cpf: formatCpfInput(value) }))}
+          inputMode="numeric"
+          maxLength={MAX_CPF_LENGTH}
+          placeholder="000.000.000-00"
+          required
+        />
 
         <DateInput
           id="user-birth-date"
@@ -165,59 +158,53 @@ export function UserForm({
           required
         />
 
-        <label>
-          Perfil
-          <select
-            value={formData.perfilId}
-            onChange={(event) => {
-              const perfilId = Number(event.target.value);
-              setFormData((current) => ({
-                ...current,
-                perfilId,
-                crm: isMedicalProfileId(perfilId) ? current.crm : '',
-                crmUf: isMedicalProfileId(perfilId) ? current.crmUf : '',
-              }));
-            }}
-            disabled={!canAccessUsers}
-            required
-          >
-            {PROFILE_OPTIONS.map((profile) => (
-              <option key={profile.id} value={profile.id}>
-                {profile.nome}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          label="Perfil"
+          value={formData.perfilId}
+          onChange={(event) => {
+            const perfilId = Number(event.target.value);
+            setFormData((current) => ({
+              ...current,
+              perfilId,
+              crm: isMedicalProfileId(perfilId) ? current.crm : '',
+              crmUf: isMedicalProfileId(perfilId) ? current.crmUf : '',
+            }));
+          }}
+          disabled={!canAccessUsers}
+          required
+        >
+          {PROFILE_OPTIONS.map((profile) => (
+            <option key={profile.id} value={profile.id}>
+              {profile.nome}
+            </option>
+          ))}
+        </SelectField>
 
         {isMedicalProfileId(formData.perfilId) && (
           <div className="two-column-fields medical-registration-fields">
-            <label>
-              CRM
-              <input
-                type="text"
-                value={formData.crm}
-                onChange={(event) => setFormData((current) => ({ ...current, crm: event.target.value.slice(0, MAX_CRM_LENGTH) }))}
-                maxLength={MAX_CRM_LENGTH}
-                placeholder="Ex.: 12345"
-                disabled={!canUseUserForm}
-                required
-              />
-            </label>
+            <TextField
+              label="CRM"
+              type="text"
+              value={formData.crm}
+              onValueChange={(value) => setFormData((current) => ({ ...current, crm: value.slice(0, MAX_CRM_LENGTH) }))}
+              maxLength={MAX_CRM_LENGTH}
+              placeholder="Ex.: 12345"
+              disabled={!canUseUserForm}
+              required
+            />
 
-            <label>
-              UF do CRM
-              <select
-                value={formData.crmUf}
-                onChange={(event) => setFormData((current) => ({ ...current, crmUf: event.target.value }))}
-                disabled={!canUseUserForm}
-                required
-              >
+            <SelectField
+              label="UF do CRM"
+              value={formData.crmUf}
+              onChange={(event) => setFormData((current) => ({ ...current, crmUf: event.target.value }))}
+              disabled={!canUseUserForm}
+              required
+            >
                 <option value="">Selecione</option>
                 {BRAZIL_UF_OPTIONS.map((uf) => (
                   <option key={uf} value={uf}>{uf}</option>
                 ))}
-              </select>
-            </label>
+            </SelectField>
           </div>
         )}
 
@@ -248,9 +235,9 @@ export function UserForm({
                   <li key={`${file.name}-${index}`}>
                     <FileText size={15} />
                     <span>{file.name}</span>
-                    <button type="button" className="icon-button muted mini" onClick={() => onRemovePendingUserFile(index)} title="Remover arquivo">
+                    <IconButton label="Remover arquivo" tone="muted" className="mini" onClick={() => onRemovePendingUserFile(index)}>
                       <X size={14} />
-                    </button>
+                    </IconButton>
                   </li>
                 ))}
               </ul>
@@ -262,9 +249,9 @@ export function UserForm({
                   <li key={arquivo.id}>
                     <FileText size={15} />
                     <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
-                    <button type="button" className="icon-button muted mini" onClick={() => void onDeleteUserArquivo(editingUserDetails, arquivo.id)} title="Excluir arquivo">
+                    <IconButton label="Excluir arquivo" tone="muted" className="mini" onClick={() => void onDeleteUserArquivo(editingUserDetails, arquivo.id)}>
                       <Trash2 size={14} />
-                    </button>
+                    </IconButton>
                   </li>
                 ))}
               </ul>
@@ -272,23 +259,20 @@ export function UserForm({
           </div>
         )}
 
-        <label className="toggle-row">
-          <input
-            type="checkbox"
-            checked={formData.ativo}
-            onChange={(event) => setFormData((current) => ({ ...current, ativo: event.target.checked }))}
-            disabled={!canAccessUsers}
-          />
-          Usuario ativo
-        </label>
+        <CheckboxField
+          label="Usuario ativo"
+          checked={formData.ativo}
+          onCheckedChange={(checked) => setFormData((current) => ({ ...current, ativo: checked }))}
+          disabled={!canAccessUsers}
+        />
 
-        {formError && <p className="alert error">{formError}</p>}
+        {formError && <AlertMessage type="error">{formError}</AlertMessage>}
 
-        <button className="primary-action" type="submit" disabled={formLoading}>
+        <Button variant="primary" type="submit" disabled={formLoading}>
           {editingId ? <Save size={18} /> : <Plus size={18} />}
           {formLoading ? 'Salvando...' : editingId ? 'Salvar alteracoes' : 'Cadastrar usuario'}
-        </button>
+        </Button>
       </form>
-    </aside>
+    </FormPanel>
   );
 }
