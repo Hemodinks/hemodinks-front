@@ -400,6 +400,39 @@ input::placeholder {
   font-weight: 700;
 }
 
+.error-boundary-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    linear-gradient(var(--background-overlay), var(--background-overlay)),
+    url("../../../imagem candidata hemodinks.jpg") center / cover no-repeat;
+}
+
+.error-boundary-panel {
+  width: min(520px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.error-boundary-panel > svg {
+  color: var(--danger);
+}
+
+.error-boundary-panel p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .vital-line {
   grid-column: 1 / -1;
   display: grid;

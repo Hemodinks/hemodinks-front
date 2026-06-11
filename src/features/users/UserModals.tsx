@@ -2,6 +2,7 @@ import { CircleCheck, CircleX, X } from 'lucide-react';
 import type { User } from '../../types';
 import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
+import { IconButton } from '../../shared/components/ui';
 import {
   formatCpfInput,
   formatPhoneInput,
@@ -25,9 +26,9 @@ export function InfoModal({ user, onClose }: InfoModalProps) {
             <span className="eyebrow">Informacoes</span>
             <h2 id="info-title">{user.nome}</h2>
           </div>
-          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar" aria-label="Fechar informacoes do usuario">
+          <IconButton label="Fechar informacoes do usuario" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
-          </button>
+          </IconButton>
         </div>
 
         <dl className="info-list">
@@ -86,9 +87,9 @@ export function ContactModal({ user, onClose }: ContactModalProps) {
             <span className="eyebrow">Contato</span>
             <h2 id="contact-title">{user.nome}</h2>
           </div>
-          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar" aria-label="Fechar contato do usuario">
+          <IconButton label="Fechar contato do usuario" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
-          </button>
+          </IconButton>
         </div>
 
         <dl className="info-list">

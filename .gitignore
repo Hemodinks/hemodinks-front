@@ -6,3 +6,5 @@ tsconfig.tsbuildinfo
 npm-debug.log*
 test-results
 playwright-report
+reports
+.lighthouseci

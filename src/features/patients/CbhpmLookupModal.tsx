@@ -2,6 +2,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, X } from 'lucide-re
 import type { CbhpmGeral } from '../../types';
 import type { CbhpmFilters } from '../../appTypes';
 import { Modal } from '../../shared/components/Modal';
+import { AlertMessage, Button, IconButton, TextField } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
 
 type CbhpmLookupModalProps = {
@@ -48,46 +49,40 @@ export function CbhpmLookupModal({
             <span className="eyebrow">CBHPM</span>
             <h2 id="cbhpm-title">Selecionar procedimento</h2>
           </div>
-          <button type="button" className="icon-button muted" onClick={onClose} title="Fechar" aria-label="Fechar selecao de procedimento">
+          <IconButton label="Fechar selecao de procedimento" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
-          </button>
+          </IconButton>
         </div>
 
         <div className="cbhpm-filters">
-          <label>
-            Codigo
-            <input
-              type="search"
-              value={filters.codigo}
-              onChange={(event) => updateFilter('codigo', event.target.value)}
-              placeholder="1.01"
-            />
-          </label>
-          <label>
-            Procedimento
-            <input
-              type="search"
-              value={filters.procedimento}
-              onChange={(event) => updateFilter('procedimento', event.target.value)}
-              placeholder="Consulta"
-            />
-          </label>
-          <label>
-            Porte
-            <input
-              type="search"
-              value={filters.porte}
-              onChange={(event) => updateFilter('porte', event.target.value.toUpperCase())}
-              placeholder="2B"
-              maxLength={10}
-            />
-          </label>
-          <button type="button" className="icon-button" onClick={onRefresh} title="Atualizar procedimentos">
+          <TextField
+            label="Codigo"
+            type="search"
+            value={filters.codigo}
+            onValueChange={(value) => updateFilter('codigo', value)}
+            placeholder="1.01"
+          />
+          <TextField
+            label="Procedimento"
+            type="search"
+            value={filters.procedimento}
+            onValueChange={(value) => updateFilter('procedimento', value)}
+            placeholder="Consulta"
+          />
+          <TextField
+            label="Porte"
+            type="search"
+            value={filters.porte}
+            onValueChange={(value) => updateFilter('porte', value.toUpperCase())}
+            placeholder="2B"
+            maxLength={10}
+          />
+          <IconButton label="Atualizar procedimentos" onClick={onRefresh}>
             <RefreshCw size={18} />
-          </button>
+          </IconButton>
         </div>
 
-        {error && <p className="alert error">{error}</p>}
+        {error && <AlertMessage type="error">{error}</AlertMessage>}
 
         <div className="table-wrap cbhpm-table-wrap">
           <table className="cbhpm-table">
@@ -113,10 +108,10 @@ export function CbhpmLookupModal({
                     <td data-label="Porte">{item.porte || '-'}</td>
                     <td data-label="Valor referencia">{formatCurrency(item.valorReferencia)}</td>
                     <td data-label="Selecionar">
-                      <button type="button" className="ghost-button select-procedure-action" onClick={() => onSelect(item)}>
+                      <Button className="select-procedure-action" onClick={() => onSelect(item)}>
                         <CheckCircle2 size={17} />
                         Adicionar
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))
@@ -134,25 +129,21 @@ export function CbhpmLookupModal({
             {visibleStart}-{visibleEnd} de {totalItems}
           </span>
           <div className="pagination-actions">
-            <button
-              type="button"
-              className="icon-button"
+            <IconButton
+              label="Pagina anterior"
               onClick={() => onPageChange((page) => Math.max(1, page - 1))}
               disabled={currentPage === 1}
-              title="Pagina anterior"
             >
               <ChevronLeft size={18} />
-            </button>
+            </IconButton>
             <span className="page-indicator">Pagina {currentPage} de {totalPages}</span>
-            <button
-              type="button"
-              className="icon-button"
+            <IconButton
+              label="Proxima pagina"
               onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
               disabled={currentPage === totalPages}
-              title="Proxima pagina"
             >
               <ChevronRight size={18} />
-            </button>
+            </IconButton>
           </div>
         </div>
       </Modal>
