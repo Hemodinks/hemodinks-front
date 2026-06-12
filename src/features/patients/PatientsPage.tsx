@@ -38,7 +38,6 @@ type PatientsPageProps = {
   isAdmin: boolean;
   isMedical: boolean;
   sessionToken: string;
-  sessionUserName: string;
   setPacienteFormData: Dispatch<SetStateAction<PacienteFormData>>;
   setPacienteSearchTerm: (value: string) => void;
   setPacienteFilters: Dispatch<SetStateAction<PacienteFilters>>;
@@ -95,7 +94,6 @@ export function PatientsPage({
   isAdmin,
   isMedical,
   sessionToken,
-  sessionUserName,
   setPacienteFormData,
   setPacienteSearchTerm,
   setPacienteFilters,
@@ -136,7 +134,6 @@ export function PatientsPage({
           convenios={convenios}
           conveniosError={conveniosError}
           isMedical={isMedical}
-          sessionUserName={sessionUserName}
           setPacienteFormData={setPacienteFormData}
           onClose={closePacienteForm}
           onSubmit={handleSubmitPaciente}

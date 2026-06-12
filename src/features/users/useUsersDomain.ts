@@ -194,7 +194,7 @@ export function useUsersDomain({
     setFormError('');
     setSuccessMessage('');
     setPendingUserFiles([]);
-    navigateToView('users');
+    navigateToView(canAccessUsers ? 'users' : 'profile');
     setModuleMode('form');
 
     try {
@@ -465,6 +465,15 @@ export function useUsersDomain({
   const refreshUsers = () => {
     void refreshUserList(true);
   };
+
+  useEffect(() => {
+    if (activeView === 'profile'
+      && canEditOwnUser
+      && session
+      && (moduleMode !== 'form' || editingId !== session.user.id)) {
+      openMyProfile();
+    }
+  }, [activeView, canEditOwnUser, editingId, moduleMode, session?.user.id]);
 
   useEffect(() => {
     if (currentPage > totalPages) {

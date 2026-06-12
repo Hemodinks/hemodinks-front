@@ -91,6 +91,8 @@ export function PatientList({
   onOpenPacienteFiles,
   onSelectPatientInfo,
 }: PatientListProps) {
+  const patientActionLabel = patientReadOnly ? 'Visualizar' : 'Editar';
+
   return (
     <DataPanel>
       <div className="data-header">
@@ -264,10 +266,10 @@ export function PatientList({
                     <td data-label="Acoes">
                       <div className="row-actions">
                         <IconButton
-                          label={`${patientReadOnly ? 'Visualizar' : 'Editar'} ${paciente.nomePaciente}`}
+                          label={`${patientActionLabel} ${paciente.nomePaciente}`}
                           tone="muted"
                           onClick={() => void onEditPaciente(paciente)}
-                          title={patientReadOnly ? 'Visualizar' : 'Editar'}
+                          title={patientActionLabel}
                         >
                           {patientReadOnly ? <Eye size={17} /> : <Pencil size={17} />}
                         </IconButton>

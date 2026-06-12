@@ -34,7 +34,6 @@ type PatientFormProps = {
   convenios: Convenio[];
   conveniosError: string;
   isMedical: boolean;
-  sessionUserName: string;
   setPacienteFormData: Dispatch<SetStateAction<PacienteFormData>>;
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -61,7 +60,6 @@ export function PatientForm({
   convenios,
   conveniosError,
   isMedical,
-  sessionUserName,
   setPacienteFormData,
   onClose,
   onSubmit,
@@ -152,20 +150,22 @@ export function PatientForm({
           </SelectField>
           {hospitaisError && <AlertMessage type="error">{hospitaisError}</AlertMessage>}
 
-          <TextField
-            label="Médico"
-            type="text"
-            list={MEDICAL_USERS_DATALIST_ID}
-            value={isMedical ? sessionUserName : pacienteFormData.medico}
-            onValueChange={(value) => {
-              const medico = value.slice(0, MAX_NAME_LENGTH);
-              const selectedMedicoUser = findMedicalUserByName(medicalUsers, medico);
-              setPacienteFormData((current) => ({ ...current, medicoUserId: selectedMedicoUser?.id ?? null, medico }));
-            }}
-            disabled={patientReadOnly || isMedical || (!medicalUsers.length && !pacienteFormData.medico)}
-            maxLength={MAX_NAME_LENGTH}
-            placeholder={isMedical ? sessionUserName : medicalUsers.length ? 'Selecione ou digite o medico' : 'Nenhum medico cadastrado'}
-          />
+          {!isMedical && (
+            <TextField
+              label="Médico"
+              type="text"
+              list={MEDICAL_USERS_DATALIST_ID}
+              value={pacienteFormData.medico}
+              onValueChange={(value) => {
+                const medico = value.slice(0, MAX_NAME_LENGTH);
+                const selectedMedicoUser = findMedicalUserByName(medicalUsers, medico);
+                setPacienteFormData((current) => ({ ...current, medicoUserId: selectedMedicoUser?.id ?? null, medico }));
+              }}
+              disabled={patientReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
+              maxLength={MAX_NAME_LENGTH}
+              placeholder={medicalUsers.length ? 'Selecione ou digite o medico' : 'Nenhum medico cadastrado'}
+            />
+          )}
 
           <TextField
             label="Convênio"
