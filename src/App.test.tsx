@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import * as api from './api';
+import { CbhpmLookupModal } from './features/patients/CbhpmLookupModal';
 import { queryClient } from './queryClient';
 import type { AuthSession, Paciente, User } from './types';
 
@@ -619,6 +620,45 @@ describe('App', () => {
     await openUsersModule(user);
     expect(await screen.findByText('Ana Recente')).toBeInTheDocument();
     expect(getVisibleFirstColumnValues()).toEqual(['Ana Recente', 'Bruno Recente', 'Carlos Antigo']);
+  });
+
+  it('permite cadastrar procedimento manual no modal CBHPM', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+
+    render(
+      <CbhpmLookupModal
+        items={[]}
+        filters={{
+          codigo: '9.99.99.99-9',
+          procedimento: 'Procedimento manual Hemodinks',
+          porte: '1A',
+        }}
+        loading={false}
+        error=""
+        currentPage={1}
+        totalPages={1}
+        totalItems={0}
+        visibleStart={0}
+        visibleEnd={0}
+        onFiltersChange={vi.fn()}
+        onPageChange={vi.fn()}
+        onRefresh={vi.fn()}
+        onSelect={onSelect}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Nenhum procedimento encontrado.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /cadastrar manualmente/i }));
+
+    expect(onSelect).toHaveBeenCalledWith({
+      id: 0,
+      codigo: '9.99.99.99-9',
+      procedimento: 'Procedimento manual Hemodinks',
+      porte: '1A',
+      valorReferencia: null,
+    });
   });
 
   it('lista e cadastra pacientes', async () => {

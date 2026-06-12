@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, X } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Plus, RefreshCw, X } from 'lucide-react';
 import type { CbhpmGeral } from '../../types';
 import type { CbhpmFilters } from '../../appTypes';
 import { Modal } from '../../shared/components/Modal';
@@ -38,8 +38,27 @@ export function CbhpmLookupModal({
   onSelect,
   onClose,
 }: CbhpmLookupModalProps) {
+  const manualCodigo = filters.codigo.trim();
+  const manualProcedimento = filters.procedimento.trim();
+  const manualPorte = filters.porte.trim().toUpperCase();
+  const canAddManual = Boolean(manualCodigo && manualProcedimento);
+
   const updateFilter = (field: keyof CbhpmFilters, value: string) => {
     onFiltersChange({ ...filters, [field]: value });
+  };
+
+  const handleAddManual = () => {
+    if (!canAddManual) {
+      return;
+    }
+
+    onSelect({
+      id: 0,
+      codigo: manualCodigo,
+      procedimento: manualProcedimento,
+      porte: manualPorte || null,
+      valorReferencia: null,
+    });
   };
 
   return (
@@ -61,6 +80,7 @@ export function CbhpmLookupModal({
             value={filters.codigo}
             onValueChange={(value) => updateFilter('codigo', value)}
             placeholder="1.01"
+            maxLength={20}
           />
           <TextField
             label="Procedimento"
@@ -68,6 +88,7 @@ export function CbhpmLookupModal({
             value={filters.procedimento}
             onValueChange={(value) => updateFilter('procedimento', value)}
             placeholder="Consulta"
+            maxLength={1000}
           />
           <TextField
             label="Porte"
@@ -80,6 +101,13 @@ export function CbhpmLookupModal({
           <IconButton label="Atualizar procedimentos" onClick={onRefresh}>
             <RefreshCw size={18} />
           </IconButton>
+        </div>
+
+        <div className="manual-procedure-row">
+          <Button className="manual-procedure-action" onClick={handleAddManual} disabled={!canAddManual}>
+            <Plus size={17} />
+            Cadastrar manualmente
+          </Button>
         </div>
 
         {error && <AlertMessage type="error">{error}</AlertMessage>}

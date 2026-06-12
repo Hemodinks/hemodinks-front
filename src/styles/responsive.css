@@ -259,7 +259,8 @@
   }
 
   .cbhpm-filters .icon-button,
-  .select-procedure-action {
+  .select-procedure-action,
+  .manual-procedure-action {
     width: 100%;
   }
 
@@ -1137,6 +1138,15 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 38px;
     gap: 8px;
     margin-bottom: 10px;
+  }
+
+  .manual-procedure-row {
+    margin-bottom: 10px;
+  }
+
+  .manual-procedure-action {
+    width: 100%;
+    min-height: 38px;
   }
 
   .cbhpm-filters label {
