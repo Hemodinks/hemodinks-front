@@ -21,6 +21,7 @@ vi.mock('./api', () => ({
   getConvenios: vi.fn(),
   getHospitais: vi.fn(),
   getUsers: vi.fn(),
+  getUser: vi.fn(),
   getUserProfilePhoto: vi.fn(),
   getPaciente: vi.fn(),
   getPacientes: vi.fn(),
@@ -143,6 +144,7 @@ describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
     queryClient.clear();
+    window.history.pushState({}, '', '/');
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
     vi.clearAllMocks();
@@ -160,6 +162,7 @@ describe('App', () => {
     vi.mocked(api.getAgendaMedicalUsers).mockResolvedValue([]);
     vi.mocked(api.getBrazilPublicHolidays).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
+    vi.mocked(api.getUser).mockResolvedValue(baseUser);
     vi.mocked(api.getUserProfilePhoto).mockResolvedValue(new Blob(['avatar'], { type: 'image/png' }));
     vi.mocked(api.getHospitais).mockResolvedValue([
       { id: 1, nome: 'Santa Clara - Mater Dei' },
@@ -751,7 +754,7 @@ describe('App', () => {
     });
   });
 
-  it('nao exibe filtros administrativos de pacientes para medico', async () => {
+  it('bloqueia modulo de usuarios e deixa pacientes somente leitura para medico', async () => {
     const user = userEvent.setup();
     mockSession({
       perfilId: 2,
@@ -761,13 +764,42 @@ describe('App', () => {
 
     render(<App />);
 
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir usuarios/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir meu cadastro/i })).toBeInTheDocument();
+
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
+    expect(screen.queryByRole('button', { name: /novo paciente/i })).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Medico')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Convenio')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Procedimento')).not.toBeInTheDocument();
     expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '' });
+
+    await user.click(screen.getByRole('button', { name: /visualizar paciente hemodinks/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Visualizar paciente' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Médico')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /salvar paciente/i })).not.toBeInTheDocument();
+    expect(api.updatePaciente).not.toHaveBeenCalled();
+  });
+
+  it('redireciona medico que tenta acessar usuarios pela URL', async () => {
+    mockSession({
+      perfilId: 2,
+      perfilNome: 'Medicos',
+      nome: 'Dra. Ana',
+    });
+    window.history.pushState({}, '', '/usuarios');
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+    expect(api.getUsers).not.toHaveBeenCalled();
   });
 
   it('ordena pacientes por registro recente e nome', async () => {
