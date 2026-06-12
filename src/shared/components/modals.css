@@ -54,7 +54,17 @@
   grid-template-columns: minmax(170px, 0.7fr) minmax(320px, 1.8fr) minmax(120px, 0.45fr) 44px;
   gap: 10px;
   align-items: end;
+  margin-bottom: 10px;
+}
+
+.manual-procedure-row {
+  display: flex;
+  justify-content: flex-end;
   margin-bottom: 14px;
+}
+
+.manual-procedure-action {
+  min-height: 36px;
 }
 
 .cbhpm-table-wrap {
