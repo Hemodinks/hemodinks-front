@@ -22,8 +22,10 @@ type AppShellProps = {
   notificationsOpen: boolean;
   notificationCount: number;
   currentUserProfile: string;
+  canAccessDashboard: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
+  canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
   medicalUsers: User[];
@@ -52,8 +54,10 @@ export function AppShell({
   notificationsOpen,
   notificationCount,
   currentUserProfile,
+  canAccessDashboard,
   canAccessUsers,
   canEditOwnUser,
+  canAccessAgenda,
   usersCount,
   pacientesCount,
   medicalUsers,
@@ -106,8 +110,10 @@ export function AppShell({
           session={session}
           activeView={activeView}
           currentUserProfile={currentUserProfile}
+          canAccessDashboard={canAccessDashboard}
           canAccessUsers={canAccessUsers}
           canEditOwnUser={canEditOwnUser}
+          canAccessAgenda={canAccessAgenda}
           usersCount={usersCount}
           pacientesCount={pacientesCount}
           onOpenDashboard={onOpenDashboard}

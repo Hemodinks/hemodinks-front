@@ -78,6 +78,9 @@ export function PatientForm({
   onRemovePendingPatientFile,
   onDeletePacienteArquivo,
 }: PatientFormProps) {
+  const formReadOnly = patientReadOnly || (editingPacienteId ? !canEditPatients : false);
+  const canSubmitForm = !formReadOnly && (!editingPacienteId || canEditPatients);
+
   const getMedicalSelectValue = (field: MedicalTeamField) => {
     const config = medicalTeamFields[field];
     const userId = pacienteFormData[config.idKey];
@@ -130,8 +133,8 @@ export function PatientForm({
     <FormPanel className="module-form-panel">
       <div className="panel-title">
         <div>
-          <span className="eyebrow">{editingPacienteId ? patientReadOnly ? 'Visualizacao' : 'Edicao' : 'Cadastro'}</span>
-          <h2>{editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'}</h2>
+          <span className="eyebrow">{editingPacienteId ? formReadOnly ? 'Visualizacao' : 'Edicao' : 'Cadastro'}</span>
+          <h2>{editingPacienteId ? formReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'}</h2>
         </div>
         <div className="panel-title-actions">
           {!editingPacienteId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
@@ -142,7 +145,7 @@ export function PatientForm({
       </div>
 
       <form className="stack module-form-grid" onSubmit={onSubmit}>
-        <fieldset className="form-fieldset" disabled={patientReadOnly}>
+        <fieldset className="form-fieldset" disabled={formReadOnly}>
           <DateInput
             id="patient-procedure-date"
             label="Data procedimento"
@@ -180,7 +183,7 @@ export function PatientForm({
               const hospital = hospitais.find((item) => item.id === hospitalId)?.nome ?? '';
               setPacienteFormData((current) => ({ ...current, hospitalId, hospital }));
             }}
-            disabled={patientReadOnly || !hospitais.length}
+            disabled={formReadOnly || !hospitais.length}
             required
           >
             <option value="">{hospitais.length ? 'Selecione um hospital' : 'Nenhum hospital cadastrado'}</option>
@@ -198,7 +201,7 @@ export function PatientForm({
               label="Cirurgião"
               value={getMedicalSelectValue('medico')}
               onChange={(event) => updateMedicalTeamMember('medico', event.target.value)}
-              disabled={patientReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
+              disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
             >
               {renderMedicalOptions('medico', medicalUsers.length ? 'Selecione um cirurgiao' : 'Nenhum medico cadastrado')}
             </SelectField>
@@ -209,7 +212,7 @@ export function PatientForm({
               label="Médico auxiliar 1"
               value={getMedicalSelectValue('medicoAuxiliar1')}
               onChange={(event) => updateMedicalTeamMember('medicoAuxiliar1', event.target.value)}
-              disabled={patientReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar1)}
+              disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar1)}
             >
               {renderMedicalOptions('medicoAuxiliar1', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
             </SelectField>
@@ -220,7 +223,7 @@ export function PatientForm({
               label="Médico auxiliar 2"
               value={getMedicalSelectValue('medicoAuxiliar2')}
               onChange={(event) => updateMedicalTeamMember('medicoAuxiliar2', event.target.value)}
-              disabled={patientReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar2)}
+              disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar2)}
             >
               {renderMedicalOptions('medicoAuxiliar2', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
             </SelectField>
@@ -240,7 +243,7 @@ export function PatientForm({
                 convenio,
               }));
             }}
-            disabled={patientReadOnly || (!convenios.length && !pacienteFormData.convenio)}
+            disabled={formReadOnly || (!convenios.length && !pacienteFormData.convenio)}
             maxLength={MAX_NAME_LENGTH}
             placeholder={convenios.length ? 'Selecione ou digite o convenio' : 'Nenhum convenio cadastrado'}
           />
@@ -268,7 +271,7 @@ export function PatientForm({
           <div className="procedure-field">
             <span className="field-label">Procedimento</span>
             <div className="procedure-selector">
-              <Button className="procedure-select-button" onClick={onOpenCbhpmModal} disabled={patientReadOnly}>
+              <Button className="procedure-select-button" onClick={onOpenCbhpmModal} disabled={formReadOnly}>
                 <Search size={17} />
                 Adicionar procedimento
               </Button>
@@ -286,7 +289,7 @@ export function PatientForm({
                       </div>
                       <div className="selected-procedure-actions">
                         {procedimento.cbhpmPorte && <span className="status-pill active">{procedimento.cbhpmPorte}</span>}
-                        {!patientReadOnly && (
+                        {!formReadOnly && (
                           <IconButton label="Remover procedimento" tone="muted" className="mini" onClick={() => onRemovePacienteProcedimento(index)}>
                             <X size={14} />
                           </IconButton>
@@ -335,7 +338,7 @@ export function PatientForm({
             <label className="field-label" htmlFor="patient-file-input">
               Arquivos
             </label>
-            {canEditPatients && (
+            {!formReadOnly && canEditPatients && (
               <>
                 <label className="ghost-button file-action full-width" htmlFor="patient-file-input">
                   <FileUp size={17} />
@@ -374,7 +377,7 @@ export function PatientForm({
                   <li key={arquivo.id}>
                     <FileText size={15} />
                     <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
-                    {canEditPatients && (
+                    {!formReadOnly && canEditPatients && (
                       <IconButton label="Excluir arquivo" tone="muted" className="mini" onClick={() => void onDeletePacienteArquivo(editingPaciente, arquivo.id)}>
                         <Trash2 size={14} />
                       </IconButton>
@@ -400,7 +403,7 @@ export function PatientForm({
 
         {pacienteFormError && <AlertMessage type="error">{pacienteFormError}</AlertMessage>}
 
-        {!patientReadOnly && (
+        {canSubmitForm && (
           <Button variant="primary" type="submit" disabled={pacienteFormLoading}>
             {editingPacienteId ? <Save size={18} /> : <Plus size={18} />}
             {pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar paciente' : 'Cadastrar paciente'}
