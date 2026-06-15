@@ -93,7 +93,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 43px;
   border: 1px solid #cbd5d0;
@@ -105,12 +106,19 @@ select {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: var(--teal);
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
 }
 
-input::placeholder {
+textarea {
+  min-height: 118px;
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
   color: color-mix(in srgb, var(--muted) 74%, transparent);
 }
 
@@ -557,6 +565,7 @@ input::placeholder {
 }
 
 .module-form-grid .profile-photo-field,
+.module-form-grid .diagnosis-field,
 .module-form-grid .procedure-field,
 .module-form-grid .two-column-fields,
 .module-form-grid .toggle-row,

@@ -56,6 +56,7 @@ describe('patientUtils', () => {
     const payload = toPacientePayload({
       ...emptyPacienteForm,
       nomePaciente: 'Paciente Hemodinks',
+      diagnostico: ' Diagnostico clinico de teste ',
       cpf: '529.982.247-25',
       telefone: '+55 (81) 99999-9999',
       hospitalId: 1,
@@ -77,6 +78,7 @@ describe('patientUtils', () => {
     });
 
     expect(payload.cbhpmCodigo).toBe('10101012');
+    expect(payload.diagnostico).toBe('Diagnostico clinico de teste');
     expect(payload.procedimentos.map((item) => item.cbhpmCodigo)).toEqual(['10101012', '20101201']);
   });
 
@@ -104,6 +106,7 @@ describe('patientUtils', () => {
       userId: 20,
       data: '2026-06-01T00:00:00Z',
       nomePaciente: 'Paciente Hemodinks',
+      diagnostico: 'Diagnostico cadastrado',
       hospitalId: 1,
       hospital: 'Santa Clara - Mater Dei',
       medicoUserId: 1,
@@ -139,6 +142,7 @@ describe('patientUtils', () => {
     const formData = getPacienteFormData(paciente);
 
     expect(formData.cbhpmCodigo).toBe('10101012');
+    expect(formData.diagnostico).toBe('Diagnostico cadastrado');
     expect(formData.procedimentos[0].cbhpmCodigo).toBe('10101012');
   });
 });

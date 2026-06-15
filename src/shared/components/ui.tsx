@@ -5,6 +5,7 @@ import {
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
 } from 'react';
 import { Search } from 'lucide-react';
 
@@ -117,6 +118,31 @@ export function TextField({
     <label className={className}>
       {label}
       <input
+        {...props}
+        value={value}
+        onChange={(event) => onValueChange(event.target.value, event)}
+      />
+    </label>
+  );
+}
+
+type TextareaFieldProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange'> & {
+  label: string;
+  value: string;
+  onValueChange: (value: string, event: ChangeEvent<HTMLTextAreaElement>) => void;
+};
+
+export function TextareaField({
+  label,
+  value,
+  onValueChange,
+  className,
+  ...props
+}: TextareaFieldProps) {
+  return (
+    <label className={className}>
+      {label}
+      <textarea
         {...props}
         value={value}
         onChange={(event) => onValueChange(event.target.value, event)}
