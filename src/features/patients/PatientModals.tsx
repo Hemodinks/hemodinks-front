@@ -3,7 +3,6 @@ import type { Paciente } from '../../types';
 import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
-import { formatCpfInput, formatPhoneInput } from '../../shared/utils/formatters';
 import { getPacienteProcedimentosFromPaciente } from './patientUtils';
 
 type PatientInfoModalProps = {
@@ -12,8 +11,6 @@ type PatientInfoModalProps = {
 };
 
 export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
-  const formattedCpf = formatCpfInput(paciente.cpf || '');
-  const formattedPhone = formatPhoneInput(paciente.telefone || '');
   const procedimentos = getPacienteProcedimentosFromPaciente(paciente);
 
   return (
@@ -30,6 +27,26 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
 
         <dl className="info-list">
           <div>
+            <dt>Diagnóstico</dt>
+            <dd>
+              {paciente.diagnostico ? (
+                <CopyValue label="diagnostico do paciente" value={paciente.diagnostico} />
+              ) : (
+                '-'
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>Fornecedor OPME</dt>
+            <dd>
+              {paciente.opmeFornecedor ? (
+                <CopyValue label="fornecedor OPME" value={paciente.opmeFornecedor} />
+              ) : (
+                '-'
+              )}
+            </dd>
+          </div>
+          <div>
             <dt>Procedimentos</dt>
             <dd>
               {procedimentos.length ? (
@@ -45,14 +62,6 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
                 '-'
               )}
             </dd>
-          </div>
-          <div>
-            <dt>CPF</dt>
-            <dd><CopyValue label="CPF" value={formattedCpf || '-'} /></dd>
-          </div>
-          <div>
-            <dt>Telefone</dt>
-            <dd><CopyValue label="telefone" value={formattedPhone || '-'} /></dd>
           </div>
         </dl>
       </Modal>

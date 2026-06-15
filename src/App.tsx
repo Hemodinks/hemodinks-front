@@ -159,12 +159,13 @@ function AppContent() {
   const isPatient = currentPerfilId === 3;
   const canAccessUsers = isAdmin;
   const canEditOwnUser = isMedical;
-  const canCreatePatients = isAdmin || isMedical;
-  const canEditPatients = isAdmin || isMedical;
+  const canCreatePatients = isAdmin;
+  const canEditPatients = isAdmin;
   const canDeletePatients = isAdmin;
-  const patientReadOnly = isPatient;
-  const canUseUsersRoute = canAccessUsers || canEditOwnUser;
-  const { activeView, navigateToView } = useRouteView({ session, canUseUsersRoute });
+  const patientReadOnly = isPatient || isMedical;
+  const canUseUsersRoute = canAccessUsers;
+  const canUseProfileRoute = canEditOwnUser;
+  const { activeView, navigateToView } = useRouteView({ session, canUseUsersRoute, canUseProfileRoute });
 
   const usersDomain = useUsersDomain({
     session,
@@ -277,6 +278,8 @@ function AppContent() {
     hospitaisError,
     convenios,
     conveniosError,
+    opmeFornecedores,
+    opmeFornecedoresError,
     cbhpmModalOpen,
     setCbhpmModalOpen,
     cbhpmItems,
@@ -389,7 +392,8 @@ function AppContent() {
 
   const appTitle = activeView === 'dashboard'
     ? 'Painel inicial'
-    : activeView === 'users' ? canAccessUsers ? 'Usuarios' : 'Meu cadastro'
+    : activeView === 'users' ? 'Usuarios'
+      : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? 'Pacientes' : 'Agenda';
 
   const openDashboard = () => {
@@ -448,15 +452,18 @@ function AppContent() {
   const pacientesCount = dashboardSummary?.pacientesCount ?? pacientesTotalItems;
 
   const formBreadcrumbLabel = activeView === 'users'
-    ? canAccessUsers ? editingId ? 'Editar usuario' : 'Novo usuario' : 'Meu cadastro'
+    ? editingId ? 'Editar usuario' : 'Novo usuario'
+    : activeView === 'profile' ? 'Meu cadastro'
     : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
       : 'Agenda';
   const activeModuleLabel = activeView === 'users'
-    ? canAccessUsers ? 'Usuarios' : 'Meu cadastro'
+    ? 'Usuarios'
+    : activeView === 'profile' ? 'Meu cadastro'
     : activeView === 'patients' ? 'Pacientes' : 'Agenda';
   const openActiveModuleList = activeView === 'users'
     ? openUsersList
-    : activeView === 'patients' ? openPatientsList : openAgenda;
+    : activeView === 'profile' ? openMyProfile
+      : activeView === 'patients' ? openPatientsList : openAgenda;
   const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
     ? [
       { label: 'Inicio', onClick: openDashboard },
@@ -490,7 +497,7 @@ function AppContent() {
       onOpenPatientsList={openPatientsList}
       onOpenAgenda={openAgenda}
     />
-  ) : activeView === 'users' ? (
+  ) : activeView === 'users' || activeView === 'profile' ? (
     <UsersPage
       moduleMode={moduleMode}
       canAccessUsers={canAccessUsers}
@@ -563,10 +570,11 @@ function AppContent() {
       medicalUsers={medicalUsers}
       convenios={convenios}
       conveniosError={conveniosError}
+      opmeFornecedores={opmeFornecedores}
+      opmeFornecedoresError={opmeFornecedoresError}
       isAdmin={isAdmin}
       isMedical={isMedical}
       sessionToken={session.token}
-      sessionUserName={session.user.nome}
       setPacienteFormData={setPacienteFormData}
       setPacienteSearchTerm={setPacienteSearchTerm}
       setPacienteFilters={setPacienteFilters}
@@ -620,6 +628,7 @@ function AppContent() {
         <CbhpmLookupModal
           items={cbhpmItems}
           filters={cbhpmFilters}
+          isAdmin={isAdmin}
           loading={cbhpmLoading}
           error={cbhpmError}
           currentPage={cbhpmCurrentPage}
@@ -675,6 +684,7 @@ function AppContent() {
       pacientesCount={pacientesCount}
       medicalUsers={medicalUsers}
       convenios={convenios}
+      opmeFornecedores={opmeFornecedores}
       onToggleNotifications={() => void handleToggleNotifications()}
       onToggleTheme={toggleTheme}
       onOpenPasswordModal={() => setShowPasswordModal(true)}

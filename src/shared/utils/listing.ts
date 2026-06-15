@@ -1,4 +1,4 @@
-import type { Convenio, Paciente, User } from '../../types';
+import type { Convenio, OpmeFornecedor, Paciente, User } from '../../types';
 import { PAGE_SIZE } from './formatters';
 
 export function getPagedItems<T>(result: { items: T[] } | T[]) {
@@ -74,4 +74,8 @@ export function sortUsersByName(items: User[]) {
 
 export function sortConveniosByDescription(items: Convenio[]) {
   return [...items].sort((first, second) => listingNameCollator.compare(first.descricaoConvenio, second.descricaoConvenio));
+}
+
+export function sortOpmeFornecedoresByName(items: OpmeFornecedor[]) {
+  return [...items].sort((first, second) => listingNameCollator.compare(first.fornecedor, second.fornecedor));
 }

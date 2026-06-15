@@ -1,5 +1,5 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import type { Convenio, Hospital, Paciente, PacienteFormData, User } from '../../types';
+import type { Convenio, Hospital, OpmeFornecedor, Paciente, PacienteFormData, User } from '../../types';
 import type { ModuleMode, PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
 import { PatientForm } from './PatientForm';
 import { PatientList } from './PatientList';
@@ -35,10 +35,11 @@ type PatientsPageProps = {
   medicalUsers: User[];
   convenios: Convenio[];
   conveniosError: string;
+  opmeFornecedores: OpmeFornecedor[];
+  opmeFornecedoresError: string;
   isAdmin: boolean;
   isMedical: boolean;
   sessionToken: string;
-  sessionUserName: string;
   setPacienteFormData: Dispatch<SetStateAction<PacienteFormData>>;
   setPacienteSearchTerm: (value: string) => void;
   setPacienteFilters: Dispatch<SetStateAction<PacienteFilters>>;
@@ -92,10 +93,11 @@ export function PatientsPage({
   medicalUsers,
   convenios,
   conveniosError,
+  opmeFornecedores,
+  opmeFornecedoresError,
   isAdmin,
   isMedical,
   sessionToken,
-  sessionUserName,
   setPacienteFormData,
   setPacienteSearchTerm,
   setPacienteFilters,
@@ -135,8 +137,9 @@ export function PatientsPage({
           medicalUsers={medicalUsers}
           convenios={convenios}
           conveniosError={conveniosError}
+          opmeFornecedores={opmeFornecedores}
+          opmeFornecedoresError={opmeFornecedoresError}
           isMedical={isMedical}
-          sessionUserName={sessionUserName}
           setPacienteFormData={setPacienteFormData}
           onClose={closePacienteForm}
           onSubmit={handleSubmitPaciente}

@@ -1,8 +1,10 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import * as api from './api';
+import { CbhpmLookupModal } from './features/patients/CbhpmLookupModal';
 import { queryClient } from './queryClient';
 import type { AuthSession, Paciente, User } from './types';
 
@@ -17,10 +19,13 @@ vi.mock('./api', () => ({
   updateAgendaEvent: vi.fn(),
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
+  getAllCbhpmGeral: vi.fn(),
   getCbhpmGeral: vi.fn(),
   getConvenios: vi.fn(),
   getHospitais: vi.fn(),
+  getOpmeFornecedores: vi.fn(),
   getUsers: vi.fn(),
+  getUser: vi.fn(),
   getUserProfilePhoto: vi.fn(),
   getPaciente: vi.fn(),
   getPacientes: vi.fn(),
@@ -143,6 +148,7 @@ describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
     queryClient.clear();
+    window.history.pushState({}, '', '/');
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
     vi.clearAllMocks();
@@ -160,6 +166,7 @@ describe('App', () => {
     vi.mocked(api.getAgendaMedicalUsers).mockResolvedValue([]);
     vi.mocked(api.getBrazilPublicHolidays).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
+    vi.mocked(api.getUser).mockResolvedValue(baseUser);
     vi.mocked(api.getUserProfilePhoto).mockResolvedValue(new Blob(['avatar'], { type: 'image/png' }));
     vi.mocked(api.getHospitais).mockResolvedValue([
       { id: 1, nome: 'Santa Clara - Mater Dei' },
@@ -171,8 +178,15 @@ describe('App', () => {
       { idConvenio: 2, descricaoConvenio: 'Bradesco Saude' },
       { idConvenio: 7, descricaoConvenio: 'Particular' },
     ]);
+    vi.mocked(api.getOpmeFornecedores).mockResolvedValue([
+      { idFornecedor: 1, fornecedor: 'Promedom' },
+      { idFornecedor: 2, fornecedor: 'AVL' },
+      { idFornecedor: 3, fornecedor: 'GE' },
+      { idFornecedor: 4, fornecedor: 'Spyner' },
+    ]);
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
+    vi.mocked(api.getAllCbhpmGeral).mockResolvedValue([]);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     Object.defineProperty(URL, 'createObjectURL', {
       value: vi.fn(() => 'blob:hemodinks-avatar'),
@@ -618,11 +632,143 @@ describe('App', () => {
     expect(getVisibleFirstColumnValues()).toEqual(['Ana Recente', 'Bruno Recente', 'Carlos Antigo']);
   });
 
+  it('permite cadastrar procedimento manual no modal CBHPM', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+
+    render(
+      <CbhpmLookupModal
+        items={[]}
+        filters={{
+          codigo: '9.99.99.99-9',
+          procedimento: 'Procedimento manual Hemodinks',
+          porte: '1A',
+        }}
+        isAdmin={false}
+        loading={false}
+        error=""
+        currentPage={1}
+        totalPages={1}
+        totalItems={0}
+        visibleStart={0}
+        visibleEnd={0}
+        onFiltersChange={vi.fn()}
+        onPageChange={vi.fn()}
+        onRefresh={vi.fn()}
+        onSelect={onSelect}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Nenhum procedimento encontrado.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /cadastrar manualmente/i }));
+
+    expect(onSelect).toHaveBeenCalledWith({
+      id: 0,
+      codigo: '99999999',
+      procedimento: 'Procedimento manual Hemodinks',
+      porte: '1A',
+      valorReferencia: null,
+    });
+  });
+
+  it('mantem cadastro manual desbloqueado para administrador no modal CBHPM', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+
+    render(
+      <CbhpmLookupModal
+        items={[]}
+        filters={{
+          codigo: '',
+          procedimento: '',
+          porte: '',
+        }}
+        isAdmin
+        loading={false}
+        error=""
+        currentPage={1}
+        totalPages={1}
+        totalItems={0}
+        visibleStart={0}
+        visibleEnd={0}
+        onFiltersChange={vi.fn()}
+        onPageChange={vi.fn()}
+        onRefresh={vi.fn()}
+        onSelect={onSelect}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const manualButton = screen.getByRole('button', { name: /cadastrar manualmente/i });
+
+    expect(manualButton).toBeEnabled();
+    await user.click(manualButton);
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(screen.getByText('Informe a descricao do procedimento para cadastrar manualmente.')).toBeInTheDocument();
+  });
+
+  it('mantem foco ao digitar nos filtros do modal CBHPM', async () => {
+    const user = userEvent.setup();
+
+    function ControlledCbhpmLookupModal() {
+      const [filters, setFilters] = useState({
+        codigo: '',
+        procedimento: '',
+        porte: '',
+      });
+
+      return (
+        <CbhpmLookupModal
+          items={[]}
+          filters={filters}
+          isAdmin
+          loading={false}
+          error=""
+          currentPage={1}
+          totalPages={1}
+          totalItems={0}
+          visibleStart={0}
+          visibleEnd={0}
+          onFiltersChange={setFilters}
+          onPageChange={vi.fn()}
+          onRefresh={vi.fn()}
+          onSelect={vi.fn()}
+          onClose={() => vi.fn()}
+        />
+      );
+    }
+
+    render(<ControlledCbhpmLookupModal />);
+
+    const procedimentoFilter = screen.getByLabelText('Procedimento');
+
+    await user.click(procedimentoFilter);
+    await user.keyboard('Consulta');
+
+    expect(procedimentoFilter).toHaveValue('Consulta');
+    expect(procedimentoFilter).toHaveFocus();
+  });
+
   it('lista e cadastra pacientes', async () => {
     const user = userEvent.setup();
     mockSession();
-    vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
-    vi.mocked(api.getCbhpmGeral).mockResolvedValue(paged([
+    const auxiliar1: User = {
+      ...baseUser,
+      id: 2,
+      nome: 'Bruno Hemodinks',
+      email: 'bruno@hemodinks.com',
+      cpf: '11144477735',
+    };
+    const auxiliar2: User = {
+      ...baseUser,
+      id: 3,
+      nome: 'Clara Hemodinks',
+      email: 'clara@hemodinks.com',
+      cpf: '93541134780',
+    };
+    vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser, auxiliar1, auxiliar2]));
+    vi.mocked(api.getAllCbhpmGeral).mockResolvedValue([
       {
         id: 1,
         codigo: '1.01.01.01-2',
@@ -637,16 +783,16 @@ describe('App', () => {
         porte: '2A',
         valorReferencia: 180,
       },
-    ]));
+    ]);
     vi.mocked(api.createPaciente).mockResolvedValue({
       ...basePaciente,
       id: 11,
       nomePaciente: 'Novo Paciente',
       hospitalId: 2,
       hospital: 'Santa Genoveva - Mater Dei',
-      email: 'paciente-93541134780@hemodinks.local',
-      telefone: '+5581997777777',
-      cpf: '93541134780',
+      email: 'paciente-tecnico@hemodinks.local',
+      telefone: '',
+      cpf: null,
       statusPago: false,
     });
 
@@ -662,21 +808,28 @@ describe('App', () => {
 
     await user.type(screen.getByLabelText('Data procedimento'), '04062026');
     await user.type(screen.getByLabelText('Paciente'), 'Novo Paciente');
-    await user.type(screen.getByLabelText('CPF'), '93541134780');
+    expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText('Telefone'), '81997777777');
+    expect(screen.queryByLabelText('Telefone')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Data de nascimento')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
     expect(await screen.findByRole('option', { name: 'Santa Genoveva - Mater Dei' })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Hospital'), '2');
-    await user.type(screen.getByLabelText('Médico'), 'Ana Hemodinks');
+    await user.selectOptions(screen.getByLabelText('Cirurgião'), '1');
+    await user.selectOptions(screen.getByLabelText('Médico auxiliar 1'), '2');
+    await user.selectOptions(screen.getByLabelText('Médico auxiliar 2'), '3');
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
-    expect(within(cbhpmDialog).getByText('1.01.01.01-2')).toBeInTheDocument();
+    fireEvent.change(within(cbhpmDialog).getByLabelText('Codigo'), { target: { value: '1010101' } });
+    expect(await within(cbhpmDialog).findByText('10101012')).toBeInTheDocument();
     await user.click(within(cbhpmDialog).getAllByRole('button', { name: /adicionar/i })[0]);
     expect(screen.getByText('Valor referência: R$ 120,00')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
-    await user.click(within(await screen.findByRole('dialog', { name: 'Selecionar procedimento' })).getAllByRole('button', { name: /adicionar/i })[1]);
+    const secondCbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
+    const secondCodigoField = within(secondCbhpmDialog).getByLabelText('Codigo');
+    fireEvent.change(secondCodigoField, { target: { value: '1010201' } });
+    expect(await within(secondCbhpmDialog).findByText('10102019')).toBeInTheDocument();
+    await user.click(within(secondCbhpmDialog).getAllByRole('button', { name: /adicionar/i })[0]);
     await user.type(screen.getByLabelText('Valor recebido/pago'), '200000');
     await user.type(screen.getByLabelText('Glosa'), '1250');
     expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 2.000,00');
@@ -686,32 +839,33 @@ describe('App', () => {
     expect(api.createPaciente).toHaveBeenCalledWith({
       data: '2026-06-04',
       nomePaciente: 'Novo Paciente',
-      cpf: '93541134780',
-      email: 'paciente-93541134780@hemodinks.local',
-      telefone: '+5581997777777',
+      diagnostico: '',
+      cpf: '',
+      email: '',
+      telefone: '',
       fotoPerfil: null,
       dataNascimento: '1900-01-01',
       hospitalId: 2,
       hospital: 'Santa Genoveva - Mater Dei',
       medicoUserId: 1,
       medico: 'Ana Hemodinks',
+      medicoAuxiliar1UserId: 2,
+      medicoAuxiliar1: 'Bruno Hemodinks',
+      medicoAuxiliar2UserId: 3,
+      medicoAuxiliar2: 'Clara Hemodinks',
       convenioId: null,
       convenio: '',
-      cbhpmCodigo: '1.01.01.01-2',
+      opmeFornecedorId: null,
+      opmeFornecedor: '',
+      cbhpmCodigo: '10101012',
       cbhpmPorte: '2B',
       procedimento: 'Consulta',
       procedimentos: [
         {
-          cbhpmCodigo: '1.01.01.01-2',
+          cbhpmCodigo: '10101012',
           cbhpmPorte: '2B',
           procedimento: 'Consulta',
           valorReferencia: 120,
-        },
-        {
-          cbhpmCodigo: '1.01.02.01-9',
-          cbhpmPorte: '2A',
-          procedimento: 'Visita hospitalar',
-          valorReferencia: 180,
         },
       ],
       autorizacao: '',
@@ -723,7 +877,7 @@ describe('App', () => {
     expect(await screen.findByText('Paciente cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
   });
 
-  it('permite ao administrador filtrar pacientes por medico, convenio e procedimento', async () => {
+  it('permite ao administrador filtrar pacientes por cirurgiao, convenio e procedimento', async () => {
     const user = userEvent.setup();
     mockSession();
     vi.mocked(api.getPacientes)
@@ -735,7 +889,7 @@ describe('App', () => {
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Medico'), 'Ana Hemodinks');
+    await user.type(screen.getByLabelText('Cirurgiao'), 'Ana Hemodinks');
     await user.type(screen.getByLabelText('Convenio'), 'Particular');
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
 
@@ -751,7 +905,7 @@ describe('App', () => {
     });
   });
 
-  it('nao exibe filtros administrativos de pacientes para medico', async () => {
+  it('bloqueia modulo de usuarios e deixa pacientes somente leitura para medico', async () => {
     const user = userEvent.setup();
     mockSession({
       perfilId: 2,
@@ -761,13 +915,44 @@ describe('App', () => {
 
     render(<App />);
 
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir usuarios/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir meu cadastro/i })).toBeInTheDocument();
+
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
-    expect(screen.queryByLabelText('Medico')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /novo paciente/i })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Cirurgiao')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Convenio')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Procedimento')).not.toBeInTheDocument();
     expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '' });
+
+    await user.click(screen.getByRole('button', { name: /visualizar paciente hemodinks/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Visualizar paciente' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Cirurgião')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Médico auxiliar 1')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Médico auxiliar 2')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /salvar paciente/i })).not.toBeInTheDocument();
+    expect(api.updatePaciente).not.toHaveBeenCalled();
+  });
+
+  it('redireciona medico que tenta acessar usuarios pela URL', async () => {
+    mockSession({
+      perfilId: 2,
+      perfilNome: 'Medicos',
+      nome: 'Dra. Ana',
+    });
+    window.history.pushState({}, '', '/usuarios');
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+    expect(api.getUsers).not.toHaveBeenCalled();
   });
 
   it('ordena pacientes por registro recente e nome', async () => {

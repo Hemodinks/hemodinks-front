@@ -93,6 +93,11 @@ export type Convenio = {
   descricaoConvenio: string;
 };
 
+export type OpmeFornecedor = {
+  idFornecedor: number;
+  fornecedor: string;
+};
+
 export type DashboardSummary = {
   usersCount: number;
   activeUsersCount: number;
@@ -223,12 +228,19 @@ export type Paciente = {
   updatedAt?: string | null;
   modifiedAt?: string | null;
   nomePaciente: string;
+  diagnostico?: string | null;
   hospitalId?: number | null;
   hospital?: string | null;
   medicoUserId?: number | null;
   medico?: string | null;
+  medicoAuxiliar1UserId?: number | null;
+  medicoAuxiliar1?: string | null;
+  medicoAuxiliar2UserId?: number | null;
+  medicoAuxiliar2?: string | null;
   convenioId?: number | null;
   convenio?: string | null;
+  opmeFornecedorId?: number | null;
+  opmeFornecedor?: string | null;
   cbhpmCodigo?: string | null;
   cbhpmPorte?: string | null;
   procedimento?: string | null;
@@ -250,6 +262,7 @@ export type Paciente = {
 export type PacienteFormData = {
   data: string | null;
   nomePaciente: string;
+  diagnostico: string;
   cpf: string;
   email: string;
   telefone: string;
@@ -259,8 +272,14 @@ export type PacienteFormData = {
   hospital: string;
   medicoUserId: number | null;
   medico: string;
+  medicoAuxiliar1UserId: number | null;
+  medicoAuxiliar1: string;
+  medicoAuxiliar2UserId: number | null;
+  medicoAuxiliar2: string;
   convenioId: number | null;
   convenio: string;
+  opmeFornecedorId: number | null;
+  opmeFornecedor: string;
   cbhpmCodigo: string;
   cbhpmPorte: string;
   procedimento: string;

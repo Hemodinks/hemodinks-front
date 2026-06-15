@@ -39,6 +39,24 @@
   white-space: nowrap;
 }
 
+.patient-export-actions .ghost-button:first-of-type {
+  background: var(--action-success);
+  border-color: color-mix(in srgb, var(--action-success) 82%, black);
+}
+
+.patient-export-actions .ghost-button:first-of-type:hover {
+  background: var(--action-success-hover);
+}
+
+.patient-export-actions .ghost-button:last-of-type {
+  background: var(--action-accent);
+  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
+}
+
+.patient-export-actions .ghost-button:last-of-type:hover {
+  background: var(--action-accent-hover);
+}
+
 .export-scope-field {
   width: 100%;
   min-width: min(230px, 100%);
@@ -80,6 +98,12 @@
   width: 100%;
   min-height: 38px;
   padding-inline: 12px;
+  background: var(--action-danger);
+  border-color: color-mix(in srgb, var(--action-danger) 82%, black);
+}
+
+.patient-clear-filters:hover {
+  background: var(--action-danger-hover);
 }
 
 .search-box {

@@ -259,7 +259,8 @@
   }
 
   .cbhpm-filters .icon-button,
-  .select-procedure-action {
+  .select-procedure-action,
+  .manual-procedure-action {
     width: 100%;
   }
 
@@ -1139,6 +1140,15 @@
     margin-bottom: 10px;
   }
 
+  .manual-procedure-row {
+    margin-bottom: 10px;
+  }
+
+  .manual-procedure-action {
+    width: 100%;
+    min-height: 38px;
+  }
+
   .cbhpm-filters label {
     gap: 5px;
     font-size: 0.8rem;
@@ -1410,25 +1420,25 @@
     z-index: 4;
     width: 36px;
     min-height: 46px;
-    border: 1px solid rgba(15, 118, 110, 0.28);
+    border: 1px solid color-mix(in srgb, var(--action-accent) 82%, black);
     border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--teal);
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: 0 8px 20px rgba(14, 116, 144, 0.18);
+    color: var(--action-text);
+    background: var(--action-accent);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--action-accent) 24%, transparent);
     transform: translateY(-50%);
   }
 
   :root[data-theme="dark"] .carousel-nav {
-    background: rgba(12, 28, 49, 0.94);
+    background: var(--action-accent);
   }
 
   .carousel-nav:hover,
   .carousel-nav:focus-visible {
     color: #fff;
-    background: var(--teal);
+    background: var(--action-accent-hover);
   }
 
   .carousel-nav-left {
