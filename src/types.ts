@@ -223,6 +223,7 @@ export type Paciente = {
   updatedAt?: string | null;
   modifiedAt?: string | null;
   nomePaciente: string;
+  diagnostico?: string | null;
   hospitalId?: number | null;
   hospital?: string | null;
   medicoUserId?: number | null;
@@ -254,6 +255,7 @@ export type Paciente = {
 export type PacienteFormData = {
   data: string | null;
   nomePaciente: string;
+  diagnostico: string;
   cpf: string;
   email: string;
   telefone: string;

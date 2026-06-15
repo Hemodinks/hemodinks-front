@@ -27,6 +27,16 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
 
         <dl className="info-list">
           <div>
+            <dt>Diagnóstico</dt>
+            <dd>
+              {paciente.diagnostico ? (
+                <CopyValue label="diagnostico do paciente" value={paciente.diagnostico} />
+              ) : (
+                '-'
+              )}
+            </dd>
+          </div>
+          <div>
             <dt>Procedimentos</dt>
             <dd>
               {procedimentos.length ? (

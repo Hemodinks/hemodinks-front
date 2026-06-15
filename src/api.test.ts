@@ -123,6 +123,7 @@ describe('api client', () => {
     const payload = {
       data: null,
       nomePaciente: 'Paciente Hemodinks',
+      diagnostico: 'Doenca renal cronica',
       cpf: '52998224725',
       email: 'paciente@hemodinks.com',
       telefone: '+5581999999999',
