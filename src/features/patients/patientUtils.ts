@@ -57,6 +57,10 @@ export function getPacienteFilterQuery(filters: PacienteFilters, enabled: boolea
   };
 }
 
+export function normalizeCbhpmCodigo(value?: string | null) {
+  return value?.replace(/\D/g, '') ?? '';
+}
+
 function toApiDate(value: string) {
   const { day, month, year } = parseDisplayDate(value);
   return `${year}-${month}-${day}`;
@@ -67,7 +71,7 @@ export function normalizePacienteProcedimentos(procedimentos: PacienteProcedimen
 
   return procedimentos
     .map((item) => ({
-      cbhpmCodigo: item.cbhpmCodigo?.trim() || null,
+      cbhpmCodigo: normalizeCbhpmCodigo(item.cbhpmCodigo) || null,
       cbhpmPorte: item.cbhpmPorte?.trim() || null,
       procedimento: item.procedimento.trim(),
       valorReferencia: item.valorReferencia ?? null,
@@ -141,7 +145,7 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
     medico: paciente.medico || '',
     convenioId: paciente.convenioId ?? null,
     convenio: paciente.convenio || '',
-    cbhpmCodigo: paciente.cbhpmCodigo || '',
+    cbhpmCodigo: normalizeCbhpmCodigo(paciente.cbhpmCodigo),
     cbhpmPorte: paciente.cbhpmPorte || '',
     procedimento: paciente.procedimento || '',
     procedimentos: getPacienteProcedimentosFromPaciente(paciente),

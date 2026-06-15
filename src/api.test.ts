@@ -8,6 +8,7 @@ import {
   deletePacienteArquivo,
   deleteUser,
   deleteUserArquivo,
+  getAllCbhpmGeral,
   getDashboardNotifications,
   getConvenios,
   getHospitais,
@@ -238,6 +239,44 @@ describe('api client', () => {
         },
       },
     );
+  });
+
+  it('carrega todas as paginas da consulta CBHPM para cache local', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({
+        items: [
+          { id: 1, codigo: '10101012', procedimento: 'Consulta', porte: '2B' },
+        ],
+        page: 1,
+        pageSize: 100,
+        totalItems: 2,
+        totalPages: 2,
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        items: [
+          { id: 2, codigo: '20101201', procedimento: 'Avaliacao clinica', porte: '2B' },
+        ],
+        page: 2,
+        pageSize: 100,
+        totalItems: 2,
+        totalPages: 2,
+      }));
+
+    const result = await getAllCbhpmGeral('jwt-token');
+
+    expect(result.map((item) => item.codigo)).toEqual(['10101012', '20101201']);
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:5000/api/cbhpm/?page=1&pageSize=100', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:5000/api/cbhpm/?page=2&pageSize=100', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
   });
 
   it('monta os payloads de CRUD e troca de senha', async () => {
