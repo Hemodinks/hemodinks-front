@@ -53,10 +53,12 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
   const canAddManual = Boolean(manualValues.codigo && manualValues.procedimento);
 
   const updateFilter = useCallback((field: keyof CbhpmFilters, value: string) => {
-    setManualValidationError('');
-    onPageChange(1);
-    onFiltersChange((current) => ({ ...current, [field]: value }));
-  }, [onFiltersChange, onPageChange]);
+  setManualValidationError('');
+    onFiltersChange((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }, [onFiltersChange]);
 
   const handleAddManual = useCallback(() => {
     if (!manualValues.procedimento) {
