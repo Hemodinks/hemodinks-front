@@ -72,7 +72,7 @@ import { usePatientList } from './usePatientList';
 import { usePatientLookups } from './usePatientLookups';
 
 const LIST_CACHE_TIME_MS = 20 * 1000;
-const LOOKUP_CACHE_TIME_MS = 5 * 60 * 1000;
+const LOOKUP_CACHE_TIME_MS = 30 * 60 * 1000;
 
 type UsePatientsDomainOptions = {
   session: AuthSession | null;
@@ -235,7 +235,7 @@ export function usePatientsDomain({
     queryFn: () => getAllCbhpmGeral(session?.token ?? '', CBHPM_CACHE_FETCH_PAGE_SIZE),
     enabled: sessionReady && cbhpmModalOpen,
     staleTime: LOOKUP_CACHE_TIME_MS,
-    gcTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
   const savePacienteMutation = useMutation({
     mutationFn: ({ id, payload, token }: { id: number | null; payload: ReturnType<typeof toPacientePayload>; token: string }) => (
@@ -251,8 +251,8 @@ export function usePatientsDomain({
     ),
   });
   const filteredCbhpmItems = useMemo(
-    () => filterCbhpmCachedItems(cbhpmCacheQuery.data ?? [], cbhpmFilters),
-    [cbhpmCacheQuery.data, cbhpmFilters],
+    () => filterCbhpmCachedItems(cbhpmCacheQuery.data ?? [], debouncedCbhpmFilters),
+    [cbhpmCacheQuery.data, debouncedCbhpmFilters],
   );
 
   useEffect(() => {

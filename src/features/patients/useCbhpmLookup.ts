@@ -23,6 +23,7 @@ export function useCbhpmLookup() {
   const [cbhpmCurrentPage, setCbhpmCurrentPage] = useState(1);
   const resetCbhpmPage = useCallback(() => setCbhpmCurrentPage(1), []);
   const [debouncedCbhpmFilters] = useDebouncedValue(cbhpmFilters, {
+    delayMs: 800,
     isEqual: areCbhpmFiltersEqual,
     onCommit: resetCbhpmPage,
   });
