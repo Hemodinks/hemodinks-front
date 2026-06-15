@@ -487,6 +487,13 @@ export function usePatientsDomain({
         head: [pacienteExportColumns.map((column) => column.header)],
         body: exportItems.map((paciente) => pacienteExportColumns.map((column) => column.getValue(paciente))),
         startY: 64,
+        columnStyles: {
+          0: { cellWidth: 80 },  // Coluna Paciente
+          1: { cellWidth: 50 },  // Coluna Data procedimento
+          7: { cellWidth: 40 },  // Coluna Codigo CBHPM
+          9: { cellWidth: 100 }, // Coluna Procedimento (geralmente mais longa)
+          15: { cellWidth: 35 }, // Coluna Arquivos
+        },
         styles: {
           fontSize: 6.6,
           cellPadding: 3,
