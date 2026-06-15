@@ -65,6 +65,12 @@
 
 .manual-procedure-action {
   min-height: 36px;
+  background: var(--action-warning);
+  border-color: color-mix(in srgb, var(--action-warning) 82%, black);
+}
+
+.manual-procedure-action:hover {
+  background: var(--action-warning-hover);
 }
 
 .cbhpm-table-wrap {
@@ -112,6 +118,12 @@
 .select-procedure-action {
   width: 138px;
   min-height: 36px;
+  background: var(--action-success);
+  border-color: color-mix(in srgb, var(--action-success) 82%, black);
+}
+
+.select-procedure-action:hover {
+  background: var(--action-success-hover);
 }
 
 .cbhpm-pagination {
@@ -185,17 +197,17 @@
 .copy-button {
   width: 30px;
   min-height: 30px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--action-accent) 82%, black);
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--teal);
-  background: var(--input-bg);
+  color: var(--action-text);
+  background: var(--action-accent);
 }
 
 .copy-button:hover {
-  background: var(--soft);
+  background: var(--action-accent-hover);
 }
 
 .copied-label {
@@ -440,16 +452,16 @@
 
 .attachment-button {
   min-height: 34px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--action-secondary) 82%, black);
   border-radius: 8px;
   padding: 6px 9px;
-  background: var(--input-bg);
-  color: var(--teal);
+  background: var(--action-secondary);
+  color: var(--action-text);
   cursor: pointer;
 }
 
 .attachment-button:hover {
-  background: var(--soft);
+  background: var(--action-secondary-hover);
 }
 
 .modal-file-list li {

@@ -140,13 +140,15 @@
 .topbar-actions .ghost-button,
 .topbar-info-panel {
   min-height: 44px;
-  color: var(--teal);
-  background: var(--app-chip-bg);
-  border-color: var(--app-chip-border);
+  color: var(--action-text);
+  background: var(--action-secondary);
+  border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
 }
 
 .logout-button {
-  color: var(--ink) !important;
+  color: var(--action-text) !important;
+  background: var(--action-danger) !important;
+  border-color: color-mix(in srgb, var(--action-danger) 82%, black) !important;
 }
 
 .current-user {
@@ -258,8 +260,9 @@
 .breadcrumb-button {
   min-height: auto;
   border: 0;
-  color: var(--teal);
-  background: transparent;
+  border-radius: 6px;
+  color: var(--action-secondary);
+  background: color-mix(in srgb, var(--action-secondary) 12%, transparent);
   padding: 0;
   font-weight: 900;
 }
@@ -285,15 +288,15 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: var(--muted);
-  background: transparent;
+  color: var(--action-text);
+  background: var(--action-secondary);
   padding: 0 10px;
   font-weight: 900;
 }
 
 .view-switch button.active {
   color: #fff;
-  background: var(--blood);
+  background: var(--action-primary);
 }
 
 .user-avatar {
@@ -430,17 +433,16 @@ img.user-avatar {
   border-left-width: 4px;
   border-radius: 8px;
   padding: 0 14px;
-  color: var(--side-nav-color, var(--muted));
-  background:
-    linear-gradient(90deg, var(--side-nav-soft, transparent), transparent 78%),
-    var(--input-bg);
+  color: var(--action-text);
+  background: var(--side-nav-color, var(--action-secondary));
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 16%, transparent);
   font-weight: 900;
   text-align: left;
 }
 
 .side-nav-count {
   margin-left: auto;
-  color: var(--side-nav-color, var(--teal));
+  color: #fff;
   font-size: 0.78rem;
 }
 
@@ -465,7 +467,7 @@ img.user-avatar {
 .side-nav button.active {
   color: #fff;
   border-color: var(--side-nav-color, #9a3412);
-  background: var(--side-nav-color, #9a3412);
+  background: linear-gradient(135deg, var(--side-nav-color, #9a3412), color-mix(in srgb, var(--side-nav-color, #9a3412) 78%, black));
 }
 
 .side-nav button.active .side-nav-count {
@@ -473,8 +475,9 @@ img.user-avatar {
 }
 
 .side-nav button:not(.active):hover {
-  border-color: var(--teal);
-  color: var(--ink);
+  border-color: color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 82%, black);
+  color: #fff;
+  background: color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 86%, black);
 }
 
 .app-content {
