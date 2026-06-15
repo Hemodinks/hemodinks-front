@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction, useState } from 'react';
+import { type Dispatch, type SetStateAction, memo, useCallback, useMemo, useState } from 'react';
 import { CheckCircle2, ChevronLeft, ChevronRight, Plus, RefreshCw, X } from 'lucide-react';
 import type { CbhpmGeral } from '../../types';
 import type { CbhpmFilters } from '../../appTypes';
@@ -25,7 +25,7 @@ type CbhpmLookupModalProps = {
   onClose: () => void;
 };
 
-export function CbhpmLookupModal({
+export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
   items,
   filters,
   isAdmin,
@@ -42,20 +42,24 @@ export function CbhpmLookupModal({
   onSelect,
   onClose,
 }: CbhpmLookupModalProps) {
-  const manualCodigo = normalizeCbhpmCodigo(filters.codigo);
-  const manualProcedimento = filters.procedimento.trim();
-  const manualPorte = filters.porte.trim().toUpperCase();
-  const canAddManual = Boolean(manualCodigo && manualProcedimento);
   const [manualValidationError, setManualValidationError] = useState('');
 
-  const updateFilter = (field: keyof CbhpmFilters, value: string) => {
+  const manualValues = useMemo(() => ({
+    codigo: normalizeCbhpmCodigo(filters.codigo),
+    procedimento: filters.procedimento.trim(),
+    porte: filters.porte.trim().toUpperCase(),
+  }), [filters.codigo, filters.procedimento, filters.porte]);
+
+  const canAddManual = Boolean(manualValues.codigo && manualValues.procedimento);
+
+  const updateFilter = useCallback((field: keyof CbhpmFilters, value: string) => {
     setManualValidationError('');
     onPageChange(1);
     onFiltersChange((current) => ({ ...current, [field]: value }));
-  };
+  }, [onFiltersChange, onPageChange]);
 
-  const handleAddManual = () => {
-    if (!manualProcedimento) {
+  const handleAddManual = useCallback(() => {
+    if (!manualValues.procedimento) {
       setManualValidationError('Informe a descricao do procedimento para cadastrar manualmente.');
       return;
     }
@@ -66,12 +70,12 @@ export function CbhpmLookupModal({
 
     onSelect({
       id: 0,
-      codigo: manualCodigo,
-      procedimento: manualProcedimento,
-      porte: manualPorte || null,
+      codigo: manualValues.codigo,
+      procedimento: manualValues.procedimento,
+      porte: manualValues.porte || null,
       valorReferencia: null,
     });
-  };
+  }, [isAdmin, canAddManual, manualValues, onSelect]);
 
   return (
     <Modal titleId="cbhpm-title" className="cbhpm-modal" onClose={onClose}>
@@ -189,4 +193,4 @@ export function CbhpmLookupModal({
         </div>
       </Modal>
   );
-}
+});
