@@ -20,13 +20,14 @@ export const OPME_FORNECEDORES_DATALIST_ID = 'hemodinks-opme-fornecedores-option
 export const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
 export const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
 export const MEDICAL_PROFILE_ID = 2;
+export const CONTROLLER_PROFILE_ID = 4;
 export const DEFAULT_PROFILE_ID = MEDICAL_PROFILE_ID;
 export const API_ASSET_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
 export const PROFILE_OPTIONS = [
   { id: 1, nome: 'Administrador' },
   { id: 2, nome: 'Médicos' },
-  { id: 3, nome: 'Pacientes' },
+  { id: 4, nome: 'Controller' },
 ] as const;
 
 export const BRAZIL_UF_OPTIONS = [

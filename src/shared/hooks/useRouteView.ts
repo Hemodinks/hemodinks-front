@@ -6,19 +6,30 @@ import type { AuthSession } from '../../types';
 
 type UseRouteViewOptions = {
   session: AuthSession | null;
+  canUseDashboardRoute: boolean;
   canUseUsersRoute: boolean;
   canUseProfileRoute: boolean;
+  canUseAgendaRoute: boolean;
 };
 
-export function useRouteView({ session, canUseUsersRoute, canUseProfileRoute }: UseRouteViewOptions) {
+export function useRouteView({
+  session,
+  canUseDashboardRoute,
+  canUseUsersRoute,
+  canUseProfileRoute,
+  canUseAgendaRoute,
+}: UseRouteViewOptions) {
   const location = useLocation();
   const navigate = useNavigate();
   const routeView = getViewFromPath(location.pathname);
   const isRootRoute = isRootPath(location.pathname);
-  const routeBlocked = (routeView === 'users' && !canUseUsersRoute)
-    || (routeView === 'profile' && !canUseProfileRoute);
+  const routeBlocked = (routeView === 'dashboard' && !canUseDashboardRoute)
+    || (routeView === 'users' && !canUseUsersRoute)
+    || (routeView === 'profile' && !canUseProfileRoute)
+    || (routeView === 'agenda' && !canUseAgendaRoute);
+  const fallbackView: AppView = canUseDashboardRoute ? 'dashboard' : 'patients';
   const activeView: AppView = !routeView || routeBlocked
-    ? 'dashboard'
+    ? fallbackView
     : routeView;
 
   useEffect(() => {
@@ -27,9 +38,9 @@ export function useRouteView({ session, canUseUsersRoute, canUseProfileRoute }: 
     }
 
     if (isRootRoute || !routeView || routeBlocked) {
-      navigate(VIEW_PATHS.dashboard, { replace: true });
+      navigate(VIEW_PATHS[fallbackView], { replace: true });
     }
-  }, [isRootRoute, navigate, routeBlocked, routeView, session]);
+  }, [fallbackView, isRootRoute, navigate, routeBlocked, routeView, session]);
 
   const navigateToView = useCallback((view: AppView, replace = false) => {
     navigate(VIEW_PATHS[view], { replace });

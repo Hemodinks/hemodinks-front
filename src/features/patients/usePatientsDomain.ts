@@ -487,6 +487,13 @@ export function usePatientsDomain({
         head: [pacienteExportColumns.map((column) => column.header)],
         body: exportItems.map((paciente) => pacienteExportColumns.map((column) => column.getValue(paciente))),
         startY: 64,
+        columnStyles: {
+          0: { cellWidth: 80 },  // Coluna Paciente
+          1: { cellWidth: 50 },  // Coluna Data procedimento
+          7: { cellWidth: 40 },  // Coluna Codigo CBHPM
+          9: { cellWidth: 100 }, // Coluna Procedimento (geralmente mais longa)
+          15: { cellWidth: 35 }, // Coluna Arquivos
+        },
         styles: {
           fontSize: 6.6,
           cellPadding: 3,
@@ -627,8 +634,13 @@ export function usePatientsDomain({
       return;
     }
 
-    if (patientReadOnly) {
-      setPacienteFormError('Pacientes podem apenas visualizar o cadastro.');
+    if (editingPacienteId && !canEditPatients) {
+      setPacienteFormError('Sem permissao para editar pacientes.');
+      return;
+    }
+
+    if (!editingPacienteId && !canCreatePatients) {
+      setPacienteFormError('Sem permissao para cadastrar pacientes.');
       return;
     }
 
@@ -649,17 +661,17 @@ export function usePatientsDomain({
       ? medicalUsers.find((user) => user.id === pacienteFormData.medicoAuxiliar2UserId)
       : findMedicalUserByName(medicalUsers, pacienteFormData.medicoAuxiliar2);
 
-    if (isAdmin && pacienteFormData.medico && !selectedMedicoUser) {
+    if (!isMedical && pacienteFormData.medico && !selectedMedicoUser) {
       setPacienteFormError('Selecione um cirurgiao cadastrado com perfil Medicos.');
       return;
     }
 
-    if (isAdmin && pacienteFormData.medicoAuxiliar1 && !selectedMedicoAuxiliar1User) {
+    if (!isMedical && pacienteFormData.medicoAuxiliar1 && !selectedMedicoAuxiliar1User) {
       setPacienteFormError('Selecione o medico auxiliar 1 no cadastro de medicos.');
       return;
     }
 
-    if (isAdmin && pacienteFormData.medicoAuxiliar2 && !selectedMedicoAuxiliar2User) {
+    if (!isMedical && pacienteFormData.medicoAuxiliar2 && !selectedMedicoAuxiliar2User) {
       setPacienteFormError('Selecione o medico auxiliar 2 no cadastro de medicos.');
       return;
     }
@@ -870,7 +882,7 @@ export function usePatientsDomain({
     navigateToView('patients');
     setModuleMode('form');
 
-    if (session && isAdmin) {
+    if (session && !isMedical) {
       void loadMedicalUsers(session.token);
     }
 

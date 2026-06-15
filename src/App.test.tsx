@@ -955,6 +955,30 @@ describe('App', () => {
     expect(api.getUsers).not.toHaveBeenCalled();
   });
 
+  it('restringe controller ao cadastro e exportacao de pacientes', async () => {
+    mockSession({
+      perfilId: 4,
+      perfilNome: 'Controller',
+    });
+    window.history.pushState({}, '', '/dashboard');
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: /pacientes/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/pacientes');
+    });
+    expect(screen.queryByRole('button', { name: /abrir usuarios/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir agenda/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir painel/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /exportar xlsx/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /exportar pdf/i })).toBeInTheDocument();
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /visualizar paciente hemodinks/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();
+  });
+
   it('ordena pacientes por registro recente e nome', async () => {
     const user = userEvent.setup();
     mockSession();

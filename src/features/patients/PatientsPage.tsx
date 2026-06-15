@@ -166,6 +166,7 @@ export function PatientsPage({
           pacienteExportScope={pacienteExportScope}
           sessionToken={sessionToken}
           canCreatePatients={canCreatePatients}
+          canEditPatients={canEditPatients}
           canDeletePatients={canDeletePatients}
           patientReadOnly={patientReadOnly}
           isAdmin={isAdmin}
