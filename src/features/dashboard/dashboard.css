@@ -144,19 +144,15 @@
   border-radius: 8px;
   padding: 22px;
   padding-right: 58px;
-  color: var(--ink);
-  background:
-    linear-gradient(135deg, var(--module-soft, transparent), transparent 74%),
-    var(--panel);
-  box-shadow: none;
+  color: #fff;
+  background: linear-gradient(135deg, var(--module-color, var(--action-secondary)), color-mix(in srgb, var(--module-color, var(--action-secondary)) 78%, black));
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--module-color, var(--action-secondary)) 18%, transparent);
   text-align: left;
 }
 
 .module-card:hover {
-  border-color: var(--module-color, var(--teal));
-  background:
-    linear-gradient(135deg, var(--module-soft, transparent), transparent 68%),
-    var(--panel-strong);
+  border-color: color-mix(in srgb, var(--module-color, var(--action-secondary)) 82%, black);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--module-color, var(--action-secondary)) 92%, white), color-mix(in srgb, var(--module-color, var(--action-secondary)) 70%, black));
 }
 
 .module-card-menu {
@@ -169,8 +165,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  color: var(--module-color, var(--muted));
-  background: var(--module-soft, var(--soft));
+  color: var(--module-color, var(--action-secondary));
+  background: #fff;
 }
 
 .module-icon {
@@ -180,19 +176,19 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  color: var(--module-color, var(--teal));
-  background: var(--module-soft, transparent);
+  color: var(--module-color, var(--action-secondary));
+  background: #fff;
 }
 
 .module-title {
-  color: var(--module-color, var(--blood));
+  color: color-mix(in srgb, white 88%, var(--module-color, var(--action-secondary)));
   font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .module-metric {
-  color: var(--ink);
+  color: #fff;
   font-size: 1rem;
   font-weight: 900;
 }
@@ -205,12 +201,12 @@
   justify-content: space-between;
   gap: 14px;
   margin-top: 8px;
-  color: var(--module-color, var(--teal));
+  color: #fff;
   font-weight: 900;
 }
 
 .module-card-foot span {
-  color: var(--muted);
+  color: color-mix(in srgb, white 76%, transparent);
   font-size: 0.82rem;
 }
 

@@ -69,25 +69,44 @@ tbody tr:last-child td {
   width: 42px;
   height: 38px;
   gap: 3px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--action-secondary) 82%, black);
   border-radius: 8px;
-  background: var(--input-bg);
+  color: var(--action-text);
+  background: var(--action-secondary);
 }
 
 .status-info-button.active {
-  color: #047857;
+  color: var(--action-text);
+  background: var(--action-success);
+  border-color: color-mix(in srgb, var(--action-success) 82%, black);
 }
 
 .status-info-button.inactive {
-  color: var(--danger);
+  color: var(--action-text);
+  background: var(--action-danger);
+  border-color: color-mix(in srgb, var(--action-danger) 82%, black);
 }
 
 .status-info-button.contact {
-  color: var(--teal);
+  color: var(--action-text);
+  background: var(--action-accent);
+  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
 }
 
 .status-info-button:hover {
-  background: var(--soft);
+  background: var(--action-secondary-hover);
+}
+
+.status-info-button.active:hover {
+  background: var(--action-success-hover);
+}
+
+.status-info-button.inactive:hover {
+  background: var(--action-danger-hover);
+}
+
+.status-info-button.contact:hover {
+  background: var(--action-accent-hover);
 }
 
 .row-actions {

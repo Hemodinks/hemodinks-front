@@ -136,19 +136,19 @@ input::placeholder {
   right: 5px;
   width: 34px;
   min-height: 34px;
-  border: 0;
+  border: 1px solid color-mix(in srgb, var(--action-accent) 82%, black);
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--muted);
-  background: transparent;
+  color: var(--action-text);
+  background: var(--action-accent);
   transform: translateY(-50%);
 }
 
 .password-visibility-button:hover {
-  color: var(--teal);
-  background: var(--soft);
+  color: var(--action-text);
+  background: var(--action-accent-hover);
 }
 
 .date-picker-button {
@@ -162,8 +162,14 @@ input::placeholder {
   justify-content: center;
   transform: translateY(-50%);
   border-radius: 8px;
-  color: var(--muted);
-  background: var(--soft);
+  border: 1px solid color-mix(in srgb, var(--action-accent) 82%, black);
+  color: var(--action-text);
+  background: var(--action-accent);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-accent) 18%, transparent);
+}
+
+.date-picker-button:hover {
+  background: var(--action-accent-hover);
 }
 
 .date-picker-button input[type="date"] {
@@ -199,6 +205,12 @@ input::placeholder {
   gap: 8px;
   font-weight: 800;
   white-space: nowrap;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
 }
 
 .primary-action:focus-visible,
@@ -211,45 +223,56 @@ input::placeholder {
 
 .primary-action {
   width: 100%;
-  color: #fff;
-  background: var(--blood);
-  border-color: var(--blood);
+  color: var(--action-text);
+  background: var(--action-primary);
+  border-color: color-mix(in srgb, var(--action-primary) 82%, black);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--action-primary) 28%, transparent);
   padding: 0 16px;
 }
 
 .primary-action:hover {
-  background: var(--blood-dark);
+  background: var(--action-primary-hover);
+  border-color: color-mix(in srgb, var(--action-primary-hover) 82%, black);
 }
 
 .ghost-button {
-  color: var(--ink);
-  background: var(--input-bg);
-  border-color: var(--line);
+  color: var(--action-text);
+  background: var(--action-secondary);
+  border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-secondary) 20%, transparent);
   padding: 0 13px;
 }
 
 .ghost-button:hover,
 .icon-button:hover {
-  background: var(--soft);
+  background: var(--action-secondary-hover);
+  border-color: color-mix(in srgb, var(--action-secondary-hover) 82%, black);
 }
 
 .icon-button {
   width: 40px;
-  color: var(--ink);
-  background: var(--input-bg);
-  border-color: var(--line);
+  color: var(--action-text);
+  background: var(--action-accent);
+  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-accent) 18%, transparent);
 }
 
 .icon-button.muted {
-  color: var(--muted);
+  color: var(--action-text);
+  background: var(--action-secondary);
+  border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
 }
 
 .icon-button.danger {
-  color: var(--danger);
+  color: var(--action-text);
+  background: var(--action-danger);
+  border-color: color-mix(in srgb, var(--action-danger) 82%, black);
 }
 
 .danger-text {
-  color: var(--danger);
+  color: var(--action-text);
+  background: var(--action-danger);
+  border-color: color-mix(in srgb, var(--action-danger) 82%, black);
 }
 
 .alert {
@@ -667,6 +690,8 @@ input::placeholder {
 .file-action {
   width: auto;
   min-height: 38px;
+  background: var(--action-accent);
+  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
 }
 
 .file-hint {
