@@ -1,4 +1,4 @@
-import type { Convenio, User } from '../../types';
+import type { Convenio, OpmeFornecedor, User } from '../../types';
 
 export const DEFAULT_PASSWORD = 'Senha@123';
 export const DEFAULT_PATIENT_BIRTH_DATE = '1900-01-01';
@@ -7,6 +7,7 @@ export const PATIENT_EXPORT_PAGE_SIZE = 100;
 export const LOOKUP_PAGE_SIZE = 100;
 export const CBHPM_PAGE_SIZE = 10;
 export const MAX_NAME_LENGTH = 255;
+export const MAX_DIAGNOSIS_LENGTH = 1500;
 export const MAX_EMAIL_LENGTH = 255;
 export const MAX_PHONE_LENGTH = 20;
 export const MAX_CPF_LENGTH = 14;
@@ -15,6 +16,7 @@ export const MAX_PASSWORD_LENGTH = 500;
 export const MAX_CURRENCY_DIGITS = 15;
 export const MEDICAL_USERS_DATALIST_ID = 'hemodinks-medical-users-options';
 export const CONVENIOS_DATALIST_ID = 'hemodinks-convenios-options';
+export const OPME_FORNECEDORES_DATALIST_ID = 'hemodinks-opme-fornecedores-options';
 export const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
 export const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
 export const MEDICAL_PROFILE_ID = 2;
@@ -79,6 +81,13 @@ export function findConvenioByDescription(convenios: Convenio[], descricao: stri
   const normalizedDescricao = normalizeLookupText(descricao);
   return normalizedDescricao
     ? convenios.find((convenio) => normalizeLookupText(convenio.descricaoConvenio) === normalizedDescricao)
+    : undefined;
+}
+
+export function findOpmeFornecedorByName(fornecedores: OpmeFornecedor[], fornecedor: string) {
+  const normalizedFornecedor = normalizeLookupText(fornecedor);
+  return normalizedFornecedor
+    ? fornecedores.find((item) => normalizeLookupText(item.fornecedor) === normalizedFornecedor)
     : undefined;
 }
 

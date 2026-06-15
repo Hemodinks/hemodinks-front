@@ -18,6 +18,11 @@ const focusableSelector = [
 
 export function Modal({ titleId, className = '', onClose, children }: ModalProps) {
   const panelRef = useRef<HTMLElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement instanceof HTMLElement
@@ -30,7 +35,7 @@ export function Modal({ titleId, className = '', onClose, children }: ModalProps
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     };
 
@@ -40,7 +45,7 @@ export function Modal({ titleId, className = '', onClose, children }: ModalProps
       document.removeEventListener('keydown', handleKeyDown);
       previouslyFocused?.focus();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div
@@ -48,7 +53,7 @@ export function Modal({ titleId, className = '', onClose, children }: ModalProps
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
-          onClose();
+          onCloseRef.current();
         }
       }}
     >

@@ -3,6 +3,7 @@ import type { AppView } from './appTypes';
 export const VIEW_PATHS: Record<AppView, string> = {
   dashboard: '/dashboard',
   users: '/usuarios',
+  profile: '/meu-cadastro',
   patients: '/pacientes',
   agenda: '/agenda',
 };

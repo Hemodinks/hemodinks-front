@@ -1,21 +1,18 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { FileText, FileUp, Plus, Save, Search, Trash2, X } from 'lucide-react';
-import type { Convenio, Hospital, Paciente, PacienteFormData, User } from '../../types';
+import type { Convenio, Hospital, OpmeFornecedor, Paciente, PacienteFormData, User } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
-import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
+import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextareaField, TextField } from '../../shared/components/ui';
 import {
   CONVENIOS_DATALIST_ID,
   DEFAULT_PASSWORD,
   findConvenioByDescription,
-  findMedicalUserByName,
-  formatCpfInput,
+  findOpmeFornecedorByName,
   formatCurrency,
   formatCurrencyInput,
-  formatPhoneInput,
-  MAX_CPF_LENGTH,
+  MAX_DIAGNOSIS_LENGTH,
   MAX_NAME_LENGTH,
-  MAX_PHONE_LENGTH,
-  MEDICAL_USERS_DATALIST_ID,
+  OPME_FORNECEDORES_DATALIST_ID,
 } from '../../shared/utils/formatters';
 
 type PatientFormProps = {
@@ -33,8 +30,9 @@ type PatientFormProps = {
   medicalUsers: User[];
   convenios: Convenio[];
   conveniosError: string;
+  opmeFornecedores: OpmeFornecedor[];
+  opmeFornecedoresError: string;
   isMedical: boolean;
-  sessionUserName: string;
   setPacienteFormData: Dispatch<SetStateAction<PacienteFormData>>;
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -44,6 +42,14 @@ type PatientFormProps = {
   onRemovePendingPatientFile: (index: number) => void;
   onDeletePacienteArquivo: (paciente: Paciente, arquivoId: number) => void | Promise<void>;
 };
+
+type MedicalTeamField = 'medico' | 'medicoAuxiliar1' | 'medicoAuxiliar2';
+
+const medicalTeamFields = {
+  medico: { idKey: 'medicoUserId', nameKey: 'medico' },
+  medicoAuxiliar1: { idKey: 'medicoAuxiliar1UserId', nameKey: 'medicoAuxiliar1' },
+  medicoAuxiliar2: { idKey: 'medicoAuxiliar2UserId', nameKey: 'medicoAuxiliar2' },
+} as const;
 
 export function PatientForm({
   canEditPatients,
@@ -60,8 +66,9 @@ export function PatientForm({
   medicalUsers,
   convenios,
   conveniosError,
+  opmeFornecedores,
+  opmeFornecedoresError,
   isMedical,
-  sessionUserName,
   setPacienteFormData,
   onClose,
   onSubmit,
@@ -71,6 +78,54 @@ export function PatientForm({
   onRemovePendingPatientFile,
   onDeletePacienteArquivo,
 }: PatientFormProps) {
+  const getMedicalSelectValue = (field: MedicalTeamField) => {
+    const config = medicalTeamFields[field];
+    const userId = pacienteFormData[config.idKey];
+
+    if (userId != null) {
+      return String(userId);
+    }
+
+    return pacienteFormData[config.nameKey] ? 'legacy' : '';
+  };
+
+  const isMedicalUserSelectedElsewhere = (field: MedicalTeamField, userId: number) => (
+    Object.entries(medicalTeamFields).some(([currentField, config]) => (
+      currentField !== field && pacienteFormData[config.idKey] === userId
+    ))
+  );
+
+  const updateMedicalTeamMember = (field: MedicalTeamField, value: string) => {
+    const config = medicalTeamFields[field];
+    const userId = value && value !== 'legacy' ? Number(value) : null;
+    const selectedUser = userId != null ? medicalUsers.find((user) => user.id === userId) : undefined;
+
+    setPacienteFormData((current) => ({
+      ...current,
+      [config.idKey]: selectedUser?.id ?? null,
+      [config.nameKey]: selectedUser?.nome ?? '',
+    }));
+  };
+
+  const renderMedicalOptions = (field: MedicalTeamField, emptyLabel: string) => {
+    const config = medicalTeamFields[field];
+    const legacyName = pacienteFormData[config.nameKey];
+
+    return (
+      <>
+        <option value="">{emptyLabel}</option>
+        {legacyName && pacienteFormData[config.idKey] == null && (
+          <option value="legacy">{legacyName} (fora do cadastro)</option>
+        )}
+        {medicalUsers.map((user) => (
+          <option key={user.id} value={user.id} disabled={isMedicalUserSelectedElsewhere(field, user.id)}>
+            {user.nome}
+          </option>
+        ))}
+      </>
+    );
+  };
+
   return (
     <FormPanel className="module-form-panel">
       <div className="panel-title">
@@ -104,27 +159,13 @@ export function PatientForm({
             required
           />
 
-          <TextField
-            label="CPF"
-            type="text"
-            value={pacienteFormData.cpf}
-            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, cpf: formatCpfInput(value) }))}
-            inputMode="numeric"
-            maxLength={MAX_CPF_LENGTH}
-            placeholder="000.000.000-00"
-            required
-          />
-
-          <TextField
-            label="Telefone"
-            type="tel"
-            value={pacienteFormData.telefone}
-            onFocus={() => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
-            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(value) }))}
-            inputMode="numeric"
-            maxLength={MAX_PHONE_LENGTH}
-            placeholder="+55 (81) 99999-9999"
-            required
+          <TextareaField
+            className="diagnosis-field"
+            label="Diagnóstico"
+            value={pacienteFormData.diagnostico}
+            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, diagnostico: value.slice(0, MAX_DIAGNOSIS_LENGTH) }))}
+            maxLength={MAX_DIAGNOSIS_LENGTH}
+            rows={5}
           />
 
           <SelectField
@@ -152,20 +193,38 @@ export function PatientForm({
           </SelectField>
           {hospitaisError && <AlertMessage type="error">{hospitaisError}</AlertMessage>}
 
-          <TextField
-            label="Médico"
-            type="text"
-            list={MEDICAL_USERS_DATALIST_ID}
-            value={isMedical ? sessionUserName : pacienteFormData.medico}
-            onValueChange={(value) => {
-              const medico = value.slice(0, MAX_NAME_LENGTH);
-              const selectedMedicoUser = findMedicalUserByName(medicalUsers, medico);
-              setPacienteFormData((current) => ({ ...current, medicoUserId: selectedMedicoUser?.id ?? null, medico }));
-            }}
-            disabled={patientReadOnly || isMedical || (!medicalUsers.length && !pacienteFormData.medico)}
-            maxLength={MAX_NAME_LENGTH}
-            placeholder={isMedical ? sessionUserName : medicalUsers.length ? 'Selecione ou digite o medico' : 'Nenhum medico cadastrado'}
-          />
+          {!isMedical && (
+            <SelectField
+              label="Cirurgião"
+              value={getMedicalSelectValue('medico')}
+              onChange={(event) => updateMedicalTeamMember('medico', event.target.value)}
+              disabled={patientReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
+            >
+              {renderMedicalOptions('medico', medicalUsers.length ? 'Selecione um cirurgiao' : 'Nenhum medico cadastrado')}
+            </SelectField>
+          )}
+
+          {!isMedical && (
+            <SelectField
+              label="Médico auxiliar 1"
+              value={getMedicalSelectValue('medicoAuxiliar1')}
+              onChange={(event) => updateMedicalTeamMember('medicoAuxiliar1', event.target.value)}
+              disabled={patientReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar1)}
+            >
+              {renderMedicalOptions('medicoAuxiliar1', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
+            </SelectField>
+          )}
+
+          {!isMedical && (
+            <SelectField
+              label="Médico auxiliar 2"
+              value={getMedicalSelectValue('medicoAuxiliar2')}
+              onChange={(event) => updateMedicalTeamMember('medicoAuxiliar2', event.target.value)}
+              disabled={patientReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar2)}
+            >
+              {renderMedicalOptions('medicoAuxiliar2', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
+            </SelectField>
+          )}
 
           <TextField
             label="Convênio"
@@ -186,6 +245,25 @@ export function PatientForm({
             placeholder={convenios.length ? 'Selecione ou digite o convenio' : 'Nenhum convenio cadastrado'}
           />
           {conveniosError && <AlertMessage type="error">{conveniosError}</AlertMessage>}
+
+          <TextField
+            label="Fornecedor OPME"
+            type="text"
+            list={OPME_FORNECEDORES_DATALIST_ID}
+            value={pacienteFormData.opmeFornecedor}
+            onValueChange={(value) => {
+              const opmeFornecedor = value.slice(0, MAX_NAME_LENGTH);
+              const selectedFornecedor = findOpmeFornecedorByName(opmeFornecedores, opmeFornecedor);
+              setPacienteFormData((current) => ({
+                ...current,
+                opmeFornecedorId: selectedFornecedor?.idFornecedor ?? null,
+                opmeFornecedor,
+              }));
+            }}
+            maxLength={MAX_NAME_LENGTH}
+            placeholder={opmeFornecedores.length ? 'Selecione ou digite o fornecedor OPME' : 'Digite o fornecedor OPME'}
+          />
+          {opmeFornecedoresError && <AlertMessage type="error">{opmeFornecedoresError}</AlertMessage>}
 
           <div className="procedure-field">
             <span className="field-label">Procedimento</span>

@@ -91,6 +91,8 @@ export function PatientList({
   onOpenPacienteFiles,
   onSelectPatientInfo,
 }: PatientListProps) {
+  const patientActionLabel = patientReadOnly ? 'Visualizar' : 'Editar';
+
   return (
     <DataPanel>
       <div className="data-header">
@@ -122,7 +124,7 @@ export function PatientList({
               onChange={(event) => onExportScopeChange(event.target.value as PacienteExportScope)}
             >
               <option value="all">Todos os pacientes</option>
-              {isAdmin && <option value="doctor">Medico selecionado</option>}
+              {isAdmin && <option value="doctor">Cirurgiao selecionado</option>}
               <option value="visible">Dados da tela</option>
             </SelectField>
             <Button
@@ -144,13 +146,13 @@ export function PatientList({
             <div className="patient-filter-grid" aria-label="Filtros administrativos de pacientes">
               <TextField
                 className="filter-field"
-                label="Medico"
+                label="Cirurgiao"
                 type="search"
                 list={MEDICAL_USERS_DATALIST_ID}
                 value={pacienteFilters.medico}
                 onValueChange={(value) => onFiltersChange((current) => ({ ...current, medico: value }))}
                 disabled={!hasMedicalUsers}
-                placeholder={hasMedicalUsers ? 'Todos os medicos' : 'Nenhum medico cadastrado'}
+                placeholder={hasMedicalUsers ? 'Todos os cirurgioes' : 'Nenhum medico cadastrado'}
               />
               <TextField
                 className="filter-field"
@@ -202,7 +204,8 @@ export function PatientList({
                 <th>Paciente</th>
                 <th>Info</th>
                 <th>Hospital</th>
-                <th>Medico</th>
+                <th>Cirurgiao</th>
+                <th>Auxiliares</th>
                 <th>Convenio</th>
                 <th>Status Pago</th>
                 <th>Arquivos</th>
@@ -212,7 +215,7 @@ export function PatientList({
             <tbody>
               {pacientesLoading ? (
                 <tr>
-                  <td colSpan={8} className="empty-row">Carregando pacientes...</td>
+                  <td colSpan={9} className="empty-row">Carregando pacientes...</td>
                 </tr>
               ) : pacientes.length ? (
                 pacientes.map((paciente) => (
@@ -235,7 +238,10 @@ export function PatientList({
                       </button>
                     </td>
                     <td data-label="Hospital">{paciente.hospital || '-'}</td>
-                    <td data-label="Medico">{paciente.medico || '-'}</td>
+                    <td data-label="Cirurgiao">{paciente.medico || '-'}</td>
+                    <td data-label="Auxiliares">
+                      {[paciente.medicoAuxiliar1, paciente.medicoAuxiliar2].filter(Boolean).join(' / ') || '-'}
+                    </td>
                     <td data-label="Convenio">{paciente.convenio || '-'}</td>
                     <td data-label="Status Pago">
                       <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
@@ -264,10 +270,10 @@ export function PatientList({
                     <td data-label="Acoes">
                       <div className="row-actions">
                         <IconButton
-                          label={`${patientReadOnly ? 'Visualizar' : 'Editar'} ${paciente.nomePaciente}`}
+                          label={`${patientActionLabel} ${paciente.nomePaciente}`}
                           tone="muted"
                           onClick={() => void onEditPaciente(paciente)}
-                          title={patientReadOnly ? 'Visualizar' : 'Editar'}
+                          title={patientActionLabel}
                         >
                           {patientReadOnly ? <Eye size={17} /> : <Pencil size={17} />}
                         </IconButton>
@@ -287,7 +293,7 @@ export function PatientList({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="empty-row">Nenhum paciente encontrado.</td>
+                  <td colSpan={9} className="empty-row">Nenhum paciente encontrado.</td>
                 </tr>
               )}
             </tbody>

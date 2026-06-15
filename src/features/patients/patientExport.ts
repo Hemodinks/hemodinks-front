@@ -1,21 +1,19 @@
 import type { Paciente } from '../../types';
-import {
-  formatCpfInput,
-  formatPhoneInput,
-  toDisplayDate,
-} from '../../shared/utils/formatters';
+import { toDisplayDate } from '../../shared/utils/formatters';
+import { normalizeCbhpmCodigo } from './patientUtils';
 
 export const pacienteExportColumns = [
   { header: 'Paciente', getValue: (paciente: Paciente) => paciente.nomePaciente },
-  { header: 'CPF', getValue: (paciente: Paciente) => formatCpfInput(paciente.cpf || '') || '-' },
   { header: 'Email', getValue: (paciente: Paciente) => paciente.email || '-' },
-  { header: 'Telefone', getValue: (paciente: Paciente) => formatPhoneInput(paciente.telefone || '') || '-' },
   { header: 'Data nascimento', getValue: (paciente: Paciente) => toDisplayDate(paciente.dataNascimento || '') || '-' },
   { header: 'Data procedimento', getValue: (paciente: Paciente) => toDisplayDate(paciente.data || '') || '-' },
   { header: 'Hospital', getValue: (paciente: Paciente) => paciente.hospital || '-' },
-  { header: 'Medico', getValue: (paciente: Paciente) => paciente.medico || '-' },
+  { header: 'Cirurgiao', getValue: (paciente: Paciente) => paciente.medico || '-' },
+  { header: 'Medico auxiliar 1', getValue: (paciente: Paciente) => paciente.medicoAuxiliar1 || '-' },
+  { header: 'Medico auxiliar 2', getValue: (paciente: Paciente) => paciente.medicoAuxiliar2 || '-' },
   { header: 'Convenio', getValue: (paciente: Paciente) => paciente.convenio || '-' },
-  { header: 'Codigo CBHPM', getValue: (paciente: Paciente) => paciente.cbhpmCodigo || '-' },
+  { header: 'Fornecedor OPME', getValue: (paciente: Paciente) => paciente.opmeFornecedor || '-' },
+  { header: 'Codigo CBHPM', getValue: (paciente: Paciente) => normalizeCbhpmCodigo(paciente.cbhpmCodigo) || '-' },
   { header: 'Porte CBHPM', getValue: (paciente: Paciente) => paciente.cbhpmPorte || '-' },
   { header: 'Procedimento', getValue: (paciente: Paciente) => paciente.procedimento || '-' },
   { header: 'Autorizacao', getValue: (paciente: Paciente) => paciente.autorizacao || '-' },

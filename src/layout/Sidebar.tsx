@@ -79,8 +79,8 @@ export function Sidebar({
           {canEditOwnUser && (
             <button
               type="button"
-              className={activeView === 'users' ? 'active' : ''}
-              aria-current={activeView === 'users' ? 'page' : undefined}
+              className={activeView === 'profile' ? 'active' : ''}
+              aria-current={activeView === 'profile' ? 'page' : undefined}
               onClick={onOpenMyProfile}
             >
               <FileText size={18} />

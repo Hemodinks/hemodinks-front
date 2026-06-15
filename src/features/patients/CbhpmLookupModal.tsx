@@ -1,13 +1,16 @@
-import { CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, X } from 'lucide-react';
+import { type Dispatch, type SetStateAction, memo, useCallback, useMemo, useState } from 'react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Plus, RefreshCw, X } from 'lucide-react';
 import type { CbhpmGeral } from '../../types';
 import type { CbhpmFilters } from '../../appTypes';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, Button, IconButton, TextField } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
+import { normalizeCbhpmCodigo } from './patientUtils';
 
 type CbhpmLookupModalProps = {
   items: CbhpmGeral[];
   filters: CbhpmFilters;
+  isAdmin: boolean;
   loading: boolean;
   error: string;
   currentPage: number;
@@ -15,16 +18,17 @@ type CbhpmLookupModalProps = {
   totalItems: number;
   visibleStart: number;
   visibleEnd: number;
-  onFiltersChange: (filters: CbhpmFilters) => void;
+  onFiltersChange: Dispatch<SetStateAction<CbhpmFilters>>;
   onPageChange: (page: number | ((current: number) => number)) => void;
   onRefresh: () => void;
   onSelect: (procedimento: CbhpmGeral) => void;
   onClose: () => void;
 };
 
-export function CbhpmLookupModal({
+export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
   items,
   filters,
+  isAdmin,
   loading,
   error,
   currentPage,
@@ -38,9 +42,42 @@ export function CbhpmLookupModal({
   onSelect,
   onClose,
 }: CbhpmLookupModalProps) {
-  const updateFilter = (field: keyof CbhpmFilters, value: string) => {
-    onFiltersChange({ ...filters, [field]: value });
-  };
+  const [manualValidationError, setManualValidationError] = useState('');
+
+  const manualValues = useMemo(() => ({
+    codigo: normalizeCbhpmCodigo(filters.codigo),
+    procedimento: filters.procedimento.trim(),
+    porte: filters.porte.trim().toUpperCase(),
+  }), [filters.codigo, filters.procedimento, filters.porte]);
+
+  const canAddManual = Boolean(manualValues.codigo && manualValues.procedimento);
+
+  const updateFilter = useCallback((field: keyof CbhpmFilters, value: string) => {
+  setManualValidationError('');
+    onFiltersChange((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }, [onFiltersChange]);
+
+  const handleAddManual = useCallback(() => {
+    if (!manualValues.procedimento) {
+      setManualValidationError('Informe a descricao do procedimento para cadastrar manualmente.');
+      return;
+    }
+
+    if (!isAdmin && !canAddManual) {
+      return;
+    }
+
+    onSelect({
+      id: 0,
+      codigo: manualValues.codigo,
+      procedimento: manualValues.procedimento,
+      porte: manualValues.porte || null,
+      valorReferencia: null,
+    });
+  }, [isAdmin, canAddManual, manualValues, onSelect]);
 
   return (
     <Modal titleId="cbhpm-title" className="cbhpm-modal" onClose={onClose}>
@@ -58,20 +95,26 @@ export function CbhpmLookupModal({
           <TextField
             label="Codigo"
             type="search"
+            
+            autoComplete="on"
             value={filters.codigo}
-            onValueChange={(value) => updateFilter('codigo', value)}
-            placeholder="1.01"
+            onValueChange={(value) => updateFilter('codigo', normalizeCbhpmCodigo(value))}
+            placeholder="4070101"
+            maxLength={20}
           />
           <TextField
             label="Procedimento"
             type="search"
+            autoComplete="on"
             value={filters.procedimento}
             onValueChange={(value) => updateFilter('procedimento', value)}
             placeholder="Consulta"
+            maxLength={1000}
           />
           <TextField
             label="Porte"
             type="search"
+            autoComplete="off"
             value={filters.porte}
             onValueChange={(value) => updateFilter('porte', value.toUpperCase())}
             placeholder="2B"
@@ -82,6 +125,14 @@ export function CbhpmLookupModal({
           </IconButton>
         </div>
 
+        <div className="manual-procedure-row">
+          <Button className="manual-procedure-action" onClick={handleAddManual} disabled={!isAdmin && !canAddManual}>
+            <Plus size={17} />
+            Cadastrar manualmente
+          </Button>
+        </div>
+
+        {manualValidationError && <AlertMessage type="error">{manualValidationError}</AlertMessage>}
         {error && <AlertMessage type="error">{error}</AlertMessage>}
 
         <div className="table-wrap cbhpm-table-wrap">
@@ -103,7 +154,7 @@ export function CbhpmLookupModal({
               ) : items.length ? (
                 items.map((item) => (
                   <tr key={item.id}>
-                    <td data-label="Codigo">{item.codigo}</td>
+                    <td data-label="Codigo">{normalizeCbhpmCodigo(item.codigo) || item.codigo}</td>
                     <td data-label="Procedimento">{item.procedimento}</td>
                     <td data-label="Porte">{item.porte || '-'}</td>
                     <td data-label="Valor referencia">{formatCurrency(item.valorReferencia)}</td>
@@ -148,4 +199,4 @@ export function CbhpmLookupModal({
         </div>
       </Modal>
   );
-}
+});
