@@ -57,6 +57,7 @@ import {
 import {
   CBHPM_CACHE_FETCH_PAGE_SIZE,
   filterCbhpmCachedItems,
+  isCbhpmCacheSearchReady,
 } from './cbhpmLookupUtils';
 import {
   emptyPacienteFilters,
@@ -251,7 +252,15 @@ export function usePatientsDomain({
     ),
   });
   const filteredCbhpmItems = useMemo(
-    () => filterCbhpmCachedItems(cbhpmCacheQuery.data ?? [], debouncedCbhpmFilters),
+    () => {
+      if (!cbhpmCacheQuery.data) return [];
+      // Se nenhum filtro foi aplicado (debouncedCbhpmFilters vazio), mostra todos os itens
+      if (!isCbhpmCacheSearchReady(debouncedCbhpmFilters)) {
+        return cbhpmCacheQuery.data;
+      }
+      // Caso contrário, filtra normalmente
+      return filterCbhpmCachedItems(cbhpmCacheQuery.data, debouncedCbhpmFilters);
+    },
     [cbhpmCacheQuery.data, debouncedCbhpmFilters],
   );
 
