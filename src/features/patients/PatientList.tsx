@@ -38,6 +38,7 @@ type PatientListProps = {
   pacienteExportScope: PacienteExportScope;
   sessionToken: string;
   canCreatePatients: boolean;
+  canEditPatients: boolean;
   canDeletePatients: boolean;
   patientReadOnly: boolean;
   isAdmin: boolean;
@@ -73,6 +74,7 @@ export function PatientList({
   pacienteExportScope,
   sessionToken,
   canCreatePatients,
+  canEditPatients,
   canDeletePatients,
   patientReadOnly,
   isAdmin,
@@ -91,7 +93,7 @@ export function PatientList({
   onOpenPacienteFiles,
   onSelectPatientInfo,
 }: PatientListProps) {
-  const patientActionLabel = patientReadOnly ? 'Visualizar' : 'Editar';
+  const patientActionLabel = patientReadOnly || !canEditPatients ? 'Visualizar' : 'Editar';
 
   return (
     <DataPanel>
@@ -275,7 +277,7 @@ export function PatientList({
                           onClick={() => void onEditPaciente(paciente)}
                           title={patientActionLabel}
                         >
-                          {patientReadOnly ? <Eye size={17} /> : <Pencil size={17} />}
+                          {patientReadOnly || !canEditPatients ? <Eye size={17} /> : <Pencil size={17} />}
                         </IconButton>
                         {canDeletePatients && (
                           <IconButton

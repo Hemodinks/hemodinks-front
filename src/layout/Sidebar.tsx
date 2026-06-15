@@ -7,8 +7,10 @@ type SidebarProps = {
   session: AuthSession;
   activeView: AppView;
   currentUserProfile: string;
+  canAccessDashboard: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
+  canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
   onOpenDashboard: () => void;
@@ -22,8 +24,10 @@ export function Sidebar({
   session,
   activeView,
   currentUserProfile,
+  canAccessDashboard,
   canAccessUsers,
   canEditOwnUser,
+  canAccessAgenda,
   usersCount,
   pacientesCount,
   onOpenDashboard,
@@ -55,15 +59,17 @@ export function Sidebar({
         </div>
 
         <nav className="side-nav" aria-label="Navegacao principal">
-          <button
-            type="button"
-            className={activeView === 'dashboard' ? 'active' : ''}
-            aria-current={activeView === 'dashboard' ? 'page' : undefined}
-            onClick={onOpenDashboard}
-          >
-            <LayoutDashboard size={18} />
-            <span>Painel</span>
-          </button>
+          {canAccessDashboard && (
+            <button
+              type="button"
+              className={activeView === 'dashboard' ? 'active' : ''}
+              aria-current={activeView === 'dashboard' ? 'page' : undefined}
+              onClick={onOpenDashboard}
+            >
+              <LayoutDashboard size={18} />
+              <span>Painel</span>
+            </button>
+          )}
           {canAccessUsers && (
             <button
               type="button"
@@ -97,15 +103,17 @@ export function Sidebar({
             <span>Pacientes</span>
             <span className="side-nav-count">{pacientesCount}</span>
           </button>
-          <button
-            type="button"
-            className={`side-nav-agenda ${activeView === 'agenda' ? 'active' : ''}`}
-            aria-current={activeView === 'agenda' ? 'page' : undefined}
-            onClick={onOpenAgenda}
-          >
-            <CalendarDays size={18} />
-            <span>Agenda</span>
-          </button>
+          {canAccessAgenda && (
+            <button
+              type="button"
+              className={`side-nav-agenda ${activeView === 'agenda' ? 'active' : ''}`}
+              aria-current={activeView === 'agenda' ? 'page' : undefined}
+              onClick={onOpenAgenda}
+            >
+              <CalendarDays size={18} />
+              <span>Agenda</span>
+            </button>
+          )}
         </nav>
       </div>
     </aside>
