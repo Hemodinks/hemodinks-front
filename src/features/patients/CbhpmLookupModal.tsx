@@ -1,3 +1,4 @@
+import { type Dispatch, type SetStateAction, useState } from 'react';
 import { CheckCircle2, ChevronLeft, ChevronRight, Plus, RefreshCw, X } from 'lucide-react';
 import type { CbhpmGeral } from '../../types';
 import type { CbhpmFilters } from '../../appTypes';
@@ -9,6 +10,7 @@ import { normalizeCbhpmCodigo } from './patientUtils';
 type CbhpmLookupModalProps = {
   items: CbhpmGeral[];
   filters: CbhpmFilters;
+  isAdmin: boolean;
   loading: boolean;
   error: string;
   currentPage: number;
@@ -16,7 +18,7 @@ type CbhpmLookupModalProps = {
   totalItems: number;
   visibleStart: number;
   visibleEnd: number;
-  onFiltersChange: (filters: CbhpmFilters) => void;
+  onFiltersChange: Dispatch<SetStateAction<CbhpmFilters>>;
   onPageChange: (page: number | ((current: number) => number)) => void;
   onRefresh: () => void;
   onSelect: (procedimento: CbhpmGeral) => void;
@@ -26,6 +28,7 @@ type CbhpmLookupModalProps = {
 export function CbhpmLookupModal({
   items,
   filters,
+  isAdmin,
   loading,
   error,
   currentPage,
@@ -43,13 +46,21 @@ export function CbhpmLookupModal({
   const manualProcedimento = filters.procedimento.trim();
   const manualPorte = filters.porte.trim().toUpperCase();
   const canAddManual = Boolean(manualCodigo && manualProcedimento);
+  const [manualValidationError, setManualValidationError] = useState('');
 
   const updateFilter = (field: keyof CbhpmFilters, value: string) => {
-    onFiltersChange({ ...filters, [field]: value });
+    setManualValidationError('');
+    onPageChange(1);
+    onFiltersChange((current) => ({ ...current, [field]: value }));
   };
 
   const handleAddManual = () => {
-    if (!canAddManual) {
+    if (!manualProcedimento) {
+      setManualValidationError('Informe a descricao do procedimento para cadastrar manualmente.');
+      return;
+    }
+
+    if (!isAdmin && !canAddManual) {
       return;
     }
 
@@ -105,12 +116,13 @@ export function CbhpmLookupModal({
         </div>
 
         <div className="manual-procedure-row">
-          <Button className="manual-procedure-action" onClick={handleAddManual} disabled={!canAddManual}>
+          <Button className="manual-procedure-action" onClick={handleAddManual} disabled={!isAdmin && !canAddManual}>
             <Plus size={17} />
             Cadastrar manualmente
           </Button>
         </div>
 
+        {manualValidationError && <AlertMessage type="error">{manualValidationError}</AlertMessage>}
         {error && <AlertMessage type="error">{error}</AlertMessage>}
 
         <div className="table-wrap cbhpm-table-wrap">

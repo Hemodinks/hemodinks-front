@@ -636,6 +636,7 @@ describe('App', () => {
           procedimento: 'Procedimento manual Hemodinks',
           porte: '1A',
         }}
+        isAdmin={false}
         loading={false}
         error=""
         currentPage={1}
@@ -661,6 +662,42 @@ describe('App', () => {
       porte: '1A',
       valorReferencia: null,
     });
+  });
+
+  it('mantem cadastro manual desbloqueado para administrador no modal CBHPM', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+
+    render(
+      <CbhpmLookupModal
+        items={[]}
+        filters={{
+          codigo: '',
+          procedimento: '',
+          porte: '',
+        }}
+        isAdmin
+        loading={false}
+        error=""
+        currentPage={1}
+        totalPages={1}
+        totalItems={0}
+        visibleStart={0}
+        visibleEnd={0}
+        onFiltersChange={vi.fn()}
+        onPageChange={vi.fn()}
+        onRefresh={vi.fn()}
+        onSelect={onSelect}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const manualButton = screen.getByRole('button', { name: /cadastrar manualmente/i });
+
+    expect(manualButton).toBeEnabled();
+    await user.click(manualButton);
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(screen.getByText('Informe a descricao do procedimento para cadastrar manualmente.')).toBeInTheDocument();
   });
 
   it('lista e cadastra pacientes', async () => {
@@ -717,11 +754,16 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Médico'), 'Ana Hemodinks');
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
-    expect(within(cbhpmDialog).getByText('10101012')).toBeInTheDocument();
+    fireEvent.change(within(cbhpmDialog).getByLabelText('Codigo'), { target: { value: '1010101' } });
+    expect(await within(cbhpmDialog).findByText('10101012')).toBeInTheDocument();
     await user.click(within(cbhpmDialog).getAllByRole('button', { name: /adicionar/i })[0]);
     expect(screen.getByText('Valor referência: R$ 120,00')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
-    await user.click(within(await screen.findByRole('dialog', { name: 'Selecionar procedimento' })).getAllByRole('button', { name: /adicionar/i })[1]);
+    const secondCbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
+    const secondCodigoField = within(secondCbhpmDialog).getByLabelText('Codigo');
+    fireEvent.change(secondCodigoField, { target: { value: '1010201' } });
+    expect(await within(secondCbhpmDialog).findByText('10102019')).toBeInTheDocument();
+    await user.click(within(secondCbhpmDialog).getAllByRole('button', { name: /adicionar/i })[0]);
     await user.type(screen.getByLabelText('Valor recebido/pago'), '200000');
     await user.type(screen.getByLabelText('Glosa'), '1250');
     expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 2.000,00');

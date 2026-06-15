@@ -624,6 +624,7 @@ function AppContent() {
         <CbhpmLookupModal
           items={cbhpmItems}
           filters={cbhpmFilters}
+          isAdmin={isAdmin}
           loading={cbhpmLoading}
           error={cbhpmError}
           currentPage={cbhpmCurrentPage}

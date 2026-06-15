@@ -251,8 +251,8 @@ export function usePatientsDomain({
     ),
   });
   const filteredCbhpmItems = useMemo(
-    () => filterCbhpmCachedItems(cbhpmCacheQuery.data ?? [], debouncedCbhpmFilters),
-    [cbhpmCacheQuery.data, debouncedCbhpmFilters],
+    () => filterCbhpmCachedItems(cbhpmCacheQuery.data ?? [], cbhpmFilters),
+    [cbhpmCacheQuery.data, cbhpmFilters],
   );
 
   useEffect(() => {
