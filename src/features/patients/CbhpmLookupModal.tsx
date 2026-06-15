@@ -4,6 +4,7 @@ import type { CbhpmFilters } from '../../appTypes';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, Button, IconButton, TextField } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
+import { normalizeCbhpmCodigo } from './patientUtils';
 
 type CbhpmLookupModalProps = {
   items: CbhpmGeral[];
@@ -38,7 +39,7 @@ export function CbhpmLookupModal({
   onSelect,
   onClose,
 }: CbhpmLookupModalProps) {
-  const manualCodigo = filters.codigo.trim();
+  const manualCodigo = normalizeCbhpmCodigo(filters.codigo);
   const manualProcedimento = filters.procedimento.trim();
   const manualPorte = filters.porte.trim().toUpperCase();
   const canAddManual = Boolean(manualCodigo && manualProcedimento);
@@ -78,8 +79,8 @@ export function CbhpmLookupModal({
             label="Codigo"
             type="search"
             value={filters.codigo}
-            onValueChange={(value) => updateFilter('codigo', value)}
-            placeholder="1.01"
+            onValueChange={(value) => updateFilter('codigo', normalizeCbhpmCodigo(value))}
+            placeholder="101"
             maxLength={20}
           />
           <TextField
@@ -131,7 +132,7 @@ export function CbhpmLookupModal({
               ) : items.length ? (
                 items.map((item) => (
                   <tr key={item.id}>
-                    <td data-label="Codigo">{item.codigo}</td>
+                    <td data-label="Codigo">{normalizeCbhpmCodigo(item.codigo) || item.codigo}</td>
                     <td data-label="Procedimento">{item.procedimento}</td>
                     <td data-label="Porte">{item.porte || '-'}</td>
                     <td data-label="Valor referencia">{formatCurrency(item.valorReferencia)}</td>

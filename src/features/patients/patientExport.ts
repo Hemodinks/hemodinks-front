@@ -4,6 +4,7 @@ import {
   formatPhoneInput,
   toDisplayDate,
 } from '../../shared/utils/formatters';
+import { normalizeCbhpmCodigo } from './patientUtils';
 
 export const pacienteExportColumns = [
   { header: 'Paciente', getValue: (paciente: Paciente) => paciente.nomePaciente },
@@ -15,7 +16,7 @@ export const pacienteExportColumns = [
   { header: 'Hospital', getValue: (paciente: Paciente) => paciente.hospital || '-' },
   { header: 'Medico', getValue: (paciente: Paciente) => paciente.medico || '-' },
   { header: 'Convenio', getValue: (paciente: Paciente) => paciente.convenio || '-' },
-  { header: 'Codigo CBHPM', getValue: (paciente: Paciente) => paciente.cbhpmCodigo || '-' },
+  { header: 'Codigo CBHPM', getValue: (paciente: Paciente) => normalizeCbhpmCodigo(paciente.cbhpmCodigo) || '-' },
   { header: 'Porte CBHPM', getValue: (paciente: Paciente) => paciente.cbhpmPorte || '-' },
   { header: 'Procedimento', getValue: (paciente: Paciente) => paciente.procedimento || '-' },
   { header: 'Autorizacao', getValue: (paciente: Paciente) => paciente.autorizacao || '-' },

@@ -263,6 +263,18 @@ export function getCbhpmGeral(token: string, query?: CbhpmListQuery) {
   return request<PagedResult<CbhpmGeral>>(`/api/cbhpm/${toQueryString(query)}`, {}, token);
 }
 
+export async function getAllCbhpmGeral(token: string, pageSize = 100) {
+  const firstResult = await getCbhpmGeral(token, { page: 1, pageSize });
+  const items = [...firstResult.items];
+
+  for (let page = 2; page <= firstResult.totalPages; page += 1) {
+    const result = await getCbhpmGeral(token, { page, pageSize });
+    items.push(...result.items);
+  }
+
+  return items;
+}
+
 export function getHospitais(token: string) {
   return request<Hospital[]>('/api/hospitais/', {}, token);
 }

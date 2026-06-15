@@ -4,7 +4,7 @@ import {
   createPaciente,
   deletePaciente,
   deletePacienteArquivo,
-  getCbhpmGeral,
+  getAllCbhpmGeral,
   getConvenios,
   getHospitais,
   getPaciente,
@@ -54,6 +54,10 @@ import {
   getPatientExportFileName,
   pacienteExportColumns,
 } from './patientExport';
+import {
+  CBHPM_CACHE_FETCH_PAGE_SIZE,
+  filterCbhpmCachedItems,
+} from './cbhpmLookupUtils';
 import {
   emptyPacienteFilters,
   getPacienteFilterQuery,
@@ -201,13 +205,6 @@ export function usePatientsDomain({
     pageSize: LOOKUP_PAGE_SIZE,
     profileId: MEDICAL_PROFILE_ID,
   }), []);
-  const cbhpmQueryParams = useMemo(() => ({
-    page: cbhpmCurrentPage,
-    pageSize: CBHPM_PAGE_SIZE,
-    codigo: debouncedCbhpmFilters.codigo,
-    procedimento: debouncedCbhpmFilters.procedimento,
-    porte: debouncedCbhpmFilters.porte,
-  }), [cbhpmCurrentPage, debouncedCbhpmFilters]);
   const sessionReady = Boolean(session && !session.user.precisaTrocarSenha);
   const pacientesQuery = useQuery({
     queryKey: queryKeys.pacientes(session?.token ?? '', pacientesQueryParams),
@@ -233,11 +230,12 @@ export function usePatientsDomain({
     enabled: sessionReady,
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
-  const cbhpmQuery = useQuery({
-    queryKey: queryKeys.cbhpm(session?.token ?? '', cbhpmQueryParams),
-    queryFn: () => getCbhpmGeral(session?.token ?? '', cbhpmQueryParams),
+  const cbhpmCacheQuery = useQuery({
+    queryKey: queryKeys.cbhpmCache(session?.token ?? ''),
+    queryFn: () => getAllCbhpmGeral(session?.token ?? '', CBHPM_CACHE_FETCH_PAGE_SIZE),
     enabled: sessionReady && cbhpmModalOpen,
-    staleTime: LIST_CACHE_TIME_MS,
+    staleTime: LOOKUP_CACHE_TIME_MS,
+    gcTime: 30 * 60 * 1000,
   });
   const savePacienteMutation = useMutation({
     mutationFn: ({ id, payload, token }: { id: number | null; payload: ReturnType<typeof toPacientePayload>; token: string }) => (
@@ -252,6 +250,10 @@ export function usePatientsDomain({
       deletePacienteArquivo(pacienteId, arquivoId, token)
     ),
   });
+  const filteredCbhpmItems = useMemo(
+    () => filterCbhpmCachedItems(cbhpmCacheQuery.data ?? [], debouncedCbhpmFilters),
+    [cbhpmCacheQuery.data, debouncedCbhpmFilters],
+  );
 
   useEffect(() => {
     setPacientesLoading(pacientesQuery.isFetching);
@@ -313,25 +315,37 @@ export function usePatientsDomain({
   }, [conveniosQuery.error, setConveniosError]);
 
   useEffect(() => {
-    setCbhpmLoading(cbhpmQuery.isFetching);
-  }, [cbhpmQuery.isFetching, setCbhpmLoading]);
+    setCbhpmLoading(cbhpmCacheQuery.isLoading || (cbhpmCacheQuery.isFetching && !cbhpmCacheQuery.data?.length));
+  }, [cbhpmCacheQuery.data?.length, cbhpmCacheQuery.isFetching, cbhpmCacheQuery.isLoading, setCbhpmLoading]);
 
   useEffect(() => {
-    if (!cbhpmQuery.data) {
+    if (!cbhpmModalOpen || !cbhpmCacheQuery.data) {
       return;
     }
 
-    setCbhpmItems(getPagedItems(cbhpmQuery.data));
-    setCbhpmTotalItems(getPagedTotal(cbhpmQuery.data));
-    setCbhpmTotalPages(getPagedTotalPages(cbhpmQuery.data));
+    const cbhpmPageStart = (cbhpmCurrentPage - 1) * CBHPM_PAGE_SIZE;
+    const cbhpmPageEnd = cbhpmPageStart + CBHPM_PAGE_SIZE;
+
+    setCbhpmItems(filteredCbhpmItems.slice(cbhpmPageStart, cbhpmPageEnd));
+    setCbhpmTotalItems(filteredCbhpmItems.length);
+    setCbhpmTotalPages(Math.max(1, Math.ceil(filteredCbhpmItems.length / CBHPM_PAGE_SIZE)));
     setCbhpmError('');
-  }, [cbhpmQuery.data, setCbhpmError, setCbhpmItems, setCbhpmTotalItems, setCbhpmTotalPages]);
+  }, [
+    cbhpmCacheQuery.data,
+    cbhpmCurrentPage,
+    cbhpmModalOpen,
+    filteredCbhpmItems,
+    setCbhpmError,
+    setCbhpmItems,
+    setCbhpmTotalItems,
+    setCbhpmTotalPages,
+  ]);
 
   useEffect(() => {
-    if (cbhpmQuery.error) {
-      setCbhpmError(getErrorMessage(cbhpmQuery.error));
+    if (cbhpmCacheQuery.error) {
+      setCbhpmError(getErrorMessage(cbhpmCacheQuery.error));
     }
-  }, [cbhpmQuery.error, setCbhpmError]);
+  }, [cbhpmCacheQuery.error, setCbhpmError]);
 
   const loadMedicalUsers = async (token = session?.token, forceRefresh = false) => {
     if (!token) {
@@ -468,10 +482,10 @@ export function usePatientsDomain({
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cbhpm(token, cbhpmQueryParams) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmCache(token) });
     }
 
-    await cbhpmQuery.refetch();
+    await cbhpmCacheQuery.refetch();
   };
 
   const loadHospitais = async (token = session?.token, forceRefresh = false) => {

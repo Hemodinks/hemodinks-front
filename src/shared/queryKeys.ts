@@ -17,4 +17,5 @@ export const queryKeys = {
     token: string,
     query?: { page: number; pageSize: number } & CbhpmFilters,
   ) => ['cbhpm', token, query] as const,
+  cbhpmCache: (token: string) => ['cbhpm', token, 'cache'] as const,
 };

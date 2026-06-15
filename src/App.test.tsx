@@ -18,6 +18,7 @@ vi.mock('./api', () => ({
   updateAgendaEvent: vi.fn(),
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
+  getAllCbhpmGeral: vi.fn(),
   getCbhpmGeral: vi.fn(),
   getConvenios: vi.fn(),
   getHospitais: vi.fn(),
@@ -177,6 +178,7 @@ describe('App', () => {
     ]);
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
+    vi.mocked(api.getAllCbhpmGeral).mockResolvedValue([]);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     Object.defineProperty(URL, 'createObjectURL', {
       value: vi.fn(() => 'blob:hemodinks-avatar'),
@@ -654,7 +656,7 @@ describe('App', () => {
 
     expect(onSelect).toHaveBeenCalledWith({
       id: 0,
-      codigo: '9.99.99.99-9',
+      codigo: '99999999',
       procedimento: 'Procedimento manual Hemodinks',
       porte: '1A',
       valorReferencia: null,
@@ -665,7 +667,7 @@ describe('App', () => {
     const user = userEvent.setup();
     mockSession();
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
-    vi.mocked(api.getCbhpmGeral).mockResolvedValue(paged([
+    vi.mocked(api.getAllCbhpmGeral).mockResolvedValue([
       {
         id: 1,
         codigo: '1.01.01.01-2',
@@ -680,7 +682,7 @@ describe('App', () => {
         porte: '2A',
         valorReferencia: 180,
       },
-    ]));
+    ]);
     vi.mocked(api.createPaciente).mockResolvedValue({
       ...basePaciente,
       id: 11,
@@ -715,7 +717,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Médico'), 'Ana Hemodinks');
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
-    expect(within(cbhpmDialog).getByText('1.01.01.01-2')).toBeInTheDocument();
+    expect(within(cbhpmDialog).getByText('10101012')).toBeInTheDocument();
     await user.click(within(cbhpmDialog).getAllByRole('button', { name: /adicionar/i })[0]);
     expect(screen.getByText('Valor referência: R$ 120,00')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
@@ -740,18 +742,18 @@ describe('App', () => {
       medico: 'Ana Hemodinks',
       convenioId: null,
       convenio: '',
-      cbhpmCodigo: '1.01.01.01-2',
+      cbhpmCodigo: '10101012',
       cbhpmPorte: '2B',
       procedimento: 'Consulta',
       procedimentos: [
         {
-          cbhpmCodigo: '1.01.01.01-2',
+          cbhpmCodigo: '10101012',
           cbhpmPorte: '2B',
           procedimento: 'Consulta',
           valorReferencia: 120,
         },
         {
-          cbhpmCodigo: '1.01.02.01-9',
+          cbhpmCodigo: '10102019',
           cbhpmPorte: '2A',
           procedimento: 'Visita hospitalar',
           valorReferencia: 180,
