@@ -93,6 +93,8 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
           <TextField
             label="Codigo"
             type="search"
+            autoFocus
+            autoComplete="off"
             value={filters.codigo}
             onValueChange={(value) => updateFilter('codigo', normalizeCbhpmCodigo(value))}
             placeholder="101"
@@ -101,6 +103,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
           <TextField
             label="Procedimento"
             type="search"
+            autoComplete="off"
             value={filters.procedimento}
             onValueChange={(value) => updateFilter('procedimento', value)}
             placeholder="Consulta"
@@ -109,6 +112,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
           <TextField
             label="Porte"
             type="search"
+            autoComplete="off"
             value={filters.porte}
             onValueChange={(value) => updateFilter('porte', value.toUpperCase())}
             placeholder="2B"
