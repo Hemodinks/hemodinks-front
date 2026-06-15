@@ -4,8 +4,6 @@ import { normalizeCbhpmCodigo } from './patientUtils';
 
 export const pacienteExportColumns = [
   { header: 'Paciente', getValue: (paciente: Paciente) => paciente.nomePaciente },
-  { header: 'Email', getValue: (paciente: Paciente) => paciente.email || '-' },
-  { header: 'Data nascimento', getValue: (paciente: Paciente) => toDisplayDate(paciente.dataNascimento || '') || '-' },
   { header: 'Data procedimento', getValue: (paciente: Paciente) => toDisplayDate(paciente.data || '') || '-' },
   { header: 'Hospital', getValue: (paciente: Paciente) => paciente.hospital || '-' },
   { header: 'Cirurgiao', getValue: (paciente: Paciente) => paciente.medico || '-' },
