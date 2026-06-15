@@ -3,7 +3,7 @@ import type { CbhpmGeral } from '../../types';
 import { normalizeCbhpmCodigo } from './patientUtils';
 
 export const CBHPM_CACHE_FETCH_PAGE_SIZE = 100;
-export const CBHPM_SEARCH_MIN_LENGTH = 5;
+export const CBHPM_SEARCH_MIN_LENGTH = 7;
 
 export function normalizeCbhpmSearchText(value?: string | null) {
   return (value ?? '')
@@ -16,10 +16,14 @@ export function normalizeCbhpmSearchText(value?: string | null) {
 export function isCbhpmCacheSearchReady(filters: CbhpmFilters) {
   const codigo = normalizeCbhpmCodigo(filters.codigo);
   const procedimento = normalizeCbhpmSearchText(filters.procedimento);
+  const hasCodigo = codigo.length > 0;
+  const hasProcedimento = procedimento.length > 0;
+  const codigoReady = codigo.length >= CBHPM_SEARCH_MIN_LENGTH;
+  const procedimentoReady = procedimento.length >= CBHPM_SEARCH_MIN_LENGTH;
 
-  return (!codigo && !procedimento)
-    || codigo.length >= CBHPM_SEARCH_MIN_LENGTH
-    || procedimento.length >= CBHPM_SEARCH_MIN_LENGTH;
+  return (codigoReady || procedimentoReady)
+    && (!hasCodigo || codigoReady)
+    && (!hasProcedimento || procedimentoReady);
 }
 
 export function filterCbhpmCachedItems(items: CbhpmGeral[], filters: CbhpmFilters) {
