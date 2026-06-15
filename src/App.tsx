@@ -23,6 +23,7 @@ import { queryKeys } from './shared/queryKeys';
 import { useRouteView } from './shared/hooks/useRouteView';
 import { useThemePreference } from './shared/hooks/useThemePreference';
 import {
+  CONTROLLER_PROFILE_ID,
   DEFAULT_PASSWORD,
   DEFAULT_PROFILE_ID,
   getErrorMessage,
@@ -156,16 +157,27 @@ function AppContent() {
   const currentPerfilId = session?.user.perfilId ?? 0;
   const isAdmin = currentPerfilId === 1;
   const isMedical = currentPerfilId === MEDICAL_PROFILE_ID;
+  const isController = currentPerfilId === CONTROLLER_PROFILE_ID;
   const isPatient = currentPerfilId === 3;
+  const canAccessDashboard = !isController;
+  const canAccessAgenda = !isController;
   const canAccessUsers = isAdmin;
   const canEditOwnUser = isMedical;
-  const canCreatePatients = isAdmin;
+  const canCreatePatients = isAdmin || isController;
   const canEditPatients = isAdmin;
   const canDeletePatients = isAdmin;
   const patientReadOnly = isPatient || isMedical;
+  const canUseDashboardRoute = canAccessDashboard;
   const canUseUsersRoute = canAccessUsers;
   const canUseProfileRoute = canEditOwnUser;
-  const { activeView, navigateToView } = useRouteView({ session, canUseUsersRoute, canUseProfileRoute });
+  const canUseAgendaRoute = canAccessAgenda;
+  const { activeView, navigateToView } = useRouteView({
+    session,
+    canUseDashboardRoute,
+    canUseUsersRoute,
+    canUseProfileRoute,
+    canUseAgendaRoute,
+  });
 
   const usersDomain = useUsersDomain({
     session,
@@ -397,11 +409,21 @@ function AppContent() {
       : activeView === 'patients' ? 'Pacientes' : 'Agenda';
 
   const openDashboard = () => {
+    if (!canAccessDashboard) {
+      openPatientsList();
+      return;
+    }
+
     navigateToView('dashboard');
     setModuleMode('list');
   };
 
   const openAgenda = () => {
+    if (!canAccessAgenda) {
+      openPatientsList();
+      return;
+    }
+
     navigateToView('agenda');
     setModuleMode('list');
   };
@@ -678,8 +700,10 @@ function AppContent() {
       notificationsOpen={notificationsOpen}
       notificationCount={notificationCount}
       currentUserProfile={currentUserProfile}
+      canAccessDashboard={canAccessDashboard}
       canAccessUsers={canAccessUsers}
       canEditOwnUser={canEditOwnUser}
+      canAccessAgenda={canAccessAgenda}
       usersCount={usersCount}
       pacientesCount={pacientesCount}
       medicalUsers={medicalUsers}
