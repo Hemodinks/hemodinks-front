@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import * as api from './api';
@@ -698,6 +699,48 @@ describe('App', () => {
     await user.click(manualButton);
     expect(onSelect).not.toHaveBeenCalled();
     expect(screen.getByText('Informe a descricao do procedimento para cadastrar manualmente.')).toBeInTheDocument();
+  });
+
+  it('mantem foco ao digitar nos filtros do modal CBHPM', async () => {
+    const user = userEvent.setup();
+
+    function ControlledCbhpmLookupModal() {
+      const [filters, setFilters] = useState({
+        codigo: '',
+        procedimento: '',
+        porte: '',
+      });
+
+      return (
+        <CbhpmLookupModal
+          items={[]}
+          filters={filters}
+          isAdmin
+          loading={false}
+          error=""
+          currentPage={1}
+          totalPages={1}
+          totalItems={0}
+          visibleStart={0}
+          visibleEnd={0}
+          onFiltersChange={setFilters}
+          onPageChange={vi.fn()}
+          onRefresh={vi.fn()}
+          onSelect={vi.fn()}
+          onClose={() => vi.fn()}
+        />
+      );
+    }
+
+    render(<ControlledCbhpmLookupModal />);
+
+    const procedimentoFilter = screen.getByLabelText('Procedimento');
+
+    await user.click(procedimentoFilter);
+    await user.keyboard('Consulta');
+
+    expect(procedimentoFilter).toHaveValue('Consulta');
+    expect(procedimentoFilter).toHaveFocus();
   });
 
   it('lista e cadastra pacientes', async () => {
