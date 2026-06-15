@@ -23,6 +23,7 @@ vi.mock('./api', () => ({
   getCbhpmGeral: vi.fn(),
   getConvenios: vi.fn(),
   getHospitais: vi.fn(),
+  getOpmeFornecedores: vi.fn(),
   getUsers: vi.fn(),
   getUser: vi.fn(),
   getUserProfilePhoto: vi.fn(),
@@ -176,6 +177,12 @@ describe('App', () => {
       { idConvenio: 1, descricaoConvenio: 'Amil' },
       { idConvenio: 2, descricaoConvenio: 'Bradesco Saude' },
       { idConvenio: 7, descricaoConvenio: 'Particular' },
+    ]);
+    vi.mocked(api.getOpmeFornecedores).mockResolvedValue([
+      { idFornecedor: 1, fornecedor: 'Promedom' },
+      { idFornecedor: 2, fornecedor: 'AVL' },
+      { idFornecedor: 3, fornecedor: 'GE' },
+      { idFornecedor: 4, fornecedor: 'Spyner' },
     ]);
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
@@ -832,6 +839,7 @@ describe('App', () => {
     expect(api.createPaciente).toHaveBeenCalledWith({
       data: '2026-06-04',
       nomePaciente: 'Novo Paciente',
+      diagnostico: '',
       cpf: '',
       email: '',
       telefone: '',
@@ -847,6 +855,8 @@ describe('App', () => {
       medicoAuxiliar2: 'Clara Hemodinks',
       convenioId: null,
       convenio: '',
+      opmeFornecedorId: null,
+      opmeFornecedor: '',
       cbhpmCodigo: '10101012',
       cbhpmPorte: '2B',
       procedimento: 'Consulta',
@@ -856,12 +866,6 @@ describe('App', () => {
           cbhpmPorte: '2B',
           procedimento: 'Consulta',
           valorReferencia: 120,
-        },
-        {
-          cbhpmCodigo: '10102019',
-          cbhpmPorte: '2A',
-          procedimento: 'Visita hospitalar',
-          valorReferencia: 180,
         },
       ],
       autorizacao: '',

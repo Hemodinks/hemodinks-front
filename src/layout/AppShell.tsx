@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import type { AppView, BreadcrumbItem, Theme } from '../appTypes';
-import type { AuthSession, Convenio, User } from '../types';
+import type { AuthSession, Convenio, OpmeFornecedor, User } from '../types';
 import { LoadingOverlay } from '../shared/components/LoadingOverlay';
 import {
   CONVENIOS_DATALIST_ID,
   MEDICAL_USERS_DATALIST_ID,
+  OPME_FORNECEDORES_DATALIST_ID,
 } from '../shared/utils/formatters';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
@@ -27,6 +28,7 @@ type AppShellProps = {
   pacientesCount: number;
   medicalUsers: User[];
   convenios: Convenio[];
+  opmeFornecedores: OpmeFornecedor[];
   onToggleNotifications: () => void;
   onToggleTheme: () => void;
   onOpenPasswordModal: () => void;
@@ -56,6 +58,7 @@ export function AppShell({
   pacientesCount,
   medicalUsers,
   convenios,
+  opmeFornecedores,
   onToggleNotifications,
   onToggleTheme,
   onOpenPasswordModal,
@@ -77,6 +80,11 @@ export function AppShell({
       <datalist id={CONVENIOS_DATALIST_ID}>
         {convenios.map((convenio) => (
           <option key={convenio.idConvenio} value={convenio.descricaoConvenio} />
+        ))}
+      </datalist>
+      <datalist id={OPME_FORNECEDORES_DATALIST_ID}>
+        {opmeFornecedores.map((fornecedor) => (
+          <option key={fornecedor.idFornecedor} value={fornecedor.fornecedor} />
         ))}
       </datalist>
 

@@ -93,6 +93,11 @@ export type Convenio = {
   descricaoConvenio: string;
 };
 
+export type OpmeFornecedor = {
+  idFornecedor: number;
+  fornecedor: string;
+};
+
 export type DashboardSummary = {
   usersCount: number;
   activeUsersCount: number;
@@ -234,6 +239,8 @@ export type Paciente = {
   medicoAuxiliar2?: string | null;
   convenioId?: number | null;
   convenio?: string | null;
+  opmeFornecedorId?: number | null;
+  opmeFornecedor?: string | null;
   cbhpmCodigo?: string | null;
   cbhpmPorte?: string | null;
   procedimento?: string | null;
@@ -271,6 +278,8 @@ export type PacienteFormData = {
   medicoAuxiliar2: string;
   convenioId: number | null;
   convenio: string;
+  opmeFornecedorId: number | null;
+  opmeFornecedor: string;
   cbhpmCodigo: string;
   cbhpmPorte: string;
   procedimento: string;

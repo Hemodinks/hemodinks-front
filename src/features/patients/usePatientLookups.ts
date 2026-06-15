@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Convenio, Hospital, User } from '../../types';
+import type { Convenio, Hospital, OpmeFornecedor, User } from '../../types';
 
 export function usePatientLookups() {
   const [medicalUsers, setMedicalUsers] = useState<User[]>([]);
@@ -7,6 +7,8 @@ export function usePatientLookups() {
   const [hospitaisError, setHospitaisError] = useState('');
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [conveniosError, setConveniosError] = useState('');
+  const [opmeFornecedores, setOpmeFornecedores] = useState<OpmeFornecedor[]>([]);
+  const [opmeFornecedoresError, setOpmeFornecedoresError] = useState('');
 
   const resetPatientLookups = () => {
     setMedicalUsers([]);
@@ -14,6 +16,8 @@ export function usePatientLookups() {
     setHospitaisError('');
     setConvenios([]);
     setConveniosError('');
+    setOpmeFornecedores([]);
+    setOpmeFornecedoresError('');
   };
 
   return {
@@ -27,6 +31,10 @@ export function usePatientLookups() {
     setConvenios,
     conveniosError,
     setConveniosError,
+    opmeFornecedores,
+    setOpmeFornecedores,
+    opmeFornecedoresError,
+    setOpmeFornecedoresError,
     resetPatientLookups,
   };
 }

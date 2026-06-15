@@ -12,6 +12,7 @@ export const pacienteExportColumns = [
   { header: 'Medico auxiliar 1', getValue: (paciente: Paciente) => paciente.medicoAuxiliar1 || '-' },
   { header: 'Medico auxiliar 2', getValue: (paciente: Paciente) => paciente.medicoAuxiliar2 || '-' },
   { header: 'Convenio', getValue: (paciente: Paciente) => paciente.convenio || '-' },
+  { header: 'Fornecedor OPME', getValue: (paciente: Paciente) => paciente.opmeFornecedor || '-' },
   { header: 'Codigo CBHPM', getValue: (paciente: Paciente) => normalizeCbhpmCodigo(paciente.cbhpmCodigo) || '-' },
   { header: 'Porte CBHPM', getValue: (paciente: Paciente) => paciente.cbhpmPorte || '-' },
   { header: 'Procedimento', getValue: (paciente: Paciente) => paciente.procedimento || '-' },

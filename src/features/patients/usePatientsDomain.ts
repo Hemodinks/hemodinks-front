@@ -7,6 +7,7 @@ import {
   getAllCbhpmGeral,
   getConvenios,
   getHospitais,
+  getOpmeFornecedores,
   getPaciente,
   getPacientes,
   getUsers,
@@ -26,6 +27,7 @@ import {
   DEFAULT_PASSWORD,
   findConvenioByDescription,
   findMedicalUserByName,
+  findOpmeFornecedorByName,
   getErrorMessage,
   LOOKUP_PAGE_SIZE,
   MAX_PATIENT_FILE_BYTES,
@@ -38,6 +40,7 @@ import {
   getPagedTotal,
   getPagedTotalPages,
   sortConveniosByDescription,
+  sortOpmeFornecedoresByName,
   sortPacientesForListing,
   sortUsersByName,
 } from '../../shared/utils/listing';
@@ -170,6 +173,10 @@ export function usePatientsDomain({
     setConvenios,
     conveniosError,
     setConveniosError,
+    opmeFornecedores,
+    setOpmeFornecedores,
+    opmeFornecedoresError,
+    setOpmeFornecedoresError,
     resetPatientLookups,
   } = patientLookups;
   const {
@@ -228,6 +235,12 @@ export function usePatientsDomain({
   const conveniosQuery = useQuery({
     queryKey: queryKeys.convenios(session?.token ?? ''),
     queryFn: () => getConvenios(session?.token ?? ''),
+    enabled: sessionReady,
+    staleTime: LOOKUP_CACHE_TIME_MS,
+  });
+  const opmeFornecedoresQuery = useQuery({
+    queryKey: queryKeys.opmeFornecedores(session?.token ?? ''),
+    queryFn: () => getOpmeFornecedores(session?.token ?? ''),
     enabled: sessionReady,
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
@@ -322,6 +335,19 @@ export function usePatientsDomain({
       setConveniosError(getErrorMessage(conveniosQuery.error));
     }
   }, [conveniosQuery.error, setConveniosError]);
+
+  useEffect(() => {
+    if (opmeFornecedoresQuery.data) {
+      setOpmeFornecedores(sortOpmeFornecedoresByName(opmeFornecedoresQuery.data));
+      setOpmeFornecedoresError('');
+    }
+  }, [opmeFornecedoresQuery.data, setOpmeFornecedores, setOpmeFornecedoresError]);
+
+  useEffect(() => {
+    if (opmeFornecedoresQuery.error) {
+      setOpmeFornecedoresError(getErrorMessage(opmeFornecedoresQuery.error));
+    }
+  }, [opmeFornecedoresQuery.error, setOpmeFornecedoresError]);
 
   useEffect(() => {
     setCbhpmLoading(cbhpmCacheQuery.isLoading || (cbhpmCacheQuery.isFetching && !cbhpmCacheQuery.data?.length));
@@ -521,6 +547,18 @@ export function usePatientsDomain({
     await conveniosQuery.refetch();
   };
 
+  const loadOpmeFornecedores = async (token = session?.token, forceRefresh = false) => {
+    if (!token) {
+      return;
+    }
+
+    if (forceRefresh) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(token) });
+    }
+
+    await opmeFornecedoresQuery.refetch();
+  };
+
   const resetPatientsState = () => {
     resetPatientListState();
     resetPatientLookups();
@@ -635,6 +673,10 @@ export function usePatientsDomain({
       return;
     }
 
+    const selectedOpmeFornecedor = pacienteFormData.opmeFornecedorId != null
+      ? opmeFornecedores.find((fornecedor) => fornecedor.idFornecedor === pacienteFormData.opmeFornecedorId)
+      : findOpmeFornecedorByName(opmeFornecedores, pacienteFormData.opmeFornecedor);
+
     const payload = toPacientePayload({
       ...pacienteFormData,
       medicoUserId: selectedMedicoUser?.id ?? pacienteFormData.medicoUserId,
@@ -645,6 +687,8 @@ export function usePatientsDomain({
       medicoAuxiliar2: selectedMedicoAuxiliar2User?.nome ?? pacienteFormData.medicoAuxiliar2,
       convenioId: selectedConvenio?.idConvenio ?? null,
       convenio: selectedConvenio?.descricaoConvenio ?? '',
+      opmeFornecedorId: selectedOpmeFornecedor?.idFornecedor ?? null,
+      opmeFornecedor: selectedOpmeFornecedor?.fornecedor ?? pacienteFormData.opmeFornecedor,
     });
 
     setPacienteFormLoading(true);
@@ -674,6 +718,7 @@ export function usePatientsDomain({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(session.token) }),
       ]);
       resetPacienteForm();
       setPacienteCurrentPage(1);
@@ -832,6 +877,10 @@ export function usePatientsDomain({
     if (session && !hospitais.length) {
       void loadHospitais(session.token);
     }
+
+    if (session && !opmeFornecedores.length) {
+      void loadOpmeFornecedores(session.token);
+    }
   };
 
   const closePacienteForm = () => {
@@ -921,6 +970,8 @@ export function usePatientsDomain({
     hospitaisError,
     convenios,
     conveniosError,
+    opmeFornecedores,
+    opmeFornecedoresError,
     cbhpmModalOpen,
     setCbhpmModalOpen,
     cbhpmItems,
@@ -938,6 +989,7 @@ export function usePatientsDomain({
     loadPacientes,
     loadHospitais,
     loadConvenios,
+    loadOpmeFornecedores,
     loadCbhpm,
     resetPatientsState,
     resetPacienteForm,

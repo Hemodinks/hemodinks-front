@@ -278,6 +278,8 @@ function AppContent() {
     hospitaisError,
     convenios,
     conveniosError,
+    opmeFornecedores,
+    opmeFornecedoresError,
     cbhpmModalOpen,
     setCbhpmModalOpen,
     cbhpmItems,
@@ -568,6 +570,8 @@ function AppContent() {
       medicalUsers={medicalUsers}
       convenios={convenios}
       conveniosError={conveniosError}
+      opmeFornecedores={opmeFornecedores}
+      opmeFornecedoresError={opmeFornecedoresError}
       isAdmin={isAdmin}
       isMedical={isMedical}
       sessionToken={session.token}
@@ -680,6 +684,7 @@ function AppContent() {
       pacientesCount={pacientesCount}
       medicalUsers={medicalUsers}
       convenios={convenios}
+      opmeFornecedores={opmeFornecedores}
       onToggleNotifications={() => void handleToggleNotifications()}
       onToggleTheme={toggleTheme}
       onOpenPasswordModal={() => setShowPasswordModal(true)}

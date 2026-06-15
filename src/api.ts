@@ -11,6 +11,7 @@ import type {
   Hospital,
   ListQuery,
   LoginResponse,
+  OpmeFornecedor,
   Paciente,
   PacienteArquivo,
   PacienteFormData,
@@ -281,6 +282,10 @@ export function getHospitais(token: string) {
 
 export function getConvenios(token: string) {
   return request<Convenio[]>('/api/convenios/', {}, token);
+}
+
+export function getOpmeFornecedores(token: string) {
+  return request<OpmeFornecedor[]>('/api/opme/', {}, token);
 }
 
 export function getPaciente(id: number, token: string) {

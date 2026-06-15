@@ -13,6 +13,7 @@ export const queryKeys = {
   pacientesRoot: (token: string) => ['pacientes', token] as const,
   hospitais: (token: string) => ['hospitais', token] as const,
   convenios: (token: string) => ['convenios', token] as const,
+  opmeFornecedores: (token: string) => ['opmeFornecedores', token] as const,
   cbhpm: (
     token: string,
     query?: { page: number; pageSize: number } & CbhpmFilters,
