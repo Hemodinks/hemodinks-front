@@ -3,7 +3,6 @@ import type { Paciente } from '../../types';
 import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
-import { formatCpfInput, formatPhoneInput } from '../../shared/utils/formatters';
 import { getPacienteProcedimentosFromPaciente } from './patientUtils';
 
 type PatientInfoModalProps = {
@@ -12,8 +11,6 @@ type PatientInfoModalProps = {
 };
 
 export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
-  const formattedCpf = formatCpfInput(paciente.cpf || '');
-  const formattedPhone = formatPhoneInput(paciente.telefone || '');
   const procedimentos = getPacienteProcedimentosFromPaciente(paciente);
 
   return (
@@ -45,14 +42,6 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
                 '-'
               )}
             </dd>
-          </div>
-          <div>
-            <dt>CPF</dt>
-            <dd><CopyValue label="CPF" value={formattedCpf || '-'} /></dd>
-          </div>
-          <div>
-            <dt>Telefone</dt>
-            <dd><CopyValue label="telefone" value={formattedPhone || '-'} /></dd>
           </div>
         </dl>
       </Modal>

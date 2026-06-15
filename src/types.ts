@@ -227,6 +227,10 @@ export type Paciente = {
   hospital?: string | null;
   medicoUserId?: number | null;
   medico?: string | null;
+  medicoAuxiliar1UserId?: number | null;
+  medicoAuxiliar1?: string | null;
+  medicoAuxiliar2UserId?: number | null;
+  medicoAuxiliar2?: string | null;
   convenioId?: number | null;
   convenio?: string | null;
   cbhpmCodigo?: string | null;
@@ -259,6 +263,10 @@ export type PacienteFormData = {
   hospital: string;
   medicoUserId: number | null;
   medico: string;
+  medicoAuxiliar1UserId: number | null;
+  medicoAuxiliar1: string;
+  medicoAuxiliar2UserId: number | null;
+  medicoAuxiliar2: string;
   convenioId: number | null;
   convenio: string;
   cbhpmCodigo: string;

@@ -7,15 +7,9 @@ import {
   CONVENIOS_DATALIST_ID,
   DEFAULT_PASSWORD,
   findConvenioByDescription,
-  findMedicalUserByName,
-  formatCpfInput,
   formatCurrency,
   formatCurrencyInput,
-  formatPhoneInput,
-  MAX_CPF_LENGTH,
   MAX_NAME_LENGTH,
-  MAX_PHONE_LENGTH,
-  MEDICAL_USERS_DATALIST_ID,
 } from '../../shared/utils/formatters';
 
 type PatientFormProps = {
@@ -44,6 +38,14 @@ type PatientFormProps = {
   onDeletePacienteArquivo: (paciente: Paciente, arquivoId: number) => void | Promise<void>;
 };
 
+type MedicalTeamField = 'medico' | 'medicoAuxiliar1' | 'medicoAuxiliar2';
+
+const medicalTeamFields = {
+  medico: { idKey: 'medicoUserId', nameKey: 'medico' },
+  medicoAuxiliar1: { idKey: 'medicoAuxiliar1UserId', nameKey: 'medicoAuxiliar1' },
+  medicoAuxiliar2: { idKey: 'medicoAuxiliar2UserId', nameKey: 'medicoAuxiliar2' },
+} as const;
+
 export function PatientForm({
   canEditPatients,
   editingPacienteId,
@@ -69,6 +71,54 @@ export function PatientForm({
   onRemovePendingPatientFile,
   onDeletePacienteArquivo,
 }: PatientFormProps) {
+  const getMedicalSelectValue = (field: MedicalTeamField) => {
+    const config = medicalTeamFields[field];
+    const userId = pacienteFormData[config.idKey];
+
+    if (userId != null) {
+      return String(userId);
+    }
+
+    return pacienteFormData[config.nameKey] ? 'legacy' : '';
+  };
+
+  const isMedicalUserSelectedElsewhere = (field: MedicalTeamField, userId: number) => (
+    Object.entries(medicalTeamFields).some(([currentField, config]) => (
+      currentField !== field && pacienteFormData[config.idKey] === userId
+    ))
+  );
+
+  const updateMedicalTeamMember = (field: MedicalTeamField, value: string) => {
+    const config = medicalTeamFields[field];
+    const userId = value && value !== 'legacy' ? Number(value) : null;
+    const selectedUser = userId != null ? medicalUsers.find((user) => user.id === userId) : undefined;
+
+    setPacienteFormData((current) => ({
+      ...current,
+      [config.idKey]: selectedUser?.id ?? null,
+      [config.nameKey]: selectedUser?.nome ?? '',
+    }));
+  };
+
+  const renderMedicalOptions = (field: MedicalTeamField, emptyLabel: string) => {
+    const config = medicalTeamFields[field];
+    const legacyName = pacienteFormData[config.nameKey];
+
+    return (
+      <>
+        <option value="">{emptyLabel}</option>
+        {legacyName && pacienteFormData[config.idKey] == null && (
+          <option value="legacy">{legacyName} (fora do cadastro)</option>
+        )}
+        {medicalUsers.map((user) => (
+          <option key={user.id} value={user.id} disabled={isMedicalUserSelectedElsewhere(field, user.id)}>
+            {user.nome}
+          </option>
+        ))}
+      </>
+    );
+  };
+
   return (
     <FormPanel className="module-form-panel">
       <div className="panel-title">
@@ -102,29 +152,6 @@ export function PatientForm({
             required
           />
 
-          <TextField
-            label="CPF"
-            type="text"
-            value={pacienteFormData.cpf}
-            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, cpf: formatCpfInput(value) }))}
-            inputMode="numeric"
-            maxLength={MAX_CPF_LENGTH}
-            placeholder="000.000.000-00"
-            required
-          />
-
-          <TextField
-            label="Telefone"
-            type="tel"
-            value={pacienteFormData.telefone}
-            onFocus={() => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
-            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, telefone: formatPhoneInput(value) }))}
-            inputMode="numeric"
-            maxLength={MAX_PHONE_LENGTH}
-            placeholder="+55 (81) 99999-9999"
-            required
-          />
-
           <SelectField
             label="Hospital"
             value={pacienteFormData.hospitalId ?? (pacienteFormData.hospital ? 'legacy' : '')}
@@ -151,20 +178,36 @@ export function PatientForm({
           {hospitaisError && <AlertMessage type="error">{hospitaisError}</AlertMessage>}
 
           {!isMedical && (
-            <TextField
-              label="Médico"
-              type="text"
-              list={MEDICAL_USERS_DATALIST_ID}
-              value={pacienteFormData.medico}
-              onValueChange={(value) => {
-                const medico = value.slice(0, MAX_NAME_LENGTH);
-                const selectedMedicoUser = findMedicalUserByName(medicalUsers, medico);
-                setPacienteFormData((current) => ({ ...current, medicoUserId: selectedMedicoUser?.id ?? null, medico }));
-              }}
+            <SelectField
+              label="Cirurgião"
+              value={getMedicalSelectValue('medico')}
+              onChange={(event) => updateMedicalTeamMember('medico', event.target.value)}
               disabled={patientReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
-              maxLength={MAX_NAME_LENGTH}
-              placeholder={medicalUsers.length ? 'Selecione ou digite o medico' : 'Nenhum medico cadastrado'}
-            />
+            >
+              {renderMedicalOptions('medico', medicalUsers.length ? 'Selecione um cirurgiao' : 'Nenhum medico cadastrado')}
+            </SelectField>
+          )}
+
+          {!isMedical && (
+            <SelectField
+              label="Médico auxiliar 1"
+              value={getMedicalSelectValue('medicoAuxiliar1')}
+              onChange={(event) => updateMedicalTeamMember('medicoAuxiliar1', event.target.value)}
+              disabled={patientReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar1)}
+            >
+              {renderMedicalOptions('medicoAuxiliar1', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
+            </SelectField>
+          )}
+
+          {!isMedical && (
+            <SelectField
+              label="Médico auxiliar 2"
+              value={getMedicalSelectValue('medicoAuxiliar2')}
+              onChange={(event) => updateMedicalTeamMember('medicoAuxiliar2', event.target.value)}
+              disabled={patientReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar2)}
+            >
+              {renderMedicalOptions('medicoAuxiliar2', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
+            </SelectField>
           )}
 
           <TextField
