@@ -93,17 +93,17 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
           <TextField
             label="Codigo"
             type="search"
-            autoFocus
-            autoComplete="off"
+            
+            autoComplete="on"
             value={filters.codigo}
             onValueChange={(value) => updateFilter('codigo', normalizeCbhpmCodigo(value))}
-            placeholder="101"
+            placeholder="4070101"
             maxLength={20}
           />
           <TextField
             label="Procedimento"
             type="search"
-            autoComplete="off"
+            autoComplete="on"
             value={filters.procedimento}
             onValueChange={(value) => updateFilter('procedimento', value)}
             placeholder="Consulta"
