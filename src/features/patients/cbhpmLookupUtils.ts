@@ -16,14 +16,10 @@ export function normalizeCbhpmSearchText(value?: string | null) {
 export function isCbhpmCacheSearchReady(filters: CbhpmFilters) {
   const codigo = normalizeCbhpmCodigo(filters.codigo);
   const procedimento = normalizeCbhpmSearchText(filters.procedimento);
-  const hasCodigo = codigo.length > 0;
-  const hasProcedimento = procedimento.length > 0;
   const codigoReady = codigo.length >= CBHPM_SEARCH_MIN_LENGTH;
   const procedimentoReady = procedimento.length >= CBHPM_SEARCH_MIN_LENGTH;
 
-  return (codigoReady || procedimentoReady)
-    && (!hasCodigo || codigoReady)
-    && (!hasProcedimento || procedimentoReady);
+  return codigoReady || procedimentoReady;
 }
 
 export function filterCbhpmCachedItems(items: CbhpmGeral[], filters: CbhpmFilters) {
