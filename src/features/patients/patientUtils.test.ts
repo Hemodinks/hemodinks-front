@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Paciente } from '../../types';
 import {
   emptyPacienteForm,
+  getDuplicatedMedicalTeamError,
   getPacienteFormData,
   normalizeCbhpmCodigo,
   normalizePacienteProcedimentos,
@@ -77,6 +78,24 @@ describe('patientUtils', () => {
 
     expect(payload.cbhpmCodigo).toBe('10101012');
     expect(payload.procedimentos.map((item) => item.cbhpmCodigo)).toEqual(['10101012', '20101201']);
+  });
+
+  it('bloqueia selecao repetida entre cirurgiao e medicos auxiliares', () => {
+    expect(getDuplicatedMedicalTeamError({
+      ...emptyPacienteForm,
+      medicoUserId: 1,
+      medico: 'Dra. Ana',
+      medicoAuxiliar1UserId: 1,
+      medicoAuxiliar1: 'Dra. Ana',
+    })).toBe('Cirurgiao e medicos auxiliares devem ser diferentes.');
+
+    expect(getDuplicatedMedicalTeamError({
+      ...emptyPacienteForm,
+      medicoUserId: 1,
+      medico: 'Dra. Ana',
+      medicoAuxiliar1UserId: 2,
+      medicoAuxiliar1: 'Dr. Bruno',
+    })).toBe('');
   });
 
   it('normaliza codigos vindos da API ao preencher o formulario', () => {

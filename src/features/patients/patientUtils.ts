@@ -5,9 +5,8 @@ import {
   formatCpfInput,
   formatCurrencyInput,
   formatPhoneInput,
+  getLocalBrazilPhoneDigits,
   isValidBirthDate,
-  isValidBrazilMobilePhone,
-  isValidCpf,
   normalizeCpfForPayload,
   normalizePhoneForPayload,
   parseDisplayDate,
@@ -19,13 +18,17 @@ export const emptyPacienteForm: PacienteFormData = {
   nomePaciente: '',
   cpf: '',
   email: '',
-  telefone: '+55 ',
+  telefone: '',
   fotoPerfil: null,
   dataNascimento: '',
   hospitalId: null,
   hospital: '',
   medicoUserId: null,
   medico: '',
+  medicoAuxiliar1UserId: null,
+  medicoAuxiliar1: '',
+  medicoAuxiliar2UserId: null,
+  medicoAuxiliar2: '',
   convenioId: null,
   convenio: '',
   cbhpmCodigo: '',
@@ -143,6 +146,10 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
     hospital: paciente.hospital || '',
     medicoUserId: paciente.medicoUserId ?? null,
     medico: paciente.medico || '',
+    medicoAuxiliar1UserId: paciente.medicoAuxiliar1UserId ?? null,
+    medicoAuxiliar1: paciente.medicoAuxiliar1 || '',
+    medicoAuxiliar2UserId: paciente.medicoAuxiliar2UserId ?? null,
+    medicoAuxiliar2: paciente.medicoAuxiliar2 || '',
     convenioId: paciente.convenioId ?? null,
     convenio: paciente.convenio || '',
     cbhpmCodigo: normalizeCbhpmCodigo(paciente.cbhpmCodigo),
@@ -162,16 +169,13 @@ export function validatePacienteForm(data: PacienteFormData) {
     return 'Informe o nome do paciente.';
   }
 
-  if (!isValidCpf(data.cpf)) {
-    return 'Informe um CPF valido.';
-  }
-
-  if (!isValidBrazilMobilePhone(data.telefone)) {
-    return 'Informe um celular valido com DDD e 9 digitos.';
-  }
-
   if (!data.hospitalId && !data.hospital.trim()) {
     return 'Selecione um hospital.';
+  }
+
+  const duplicatedMedicalTeamError = getDuplicatedMedicalTeamError(data);
+  if (duplicatedMedicalTeamError) {
+    return duplicatedMedicalTeamError;
   }
 
   if (!getPacienteProcedimentosFromForm(data).length) {
@@ -181,9 +185,45 @@ export function validatePacienteForm(data: PacienteFormData) {
   return '';
 }
 
+export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
+  const medicalTeam = [
+    { userId: data.medicoUserId, name: data.medico },
+    { userId: data.medicoAuxiliar1UserId, name: data.medicoAuxiliar1 },
+    { userId: data.medicoAuxiliar2UserId, name: data.medicoAuxiliar2 },
+  ];
+  const selectedUserIds = new Set<number>();
+  const selectedNames = new Set<string>();
+
+  for (const member of medicalTeam) {
+    if (member.userId != null) {
+      if (selectedUserIds.has(member.userId)) {
+        return 'Cirurgiao e medicos auxiliares devem ser diferentes.';
+      }
+
+      selectedUserIds.add(member.userId);
+      continue;
+    }
+
+    const normalizedName = member.name.trim().toLocaleLowerCase('pt-BR');
+    if (!normalizedName) {
+      continue;
+    }
+
+    if (selectedNames.has(normalizedName)) {
+      return 'Cirurgiao e medicos auxiliares devem ser diferentes.';
+    }
+
+    selectedNames.add(normalizedName);
+  }
+
+  return '';
+}
+
 export function toPacientePayload(data: PacienteFormData): PacienteFormData {
   const cpf = normalizeCpfForPayload(data.cpf);
-  const generatedEmail = `paciente-${cpf}@hemodinks.local`;
+  const telefone = getLocalBrazilPhoneDigits(data.telefone)
+    ? normalizePhoneForPayload(data.telefone)
+    : '';
   const procedimentos = getPacienteProcedimentosFromForm(data);
   const firstProcedimento = procedimentos[0];
 
@@ -191,14 +231,18 @@ export function toPacientePayload(data: PacienteFormData): PacienteFormData {
     data: data.data && isValidBirthDate(data.data) ? toApiDate(data.data) : null,
     nomePaciente: data.nomePaciente.trim(),
     cpf,
-    email: data.email.trim() || generatedEmail,
-    telefone: normalizePhoneForPayload(data.telefone),
+    email: data.email.trim(),
+    telefone,
     fotoPerfil: data.fotoPerfil || null,
     dataNascimento: isValidBirthDate(data.dataNascimento) ? toApiDate(data.dataNascimento) : DEFAULT_PATIENT_BIRTH_DATE,
     hospitalId: data.hospitalId,
     hospital: data.hospital.trim(),
     medicoUserId: data.medicoUserId,
     medico: data.medico.trim(),
+    medicoAuxiliar1UserId: data.medicoAuxiliar1UserId,
+    medicoAuxiliar1: data.medicoAuxiliar1.trim(),
+    medicoAuxiliar2UserId: data.medicoAuxiliar2UserId,
+    medicoAuxiliar2: data.medicoAuxiliar2.trim(),
     convenioId: data.convenioId,
     convenio: data.convenio.trim(),
     cbhpmCodigo: firstProcedimento?.cbhpmCodigo || '',

@@ -412,7 +412,7 @@ export function usePatientsDomain({
       const medico = pacienteFilters.medico.trim();
 
       if (!medico) {
-        throw new Error('Selecione um medico antes de exportar por medico.');
+        throw new Error('Selecione um cirurgiao antes de exportar por cirurgiao.');
       }
 
       return fetchPacientesForExport({ medico });
@@ -595,9 +595,25 @@ export function usePatientsDomain({
     const selectedMedicoUser = pacienteFormData.medicoUserId != null
       ? medicalUsers.find((user) => user.id === pacienteFormData.medicoUserId)
       : findMedicalUserByName(medicalUsers, pacienteFormData.medico);
+    const selectedMedicoAuxiliar1User = pacienteFormData.medicoAuxiliar1UserId != null
+      ? medicalUsers.find((user) => user.id === pacienteFormData.medicoAuxiliar1UserId)
+      : findMedicalUserByName(medicalUsers, pacienteFormData.medicoAuxiliar1);
+    const selectedMedicoAuxiliar2User = pacienteFormData.medicoAuxiliar2UserId != null
+      ? medicalUsers.find((user) => user.id === pacienteFormData.medicoAuxiliar2UserId)
+      : findMedicalUserByName(medicalUsers, pacienteFormData.medicoAuxiliar2);
 
     if (isAdmin && pacienteFormData.medico && !selectedMedicoUser) {
-      setPacienteFormError('Selecione um medico cadastrado com perfil Medicos.');
+      setPacienteFormError('Selecione um cirurgiao cadastrado com perfil Medicos.');
+      return;
+    }
+
+    if (isAdmin && pacienteFormData.medicoAuxiliar1 && !selectedMedicoAuxiliar1User) {
+      setPacienteFormError('Selecione o medico auxiliar 1 no cadastro de medicos.');
+      return;
+    }
+
+    if (isAdmin && pacienteFormData.medicoAuxiliar2 && !selectedMedicoAuxiliar2User) {
+      setPacienteFormError('Selecione o medico auxiliar 2 no cadastro de medicos.');
       return;
     }
 
@@ -614,6 +630,10 @@ export function usePatientsDomain({
       ...pacienteFormData,
       medicoUserId: selectedMedicoUser?.id ?? pacienteFormData.medicoUserId,
       medico: selectedMedicoUser?.nome ?? pacienteFormData.medico,
+      medicoAuxiliar1UserId: selectedMedicoAuxiliar1User?.id ?? pacienteFormData.medicoAuxiliar1UserId,
+      medicoAuxiliar1: selectedMedicoAuxiliar1User?.nome ?? pacienteFormData.medicoAuxiliar1,
+      medicoAuxiliar2UserId: selectedMedicoAuxiliar2User?.id ?? pacienteFormData.medicoAuxiliar2UserId,
+      medicoAuxiliar2: selectedMedicoAuxiliar2User?.nome ?? pacienteFormData.medicoAuxiliar2,
       convenioId: selectedConvenio?.idConvenio ?? null,
       convenio: selectedConvenio?.descricaoConvenio ?? '',
     });

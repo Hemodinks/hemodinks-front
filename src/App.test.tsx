@@ -703,7 +703,21 @@ describe('App', () => {
   it('lista e cadastra pacientes', async () => {
     const user = userEvent.setup();
     mockSession();
-    vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
+    const auxiliar1: User = {
+      ...baseUser,
+      id: 2,
+      nome: 'Bruno Hemodinks',
+      email: 'bruno@hemodinks.com',
+      cpf: '11144477735',
+    };
+    const auxiliar2: User = {
+      ...baseUser,
+      id: 3,
+      nome: 'Clara Hemodinks',
+      email: 'clara@hemodinks.com',
+      cpf: '93541134780',
+    };
+    vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser, auxiliar1, auxiliar2]));
     vi.mocked(api.getAllCbhpmGeral).mockResolvedValue([
       {
         id: 1,
@@ -726,9 +740,9 @@ describe('App', () => {
       nomePaciente: 'Novo Paciente',
       hospitalId: 2,
       hospital: 'Santa Genoveva - Mater Dei',
-      email: 'paciente-93541134780@hemodinks.local',
-      telefone: '+5581997777777',
-      cpf: '93541134780',
+      email: 'paciente-tecnico@hemodinks.local',
+      telefone: '',
+      cpf: null,
       statusPago: false,
     });
 
@@ -744,14 +758,16 @@ describe('App', () => {
 
     await user.type(screen.getByLabelText('Data procedimento'), '04062026');
     await user.type(screen.getByLabelText('Paciente'), 'Novo Paciente');
-    await user.type(screen.getByLabelText('CPF'), '93541134780');
+    expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText('Telefone'), '81997777777');
+    expect(screen.queryByLabelText('Telefone')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Data de nascimento')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
     expect(await screen.findByRole('option', { name: 'Santa Genoveva - Mater Dei' })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Hospital'), '2');
-    await user.type(screen.getByLabelText('Médico'), 'Ana Hemodinks');
+    await user.selectOptions(screen.getByLabelText('Cirurgião'), '1');
+    await user.selectOptions(screen.getByLabelText('Médico auxiliar 1'), '2');
+    await user.selectOptions(screen.getByLabelText('Médico auxiliar 2'), '3');
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     fireEvent.change(within(cbhpmDialog).getByLabelText('Codigo'), { target: { value: '1010101' } });
@@ -773,15 +789,19 @@ describe('App', () => {
     expect(api.createPaciente).toHaveBeenCalledWith({
       data: '2026-06-04',
       nomePaciente: 'Novo Paciente',
-      cpf: '93541134780',
-      email: 'paciente-93541134780@hemodinks.local',
-      telefone: '+5581997777777',
+      cpf: '',
+      email: '',
+      telefone: '',
       fotoPerfil: null,
       dataNascimento: '1900-01-01',
       hospitalId: 2,
       hospital: 'Santa Genoveva - Mater Dei',
       medicoUserId: 1,
       medico: 'Ana Hemodinks',
+      medicoAuxiliar1UserId: 2,
+      medicoAuxiliar1: 'Bruno Hemodinks',
+      medicoAuxiliar2UserId: 3,
+      medicoAuxiliar2: 'Clara Hemodinks',
       convenioId: null,
       convenio: '',
       cbhpmCodigo: '10101012',
@@ -810,7 +830,7 @@ describe('App', () => {
     expect(await screen.findByText('Paciente cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
   });
 
-  it('permite ao administrador filtrar pacientes por medico, convenio e procedimento', async () => {
+  it('permite ao administrador filtrar pacientes por cirurgiao, convenio e procedimento', async () => {
     const user = userEvent.setup();
     mockSession();
     vi.mocked(api.getPacientes)
@@ -822,7 +842,7 @@ describe('App', () => {
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Medico'), 'Ana Hemodinks');
+    await user.type(screen.getByLabelText('Cirurgiao'), 'Ana Hemodinks');
     await user.type(screen.getByLabelText('Convenio'), 'Particular');
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
 
@@ -856,7 +876,7 @@ describe('App', () => {
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
     expect(screen.queryByRole('button', { name: /novo paciente/i })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Medico')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Cirurgiao')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Convenio')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Procedimento')).not.toBeInTheDocument();
     expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '' });
@@ -864,7 +884,9 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /visualizar paciente hemodinks/i }));
 
     expect(await screen.findByRole('heading', { name: 'Visualizar paciente' })).toBeInTheDocument();
-    expect(screen.queryByLabelText('Médico')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Cirurgião')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Médico auxiliar 1')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Médico auxiliar 2')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /salvar paciente/i })).not.toBeInTheDocument();
     expect(api.updatePaciente).not.toHaveBeenCalled();
   });
