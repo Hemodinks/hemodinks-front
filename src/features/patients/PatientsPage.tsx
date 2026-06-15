@@ -1,5 +1,5 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import type { Convenio, Hospital, Paciente, PacienteFormData, User } from '../../types';
+import type { Convenio, Hospital, OpmeFornecedor, Paciente, PacienteFormData, User } from '../../types';
 import type { ModuleMode, PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
 import { PatientForm } from './PatientForm';
 import { PatientList } from './PatientList';
@@ -35,6 +35,8 @@ type PatientsPageProps = {
   medicalUsers: User[];
   convenios: Convenio[];
   conveniosError: string;
+  opmeFornecedores: OpmeFornecedor[];
+  opmeFornecedoresError: string;
   isAdmin: boolean;
   isMedical: boolean;
   sessionToken: string;
@@ -91,6 +93,8 @@ export function PatientsPage({
   medicalUsers,
   convenios,
   conveniosError,
+  opmeFornecedores,
+  opmeFornecedoresError,
   isAdmin,
   isMedical,
   sessionToken,
@@ -133,6 +137,8 @@ export function PatientsPage({
           medicalUsers={medicalUsers}
           convenios={convenios}
           conveniosError={conveniosError}
+          opmeFornecedores={opmeFornecedores}
+          opmeFornecedoresError={opmeFornecedoresError}
           isMedical={isMedical}
           setPacienteFormData={setPacienteFormData}
           onClose={closePacienteForm}

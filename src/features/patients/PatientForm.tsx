@@ -1,16 +1,18 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { FileText, FileUp, Plus, Save, Search, Trash2, X } from 'lucide-react';
-import type { Convenio, Hospital, Paciente, PacienteFormData, User } from '../../types';
+import type { Convenio, Hospital, OpmeFornecedor, Paciente, PacienteFormData, User } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextareaField, TextField } from '../../shared/components/ui';
 import {
   CONVENIOS_DATALIST_ID,
   DEFAULT_PASSWORD,
   findConvenioByDescription,
+  findOpmeFornecedorByName,
   formatCurrency,
   formatCurrencyInput,
   MAX_DIAGNOSIS_LENGTH,
   MAX_NAME_LENGTH,
+  OPME_FORNECEDORES_DATALIST_ID,
 } from '../../shared/utils/formatters';
 
 type PatientFormProps = {
@@ -28,6 +30,8 @@ type PatientFormProps = {
   medicalUsers: User[];
   convenios: Convenio[];
   conveniosError: string;
+  opmeFornecedores: OpmeFornecedor[];
+  opmeFornecedoresError: string;
   isMedical: boolean;
   setPacienteFormData: Dispatch<SetStateAction<PacienteFormData>>;
   onClose: () => void;
@@ -62,6 +66,8 @@ export function PatientForm({
   medicalUsers,
   convenios,
   conveniosError,
+  opmeFornecedores,
+  opmeFornecedoresError,
   isMedical,
   setPacienteFormData,
   onClose,
@@ -239,6 +245,25 @@ export function PatientForm({
             placeholder={convenios.length ? 'Selecione ou digite o convenio' : 'Nenhum convenio cadastrado'}
           />
           {conveniosError && <AlertMessage type="error">{conveniosError}</AlertMessage>}
+
+          <TextField
+            label="Fornecedor OPME"
+            type="text"
+            list={OPME_FORNECEDORES_DATALIST_ID}
+            value={pacienteFormData.opmeFornecedor}
+            onValueChange={(value) => {
+              const opmeFornecedor = value.slice(0, MAX_NAME_LENGTH);
+              const selectedFornecedor = findOpmeFornecedorByName(opmeFornecedores, opmeFornecedor);
+              setPacienteFormData((current) => ({
+                ...current,
+                opmeFornecedorId: selectedFornecedor?.idFornecedor ?? null,
+                opmeFornecedor,
+              }));
+            }}
+            maxLength={MAX_NAME_LENGTH}
+            placeholder={opmeFornecedores.length ? 'Selecione ou digite o fornecedor OPME' : 'Digite o fornecedor OPME'}
+          />
+          {opmeFornecedoresError && <AlertMessage type="error">{opmeFornecedoresError}</AlertMessage>}
 
           <div className="procedure-field">
             <span className="field-label">Procedimento</span>

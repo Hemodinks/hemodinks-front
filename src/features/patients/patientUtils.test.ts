@@ -61,6 +61,8 @@ describe('patientUtils', () => {
       telefone: '+55 (81) 99999-9999',
       hospitalId: 1,
       hospital: 'Santa Clara - Mater Dei',
+      opmeFornecedorId: 1,
+      opmeFornecedor: 'Promedom',
       procedimentos: [
         {
           cbhpmCodigo: '1.01.01.01-2',
@@ -79,6 +81,8 @@ describe('patientUtils', () => {
 
     expect(payload.cbhpmCodigo).toBe('10101012');
     expect(payload.diagnostico).toBe('Diagnostico clinico de teste');
+    expect(payload.opmeFornecedorId).toBe(1);
+    expect(payload.opmeFornecedor).toBe('Promedom');
     expect(payload.procedimentos.map((item) => item.cbhpmCodigo)).toEqual(['10101012', '20101201']);
   });
 
@@ -113,6 +117,8 @@ describe('patientUtils', () => {
       medico: 'Dra. Ana',
       convenioId: 7,
       convenio: 'Particular',
+      opmeFornecedorId: 2,
+      opmeFornecedor: 'AVL',
       cbhpmCodigo: '1.01.01.01-2',
       cbhpmPorte: '2B',
       procedimento: 'Consulta',
@@ -143,6 +149,8 @@ describe('patientUtils', () => {
 
     expect(formData.cbhpmCodigo).toBe('10101012');
     expect(formData.diagnostico).toBe('Diagnostico cadastrado');
+    expect(formData.opmeFornecedorId).toBe(2);
+    expect(formData.opmeFornecedor).toBe('AVL');
     expect(formData.procedimentos[0].cbhpmCodigo).toBe('10101012');
   });
 });
