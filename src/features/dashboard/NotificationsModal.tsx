@@ -9,10 +9,11 @@ type NotificationsModalProps = {
   loading: boolean;
   error: string;
   totalCount: number;
+  onOpenObservation: (pacienteId: number) => void | Promise<void>;
   onClose: () => void;
 };
 
-export function NotificationsModal({ notifications, loading, error, totalCount, onClose }: NotificationsModalProps) {
+export function NotificationsModal({ notifications, loading, error, totalCount, onOpenObservation, onClose }: NotificationsModalProps) {
   return (
     <Modal titleId="notifications-title" className="notifications-modal" onClose={onClose}>
         <div className="panel-title">
@@ -46,10 +47,22 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
                     <p>{notification.mensagem}</p>
                     <div className="notification-meta-row">
                       {notification.nomePaciente && <span>{notification.nomePaciente}</span>}
+                      {notification.autor && <span>De: {notification.autor}</span>}
                       {notification.medico && <span>Medico: {notification.medico}</span>}
                       {notification.procedimento && <span>Procedimento: {notification.procedimento}</span>}
                       {date && <span>{date}</span>}
                     </div>
+                    {notification.tipo === 'ObservacaoPaciente' && notification.pacienteId > 0 && (
+                      <div className="patient-observation-actions">
+                        <button
+                          type="button"
+                          className="ghost-button patient-observation-reply-action"
+                          onClick={() => void onOpenObservation(notification.pacienteId)}
+                        >
+                          Abrir conversa
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </li>
               );
