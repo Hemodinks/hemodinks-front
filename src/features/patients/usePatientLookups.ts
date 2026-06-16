@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { Convenio, Hospital, OpmeFornecedor, User } from '../../types';
+import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor } from '../../types';
 
 export function usePatientLookups() {
-  const [medicalUsers, setMedicalUsers] = useState<User[]>([]);
+  const [medicalUsers, setMedicalUsers] = useState<MedicalUserOption[]>([]);
   const [hospitais, setHospitais] = useState<Hospital[]>([]);
   const [hospitaisError, setHospitaisError] = useState('');
   const [convenios, setConvenios] = useState<Convenio[]>([]);

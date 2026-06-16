@@ -23,6 +23,9 @@ vi.mock('./api', () => ({
   getCbhpmGeral: vi.fn(),
   getConvenios: vi.fn(),
   getHospitais: vi.fn(),
+  getMedicalGroup: vi.fn(),
+  getMedicalGroups: vi.fn(),
+  getScopedMedicalUsers: vi.fn(),
   getOpmeFornecedores: vi.fn(),
   getUsers: vi.fn(),
   getUser: vi.fn(),
@@ -168,6 +171,24 @@ describe('App', () => {
     vi.mocked(api.getAgendaMedicalUsers).mockResolvedValue([]);
     vi.mocked(api.getBrazilPublicHolidays).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
+    vi.mocked(api.getMedicalGroups).mockResolvedValue(paged([]));
+    vi.mocked(api.getScopedMedicalUsers).mockResolvedValue([
+      { id: 1, nome: 'Ana Hemodinks', email: 'ana@hemodinks.com' },
+      { id: 2, nome: 'Bruno Hemodinks', email: 'bruno@hemodinks.com' },
+      { id: 3, nome: 'Clara Hemodinks', email: 'clara@hemodinks.com' },
+    ]);
+    vi.mocked(api.getMedicalGroup).mockResolvedValue({
+      id: 1,
+      nome: 'Grupo A',
+      ativo: true,
+      dataCadastro: '2026-06-01T00:00:00Z',
+      dataAtualizacao: null,
+      membrosCount: 2,
+      membros: [
+        { userId: 1, nome: 'Ana Hemodinks', email: 'ana@hemodinks.com' },
+        { userId: 2, nome: 'Bruno Hemodinks', email: 'bruno@hemodinks.com' },
+      ],
+    });
     vi.mocked(api.getUser).mockResolvedValue(baseUser);
     vi.mocked(api.getUserProfilePhoto).mockResolvedValue(new Blob(['avatar'], { type: 'image/png' }));
     vi.mocked(api.getHospitais).mockResolvedValue([
@@ -960,7 +981,7 @@ describe('App', () => {
     });
   });
 
-  it('libera pacientes para medico e oculta o combo de medicos', async () => {
+  it('libera pacientes para medico e exibe os combos de equipe medica', async () => {
     const user = userEvent.setup();
     mockSession({
       perfilId: 2,
@@ -982,13 +1003,14 @@ describe('App', () => {
     expect(screen.queryByLabelText('Convenio')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Procedimento')).not.toBeInTheDocument();
     expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
+    expect(api.getScopedMedicalUsers).toHaveBeenCalledWith('jwt-token');
 
     await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
 
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
-    expect(screen.queryByLabelText('Cirurgião')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Médico auxiliar 1')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Médico auxiliar 2')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Cirurgião')).toBeInTheDocument();
+    expect(screen.getByLabelText('Médico auxiliar 1')).toBeInTheDocument();
+    expect(screen.getByLabelText('Médico auxiliar 2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
   });
 

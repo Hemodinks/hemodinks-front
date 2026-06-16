@@ -6,5 +6,6 @@
 @import './features/events/events.css';
 @import './features/users/users.css';
 @import './features/patients/patients.css';
+@import './features/medicalGroups/medicalGroups.css';
 @import './shared/components/modals.css';
 @import './styles/responsive.css';

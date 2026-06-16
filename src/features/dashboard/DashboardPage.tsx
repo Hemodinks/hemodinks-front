@@ -7,12 +7,14 @@ import {
   FileText,
   GripVertical,
   Info,
+  ShieldPlus,
   Users,
 } from 'lucide-react';
 
 type DashboardPageProps = {
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
+  canAccessMedicalGroups: boolean;
   patientReadOnly: boolean;
   usersCount: number;
   pacientesCount: number;
@@ -26,12 +28,14 @@ type DashboardPageProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
 };
 
 export function DashboardPage({
   canAccessUsers,
   canEditOwnUser,
+  canAccessMedicalGroups,
   patientReadOnly,
   usersCount,
   pacientesCount,
@@ -45,6 +49,7 @@ export function DashboardPage({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenMedicalGroups,
   onOpenAgenda,
 }: DashboardPageProps) {
   return (
@@ -96,6 +101,19 @@ export function DashboardPage({
             <ArrowRight size={20} />
           </span>
         </button>
+
+        {canAccessMedicalGroups && (
+          <button type="button" className="module-card module-card-medical-groups" onClick={onOpenMedicalGroups} aria-label="Abrir grupos medicos">
+            <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
+            <span className="module-icon"><ShieldPlus size={24} /></span>
+            <span className="module-title">Grupos medicos</span>
+            <span className="module-metric">Relacionar equipes e escopos</span>
+            <span className="module-card-foot">
+              <span>Definir compartilhamento</span>
+              <ArrowRight size={20} />
+            </span>
+          </button>
+        )}
 
         <button type="button" className="module-card module-card-agenda" onClick={onOpenAgenda} aria-label="Abrir agenda">
           <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
