@@ -1,5 +1,5 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import type { Convenio, Hospital, OpmeFornecedor, Paciente, PacienteFormData, User } from '../../types';
+import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
 import type { ModuleMode, PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
 import { PatientForm } from './PatientForm';
 import { PatientList } from './PatientList';
@@ -34,7 +34,7 @@ type PatientsPageProps = {
   pacienteExportScope: PacienteExportScope;
   hospitais: Hospital[];
   hospitaisError: string;
-  medicalUsers: User[];
+  medicalUsers: MedicalUserOption[];
   convenios: Convenio[];
   conveniosError: string;
   opmeFornecedores: OpmeFornecedor[];

@@ -1,4 +1,4 @@
-import type { Convenio, OpmeFornecedor, User } from '../../types';
+import type { Convenio, MedicalUserOption, OpmeFornecedor, User } from '../../types';
 
 export const DEFAULT_PASSWORD = 'Senha@123';
 export const DEFAULT_PATIENT_BIRTH_DATE = '1900-01-01';
@@ -72,7 +72,7 @@ export function normalizeLookupText(value: string) {
   return value.trim().toLocaleLowerCase('pt-BR');
 }
 
-export function findMedicalUserByName(users: User[], name: string) {
+export function findMedicalUserByName(users: Array<User | MedicalUserOption>, name: string) {
   const normalizedName = normalizeLookupText(name);
   return normalizedName
     ? users.find((user) => normalizeLookupText(user.nome) === normalizedName)

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { AppView, BreadcrumbItem, Theme } from '../appTypes';
-import type { AuthSession, Convenio, OpmeFornecedor, User } from '../types';
+import type { AuthSession, Convenio, MedicalUserOption, OpmeFornecedor } from '../types';
 import { LoadingOverlay } from '../shared/components/LoadingOverlay';
 import {
   CONVENIOS_DATALIST_ID,
@@ -25,10 +25,11 @@ type AppShellProps = {
   canAccessDashboard: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
+  canAccessMedicalGroups: boolean;
   canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
-  medicalUsers: User[];
+  medicalUsers: MedicalUserOption[];
   convenios: Convenio[];
   opmeFornecedores: OpmeFornecedor[];
   onToggleNotifications: () => void;
@@ -39,6 +40,7 @@ type AppShellProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
 };
 
@@ -57,6 +59,7 @@ export function AppShell({
   canAccessDashboard,
   canAccessUsers,
   canEditOwnUser,
+  canAccessMedicalGroups,
   canAccessAgenda,
   usersCount,
   pacientesCount,
@@ -71,6 +74,7 @@ export function AppShell({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenMedicalGroups,
   onOpenAgenda,
 }: AppShellProps) {
   return (
@@ -113,6 +117,7 @@ export function AppShell({
           canAccessDashboard={canAccessDashboard}
           canAccessUsers={canAccessUsers}
           canEditOwnUser={canEditOwnUser}
+          canAccessMedicalGroups={canAccessMedicalGroups}
           canAccessAgenda={canAccessAgenda}
           usersCount={usersCount}
           pacientesCount={pacientesCount}
@@ -120,6 +125,7 @@ export function AppShell({
           onOpenUsersList={onOpenUsersList}
           onOpenMyProfile={onOpenMyProfile}
           onOpenPatientsList={onOpenPatientsList}
+          onOpenMedicalGroups={onOpenMedicalGroups}
           onOpenAgenda={onOpenAgenda}
         />
 

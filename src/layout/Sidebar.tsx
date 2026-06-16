@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, Users } from 'lucide-react';
+import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ShieldPlus, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -10,6 +10,7 @@ type SidebarProps = {
   canAccessDashboard: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
+  canAccessMedicalGroups: boolean;
   canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
@@ -17,6 +18,7 @@ type SidebarProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
 };
 
@@ -27,6 +29,7 @@ export function Sidebar({
   canAccessDashboard,
   canAccessUsers,
   canEditOwnUser,
+  canAccessMedicalGroups,
   canAccessAgenda,
   usersCount,
   pacientesCount,
@@ -34,6 +37,7 @@ export function Sidebar({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenMedicalGroups,
   onOpenAgenda,
 }: SidebarProps) {
   return (
@@ -103,6 +107,17 @@ export function Sidebar({
             <span>Pacientes</span>
             <span className="side-nav-count">{pacientesCount}</span>
           </button>
+          {canAccessMedicalGroups && (
+            <button
+              type="button"
+              className={`side-nav-medical-groups ${activeView === 'medicalGroups' ? 'active' : ''}`}
+              aria-current={activeView === 'medicalGroups' ? 'page' : undefined}
+              onClick={onOpenMedicalGroups}
+            >
+              <ShieldPlus size={18} />
+              <span>Grupos medicos</span>
+            </button>
+          )}
           {canAccessAgenda && (
             <button
               type="button"

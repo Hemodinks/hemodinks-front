@@ -6,6 +6,8 @@ export const queryKeys = {
   users: (token: string, query?: { page: number; pageSize: number; search: string }) => ['users', token, query] as const,
   usersRoot: (token: string) => ['users', token] as const,
   medicalUsers: (token: string) => ['medicalUsers', token] as const,
+  medicalGroups: (token: string, query?: { page: number; pageSize: number; search: string; sortBy: string; sortDirection: 'asc' | 'desc' }) => ['medicalGroups', token, query] as const,
+  medicalGroupsRoot: (token: string) => ['medicalGroups', token] as const,
   pacientes: (
     token: string,
     query?: { page: number; pageSize: number; search: string } & Partial<PacienteFilters>,

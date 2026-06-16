@@ -10,7 +10,7 @@ import {
   getOpmeFornecedores,
   getPaciente,
   getPacientes,
-  getUsers,
+  getScopedMedicalUsers,
   updatePaciente,
   uploadPacienteArquivo,
 } from '../../api';
@@ -31,7 +31,6 @@ import {
   getErrorMessage,
   LOOKUP_PAGE_SIZE,
   MAX_PATIENT_FILE_BYTES,
-  MEDICAL_PROFILE_ID,
   PAGE_SIZE,
   PATIENT_EXPORT_PAGE_SIZE,
 } from '../../shared/utils/formatters';
@@ -47,6 +46,7 @@ import {
 import type {
   AuthSession,
   CbhpmGeral,
+  MedicalUserOption,
   Paciente,
 } from '../../types';
 import { queryKeys } from '../../shared/queryKeys';
@@ -218,11 +218,6 @@ export function usePatientsDomain({
     sortBy,
     sortDirection,
   }), [debouncedPacienteFilters, debouncedPacienteSearchTerm, isAdmin, pacienteCurrentPage, sortBy, sortDirection]);
-  const medicalUsersQueryParams = useMemo(() => ({
-    page: 1,
-    pageSize: LOOKUP_PAGE_SIZE,
-    profileId: MEDICAL_PROFILE_ID,
-  }), []);
   const sessionReady = Boolean(session && !session.user.precisaTrocarSenha);
   const pacientesQuery = useQuery({
     queryKey: queryKeys.pacientes(session?.token ?? '', pacientesQueryParams),
@@ -232,8 +227,8 @@ export function usePatientsDomain({
   });
   const medicalUsersQuery = useQuery({
     queryKey: queryKeys.medicalUsers(session?.token ?? ''),
-    queryFn: () => getUsers(session?.token ?? '', medicalUsersQueryParams),
-    enabled: sessionReady && activeView === 'patients' && isAdmin,
+    queryFn: () => getScopedMedicalUsers(session?.token ?? ''),
+    enabled: sessionReady && activeView === 'patients' && !patientReadOnly,
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
   const hospitaisQuery = useQuery({
@@ -310,7 +305,7 @@ export function usePatientsDomain({
 
   useEffect(() => {
     if (medicalUsersQuery.data) {
-      setMedicalUsers(sortUsersByName(getPagedItems(medicalUsersQuery.data)));
+      setMedicalUsers(sortUsersByName(getPagedItems(medicalUsersQuery.data as MedicalUserOption[])));
     }
   }, [medicalUsersQuery.data, setMedicalUsers]);
 
@@ -671,17 +666,17 @@ export function usePatientsDomain({
       ? medicalUsers.find((user) => user.id === pacienteFormData.medicoAuxiliar2UserId)
       : findMedicalUserByName(medicalUsers, pacienteFormData.medicoAuxiliar2);
 
-    if (!isMedical && pacienteFormData.medico && !selectedMedicoUser) {
+    if (pacienteFormData.medico && !selectedMedicoUser) {
       setPacienteFormError('Selecione um cirurgiao cadastrado com perfil Medicos.');
       return;
     }
 
-    if (!isMedical && pacienteFormData.medicoAuxiliar1 && !selectedMedicoAuxiliar1User) {
+    if (pacienteFormData.medicoAuxiliar1 && !selectedMedicoAuxiliar1User) {
       setPacienteFormError('Selecione o medico auxiliar 1 no cadastro de medicos.');
       return;
     }
 
-    if (!isMedical && pacienteFormData.medicoAuxiliar2 && !selectedMedicoAuxiliar2User) {
+    if (pacienteFormData.medicoAuxiliar2 && !selectedMedicoAuxiliar2User) {
       setPacienteFormError('Selecione o medico auxiliar 2 no cadastro de medicos.');
       return;
     }
@@ -892,7 +887,7 @@ export function usePatientsDomain({
     navigateToView('patients');
     setModuleMode('form');
 
-    if (session && !isMedical) {
+    if (session) {
       void loadMedicalUsers(session.token);
     }
 
