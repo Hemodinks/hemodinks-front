@@ -18,8 +18,11 @@ type CbhpmLookupModalProps = {
   totalItems: number;
   visibleStart: number;
   visibleEnd: number;
+  sortBy: string;
+  sortDirection: 'asc' | 'desc';
   onFiltersChange: Dispatch<SetStateAction<CbhpmFilters>>;
   onPageChange: (page: number | ((current: number) => number)) => void;
+  onSortChange: (field: string) => void;
   onRefresh: () => void;
   onSelect: (procedimento: CbhpmGeral) => void;
   onClose: () => void;
@@ -36,13 +39,43 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
   totalItems,
   visibleStart,
   visibleEnd,
+  sortBy,
+  sortDirection,
   onFiltersChange,
   onPageChange,
+  onSortChange,
   onRefresh,
   onSelect,
   onClose,
 }: CbhpmLookupModalProps) {
   const [manualValidationError, setManualValidationError] = useState('');
+
+  const sortedItems = useMemo(() => {
+    const compareText = (first: string | null | undefined, second: string | null | undefined) => {
+      const result = (first ?? '').localeCompare(second ?? '', 'pt-BR', { numeric: true, sensitivity: 'base' });
+      return result;
+    };
+
+    const ordered = [...items].sort((first, second) => {
+      const direction = sortDirection === 'asc' ? 1 : -1;
+
+      switch (sortBy) {
+        case 'procedimento':
+          return compareText(first.procedimento, second.procedimento) * direction || (first.id - second.id) * direction;
+        case 'porte':
+          return compareText(first.porte, second.porte) * direction || (first.id - second.id) * direction;
+        case 'valorreferencia':
+          return (((first.valorReferencia ?? Number.NEGATIVE_INFINITY) - (second.valorReferencia ?? Number.NEGATIVE_INFINITY)) * direction)
+            || compareText(first.codigo, second.codigo) * direction
+            || (first.id - second.id) * direction;
+        case 'codigo':
+        default:
+          return compareText(first.codigo, second.codigo) * direction || (first.id - second.id) * direction;
+      }
+    });
+
+    return ordered;
+  }, [items, sortBy, sortDirection]);
 
   const manualValues = useMemo(() => ({
     codigo: normalizeCbhpmCodigo(filters.codigo),
@@ -139,10 +172,30 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
           <table className="cbhpm-table">
             <thead>
               <tr>
-                <th>Codigo</th>
-                <th>Procedimento</th>
-                <th>Porte</th>
-                <th>Valor referencia</th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('codigo')} aria-sort={sortBy === 'codigo' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Codigo
+                    {sortBy === 'codigo' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('procedimento')} aria-sort={sortBy === 'procedimento' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Procedimento
+                    {sortBy === 'procedimento' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('porte')} aria-sort={sortBy === 'porte' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Porte
+                    {sortBy === 'porte' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('valorreferencia')} aria-sort={sortBy === 'valorreferencia' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Valor referencia
+                    {sortBy === 'valorreferencia' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
                 <th aria-label="Selecionar" />
               </tr>
             </thead>
@@ -151,8 +204,8 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
                 <tr>
                   <td colSpan={5} className="empty-row">Carregando procedimentos...</td>
                 </tr>
-              ) : items.length ? (
-                items.map((item) => (
+              ) : sortedItems.length ? (
+                sortedItems.map((item) => (
                   <tr key={item.id}>
                     <td data-label="Codigo">{normalizeCbhpmCodigo(item.codigo) || item.codigo}</td>
                     <td data-label="Procedimento">{item.procedimento}</td>

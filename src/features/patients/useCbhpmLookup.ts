@@ -21,6 +21,8 @@ export function useCbhpmLookup() {
   const [cbhpmItems, setCbhpmItems] = useState<CbhpmGeral[]>([]);
   const [cbhpmFilters, setCbhpmFilters] = useState<CbhpmFilters>(emptyCbhpmFilters);
   const [cbhpmCurrentPage, setCbhpmCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState('codigo');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const resetCbhpmPage = useCallback(() => setCbhpmCurrentPage(1), []);
   const [debouncedCbhpmFilters] = useDebouncedValue(cbhpmFilters, {
     delayMs: 800,
@@ -46,6 +48,8 @@ export function useCbhpmLookup() {
     setCbhpmTotalItems(0);
     setCbhpmTotalPages(1);
     setCbhpmError('');
+    setSortBy('codigo');
+    setSortDirection('asc');
   };
 
   return {
@@ -58,6 +62,10 @@ export function useCbhpmLookup() {
     debouncedCbhpmFilters,
     cbhpmCurrentPage,
     setCbhpmCurrentPage,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
     cbhpmTotalItems,
     setCbhpmTotalItems,
     cbhpmTotalPageCount,
