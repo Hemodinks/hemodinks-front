@@ -384,7 +384,7 @@ function AppContent() {
     handleSubmitMedicalGroup,
   } = medicalGroupsDomain;
 
-  const isBusy = loginLoading || resetPasswordLoading || usersLoading || formLoading || pacientesLoading || pacienteFormLoading || groupsLoading || medicalGroupFormLoading;
+  const isBusy = loginLoading || resetPasswordLoading || formLoading || pacienteFormLoading || medicalGroupFormLoading;
 
   function logout() {
     queryClient.clear();
