@@ -13,6 +13,9 @@
   --dashboard-profile: #7c3aed;
   --dashboard-profile-soft: rgba(124, 58, 237, 0.1);
   --dashboard-profile-border: rgba(124, 58, 237, 0.28);
+  --dashboard-medical-groups: #0f4c81;
+  --dashboard-medical-groups-soft: rgba(15, 76, 129, 0.12);
+  --dashboard-medical-groups-border: rgba(15, 76, 129, 0.32);
   --dashboard-agenda: #b7791f;
   --dashboard-agenda-soft: rgba(183, 121, 31, 0.14);
   --dashboard-agenda-border: rgba(183, 121, 31, 0.34);
@@ -226,6 +229,12 @@
   --module-color: var(--dashboard-profile);
   --module-soft: var(--dashboard-profile-soft);
   --module-border: var(--dashboard-profile-border);
+}
+
+.module-card-medical-groups {
+  --module-color: var(--dashboard-medical-groups);
+  --module-soft: var(--dashboard-medical-groups-soft);
+  --module-border: var(--dashboard-medical-groups-border);
 }
 
 .module-card-agenda {

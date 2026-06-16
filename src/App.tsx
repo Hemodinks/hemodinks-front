@@ -11,6 +11,7 @@ import { LoginScreen } from './features/auth/LoginScreen';
 import { PasswordRequiredScreen } from './features/auth/PasswordRequiredScreen';
 import { useAuthSession } from './features/auth/useAuthSession';
 import { DashboardPage } from './features/dashboard/DashboardPage';
+import { useMedicalGroupsDomain } from './features/medicalGroups/useMedicalGroupsDomain';
 import { usePatientsDomain } from './features/patients/usePatientsDomain';
 import { useUsersDomain } from './features/users/useUsersDomain';
 import { ContactModal, InfoModal } from './features/users/UserModals';
@@ -41,6 +42,7 @@ const NOTIFICATIONS_CACHE_TIME_MS = 15 * 1000;
 
 const NotificationsModal = lazy(() => import('./features/dashboard/NotificationsModal').then((module) => ({ default: module.NotificationsModal })));
 const AgendaPage = lazy(() => import('./features/events/AgendaPage').then((module) => ({ default: module.AgendaPage })));
+const MedicalGroupsPage = lazy(() => import('./features/medicalGroups/MedicalGroupsPage').then((module) => ({ default: module.MedicalGroupsPage })));
 const CbhpmLookupModal = lazy(() => import('./features/patients/CbhpmLookupModal').then((module) => ({ default: module.CbhpmLookupModal })));
 const PatientInfoModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientInfoModal })));
 const PatientFilesModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientFilesModal })));
@@ -163,6 +165,7 @@ function AppContent() {
   const canAccessAgenda = !isController;
   const canAccessUsers = isAdmin;
   const canEditOwnUser = isMedical;
+  const canAccessMedicalGroups = isAdmin;
   const canCreatePatients = isAdmin || isController || isMedical;
   const canEditPatients = isAdmin || isMedical || isController;
   const canDeletePatients = isAdmin;
@@ -170,12 +173,14 @@ function AppContent() {
   const canUseDashboardRoute = canAccessDashboard;
   const canUseUsersRoute = canAccessUsers;
   const canUseProfileRoute = canEditOwnUser;
+  const canUseMedicalGroupsRoute = canAccessMedicalGroups;
   const canUseAgendaRoute = canAccessAgenda;
   const { activeView, navigateToView } = useRouteView({
     session,
     canUseDashboardRoute,
     canUseUsersRoute,
     canUseProfileRoute,
+    canUseMedicalGroupsRoute,
     canUseAgendaRoute,
   });
 
@@ -206,6 +211,14 @@ function AppContent() {
     setModuleMode,
     navigateToView,
     loadDashboardSummary,
+  });
+  const medicalGroupsDomain = useMedicalGroupsDomain({
+    session,
+    activeView,
+    moduleMode,
+    canAccessMedicalGroups,
+    setModuleMode,
+    navigateToView,
   });
 
   const {
@@ -338,8 +351,40 @@ function AppContent() {
     refreshCbhpm,
     closePatientFilesModal,
   } = patientsDomain;
+  const {
+    groups,
+    groupsLoading,
+    groupsError,
+    successMessage: medicalGroupsSuccessMessage,
+    searchTerm: medicalGroupSearchTerm,
+    setSearchTerm: setMedicalGroupSearchTerm,
+    currentPage: medicalGroupCurrentPage,
+    setCurrentPage: setMedicalGroupCurrentPage,
+    sortBy: medicalGroupSortBy,
+    setSortBy: setMedicalGroupSortBy,
+    sortDirection: medicalGroupSortDirection,
+    setSortDirection: setMedicalGroupSortDirection,
+    totalItems: medicalGroupsTotalItems,
+    totalPages: medicalGroupTotalPages,
+    visibleStart: medicalGroupVisibleStart,
+    visibleEnd: medicalGroupVisibleEnd,
+    editingGroupId,
+    formData: medicalGroupFormData,
+    setFormData: setMedicalGroupFormData,
+    formError: medicalGroupFormError,
+    formLoading: medicalGroupFormLoading,
+    availableMedicalUsers,
+    resetMedicalGroupsState,
+    loadMedicalGroups,
+    openMedicalGroupsList,
+    openNewMedicalGroupForm,
+    closeMedicalGroupForm,
+    handleEditMedicalGroup,
+    handleDeleteMedicalGroup,
+    handleSubmitMedicalGroup,
+  } = medicalGroupsDomain;
 
-  const isBusy = loginLoading || resetPasswordLoading || usersLoading || formLoading || pacientesLoading || pacienteFormLoading;
+  const isBusy = loginLoading || resetPasswordLoading || usersLoading || formLoading || pacientesLoading || pacienteFormLoading || groupsLoading || medicalGroupFormLoading;
 
   function logout() {
     queryClient.clear();
@@ -351,6 +396,7 @@ function AppContent() {
     setNotificationsLoading(false);
     resetUsersState();
     resetPatientsState();
+    resetMedicalGroupsState();
     navigateToView('dashboard', true);
     setModuleMode('list');
     setLoginPassword('');
@@ -419,7 +465,8 @@ function AppContent() {
     ? 'Painel inicial'
     : activeView === 'users' ? 'Usuarios'
       : activeView === 'profile' ? 'Meu cadastro'
-      : activeView === 'patients' ? 'Pacientes' : 'Agenda';
+      : activeView === 'patients' ? 'Pacientes'
+        : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda';
 
   const openDashboard = () => {
     if (activeView === 'profile') {
@@ -457,6 +504,19 @@ function AppContent() {
     openPatientsList();
   };
 
+  const openMedicalGroups = () => {
+    if (activeView === 'profile') {
+      resetUserFormState({ suppressProfileAutoOpen: true });
+    }
+
+    if (!canAccessMedicalGroups) {
+      openPatientsList();
+      return;
+    }
+
+    openMedicalGroupsList();
+  };
+
   const handleUserSortChange = (field: string) => {
     setCurrentPage(1);
 
@@ -491,6 +551,18 @@ function AppContent() {
 
     setCbhpmSortBy(field);
     setCbhpmSortDirection('asc');
+  };
+
+  const handleMedicalGroupSortChange = (field: string) => {
+    setMedicalGroupCurrentPage(1);
+
+    if (medicalGroupSortBy === field) {
+      setMedicalGroupSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    setMedicalGroupSortBy(field);
+    setMedicalGroupSortDirection(field === 'recent' ? 'desc' : 'asc');
   };
 
   if (!session) {
@@ -542,15 +614,18 @@ function AppContent() {
     ? editingId ? 'Editar usuario' : 'Novo usuario'
     : activeView === 'profile' ? 'Meu cadastro'
     : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
+      : activeView === 'medicalGroups' ? editingGroupId ? 'Editar grupo medico' : 'Novo grupo medico'
       : 'Agenda';
   const activeModuleLabel = activeView === 'users'
     ? 'Usuarios'
     : activeView === 'profile' ? 'Meu cadastro'
-    : activeView === 'patients' ? 'Pacientes' : 'Agenda';
+    : activeView === 'patients' ? 'Pacientes'
+      : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda';
   const openActiveModuleList = activeView === 'users'
     ? openUsersList
     : activeView === 'profile' ? openMyProfile
-      : activeView === 'patients' ? openPatientsList : openAgenda;
+      : activeView === 'patients' ? openPatientsList
+        : activeView === 'medicalGroups' ? openMedicalGroups : openAgenda;
   const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
     ? [
       { label: 'Inicio', onClick: openDashboard },
@@ -569,6 +644,7 @@ function AppContent() {
     <DashboardPage
       canAccessUsers={canAccessUsers}
       canEditOwnUser={canEditOwnUser}
+      canAccessMedicalGroups={canAccessMedicalGroups}
       patientReadOnly={patientReadOnly}
       usersCount={usersCount}
       pacientesCount={pacientesCount}
@@ -582,6 +658,7 @@ function AppContent() {
       onOpenUsersList={openUsersList}
       onOpenMyProfile={openMyProfile}
       onOpenPatientsList={openPatientsList}
+      onOpenMedicalGroups={openMedicalGroups}
       onOpenAgenda={openAgenda}
     />
   ) : activeView === 'users' || activeView === 'profile' ? (
@@ -689,6 +766,41 @@ function AppContent() {
       clearPacienteFilters={clearPacienteFilters}
       refreshPacientes={refreshPacientes}
     />
+  ) : activeView === 'medicalGroups' ? (
+    <MedicalGroupsPage
+      moduleMode={moduleMode}
+      groups={groups}
+      groupsLoading={groupsLoading}
+      groupsError={groupsError}
+      successMessage={medicalGroupsSuccessMessage}
+      totalItems={medicalGroupsTotalItems}
+      visibleStart={medicalGroupVisibleStart}
+      visibleEnd={medicalGroupVisibleEnd}
+      currentPage={medicalGroupCurrentPage}
+      totalPages={medicalGroupTotalPages}
+      searchTerm={medicalGroupSearchTerm}
+      sortBy={medicalGroupSortBy}
+      sortDirection={medicalGroupSortDirection}
+      editingGroupId={editingGroupId}
+      formData={medicalGroupFormData}
+      formError={medicalGroupFormError}
+      formLoading={medicalGroupFormLoading}
+      availableMedicalUsers={availableMedicalUsers}
+      setFormData={setMedicalGroupFormData}
+      setSearchTerm={setMedicalGroupSearchTerm}
+      setCurrentPage={setMedicalGroupCurrentPage}
+      onSortChange={handleMedicalGroupSortChange}
+      onCloseForm={closeMedicalGroupForm}
+      onOpenNewForm={openNewMedicalGroupForm}
+      onSubmit={handleSubmitMedicalGroup}
+      onEditGroup={handleEditMedicalGroup}
+      onDeleteGroup={handleDeleteMedicalGroup}
+      onRefresh={() => {
+        if (session) {
+          void loadMedicalGroups(session.token, true);
+        }
+      }}
+    />
   ) : (
     <AgendaPage
       session={session}
@@ -777,6 +889,7 @@ function AppContent() {
       canAccessDashboard={canAccessDashboard}
       canAccessUsers={canAccessUsers}
       canEditOwnUser={canEditOwnUser}
+      canAccessMedicalGroups={canAccessMedicalGroups}
       canAccessAgenda={canAccessAgenda}
       usersCount={usersCount}
       pacientesCount={pacientesCount}
@@ -791,6 +904,7 @@ function AppContent() {
       onOpenUsersList={openUsersList}
       onOpenMyProfile={openMyProfile}
       onOpenPatientsList={openPatientsListFromMenu}
+      onOpenMedicalGroups={openMedicalGroups}
       onOpenAgenda={openAgenda}
       modals={modals}
     >
