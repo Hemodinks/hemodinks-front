@@ -955,6 +955,31 @@ describe('App', () => {
     expect(api.getUsers).not.toHaveBeenCalled();
   });
 
+  it('permite ao medico fechar o proprio cadastro e voltar ao painel', async () => {
+    const user = userEvent.setup();
+    mockSession({
+      perfilId: 2,
+      perfilNome: 'Medicos',
+      nome: 'Dra. Ana',
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/meu-cadastro');
+
+    await user.click(screen.getByRole('button', { name: /voltar para lista/i }));
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Meu cadastro', level: 1 })).not.toBeInTheDocument();
+  });
+
   it('restringe controller ao cadastro e exportacao de pacientes', async () => {
     mockSession({
       perfilId: 4,

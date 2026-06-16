@@ -1,4 +1,4 @@
-import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   createUser,
@@ -73,6 +73,7 @@ export function useUsersDomain({
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedInfoUser, setSelectedInfoUser] = useState<User | null>(null);
   const [selectedContactUser, setSelectedContactUser] = useState<User | null>(null);
+  const skipProfileAutoOpenRef = useRef(false);
 
   const {
     users,
@@ -433,6 +434,7 @@ export function useUsersDomain({
     setModuleMode('list');
 
     if (!canAccessUsers) {
+      skipProfileAutoOpenRef.current = true;
       navigateToView('dashboard');
     }
   };
@@ -441,6 +443,8 @@ export function useUsersDomain({
     if (!session || !canEditOwnUser) {
       return;
     }
+
+    skipProfileAutoOpenRef.current = false;
 
     void handleEditUser({
       id: session.user.id,
@@ -467,9 +471,14 @@ export function useUsersDomain({
   };
 
   useEffect(() => {
-    if (activeView === 'profile'
-      && canEditOwnUser
+    if (activeView !== 'profile') {
+      skipProfileAutoOpenRef.current = false;
+      return;
+    }
+
+    if (canEditOwnUser
       && session
+      && !skipProfileAutoOpenRef.current
       && (moduleMode !== 'form' || editingId !== session.user.id)) {
       openMyProfile();
     }
