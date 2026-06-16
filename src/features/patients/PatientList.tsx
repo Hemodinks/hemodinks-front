@@ -229,18 +229,6 @@ export function PatientList({
                   </button>
                 </th>
                 <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('auxiliares')} aria-sort={sortBy === 'auxiliares' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Auxiliares
-                    {sortBy === 'auxiliares' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('convenio')} aria-sort={sortBy === 'convenio' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Convenio
-                    {sortBy === 'convenio' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
                   <button type="button" className="sort-header-button" onClick={() => onSortChange('status')} aria-sort={sortBy === 'status' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                     Status Pago
                     {sortBy === 'status' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
@@ -258,7 +246,7 @@ export function PatientList({
             <tbody>
               {pacientesLoading ? (
                 <tr>
-                  <td colSpan={9} className="empty-row">Carregando pacientes...</td>
+                  <td colSpan={7} className="empty-row">Carregando pacientes...</td>
                 </tr>
               ) : pacientes.length ? (
                 pacientes.map((paciente) => (
@@ -282,10 +270,6 @@ export function PatientList({
                     </td>
                     <td data-label="Hospital">{paciente.hospital || '-'}</td>
                     <td data-label="Cirurgiao">{paciente.medico || '-'}</td>
-                    {/* <td data-label="Auxiliares">
-                      {[paciente.medicoAuxiliar1, paciente.medicoAuxiliar2].filter(Boolean).join(' / ') || '-'}
-                    </td>
-                    <td data-label="Convenio">{paciente.convenio || '-'}</td> */}
                     <td data-label="Status Pago">
                       <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
                         {paciente.statusPago ? 'Pago' : 'Pendente'}
@@ -336,7 +320,7 @@ export function PatientList({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="empty-row">Nenhum paciente encontrado.</td>
+                  <td colSpan={7} className="empty-row">Nenhum paciente encontrado.</td>
                 </tr>
               )}
             </tbody>
