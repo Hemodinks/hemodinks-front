@@ -19,6 +19,8 @@ export function usePatientList() {
   const [pacienteSearchTerm, setPacienteSearchTerm] = useState('');
   const [pacienteFilters, setPacienteFilters] = useState<PacienteFilters>(emptyPacienteFilters);
   const [pacienteCurrentPage, setPacienteCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState('recent');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const resetPacientesPage = useCallback(() => setPacienteCurrentPage(1), []);
   const [debouncedPacienteSearchTerm] = useDebouncedValue(pacienteSearchTerm, { onCommit: resetPacientesPage });
   const [debouncedPacienteFilters, setDebouncedPacienteFilters] = useDebouncedValue(pacienteFilters, {
@@ -45,6 +47,8 @@ export function usePatientList() {
     setPacienteCurrentPage(1);
     setPacientesTotalItems(0);
     setPacientesTotalPages(1);
+    setSortBy('recent');
+    setSortDirection('desc');
   };
 
   return {
@@ -65,6 +69,10 @@ export function usePatientList() {
     setDebouncedPacienteFilters,
     pacienteCurrentPage,
     setPacienteCurrentPage,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
     pacientesTotalItems,
     setPacientesTotalItems,
     pacientesTotalPages,

@@ -45,6 +45,8 @@ export type ListQuery = {
   pageSize?: number;
   search?: string;
   profileId?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 };
 
 export type PacienteListQuery = ListQuery & {
@@ -60,6 +62,8 @@ export type CbhpmListQuery = {
   codigo?: string;
   procedimento?: string;
   porte?: string;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 };
 
 export type CbhpmGeral = {

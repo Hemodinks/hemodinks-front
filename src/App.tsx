@@ -163,10 +163,10 @@ function AppContent() {
   const canAccessAgenda = !isController;
   const canAccessUsers = isAdmin;
   const canEditOwnUser = isMedical;
-  const canCreatePatients = isAdmin || isController;
-  const canEditPatients = isAdmin;
+  const canCreatePatients = isAdmin || isController || isMedical;
+  const canEditPatients = isAdmin || isMedical;
   const canDeletePatients = isAdmin;
-  const patientReadOnly = isPatient || isMedical;
+  const patientReadOnly = isPatient;
   const canUseDashboardRoute = canAccessDashboard;
   const canUseUsersRoute = canAccessUsers;
   const canUseProfileRoute = canEditOwnUser;
@@ -216,6 +216,10 @@ function AppContent() {
     setSearchTerm,
     currentPage,
     setCurrentPage,
+    sortBy: userSortBy,
+    setSortBy: setUserSortBy,
+    sortDirection: userSortDirection,
+    setSortDirection: setUserSortDirection,
     usersTotalItems,
     totalPages,
     paginatedUsers,
@@ -250,6 +254,7 @@ function AppContent() {
     openUsersList,
     openNewUserForm,
     closeUserForm,
+    resetUserFormState,
     openMyProfile,
     refreshUsers,
   } = usersDomain;
@@ -267,6 +272,10 @@ function AppContent() {
     setPacienteFilters,
     pacienteCurrentPage,
     setPacienteCurrentPage,
+    sortBy: pacienteSortBy,
+    setSortBy: setPacienteSortBy,
+    sortDirection: pacienteSortDirection,
+    setSortDirection: setPacienteSortDirection,
     pacientesTotalItems,
     pacienteTotalPages,
     paginatedPacientes,
@@ -301,6 +310,10 @@ function AppContent() {
     cbhpmError,
     cbhpmCurrentPage,
     setCbhpmCurrentPage,
+    sortBy: cbhpmSortBy,
+    setSortBy: setCbhpmSortBy,
+    sortDirection: cbhpmSortDirection,
+    setSortDirection: setCbhpmSortDirection,
     cbhpmTotalPageCount,
     cbhpmTotalItems,
     cbhpmVisibleStart,
@@ -409,6 +422,10 @@ function AppContent() {
       : activeView === 'patients' ? 'Pacientes' : 'Agenda';
 
   const openDashboard = () => {
+    if (activeView === 'profile') {
+      resetUserFormState();
+    }
+
     if (!canAccessDashboard) {
       openPatientsList();
       return;
@@ -419,6 +436,10 @@ function AppContent() {
   };
 
   const openAgenda = () => {
+    if (activeView === 'profile') {
+      resetUserFormState();
+    }
+
     if (!canAccessAgenda) {
       openPatientsList();
       return;
@@ -426,6 +447,50 @@ function AppContent() {
 
     navigateToView('agenda');
     setModuleMode('list');
+  };
+
+  const openPatientsListFromMenu = () => {
+    if (activeView === 'profile') {
+      resetUserFormState();
+    }
+
+    openPatientsList();
+  };
+
+  const handleUserSortChange = (field: string) => {
+    setCurrentPage(1);
+
+    if (userSortBy === field) {
+      setUserSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    setUserSortBy(field);
+    setUserSortDirection(field === 'recent' ? 'desc' : 'asc');
+  };
+
+  const handlePacienteSortChange = (field: string) => {
+    setPacienteCurrentPage(1);
+
+    if (pacienteSortBy === field) {
+      setPacienteSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    setPacienteSortBy(field);
+    setPacienteSortDirection(field === 'recent' ? 'desc' : 'asc');
+  };
+
+  const handleCbhpmSortChange = (field: string) => {
+    setCbhpmCurrentPage(1);
+
+    if (cbhpmSortBy === field) {
+      setCbhpmSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    setCbhpmSortBy(field);
+    setCbhpmSortDirection('asc');
   };
 
   if (!session) {
@@ -542,10 +607,13 @@ function AppContent() {
       currentPage={currentPage}
       totalPages={totalPages}
       searchTerm={searchTerm}
+      sortBy={userSortBy}
+      sortDirection={userSortDirection}
       sessionToken={session.token}
       setFormData={setFormData}
       setSearchTerm={setSearchTerm}
       setCurrentPage={setCurrentPage}
+      onSortChange={handleUserSortChange}
       closeUserForm={closeUserForm}
       openNewUserForm={openNewUserForm}
       handleSubmitUser={handleSubmitUser}
@@ -584,6 +652,8 @@ function AppContent() {
       pacienteCurrentPage={pacienteCurrentPage}
       pacienteTotalPages={pacienteTotalPages}
       pacienteSearchTerm={pacienteSearchTerm}
+      sortBy={pacienteSortBy}
+      sortDirection={pacienteSortDirection}
       pacienteFilters={pacienteFilters}
       pacienteExportLoading={pacienteExportLoading}
       pacienteExportScope={pacienteExportScope}
@@ -602,6 +672,7 @@ function AppContent() {
       setPacienteFilters={setPacienteFilters}
       setPacienteExportScope={setPacienteExportScope}
       setPacienteCurrentPage={setPacienteCurrentPage}
+      onSortChange={handlePacienteSortChange}
       closePacienteForm={closePacienteForm}
       openNewPacienteForm={openNewPacienteForm}
       handleSubmitPaciente={handleSubmitPaciente}
@@ -658,8 +729,11 @@ function AppContent() {
           totalItems={cbhpmTotalItems}
           visibleStart={cbhpmVisibleStart}
           visibleEnd={cbhpmVisibleEnd}
+          sortBy={cbhpmSortBy}
+          sortDirection={cbhpmSortDirection}
           onFiltersChange={setCbhpmFilters}
           onPageChange={setCbhpmCurrentPage}
+          onSortChange={handleCbhpmSortChange}
           onRefresh={refreshCbhpm}
           onSelect={handleSelectCbhpm}
           onClose={() => setCbhpmModalOpen(false)}
@@ -716,7 +790,7 @@ function AppContent() {
       onOpenDashboard={openDashboard}
       onOpenUsersList={openUsersList}
       onOpenMyProfile={openMyProfile}
-      onOpenPatientsList={openPatientsList}
+      onOpenPatientsList={openPatientsListFromMenu}
       onOpenAgenda={openAgenda}
       modals={modals}
     >

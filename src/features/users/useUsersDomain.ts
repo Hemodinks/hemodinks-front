@@ -88,6 +88,10 @@ export function useUsersDomain({
     setSearchTerm,
     currentPage,
     setCurrentPage,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
     debouncedSearchTerm,
     usersTotalItems,
     setUsersTotalItems,
@@ -122,7 +126,9 @@ export function useUsersDomain({
     page: currentPage,
     pageSize: PAGE_SIZE,
     search: debouncedSearchTerm,
-  }), [currentPage, debouncedSearchTerm]);
+    sortBy,
+    sortDirection,
+  }), [currentPage, debouncedSearchTerm, sortBy, sortDirection]);
   const usersQueryEnabled = Boolean(session && !session.user.precisaTrocarSenha && canAccessUsers && activeView === 'users' && moduleMode === 'list');
   const usersQuery = useQuery({
     queryKey: queryKeys.users(session?.token ?? '', usersQueryParams),
@@ -408,14 +414,14 @@ export function useUsersDomain({
   };
 
   const openUsersList = () => {
+    resetUserFormState();
+
     if (!canAccessUsers) {
       navigateToView('dashboard');
-      setModuleMode('list');
       return;
     }
 
     navigateToView('users');
-    setModuleMode('list');
   };
 
   const openNewUserForm = () => {
@@ -437,6 +443,11 @@ export function useUsersDomain({
       skipProfileAutoOpenRef.current = true;
       navigateToView('dashboard');
     }
+  };
+
+  const resetUserFormState = () => {
+    resetUserForm();
+    setModuleMode('list');
   };
 
   const openMyProfile = () => {
@@ -500,6 +511,10 @@ export function useUsersDomain({
     setSearchTerm,
     currentPage,
     setCurrentPage,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
     debouncedSearchTerm,
     usersTotalItems,
     usersTotalPages,
@@ -537,6 +552,7 @@ export function useUsersDomain({
     openUsersList,
     openNewUserForm,
     closeUserForm,
+    resetUserFormState,
     openMyProfile,
     refreshUsers,
   };
