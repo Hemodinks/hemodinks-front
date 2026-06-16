@@ -1029,6 +1029,16 @@ describe('App', () => {
     });
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Meu cadastro', level: 1 })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /pacientes/i }));
+
+    expect(await screen.findByRole('heading', { name: /pacientes/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/pacientes');
+    });
+    expect(screen.queryByRole('heading', { name: 'Meu cadastro', level: 1 })).not.toBeInTheDocument();
   });
 
   it('restringe controller ao cadastro e exportacao de pacientes', async () => {

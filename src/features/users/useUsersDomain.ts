@@ -414,7 +414,7 @@ export function useUsersDomain({
   };
 
   const openUsersList = () => {
-    resetUserFormState();
+    resetUserFormState({ suppressProfileAutoOpen: true });
 
     if (!canAccessUsers) {
       navigateToView('dashboard');
@@ -445,7 +445,11 @@ export function useUsersDomain({
     }
   };
 
-  const resetUserFormState = () => {
+  const resetUserFormState = (options?: { suppressProfileAutoOpen?: boolean }) => {
+    if (options?.suppressProfileAutoOpen) {
+      skipProfileAutoOpenRef.current = true;
+    }
+
     resetUserForm();
     setModuleMode('list');
   };
@@ -493,7 +497,7 @@ export function useUsersDomain({
       && (moduleMode !== 'form' || editingId !== session.user.id)) {
       openMyProfile();
     }
-  }, [activeView, canEditOwnUser, editingId, moduleMode, session?.user.id]);
+  }, [activeView, canEditOwnUser, editingId, moduleMode, session?.user.id, session, openMyProfile]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
