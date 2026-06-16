@@ -10,6 +10,8 @@ export function useUserList() {
   const [successMessage, setSuccessMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState('recent');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const resetUsersPage = useCallback(() => setCurrentPage(1), []);
   const [debouncedSearchTerm] = useDebouncedValue(searchTerm, { onCommit: resetUsersPage });
   const [usersTotalItems, setUsersTotalItems] = useState(0);
@@ -30,6 +32,8 @@ export function useUserList() {
     setSuccessMessage('');
     setSearchTerm('');
     setCurrentPage(1);
+    setSortBy('recent');
+    setSortDirection('desc');
   };
 
   return {
@@ -45,6 +49,10 @@ export function useUserList() {
     setSearchTerm,
     currentPage,
     setCurrentPage,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
     debouncedSearchTerm,
     usersTotalItems,
     setUsersTotalItems,

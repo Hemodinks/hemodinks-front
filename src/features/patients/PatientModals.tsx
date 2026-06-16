@@ -37,6 +37,16 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
             </dd>
           </div>
           <div>
+            <dt>Tratamento médico</dt>
+            <dd>
+              {paciente.tratamentoMedico ? (
+                <CopyValue label="tratamento medico do paciente" value={paciente.tratamentoMedico} />
+              ) : (
+                '-'
+              )}
+            </dd>
+          </div>
+          <div>
             <dt>Fornecedor OPME</dt>
             <dd>
               {paciente.opmeFornecedor ? (

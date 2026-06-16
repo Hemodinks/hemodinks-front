@@ -20,6 +20,30 @@ th {
   letter-spacing: 0;
 }
 
+.sort-header-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+}
+
+.sort-header-button:hover {
+  color: var(--ink);
+}
+
+.sort-indicator {
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
 tbody tr:hover {
   background: var(--row-hover);
 }

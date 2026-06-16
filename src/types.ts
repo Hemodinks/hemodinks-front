@@ -45,6 +45,8 @@ export type ListQuery = {
   pageSize?: number;
   search?: string;
   profileId?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 };
 
 export type PacienteListQuery = ListQuery & {
@@ -60,6 +62,8 @@ export type CbhpmListQuery = {
   codigo?: string;
   procedimento?: string;
   porte?: string;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 };
 
 export type CbhpmGeral = {
@@ -229,6 +233,7 @@ export type Paciente = {
   modifiedAt?: string | null;
   nomePaciente: string;
   diagnostico?: string | null;
+  tratamentoMedico?: string | null;
   hospitalId?: number | null;
   hospital?: string | null;
   medicoUserId?: number | null;
@@ -263,6 +268,7 @@ export type PacienteFormData = {
   data: string | null;
   nomePaciente: string;
   diagnostico: string;
+  tratamentoMedico: string;
   cpf: string;
   email: string;
   telefone: string;

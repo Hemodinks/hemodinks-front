@@ -57,6 +57,7 @@ describe('patientUtils', () => {
       ...emptyPacienteForm,
       nomePaciente: 'Paciente Hemodinks',
       diagnostico: ' Diagnostico clinico de teste ',
+      tratamentoMedico: ' Tratamento conservador ',
       cpf: '529.982.247-25',
       telefone: '+55 (81) 99999-9999',
       hospitalId: 1,
@@ -81,6 +82,7 @@ describe('patientUtils', () => {
 
     expect(payload.cbhpmCodigo).toBe('10101012');
     expect(payload.diagnostico).toBe('Diagnostico clinico de teste');
+    expect(payload.tratamentoMedico).toBe('Tratamento conservador');
     expect(payload.opmeFornecedorId).toBe(1);
     expect(payload.opmeFornecedor).toBe('Promedom');
     expect(payload.procedimentos.map((item) => item.cbhpmCodigo)).toEqual(['10101012', '20101201']);
@@ -111,6 +113,7 @@ describe('patientUtils', () => {
       data: '2026-06-01T00:00:00Z',
       nomePaciente: 'Paciente Hemodinks',
       diagnostico: 'Diagnostico cadastrado',
+      tratamentoMedico: 'Tratamento cadastrado',
       hospitalId: 1,
       hospital: 'Santa Clara - Mater Dei',
       medicoUserId: 1,
@@ -149,6 +152,7 @@ describe('patientUtils', () => {
 
     expect(formData.cbhpmCodigo).toBe('10101012');
     expect(formData.diagnostico).toBe('Diagnostico cadastrado');
+    expect(formData.tratamentoMedico).toBe('Tratamento cadastrado');
     expect(formData.opmeFornecedorId).toBe(2);
     expect(formData.opmeFornecedor).toBe('AVL');
     expect(formData.procedimentos[0].cbhpmCodigo).toBe('10101012');

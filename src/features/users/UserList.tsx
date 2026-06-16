@@ -16,9 +16,12 @@ type UserListProps = {
   currentPage: number;
   totalPages: number;
   searchTerm: string;
+  sortBy: string;
+  sortDirection: 'asc' | 'desc';
   sessionToken: string;
   onSearchChange: (value: string) => void;
   onPageChange: (page: number | ((current: number) => number)) => void;
+  onSortChange: (field: string) => void;
   onRefresh: () => void;
   onOpenNewUserForm: () => void;
   onEditUser: (user: User) => void | Promise<void>;
@@ -38,9 +41,12 @@ export function UserList({
   currentPage,
   totalPages,
   searchTerm,
+  sortBy,
+  sortDirection,
   sessionToken,
   onSearchChange,
   onPageChange,
+  onSortChange,
   onRefresh,
   onOpenNewUserForm,
   onEditUser,
@@ -89,8 +95,18 @@ export function UserList({
           <table className="users-table">
             <thead>
               <tr>
-                <th>Nome</th>
-                <th>Perfil</th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('nome')} aria-sort={sortBy === 'nome' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Nome
+                    {sortBy === 'nome' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('perfil')} aria-sort={sortBy === 'perfil' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Perfil
+                    {sortBy === 'perfil' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
                 <th>Info</th>
                 <th>Contato</th>
                 <th aria-label="Acoes" />
