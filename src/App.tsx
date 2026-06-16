@@ -423,7 +423,7 @@ function AppContent() {
 
   const openDashboard = () => {
     if (activeView === 'profile') {
-      resetUserFormState();
+      resetUserFormState({ suppressProfileAutoOpen: true });
     }
 
     if (!canAccessDashboard) {
@@ -437,7 +437,7 @@ function AppContent() {
 
   const openAgenda = () => {
     if (activeView === 'profile') {
-      resetUserFormState();
+      resetUserFormState({ suppressProfileAutoOpen: true });
     }
 
     if (!canAccessAgenda) {
@@ -451,7 +451,7 @@ function AppContent() {
 
   const openPatientsListFromMenu = () => {
     if (activeView === 'profile') {
-      resetUserFormState();
+      resetUserFormState({ suppressProfileAutoOpen: true });
     }
 
     openPatientsList();
