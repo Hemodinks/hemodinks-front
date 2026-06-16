@@ -65,6 +65,8 @@ const basePaciente: Paciente = {
   userId: 20,
   data: '2026-06-01T00:00:00Z',
   nomePaciente: 'Paciente Hemodinks',
+  diagnostico: 'Diagnostico inicial',
+  tratamentoMedico: 'Tratamento inicial',
   hospitalId: 1,
   hospital: 'Santa Clara - Mater Dei',
   medicoUserId: 1,
@@ -852,6 +854,7 @@ describe('App', () => {
       data: '2026-06-04',
       nomePaciente: 'Novo Paciente',
       diagnostico: '',
+      tratamentoMedico: '',
       cpf: '',
       email: '',
       telefone: '',
@@ -1091,7 +1094,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: /agenda/i })).toBeInTheDocument();
   });
 
-  it('restringe controller ao cadastro e exportacao de pacientes', async () => {
+  it('permite controller editar pacientes e restringe usuarios e agenda', async () => {
     mockSession({
       perfilId: 4,
       perfilNome: 'Controller',
@@ -1111,7 +1114,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /exportar xlsx/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar pdf/i })).toBeInTheDocument();
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /visualizar paciente hemodinks/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();
   });
 

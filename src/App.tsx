@@ -164,7 +164,7 @@ function AppContent() {
   const canAccessUsers = isAdmin;
   const canEditOwnUser = isMedical;
   const canCreatePatients = isAdmin || isController || isMedical;
-  const canEditPatients = isAdmin || isMedical;
+  const canEditPatients = isAdmin || isMedical || isController;
   const canDeletePatients = isAdmin;
   const patientReadOnly = isPatient;
   const canUseDashboardRoute = canAccessDashboard;
