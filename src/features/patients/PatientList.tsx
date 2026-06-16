@@ -282,15 +282,15 @@ export function PatientList({
                     </td>
                     <td data-label="Hospital">{paciente.hospital || '-'}</td>
                     <td data-label="Cirurgiao">{paciente.medico || '-'}</td>
-                    <td data-label="Auxiliares">
+                    {/* <td data-label="Auxiliares">
                       {[paciente.medicoAuxiliar1, paciente.medicoAuxiliar2].filter(Boolean).join(' / ') || '-'}
-                    </td>
-                    <td data-label="Convenio">{paciente.convenio || '-'}</td>
-                    <td data-label="Status Pago">
+                    </td> */}
+                    {/* <td data-label="Convenio">{paciente.convenio || '-'}</td> */}
+                    {/* <td data-label="Status Pago">
                       <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
                         {paciente.statusPago ? 'Pago' : 'Pendente'}
                       </span>
-                    </td>
+                    </td> */}
                     <td data-label="Arquivos">
                       {(paciente.arquivosCount ?? paciente.arquivos.length) > 0 ? (
                         <button
