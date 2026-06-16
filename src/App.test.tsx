@@ -1041,6 +1041,56 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: 'Meu cadastro', level: 1 })).not.toBeInTheDocument();
   });
 
+  it('permite ao medico navegar pelo menu enquanto o proprio cadastro ainda carrega', async () => {
+    const user = userEvent.setup();
+    let resolveProfile: (user: User) => void = () => {};
+    mockSession({
+      perfilId: 2,
+      perfilNome: 'Medicos',
+      nome: 'Dra. Ana',
+    });
+    vi.mocked(api.getUser).mockReturnValue(new Promise((resolve) => {
+      resolveProfile = resolve;
+    }));
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+
+    const sidebar = screen.getByLabelText('Sessao ativa');
+    await user.click(within(sidebar).getByRole('button', { name: /^painel$/i }));
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+
+    resolveProfile({
+      ...baseUser,
+      id: 99,
+      nome: 'Dra. Ana',
+      perfilId: 2,
+      perfilNome: 'Medicos',
+    });
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Meu cadastro', level: 1 })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+    await user.click(within(sidebar).getByRole('button', { name: /pacientes/i }));
+    expect(await screen.findByRole('heading', { name: /pacientes/i })).toBeInTheDocument();
+
+    await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /^meu cadastro$/i }));
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+    await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /agenda/i }));
+    expect(await screen.findByRole('heading', { name: /agenda/i })).toBeInTheDocument();
+  });
+
   it('restringe controller ao cadastro e exportacao de pacientes', async () => {
     mockSession({
       perfilId: 4,

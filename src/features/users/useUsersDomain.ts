@@ -74,6 +74,7 @@ export function useUsersDomain({
   const [selectedInfoUser, setSelectedInfoUser] = useState<User | null>(null);
   const [selectedContactUser, setSelectedContactUser] = useState<User | null>(null);
   const skipProfileAutoOpenRef = useRef(false);
+  const userFormRequestRef = useRef(0);
 
   const {
     users,
@@ -183,7 +184,13 @@ export function useUsersDomain({
     await usersQuery.refetch();
   };
 
+  const cancelUserFormRequest = () => {
+    userFormRequestRef.current += 1;
+    setFormLoading(false);
+  };
+
   const resetUsersState = () => {
+    cancelUserFormRequest();
     resetUserListState();
     setSelectedInfoUser(null);
     setSelectedContactUser(null);
@@ -196,6 +203,8 @@ export function useUsersDomain({
       return;
     }
 
+    const requestId = userFormRequestRef.current + 1;
+    userFormRequestRef.current = requestId;
     applyUserToForm(user);
     setEditingUserDetails(user);
     setFormError('');
@@ -207,12 +216,22 @@ export function useUsersDomain({
     try {
       setFormLoading(true);
       const details = await getUser(user.id, session.token);
+      if (userFormRequestRef.current !== requestId) {
+        return;
+      }
+
       setEditingUserDetails(details);
       applyUserToForm(details);
     } catch (error) {
+      if (userFormRequestRef.current !== requestId) {
+        return;
+      }
+
       setFormError(getErrorMessage(error));
     } finally {
-      setFormLoading(false);
+      if (userFormRequestRef.current === requestId) {
+        setFormLoading(false);
+      }
     }
   };
 
@@ -436,6 +455,7 @@ export function useUsersDomain({
   };
 
   const closeUserForm = () => {
+    cancelUserFormRequest();
     resetUserForm();
     setModuleMode('list');
 
@@ -450,6 +470,7 @@ export function useUsersDomain({
       skipProfileAutoOpenRef.current = true;
     }
 
+    cancelUserFormRequest();
     resetUserForm();
     setModuleMode('list');
   };
@@ -497,7 +518,7 @@ export function useUsersDomain({
       && (moduleMode !== 'form' || editingId !== session.user.id)) {
       openMyProfile();
     }
-  }, [activeView, canEditOwnUser, editingId, moduleMode, session?.user.id, session, openMyProfile]);
+  }, [activeView, canEditOwnUser, editingId, moduleMode, session?.user.id]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
