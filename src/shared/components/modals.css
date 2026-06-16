@@ -37,6 +37,14 @@
   overflow: hidden;
 }
 
+.patient-observacoes-modal {
+  width: min(760px, calc(100vw - 40px));
+  max-height: min(86vh, 840px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .cbhpm-modal {
   width: min(1040px, calc(100vw - 48px));
   max-height: min(88vh, 820px);
@@ -308,6 +316,110 @@
   font-weight: 900;
 }
 
+.patient-observation-reply-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+.patient-observation-reply-banner strong {
+  color: var(--ink);
+}
+
+.patient-observation-reply-banner p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.patient-observation-compose {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.patient-observation-compose-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.patient-observation-submit {
+  width: auto;
+}
+
+.patient-observation-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0 6px 0 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.patient-observation-list li {
+  display: grid;
+}
+
+.patient-observation-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+.patient-observation-card p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.patient-observation-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.patient-observation-author,
+.patient-observation-destination {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.patient-observation-author {
+  color: var(--ink);
+}
+
+.patient-observation-destination {
+  color: var(--muted);
+}
+
+.patient-observation-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.patient-observation-reply-action {
+  width: auto;
+  min-height: 36px;
+}
+
 .detail-active {
   color: #047857 !important;
 }
@@ -462,6 +574,24 @@
 
 .attachment-button:hover {
   background: var(--action-secondary-hover);
+}
+
+.patient-observation-button {
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--action-accent) 82%, black);
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--action-accent);
+  color: var(--action-text);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-observation-button:hover {
+  background: var(--action-accent-hover);
 }
 
 .modal-file-list li {

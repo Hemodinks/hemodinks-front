@@ -566,6 +566,7 @@ textarea::placeholder {
 
 .module-form-grid .profile-photo-field,
 .module-form-grid .diagnosis-field,
+.module-form-grid .patient-observation-field,
 .module-form-grid .procedure-field,
 .module-form-grid .two-column-fields,
 .module-form-grid .toggle-row,
@@ -607,6 +608,28 @@ textarea::placeholder {
 .profile-photo-field {
   display: grid;
   gap: 9px;
+}
+
+.patient-observation-field {
+  display: grid;
+  gap: 10px;
+}
+
+.patient-observation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.patient-observation-action {
+  width: auto;
+  min-height: 36px;
+}
+
+.observation-textarea {
+  display: grid;
+  gap: 7px;
 }
 
 .procedure-field {

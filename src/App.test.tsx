@@ -31,7 +31,10 @@ vi.mock('./api', () => ({
   getUser: vi.fn(),
   getUserProfilePhoto: vi.fn(),
   getPaciente: vi.fn(),
+  getPacienteObservacoes: vi.fn(),
   getPacientes: vi.fn(),
+  createPacienteObservacao: vi.fn(),
+  markPacienteObservacoesAsRead: vi.fn(),
   createUser: vi.fn(),
   createPaciente: vi.fn(),
   updatePaciente: vi.fn(),
@@ -208,7 +211,10 @@ describe('App', () => {
       { idFornecedor: 4, fornecedor: 'Spyner' },
     ]);
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
+    vi.mocked(api.getPacienteObservacoes).mockResolvedValue([]);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
+    vi.mocked(api.createPacienteObservacao).mockResolvedValue({ pacienteId: basePaciente.id, createdCount: 1 });
+    vi.mocked(api.markPacienteObservacoesAsRead).mockResolvedValue({ pacienteId: basePaciente.id, updatedCount: 0 });
     vi.mocked(api.getAllCbhpmGeral).mockResolvedValue([]);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     Object.defineProperty(URL, 'createObjectURL', {

@@ -138,6 +138,7 @@ export type DashboardSummary = {
   pendingPaymentsCount: number;
   patientFilesCount: number;
   upcomingEventsCount: number;
+  unreadObservationCount?: number;
 };
 
 export type DashboardNotification = {
@@ -147,9 +148,11 @@ export type DashboardNotification = {
   mensagem: string;
   pacienteId: number;
   eventId?: number | null;
+  observacaoId?: number | null;
   nomePaciente: string;
   medico?: string | null;
   procedimento?: string | null;
+  autor?: string | null;
   data?: string | null;
 };
 
@@ -289,6 +292,7 @@ export type Paciente = {
   dataNascimento: string;
   ativo: boolean;
   arquivosCount: number;
+  observacoesNaoLidasCount?: number;
   arquivos: PacienteArquivo[];
 };
 
@@ -323,4 +327,38 @@ export type PacienteFormData = {
   repasseGlosa: string;
   statusPago: boolean;
   ativo: boolean;
+  novaObservacao: string;
+};
+
+export type PacientePayload = Omit<PacienteFormData, 'novaObservacao'>;
+
+export type PacienteObservacao = {
+  id: number;
+  pacienteId: number;
+  observacaoPaiId?: number | null;
+  texto: string;
+  dataCadastro: string;
+  dataLeitura?: string | null;
+  autorUserId: number;
+  autorNome: string;
+  autorPerfilId: number;
+  autorPerfilNome: string;
+  destinatarioUserId: number;
+  destinatarioNome: string;
+  destinatarioPerfilId: number;
+  destinatarioPerfilNome: string;
+  nomePaciente: string;
+  medicoUserId?: number | null;
+  medico?: string | null;
+  medicoAuxiliar1UserId?: number | null;
+  medicoAuxiliar1?: string | null;
+  medicoAuxiliar2UserId?: number | null;
+  medicoAuxiliar2?: string | null;
+  foiLida: boolean;
+  enviadaPorMim: boolean;
+};
+
+export type CreatePacienteObservacaoPayload = {
+  texto: string;
+  observacaoPaiId?: number | null;
 };

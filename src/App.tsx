@@ -46,6 +46,7 @@ const MedicalGroupsPage = lazy(() => import('./features/medicalGroups/MedicalGro
 const CbhpmLookupModal = lazy(() => import('./features/patients/CbhpmLookupModal').then((module) => ({ default: module.CbhpmLookupModal })));
 const PatientInfoModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientInfoModal })));
 const PatientFilesModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientFilesModal })));
+const PatientObservacoesModal = lazy(() => import('./features/patients/PatientObservacoesModal').then((module) => ({ default: module.PatientObservacoesModal })));
 const PatientsPage = lazy(() => import('./features/patients/PatientsPage').then((module) => ({ default: module.PatientsPage })));
 const UsersPage = lazy(() => import('./features/users/UsersPage').then((module) => ({ default: module.UsersPage })));
 const PasswordModal = lazy(() => import('./shared/components/PasswordModal').then((module) => ({ default: module.PasswordModal })));
@@ -169,6 +170,7 @@ function AppContent() {
   const canCreatePatients = isAdmin || isController || isMedical;
   const canEditPatients = isAdmin || isMedical || isController;
   const canDeletePatients = isAdmin;
+  const canManagePatientObservacoes = isAdmin || isMedical || isController;
   const patientReadOnly = isPatient;
   const canUseDashboardRoute = canAccessDashboard;
   const canUseUsersRoute = canAccessUsers;
@@ -307,6 +309,15 @@ function AppContent() {
     selectedPatientFiles,
     patientFilesModalLoading,
     patientFilesModalError,
+    selectedPatientObservacoes,
+    patientObservacoes,
+    patientObservacoesLoading,
+    patientObservacoesSaving,
+    patientObservacoesError,
+    patientObservationDraft,
+    setPatientObservationDraft,
+    patientObservationReplyTo,
+    setPatientObservationReplyTo,
     medicalUsers,
     hospitais,
     hospitaisError,
@@ -340,6 +351,9 @@ function AppContent() {
     handleEditPaciente,
     handleDeletePaciente,
     handleOpenPacienteFiles,
+    handleOpenPacienteObservacoes,
+    handleOpenPacienteObservacoesById,
+    handleSubmitPacienteObservacao,
     handleOpenCbhpmModal,
     handleSelectCbhpm,
     handleRemovePacienteProcedimento,
@@ -350,6 +364,7 @@ function AppContent() {
     refreshPacientes,
     refreshCbhpm,
     closePatientFilesModal,
+    closePatientObservacoesModal,
   } = patientsDomain;
   const {
     groups,
@@ -604,9 +619,10 @@ function AppContent() {
   const pendingPaymentsCount = dashboardSummary?.pendingPaymentsCount ?? 0;
   const patientFilesCount = dashboardSummary?.patientFilesCount ?? 0;
   const upcomingEventsCount = dashboardSummary?.upcomingEventsCount ?? 0;
+  const unreadObservationCount = dashboardSummary?.unreadObservationCount ?? 0;
   const notificationCount = notificationsOpen && notifications.length
     ? notifications.length
-    : pendingPaymentsCount + upcomingEventsCount;
+    : pendingPaymentsCount + upcomingEventsCount + unreadObservationCount;
   const usersCount = dashboardSummary?.usersCount ?? usersTotalItems;
   const pacientesCount = dashboardSummary?.pacientesCount ?? pacientesTotalItems;
 
@@ -711,6 +727,7 @@ function AppContent() {
       canCreatePatients={canCreatePatients}
       canEditPatients={canEditPatients}
       canDeletePatients={canDeletePatients}
+      canManageObservacoes={canManagePatientObservacoes}
       patientReadOnly={patientReadOnly}
       editingPacienteId={editingPacienteId}
       editingPaciente={editingPaciente}
@@ -762,6 +779,7 @@ function AppContent() {
       handleEditPaciente={handleEditPaciente}
       handleDeletePaciente={handleDeletePaciente}
       handleOpenPacienteFiles={handleOpenPacienteFiles}
+      handleOpenPacienteObservacoes={handleOpenPacienteObservacoes}
       setSelectedPatientInfo={setSelectedPatientInfo}
       clearPacienteFilters={clearPacienteFilters}
       refreshPacientes={refreshPacientes}
@@ -825,6 +843,10 @@ function AppContent() {
           loading={notificationsLoading}
           error={notificationsError}
           totalCount={notificationCount}
+          onOpenObservation={(pacienteId) => {
+            setNotificationsOpen(false);
+            void handleOpenPacienteObservacoesById(pacienteId);
+          }}
           onClose={() => setNotificationsOpen(false)}
         />
       )}
@@ -862,6 +884,23 @@ function AppContent() {
           loading={patientFilesModalLoading}
           error={patientFilesModalError}
           onClose={closePatientFilesModal}
+        />
+      )}
+
+      {selectedPatientObservacoes && (
+        <PatientObservacoesModal
+          paciente={selectedPatientObservacoes}
+          observacoes={patientObservacoes}
+          loading={patientObservacoesLoading}
+          saving={patientObservacoesSaving}
+          error={patientObservacoesError}
+          draft={patientObservationDraft}
+          replyTo={patientObservationReplyTo}
+          onDraftChange={setPatientObservationDraft}
+          onReplyToChange={setPatientObservationReplyTo}
+          onRefresh={() => void handleOpenPacienteObservacoes(selectedPatientObservacoes)}
+          onSubmit={() => void handleSubmitPacienteObservacao()}
+          onClose={closePatientObservacoesModal}
         />
       )}
 
