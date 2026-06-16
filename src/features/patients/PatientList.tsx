@@ -33,6 +33,8 @@ type PatientListProps = {
   pacienteCurrentPage: number;
   pacienteTotalPages: number;
   pacienteSearchTerm: string;
+  sortBy: string;
+  sortDirection: 'asc' | 'desc';
   pacienteFilters: PacienteFilters;
   pacienteExportLoading: PacienteExportFormat | null;
   pacienteExportScope: PacienteExportScope;
@@ -49,6 +51,7 @@ type PatientListProps = {
   onClearFilters: () => void;
   onExportScopeChange: (scope: PacienteExportScope) => void;
   onPageChange: (page: number | ((current: number) => number)) => void;
+  onSortChange: (field: string) => void;
   onRefresh: () => void;
   onOpenNewPacienteForm: () => void;
   onExportPacientes: (format: PacienteExportFormat) => void | Promise<void>;
@@ -69,6 +72,8 @@ export function PatientList({
   pacienteCurrentPage,
   pacienteTotalPages,
   pacienteSearchTerm,
+  sortBy,
+  sortDirection,
   pacienteFilters,
   pacienteExportLoading,
   pacienteExportScope,
@@ -85,6 +90,7 @@ export function PatientList({
   onClearFilters,
   onExportScopeChange,
   onPageChange,
+  onSortChange,
   onRefresh,
   onOpenNewPacienteForm,
   onExportPacientes,
@@ -203,21 +209,44 @@ export function PatientList({
           <table className="patients-table">
             <thead>
               <tr>
-                <th>Paciente</th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('nome')} aria-sort={sortBy === 'nome' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Paciente
+                    {sortBy === 'nome' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
                 <th>Info</th>
-                <th>Hospital</th>
-                <th>Cirurgiao</th>
-                <th>Auxiliares</th>
-                <th>Convenio</th>
-                <th>Status Pago</th>
-                <th>Arquivos</th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('hospital')} aria-sort={sortBy === 'hospital' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Hospital
+                    {sortBy === 'hospital' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('medico')} aria-sort={sortBy === 'medico' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Cirurgiao
+                    {sortBy === 'medico' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('status')} aria-sort={sortBy === 'status' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Status Pago
+                    {sortBy === 'status' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('arquivos')} aria-sort={sortBy === 'arquivos' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Arquivos
+                    {sortBy === 'arquivos' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
                 <th aria-label="Acoes" />
               </tr>
             </thead>
             <tbody>
               {pacientesLoading ? (
                 <tr>
-                  <td colSpan={9} className="empty-row">Carregando pacientes...</td>
+                  <td colSpan={7} className="empty-row">Carregando pacientes...</td>
                 </tr>
               ) : pacientes.length ? (
                 pacientes.map((paciente) => (
@@ -241,10 +270,6 @@ export function PatientList({
                     </td>
                     <td data-label="Hospital">{paciente.hospital || '-'}</td>
                     <td data-label="Cirurgiao">{paciente.medico || '-'}</td>
-                    <td data-label="Auxiliares">
-                      {[paciente.medicoAuxiliar1, paciente.medicoAuxiliar2].filter(Boolean).join(' / ') || '-'}
-                    </td>
-                    <td data-label="Convenio">{paciente.convenio || '-'}</td>
                     <td data-label="Status Pago">
                       <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
                         {paciente.statusPago ? 'Pago' : 'Pendente'}
@@ -295,7 +320,7 @@ export function PatientList({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="empty-row">Nenhum paciente encontrado.</td>
+                  <td colSpan={7} className="empty-row">Nenhum paciente encontrado.</td>
                 </tr>
               )}
             </tbody>

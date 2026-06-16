@@ -25,10 +25,13 @@ type UsersPageProps = {
   currentPage: number;
   totalPages: number;
   searchTerm: string;
+  sortBy: string;
+  sortDirection: 'asc' | 'desc';
   sessionToken: string;
   setFormData: Dispatch<SetStateAction<UserFormData>>;
   setSearchTerm: (value: string) => void;
   setCurrentPage: (page: number | ((current: number) => number)) => void;
+  onSortChange: (field: string) => void;
   closeUserForm: () => void;
   openNewUserForm: () => void;
   handleSubmitUser: (event: FormEvent<HTMLFormElement>) => void;
@@ -66,10 +69,13 @@ export function UsersPage({
   currentPage,
   totalPages,
   searchTerm,
+  sortBy,
+  sortDirection,
   sessionToken,
   setFormData,
   setSearchTerm,
   setCurrentPage,
+  onSortChange,
   closeUserForm,
   openNewUserForm,
   handleSubmitUser,
@@ -120,9 +126,12 @@ export function UsersPage({
           currentPage={currentPage}
           totalPages={totalPages}
           searchTerm={searchTerm}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
           sessionToken={sessionToken}
           onSearchChange={setSearchTerm}
           onPageChange={setCurrentPage}
+          onSortChange={onSortChange}
           onRefresh={refreshUsers}
           onOpenNewUserForm={openNewUserForm}
           onEditUser={handleEditUser}

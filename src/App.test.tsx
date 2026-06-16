@@ -65,6 +65,8 @@ const basePaciente: Paciente = {
   userId: 20,
   data: '2026-06-01T00:00:00Z',
   nomePaciente: 'Paciente Hemodinks',
+  diagnostico: 'Diagnostico inicial',
+  tratamentoMedico: 'Tratamento inicial',
   hospitalId: 1,
   hospital: 'Santa Clara - Mater Dei',
   medicoUserId: 1,
@@ -248,7 +250,7 @@ describe('App', () => {
     expect(screen.getByAltText('Foto de George Marcone')).toBeInTheDocument();
     expect(within(userRow).queryByText('+55 (81) 99999-9999')).not.toBeInTheDocument();
     expect(within(userRow).queryByText('529.982.247-25')).not.toBeInTheDocument();
-    expect(api.getUsers).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '' });
+    expect(api.getUsers).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
 
     await user.click(within(userRow).getByLabelText('Contato de Ana Hemodinks'));
 
@@ -588,7 +590,7 @@ describe('App', () => {
     await user.type(screen.getByPlaceholderText('Buscar'), 'carlos');
 
     await waitFor(() => {
-      expect(api.getUsers).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: 'carlos' });
+      expect(api.getUsers).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: 'carlos', sortBy: 'recent', sortDirection: 'desc' });
     });
 
     expect(await screen.findByText('Carlos Hemodinks')).toBeInTheDocument();
@@ -652,8 +654,11 @@ describe('App', () => {
         totalItems={0}
         visibleStart={0}
         visibleEnd={0}
+        sortBy="codigo"
+        sortDirection="asc"
         onFiltersChange={vi.fn()}
         onPageChange={vi.fn()}
+        onSortChange={vi.fn()}
         onRefresh={vi.fn()}
         onSelect={onSelect}
         onClose={vi.fn()}
@@ -692,8 +697,11 @@ describe('App', () => {
         totalItems={0}
         visibleStart={0}
         visibleEnd={0}
+        sortBy="codigo"
+        sortDirection="asc"
         onFiltersChange={vi.fn()}
         onPageChange={vi.fn()}
+        onSortChange={vi.fn()}
         onRefresh={vi.fn()}
         onSelect={onSelect}
         onClose={vi.fn()}
@@ -730,8 +738,11 @@ describe('App', () => {
           totalItems={0}
           visibleStart={0}
           visibleEnd={0}
+          sortBy="codigo"
+          sortDirection="asc"
           onFiltersChange={setFilters}
           onPageChange={vi.fn()}
+          onSortChange={vi.fn()}
           onRefresh={vi.fn()}
           onSelect={vi.fn()}
           onClose={() => vi.fn()}
@@ -802,7 +813,7 @@ describe('App', () => {
 
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(screen.getByText('Pago')).toBeInTheDocument();
-    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '' });
+    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
 
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
 
@@ -822,14 +833,17 @@ describe('App', () => {
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     fireEvent.change(within(cbhpmDialog).getByLabelText('Codigo'), { target: { value: '1010101' } });
     expect(await within(cbhpmDialog).findByText('10101012')).toBeInTheDocument();
-    await user.click(within(cbhpmDialog).getAllByRole('button', { name: /adicionar/i })[0]);
-    expect(screen.getByText('Valor referência: R$ 120,00')).toBeInTheDocument();
+    const firstProcedureRow = within(cbhpmDialog).getByText('10101012').closest('tr');
+    expect(firstProcedureRow).not.toBeNull();
+    await user.click(within(firstProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const secondCbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     const secondCodigoField = within(secondCbhpmDialog).getByLabelText('Codigo');
     fireEvent.change(secondCodigoField, { target: { value: '1010201' } });
     expect(await within(secondCbhpmDialog).findByText('10102019')).toBeInTheDocument();
-    await user.click(within(secondCbhpmDialog).getAllByRole('button', { name: /adicionar/i })[0]);
+    const secondProcedureRow = within(secondCbhpmDialog).getByText('10102019').closest('tr');
+    expect(secondProcedureRow).not.toBeNull();
+    await user.click(within(secondProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
     await user.type(screen.getByLabelText('Valor recebido/pago'), '200000');
     await user.type(screen.getByLabelText('Glosa'), '1250');
     expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 2.000,00');
@@ -840,6 +854,7 @@ describe('App', () => {
       data: '2026-06-04',
       nomePaciente: 'Novo Paciente',
       diagnostico: '',
+      tratamentoMedico: '',
       cpf: '',
       email: '',
       telefone: '',
@@ -866,6 +881,12 @@ describe('App', () => {
           cbhpmPorte: '2B',
           procedimento: 'Consulta',
           valorReferencia: 120,
+        },
+        {
+          cbhpmCodigo: '10102019',
+          cbhpmPorte: '2A',
+          procedimento: 'Visita hospitalar',
+          valorReferencia: 180,
         },
       ],
       autorizacao: '',
@@ -901,11 +922,45 @@ describe('App', () => {
         medico: 'Ana Hemodinks',
         convenio: 'Particular',
         procedimento: 'Consulta',
+        sortBy: 'recent',
+        sortDirection: 'desc',
       });
     });
   });
 
-  it('bloqueia modulo de usuarios e deixa pacientes somente leitura para medico', async () => {
+  it('permite ordenar usuarios pelos cabeçalhos da tabela', async () => {
+    const user = userEvent.setup();
+    mockSession();
+
+    render(<App />);
+
+    await openUsersModule(user);
+    expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^nome$/i }));
+
+    await waitFor(() => {
+      expect(api.getUsers).toHaveBeenLastCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'nome', sortDirection: 'asc' });
+    });
+  });
+
+  it('permite ordenar pacientes pelos cabeçalhos da tabela', async () => {
+    const user = userEvent.setup();
+    mockSession();
+
+    render(<App />);
+
+    await openPatientsModule(user);
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^hospital$/i }));
+
+    await waitFor(() => {
+      expect(api.getPacientes).toHaveBeenLastCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'hospital', sortDirection: 'asc' });
+    });
+  });
+
+  it('libera pacientes para medico e oculta o combo de medicos', async () => {
     const user = userEvent.setup();
     mockSession({
       perfilId: 2,
@@ -922,20 +977,19 @@ describe('App', () => {
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
-    expect(screen.queryByRole('button', { name: /novo paciente/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
     expect(screen.queryByLabelText('Cirurgiao')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Convenio')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Procedimento')).not.toBeInTheDocument();
-    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '' });
+    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
 
-    await user.click(screen.getByRole('button', { name: /visualizar paciente hemodinks/i }));
+    await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
 
-    expect(await screen.findByRole('heading', { name: 'Visualizar paciente' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Cirurgião')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Médico auxiliar 1')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Médico auxiliar 2')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /salvar paciente/i })).not.toBeInTheDocument();
-    expect(api.updatePaciente).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
   });
 
   it('redireciona medico que tenta acessar usuarios pela URL', async () => {
@@ -955,7 +1009,92 @@ describe('App', () => {
     expect(api.getUsers).not.toHaveBeenCalled();
   });
 
-  it('restringe controller ao cadastro e exportacao de pacientes', async () => {
+  it('permite ao medico fechar o proprio cadastro e voltar ao painel', async () => {
+    const user = userEvent.setup();
+    mockSession({
+      perfilId: 2,
+      perfilNome: 'Medicos',
+      nome: 'Dra. Ana',
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/meu-cadastro');
+
+    await user.click(screen.getByRole('button', { name: /voltar para lista/i }));
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Meu cadastro', level: 1 })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /pacientes/i }));
+
+    expect(await screen.findByRole('heading', { name: /pacientes/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/pacientes');
+    });
+    expect(screen.queryByRole('heading', { name: 'Meu cadastro', level: 1 })).not.toBeInTheDocument();
+  });
+
+  it('permite ao medico navegar pelo menu enquanto o proprio cadastro ainda carrega', async () => {
+    const user = userEvent.setup();
+    let resolveProfile: (user: User) => void = () => {};
+    mockSession({
+      perfilId: 2,
+      perfilNome: 'Medicos',
+      nome: 'Dra. Ana',
+    });
+    vi.mocked(api.getUser).mockReturnValue(new Promise((resolve) => {
+      resolveProfile = resolve;
+    }));
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+
+    const sidebar = screen.getByLabelText('Sessao ativa');
+    await user.click(within(sidebar).getByRole('button', { name: /^painel$/i }));
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+
+    resolveProfile({
+      ...baseUser,
+      id: 99,
+      nome: 'Dra. Ana',
+      perfilId: 2,
+      perfilNome: 'Medicos',
+    });
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Meu cadastro', level: 1 })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+    await user.click(within(sidebar).getByRole('button', { name: /pacientes/i }));
+    expect(await screen.findByRole('heading', { name: /pacientes/i })).toBeInTheDocument();
+
+    await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /^meu cadastro$/i }));
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+    await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /agenda/i }));
+    expect(await screen.findByRole('heading', { name: /agenda/i })).toBeInTheDocument();
+  });
+
+  it('permite controller editar pacientes e restringe usuarios e agenda', async () => {
     mockSession({
       perfilId: 4,
       perfilNome: 'Controller',
@@ -975,7 +1114,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /exportar xlsx/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar pdf/i })).toBeInTheDocument();
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /visualizar paciente hemodinks/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();
   });
 

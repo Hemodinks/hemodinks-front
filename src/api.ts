@@ -114,6 +114,14 @@ function toQueryString(query?: ListQuery | PacienteListQuery | CbhpmListQuery) {
     params.set('porte', query.porte.trim());
   }
 
+  if (query && 'sortBy' in query && query.sortBy?.trim()) {
+    params.set('sortBy', query.sortBy.trim());
+  }
+
+  if (query && 'sortDirection' in query && query.sortDirection) {
+    params.set('sortDirection', query.sortDirection);
+  }
+
   const value = params.toString();
   return value ? `?${value}` : '';
 }

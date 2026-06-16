@@ -1,4 +1,4 @@
-import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   createUser,
@@ -73,6 +73,8 @@ export function useUsersDomain({
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedInfoUser, setSelectedInfoUser] = useState<User | null>(null);
   const [selectedContactUser, setSelectedContactUser] = useState<User | null>(null);
+  const skipProfileAutoOpenRef = useRef(false);
+  const userFormRequestRef = useRef(0);
 
   const {
     users,
@@ -87,6 +89,10 @@ export function useUsersDomain({
     setSearchTerm,
     currentPage,
     setCurrentPage,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
     debouncedSearchTerm,
     usersTotalItems,
     setUsersTotalItems,
@@ -121,7 +127,9 @@ export function useUsersDomain({
     page: currentPage,
     pageSize: PAGE_SIZE,
     search: debouncedSearchTerm,
-  }), [currentPage, debouncedSearchTerm]);
+    sortBy,
+    sortDirection,
+  }), [currentPage, debouncedSearchTerm, sortBy, sortDirection]);
   const usersQueryEnabled = Boolean(session && !session.user.precisaTrocarSenha && canAccessUsers && activeView === 'users' && moduleMode === 'list');
   const usersQuery = useQuery({
     queryKey: queryKeys.users(session?.token ?? '', usersQueryParams),
@@ -176,7 +184,13 @@ export function useUsersDomain({
     await usersQuery.refetch();
   };
 
+  const cancelUserFormRequest = () => {
+    userFormRequestRef.current += 1;
+    setFormLoading(false);
+  };
+
   const resetUsersState = () => {
+    cancelUserFormRequest();
     resetUserListState();
     setSelectedInfoUser(null);
     setSelectedContactUser(null);
@@ -189,6 +203,8 @@ export function useUsersDomain({
       return;
     }
 
+    const requestId = userFormRequestRef.current + 1;
+    userFormRequestRef.current = requestId;
     applyUserToForm(user);
     setEditingUserDetails(user);
     setFormError('');
@@ -200,12 +216,22 @@ export function useUsersDomain({
     try {
       setFormLoading(true);
       const details = await getUser(user.id, session.token);
+      if (userFormRequestRef.current !== requestId) {
+        return;
+      }
+
       setEditingUserDetails(details);
       applyUserToForm(details);
     } catch (error) {
+      if (userFormRequestRef.current !== requestId) {
+        return;
+      }
+
       setFormError(getErrorMessage(error));
     } finally {
-      setFormLoading(false);
+      if (userFormRequestRef.current === requestId) {
+        setFormLoading(false);
+      }
     }
   };
 
@@ -407,14 +433,14 @@ export function useUsersDomain({
   };
 
   const openUsersList = () => {
+    resetUserFormState({ suppressProfileAutoOpen: true });
+
     if (!canAccessUsers) {
       navigateToView('dashboard');
-      setModuleMode('list');
       return;
     }
 
     navigateToView('users');
-    setModuleMode('list');
   };
 
   const openNewUserForm = () => {
@@ -429,18 +455,32 @@ export function useUsersDomain({
   };
 
   const closeUserForm = () => {
+    cancelUserFormRequest();
     resetUserForm();
     setModuleMode('list');
 
     if (!canAccessUsers) {
+      skipProfileAutoOpenRef.current = true;
       navigateToView('dashboard');
     }
+  };
+
+  const resetUserFormState = (options?: { suppressProfileAutoOpen?: boolean }) => {
+    if (options?.suppressProfileAutoOpen) {
+      skipProfileAutoOpenRef.current = true;
+    }
+
+    cancelUserFormRequest();
+    resetUserForm();
+    setModuleMode('list');
   };
 
   const openMyProfile = () => {
     if (!session || !canEditOwnUser) {
       return;
     }
+
+    skipProfileAutoOpenRef.current = false;
 
     void handleEditUser({
       id: session.user.id,
@@ -467,9 +507,14 @@ export function useUsersDomain({
   };
 
   useEffect(() => {
-    if (activeView === 'profile'
-      && canEditOwnUser
+    if (activeView !== 'profile') {
+      skipProfileAutoOpenRef.current = false;
+      return;
+    }
+
+    if (canEditOwnUser
       && session
+      && !skipProfileAutoOpenRef.current
       && (moduleMode !== 'form' || editingId !== session.user.id)) {
       openMyProfile();
     }
@@ -491,6 +536,10 @@ export function useUsersDomain({
     setSearchTerm,
     currentPage,
     setCurrentPage,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
     debouncedSearchTerm,
     usersTotalItems,
     usersTotalPages,
@@ -528,6 +577,7 @@ export function useUsersDomain({
     openUsersList,
     openNewUserForm,
     closeUserForm,
+    resetUserFormState,
     openMyProfile,
     refreshUsers,
   };

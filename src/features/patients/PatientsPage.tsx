@@ -27,6 +27,8 @@ type PatientsPageProps = {
   pacienteCurrentPage: number;
   pacienteTotalPages: number;
   pacienteSearchTerm: string;
+  sortBy: string;
+  sortDirection: 'asc' | 'desc';
   pacienteFilters: PacienteFilters;
   pacienteExportLoading: PacienteExportFormat | null;
   pacienteExportScope: PacienteExportScope;
@@ -45,6 +47,7 @@ type PatientsPageProps = {
   setPacienteFilters: Dispatch<SetStateAction<PacienteFilters>>;
   setPacienteExportScope: (scope: PacienteExportScope) => void;
   setPacienteCurrentPage: (page: number | ((current: number) => number)) => void;
+  onSortChange: (field: string) => void;
   closePacienteForm: () => void;
   openNewPacienteForm: () => void;
   handleSubmitPaciente: (event: FormEvent<HTMLFormElement>) => void;
@@ -85,6 +88,8 @@ export function PatientsPage({
   pacienteCurrentPage,
   pacienteTotalPages,
   pacienteSearchTerm,
+  sortBy,
+  sortDirection,
   pacienteFilters,
   pacienteExportLoading,
   pacienteExportScope,
@@ -103,6 +108,7 @@ export function PatientsPage({
   setPacienteFilters,
   setPacienteExportScope,
   setPacienteCurrentPage,
+  onSortChange,
   closePacienteForm,
   openNewPacienteForm,
   handleSubmitPaciente,
@@ -161,6 +167,8 @@ export function PatientsPage({
           pacienteCurrentPage={pacienteCurrentPage}
           pacienteTotalPages={pacienteTotalPages}
           pacienteSearchTerm={pacienteSearchTerm}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
           pacienteFilters={pacienteFilters}
           pacienteExportLoading={pacienteExportLoading}
           pacienteExportScope={pacienteExportScope}
@@ -177,6 +185,7 @@ export function PatientsPage({
           onClearFilters={clearPacienteFilters}
           onExportScopeChange={setPacienteExportScope}
           onPageChange={setPacienteCurrentPage}
+          onSortChange={onSortChange}
           onRefresh={refreshPacientes}
           onOpenNewPacienteForm={openNewPacienteForm}
           onExportPacientes={handleExportPacientes}

@@ -2,7 +2,7 @@ import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } 
 import { FileText, FileUp, Plus, Save, Search, Trash2, X } from 'lucide-react';
 import type { Convenio, Hospital, OpmeFornecedor, Paciente, PacienteFormData, User } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
-import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextareaField, TextField } from '../../shared/components/ui';
+import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
 import {
   CONVENIOS_DATALIST_ID,
   DEFAULT_PASSWORD,
@@ -12,6 +12,7 @@ import {
   formatCurrencyInput,
   MAX_DIAGNOSIS_LENGTH,
   MAX_NAME_LENGTH,
+  MAX_TREATMENT_MEDICAL_LENGTH,
   OPME_FORNECEDORES_DATALIST_ID,
 } from '../../shared/utils/formatters';
 
@@ -162,14 +163,23 @@ export function PatientForm({
             required
           />
 
-          <TextareaField
-            className="diagnosis-field"
-            label="Diagnóstico"
-            value={pacienteFormData.diagnostico}
-            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, diagnostico: value.slice(0, MAX_DIAGNOSIS_LENGTH) }))}
-            maxLength={MAX_DIAGNOSIS_LENGTH}
-            rows={5}
-          />
+          <div className="two-column-fields">
+            <TextField
+              label="Diagnóstico"
+              type="text"
+              value={pacienteFormData.diagnostico}
+              onValueChange={(value) => setPacienteFormData((current) => ({ ...current, diagnostico: value.slice(0, MAX_DIAGNOSIS_LENGTH) }))}
+              maxLength={MAX_DIAGNOSIS_LENGTH}
+            />
+
+            <TextField
+              label="Tratamento médico"
+              type="text"
+              value={pacienteFormData.tratamentoMedico}
+              onValueChange={(value) => setPacienteFormData((current) => ({ ...current, tratamentoMedico: value.slice(0, MAX_TREATMENT_MEDICAL_LENGTH) }))}
+              maxLength={MAX_TREATMENT_MEDICAL_LENGTH}
+            />
+          </div>
 
           <SelectField
             label="Hospital"
