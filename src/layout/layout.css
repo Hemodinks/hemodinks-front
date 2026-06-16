@@ -458,6 +458,12 @@ img.user-avatar {
   --side-nav-border: rgba(37, 99, 235, 0.3);
 }
 
+.side-nav-medical-groups {
+  --side-nav-color: #0f4c81;
+  --side-nav-soft: rgba(15, 76, 129, 0.12);
+  --side-nav-border: rgba(15, 76, 129, 0.32);
+}
+
 .side-nav-agenda {
   --side-nav-color: #8a5a15;
   --side-nav-soft: rgba(183, 121, 31, 0.12);

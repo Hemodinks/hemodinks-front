@@ -11,6 +11,9 @@ import type {
   Hospital,
   ListQuery,
   LoginResponse,
+  MedicalGroup,
+  MedicalGroupFormData,
+  MedicalUserOption,
   OpmeFornecedor,
   Paciente,
   PacienteArquivo,
@@ -198,6 +201,38 @@ export async function getBrazilPublicHolidays(year: number) {
 
 export function getUsers(token: string, query?: ListQuery) {
   return request<PagedResult<User>>(`/api/users/${toQueryString(query)}`, {}, token);
+}
+
+export function getMedicalGroups(token: string, query?: ListQuery) {
+  return request<PagedResult<MedicalGroup>>(`/api/grupos-medicos/${toQueryString(query)}`, {}, token);
+}
+
+export function getMedicalGroup(id: number, token: string) {
+  return request<MedicalGroup>(`/api/grupos-medicos/${id}`, {}, token);
+}
+
+export function createMedicalGroup(payload: MedicalGroupFormData, token: string) {
+  return request<MedicalGroup>('/api/grupos-medicos/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function updateMedicalGroup(id: number, payload: MedicalGroupFormData, token: string) {
+  return request<MedicalGroup>(`/api/grupos-medicos/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function deleteMedicalGroup(id: number, token: string) {
+  return request<void>(`/api/grupos-medicos/${id}`, {
+    method: 'DELETE',
+  }, token);
+}
+
+export function getScopedMedicalUsers(token: string) {
+  return request<MedicalUserOption[]>('/api/grupos-medicos/medicos', {}, token);
 }
 
 export function getUser(id: number, token: string) {

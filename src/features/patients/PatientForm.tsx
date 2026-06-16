@@ -1,6 +1,6 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { FileText, FileUp, Plus, Save, Search, Trash2, X } from 'lucide-react';
-import type { Convenio, Hospital, OpmeFornecedor, Paciente, PacienteFormData, User } from '../../types';
+import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
 import {
@@ -28,7 +28,7 @@ type PatientFormProps = {
   patientFileInputKey: number;
   hospitais: Hospital[];
   hospitaisError: string;
-  medicalUsers: User[];
+  medicalUsers: MedicalUserOption[];
   convenios: Convenio[];
   conveniosError: string;
   opmeFornecedores: OpmeFornecedor[];
@@ -206,38 +206,32 @@ export function PatientForm({
           </SelectField>
           {hospitaisError && <AlertMessage type="error">{hospitaisError}</AlertMessage>}
 
-          {!isMedical && (
-            <SelectField
-              label="Cirurgião"
-              value={getMedicalSelectValue('medico')}
-              onChange={(event) => updateMedicalTeamMember('medico', event.target.value)}
-              disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
-            >
-              {renderMedicalOptions('medico', medicalUsers.length ? 'Selecione um cirurgiao' : 'Nenhum medico cadastrado')}
-            </SelectField>
-          )}
+          <SelectField
+            label="Cirurgião"
+            value={getMedicalSelectValue('medico')}
+            onChange={(event) => updateMedicalTeamMember('medico', event.target.value)}
+            disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
+          >
+            {renderMedicalOptions('medico', medicalUsers.length ? 'Selecione um cirurgiao' : 'Nenhum medico cadastrado')}
+          </SelectField>
 
-          {!isMedical && (
-            <SelectField
-              label="Médico auxiliar 1"
-              value={getMedicalSelectValue('medicoAuxiliar1')}
-              onChange={(event) => updateMedicalTeamMember('medicoAuxiliar1', event.target.value)}
-              disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar1)}
-            >
-              {renderMedicalOptions('medicoAuxiliar1', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
-            </SelectField>
-          )}
+          <SelectField
+            label="Médico auxiliar 1"
+            value={getMedicalSelectValue('medicoAuxiliar1')}
+            onChange={(event) => updateMedicalTeamMember('medicoAuxiliar1', event.target.value)}
+            disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar1)}
+          >
+            {renderMedicalOptions('medicoAuxiliar1', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
+          </SelectField>
 
-          {!isMedical && (
-            <SelectField
-              label="Médico auxiliar 2"
-              value={getMedicalSelectValue('medicoAuxiliar2')}
-              onChange={(event) => updateMedicalTeamMember('medicoAuxiliar2', event.target.value)}
-              disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar2)}
-            >
-              {renderMedicalOptions('medicoAuxiliar2', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
-            </SelectField>
-          )}
+          <SelectField
+            label="Médico auxiliar 2"
+            value={getMedicalSelectValue('medicoAuxiliar2')}
+            onChange={(event) => updateMedicalTeamMember('medicoAuxiliar2', event.target.value)}
+            disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar2)}
+          >
+            {renderMedicalOptions('medicoAuxiliar2', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
+          </SelectField>
 
           <TextField
             label="Convênio"

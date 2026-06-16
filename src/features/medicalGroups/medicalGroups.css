@@ -1,0 +1,94 @@
+.medical-groups-table {
+  min-width: 920px;
+}
+
+.medical-group-icon {
+  color: #0f4c81;
+  background: rgba(15, 76, 129, 0.14);
+}
+
+.medical-group-members-preview {
+  display: inline-block;
+  max-width: 320px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medical-group-members-field {
+  display: grid;
+  gap: 12px;
+}
+
+.medical-group-members-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.medical-group-members-count {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.medical-group-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.medical-group-member-card {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+  cursor: pointer;
+}
+
+.medical-group-member-card.selected {
+  border-color: rgba(15, 76, 129, 0.34);
+  background: color-mix(in srgb, rgba(15, 76, 129, 0.14) 72%, var(--input-bg));
+}
+
+.medical-group-member-card input {
+  margin: 0;
+}
+
+.medical-group-member-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #0f4c81;
+  background: rgba(15, 76, 129, 0.14);
+}
+
+.medical-group-member-name,
+.medical-group-member-email {
+  grid-column: 3;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medical-group-member-name {
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.medical-group-member-email {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
