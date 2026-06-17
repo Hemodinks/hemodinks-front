@@ -15,7 +15,9 @@ vi.mock('./api', () => ({
   deleteAgendaEvent: vi.fn(),
   getAgendaEvents: vi.fn(),
   getAgendaMedicalUsers: vi.fn(),
+  getAgendaNotificationRecipientOptions: vi.fn(),
   getBrazilPublicHolidays: vi.fn(),
+  markAgendaNotificationsAsRead: vi.fn(),
   updateAgendaEvent: vi.fn(),
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
@@ -172,6 +174,18 @@ describe('App', () => {
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
     vi.mocked(api.getAgendaEvents).mockResolvedValue([]);
     vi.mocked(api.getAgendaMedicalUsers).mockResolvedValue([]);
+    vi.mocked(api.getAgendaNotificationRecipientOptions).mockResolvedValue({
+      canNotifyAllAllowedRecipients: true,
+      allRecipientsLabel: 'Todos os usuarios ativos, exceto pacientes',
+      users: [
+        { id: 1, nome: 'Ana Hemodinks', email: 'ana@hemodinks.com', perfilId: 1, perfilNome: 'Administrador' },
+        { id: 2, nome: 'Bruno Hemodinks', email: 'bruno@hemodinks.com', perfilId: 4, perfilNome: 'Controller' },
+      ],
+      groups: [
+        { id: 1, nome: 'Grupo A', membrosCount: 2 },
+      ],
+    });
+    vi.mocked(api.markAgendaNotificationsAsRead).mockResolvedValue({ updatedCount: 0 });
     vi.mocked(api.getBrazilPublicHolidays).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
     vi.mocked(api.getMedicalGroups).mockResolvedValue(paged([]));
@@ -300,7 +314,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: 'Agenda' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes' })).toBeInTheDocument();
     expect(await screen.findByText('Novo evento')).toBeInTheDocument();
     expect(api.getAgendaEvents).toHaveBeenCalled();
   });
@@ -354,7 +368,7 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /notificacoes/i }));
+    await user.click(screen.getByRole('button', { name: /avisos/i }));
 
     expect(api.getDashboardNotifications).toHaveBeenCalledWith('jwt-token');
 
@@ -1185,8 +1199,8 @@ describe('App', () => {
 
     await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /^meu cadastro$/i }));
     expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
-    await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /agenda/i }));
-    expect(await screen.findByRole('heading', { name: /agenda/i })).toBeInTheDocument();
+    await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /agenda e notificacoes/i }));
+    expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeInTheDocument();
   });
 
   it('permite controller editar pacientes e restringe usuarios e agenda', async () => {

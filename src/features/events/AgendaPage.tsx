@@ -20,12 +20,20 @@ import {
   deleteAgendaEvent,
   getAgendaEvents,
   getAgendaMedicalUsers,
+  getAgendaNotificationRecipientOptions,
   getBrazilPublicHolidays,
   updateAgendaEvent,
 } from '../../api';
-import type { AgendaEvent, AgendaEventPayload, AgendaMedicalUser, AuthSession, PublicHoliday } from '../../types';
+import type {
+  AgendaEvent,
+  AgendaEventPayload,
+  AgendaMedicalUser,
+  AgendaNotificationRecipientOptions,
+  AuthSession,
+  PublicHoliday,
+} from '../../types';
 import { getErrorMessage } from '../../shared/utils/formatters';
-import { AlertMessage, Button, CheckboxField, DataPanel, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
+import { AlertMessage, Button, CheckboxField, DataPanel, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
 
 type AgendaPageProps = {
   session: AuthSession;
@@ -44,6 +52,10 @@ type AgendaFormData = {
   medicalUserId: string;
   notifyUser: boolean;
   reminderPeriodMinutes: string;
+  notificationMessage: string;
+  notifyAllAllowedRecipients: boolean;
+  notificationUserIds: number[];
+  notificationGroupIds: number[];
 };
 
 const weekdayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
@@ -101,6 +113,10 @@ function buildEmptyForm(dateKey = toDateKey(new Date()), isMedical = false, user
     medicalUserId: isMedical && userId ? String(userId) : '',
     notifyUser: true,
     reminderPeriodMinutes: defaultReminderMinutes,
+    notificationMessage: '',
+    notifyAllAllowedRecipients: false,
+    notificationUserIds: [],
+    notificationGroupIds: [],
   };
 }
 
@@ -140,6 +156,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [events, setEvents] = useState<AgendaEvent[]>([]);
   const [medicalUsers, setMedicalUsers] = useState<AgendaMedicalUser[]>([]);
+  const [notificationRecipientOptions, setNotificationRecipientOptions] = useState<AgendaNotificationRecipientOptions | null>(null);
   const [holidays, setHolidays] = useState<PublicHoliday[]>([]);
   const [loading, setLoading] = useState(false);
   const [holidayLoading, setHolidayLoading] = useState(false);
@@ -206,6 +223,12 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
       .catch((caughtError) => setError(getErrorMessage(caughtError)));
   }, [session.token]);
 
+  useEffect(() => {
+    void getAgendaNotificationRecipientOptions(session.token)
+      .then(setNotificationRecipientOptions)
+      .catch((caughtError) => setError(getErrorMessage(caughtError)));
+  }, [session.token]);
+
   const resetForm = (dateKey = selectedDate) => {
     setEditingEventId(null);
     setFormData(buildEmptyForm(dateKey, isMedical, session.user.id));
@@ -255,7 +278,35 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
       notifyMedicalProfile: formData.notifyMedicalProfile,
       notifyUser: formData.notifyUser,
       reminderPeriodMinutes: reminderPeriod,
+      notificationMessage: formData.notificationMessage.trim() || null,
+      notifyAllAllowedRecipients: formData.notifyAllAllowedRecipients,
+      notificationUserIds: formData.notificationUserIds,
+      notificationGroupIds: formData.notificationGroupIds,
     };
+  };
+
+  const toggleNotificationUser = (userId: number) => {
+    setFormData((current) => {
+      const hasUser = current.notificationUserIds.includes(userId);
+      return {
+        ...current,
+        notificationUserIds: hasUser
+          ? current.notificationUserIds.filter((id) => id !== userId)
+          : [...current.notificationUserIds, userId],
+      };
+    });
+  };
+
+  const toggleNotificationGroup = (groupId: number) => {
+    setFormData((current) => {
+      const hasGroup = current.notificationGroupIds.includes(groupId);
+      return {
+        ...current,
+        notificationGroupIds: hasGroup
+          ? current.notificationGroupIds.filter((id) => id !== groupId)
+          : [...current.notificationGroupIds, groupId],
+      };
+    });
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -270,6 +321,21 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
 
     if (composeDateTime(formData.endDate, formData.endTime) <= composeDateTime(formData.startDate, formData.startTime)) {
       setError('A data final deve ser maior que a inicial.');
+      return;
+    }
+
+    const hasNotificationMessage = formData.notificationMessage.trim().length > 0;
+    const hasNotificationRecipients = formData.notifyAllAllowedRecipients
+      || formData.notificationUserIds.length > 0
+      || formData.notificationGroupIds.length > 0;
+
+    if (hasNotificationRecipients && !hasNotificationMessage) {
+      setError('Informe a mensagem da notificacao.');
+      return;
+    }
+
+    if (hasNotificationMessage && !hasNotificationRecipients) {
+      setError('Selecione ao menos um destinatario para enviar a notificacao.');
       return;
     }
 
@@ -312,6 +378,10 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
       medicalUserId: agendaEvent.medicalUserId ? String(agendaEvent.medicalUserId) : '',
       notifyUser: agendaEvent.notifyUser,
       reminderPeriodMinutes: String(agendaEvent.reminderPeriodMinutes ?? defaultReminderMinutes),
+      notificationMessage: '',
+      notifyAllAllowedRecipients: false,
+      notificationUserIds: [],
+      notificationGroupIds: [],
     });
   };
 
@@ -353,8 +423,9 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
       <DataPanel className="agenda-panel">
         <div className="data-header agenda-header">
           <div>
-            <span className="eyebrow">Agenda</span>
-            <h2>{pendingEventsCount} eventos ativos</h2>
+            <span className="eyebrow">Agenda e notificacoes</span>
+            <h2>Agenda e notificacoes</h2>
+            <span className="agenda-subtitle">{pendingEventsCount} eventos ativos</span>
           </div>
           <div className="table-tools agenda-tools">
             <Button onClick={handleToday}>
@@ -575,6 +646,71 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
               <option value="2880">A cada 2 dias</option>
             </SelectField>
           )}
+
+          <div className="agenda-notification-section">
+            <div className="agenda-notification-header">
+              <div>
+                <span className="eyebrow">Notificacoes da agenda</span>
+                <strong>Mensagem e destinatarios</strong>
+              </div>
+              <span className="agenda-notification-hint">
+                Maximo de 500 caracteres
+              </span>
+            </div>
+
+            <TextareaField
+              label="Mensagem da notificacao"
+              value={formData.notificationMessage}
+              onValueChange={(value) => setFormData((current) => ({ ...current, notificationMessage: value.slice(0, 500) }))}
+              maxLength={500}
+              placeholder="Explique a reuniao, evento, auditoria ou videoconferencia."
+              className="agenda-notification-message"
+            />
+
+            {notificationRecipientOptions ? (
+              <>
+                <CheckboxField
+                  label={notificationRecipientOptions.allRecipientsLabel}
+                  checked={formData.notifyAllAllowedRecipients}
+                  onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyAllAllowedRecipients: checked }))}
+                />
+
+                {notificationRecipientOptions.users.length > 0 && (
+                  <div className="agenda-recipient-group">
+                    <strong>Destinatarios individuais</strong>
+                    <div className="agenda-recipient-list">
+                      {notificationRecipientOptions.users.map((user) => (
+                        <CheckboxField
+                          key={user.id}
+                          label={`${user.nome} (${user.perfilNome})`}
+                          checked={formData.notificationUserIds.includes(user.id)}
+                          onCheckedChange={() => toggleNotificationUser(user.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {notificationRecipientOptions.groups.length > 0 && (
+                  <div className="agenda-recipient-group">
+                    <strong>Grupos medicos</strong>
+                    <div className="agenda-recipient-list">
+                      {notificationRecipientOptions.groups.map((group) => (
+                        <CheckboxField
+                          key={group.id}
+                          label={`${group.nome} (${group.membrosCount})`}
+                          checked={formData.notificationGroupIds.includes(group.id)}
+                          onCheckedChange={() => toggleNotificationGroup(group.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="agenda-empty">Carregando destinatarios disponiveis...</p>
+            )}
+          </div>
 
           <Button variant="primary" type="submit" disabled={formLoading}>
             {editingEventId ? <Save size={18} /> : <Plus size={18} />}

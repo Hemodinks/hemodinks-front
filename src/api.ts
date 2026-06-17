@@ -2,6 +2,7 @@ import type {
   AgendaEvent,
   AgendaEventPayload,
   AgendaMedicalUser,
+  AgendaNotificationRecipientOptions,
   ChangePasswordPayload,
   CbhpmGeral,
   CbhpmListQuery,
@@ -189,6 +190,16 @@ export function deleteAgendaEvent(id: number, token: string) {
 
 export function getAgendaMedicalUsers(token: string) {
   return request<AgendaMedicalUser[]>('/api/events/medical-users', {}, token);
+}
+
+export function getAgendaNotificationRecipientOptions(token: string) {
+  return request<AgendaNotificationRecipientOptions>('/api/events/notification-recipients', {}, token);
+}
+
+export function markAgendaNotificationsAsRead(token: string) {
+  return request<{ updatedCount: number }>('/api/events/notifications/mark-read', {
+    method: 'POST',
+  }, token);
 }
 
 export async function getBrazilPublicHolidays(year: number) {

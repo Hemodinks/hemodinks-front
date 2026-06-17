@@ -5,6 +5,7 @@ import {
   authenticate,
   getDashboardNotifications,
   getDashboardSummary,
+  markAgendaNotificationsAsRead,
   resetPassword,
 } from './api';
 import { LoginScreen } from './features/auth/LoginScreen';
@@ -155,6 +156,9 @@ function AppContent() {
     }
 
     await notificationsQuery.refetch();
+    await markAgendaNotificationsAsRead(session.token);
+    await notificationsQuery.refetch();
+    await loadDashboardSummary(session.token, true);
   };
 
   const currentPerfilId = session?.user.perfilId ?? 0;
@@ -481,7 +485,7 @@ function AppContent() {
     : activeView === 'users' ? 'Usuarios'
       : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? 'Pacientes'
-        : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda';
+        : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda e notificacoes';
 
   const openDashboard = () => {
     if (activeView === 'profile') {
@@ -620,23 +624,24 @@ function AppContent() {
   const patientFilesCount = dashboardSummary?.patientFilesCount ?? 0;
   const upcomingEventsCount = dashboardSummary?.upcomingEventsCount ?? 0;
   const unreadObservationCount = dashboardSummary?.unreadObservationCount ?? 0;
+  const unreadAgendaNotificationCount = dashboardSummary?.unreadAgendaNotificationCount ?? 0;
   const notificationCount = notificationsOpen && notifications.length
     ? notifications.length
-    : pendingPaymentsCount + upcomingEventsCount + unreadObservationCount;
+    : pendingPaymentsCount + upcomingEventsCount + unreadObservationCount + unreadAgendaNotificationCount;
   const usersCount = dashboardSummary?.usersCount ?? usersTotalItems;
   const pacientesCount = dashboardSummary?.pacientesCount ?? pacientesTotalItems;
 
   const formBreadcrumbLabel = activeView === 'users'
     ? editingId ? 'Editar usuario' : 'Novo usuario'
     : activeView === 'profile' ? 'Meu cadastro'
-    : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
+      : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
       : activeView === 'medicalGroups' ? editingGroupId ? 'Editar grupo medico' : 'Novo grupo medico'
-      : 'Agenda';
+      : 'Agenda e notificacoes';
   const activeModuleLabel = activeView === 'users'
     ? 'Usuarios'
     : activeView === 'profile' ? 'Meu cadastro'
     : activeView === 'patients' ? 'Pacientes'
-      : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda';
+      : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda e notificacoes';
   const openActiveModuleList = activeView === 'users'
     ? openUsersList
     : activeView === 'profile' ? openMyProfile
@@ -669,6 +674,7 @@ function AppContent() {
       pendingPaymentsCount={pendingPaymentsCount}
       patientFilesCount={patientFilesCount}
       upcomingEventsCount={upcomingEventsCount}
+      unreadAgendaNotificationCount={unreadAgendaNotificationCount}
       successMessage={successMessage}
       dashboardError={dashboardError}
       onOpenUsersList={openUsersList}
@@ -932,6 +938,7 @@ function AppContent() {
       canAccessAgenda={canAccessAgenda}
       usersCount={usersCount}
       pacientesCount={pacientesCount}
+      unreadAgendaNotificationCount={unreadAgendaNotificationCount}
       medicalUsers={medicalUsers}
       convenios={convenios}
       opmeFornecedores={opmeFornecedores}
