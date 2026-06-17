@@ -314,6 +314,12 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     });
   };
 
+  const openDraftForSelectedDate = (tab: AgendaFormTab) => {
+    setEditingEventId(null);
+    setActiveFormTab(tab);
+    setFormData(buildEmptyForm(selectedDate, isMedical, session.user.id));
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
@@ -500,6 +506,23 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
           <div className="agenda-selected-title">
             <span>{new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(fromDateKey(selectedDate))}</span>
             {selectedHoliday && <strong>{getHolidayTitle(selectedHoliday)}</strong>}
+          </div>
+
+          <div className="agenda-day-actions">
+            <div className="agenda-day-actions-copy">
+              <strong>Adicionar neste dia</strong>
+              <span>Clique para criar um evento ou uma notificacao com a data ja preenchida.</span>
+            </div>
+            <div className="agenda-day-actions-buttons">
+              <Button type="button" variant="ghost" onClick={() => openDraftForSelectedDate('evento')}>
+                <Plus size={17} />
+                Novo evento
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => openDraftForSelectedDate('notificacoes')}>
+                <MessageSquareText size={17} />
+                Nova notificacao
+              </Button>
+            </div>
           </div>
 
           <div className="agenda-event-list">

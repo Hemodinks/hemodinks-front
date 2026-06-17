@@ -204,6 +204,43 @@
   text-align: right;
 }
 
+.agenda-day-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(183, 121, 31, 0.2);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(183, 121, 31, 0.08), rgba(15, 118, 110, 0.06));
+}
+
+.agenda-day-actions-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.agenda-day-actions-copy strong {
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.agenda-day-actions-copy span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.agenda-day-actions-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .agenda-event-list {
   display: grid;
   gap: 9px;
