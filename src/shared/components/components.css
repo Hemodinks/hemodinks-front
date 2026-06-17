@@ -108,8 +108,8 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
+  border-color: var(--selection-accent);
+  box-shadow: 0 0 0 3px var(--selection-accent-soft);
 }
 
 textarea {
@@ -221,12 +221,41 @@ textarea::placeholder {
     transform 0.16s ease;
 }
 
+.primary-action:focus,
 .primary-action:focus-visible,
+.primary-action:active,
+.ghost-button:focus,
 .ghost-button:focus-visible,
+.ghost-button:active,
+.icon-button:focus,
 .icon-button:focus-visible,
+.icon-button:active,
+.copy-button:focus,
 .copy-button:focus-visible,
-.status-info-button:focus-visible {
-  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.18);
+.copy-button:active,
+.status-info-button:focus,
+.status-info-button:focus-visible,
+.status-info-button:active,
+.breadcrumb-button:focus,
+.breadcrumb-button:focus-visible,
+.breadcrumb-button:active,
+.view-switch button:focus,
+.view-switch button:focus-visible,
+.view-switch button:active,
+.password-visibility-button:focus,
+.password-visibility-button:focus-visible,
+.password-visibility-button:active,
+.date-picker-button:focus,
+.date-picker-button:focus-visible,
+.date-picker-button:active,
+.side-nav button:focus,
+.side-nav button:focus-visible,
+.side-nav button:active,
+.agenda-day:focus,
+.agenda-day:focus-visible,
+.agenda-day:active {
+  border-color: var(--selection-accent);
+  box-shadow: 0 0 0 4px var(--selection-accent-soft);
 }
 
 .primary-action {

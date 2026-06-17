@@ -113,16 +113,21 @@
 
 .agenda-day.selected {
   color: #fff;
-  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
-  background: linear-gradient(135deg, var(--action-accent), color-mix(in srgb, var(--action-accent) 78%, black));
+  border-color: var(--selection-accent);
+  background: linear-gradient(135deg, var(--selection-accent), color-mix(in srgb, var(--selection-accent) 78%, black));
+  box-shadow:
+    0 0 0 2px var(--selection-accent),
+    0 0 0 4px var(--selection-accent-soft),
+    0 12px 24px rgba(220, 38, 38, 0.16);
   opacity: 1;
 }
 
 .agenda-day.today.selected {
-  border-color: #9ff8ec;
+  border-color: var(--selection-accent);
   box-shadow:
-    inset 0 0 0 2px rgba(255, 255, 255, 0.34),
-    0 12px 24px rgba(15, 118, 110, 0.18);
+    0 0 0 2px var(--selection-accent),
+    0 0 0 4px var(--selection-accent-soft),
+    0 12px 24px rgba(220, 38, 38, 0.16);
 }
 
 .agenda-day.holiday:not(.selected) {
@@ -147,7 +152,7 @@
 }
 
 .agenda-day.selected .agenda-day-number {
-  color: var(--action-accent);
+  color: var(--selection-accent);
   background: #fff;
 }
 
@@ -181,7 +186,7 @@
 }
 
 .agenda-day.selected .agenda-event-count {
-  color: var(--action-accent);
+  color: var(--selection-accent);
   background: #fff;
 }
 
