@@ -315,7 +315,7 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes' })).toBeInTheDocument();
-    expect(await screen.findByText('Novo evento')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Novo evento', level: 2 })).toBeInTheDocument();
     expect(api.getAgendaEvents).toHaveBeenCalled();
   });
 
