@@ -562,6 +562,24 @@
   font-weight: 900;
 }
 
+.attachment-count.has-unread-observations,
+.patient-observation-summary.has-unread-observations,
+.patient-observation-read-status.is-unread {
+  color: var(--blood);
+}
+
+.patient-observation-count {
+  min-width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+
 .attachment-button {
   min-height: 34px;
   border: 1px solid color-mix(in srgb, var(--action-secondary) 82%, black);
@@ -590,8 +608,64 @@
   cursor: pointer;
 }
 
+.patient-observation-button.has-unread-observations {
+  border-color: color-mix(in srgb, var(--blood) 80%, black);
+  background: linear-gradient(135deg, var(--blood), color-mix(in srgb, var(--blood) 85%, black));
+  color: #fff;
+}
+
+.patient-observation-button.has-unread-observations .patient-observation-count {
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+}
+
 .patient-observation-button:hover {
   background: var(--action-accent-hover);
+}
+
+.patient-observation-button.has-unread-observations:hover {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--blood) 94%, white), var(--blood-dark));
+}
+
+.patient-observation-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.patient-observation-summary.has-unread-observations {
+  color: var(--blood);
+}
+
+.patient-observation-list li.is-unread .patient-observation-card {
+  border-color: color-mix(in srgb, var(--blood) 38%, var(--line));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--blood) 8%, var(--panel-strong)), var(--panel-strong));
+}
+
+.patient-observation-list li.is-unread .patient-observation-author {
+  color: var(--blood);
+}
+
+.patient-observation-read-status {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 7px;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.patient-observation-read-status.is-unread {
+  border-color: color-mix(in srgb, var(--blood) 38%, var(--line));
+  background: color-mix(in srgb, var(--blood) 12%, var(--panel-strong));
+}
+
+.patient-observation-read-status.is-read {
+  color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 10%, var(--panel-strong));
 }
 
 .modal-file-list li {

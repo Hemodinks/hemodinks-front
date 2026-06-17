@@ -6,7 +6,7 @@ import App from './App';
 import * as api from './api';
 import { CbhpmLookupModal } from './features/patients/CbhpmLookupModal';
 import { queryClient } from './queryClient';
-import type { AuthSession, Paciente, User } from './types';
+import type { AuthSession, Paciente, PacienteObservacao, User } from './types';
 
 vi.mock('./api', () => ({
   authenticate: vi.fn(),
@@ -364,6 +364,73 @@ describe('App', () => {
     expect(within(dialog).getByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(within(dialog).getByText('Medico: Dra. Ana')).toBeInTheDocument();
     expect(within(dialog).getByText('Procedimento: Consulta')).toBeInTheDocument();
+  });
+
+  it('destaca observacoes nao lidas na lista de pacientes e no modal', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    const pacienteComNaoLidas: Paciente = {
+      ...basePaciente,
+      observacoesNaoLidasCount: 3,
+    };
+    const observacoes: PacienteObservacao[] = [
+      {
+        id: 1,
+        pacienteId: basePaciente.id,
+        texto: 'Primeira observacao sem leitura.',
+        dataCadastro: '2026-06-01T10:00:00Z',
+        autorUserId: 1,
+        autorNome: 'Dra. Ana',
+        autorPerfilId: 2,
+        autorPerfilNome: 'Médicos',
+        destinatarioUserId: 99,
+        destinatarioNome: 'George Marcone',
+        destinatarioPerfilId: 1,
+        destinatarioPerfilNome: 'Administrador',
+        nomePaciente: basePaciente.nomePaciente,
+        foiLida: false,
+        enviadaPorMim: false,
+      },
+      {
+        id: 2,
+        pacienteId: basePaciente.id,
+        texto: 'Resposta ja lida.',
+        dataCadastro: '2026-06-01T11:00:00Z',
+        autorUserId: 99,
+        autorNome: 'George Marcone',
+        autorPerfilId: 1,
+        autorPerfilNome: 'Administrador',
+        destinatarioUserId: 1,
+        destinatarioNome: 'Dra. Ana',
+        destinatarioPerfilId: 2,
+        destinatarioPerfilNome: 'Médicos',
+        nomePaciente: basePaciente.nomePaciente,
+        foiLida: true,
+        enviadaPorMim: true,
+      },
+    ];
+
+    vi.mocked(api.getPacientes).mockResolvedValue(paged([pacienteComNaoLidas]));
+    vi.mocked(api.getPaciente).mockResolvedValue(pacienteComNaoLidas);
+    vi.mocked(api.getPacienteObservacoes).mockResolvedValue(observacoes);
+    vi.mocked(api.markPacienteObservacoesAsRead).mockResolvedValue({ pacienteId: basePaciente.id, updatedCount: 0 });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
+
+    const patientRow = await screen.findByText('Paciente Hemodinks');
+    const observationButton = within(patientRow.closest('tr')!).getByRole('button', { name: /observacoes de paciente hemodinks/i });
+    expect(within(observationButton).getByText('3')).toBeInTheDocument();
+    expect(observationButton).toHaveClass('has-unread-observations');
+
+    await user.click(observationButton);
+
+    const dialog = await screen.findByRole('dialog', { name: 'Paciente Hemodinks' });
+    expect(within(dialog).getByText('3 observacoes nao lidas')).toBeInTheDocument();
+    expect(within(dialog).getByText('Nao lida')).toBeInTheDocument();
+    expect(within(dialog).getByText('Lida')).toBeInTheDocument();
   });
 
   it('permite visualizar e ocultar a senha no login', async () => {

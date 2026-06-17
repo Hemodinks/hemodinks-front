@@ -255,7 +255,11 @@ export function PatientList({
                   <td colSpan={8} className="empty-row">Carregando pacientes...</td>
                 </tr>
               ) : pacientes.length ? (
-                pacientes.map((paciente) => (
+                pacientes.map((paciente) => {
+                  const unreadObservations = paciente.observacoesNaoLidasCount ?? 0;
+                  const hasUnreadObservations = unreadObservations > 0;
+
+                  return (
                   <tr key={paciente.id}>
                     <td data-label="Paciente">
                       <div className="name-cell">
@@ -304,18 +308,18 @@ export function PatientList({
                       {canManageObservacoes && !patientReadOnly ? (
                         <button
                           type="button"
-                          className="patient-observation-button"
+                          className={`patient-observation-button${hasUnreadObservations ? ' has-unread-observations' : ''}`}
                           onClick={() => void onOpenPacienteObservacoes(paciente)}
                           title="Abrir observacoes"
                           aria-label={`Observacoes de ${paciente.nomePaciente}`}
                         >
                           <MessageSquareText size={16} />
-                          <span>{paciente.observacoesNaoLidasCount ?? 0}</span>
+                          <span className="patient-observation-count">{unreadObservations}</span>
                         </button>
                       ) : (
-                        <span className="attachment-count">
+                        <span className={`attachment-count patient-observation-count${hasUnreadObservations ? ' has-unread-observations' : ''}`}>
                           <MessageSquareText size={15} />
-                          {paciente.observacoesNaoLidasCount ?? 0}
+                          {unreadObservations}
                         </span>
                       )}
                     </td>
@@ -342,7 +346,8 @@ export function PatientList({
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan={8} className="empty-row">Nenhum paciente encontrado.</td>
