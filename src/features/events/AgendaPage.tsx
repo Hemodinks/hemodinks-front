@@ -59,7 +59,6 @@ type AgendaFormData = {
   notificationGroupIds: number[];
 };
 
-type AgendaFormTab = 'evento' | 'notificacoes';
 type AgendaSection = 'calendario' | 'cadastro';
 
 const weekdayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
@@ -166,7 +165,6 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
   const [loading, setLoading] = useState(false);
   const [holidayLoading, setHolidayLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
-  const [activeFormTab, setActiveFormTab] = useState<AgendaFormTab>('evento');
   const [error, setError] = useState('');
   const [holidayError, setHolidayError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -237,7 +235,6 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
 
   const resetForm = (dateKey = selectedDate) => {
     setEditingEventId(null);
-    setActiveFormTab('evento');
     setFormData(buildEmptyForm(dateKey, isMedical, session.user.id));
   };
 
@@ -245,9 +242,8 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     setActiveSection('calendario');
   };
 
-  const openCadastroSection = (tab: AgendaFormTab = 'evento') => {
+  const openCadastroSection = () => {
     setActiveSection('cadastro');
-    setActiveFormTab(tab);
   };
 
   const handleSelectDate = (date: Date) => {
@@ -326,10 +322,10 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     });
   };
 
-  const openDraftForSelectedDate = (tab: AgendaFormTab) => {
+  const openDraftForSelectedDate = () => {
     setEditingEventId(null);
     setFormData(buildEmptyForm(selectedDate, isMedical, session.user.id));
-    openCadastroSection(tab);
+    openCadastroSection();
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -392,7 +388,6 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     setSelectedDate(startDate);
     setVisibleMonth(new Date(start.getFullYear(), start.getMonth(), 1));
     setEditingEventId(agendaEvent.id);
-    setActiveFormTab('evento');
     setFormData({
       title: agendaEvent.title,
       description: agendaEvent.description ?? '',
@@ -465,7 +460,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
             <Button
               type="button"
               variant={activeSection === 'cadastro' ? 'primary' : 'ghost'}
-              onClick={() => openCadastroSection(editingEventId ? activeFormTab : 'evento')}
+              onClick={openCadastroSection}
             >
               <MessageSquareText size={17} />
               Cadastro
@@ -546,13 +541,9 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
                   <span>Clique para criar um evento ou uma notificacao com a data ja preenchida.</span>
                 </div>
                 <div className="agenda-day-actions-buttons">
-                  <Button type="button" variant="ghost" onClick={() => openDraftForSelectedDate('evento')}>
+                  <Button type="button" variant="ghost" onClick={openDraftForSelectedDate}>
                     <Plus size={17} />
                     Novo evento
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={() => openDraftForSelectedDate('notificacoes')}>
-                    <MessageSquareText size={17} />
-                    Nova notificacao
                   </Button>
                 </div>
               </div>
@@ -609,27 +600,8 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
               <div>
                 <span className="eyebrow">{editingEventId ? 'Edicao' : 'Cadastro'}</span>
                 <h2>{editingEventId ? 'Editar evento' : 'Novo evento'}</h2>
-                <span className="agenda-form-context">
-                  {new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(fromDateKey(selectedDate))}
-                </span>
               </div>
               <div className="agenda-panel-actions">
-                <Button
-                  type="button"
-                  variant={activeFormTab === 'evento' ? 'primary' : 'ghost'}
-                  onClick={() => setActiveFormTab('evento')}
-                >
-                  <CalendarDays size={17} />
-                  Evento
-                </Button>
-                <Button
-                  type="button"
-                  variant={activeFormTab === 'notificacoes' ? 'primary' : 'ghost'}
-                  onClick={() => setActiveFormTab('notificacoes')}
-                >
-                  <MessageSquareText size={17} />
-                  Notificacoes
-                </Button>
                 <Button type="button" variant="ghost" onClick={openCalendarSection}>
                   <ChevronLeft size={17} />
                   Calendario
@@ -643,182 +615,151 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
             </div>
 
             <form className="stack agenda-form" onSubmit={handleSubmit}>
-              {activeFormTab === 'evento' ? (
-                <div className="agenda-form-section">
+              <div className="agenda-form-section">
+                <TextField
+                  label="Titulo"
+                  type="text"
+                  value={formData.title}
+                  onValueChange={(value) => setFormData((current) => ({ ...current, title: value.slice(0, 255) }))}
+                  maxLength={255}
+                  required
+                />
+
+                <TextField
+                  label="Descricao"
+                  type="text"
+                  value={formData.description}
+                  onValueChange={(value) => setFormData((current) => ({ ...current, description: value.slice(0, 2000) }))}
+                  maxLength={2000}
+                />
+
+                <div className="two-column-fields">
                   <TextField
-                    label="Titulo"
-                    type="text"
-                    value={formData.title}
-                    onValueChange={(value) => setFormData((current) => ({ ...current, title: value.slice(0, 255) }))}
-                    maxLength={255}
+                    label="Inicio"
+                    type="date"
+                    value={formData.startDate}
+                    onValueChange={(value) => setFormData((current) => ({ ...current, startDate: value }))}
                     required
                   />
-
                   <TextField
-                    label="Descricao"
-                    type="text"
-                    value={formData.description}
-                    onValueChange={(value) => setFormData((current) => ({ ...current, description: value.slice(0, 2000) }))}
-                    maxLength={2000}
+                    label="Hora"
+                    type="time"
+                    value={formData.startTime}
+                    onValueChange={(value) => setFormData((current) => ({ ...current, startTime: value }))}
+                    required
                   />
-
-                  <div className="two-column-fields">
-                    <TextField
-                      label="Inicio"
-                      type="date"
-                      value={formData.startDate}
-                      onValueChange={(value) => setFormData((current) => ({ ...current, startDate: value }))}
-                      required
-                    />
-                    <TextField
-                      label="Hora"
-                      type="time"
-                      value={formData.startTime}
-                      onValueChange={(value) => setFormData((current) => ({ ...current, startTime: value }))}
-                      required
-                    />
-                  </div>
-
-                  <div className="two-column-fields">
-                    <TextField
-                      label="Termino"
-                      type="date"
-                      value={formData.endDate}
-                      onValueChange={(value) => setFormData((current) => ({ ...current, endDate: value }))}
-                      required
-                    />
-                    <TextField
-                      label="Hora"
-                      type="time"
-                      value={formData.endTime}
-                      onValueChange={(value) => setFormData((current) => ({ ...current, endTime: value }))}
-                      required
-                    />
-                  </div>
-
-                  <CheckboxField
-                    label="Notificar perfil medico"
-                    checked={formData.notifyMedicalProfile}
-                    onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyMedicalProfile: checked }))}
-                  />
-
-                  {formData.notifyMedicalProfile && (
-                    <SelectField
-                      label="Medico"
-                      value={formData.medicalUserId}
-                      onChange={(event) => setFormData((current) => ({ ...current, medicalUserId: event.target.value }))}
-                    >
-                      <option value="">Perfil medico</option>
-                      {medicalUsers.map((user) => (
-                        <option key={user.id} value={user.id}>{user.nome}</option>
-                      ))}
-                    </SelectField>
-                  )}
-
-                  <CheckboxField
-                    label="Receber lembretes"
-                    checked={formData.notifyUser}
-                    onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyUser: checked }))}
-                  />
-
-                  {(formData.notifyUser || formData.notifyMedicalProfile) && (
-                    <SelectField
-                      label="Intervalo de lembretes"
-                      value={formData.reminderPeriodMinutes}
-                      onChange={(event) => setFormData((current) => ({ ...current, reminderPeriodMinutes: event.target.value }))}
-                    >
-                      <option value="60">A cada 1 hora</option>
-                      <option value="360">A cada 6 horas</option>
-                      <option value="720">A cada 12 horas</option>
-                      <option value="1440">A cada 1 dia</option>
-                      <option value="2880">A cada 2 dias</option>
-                    </SelectField>
-                  )}
                 </div>
-              ) : (
-                <div className="agenda-form-section agenda-notification-section agenda-notification-section-compact">
-                  <div className="agenda-notification-header">
-                    <div>
-                      <span className="eyebrow">Notificacoes da agenda</span>
-                      <strong>Mensagem e destinatarios</strong>
-                    </div>
-                    <span className="agenda-notification-hint">
-                      Maximo de 500 caracteres
-                    </span>
-                  </div>
 
-                  <TextareaField
-                    label="Mensagem da notificacao"
-                    value={formData.notificationMessage}
-                    onValueChange={(value) => setFormData((current) => ({ ...current, notificationMessage: value.slice(0, 500) }))}
-                    maxLength={500}
-                    placeholder="Explique a reuniao, evento, auditoria ou videoconferencia."
-                    className="agenda-notification-message"
+                <div className="two-column-fields">
+                  <TextField
+                    label="Termino"
+                    type="date"
+                    value={formData.endDate}
+                    onValueChange={(value) => setFormData((current) => ({ ...current, endDate: value }))}
+                    required
                   />
-
-                  {notificationRecipientOptions ? (
-                    <>
-                      <CheckboxField
-                        label={notificationRecipientOptions.allRecipientsLabel}
-                        checked={formData.notifyAllAllowedRecipients}
-                        onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyAllAllowedRecipients: checked }))}
-                      />
-
-                      {notificationRecipientOptions.users.length > 0 && (
-                        <div className="agenda-recipient-group">
-                          <strong>Destinatarios individuais</strong>
-                          <div className="agenda-recipient-list">
-                            {notificationRecipientOptions.users.map((user) => (
-                              <CheckboxField
-                                key={user.id}
-                                label={`${user.nome} (${user.perfilNome})`}
-                                checked={formData.notificationUserIds.includes(user.id)}
-                                onCheckedChange={() => toggleNotificationUser(user.id)}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {notificationRecipientOptions.groups.length > 0 && (
-                        <div className="agenda-recipient-group">
-                          <strong>Grupos medicos</strong>
-                          <div className="agenda-recipient-list">
-                            {notificationRecipientOptions.groups.map((group) => (
-                              <CheckboxField
-                                key={group.id}
-                                label={`${group.nome} (${group.membrosCount})`}
-                                checked={formData.notificationGroupIds.includes(group.id)}
-                                onCheckedChange={() => toggleNotificationGroup(group.id)}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <p className="agenda-empty">Carregando destinatarios disponiveis...</p>
-                  )}
+                  <TextField
+                    label="Hora"
+                    type="time"
+                    value={formData.endTime}
+                    onValueChange={(value) => setFormData((current) => ({ ...current, endTime: value }))}
+                    required
+                  />
                 </div>
-              )}
 
-              <div className="agenda-form-summary">
-                {activeFormTab === 'evento' ? (
-                  <Button type="button" variant="ghost" onClick={() => setActiveFormTab('notificacoes')}>
-                    <MessageSquareText size={17} />
-                    Configurar notificacao
-                  </Button>
-                ) : (
-                  <Button type="button" variant="ghost" onClick={() => setActiveFormTab('evento')}>
-                    <CalendarDays size={17} />
-                    Voltar ao evento
-                  </Button>
+                <CheckboxField
+                  label="Notificar perfil medico"
+                  checked={formData.notifyMedicalProfile}
+                  onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyMedicalProfile: checked }))}
+                />
+
+                {formData.notifyMedicalProfile && (
+                  <SelectField
+                    label="Medico"
+                    value={formData.medicalUserId}
+                    onChange={(event) => setFormData((current) => ({ ...current, medicalUserId: event.target.value }))}
+                  >
+                    <option value="">Perfil medico</option>
+                    {medicalUsers.map((user) => (
+                      <option key={user.id} value={user.id}>{user.nome}</option>
+                    ))}
+                  </SelectField>
                 )}
-                <span className="agenda-form-summary-text">
-                  {activeFormTab === 'evento'
-                    ? 'A aba de notificacoes fica separada do calendario para evitar rolagem longa.'
-                    : 'As notificacoes sao enviadas junto com o evento, mas configuradas nesta tela.'}
-                </span>
+
+                <CheckboxField
+                  label="Receber lembretes"
+                  checked={formData.notifyUser}
+                  onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyUser: checked }))}
+                />
+
+                {(formData.notifyUser || formData.notifyMedicalProfile) && (
+                  <SelectField
+                    label="Intervalo de lembretes"
+                    value={formData.reminderPeriodMinutes}
+                    onChange={(event) => setFormData((current) => ({ ...current, reminderPeriodMinutes: event.target.value }))}
+                  >
+                    <option value="60">A cada 1 hora</option>
+                    <option value="360">A cada 6 horas</option>
+                    <option value="720">A cada 12 horas</option>
+                    <option value="1440">A cada 1 dia</option>
+                    <option value="2880">A cada 2 dias</option>
+                  </SelectField>
+                )}
+              </div>
+
+              <div className="agenda-form-section agenda-notification-section">
+                <TextareaField
+                  label="Mensagem da notificacao"
+                  value={formData.notificationMessage}
+                  onValueChange={(value) => setFormData((current) => ({ ...current, notificationMessage: value.slice(0, 500) }))}
+                  maxLength={500}
+                  placeholder="Explique a reuniao, evento, auditoria ou videoconferencia."
+                  className="agenda-notification-message"
+                />
+
+                {notificationRecipientOptions ? (
+                  <>
+                    <CheckboxField
+                      label={notificationRecipientOptions.allRecipientsLabel}
+                      checked={formData.notifyAllAllowedRecipients}
+                      onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyAllAllowedRecipients: checked }))}
+                    />
+
+                    {notificationRecipientOptions.users.length > 0 && (
+                      <div className="agenda-recipient-group">
+                        <strong>Destinatarios individuais</strong>
+                        <div className="agenda-recipient-list">
+                          {notificationRecipientOptions.users.map((user) => (
+                            <CheckboxField
+                              key={user.id}
+                              label={`${user.nome} (${user.perfilNome})`}
+                              checked={formData.notificationUserIds.includes(user.id)}
+                              onCheckedChange={() => toggleNotificationUser(user.id)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {notificationRecipientOptions.groups.length > 0 && (
+                      <div className="agenda-recipient-group">
+                        <strong>Grupos medicos</strong>
+                        <div className="agenda-recipient-list">
+                          {notificationRecipientOptions.groups.map((group) => (
+                            <CheckboxField
+                              key={group.id}
+                              label={`${group.nome} (${group.membrosCount})`}
+                              checked={formData.notificationGroupIds.includes(group.id)}
+                              onCheckedChange={() => toggleNotificationGroup(group.id)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="agenda-empty">Carregando destinatarios disponiveis...</p>
+                )}
               </div>
 
               <Button variant="primary" type="submit" disabled={formLoading}>
