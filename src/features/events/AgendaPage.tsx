@@ -33,6 +33,7 @@ import type {
   PublicHoliday,
 } from '../../types';
 import { getErrorMessage } from '../../shared/utils/formatters';
+import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
 import { AlertMessage, Button, CheckboxField, DataPanel, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
 
 type AgendaPageProps = {
@@ -153,6 +154,7 @@ function getHolidayTitle(holiday?: PublicHoliday) {
 }
 
 export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
+  const { confirmAction, confirmationDialog } = useConfirmationDialog();
   const todayKey = useMemo(() => toDateKey(new Date()), []);
   const [visibleMonth, setVisibleMonth] = useState(() => fromDateKey(todayKey));
   const [selectedDate, setSelectedDate] = useState(todayKey);
@@ -420,7 +422,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     });
   };
 
-  const handleComplete = async (agendaEvent: AgendaEvent) => {
+  const completeSelectedEvent = async (agendaEvent: AgendaEvent) => {
     setError('');
     setSuccessMessage('');
 
@@ -433,12 +435,19 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     }
   };
 
-  const handleDelete = async (agendaEvent: AgendaEvent) => {
-    const eventId = agendaEvent.id;
+  const handleComplete = (agendaEvent: AgendaEvent) => {
+    confirmAction({
+      tone: 'update',
+      title: 'Concluir evento?',
+      message: `Deseja marcar "${agendaEvent.title}" como concluido?`,
+      confirmLabel: 'Sim',
+      cancelLabel: 'Nao',
+      onConfirm: () => completeSelectedEvent(agendaEvent),
+    });
+  };
 
-    if (!window.confirm(`Excluir ${agendaEvent.title}?`)) {
-      return;
-    }
+  const deleteSelectedEvent = async (agendaEvent: AgendaEvent) => {
+    const eventId = agendaEvent.id;
 
     setError('');
     setSuccessMessage('');
@@ -454,6 +463,17 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     } catch (caughtError) {
       setError(getErrorMessage(caughtError));
     }
+  };
+
+  const handleDelete = (agendaEvent: AgendaEvent) => {
+    confirmAction({
+      tone: 'delete',
+      title: 'Excluir evento?',
+      message: `Deseja excluir "${agendaEvent.title}"? Esta acao nao podera ser desfeita.`,
+      confirmLabel: 'Sim',
+      cancelLabel: 'Nao',
+      onConfirm: () => deleteSelectedEvent(agendaEvent),
+    });
   };
 
   return (
@@ -594,14 +614,14 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
                         {canManage && (
                           <div className="agenda-event-actions">
                             {!agendaEvent.isCompleted && (
-                              <IconButton label="Concluir" tone="muted" onClick={() => void handleComplete(agendaEvent)}>
+                              <IconButton label="Concluir" tone="muted" onClick={() => handleComplete(agendaEvent)}>
                                 <Check size={17} />
                               </IconButton>
                             )}
                             <IconButton label="Editar" tone="muted" onClick={() => handleEdit(agendaEvent)}>
                               <Pencil size={17} />
                             </IconButton>
-                            <IconButton label="Excluir" tone="danger" onClick={() => void handleDelete(agendaEvent)}>
+                            <IconButton label="Excluir" tone="danger" onClick={() => handleDelete(agendaEvent)}>
                               <Trash2 size={17} />
                             </IconButton>
                           </div>
@@ -797,6 +817,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
           </FormPanel>
         )}
       </DataPanel>
+      {confirmationDialog}
     </section>
   );
 }

@@ -32,6 +32,7 @@ import {
   sortUsersForListing,
 } from '../../shared/utils/listing';
 import type { AuthSession, User, UserFormData } from '../../types';
+import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import {
   toUserPayload,
   validateUserForm,
@@ -53,6 +54,7 @@ type UseUsersDomainOptions = {
   persistSession: (nextSession: AuthSession) => void;
   loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
   onDeleteCurrentUser: () => void;
+  confirmAction: ConfirmAction;
 };
 
 export function useUsersDomain({
@@ -67,6 +69,7 @@ export function useUsersDomain({
   persistSession,
   loadDashboardSummary,
   onDeleteCurrentUser,
+  confirmAction,
 }: UseUsersDomainOptions) {
   const userList = useUserList();
   const userForm = useUserForm();
@@ -385,8 +388,8 @@ export function useUsersDomain({
     }
   };
 
-  const handleDeleteUser = async (user: User) => {
-    if (!session || !window.confirm(`Excluir ${user.nome}?`)) {
+  const deleteSelectedUser = async (user: User) => {
+    if (!session) {
       return;
     }
 
@@ -412,6 +415,17 @@ export function useUsersDomain({
     } catch (error) {
       setUsersError(getErrorMessage(error));
     }
+  };
+
+  const handleDeleteUser = (user: User) => {
+    confirmAction({
+      tone: 'delete',
+      title: 'Excluir usuario?',
+      message: `Deseja excluir "${user.nome}"? Esta acao nao podera ser desfeita.`,
+      confirmLabel: 'Sim',
+      cancelLabel: 'Nao',
+      onConfirm: () => deleteSelectedUser(user),
+    });
   };
 
   const handlePasswordChanged = (message: string) => {

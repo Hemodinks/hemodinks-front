@@ -230,7 +230,6 @@ describe('App', () => {
     vi.mocked(api.createPacienteObservacao).mockResolvedValue({ pacienteId: basePaciente.id, createdCount: 1 });
     vi.mocked(api.markPacienteObservacoesAsRead).mockResolvedValue({ pacienteId: basePaciente.id, updatedCount: 0 });
     vi.mocked(api.getAllCbhpmGeral).mockResolvedValue([]);
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     Object.defineProperty(URL, 'createObjectURL', {
       value: vi.fn(() => 'blob:hemodinks-avatar'),
       configurable: true,
@@ -380,8 +379,13 @@ describe('App', () => {
 
     await user.click(within(eventCard as HTMLElement).getByLabelText('Excluir'));
 
-    expect(window.confirm).toHaveBeenCalledWith('Excluir Evento A?');
-    expect(api.deleteAgendaEvent).toHaveBeenCalledWith(101, 'jwt-token');
+    const confirmDialog = await screen.findByRole('dialog', { name: 'Excluir evento?' });
+    expect(within(confirmDialog).getByText(/Deseja excluir "Evento A"/i)).toBeInTheDocument();
+    expect(api.deleteAgendaEvent).not.toHaveBeenCalled();
+
+    await user.click(within(confirmDialog).getByRole('button', { name: 'Sim' }));
+
+    await waitFor(() => expect(api.deleteAgendaEvent).toHaveBeenCalledWith(101, 'jwt-token'));
     expect(api.deleteAgendaEvent).not.toHaveBeenCalledWith(202, 'jwt-token');
   });
 
@@ -1396,8 +1400,13 @@ describe('App', () => {
     const deleteRow = (await screen.findByText('Ana Hemodinks')).closest('tr')!;
     await user.click(within(deleteRow).getByTitle('Excluir'));
 
-    expect(window.confirm).toHaveBeenCalledWith('Excluir Ana Hemodinks?');
-    expect(api.deleteUser).toHaveBeenCalledWith(1, 'jwt-token');
+    const confirmDialog = await screen.findByRole('dialog', { name: 'Excluir usuario?' });
+    expect(within(confirmDialog).getByText(/Deseja excluir "Ana Hemodinks"/i)).toBeInTheDocument();
+    expect(api.deleteUser).not.toHaveBeenCalled();
+
+    await user.click(within(confirmDialog).getByRole('button', { name: 'Sim' }));
+
+    await waitFor(() => expect(api.deleteUser).toHaveBeenCalledWith(1, 'jwt-token'));
     expect(await screen.findByText('Usuario excluido.')).toBeInTheDocument();
   });
 
