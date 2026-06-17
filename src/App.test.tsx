@@ -309,12 +309,15 @@ describe('App', () => {
   });
 
   it('abre a agenda por URL direta', async () => {
+    const user = userEvent.setup();
     mockSession();
     window.history.replaceState(null, '', '/agenda');
 
     render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /cadastro/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /cadastro/i }));
     expect(await screen.findByRole('heading', { name: 'Novo evento', level: 2 })).toBeInTheDocument();
     expect(api.getAgendaEvents).toHaveBeenCalled();
   });

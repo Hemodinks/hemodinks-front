@@ -1,5 +1,5 @@
 .agenda-workspace {
-  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.68fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -18,6 +18,12 @@
 .agenda-tools {
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.agenda-tools .button,
+.agenda-tools .ghost-button,
+.agenda-tools .icon-button {
+  flex: 0 0 auto;
 }
 
 .agenda-tools .ghost-button,
@@ -333,9 +339,16 @@
 }
 
 .agenda-form-panel {
-  position: sticky;
-  top: 18px;
   container-type: inline-size;
+}
+
+.agenda-form-context {
+  display: inline-flex;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: capitalize;
 }
 
 .agenda-panel-actions {
@@ -450,6 +463,23 @@
 
 .agenda-form .primary-action {
   margin-top: 2px;
+}
+
+.agenda-calendar-view {
+  display: grid;
+  gap: 14px;
+}
+
+.agenda-view-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.agenda-view-tabs .button,
+.agenda-view-tabs .ghost-button {
+  min-width: 0;
 }
 
 :root[data-theme="dark"] .agenda-calendar {
