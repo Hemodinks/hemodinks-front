@@ -33,12 +33,19 @@ export function PatientObservacoesModal({
   onSubmit,
   onClose,
 }: PatientObservacoesModalProps) {
+  const unreadObservations = paciente.observacoesNaoLidasCount ?? 0;
+
   return (
     <Modal titleId="patient-observacoes-title" className="patient-observacoes-modal" onClose={onClose}>
       <div className="panel-title">
         <div>
           <span className="eyebrow">Comunicacao do paciente</span>
           <h2 id="patient-observacoes-title">{paciente.nomePaciente}</h2>
+          <span className={`patient-observation-summary${unreadObservations > 0 ? ' has-unread-observations' : ' is-read'}`}>
+            {unreadObservations > 0
+              ? `${unreadObservations} observacoes nao lidas`
+              : 'Todas as observacoes estao lidas'}
+          </span>
         </div>
         <div className="panel-title-actions">
           <IconButton label="Atualizar observacoes" title="Atualizar" tone="muted" onClick={onRefresh}>
@@ -86,7 +93,13 @@ export function PatientObservacoesModal({
       {observacoes.length ? (
         <ul className="patient-observation-list">
           {observacoes.map((observacao) => (
-            <li key={observacao.id} className={observacao.enviadaPorMim ? 'is-outbound' : 'is-inbound'}>
+            <li
+              key={observacao.id}
+              className={[
+                observacao.enviadaPorMim ? 'is-outbound' : 'is-inbound',
+                observacao.foiLida ? 'is-read' : 'is-unread',
+              ].join(' ')}
+            >
               <div className="patient-observation-card">
                 <div className="patient-observation-card-header">
                   <span className="patient-observation-author">
@@ -99,7 +112,11 @@ export function PatientObservacoesModal({
                 <div className="notification-meta-row">
                   <span>{observacao.autorPerfilNome}</span>
                   <span>{toNotificationDate(observacao.dataCadastro) || 'Agora'}</span>
-                  {observacao.foiLida && <span>Lida</span>}
+                  {observacao.foiLida ? (
+                    <span className="patient-observation-read-status is-read">Lida</span>
+                  ) : (
+                    <span className="patient-observation-read-status is-unread">Nao lida</span>
+                  )}
                 </div>
                 <div className="patient-observation-actions">
                   <Button className="patient-observation-reply-action" onClick={() => onReplyToChange(observacao)}>
