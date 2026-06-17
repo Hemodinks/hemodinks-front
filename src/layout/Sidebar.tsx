@@ -14,6 +14,7 @@ type SidebarProps = {
   canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
+  unreadAgendaNotificationCount: number;
   onOpenDashboard: () => void;
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
@@ -33,6 +34,7 @@ export function Sidebar({
   canAccessAgenda,
   usersCount,
   pacientesCount,
+  unreadAgendaNotificationCount,
   onOpenDashboard,
   onOpenUsersList,
   onOpenMyProfile,
@@ -126,7 +128,10 @@ export function Sidebar({
               onClick={onOpenAgenda}
             >
               <CalendarDays size={18} />
-              <span>Agenda</span>
+              <span>Agenda e notificacoes</span>
+              {unreadAgendaNotificationCount > 0 && (
+                <span className="side-nav-count">{unreadAgendaNotificationCount}</span>
+              )}
             </button>
           )}
         </nav>

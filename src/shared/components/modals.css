@@ -272,6 +272,11 @@
   background: var(--panel-strong);
 }
 
+.notifications-list li.is-unread {
+  border-color: color-mix(in srgb, var(--blood) 34%, var(--line));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--blood) 8%, var(--panel-strong)), var(--panel-strong));
+}
+
 .notification-item-icon {
   width: 36px;
   height: 36px;
@@ -314,6 +319,21 @@
   background: var(--input-bg);
   font-size: 0.76rem;
   font-weight: 900;
+}
+
+.notification-read-status {
+  border-radius: 999px;
+  padding: 4px 7px;
+}
+
+.notification-read-status.is-unread {
+  color: var(--blood);
+  background: color-mix(in srgb, var(--blood) 10%, var(--panel-strong));
+}
+
+.notification-read-status.is-read {
+  color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 10%, var(--panel-strong));
 }
 
 .patient-observation-reply-banner {

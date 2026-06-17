@@ -139,6 +139,7 @@ export type DashboardSummary = {
   patientFilesCount: number;
   upcomingEventsCount: number;
   unreadObservationCount?: number;
+  unreadAgendaNotificationCount?: number;
 };
 
 export type DashboardNotification = {
@@ -154,6 +155,7 @@ export type DashboardNotification = {
   procedimento?: string | null;
   autor?: string | null;
   data?: string | null;
+  dataLeitura?: string | null;
 };
 
 export type AgendaEvent = {
@@ -188,11 +190,36 @@ export type AgendaEventPayload = {
   notifyUser: boolean;
   reminderPeriodMinutes?: number | null;
   isCompleted?: boolean | null;
+  notificationMessage?: string | null;
+  notifyAllAllowedRecipients?: boolean;
+  notificationUserIds?: number[];
+  notificationGroupIds?: number[];
 };
 
 export type AgendaMedicalUser = {
   id: number;
   nome: string;
+};
+
+export type AgendaNotificationRecipientUser = {
+  id: number;
+  nome: string;
+  email: string;
+  perfilId: number;
+  perfilNome: string;
+};
+
+export type AgendaNotificationRecipientGroup = {
+  id: number;
+  nome: string;
+  membrosCount: number;
+};
+
+export type AgendaNotificationRecipientOptions = {
+  canNotifyAllAllowedRecipients: boolean;
+  allRecipientsLabel: string;
+  users: AgendaNotificationRecipientUser[];
+  groups: AgendaNotificationRecipientGroup[];
 };
 
 export type PublicHoliday = {

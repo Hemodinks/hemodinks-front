@@ -40,7 +40,7 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
               const date = toNotificationDate(notification.data);
 
               return (
-                <li key={`${notification.tipo}-${notification.id}`}>
+                <li key={`${notification.tipo}-${notification.id}`} className={notification.dataLeitura ? 'is-read' : 'is-unread'}>
                   <span className="notification-item-icon"><Bell size={17} /></span>
                   <div className="notification-item-body">
                     <strong>{notification.titulo}</strong>
@@ -51,6 +51,9 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
                       {notification.medico && <span>Medico: {notification.medico}</span>}
                       {notification.procedimento && <span>Procedimento: {notification.procedimento}</span>}
                       {date && <span>{date}</span>}
+                      <span className={`notification-read-status ${notification.dataLeitura ? 'is-read' : 'is-unread'}`}>
+                        {notification.dataLeitura ? 'Lida' : 'Nao lida'}
+                      </span>
                     </div>
                     {notification.tipo === 'ObservacaoPaciente' && notification.pacienteId > 0 && (
                       <div className="patient-observation-actions">
