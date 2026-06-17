@@ -160,6 +160,8 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
   const [events, setEvents] = useState<AgendaEvent[]>([]);
   const [medicalUsers, setMedicalUsers] = useState<AgendaMedicalUser[]>([]);
   const [notificationRecipientOptions, setNotificationRecipientOptions] = useState<AgendaNotificationRecipientOptions | null>(null);
+  const [notificationRecipientsLoading, setNotificationRecipientsLoading] = useState(false);
+  const [notificationRecipientsError, setNotificationRecipientsError] = useState('');
   const [holidays, setHolidays] = useState<PublicHoliday[]>([]);
   const [loading, setLoading] = useState(false);
   const [holidayLoading, setHolidayLoading] = useState(false);
@@ -227,9 +229,22 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
   }, [session.token]);
 
   useEffect(() => {
+    setNotificationRecipientsLoading(true);
+    setNotificationRecipientsError('');
+
     void getAgendaNotificationRecipientOptions(session.token)
-      .then(setNotificationRecipientOptions)
-      .catch((caughtError) => setError(getErrorMessage(caughtError)));
+      .then((options) => {
+        setNotificationRecipientOptions(options);
+        setNotificationRecipientsError('');
+      })
+      .catch((caughtError) => {
+        const message = getErrorMessage(caughtError);
+
+        setNotificationRecipientOptions(null);
+        setNotificationRecipientsError(message);
+        setError(message);
+      })
+      .finally(() => setNotificationRecipientsLoading(false));
   }, [session.token]);
 
   const resetForm = (dateKey = selectedDate) => {
@@ -464,12 +479,12 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
             <Button
               type="button"
               variant="ghost"
-              className={`agenda-section-tab ${activeSection === 'cadastro' ? 'is-active' : ''}`}
+              className={`agenda-section-tab agenda-new-event-button ${activeSection === 'cadastro' ? 'is-active' : ''}`}
               onClick={openCadastroSection}
               aria-pressed={activeSection === 'cadastro'}
             >
               <Plus size={17} />
-              + novo evento
+              Novo evento
             </Button>
             <Button onClick={handleToday}>
               <CalendarDays size={17} />
@@ -763,8 +778,14 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
                       </div>
                     )}
                   </>
-                ) : (
+                ) : notificationRecipientsError ? (
+                  <p className="agenda-empty agenda-empty-error">
+                    Nao foi possivel carregar os destinatarios. {notificationRecipientsError}
+                  </p>
+                ) : notificationRecipientsLoading ? (
                   <p className="agenda-empty">Carregando destinatarios disponiveis...</p>
+                ) : (
+                  <p className="agenda-empty">Nenhum destinatario disponivel.</p>
                 )}
               </div>
 
