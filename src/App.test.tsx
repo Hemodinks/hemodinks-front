@@ -316,8 +316,9 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes' })).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: /\+ novo evento/i })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /\+ novo evento/i }));
+    const newEventButtons = await screen.findAllByRole('button', { name: /^novo evento$/i });
+    expect(newEventButtons[0]).toBeInTheDocument();
+    await user.click(newEventButtons[0]);
     expect(await screen.findByRole('heading', { name: 'Novo evento', level: 2 })).toBeInTheDocument();
     expect(api.getAgendaEvents).toHaveBeenCalled();
   });

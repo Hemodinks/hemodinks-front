@@ -51,6 +51,27 @@
   background: var(--action-warning-hover);
 }
 
+.agenda-tools .agenda-new-event-button,
+.agenda-tools .agenda-new-event-button:hover {
+  background: var(--action-secondary);
+  border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
+}
+
+.agenda-tools .agenda-new-event-button:hover {
+  background: var(--action-secondary-hover);
+}
+
+.agenda-tools .agenda-new-event-button.is-active,
+.agenda-tools .agenda-new-event-button.is-active:hover {
+  color: #fff;
+  border-color: var(--selection-accent);
+  background: var(--action-secondary);
+  box-shadow:
+    0 0 0 2px var(--selection-accent),
+    0 0 0 4px var(--selection-accent-soft),
+    0 8px 16px rgba(220, 38, 38, 0.18);
+}
+
 .agenda-monthbar {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) 40px;
@@ -280,6 +301,12 @@
   background: var(--input-bg);
   font-weight: 800;
   text-align: center;
+}
+
+.agenda-empty-error {
+  border-color: rgba(220, 38, 38, 0.42);
+  color: #fca5a5;
+  background: rgba(127, 29, 29, 0.14);
 }
 
 .agenda-event-item {
