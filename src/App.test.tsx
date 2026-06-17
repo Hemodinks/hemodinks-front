@@ -316,10 +316,72 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes' })).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: /cadastro/i })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /cadastro/i }));
+    expect(await screen.findByRole('button', { name: /\+ novo evento/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /\+ novo evento/i }));
     expect(await screen.findByRole('heading', { name: 'Novo evento', level: 2 })).toBeInTheDocument();
     expect(api.getAgendaEvents).toHaveBeenCalled();
+  });
+
+  it('exclui apenas o evento clicado na agenda', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    vi.mocked(api.getAgendaEvents).mockResolvedValue([
+      {
+        id: 101,
+        userId: 1,
+        userName: 'George Marcone',
+        medicalUserId: null,
+        medicalUserName: null,
+        title: 'Evento A',
+        description: 'Primeiro evento',
+        start: '2026-06-17T10:00:00Z',
+        end: '2026-06-17T11:00:00Z',
+        notifyMedicalProfile: false,
+        notifyUser: false,
+        reminderPeriodMinutes: null,
+        lastReminderSentAt: null,
+        nextReminderAt: null,
+        isCompleted: false,
+        completedAt: null,
+        createdAt: '2026-06-17T09:00:00Z',
+        updatedAt: null,
+      },
+      {
+        id: 202,
+        userId: 1,
+        userName: 'George Marcone',
+        medicalUserId: null,
+        medicalUserName: null,
+        title: 'Evento B',
+        description: 'Segundo evento',
+        start: '2026-06-17T12:00:00Z',
+        end: '2026-06-17T13:00:00Z',
+        notifyMedicalProfile: false,
+        notifyUser: false,
+        reminderPeriodMinutes: null,
+        lastReminderSentAt: null,
+        nextReminderAt: null,
+        isCompleted: false,
+        completedAt: null,
+        createdAt: '2026-06-17T11:00:00Z',
+        updatedAt: null,
+      },
+    ]);
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /agenda e notificacoes/i }));
+    expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeInTheDocument();
+    expect(await screen.findByText('Evento A')).toBeInTheDocument();
+    const eventCard = screen.getByText('Evento A').closest('article');
+    expect(eventCard).not.toBeNull();
+
+    await user.click(within(eventCard as HTMLElement).getByLabelText('Excluir'));
+
+    expect(window.confirm).toHaveBeenCalledWith('Excluir Evento A?');
+    expect(api.deleteAgendaEvent).toHaveBeenCalledWith(101, 'jwt-token');
+    expect(api.deleteAgendaEvent).not.toHaveBeenCalledWith(202, 'jwt-token');
   });
 
   it('alterna entre tema claro e escuro no painel logado', async () => {

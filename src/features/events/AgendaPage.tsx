@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  MessageSquareText,
   Pencil,
   Plus,
   RefreshCw,
@@ -420,6 +419,8 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
   };
 
   const handleDelete = async (agendaEvent: AgendaEvent) => {
+    const eventId = agendaEvent.id;
+
     if (!window.confirm(`Excluir ${agendaEvent.title}?`)) {
       return;
     }
@@ -428,9 +429,10 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     setSuccessMessage('');
 
     try {
-      await deleteAgendaEvent(agendaEvent.id, session.token);
+      await deleteAgendaEvent(eventId, session.token);
+      setEvents((current) => current.filter((event) => event.id !== eventId));
       setSuccessMessage('Evento excluido.');
-      if (editingEventId === agendaEvent.id) {
+      if (editingEventId === eventId) {
         resetForm();
       }
       await loadEvents();
@@ -451,19 +453,23 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
           <div className="table-tools agenda-tools">
             <Button
               type="button"
-              variant={activeSection === 'calendario' ? 'primary' : 'ghost'}
+              variant="ghost"
+              className={`agenda-section-tab ${activeSection === 'calendario' ? 'is-active' : ''}`}
               onClick={openCalendarSection}
+              aria-pressed={activeSection === 'calendario'}
             >
               <CalendarDays size={17} />
               Calendario
             </Button>
             <Button
               type="button"
-              variant={activeSection === 'cadastro' ? 'primary' : 'ghost'}
+              variant="ghost"
+              className={`agenda-section-tab ${activeSection === 'cadastro' ? 'is-active' : ''}`}
               onClick={openCadastroSection}
+              aria-pressed={activeSection === 'cadastro'}
             >
-              <MessageSquareText size={17} />
-              Cadastro
+              <Plus size={17} />
+              + novo evento
             </Button>
             <Button onClick={handleToday}>
               <CalendarDays size={17} />
