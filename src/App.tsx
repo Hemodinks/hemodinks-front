@@ -21,6 +21,7 @@ import type { BreadcrumbItem, ModuleMode } from './appTypes';
 import { queryClient } from './queryClient';
 import { setObservabilityUser } from './observability';
 import { ErrorBoundary } from './shared/components/ErrorBoundary';
+import { useConfirmationDialog } from './shared/components/ConfirmationDialog';
 import { queryKeys } from './shared/queryKeys';
 import { useRouteView } from './shared/hooks/useRouteView';
 import { useThemePreference } from './shared/hooks/useThemePreference';
@@ -65,6 +66,7 @@ function ModuleFallback() {
 function AppContent() {
   const { session, persistSession, clearSession } = useAuthSession();
   const { theme, toggleTheme } = useThemePreference();
+  const { confirmAction, confirmationDialog } = useConfirmationDialog();
   const [moduleMode, setModuleMode] = useState<ModuleMode>('list');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -202,6 +204,7 @@ function AppContent() {
     persistSession,
     loadDashboardSummary,
     onDeleteCurrentUser: logout,
+    confirmAction,
   });
 
   const patientsDomain = usePatientsDomain({
@@ -217,6 +220,7 @@ function AppContent() {
     setModuleMode,
     navigateToView,
     loadDashboardSummary,
+    confirmAction,
   });
   const medicalGroupsDomain = useMedicalGroupsDomain({
     session,
@@ -225,6 +229,7 @@ function AppContent() {
     canAccessMedicalGroups,
     setModuleMode,
     navigateToView,
+    confirmAction,
   });
 
   const {
@@ -917,6 +922,8 @@ function AppContent() {
           onClose={() => setShowPasswordModal(false)}
         />
       )}
+
+      {confirmationDialog}
     </Suspense>
   );
 

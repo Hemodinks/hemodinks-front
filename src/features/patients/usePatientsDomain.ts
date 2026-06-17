@@ -53,6 +53,7 @@ import type {
   Paciente,
   PacienteObservacao,
 } from '../../types';
+import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { queryKeys } from '../../shared/queryKeys';
 import {
   createXlsxBlob,
@@ -95,6 +96,7 @@ type UsePatientsDomainOptions = {
   setModuleMode: Dispatch<SetStateAction<ModuleMode>>;
   navigateToView: (view: AppView, replace?: boolean) => void;
   loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
+  confirmAction: ConfirmAction;
 };
 
 export function usePatientsDomain({
@@ -110,6 +112,7 @@ export function usePatientsDomain({
   setModuleMode,
   navigateToView,
   loadDashboardSummary,
+  confirmAction,
 }: UsePatientsDomainOptions) {
   const patientList = usePatientList();
   const patientForm = usePatientForm(patientList.pacientes);
@@ -836,8 +839,8 @@ export function usePatientsDomain({
     }
   };
 
-  const handleDeletePaciente = async (paciente: Paciente) => {
-    if (!session || !window.confirm(`Excluir ${paciente.nomePaciente}?`)) {
+  const deleteSelectedPaciente = async (paciente: Paciente) => {
+    if (!session) {
       return;
     }
 
@@ -861,6 +864,17 @@ export function usePatientsDomain({
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     }
+  };
+
+  const handleDeletePaciente = (paciente: Paciente) => {
+    confirmAction({
+      tone: 'delete',
+      title: 'Excluir paciente?',
+      message: `Deseja excluir "${paciente.nomePaciente}"? Esta acao nao podera ser desfeita.`,
+      confirmLabel: 'Sim',
+      cancelLabel: 'Nao',
+      onConfirm: () => deleteSelectedPaciente(paciente),
+    });
   };
 
   const handleDeletePacienteArquivo = async (paciente: Paciente, arquivoId: number) => {
