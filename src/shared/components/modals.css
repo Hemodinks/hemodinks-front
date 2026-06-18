@@ -37,6 +37,14 @@
   overflow: hidden;
 }
 
+.patient-observacoes-modal {
+  width: min(760px, calc(100vw - 40px));
+  max-height: min(86vh, 840px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .cbhpm-modal {
   width: min(1040px, calc(100vw - 48px));
   max-height: min(88vh, 820px);
@@ -47,6 +55,63 @@
 
 .modal-panel:focus {
   outline: none;
+}
+
+.confirmation-modal {
+  width: min(430px, 100%);
+  display: grid;
+  gap: 16px;
+  border: 1px solid rgba(15, 118, 110, 0.24);
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(183, 121, 31, 0.08)),
+    var(--panel);
+}
+
+.confirmation-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: #fff;
+  background: var(--action-primary);
+  box-shadow: 0 12px 28px rgba(15, 118, 110, 0.22);
+}
+
+.confirmation-modal.delete .confirmation-icon {
+  background: var(--danger);
+  box-shadow: 0 12px 28px rgba(220, 38, 38, 0.22);
+}
+
+.confirmation-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.confirmation-copy h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.2rem, 4vw, 1.45rem);
+}
+
+.confirmation-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirmation-actions .button,
+.confirmation-actions .ghost-button,
+.confirmation-actions .primary-action {
+  min-width: 98px;
 }
 
 .cbhpm-filters {
@@ -264,6 +329,11 @@
   background: var(--panel-strong);
 }
 
+.notifications-list li.is-unread {
+  border-color: color-mix(in srgb, var(--blood) 34%, var(--line));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--blood) 8%, var(--panel-strong)), var(--panel-strong));
+}
+
 .notification-item-icon {
   width: 36px;
   height: 36px;
@@ -306,6 +376,125 @@
   background: var(--input-bg);
   font-size: 0.76rem;
   font-weight: 900;
+}
+
+.notification-read-status {
+  border-radius: 999px;
+  padding: 4px 7px;
+}
+
+.notification-read-status.is-unread {
+  color: var(--blood);
+  background: color-mix(in srgb, var(--blood) 10%, var(--panel-strong));
+}
+
+.notification-read-status.is-read {
+  color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 10%, var(--panel-strong));
+}
+
+.patient-observation-reply-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+.patient-observation-reply-banner strong {
+  color: var(--ink);
+}
+
+.patient-observation-reply-banner p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.patient-observation-compose {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.patient-observation-compose-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.patient-observation-submit {
+  width: auto;
+}
+
+.patient-observation-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0 6px 0 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.patient-observation-list li {
+  display: grid;
+}
+
+.patient-observation-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+.patient-observation-card p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.patient-observation-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.patient-observation-author,
+.patient-observation-destination {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.patient-observation-author {
+  color: var(--ink);
+}
+
+.patient-observation-destination {
+  color: var(--muted);
+}
+
+.patient-observation-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.patient-observation-reply-action {
+  width: auto;
+  min-height: 36px;
 }
 
 .detail-active {
@@ -450,6 +639,24 @@
   font-weight: 900;
 }
 
+.attachment-count.has-unread-observations,
+.patient-observation-summary.has-unread-observations,
+.patient-observation-read-status.is-unread {
+  color: var(--blood);
+}
+
+.patient-observation-count {
+  min-width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+
 .attachment-button {
   min-height: 34px;
   border: 1px solid color-mix(in srgb, var(--action-secondary) 82%, black);
@@ -462,6 +669,80 @@
 
 .attachment-button:hover {
   background: var(--action-secondary-hover);
+}
+
+.patient-observation-button {
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--action-accent) 82%, black);
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--action-accent);
+  color: var(--action-text);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-observation-button.has-unread-observations {
+  border-color: color-mix(in srgb, var(--blood) 80%, black);
+  background: linear-gradient(135deg, var(--blood), color-mix(in srgb, var(--blood) 85%, black));
+  color: #fff;
+}
+
+.patient-observation-button.has-unread-observations .patient-observation-count {
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+}
+
+.patient-observation-button:hover {
+  background: var(--action-accent-hover);
+}
+
+.patient-observation-button.has-unread-observations:hover {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--blood) 94%, white), var(--blood-dark));
+}
+
+.patient-observation-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.patient-observation-summary.has-unread-observations {
+  color: var(--blood);
+}
+
+.patient-observation-list li.is-unread .patient-observation-card {
+  border-color: color-mix(in srgb, var(--blood) 38%, var(--line));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--blood) 8%, var(--panel-strong)), var(--panel-strong));
+}
+
+.patient-observation-list li.is-unread .patient-observation-author {
+  color: var(--blood);
+}
+
+.patient-observation-read-status {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 7px;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.patient-observation-read-status.is-unread {
+  border-color: color-mix(in srgb, var(--blood) 38%, var(--line));
+  background: color-mix(in srgb, var(--blood) 12%, var(--panel-strong));
+}
+
+.patient-observation-read-status.is-read {
+  color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 10%, var(--panel-strong));
 }
 
 .modal-file-list li {

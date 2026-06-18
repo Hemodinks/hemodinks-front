@@ -17,6 +17,31 @@ export default defineConfig(({ mode }) => ({
   server: {
     port: 5173,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return undefined;
+          }
+
+          if (id.includes('@sentry/react')) {
+            return 'observability';
+          }
+
+          if (id.includes('react-router-dom') || id.includes('react-dom') || id.includes('/react/')) {
+            return 'react-vendor';
+          }
+
+          if (id.includes('@tanstack/react-query')) {
+            return 'query-vendor';
+          }
+
+          return undefined;
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',

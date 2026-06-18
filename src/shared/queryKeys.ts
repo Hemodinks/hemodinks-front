@@ -13,6 +13,8 @@ export const queryKeys = {
     query?: { page: number; pageSize: number; search: string } & Partial<PacienteFilters>,
   ) => ['pacientes', token, query] as const,
   pacientesRoot: (token: string) => ['pacientes', token] as const,
+  pacienteObservacoes: (token: string, pacienteId: number) => ['pacienteObservacoes', token, pacienteId] as const,
+  pacienteObservacoesRoot: (token: string) => ['pacienteObservacoes', token] as const,
   hospitais: (token: string) => ['hospitais', token] as const,
   convenios: (token: string) => ['convenios', token] as const,
   opmeFornecedores: (token: string) => ['opmeFornecedores', token] as const,

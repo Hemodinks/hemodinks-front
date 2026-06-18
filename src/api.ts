@@ -2,6 +2,7 @@ import type {
   AgendaEvent,
   AgendaEventPayload,
   AgendaMedicalUser,
+  AgendaNotificationRecipientOptions,
   ChangePasswordPayload,
   CbhpmGeral,
   CbhpmListQuery,
@@ -18,6 +19,8 @@ import type {
   Paciente,
   PacienteArquivo,
   PacienteFormData,
+  PacienteObservacao,
+  PacientePayload,
   PacienteListQuery,
   PagedResult,
   PublicHoliday,
@@ -189,6 +192,16 @@ export function getAgendaMedicalUsers(token: string) {
   return request<AgendaMedicalUser[]>('/api/events/medical-users', {}, token);
 }
 
+export function getAgendaNotificationRecipientOptions(token: string) {
+  return request<AgendaNotificationRecipientOptions>('/api/events/notification-recipients', {}, token);
+}
+
+export function markAgendaNotificationsAsRead(token: string) {
+  return request<{ updatedCount: number }>('/api/events/notifications/mark-read', {
+    method: 'POST',
+  }, token);
+}
+
 export async function getBrazilPublicHolidays(year: number) {
   const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/BR`);
 
@@ -335,14 +348,14 @@ export function getPaciente(id: number, token: string) {
   return request<Paciente>(`/api/pacientes/${id}`, {}, token);
 }
 
-export function createPaciente(payload: PacienteFormData, token: string) {
+export function createPaciente(payload: PacientePayload, token: string) {
   return request<Paciente>('/api/pacientes/', {
     method: 'POST',
     body: JSON.stringify(payload),
   }, token);
 }
 
-export function updatePaciente(id: number, payload: PacienteFormData, token: string) {
+export function updatePaciente(id: number, payload: PacientePayload, token: string) {
   return request<Paciente>(`/api/pacientes/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
@@ -359,6 +372,23 @@ export function uploadPacienteArquivo(id: number, file: File, token: string) {
   const body = new FormData();
   body.append('file', file);
   return uploadRequest<PacienteArquivo>(`/api/pacientes/${id}/arquivos`, body, token);
+}
+
+export function getPacienteObservacoes(id: number, token: string) {
+  return request<PacienteObservacao[]>(`/api/pacientes/${id}/observacoes`, {}, token);
+}
+
+export function createPacienteObservacao(id: number, payload: { texto: string; observacaoPaiId?: number | null }, token: string) {
+  return request<{ pacienteId: number; createdCount: number }>(`/api/pacientes/${id}/observacoes`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, token);
+}
+
+export function markPacienteObservacoesAsRead(id: number, token: string) {
+  return request<{ pacienteId: number; updatedCount: number }>(`/api/pacientes/${id}/observacoes/marcar-lidas`, {
+    method: 'POST',
+  }, token);
 }
 
 export function deletePacienteArquivo(id: number, arquivoId: number, token: string) {

@@ -1,4 +1,4 @@
-import type { Paciente, PacienteFormData, PacienteProcedimento } from '../../types';
+import type { Paciente, PacienteFormData, PacientePayload, PacienteProcedimento } from '../../types';
 import type { PacienteFilters } from '../../appTypes';
 import {
   DEFAULT_PATIENT_BIRTH_DATE,
@@ -44,6 +44,7 @@ export const emptyPacienteForm: PacienteFormData = {
   repasseGlosa: '',
   statusPago: false,
   ativo: true,
+  novaObservacao: '',
 };
 
 export const emptyPacienteFilters: PacienteFilters = {
@@ -169,6 +170,7 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
     repasseGlosa: formatCurrencyInput(paciente.repasseGlosa || ''),
     statusPago: paciente.statusPago,
     ativo: paciente.ativo,
+    novaObservacao: '',
   });
 }
 
@@ -227,7 +229,7 @@ export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
   return '';
 }
 
-export function toPacientePayload(data: PacienteFormData): PacienteFormData {
+export function toPacientePayload(data: PacienteFormData): PacientePayload {
   const cpf = normalizeCpfForPayload(data.cpf);
   const telefone = getLocalBrazilPhoneDigits(data.telefone)
     ? normalizePhoneForPayload(data.telefone)

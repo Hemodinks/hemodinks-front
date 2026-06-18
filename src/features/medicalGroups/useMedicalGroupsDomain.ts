@@ -11,6 +11,7 @@ import {
 import type { AppView, ModuleMode } from '../../appTypes';
 import { queryClient } from '../../queryClient';
 import { queryKeys } from '../../shared/queryKeys';
+import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { getErrorMessage, PAGE_SIZE } from '../../shared/utils/formatters';
 import { getPagedItems, getPagedTotal, getPagedTotalPages, sortUsersByName } from '../../shared/utils/listing';
 import type { AuthSession, MedicalGroup, MedicalGroupFormData, MedicalUserOption } from '../../types';
@@ -31,6 +32,7 @@ type UseMedicalGroupsDomainOptions = {
   canAccessMedicalGroups: boolean;
   setModuleMode: Dispatch<SetStateAction<ModuleMode>>;
   navigateToView: (view: AppView, replace?: boolean) => void;
+  confirmAction: ConfirmAction;
 };
 
 export function useMedicalGroupsDomain({
@@ -40,6 +42,7 @@ export function useMedicalGroupsDomain({
   canAccessMedicalGroups,
   setModuleMode,
   navigateToView,
+  confirmAction,
 }: UseMedicalGroupsDomainOptions) {
   const [groups, setGroups] = useState<MedicalGroup[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
@@ -212,8 +215,8 @@ export function useMedicalGroupsDomain({
     }
   };
 
-  const handleDeleteMedicalGroup = async (group: MedicalGroup) => {
-    if (!session || !window.confirm(`Excluir ${group.nome}?`)) {
+  const deleteSelectedMedicalGroup = async (group: MedicalGroup) => {
+    if (!session) {
       return;
     }
 
@@ -227,6 +230,17 @@ export function useMedicalGroupsDomain({
     } catch (error) {
       setGroupsError(getErrorMessage(error));
     }
+  };
+
+  const handleDeleteMedicalGroup = (group: MedicalGroup) => {
+    confirmAction({
+      tone: 'delete',
+      title: 'Excluir grupo medico?',
+      message: `Deseja excluir "${group.nome}"? Esta acao nao podera ser desfeita.`,
+      confirmLabel: 'Sim',
+      cancelLabel: 'Nao',
+      onConfirm: () => deleteSelectedMedicalGroup(group),
+    });
   };
 
   const handleSubmitMedicalGroup = async (event: FormEvent<HTMLFormElement>) => {

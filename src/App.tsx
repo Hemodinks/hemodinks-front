@@ -5,6 +5,7 @@ import {
   authenticate,
   getDashboardNotifications,
   getDashboardSummary,
+  markAgendaNotificationsAsRead,
   resetPassword,
 } from './api';
 import { LoginScreen } from './features/auth/LoginScreen';
@@ -20,6 +21,7 @@ import type { BreadcrumbItem, ModuleMode } from './appTypes';
 import { queryClient } from './queryClient';
 import { setObservabilityUser } from './observability';
 import { ErrorBoundary } from './shared/components/ErrorBoundary';
+import { useConfirmationDialog } from './shared/components/ConfirmationDialog';
 import { queryKeys } from './shared/queryKeys';
 import { useRouteView } from './shared/hooks/useRouteView';
 import { useThemePreference } from './shared/hooks/useThemePreference';
@@ -46,6 +48,7 @@ const MedicalGroupsPage = lazy(() => import('./features/medicalGroups/MedicalGro
 const CbhpmLookupModal = lazy(() => import('./features/patients/CbhpmLookupModal').then((module) => ({ default: module.CbhpmLookupModal })));
 const PatientInfoModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientInfoModal })));
 const PatientFilesModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientFilesModal })));
+const PatientObservacoesModal = lazy(() => import('./features/patients/PatientObservacoesModal').then((module) => ({ default: module.PatientObservacoesModal })));
 const PatientsPage = lazy(() => import('./features/patients/PatientsPage').then((module) => ({ default: module.PatientsPage })));
 const UsersPage = lazy(() => import('./features/users/UsersPage').then((module) => ({ default: module.UsersPage })));
 const PasswordModal = lazy(() => import('./shared/components/PasswordModal').then((module) => ({ default: module.PasswordModal })));
@@ -63,6 +66,7 @@ function ModuleFallback() {
 function AppContent() {
   const { session, persistSession, clearSession } = useAuthSession();
   const { theme, toggleTheme } = useThemePreference();
+  const { confirmAction, confirmationDialog } = useConfirmationDialog();
   const [moduleMode, setModuleMode] = useState<ModuleMode>('list');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -154,6 +158,9 @@ function AppContent() {
     }
 
     await notificationsQuery.refetch();
+    await markAgendaNotificationsAsRead(session.token);
+    await notificationsQuery.refetch();
+    await loadDashboardSummary(session.token, true);
   };
 
   const currentPerfilId = session?.user.perfilId ?? 0;
@@ -169,6 +176,7 @@ function AppContent() {
   const canCreatePatients = isAdmin || isController || isMedical;
   const canEditPatients = isAdmin || isMedical || isController;
   const canDeletePatients = isAdmin;
+  const canManagePatientObservacoes = isAdmin || isMedical || isController;
   const patientReadOnly = isPatient;
   const canUseDashboardRoute = canAccessDashboard;
   const canUseUsersRoute = canAccessUsers;
@@ -196,6 +204,7 @@ function AppContent() {
     persistSession,
     loadDashboardSummary,
     onDeleteCurrentUser: logout,
+    confirmAction,
   });
 
   const patientsDomain = usePatientsDomain({
@@ -211,6 +220,7 @@ function AppContent() {
     setModuleMode,
     navigateToView,
     loadDashboardSummary,
+    confirmAction,
   });
   const medicalGroupsDomain = useMedicalGroupsDomain({
     session,
@@ -219,6 +229,7 @@ function AppContent() {
     canAccessMedicalGroups,
     setModuleMode,
     navigateToView,
+    confirmAction,
   });
 
   const {
@@ -307,6 +318,15 @@ function AppContent() {
     selectedPatientFiles,
     patientFilesModalLoading,
     patientFilesModalError,
+    selectedPatientObservacoes,
+    patientObservacoes,
+    patientObservacoesLoading,
+    patientObservacoesSaving,
+    patientObservacoesError,
+    patientObservationDraft,
+    setPatientObservationDraft,
+    patientObservationReplyTo,
+    setPatientObservationReplyTo,
     medicalUsers,
     hospitais,
     hospitaisError,
@@ -340,6 +360,9 @@ function AppContent() {
     handleEditPaciente,
     handleDeletePaciente,
     handleOpenPacienteFiles,
+    handleOpenPacienteObservacoes,
+    handleOpenPacienteObservacoesById,
+    handleSubmitPacienteObservacao,
     handleOpenCbhpmModal,
     handleSelectCbhpm,
     handleRemovePacienteProcedimento,
@@ -350,6 +373,7 @@ function AppContent() {
     refreshPacientes,
     refreshCbhpm,
     closePatientFilesModal,
+    closePatientObservacoesModal,
   } = patientsDomain;
   const {
     groups,
@@ -466,7 +490,7 @@ function AppContent() {
     : activeView === 'users' ? 'Usuarios'
       : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? 'Pacientes'
-        : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda';
+        : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda e notificacoes';
 
   const openDashboard = () => {
     if (activeView === 'profile') {
@@ -604,23 +628,25 @@ function AppContent() {
   const pendingPaymentsCount = dashboardSummary?.pendingPaymentsCount ?? 0;
   const patientFilesCount = dashboardSummary?.patientFilesCount ?? 0;
   const upcomingEventsCount = dashboardSummary?.upcomingEventsCount ?? 0;
+  const unreadObservationCount = dashboardSummary?.unreadObservationCount ?? 0;
+  const unreadAgendaNotificationCount = dashboardSummary?.unreadAgendaNotificationCount ?? 0;
   const notificationCount = notificationsOpen && notifications.length
     ? notifications.length
-    : pendingPaymentsCount + upcomingEventsCount;
+    : pendingPaymentsCount + upcomingEventsCount + unreadObservationCount + unreadAgendaNotificationCount;
   const usersCount = dashboardSummary?.usersCount ?? usersTotalItems;
   const pacientesCount = dashboardSummary?.pacientesCount ?? pacientesTotalItems;
 
   const formBreadcrumbLabel = activeView === 'users'
     ? editingId ? 'Editar usuario' : 'Novo usuario'
     : activeView === 'profile' ? 'Meu cadastro'
-    : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
+      : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
       : activeView === 'medicalGroups' ? editingGroupId ? 'Editar grupo medico' : 'Novo grupo medico'
-      : 'Agenda';
+      : 'Agenda e notificacoes';
   const activeModuleLabel = activeView === 'users'
     ? 'Usuarios'
     : activeView === 'profile' ? 'Meu cadastro'
     : activeView === 'patients' ? 'Pacientes'
-      : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda';
+      : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda e notificacoes';
   const openActiveModuleList = activeView === 'users'
     ? openUsersList
     : activeView === 'profile' ? openMyProfile
@@ -653,6 +679,7 @@ function AppContent() {
       pendingPaymentsCount={pendingPaymentsCount}
       patientFilesCount={patientFilesCount}
       upcomingEventsCount={upcomingEventsCount}
+      unreadAgendaNotificationCount={unreadAgendaNotificationCount}
       successMessage={successMessage}
       dashboardError={dashboardError}
       onOpenUsersList={openUsersList}
@@ -711,6 +738,7 @@ function AppContent() {
       canCreatePatients={canCreatePatients}
       canEditPatients={canEditPatients}
       canDeletePatients={canDeletePatients}
+      canManageObservacoes={canManagePatientObservacoes}
       patientReadOnly={patientReadOnly}
       editingPacienteId={editingPacienteId}
       editingPaciente={editingPaciente}
@@ -762,6 +790,7 @@ function AppContent() {
       handleEditPaciente={handleEditPaciente}
       handleDeletePaciente={handleDeletePaciente}
       handleOpenPacienteFiles={handleOpenPacienteFiles}
+      handleOpenPacienteObservacoes={handleOpenPacienteObservacoes}
       setSelectedPatientInfo={setSelectedPatientInfo}
       clearPacienteFilters={clearPacienteFilters}
       refreshPacientes={refreshPacientes}
@@ -825,6 +854,10 @@ function AppContent() {
           loading={notificationsLoading}
           error={notificationsError}
           totalCount={notificationCount}
+          onOpenObservation={(pacienteId) => {
+            setNotificationsOpen(false);
+            void handleOpenPacienteObservacoesById(pacienteId);
+          }}
           onClose={() => setNotificationsOpen(false)}
         />
       )}
@@ -865,6 +898,23 @@ function AppContent() {
         />
       )}
 
+      {selectedPatientObservacoes && (
+        <PatientObservacoesModal
+          paciente={selectedPatientObservacoes}
+          observacoes={patientObservacoes}
+          loading={patientObservacoesLoading}
+          saving={patientObservacoesSaving}
+          error={patientObservacoesError}
+          draft={patientObservationDraft}
+          replyTo={patientObservationReplyTo}
+          onDraftChange={setPatientObservationDraft}
+          onReplyToChange={setPatientObservationReplyTo}
+          onRefresh={() => void handleOpenPacienteObservacoes(selectedPatientObservacoes)}
+          onSubmit={() => void handleSubmitPacienteObservacao()}
+          onClose={closePatientObservacoesModal}
+        />
+      )}
+
       {showPasswordModal && (
         <PasswordModal
           session={session}
@@ -872,6 +922,8 @@ function AppContent() {
           onClose={() => setShowPasswordModal(false)}
         />
       )}
+
+      {confirmationDialog}
     </Suspense>
   );
 
@@ -893,6 +945,7 @@ function AppContent() {
       canAccessAgenda={canAccessAgenda}
       usersCount={usersCount}
       pacientesCount={pacientesCount}
+      unreadAgendaNotificationCount={unreadAgendaNotificationCount}
       medicalUsers={medicalUsers}
       convenios={convenios}
       opmeFornecedores={opmeFornecedores}

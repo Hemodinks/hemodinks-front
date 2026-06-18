@@ -138,6 +138,8 @@ export type DashboardSummary = {
   pendingPaymentsCount: number;
   patientFilesCount: number;
   upcomingEventsCount: number;
+  unreadObservationCount?: number;
+  unreadAgendaNotificationCount?: number;
 };
 
 export type DashboardNotification = {
@@ -147,10 +149,13 @@ export type DashboardNotification = {
   mensagem: string;
   pacienteId: number;
   eventId?: number | null;
+  observacaoId?: number | null;
   nomePaciente: string;
   medico?: string | null;
   procedimento?: string | null;
+  autor?: string | null;
   data?: string | null;
+  dataLeitura?: string | null;
 };
 
 export type AgendaEvent = {
@@ -185,11 +190,36 @@ export type AgendaEventPayload = {
   notifyUser: boolean;
   reminderPeriodMinutes?: number | null;
   isCompleted?: boolean | null;
+  notificationMessage?: string | null;
+  notifyAllAllowedRecipients?: boolean;
+  notificationUserIds?: number[];
+  notificationGroupIds?: number[];
 };
 
 export type AgendaMedicalUser = {
   id: number;
   nome: string;
+};
+
+export type AgendaNotificationRecipientUser = {
+  id: number;
+  nome: string;
+  email: string;
+  perfilId: number;
+  perfilNome: string;
+};
+
+export type AgendaNotificationRecipientGroup = {
+  id: number;
+  nome: string;
+  membrosCount: number;
+};
+
+export type AgendaNotificationRecipientOptions = {
+  canNotifyAllAllowedRecipients: boolean;
+  allRecipientsLabel: string;
+  users: AgendaNotificationRecipientUser[];
+  groups: AgendaNotificationRecipientGroup[];
 };
 
 export type PublicHoliday = {
@@ -289,6 +319,7 @@ export type Paciente = {
   dataNascimento: string;
   ativo: boolean;
   arquivosCount: number;
+  observacoesNaoLidasCount?: number;
   arquivos: PacienteArquivo[];
 };
 
@@ -323,4 +354,38 @@ export type PacienteFormData = {
   repasseGlosa: string;
   statusPago: boolean;
   ativo: boolean;
+  novaObservacao: string;
+};
+
+export type PacientePayload = Omit<PacienteFormData, 'novaObservacao'>;
+
+export type PacienteObservacao = {
+  id: number;
+  pacienteId: number;
+  observacaoPaiId?: number | null;
+  texto: string;
+  dataCadastro: string;
+  dataLeitura?: string | null;
+  autorUserId: number;
+  autorNome: string;
+  autorPerfilId: number;
+  autorPerfilNome: string;
+  destinatarioUserId: number;
+  destinatarioNome: string;
+  destinatarioPerfilId: number;
+  destinatarioPerfilNome: string;
+  nomePaciente: string;
+  medicoUserId?: number | null;
+  medico?: string | null;
+  medicoAuxiliar1UserId?: number | null;
+  medicoAuxiliar1?: string | null;
+  medicoAuxiliar2UserId?: number | null;
+  medicoAuxiliar2?: string | null;
+  foiLida: boolean;
+  enviadaPorMim: boolean;
+};
+
+export type CreatePacienteObservacaoPayload = {
+  texto: string;
+  observacaoPaiId?: number | null;
 };

@@ -213,6 +213,19 @@
   font-size: 0.82rem;
 }
 
+.module-badge {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #fff;
+  background: color-mix(in srgb, white 18%, transparent);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
 .module-card-users {
   --module-color: var(--dashboard-users);
   --module-soft: var(--dashboard-users-soft);

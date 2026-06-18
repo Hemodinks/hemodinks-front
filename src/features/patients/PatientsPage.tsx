@@ -9,6 +9,7 @@ type PatientsPageProps = {
   canCreatePatients: boolean;
   canEditPatients: boolean;
   canDeletePatients: boolean;
+  canManageObservacoes: boolean;
   patientReadOnly: boolean;
   editingPacienteId: number | null;
   editingPaciente: Paciente | null;
@@ -60,6 +61,7 @@ type PatientsPageProps = {
   handleEditPaciente: (paciente: Paciente) => void | Promise<void>;
   handleDeletePaciente: (paciente: Paciente) => void | Promise<void>;
   handleOpenPacienteFiles: (paciente: Paciente) => void | Promise<void>;
+  handleOpenPacienteObservacoes: (paciente: Paciente) => void | Promise<void>;
   setSelectedPatientInfo: (paciente: Paciente) => void;
   clearPacienteFilters: () => void;
   refreshPacientes: () => void;
@@ -70,6 +72,7 @@ export function PatientsPage({
   canCreatePatients,
   canEditPatients,
   canDeletePatients,
+  canManageObservacoes,
   patientReadOnly,
   editingPacienteId,
   editingPaciente,
@@ -121,6 +124,7 @@ export function PatientsPage({
   handleEditPaciente,
   handleDeletePaciente,
   handleOpenPacienteFiles,
+  handleOpenPacienteObservacoes,
   setSelectedPatientInfo,
   clearPacienteFilters,
   refreshPacientes,
@@ -154,6 +158,7 @@ export function PatientsPage({
           onPacienteFilesChange={handlePacienteFilesChange}
           onRemovePendingPatientFile={removePendingPatientFile}
           onDeletePacienteArquivo={handleDeletePacienteArquivo}
+          onOpenPacienteObservacoes={editingPaciente ? () => void handleOpenPacienteObservacoes(editingPaciente) : undefined}
         />
       ) : (
         <PatientList
@@ -176,6 +181,7 @@ export function PatientsPage({
           canCreatePatients={canCreatePatients}
           canEditPatients={canEditPatients}
           canDeletePatients={canDeletePatients}
+          canManageObservacoes={canManageObservacoes}
           patientReadOnly={patientReadOnly}
           isAdmin={isAdmin}
           hasMedicalUsers={medicalUsers.length > 0}
@@ -192,6 +198,7 @@ export function PatientsPage({
           onEditPaciente={handleEditPaciente}
           onDeletePaciente={handleDeletePaciente}
           onOpenPacienteFiles={handleOpenPacienteFiles}
+          onOpenPacienteObservacoes={handleOpenPacienteObservacoes}
           onSelectPatientInfo={setSelectedPatientInfo}
         />
       )}
