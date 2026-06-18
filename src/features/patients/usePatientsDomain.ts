@@ -2,6 +2,7 @@ import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, u
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   createPaciente,
+  createPacienteObservacao,
   deletePaciente,
   deletePacienteArquivo,
   getAllCbhpmGeral,
@@ -9,8 +10,10 @@ import {
   getHospitais,
   getOpmeFornecedores,
   getPaciente,
+  getPacienteObservacoes,
   getPacientes,
   getScopedMedicalUsers,
+  markPacienteObservacoesAsRead,
   updatePaciente,
   uploadPacienteArquivo,
 } from '../../api';
@@ -48,7 +51,9 @@ import type {
   CbhpmGeral,
   MedicalUserOption,
   Paciente,
+  PacienteObservacao,
 } from '../../types';
+import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { queryKeys } from '../../shared/queryKeys';
 import {
   createXlsxBlob,
@@ -91,6 +96,7 @@ type UsePatientsDomainOptions = {
   setModuleMode: Dispatch<SetStateAction<ModuleMode>>;
   navigateToView: (view: AppView, replace?: boolean) => void;
   loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
+  confirmAction: ConfirmAction;
 };
 
 export function usePatientsDomain({
@@ -106,6 +112,7 @@ export function usePatientsDomain({
   setModuleMode,
   navigateToView,
   loadDashboardSummary,
+  confirmAction,
 }: UsePatientsDomainOptions) {
   const patientList = usePatientList();
   const patientForm = usePatientForm(patientList.pacientes);
@@ -117,6 +124,13 @@ export function usePatientsDomain({
   const [selectedPatientFiles, setSelectedPatientFiles] = useState<Paciente | null>(null);
   const [patientFilesModalLoading, setPatientFilesModalLoading] = useState(false);
   const [patientFilesModalError, setPatientFilesModalError] = useState('');
+  const [selectedPatientObservacoes, setSelectedPatientObservacoes] = useState<Paciente | null>(null);
+  const [patientObservacoes, setPatientObservacoes] = useState<PacienteObservacao[]>([]);
+  const [patientObservacoesLoading, setPatientObservacoesLoading] = useState(false);
+  const [patientObservacoesSaving, setPatientObservacoesSaving] = useState(false);
+  const [patientObservacoesError, setPatientObservacoesError] = useState('');
+  const [patientObservationDraft, setPatientObservationDraft] = useState('');
+  const [patientObservationReplyTo, setPatientObservationReplyTo] = useState<PacienteObservacao | null>(null);
 
   const {
     pacientes,
@@ -267,6 +281,11 @@ export function usePatientsDomain({
   const deletePacienteArquivoMutation = useMutation({
     mutationFn: ({ pacienteId, arquivoId, token }: { pacienteId: number; arquivoId: number; token: string }) => (
       deletePacienteArquivo(pacienteId, arquivoId, token)
+    ),
+  });
+  const createPacienteObservacaoMutation = useMutation({
+    mutationFn: ({ pacienteId, texto, observacaoPaiId, token }: { pacienteId: number; texto: string; observacaoPaiId?: number | null; token: string }) => (
+      createPacienteObservacao(pacienteId, { texto, observacaoPaiId }, token)
     ),
   });
   const filteredCbhpmItems = useMemo(
@@ -576,10 +595,54 @@ export function usePatientsDomain({
     resetPatientLookups();
     setSelectedPatientInfo(null);
     setSelectedPatientFiles(null);
+    setSelectedPatientObservacoes(null);
+    setPatientObservacoes([]);
+    setPatientObservacoesError('');
+    setPatientObservacoesLoading(false);
+    setPatientObservacoesSaving(false);
+    setPatientObservationDraft('');
+    setPatientObservationReplyTo(null);
     setPatientFilesModalError('');
     setPatientFilesModalLoading(false);
     resetCbhpmLookup();
     resetPacienteForm();
+  };
+
+  const clearObservationIndicators = (pacienteId: number) => {
+    setPacientes((current) => current.map((paciente) => (
+      paciente.id === pacienteId
+        ? { ...paciente, observacoesNaoLidasCount: 0 }
+        : paciente
+    )));
+    setSelectedPatientObservacoes((current) => (
+      current && current.id === pacienteId
+        ? { ...current, observacoesNaoLidasCount: 0 }
+        : current
+    ));
+    setEditingPacienteDetails((current) => (
+      current && current.id === pacienteId
+        ? { ...current, observacoesNaoLidasCount: 0 }
+        : current
+    ));
+  };
+
+  const syncObservationViews = async (token: string, pacienteId: number, clearUnread = false) => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(token) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardNotifications(token) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(token) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.pacienteObservacoes(token, pacienteId) }),
+    ]);
+
+    if (clearUnread) {
+      clearObservationIndicators(pacienteId);
+    }
+
+    if (activeView === 'patients' && moduleMode === 'list') {
+      await loadPacientes(token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
+    }
+
+    await loadDashboardSummary(token, true);
   };
 
   const handleEditPaciente = async (paciente: Paciente) => {
@@ -707,6 +770,7 @@ export function usePatientsDomain({
       opmeFornecedorId: selectedOpmeFornecedor?.idFornecedor ?? null,
       opmeFornecedor: selectedOpmeFornecedor?.fornecedor ?? pacienteFormData.opmeFornecedor,
     });
+    const observationText = pacienteFormData.novaObservacao.trim();
 
     setPacienteFormLoading(true);
     setPacienteFormError('');
@@ -718,9 +782,22 @@ export function usePatientsDomain({
         payload,
         token: session.token,
       });
+      let warningMessage = '';
 
       for (const file of pendingPatientFiles) {
         await uploadPacienteArquivo(savedPaciente.id, file, session.token);
+      }
+
+      if (observationText) {
+        try {
+          await createPacienteObservacaoMutation.mutateAsync({
+            pacienteId: savedPaciente.id,
+            texto: observationText,
+            token: session.token,
+          });
+        } catch (error) {
+          warningMessage = getErrorMessage(error);
+        }
       }
 
       setPacientes((current) => sortPacientesForListing(
@@ -731,10 +808,20 @@ export function usePatientsDomain({
       if (!editingPacienteId) {
         setPacientesTotalItems((current) => current + 1);
       }
-      setPacienteSuccessMessage(editingPacienteId ? 'Paciente atualizado.' : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
+      const baseSuccessMessage = editingPacienteId
+        ? 'Paciente atualizado.'
+        : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`;
+      const successMessage = warningMessage
+        ? `${baseSuccessMessage} Paciente salvo, mas a observacao nao foi enviada.`
+        : observationText
+          ? `${baseSuccessMessage} Observacao enviada.`
+          : baseSuccessMessage;
+      setPacienteSuccessMessage(successMessage);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardNotifications(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacienteObservacoesRoot(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(session.token) }),
       ]);
       resetPacienteForm();
@@ -742,6 +829,9 @@ export function usePatientsDomain({
       setModuleMode('list');
       await loadPacientes(session.token, 1, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
       await loadDashboardSummary(session.token, true);
+      if (warningMessage) {
+        setPacientesError(warningMessage);
+      }
     } catch (error) {
       setPacienteFormError(getErrorMessage(error));
     } finally {
@@ -749,8 +839,8 @@ export function usePatientsDomain({
     }
   };
 
-  const handleDeletePaciente = async (paciente: Paciente) => {
-    if (!session || !window.confirm(`Excluir ${paciente.nomePaciente}?`)) {
+  const deleteSelectedPaciente = async (paciente: Paciente) => {
+    if (!session) {
       return;
     }
 
@@ -774,6 +864,17 @@ export function usePatientsDomain({
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     }
+  };
+
+  const handleDeletePaciente = (paciente: Paciente) => {
+    confirmAction({
+      tone: 'delete',
+      title: 'Excluir paciente?',
+      message: `Deseja excluir "${paciente.nomePaciente}"? Esta acao nao podera ser desfeita.`,
+      confirmLabel: 'Sim',
+      cancelLabel: 'Nao',
+      onConfirm: () => deleteSelectedPaciente(paciente),
+    });
   };
 
   const handleDeletePacienteArquivo = async (paciente: Paciente, arquivoId: number) => {
@@ -826,6 +927,107 @@ export function usePatientsDomain({
     } finally {
       setPatientFilesModalLoading(false);
     }
+  };
+
+  const openPacienteObservacoesModal = async (paciente: Paciente) => {
+    if (!session) {
+      return;
+    }
+
+    setSelectedPatientObservacoes(paciente);
+    setPatientObservacoes([]);
+    setPatientObservationDraft('');
+    setPatientObservationReplyTo(null);
+    setPatientObservacoesError('');
+    setPatientObservacoesLoading(true);
+
+    try {
+      const [details, observacoes] = await Promise.all([
+        getPaciente(paciente.id, session.token),
+        getPacienteObservacoes(paciente.id, session.token),
+      ]);
+      setSelectedPatientObservacoes(details);
+      setPatientObservacoes(observacoes);
+
+      const readResult = await markPacienteObservacoesAsRead(paciente.id, session.token);
+      if (readResult.updatedCount > 0) {
+        await syncObservationViews(session.token, paciente.id, true);
+      }
+    } catch (error) {
+      setPatientObservacoesError(getErrorMessage(error));
+    } finally {
+      setPatientObservacoesLoading(false);
+    }
+  };
+
+  const handleOpenPacienteObservacoes = async (paciente: Paciente) => {
+    await openPacienteObservacoesModal(paciente);
+  };
+
+  const handleOpenPacienteObservacoesById = async (pacienteId: number) => {
+    if (!session) {
+      return;
+    }
+
+    const currentPaciente = pacientes.find((item) => item.id === pacienteId)
+      ?? (editingPaciente?.id === pacienteId ? editingPaciente : null)
+      ?? (selectedPatientObservacoes?.id === pacienteId ? selectedPatientObservacoes : null);
+
+    if (currentPaciente) {
+      await openPacienteObservacoesModal(currentPaciente);
+      return;
+    }
+
+    try {
+      const details = await getPaciente(pacienteId, session.token);
+      await openPacienteObservacoesModal(details);
+    } catch (error) {
+      setPatientObservacoesError(getErrorMessage(error));
+    }
+  };
+
+  const handleSubmitPacienteObservacao = async () => {
+    if (!session || !selectedPatientObservacoes) {
+      return;
+    }
+
+    const texto = patientObservationDraft.trim();
+    if (!texto) {
+      setPatientObservacoesError('Informe a observacao.');
+      return;
+    }
+
+    setPatientObservacoesSaving(true);
+    setPatientObservacoesError('');
+
+    try {
+      await createPacienteObservacaoMutation.mutateAsync({
+        pacienteId: selectedPatientObservacoes.id,
+        texto,
+        observacaoPaiId: patientObservationReplyTo?.id ?? null,
+        token: session.token,
+      });
+
+      const observacoes = await getPacienteObservacoes(selectedPatientObservacoes.id, session.token);
+      setPatientObservacoes(observacoes);
+      setPatientObservationDraft('');
+      setPatientObservationReplyTo(null);
+      await syncObservationViews(session.token, selectedPatientObservacoes.id);
+    } catch (error) {
+      setPatientObservacoesError(getErrorMessage(error));
+    } finally {
+      setPatientObservacoesSaving(false);
+    }
+  };
+
+  const closePatientObservacoesModal = () => {
+    setSelectedPatientObservacoes(null);
+    setPatientObservacoes([]);
+    setPatientObservacoesError('');
+    setPatientObservacoesLoading(false);
+    setPatientObservacoesSaving(false);
+    setPatientObservationDraft('');
+    setPatientObservationReplyTo(null);
   };
 
   const handleOpenCbhpmModal = () => {
@@ -986,6 +1188,15 @@ export function usePatientsDomain({
     selectedPatientFiles,
     patientFilesModalLoading,
     patientFilesModalError,
+    selectedPatientObservacoes,
+    patientObservacoes,
+    patientObservacoesLoading,
+    patientObservacoesSaving,
+    patientObservacoesError,
+    patientObservationDraft,
+    setPatientObservationDraft,
+    patientObservationReplyTo,
+    setPatientObservationReplyTo,
     medicalUsers,
     hospitais,
     hospitaisError,
@@ -1025,6 +1236,9 @@ export function usePatientsDomain({
     handleDeletePaciente,
     handleDeletePacienteArquivo,
     handleOpenPacienteFiles,
+    handleOpenPacienteObservacoes,
+    handleOpenPacienteObservacoesById,
+    handleSubmitPacienteObservacao,
     handleOpenCbhpmModal,
     handleSelectCbhpm,
     handleRemovePacienteProcedimento,
@@ -1036,5 +1250,6 @@ export function usePatientsDomain({
     refreshPacientes,
     refreshCbhpm,
     closePatientFilesModal,
+    closePatientObservacoesModal,
   };
 }

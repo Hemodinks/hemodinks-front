@@ -1,8 +1,8 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import { FileText, FileUp, Plus, Save, Search, Trash2, X } from 'lucide-react';
+import { FileText, FileUp, MessageSquareText, Plus, Save, Search, Trash2, X } from 'lucide-react';
 import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
-import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
+import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
 import {
   CONVENIOS_DATALIST_ID,
   DEFAULT_PASSWORD,
@@ -12,6 +12,7 @@ import {
   formatCurrencyInput,
   MAX_DIAGNOSIS_LENGTH,
   MAX_NAME_LENGTH,
+  MAX_OBSERVATION_LENGTH,
   MAX_TREATMENT_MEDICAL_LENGTH,
   OPME_FORNECEDORES_DATALIST_ID,
 } from '../../shared/utils/formatters';
@@ -42,6 +43,7 @@ type PatientFormProps = {
   onPacienteFilesChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onRemovePendingPatientFile: (index: number) => void;
   onDeletePacienteArquivo: (paciente: Paciente, arquivoId: number) => void | Promise<void>;
+  onOpenPacienteObservacoes?: () => void;
 };
 
 type MedicalTeamField = 'medico' | 'medicoAuxiliar1' | 'medicoAuxiliar2';
@@ -78,6 +80,7 @@ export function PatientForm({
   onPacienteFilesChange,
   onRemovePendingPatientFile,
   onDeletePacienteArquivo,
+  onOpenPacienteObservacoes,
 }: PatientFormProps) {
   const formReadOnly = patientReadOnly || (editingPacienteId ? !canEditPatients : false);
   const canSubmitForm = !formReadOnly && (!editingPacienteId || canEditPatients);
@@ -336,6 +339,27 @@ export function PatientForm({
               maxLength={24}
               placeholder="R$ 0,00"
             />
+          </div>
+
+          <div className="patient-observation-field">
+            <div className="patient-observation-header">
+              <span className="field-label">Observacoes</span>
+              {editingPacienteId && onOpenPacienteObservacoes && (
+                <Button className="patient-observation-action" onClick={onOpenPacienteObservacoes}>
+                  <MessageSquareText size={16} />
+                  Abrir conversa
+                </Button>
+              )}
+            </div>
+            <TextareaField
+              label="Nova observacao"
+              value={pacienteFormData.novaObservacao}
+              onValueChange={(value) => setPacienteFormData((current) => ({ ...current, novaObservacao: value.slice(0, MAX_OBSERVATION_LENGTH) }))}
+              maxLength={MAX_OBSERVATION_LENGTH}
+              placeholder="Escreva uma observacao para os envolvidos neste paciente."
+              className="observation-textarea"
+            />
+            <span className="file-hint">{pacienteFormData.novaObservacao.length}/{MAX_OBSERVATION_LENGTH} caracteres</span>
           </div>
 
           <div className="profile-photo-field">

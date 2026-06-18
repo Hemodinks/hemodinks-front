@@ -23,6 +23,7 @@ type DashboardPageProps = {
   pendingPaymentsCount: number;
   patientFilesCount: number;
   upcomingEventsCount: number;
+  unreadAgendaNotificationCount: number;
   successMessage: string;
   dashboardError: string;
   onOpenUsersList: () => void;
@@ -44,6 +45,7 @@ export function DashboardPage({
   pendingPaymentsCount,
   patientFilesCount,
   upcomingEventsCount,
+  unreadAgendaNotificationCount,
   successMessage,
   dashboardError,
   onOpenUsersList,
@@ -115,13 +117,16 @@ export function DashboardPage({
           </button>
         )}
 
-        <button type="button" className="module-card module-card-agenda" onClick={onOpenAgenda} aria-label="Abrir agenda">
+        <button type="button" className="module-card module-card-agenda" onClick={onOpenAgenda} aria-label="Abrir agenda e notificacoes">
           <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
           <span className="module-icon"><CalendarDays size={24} /></span>
-          <span className="module-title">Agenda</span>
-          <span className="module-metric">Eventos e lembretes</span>
+          <span className="module-title">Agenda e notificacoes</span>
+          <span className="module-metric">Eventos, lembretes e avisos</span>
           <span className="module-card-foot">
             <span>{upcomingEventsCount} proximos</span>
+            {unreadAgendaNotificationCount > 0 && (
+              <span className="module-badge">{unreadAgendaNotificationCount} nao lidas</span>
+            )}
             <ArrowRight size={20} />
           </span>
         </button>

@@ -6,6 +6,7 @@ import {
   Eye,
   FileText,
   Info,
+  MessageSquareText,
   Pencil,
   Plus,
   RefreshCw,
@@ -42,6 +43,7 @@ type PatientListProps = {
   canCreatePatients: boolean;
   canEditPatients: boolean;
   canDeletePatients: boolean;
+  canManageObservacoes: boolean;
   patientReadOnly: boolean;
   isAdmin: boolean;
   hasMedicalUsers: boolean;
@@ -58,6 +60,7 @@ type PatientListProps = {
   onEditPaciente: (paciente: Paciente) => void | Promise<void>;
   onDeletePaciente: (paciente: Paciente) => void | Promise<void>;
   onOpenPacienteFiles: (paciente: Paciente) => void | Promise<void>;
+  onOpenPacienteObservacoes: (paciente: Paciente) => void | Promise<void>;
   onSelectPatientInfo: (paciente: Paciente) => void;
 };
 
@@ -81,6 +84,7 @@ export function PatientList({
   canCreatePatients,
   canEditPatients,
   canDeletePatients,
+  canManageObservacoes,
   patientReadOnly,
   isAdmin,
   hasMedicalUsers,
@@ -97,6 +101,7 @@ export function PatientList({
   onEditPaciente,
   onDeletePaciente,
   onOpenPacienteFiles,
+  onOpenPacienteObservacoes,
   onSelectPatientInfo,
 }: PatientListProps) {
   const patientActionLabel = patientReadOnly || !canEditPatients ? 'Visualizar' : 'Editar';
@@ -240,16 +245,21 @@ export function PatientList({
                     {sortBy === 'arquivos' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
                   </button>
                 </th>
+                <th>Obs.</th>
                 <th aria-label="Acoes" />
               </tr>
             </thead>
             <tbody>
               {pacientesLoading ? (
                 <tr>
-                  <td colSpan={7} className="empty-row">Carregando pacientes...</td>
+                  <td colSpan={8} className="empty-row">Carregando pacientes...</td>
                 </tr>
               ) : pacientes.length ? (
-                pacientes.map((paciente) => (
+                pacientes.map((paciente) => {
+                  const unreadObservations = paciente.observacoesNaoLidasCount ?? 0;
+                  const hasUnreadObservations = unreadObservations > 0;
+
+                  return (
                   <tr key={paciente.id}>
                     <td data-label="Paciente">
                       <div className="name-cell">
@@ -294,6 +304,25 @@ export function PatientList({
                         </span>
                       )}
                     </td>
+                    <td data-label="Observacoes">
+                      {canManageObservacoes && !patientReadOnly ? (
+                        <button
+                          type="button"
+                          className={`patient-observation-button${hasUnreadObservations ? ' has-unread-observations' : ''}`}
+                          onClick={() => void onOpenPacienteObservacoes(paciente)}
+                          title="Abrir observacoes"
+                          aria-label={`Observacoes de ${paciente.nomePaciente}`}
+                        >
+                          <MessageSquareText size={16} />
+                          <span className="patient-observation-count">{unreadObservations}</span>
+                        </button>
+                      ) : (
+                        <span className={`attachment-count patient-observation-count${hasUnreadObservations ? ' has-unread-observations' : ''}`}>
+                          <MessageSquareText size={15} />
+                          {unreadObservations}
+                        </span>
+                      )}
+                    </td>
                     <td data-label="Acoes">
                       <div className="row-actions">
                         <IconButton
@@ -317,10 +346,11 @@ export function PatientList({
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               ) : (
                 <tr>
-                  <td colSpan={7} className="empty-row">Nenhum paciente encontrado.</td>
+                  <td colSpan={8} className="empty-row">Nenhum paciente encontrado.</td>
                 </tr>
               )}
             </tbody>

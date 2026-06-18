@@ -6,7 +6,7 @@ import App from './App';
 import * as api from './api';
 import { CbhpmLookupModal } from './features/patients/CbhpmLookupModal';
 import { queryClient } from './queryClient';
-import type { AuthSession, Paciente, User } from './types';
+import type { AuthSession, Paciente, PacienteObservacao, User } from './types';
 
 vi.mock('./api', () => ({
   authenticate: vi.fn(),
@@ -15,7 +15,9 @@ vi.mock('./api', () => ({
   deleteAgendaEvent: vi.fn(),
   getAgendaEvents: vi.fn(),
   getAgendaMedicalUsers: vi.fn(),
+  getAgendaNotificationRecipientOptions: vi.fn(),
   getBrazilPublicHolidays: vi.fn(),
+  markAgendaNotificationsAsRead: vi.fn(),
   updateAgendaEvent: vi.fn(),
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
@@ -31,7 +33,10 @@ vi.mock('./api', () => ({
   getUser: vi.fn(),
   getUserProfilePhoto: vi.fn(),
   getPaciente: vi.fn(),
+  getPacienteObservacoes: vi.fn(),
   getPacientes: vi.fn(),
+  createPacienteObservacao: vi.fn(),
+  markPacienteObservacoesAsRead: vi.fn(),
   createUser: vi.fn(),
   createPaciente: vi.fn(),
   updatePaciente: vi.fn(),
@@ -169,6 +174,18 @@ describe('App', () => {
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
     vi.mocked(api.getAgendaEvents).mockResolvedValue([]);
     vi.mocked(api.getAgendaMedicalUsers).mockResolvedValue([]);
+    vi.mocked(api.getAgendaNotificationRecipientOptions).mockResolvedValue({
+      canNotifyAllAllowedRecipients: true,
+      allRecipientsLabel: 'Todos os usuarios ativos, exceto pacientes',
+      users: [
+        { id: 1, nome: 'Ana Hemodinks', email: 'ana@hemodinks.com', perfilId: 1, perfilNome: 'Administrador' },
+        { id: 2, nome: 'Bruno Hemodinks', email: 'bruno@hemodinks.com', perfilId: 4, perfilNome: 'Controller' },
+      ],
+      groups: [
+        { id: 1, nome: 'Grupo A', membrosCount: 2 },
+      ],
+    });
+    vi.mocked(api.markAgendaNotificationsAsRead).mockResolvedValue({ updatedCount: 0 });
     vi.mocked(api.getBrazilPublicHolidays).mockResolvedValue([]);
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
     vi.mocked(api.getMedicalGroups).mockResolvedValue(paged([]));
@@ -208,9 +225,11 @@ describe('App', () => {
       { idFornecedor: 4, fornecedor: 'Spyner' },
     ]);
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
+    vi.mocked(api.getPacienteObservacoes).mockResolvedValue([]);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
+    vi.mocked(api.createPacienteObservacao).mockResolvedValue({ pacienteId: basePaciente.id, createdCount: 1 });
+    vi.mocked(api.markPacienteObservacoesAsRead).mockResolvedValue({ pacienteId: basePaciente.id, updatedCount: 0 });
     vi.mocked(api.getAllCbhpmGeral).mockResolvedValue([]);
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     Object.defineProperty(URL, 'createObjectURL', {
       value: vi.fn(() => 'blob:hemodinks-avatar'),
       configurable: true,
@@ -289,14 +308,85 @@ describe('App', () => {
   });
 
   it('abre a agenda por URL direta', async () => {
+    const user = userEvent.setup();
     mockSession();
     window.history.replaceState(null, '', '/agenda');
 
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: 'Agenda' })).toBeInTheDocument();
-    expect(await screen.findByText('Novo evento')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes' })).toBeInTheDocument();
+    const newEventButtons = await screen.findAllByRole('button', { name: /^novo evento$/i });
+    expect(newEventButtons[0]).toBeInTheDocument();
+    await user.click(newEventButtons[0]);
+    expect(await screen.findByRole('heading', { name: 'Novo evento', level: 2 })).toBeInTheDocument();
     expect(api.getAgendaEvents).toHaveBeenCalled();
+  });
+
+  it('exclui apenas o evento clicado na agenda', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    vi.mocked(api.getAgendaEvents).mockResolvedValue([
+      {
+        id: 101,
+        userId: 1,
+        userName: 'George Marcone',
+        medicalUserId: null,
+        medicalUserName: null,
+        title: 'Evento A',
+        description: 'Primeiro evento',
+        start: '2026-06-17T10:00:00Z',
+        end: '2026-06-17T11:00:00Z',
+        notifyMedicalProfile: false,
+        notifyUser: false,
+        reminderPeriodMinutes: null,
+        lastReminderSentAt: null,
+        nextReminderAt: null,
+        isCompleted: false,
+        completedAt: null,
+        createdAt: '2026-06-17T09:00:00Z',
+        updatedAt: null,
+      },
+      {
+        id: 202,
+        userId: 1,
+        userName: 'George Marcone',
+        medicalUserId: null,
+        medicalUserName: null,
+        title: 'Evento B',
+        description: 'Segundo evento',
+        start: '2026-06-17T12:00:00Z',
+        end: '2026-06-17T13:00:00Z',
+        notifyMedicalProfile: false,
+        notifyUser: false,
+        reminderPeriodMinutes: null,
+        lastReminderSentAt: null,
+        nextReminderAt: null,
+        isCompleted: false,
+        completedAt: null,
+        createdAt: '2026-06-17T11:00:00Z',
+        updatedAt: null,
+      },
+    ]);
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /agenda e notificacoes/i }));
+    expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeInTheDocument();
+    expect(await screen.findByText('Evento A')).toBeInTheDocument();
+    const eventCard = screen.getByText('Evento A').closest('article');
+    expect(eventCard).not.toBeNull();
+
+    await user.click(within(eventCard as HTMLElement).getByLabelText('Excluir'));
+
+    const confirmDialog = await screen.findByRole('dialog', { name: 'Excluir evento?' });
+    expect(within(confirmDialog).getByText(/Deseja excluir "Evento A"/i)).toBeInTheDocument();
+    expect(api.deleteAgendaEvent).not.toHaveBeenCalled();
+
+    await user.click(within(confirmDialog).getByRole('button', { name: 'Sim' }));
+
+    await waitFor(() => expect(api.deleteAgendaEvent).toHaveBeenCalledWith(101, 'jwt-token'));
+    expect(api.deleteAgendaEvent).not.toHaveBeenCalledWith(202, 'jwt-token');
   });
 
   it('alterna entre tema claro e escuro no painel logado', async () => {
@@ -348,7 +438,7 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /notificacoes/i }));
+    await user.click(screen.getByRole('button', { name: /avisos/i }));
 
     expect(api.getDashboardNotifications).toHaveBeenCalledWith('jwt-token');
 
@@ -358,6 +448,73 @@ describe('App', () => {
     expect(within(dialog).getByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(within(dialog).getByText('Medico: Dra. Ana')).toBeInTheDocument();
     expect(within(dialog).getByText('Procedimento: Consulta')).toBeInTheDocument();
+  });
+
+  it('destaca observacoes nao lidas na lista de pacientes e no modal', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    const pacienteComNaoLidas: Paciente = {
+      ...basePaciente,
+      observacoesNaoLidasCount: 3,
+    };
+    const observacoes: PacienteObservacao[] = [
+      {
+        id: 1,
+        pacienteId: basePaciente.id,
+        texto: 'Primeira observacao sem leitura.',
+        dataCadastro: '2026-06-01T10:00:00Z',
+        autorUserId: 1,
+        autorNome: 'Dra. Ana',
+        autorPerfilId: 2,
+        autorPerfilNome: 'Médicos',
+        destinatarioUserId: 99,
+        destinatarioNome: 'George Marcone',
+        destinatarioPerfilId: 1,
+        destinatarioPerfilNome: 'Administrador',
+        nomePaciente: basePaciente.nomePaciente,
+        foiLida: false,
+        enviadaPorMim: false,
+      },
+      {
+        id: 2,
+        pacienteId: basePaciente.id,
+        texto: 'Resposta ja lida.',
+        dataCadastro: '2026-06-01T11:00:00Z',
+        autorUserId: 99,
+        autorNome: 'George Marcone',
+        autorPerfilId: 1,
+        autorPerfilNome: 'Administrador',
+        destinatarioUserId: 1,
+        destinatarioNome: 'Dra. Ana',
+        destinatarioPerfilId: 2,
+        destinatarioPerfilNome: 'Médicos',
+        nomePaciente: basePaciente.nomePaciente,
+        foiLida: true,
+        enviadaPorMim: true,
+      },
+    ];
+
+    vi.mocked(api.getPacientes).mockResolvedValue(paged([pacienteComNaoLidas]));
+    vi.mocked(api.getPaciente).mockResolvedValue(pacienteComNaoLidas);
+    vi.mocked(api.getPacienteObservacoes).mockResolvedValue(observacoes);
+    vi.mocked(api.markPacienteObservacoesAsRead).mockResolvedValue({ pacienteId: basePaciente.id, updatedCount: 0 });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
+
+    const patientRow = await screen.findByText('Paciente Hemodinks');
+    const observationButton = within(patientRow.closest('tr')!).getByRole('button', { name: /observacoes de paciente hemodinks/i });
+    expect(within(observationButton).getByText('3')).toBeInTheDocument();
+    expect(observationButton).toHaveClass('has-unread-observations');
+
+    await user.click(observationButton);
+
+    const dialog = await screen.findByRole('dialog', { name: 'Paciente Hemodinks' });
+    expect(within(dialog).getByText('3 observacoes nao lidas')).toBeInTheDocument();
+    expect(within(dialog).getByText('Nao lida')).toBeInTheDocument();
+    expect(within(dialog).getByText('Lida')).toBeInTheDocument();
   });
 
   it('permite visualizar e ocultar a senha no login', async () => {
@@ -1112,8 +1269,8 @@ describe('App', () => {
 
     await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /^meu cadastro$/i }));
     expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
-    await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /agenda/i }));
-    expect(await screen.findByRole('heading', { name: /agenda/i })).toBeInTheDocument();
+    await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /agenda e notificacoes/i }));
+    expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeInTheDocument();
   });
 
   it('permite controller editar pacientes e restringe usuarios e agenda', async () => {
@@ -1243,8 +1400,13 @@ describe('App', () => {
     const deleteRow = (await screen.findByText('Ana Hemodinks')).closest('tr')!;
     await user.click(within(deleteRow).getByTitle('Excluir'));
 
-    expect(window.confirm).toHaveBeenCalledWith('Excluir Ana Hemodinks?');
-    expect(api.deleteUser).toHaveBeenCalledWith(1, 'jwt-token');
+    const confirmDialog = await screen.findByRole('dialog', { name: 'Excluir usuario?' });
+    expect(within(confirmDialog).getByText(/Deseja excluir "Ana Hemodinks"/i)).toBeInTheDocument();
+    expect(api.deleteUser).not.toHaveBeenCalled();
+
+    await user.click(within(confirmDialog).getByRole('button', { name: 'Sim' }));
+
+    await waitFor(() => expect(api.deleteUser).toHaveBeenCalledWith(1, 'jwt-token'));
     expect(await screen.findByText('Usuario excluido.')).toBeInTheDocument();
   });
 

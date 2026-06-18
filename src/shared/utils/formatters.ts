@@ -9,6 +9,7 @@ export const CBHPM_PAGE_SIZE = 10;
 export const MAX_NAME_LENGTH = 255;
 export const MAX_DIAGNOSIS_LENGTH = 100;
 export const MAX_TREATMENT_MEDICAL_LENGTH = 100;
+export const MAX_OBSERVATION_LENGTH = 500;
 export const MAX_EMAIL_LENGTH = 255;
 export const MAX_PHONE_LENGTH = 20;
 export const MAX_CPF_LENGTH = 14;
