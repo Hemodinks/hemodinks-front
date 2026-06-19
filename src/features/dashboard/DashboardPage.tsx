@@ -14,6 +14,7 @@ import {
 type DashboardPageProps = {
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
+  canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
   patientReadOnly: boolean;
   usersCount: number;
@@ -29,6 +30,7 @@ type DashboardPageProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenBilling: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
 };
@@ -36,6 +38,7 @@ type DashboardPageProps = {
 export function DashboardPage({
   canAccessUsers,
   canEditOwnUser,
+  canAccessBilling,
   canAccessMedicalGroups,
   patientReadOnly,
   usersCount,
@@ -51,6 +54,7 @@ export function DashboardPage({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenBilling,
   onOpenMedicalGroups,
   onOpenAgenda,
 }: DashboardPageProps) {
@@ -103,6 +107,19 @@ export function DashboardPage({
             <ArrowRight size={20} />
           </span>
         </button>
+
+        {canAccessBilling && (
+          <button type="button" className="module-card module-card-billing" onClick={onOpenBilling} aria-label="Abrir faturamento medico">
+            <span className="module-card-menu" aria-hidden="true"><GripVertical size={20} /></span>
+            <span className="module-icon"><FileText size={24} /></span>
+            <span className="module-title">Faturamento medico</span>
+            <span className="module-metric">Honorarios, glosas e repasses</span>
+            <span className="module-card-foot">
+              <span>{pendingPaymentsCount} pendencias financeiras</span>
+              <ArrowRight size={20} />
+            </span>
+          </button>
+        )}
 
         {canAccessMedicalGroups && (
           <button type="button" className="module-card module-card-medical-groups" onClick={onOpenMedicalGroups} aria-label="Abrir grupos medicos">

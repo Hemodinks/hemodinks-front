@@ -25,10 +25,12 @@ type AppShellProps = {
   canAccessDashboard: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
+  canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
   canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
+  pendingPaymentsCount: number;
   unreadAgendaNotificationCount: number;
   medicalUsers: MedicalUserOption[];
   convenios: Convenio[];
@@ -41,6 +43,7 @@ type AppShellProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenBilling: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
 };
@@ -60,10 +63,12 @@ export function AppShell({
   canAccessDashboard,
   canAccessUsers,
   canEditOwnUser,
+  canAccessBilling,
   canAccessMedicalGroups,
   canAccessAgenda,
   usersCount,
   pacientesCount,
+  pendingPaymentsCount,
   unreadAgendaNotificationCount,
   medicalUsers,
   convenios,
@@ -76,6 +81,7 @@ export function AppShell({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenBilling,
   onOpenMedicalGroups,
   onOpenAgenda,
 }: AppShellProps) {
@@ -119,15 +125,18 @@ export function AppShell({
           canAccessDashboard={canAccessDashboard}
           canAccessUsers={canAccessUsers}
           canEditOwnUser={canEditOwnUser}
+          canAccessBilling={canAccessBilling}
           canAccessMedicalGroups={canAccessMedicalGroups}
           canAccessAgenda={canAccessAgenda}
           usersCount={usersCount}
           pacientesCount={pacientesCount}
+          pendingPaymentsCount={pendingPaymentsCount}
           unreadAgendaNotificationCount={unreadAgendaNotificationCount}
           onOpenDashboard={onOpenDashboard}
           onOpenUsersList={onOpenUsersList}
           onOpenMyProfile={onOpenMyProfile}
           onOpenPatientsList={onOpenPatientsList}
+          onOpenBilling={onOpenBilling}
           onOpenMedicalGroups={onOpenMedicalGroups}
           onOpenAgenda={onOpenAgenda}
         />
