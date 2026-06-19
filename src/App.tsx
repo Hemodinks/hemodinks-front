@@ -44,6 +44,7 @@ const NOTIFICATIONS_CACHE_TIME_MS = 15 * 1000;
 
 const NotificationsModal = lazy(() => import('./features/dashboard/NotificationsModal').then((module) => ({ default: module.NotificationsModal })));
 const AgendaPage = lazy(() => import('./features/events/AgendaPage').then((module) => ({ default: module.AgendaPage })));
+const BillingPage = lazy(() => import('./features/billing/BillingPage').then((module) => ({ default: module.BillingPage })));
 const MedicalGroupsPage = lazy(() => import('./features/medicalGroups/MedicalGroupsPage').then((module) => ({ default: module.MedicalGroupsPage })));
 const CbhpmLookupModal = lazy(() => import('./features/patients/CbhpmLookupModal').then((module) => ({ default: module.CbhpmLookupModal })));
 const PatientInfoModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientInfoModal })));
@@ -172,6 +173,7 @@ function AppContent() {
   const canAccessAgenda = !isController;
   const canAccessUsers = isAdmin;
   const canEditOwnUser = isMedical;
+  const canAccessBilling = isAdmin || isMedical || isController;
   const canAccessMedicalGroups = isAdmin;
   const canCreatePatients = isAdmin || isController || isMedical;
   const canEditPatients = isAdmin || isMedical || isController;
@@ -181,6 +183,7 @@ function AppContent() {
   const canUseDashboardRoute = canAccessDashboard;
   const canUseUsersRoute = canAccessUsers;
   const canUseProfileRoute = canEditOwnUser;
+  const canUseBillingRoute = canAccessBilling;
   const canUseMedicalGroupsRoute = canAccessMedicalGroups;
   const canUseAgendaRoute = canAccessAgenda;
   const { activeView, navigateToView } = useRouteView({
@@ -188,6 +191,7 @@ function AppContent() {
     canUseDashboardRoute,
     canUseUsersRoute,
     canUseProfileRoute,
+    canUseBillingRoute,
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
   });
@@ -490,7 +494,8 @@ function AppContent() {
     : activeView === 'users' ? 'Usuarios'
       : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? 'Pacientes'
-        : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda e notificacoes';
+        : activeView === 'billing' ? 'Faturamento medico'
+          : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda e notificacoes';
 
   const openDashboard = () => {
     if (activeView === 'profile') {
@@ -539,6 +544,20 @@ function AppContent() {
     }
 
     openMedicalGroupsList();
+  };
+
+  const openBilling = () => {
+    if (activeView === 'profile') {
+      resetUserFormState({ suppressProfileAutoOpen: true });
+    }
+
+    if (!canAccessBilling) {
+      openPatientsList();
+      return;
+    }
+
+    navigateToView('billing');
+    setModuleMode('list');
   };
 
   const handleUserSortChange = (field: string) => {
@@ -646,12 +665,14 @@ function AppContent() {
     ? 'Usuarios'
     : activeView === 'profile' ? 'Meu cadastro'
     : activeView === 'patients' ? 'Pacientes'
-      : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda e notificacoes';
+      : activeView === 'billing' ? 'Faturamento medico'
+        : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda e notificacoes';
   const openActiveModuleList = activeView === 'users'
     ? openUsersList
     : activeView === 'profile' ? openMyProfile
       : activeView === 'patients' ? openPatientsList
-        : activeView === 'medicalGroups' ? openMedicalGroups : openAgenda;
+        : activeView === 'billing' ? openBilling
+          : activeView === 'medicalGroups' ? openMedicalGroups : openAgenda;
   const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
     ? [
       { label: 'Inicio', onClick: openDashboard },
@@ -670,6 +691,7 @@ function AppContent() {
     <DashboardPage
       canAccessUsers={canAccessUsers}
       canEditOwnUser={canEditOwnUser}
+      canAccessBilling={canAccessBilling}
       canAccessMedicalGroups={canAccessMedicalGroups}
       patientReadOnly={patientReadOnly}
       usersCount={usersCount}
@@ -685,6 +707,7 @@ function AppContent() {
       onOpenUsersList={openUsersList}
       onOpenMyProfile={openMyProfile}
       onOpenPatientsList={openPatientsList}
+      onOpenBilling={openBilling}
       onOpenMedicalGroups={openMedicalGroups}
       onOpenAgenda={openAgenda}
     />
@@ -794,6 +817,14 @@ function AppContent() {
       setSelectedPatientInfo={setSelectedPatientInfo}
       clearPacienteFilters={clearPacienteFilters}
       refreshPacientes={refreshPacientes}
+    />
+  ) : activeView === 'billing' ? (
+    <BillingPage
+      session={session}
+      medicalUsers={medicalUsers}
+      convenios={convenios}
+      isAdmin={isAdmin}
+      isMedical={isMedical}
     />
   ) : activeView === 'medicalGroups' ? (
     <MedicalGroupsPage
@@ -941,10 +972,12 @@ function AppContent() {
       canAccessDashboard={canAccessDashboard}
       canAccessUsers={canAccessUsers}
       canEditOwnUser={canEditOwnUser}
+      canAccessBilling={canAccessBilling}
       canAccessMedicalGroups={canAccessMedicalGroups}
       canAccessAgenda={canAccessAgenda}
       usersCount={usersCount}
       pacientesCount={pacientesCount}
+      pendingPaymentsCount={pendingPaymentsCount}
       unreadAgendaNotificationCount={unreadAgendaNotificationCount}
       medicalUsers={medicalUsers}
       convenios={convenios}
@@ -957,6 +990,7 @@ function AppContent() {
       onOpenUsersList={openUsersList}
       onOpenMyProfile={openMyProfile}
       onOpenPatientsList={openPatientsListFromMenu}
+      onOpenBilling={openBilling}
       onOpenMedicalGroups={openMedicalGroups}
       onOpenAgenda={openAgenda}
       modals={modals}

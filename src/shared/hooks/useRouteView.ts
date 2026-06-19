@@ -9,6 +9,7 @@ type UseRouteViewOptions = {
   canUseDashboardRoute: boolean;
   canUseUsersRoute: boolean;
   canUseProfileRoute: boolean;
+  canUseBillingRoute: boolean;
   canUseMedicalGroupsRoute: boolean;
   canUseAgendaRoute: boolean;
 };
@@ -18,6 +19,7 @@ export function useRouteView({
   canUseDashboardRoute,
   canUseUsersRoute,
   canUseProfileRoute,
+  canUseBillingRoute,
   canUseMedicalGroupsRoute,
   canUseAgendaRoute,
 }: UseRouteViewOptions) {
@@ -28,6 +30,7 @@ export function useRouteView({
   const routeBlocked = (routeView === 'dashboard' && !canUseDashboardRoute)
     || (routeView === 'users' && !canUseUsersRoute)
     || (routeView === 'profile' && !canUseProfileRoute)
+    || (routeView === 'billing' && !canUseBillingRoute)
     || (routeView === 'medicalGroups' && !canUseMedicalGroupsRoute)
     || (routeView === 'agenda' && !canUseAgendaRoute);
   const fallbackView: AppView = canUseDashboardRoute ? 'dashboard' : 'patients';

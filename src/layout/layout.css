@@ -464,6 +464,12 @@ img.user-avatar {
   --side-nav-border: rgba(37, 99, 235, 0.3);
 }
 
+.side-nav-billing {
+  --side-nav-color: #b45309;
+  --side-nav-soft: rgba(180, 83, 9, 0.12);
+  --side-nav-border: rgba(180, 83, 9, 0.32);
+}
+
 .side-nav-medical-groups {
   --side-nav-color: #0f4c81;
   --side-nav-soft: rgba(15, 76, 129, 0.12);

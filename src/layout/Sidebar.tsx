@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ShieldPlus, Users } from 'lucide-react';
+import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ReceiptText, ShieldPlus, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -10,15 +10,18 @@ type SidebarProps = {
   canAccessDashboard: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
+  canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
   canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
+  pendingPaymentsCount: number;
   unreadAgendaNotificationCount: number;
   onOpenDashboard: () => void;
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenBilling: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
 };
@@ -30,15 +33,18 @@ export function Sidebar({
   canAccessDashboard,
   canAccessUsers,
   canEditOwnUser,
+  canAccessBilling,
   canAccessMedicalGroups,
   canAccessAgenda,
   usersCount,
   pacientesCount,
+  pendingPaymentsCount,
   unreadAgendaNotificationCount,
   onOpenDashboard,
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenBilling,
   onOpenMedicalGroups,
   onOpenAgenda,
 }: SidebarProps) {
@@ -109,6 +115,20 @@ export function Sidebar({
             <span>Pacientes</span>
             <span className="side-nav-count">{pacientesCount}</span>
           </button>
+          {canAccessBilling && (
+            <button
+              type="button"
+              className={`side-nav-billing ${activeView === 'billing' ? 'active' : ''}`}
+              aria-current={activeView === 'billing' ? 'page' : undefined}
+              onClick={onOpenBilling}
+            >
+              <ReceiptText size={18} />
+              <span>Faturamento medico</span>
+              {pendingPaymentsCount > 0 && (
+                <span className="side-nav-count">{pendingPaymentsCount}</span>
+              )}
+            </button>
+          )}
           {canAccessMedicalGroups && (
             <button
               type="button"

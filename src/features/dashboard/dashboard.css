@@ -10,6 +10,9 @@
   --dashboard-patients: #2563eb;
   --dashboard-patients-soft: rgba(37, 99, 235, 0.12);
   --dashboard-patients-border: rgba(37, 99, 235, 0.32);
+  --dashboard-billing: #b45309;
+  --dashboard-billing-soft: rgba(180, 83, 9, 0.12);
+  --dashboard-billing-border: rgba(180, 83, 9, 0.3);
   --dashboard-profile: #7c3aed;
   --dashboard-profile-soft: rgba(124, 58, 237, 0.1);
   --dashboard-profile-border: rgba(124, 58, 237, 0.28);
@@ -236,6 +239,12 @@
   --module-color: var(--dashboard-patients);
   --module-soft: var(--dashboard-patients-soft);
   --module-border: var(--dashboard-patients-border);
+}
+
+.module-card-billing {
+  --module-color: var(--dashboard-billing);
+  --module-soft: var(--dashboard-billing-soft);
+  --module-border: var(--dashboard-billing-border);
 }
 
 .module-card-profile {
