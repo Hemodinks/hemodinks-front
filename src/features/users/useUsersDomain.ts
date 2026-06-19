@@ -8,7 +8,7 @@ import {
   getUsers,
   updateUser,
   uploadUserArquivo,
-} from '../../api';
+} from '../../services';
 import type { AppView, ModuleMode } from '../../appTypes';
 import { queryClient } from '../../queryClient';
 import { queryKeys } from '../../shared/queryKeys';

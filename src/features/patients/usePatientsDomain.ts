@@ -16,7 +16,7 @@ import {
   markPacienteObservacoesAsRead,
   updatePaciente,
   uploadPacienteArquivo,
-} from '../../api';
+} from '../../services';
 import type {
   AppView,
   ModuleMode,

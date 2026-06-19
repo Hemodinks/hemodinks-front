@@ -23,7 +23,7 @@ import {
   getAgendaNotificationRecipientOptions,
   getBrazilPublicHolidays,
   updateAgendaEvent,
-} from '../../api';
+} from '../../services';
 import type {
   AgendaEvent,
   AgendaEventPayload,

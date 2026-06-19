@@ -7,7 +7,7 @@ import {
   getDashboardSummary,
   markAgendaNotificationsAsRead,
   resetPassword,
-} from './api';
+} from './services';
 import { LoginScreen } from './features/auth/LoginScreen';
 import { PasswordRequiredScreen } from './features/auth/PasswordRequiredScreen';
 import { useAuthSession } from './features/auth/useAuthSession';

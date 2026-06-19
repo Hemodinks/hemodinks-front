@@ -45,7 +45,8 @@ Responsabilidades:
 
 | Caminho | Responsabilidade |
 | --- | --- |
-| `src/api.ts` | cliente HTTP e contratos de endpoint |
+| `src/services/api.ts` | cliente HTTP centralizado com axios |
+| `src/services/*Service.ts` | servicos por dominio e endpoint da aplicacao |
 | `src/App.tsx` | sessao, rotas, layout, modais globais e integracao entre dominios |
 | `src/routes.ts` | mapeamento entre views internas e paths da SPA |
 | `src/queryClient.ts` | configuracao global do TanStack Query |
@@ -380,7 +381,7 @@ npx playwright install chromium
 
 Arquivos principais:
 
-- `src/api.test.ts`
+- `src/services/api.test.ts`
 - `src/App.test.tsx`
 - `e2e/hemodinks.spec.ts`
 - `playwright.config.ts`
