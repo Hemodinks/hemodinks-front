@@ -1,3 +1,4 @@
+import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   authenticate,
@@ -9,10 +10,12 @@ import {
   deleteUser,
   deleteUserArquivo,
   getAllCbhpmGeral,
-  getDashboardNotifications,
+  getBrazilPublicHolidays,
   getConvenios,
+  getDashboardNotifications,
   getHospitais,
   getOpmeFornecedores,
+  getPacienteObservacoes,
   getUser,
   getUserProfilePhoto,
   getPacientes,
@@ -22,30 +25,40 @@ import {
   updateUser,
   uploadPacienteArquivo,
   uploadUserArquivo,
-} from './api';
+} from './index';
+import { apiClient, publicApiClient } from './api';
 
-const fetchMock = vi.fn<typeof fetch>();
-
-function jsonResponse(body: unknown, init?: ResponseInit) {
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-    ...init,
-  });
+function axiosResponse<T>(data: T, status = 200): AxiosResponse<T> {
+  return {
+    data,
+    status,
+    statusText: status === 204 ? 'No Content' : 'OK',
+    headers: {},
+    config: { headers: {} } as AxiosResponse<T>['config'],
+  };
 }
 
-describe('api client', () => {
+function apiError(status: number, data?: unknown) {
+  return new AxiosError(
+    'Request failed',
+    undefined,
+    undefined,
+    undefined,
+    axiosResponse(data, status),
+  );
+}
+
+describe('services api client', () => {
   beforeEach(() => {
-    fetchMock.mockReset();
-    vi.stubGlobal('fetch', fetchMock);
+    vi.restoreAllMocks();
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('autentica enviando email e senha para a rota correta', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(axiosResponse({
       id: 1,
       nome: 'George',
       email: 'gmarcone@gmail.com',
@@ -58,19 +71,22 @@ describe('api client', () => {
     const result = await authenticate('gmarcone@gmail.com', 'Senha@123');
 
     expect(result.token).toBe('jwt-token');
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/users/authenticate', {
+    expect(requestSpy).toHaveBeenCalledWith({
+      url: '/api/users/authenticate',
       method: 'POST',
-      body: JSON.stringify({ email: 'gmarcone@gmail.com', senha: 'Senha@123' }),
+      data: { email: 'gmarcone@gmail.com', senha: 'Senha@123' },
       headers: { 'Content-Type': 'application/json' },
     });
   });
 
   it('inclui o token bearer ao buscar usuarios', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse([]));
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(axiosResponse([]));
 
     await getUsers('jwt-token');
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/users/', {
+    expect(requestSpy).toHaveBeenCalledWith({
+      url: '/api/users/',
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
@@ -79,18 +95,19 @@ describe('api client', () => {
   });
 
   it('busca a foto de perfil do usuario com token bearer', async () => {
-    fetchMock.mockResolvedValueOnce(new Response('avatar', {
-      status: 200,
-      headers: { 'Content-Type': 'image/png' },
-    }));
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(
+      axiosResponse(new Blob(['avatar'], { type: 'image/png' })),
+    );
 
     const result = await getUserProfilePhoto(1, 'jwt-token');
 
     expect(result.size).toBe(6);
     expect(result.type).toBe('image/png');
     await expect(result.text()).resolves.toBe('avatar');
-
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/users/1/foto-perfil', {
+    expect(requestSpy).toHaveBeenCalledWith({
+      url: '/api/users/1/foto-perfil',
+      method: 'GET',
+      responseType: 'blob',
       headers: {
         Authorization: 'Bearer jwt-token',
       },
@@ -98,11 +115,13 @@ describe('api client', () => {
   });
 
   it('busca notificacoes do dashboard com token bearer', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse([]));
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(axiosResponse([]));
 
     await getDashboardNotifications('jwt-token');
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/dashboard/notifications', {
+    expect(requestSpy).toHaveBeenCalledWith({
+      url: '/api/dashboard/notifications',
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
@@ -111,16 +130,18 @@ describe('api client', () => {
   });
 
   it('monta os payloads de CRUD de pacientes', async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse([]))
-      .mockResolvedValueOnce(jsonResponse([{ id: 1, nome: 'Santa Clara - Mater Dei' }]))
-      .mockResolvedValueOnce(jsonResponse([{ idConvenio: 7, descricaoConvenio: 'Particular' }]))
-      .mockResolvedValueOnce(jsonResponse([{ idFornecedor: 1, fornecedor: 'Promedom' }]))
-      .mockResolvedValueOnce(jsonResponse({ id: 10 }))
-      .mockResolvedValueOnce(jsonResponse({ id: 10 }))
-      .mockResolvedValueOnce(jsonResponse({ id: 1, nomeOriginal: 'laudo.pdf' }))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const requestSpy = vi.spyOn(apiClient, 'request');
+
+    requestSpy
+      .mockResolvedValueOnce(axiosResponse([]))
+      .mockResolvedValueOnce(axiosResponse([{ id: 1, nome: 'Santa Clara - Mater Dei' }]))
+      .mockResolvedValueOnce(axiosResponse([{ idConvenio: 7, descricaoConvenio: 'Particular' }]))
+      .mockResolvedValueOnce(axiosResponse([{ idFornecedor: 1, fornecedor: 'Promedom' }]))
+      .mockResolvedValueOnce(axiosResponse({ id: 10 }))
+      .mockResolvedValueOnce(axiosResponse({ id: 10 }))
+      .mockResolvedValueOnce(axiosResponse({ id: 1, nomeOriginal: 'laudo.pdf' }))
+      .mockResolvedValueOnce(axiosResponse(undefined, 204))
+      .mockResolvedValueOnce(axiosResponse(undefined, 204));
 
     const payload = {
       data: null,
@@ -172,61 +193,74 @@ describe('api client', () => {
     await expect(deletePacienteArquivo(10, 1, 'jwt-token')).resolves.toBeUndefined();
     await expect(deletePaciente(10, 'jwt-token')).resolves.toBeUndefined();
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:5000/api/pacientes/', {
+    expect(requestSpy).toHaveBeenNthCalledWith(1, {
+      url: '/api/pacientes/',
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:5000/api/hospitais/', {
+    expect(requestSpy).toHaveBeenNthCalledWith(2, {
+      url: '/api/hospitais/',
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://localhost:5000/api/convenios/', {
+    expect(requestSpy).toHaveBeenNthCalledWith(3, {
+      url: '/api/convenios/',
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://localhost:5000/api/opme/', {
+    expect(requestSpy).toHaveBeenNthCalledWith(4, {
+      url: '/api/opme/',
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://localhost:5000/api/pacientes/', {
+    expect(requestSpy).toHaveBeenNthCalledWith(5, {
+      url: '/api/pacientes/',
       method: 'POST',
-      body: JSON.stringify(payload),
+      data: payload,
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(6, 'http://localhost:5000/api/pacientes/10', {
+    expect(requestSpy).toHaveBeenNthCalledWith(6, {
+      url: '/api/pacientes/10',
       method: 'PUT',
-      body: JSON.stringify(payload),
+      data: payload,
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(7, 'http://localhost:5000/api/pacientes/10/arquivos', expect.objectContaining({
+    expect(requestSpy).toHaveBeenNthCalledWith(7, expect.objectContaining({
+      url: '/api/pacientes/10/arquivos',
       method: 'POST',
-      body: expect.any(FormData),
+      data: expect.any(FormData),
       headers: {
         Authorization: 'Bearer jwt-token',
       },
     }));
-    expect(fetchMock).toHaveBeenNthCalledWith(8, 'http://localhost:5000/api/pacientes/10/arquivos/1', {
+    expect(requestSpy).toHaveBeenNthCalledWith(8, {
+      url: '/api/pacientes/10/arquivos/1',
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(9, 'http://localhost:5000/api/pacientes/10', {
+    expect(requestSpy).toHaveBeenNthCalledWith(9, {
+      url: '/api/pacientes/10',
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -236,7 +270,9 @@ describe('api client', () => {
   });
 
   it('monta filtros administrativos da lista de pacientes', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ items: [], page: 2, pageSize: 10, totalItems: 0, totalPages: 1 }));
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(
+      axiosResponse({ items: [], page: 2, pageSize: 10, totalItems: 0, totalPages: 1 }),
+    );
 
     await getPacientes('jwt-token', {
       page: 2,
@@ -247,20 +283,21 @@ describe('api client', () => {
       procedimento: 'Consulta',
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:5000/api/pacientes/?page=2&pageSize=10&search=ana&medico=Dra.+Ana&convenio=Particular&procedimento=Consulta',
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer jwt-token',
-        },
-      },
-    );
+    const config = requestSpy.mock.calls[0]?.[0];
+    expect(config?.url).toBe('/api/pacientes/');
+    expect(config?.method).toBe('GET');
+    expect(config?.headers).toEqual({
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer jwt-token',
+    });
+    expect(config?.params?.toString()).toBe('page=2&pageSize=10&search=ana&medico=Dra.+Ana&convenio=Particular&procedimento=Consulta');
   });
 
   it('carrega todas as paginas da consulta CBHPM para cache local', async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({
+    const requestSpy = vi.spyOn(apiClient, 'request');
+
+    requestSpy
+      .mockResolvedValueOnce(axiosResponse({
         items: [
           { id: 1, codigo: '10101012', procedimento: 'Consulta', porte: '2B' },
         ],
@@ -269,7 +306,7 @@ describe('api client', () => {
         totalItems: 2,
         totalPages: 2,
       }))
-      .mockResolvedValueOnce(jsonResponse({
+      .mockResolvedValueOnce(axiosResponse({
         items: [
           { id: 2, codigo: '20101201', procedimento: 'Avaliacao clinica', porte: '2B' },
         ],
@@ -282,27 +319,22 @@ describe('api client', () => {
     const result = await getAllCbhpmGeral('jwt-token');
 
     expect(result.map((item) => item.codigo)).toEqual(['10101012', '20101201']);
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:5000/api/cbhpm/?page=1&pageSize=100', {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer jwt-token',
-      },
-    });
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:5000/api/cbhpm/?page=2&pageSize=100', {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer jwt-token',
-      },
-    });
+    expect(requestSpy).toHaveBeenCalledTimes(2);
+    expect(requestSpy.mock.calls[0]?.[0]?.url).toBe('/api/cbhpm/');
+    expect(requestSpy.mock.calls[0]?.[0]?.params?.toString()).toBe('page=1&pageSize=100');
+    expect(requestSpy.mock.calls[1]?.[0]?.url).toBe('/api/cbhpm/');
+    expect(requestSpy.mock.calls[1]?.[0]?.params?.toString()).toBe('page=2&pageSize=100');
   });
 
   it('monta os payloads de CRUD e troca de senha', async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ id: 1 }))
-      .mockResolvedValueOnce(jsonResponse({ id: 1 }))
-      .mockResolvedValueOnce(jsonResponse({ id: 1, precisaTrocarSenha: false, message: 'Senha alterada com sucesso' }))
-      .mockResolvedValueOnce(jsonResponse({ id: 1, precisaTrocarSenha: true, message: 'Senha resetada para a senha padrao' }))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const requestSpy = vi.spyOn(apiClient, 'request');
+
+    requestSpy
+      .mockResolvedValueOnce(axiosResponse({ id: 1 }))
+      .mockResolvedValueOnce(axiosResponse({ id: 1 }))
+      .mockResolvedValueOnce(axiosResponse({ id: 1, precisaTrocarSenha: false, message: 'Senha alterada com sucesso' }))
+      .mockResolvedValueOnce(axiosResponse({ id: 1, precisaTrocarSenha: true, message: 'Senha resetada para a senha padrao' }))
+      .mockResolvedValueOnce(axiosResponse(undefined, 204));
 
     const payload = {
       nome: 'Ana Hemodinks',
@@ -323,38 +355,43 @@ describe('api client', () => {
     await resetPassword('ana@hemodinks.com');
     await expect(deleteUser(1, 'jwt-token')).resolves.toBeUndefined();
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:5000/api/users/', {
+    expect(requestSpy).toHaveBeenNthCalledWith(1, {
+      url: '/api/users/',
       method: 'POST',
-      body: JSON.stringify(payload),
+      data: payload,
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:5000/api/users/1', {
+    expect(requestSpy).toHaveBeenNthCalledWith(2, {
+      url: '/api/users/1',
       method: 'PUT',
-      body: JSON.stringify(payload),
+      data: payload,
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://localhost:5000/api/users/1/password', {
+    expect(requestSpy).toHaveBeenNthCalledWith(3, {
+      url: '/api/users/1/password',
       method: 'PUT',
-      body: JSON.stringify({ senhaAtual: 'Senha@123', novaSenha: 'NovaSenha@123' }),
+      data: { senhaAtual: 'Senha@123', novaSenha: 'NovaSenha@123' },
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(4, 'http://localhost:5000/api/users/password/reset', {
+    expect(requestSpy).toHaveBeenNthCalledWith(4, {
+      url: '/api/users/password/reset',
       method: 'POST',
-      body: JSON.stringify({ email: 'ana@hemodinks.com' }),
+      data: { email: 'ana@hemodinks.com' },
       headers: {
         'Content-Type': 'application/json',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(5, 'http://localhost:5000/api/users/1', {
+    expect(requestSpy).toHaveBeenNthCalledWith(5, {
+      url: '/api/users/1',
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -364,29 +401,35 @@ describe('api client', () => {
   });
 
   it('monta as chamadas de documentos do cadastro medico', async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ id: 2, arquivos: [] }))
-      .mockResolvedValueOnce(jsonResponse({ id: 7, nomeOriginal: 'crm.pdf' }))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const requestSpy = vi.spyOn(apiClient, 'request');
+
+    requestSpy
+      .mockResolvedValueOnce(axiosResponse({ id: 2, arquivos: [] }))
+      .mockResolvedValueOnce(axiosResponse({ id: 7, nomeOriginal: 'crm.pdf' }))
+      .mockResolvedValueOnce(axiosResponse(undefined, 204));
 
     await getUser(2, 'jwt-token');
     await uploadUserArquivo(2, new File(['crm'], 'crm.pdf', { type: 'application/pdf' }), 'jwt-token');
     await expect(deleteUserArquivo(2, 7, 'jwt-token')).resolves.toBeUndefined();
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:5000/api/users/2', {
+    expect(requestSpy).toHaveBeenNthCalledWith(1, {
+      url: '/api/users/2',
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
       },
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:5000/api/users/2/arquivos', expect.objectContaining({
+    expect(requestSpy).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      url: '/api/users/2/arquivos',
       method: 'POST',
-      body: expect.any(FormData),
+      data: expect.any(FormData),
       headers: {
         Authorization: 'Bearer jwt-token',
       },
     }));
-    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://localhost:5000/api/users/2/arquivos/7', {
+    expect(requestSpy).toHaveBeenNthCalledWith(3, {
+      url: '/api/users/2/arquivos/7',
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -395,15 +438,53 @@ describe('api client', () => {
     });
   });
 
+  it('consulta feriados nacionais pela API publica com axios', async () => {
+    const requestSpy = vi.spyOn(publicApiClient, 'request').mockResolvedValueOnce(axiosResponse([
+      { date: '2026-01-01', localName: 'Confraternizacao Universal', name: 'New Year', countryCode: 'BR', fixed: true, global: true, counties: null, launchYear: null, types: ['Public'] },
+    ]));
+
+    const result = await getBrazilPublicHolidays(2026);
+
+    expect(result).toHaveLength(1);
+    expect(requestSpy).toHaveBeenCalledWith({
+      url: 'https://date.nager.at/api/v3/PublicHolidays/2026/BR',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  });
+
   it('normaliza mensagens de erro da API', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'Email ja cadastrado' }, { status: 400 }));
+    vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(400, { message: 'Email ja cadastrado' }));
 
     await expect(getUsers('jwt-token')).rejects.toThrow('Email ja cadastrado');
   });
 
   it('usa mensagem padrao para resposta 401', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 401 }));
+    vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(401));
 
     await expect(authenticate('email@teste.com', 'senha')).rejects.toThrow('Credenciais invalidas ou sessao expirada.');
+  });
+
+  it('usa mensagem especifica ao falhar consulta de feriados nacionais', async () => {
+    vi.spyOn(publicApiClient, 'request').mockRejectedValueOnce(apiError(503));
+
+    await expect(getBrazilPublicHolidays(2026)).rejects.toThrow('Nao foi possivel carregar feriados nacionais.');
+  });
+
+  it('mantem o carregamento de observacoes do paciente no servico dedicado', async () => {
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(axiosResponse([]));
+
+    await getPacienteObservacoes(10, 'jwt-token');
+
+    expect(requestSpy).toHaveBeenCalledWith({
+      url: '/api/pacientes/10/observacoes',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
   });
 });

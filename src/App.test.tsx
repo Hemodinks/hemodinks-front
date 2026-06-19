@@ -3,12 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
-import * as api from './api';
+import * as api from './services';
 import { CbhpmLookupModal } from './features/patients/CbhpmLookupModal';
 import { queryClient } from './queryClient';
 import type { AuthSession, Paciente, PacienteObservacao, User } from './types';
 
-vi.mock('./api', () => ({
+vi.mock('./services', () => ({
   authenticate: vi.fn(),
   completeAgendaEvent: vi.fn(),
   createAgendaEvent: vi.fn(),
@@ -325,6 +325,8 @@ describe('App', () => {
   it('exclui apenas o evento clicado na agenda', async () => {
     const user = userEvent.setup();
     mockSession();
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${`${today.getMonth() + 1}`.padStart(2, '0')}-${`${today.getDate()}`.padStart(2, '0')}`;
     vi.mocked(api.getAgendaEvents).mockResolvedValue([
       {
         id: 101,
@@ -334,8 +336,8 @@ describe('App', () => {
         medicalUserName: null,
         title: 'Evento A',
         description: 'Primeiro evento',
-        start: '2026-06-17T10:00:00Z',
-        end: '2026-06-17T11:00:00Z',
+        start: `${todayKey}T12:00:00Z`,
+        end: `${todayKey}T13:00:00Z`,
         notifyMedicalProfile: false,
         notifyUser: false,
         reminderPeriodMinutes: null,
@@ -343,7 +345,7 @@ describe('App', () => {
         nextReminderAt: null,
         isCompleted: false,
         completedAt: null,
-        createdAt: '2026-06-17T09:00:00Z',
+        createdAt: `${todayKey}T11:00:00Z`,
         updatedAt: null,
       },
       {
@@ -354,8 +356,8 @@ describe('App', () => {
         medicalUserName: null,
         title: 'Evento B',
         description: 'Segundo evento',
-        start: '2026-06-17T12:00:00Z',
-        end: '2026-06-17T13:00:00Z',
+        start: `${todayKey}T15:00:00Z`,
+        end: `${todayKey}T16:00:00Z`,
         notifyMedicalProfile: false,
         notifyUser: false,
         reminderPeriodMinutes: null,
@@ -363,7 +365,7 @@ describe('App', () => {
         nextReminderAt: null,
         isCompleted: false,
         completedAt: null,
-        createdAt: '2026-06-17T11:00:00Z',
+        createdAt: `${todayKey}T14:00:00Z`,
         updatedAt: null,
       },
     ]);
