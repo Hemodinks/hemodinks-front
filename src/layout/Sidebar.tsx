@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ReceiptText, ShieldPlus, Users } from 'lucide-react';
+import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -24,6 +24,7 @@ type SidebarProps = {
   onOpenBilling: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
+  onOpenSettings: () => void;
 };
 
 export function Sidebar({
@@ -47,6 +48,7 @@ export function Sidebar({
   onOpenBilling,
   onOpenMedicalGroups,
   onOpenAgenda,
+  onOpenSettings,
 }: SidebarProps) {
   return (
     <aside className="sidebar-panel" aria-label="Sessao ativa">
@@ -154,6 +156,15 @@ export function Sidebar({
               )}
             </button>
           )}
+          <button
+            type="button"
+            className={`side-nav-settings ${activeView === 'settings' ? 'active' : ''}`}
+            aria-current={activeView === 'settings' ? 'page' : undefined}
+            onClick={onOpenSettings}
+          >
+            <Settings size={18} />
+            <span>Configuracao</span>
+          </button>
         </nav>
       </div>
     </aside>

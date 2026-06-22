@@ -3,8 +3,10 @@ import { QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import {
   authenticate,
+  DEFAULT_SYSTEM_SETTINGS,
   getDashboardNotifications,
   getDashboardSummary,
+  getSystemSettings,
   markAgendaNotificationsAsRead,
   resetPassword,
 } from './services';
@@ -46,6 +48,7 @@ const NotificationsModal = lazy(() => import('./features/dashboard/Notifications
 const AgendaPage = lazy(() => import('./features/events/AgendaPage').then((module) => ({ default: module.AgendaPage })));
 const BillingPage = lazy(() => import('./features/billing/BillingPage').then((module) => ({ default: module.BillingPage })));
 const MedicalGroupsPage = lazy(() => import('./features/medicalGroups/MedicalGroupsPage').then((module) => ({ default: module.MedicalGroupsPage })));
+const SystemSettingsPage = lazy(() => import('./features/settings/SystemSettingsPage').then((module) => ({ default: module.SystemSettingsPage })));
 const CbhpmLookupModal = lazy(() => import('./features/patients/CbhpmLookupModal').then((module) => ({ default: module.CbhpmLookupModal })));
 const PatientInfoModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientInfoModal })));
 const PatientFilesModal = lazy(() => import('./features/patients/PatientModals').then((module) => ({ default: module.PatientFilesModal })));
@@ -66,7 +69,7 @@ function ModuleFallback() {
 
 function AppContent() {
   const { session, persistSession, clearSession } = useAuthSession();
-  const { theme, toggleTheme } = useThemePreference();
+  const { theme, toggleTheme, setThemePreference } = useThemePreference();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
   const [moduleMode, setModuleMode] = useState<ModuleMode>('list');
   const [loginEmail, setLoginEmail] = useState('');
@@ -95,6 +98,14 @@ function AppContent() {
     enabled: Boolean(session && notificationsOpen),
     staleTime: NOTIFICATIONS_CACHE_TIME_MS,
   });
+  const systemSettingsQuery = useQuery({
+    queryKey: queryKeys.systemSettings(),
+    queryFn: getSystemSettings,
+    staleTime: 5 * 60 * 1000,
+  });
+  const systemSettings = systemSettingsQuery.data ?? DEFAULT_SYSTEM_SETTINGS;
+  const companyName = systemSettings.nomeEmpresa?.trim() || DEFAULT_SYSTEM_SETTINGS.nomeEmpresa;
+  const systemSettingsError = systemSettingsQuery.error ? getErrorMessage(systemSettingsQuery.error) : '';
 
   useEffect(() => {
     setObservabilityUser(session ? {
@@ -186,6 +197,7 @@ function AppContent() {
   const canUseBillingRoute = canAccessBilling;
   const canUseMedicalGroupsRoute = canAccessMedicalGroups;
   const canUseAgendaRoute = canAccessAgenda;
+  const canUseSettingsRoute = true;
   const { activeView, navigateToView } = useRouteView({
     session,
     canUseDashboardRoute,
@@ -194,6 +206,7 @@ function AppContent() {
     canUseBillingRoute,
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
+    canUseSettingsRoute,
   });
 
   const usersDomain = useUsersDomain({
@@ -215,6 +228,7 @@ function AppContent() {
     session,
     activeView,
     moduleMode,
+    companyName,
     isAdmin,
     isMedical,
     canCreatePatients,
@@ -495,7 +509,8 @@ function AppContent() {
       : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? 'Pacientes'
         : activeView === 'billing' ? 'Faturamento medico'
-          : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda e notificacoes';
+          : activeView === 'medicalGroups' ? 'Grupos medicos'
+            : activeView === 'settings' ? 'Configuracao do sistema' : 'Agenda e notificacoes';
 
   const openDashboard = () => {
     if (activeView === 'profile') {
@@ -560,6 +575,15 @@ function AppContent() {
     setModuleMode('list');
   };
 
+  const openSettings = () => {
+    if (activeView === 'profile') {
+      resetUserFormState({ suppressProfileAutoOpen: true });
+    }
+
+    navigateToView('settings');
+    setModuleMode('list');
+  };
+
   const handleUserSortChange = (field: string) => {
     setCurrentPage(1);
 
@@ -611,6 +635,7 @@ function AppContent() {
   if (!session) {
     return (
       <LoginScreen
+        companyName={companyName}
         isBusy={isBusy}
         theme={theme}
         loginEmail={loginEmail}
@@ -660,19 +685,22 @@ function AppContent() {
     : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
       : activeView === 'medicalGroups' ? editingGroupId ? 'Editar grupo medico' : 'Novo grupo medico'
+      : activeView === 'settings' ? 'Configuracao do sistema'
       : 'Agenda e notificacoes';
   const activeModuleLabel = activeView === 'users'
     ? 'Usuarios'
     : activeView === 'profile' ? 'Meu cadastro'
     : activeView === 'patients' ? 'Pacientes'
       : activeView === 'billing' ? 'Faturamento medico'
-        : activeView === 'medicalGroups' ? 'Grupos medicos' : 'Agenda e notificacoes';
+        : activeView === 'medicalGroups' ? 'Grupos medicos'
+          : activeView === 'settings' ? 'Configuracao do sistema' : 'Agenda e notificacoes';
   const openActiveModuleList = activeView === 'users'
     ? openUsersList
     : activeView === 'profile' ? openMyProfile
       : activeView === 'patients' ? openPatientsList
         : activeView === 'billing' ? openBilling
-          : activeView === 'medicalGroups' ? openMedicalGroups : openAgenda;
+          : activeView === 'medicalGroups' ? openMedicalGroups
+            : activeView === 'settings' ? openSettings : openAgenda;
   const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
     ? [
       { label: 'Inicio', onClick: openDashboard },
@@ -689,6 +717,7 @@ function AppContent() {
 
   const mainContent = activeView === 'dashboard' ? (
     <DashboardPage
+      companyName={companyName}
       canAccessUsers={canAccessUsers}
       canEditOwnUser={canEditOwnUser}
       canAccessBilling={canAccessBilling}
@@ -710,6 +739,7 @@ function AppContent() {
       onOpenBilling={openBilling}
       onOpenMedicalGroups={openMedicalGroups}
       onOpenAgenda={openAgenda}
+      onOpenSettings={openSettings}
     />
   ) : activeView === 'users' || activeView === 'profile' ? (
     <UsersPage
@@ -861,6 +891,18 @@ function AppContent() {
         }
       }}
     />
+  ) : activeView === 'settings' ? (
+    <SystemSettingsPage
+      session={session}
+      settings={systemSettings}
+      settingsLoading={systemSettingsQuery.isLoading || systemSettingsQuery.isFetching}
+      settingsError={systemSettingsError}
+      isAdmin={isAdmin}
+      theme={theme}
+      onThemeChange={setThemePreference}
+      onSettingsUpdated={(updated) => queryClient.setQueryData(queryKeys.systemSettings(), updated)}
+      onPasswordChanged={handlePasswordChanged}
+    />
   ) : (
     <AgendaPage
       session={session}
@@ -963,9 +1005,9 @@ function AppContent() {
       session={session}
       isBusy={isBusy}
       appTitle={appTitle}
+      companyName={companyName}
       activeView={activeView}
       breadcrumbItems={breadcrumbItems}
-      theme={theme}
       notificationsOpen={notificationsOpen}
       notificationCount={notificationCount}
       currentUserProfile={currentUserProfile}
@@ -983,8 +1025,6 @@ function AppContent() {
       convenios={convenios}
       opmeFornecedores={opmeFornecedores}
       onToggleNotifications={() => void handleToggleNotifications()}
-      onToggleTheme={toggleTheme}
-      onOpenPasswordModal={() => setShowPasswordModal(true)}
       onLogout={logout}
       onOpenDashboard={openDashboard}
       onOpenUsersList={openUsersList}
@@ -993,6 +1033,7 @@ function AppContent() {
       onOpenBilling={openBilling}
       onOpenMedicalGroups={openMedicalGroups}
       onOpenAgenda={openAgenda}
+      onOpenSettings={openSettings}
       modals={modals}
     >
       <Suspense fallback={<ModuleFallback />}>

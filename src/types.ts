@@ -251,6 +251,17 @@ export type AuthSession = {
   user: SessionUser;
 };
 
+export type SystemSettings = {
+  id: number;
+  nomeEmpresa: string;
+  dataCadastro: string;
+  dataAtualizacao?: string | null;
+};
+
+export type UpdateSystemSettingsPayload = {
+  nomeEmpresa: string;
+};
+
 export type UserFormData = {
   nome: string;
   email: string;

@@ -8,11 +8,13 @@ import {
   FileText,
   GripVertical,
   Info,
+  Settings,
   ShieldPlus,
   Users,
 } from 'lucide-react';
 
 type DashboardPageProps = {
+  companyName: string;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
@@ -34,9 +36,10 @@ type DashboardPageProps = {
   onOpenBilling: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
+  onOpenSettings: () => void;
 };
 
-type DashboardModuleId = 'users' | 'profile' | 'patients' | 'billing' | 'medicalGroups' | 'agenda';
+type DashboardModuleId = 'users' | 'profile' | 'patients' | 'billing' | 'medicalGroups' | 'agenda' | 'settings';
 
 type DashboardModule = {
   id: DashboardModuleId;
@@ -51,7 +54,7 @@ type DashboardModule = {
 };
 
 const DASHBOARD_MODULE_ORDER_KEY = 'hemodinks.dashboard.module-order';
-const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = ['users', 'profile', 'patients', 'billing', 'medicalGroups', 'agenda'];
+const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = ['users', 'profile', 'patients', 'billing', 'medicalGroups', 'agenda', 'settings'];
 
 function readStoredDashboardModuleOrder() {
   if (typeof window === 'undefined') {
@@ -104,6 +107,7 @@ function reorderDashboardModuleOrder(currentOrder: DashboardModuleId[], draggedM
 }
 
 export function DashboardPage({
+  companyName,
   canAccessUsers,
   canEditOwnUser,
   canAccessBilling,
@@ -125,6 +129,7 @@ export function DashboardPage({
   onOpenBilling,
   onOpenMedicalGroups,
   onOpenAgenda,
+  onOpenSettings,
 }: DashboardPageProps) {
   const [moduleOrder, setModuleOrder] = useState<DashboardModuleId[]>(() => readStoredDashboardModuleOrder());
   const [draggedModuleId, setDraggedModuleId] = useState<DashboardModuleId | null>(null);
@@ -199,6 +204,16 @@ export function DashboardPage({
       icon: <CalendarDays size={24} />,
       onOpen: onOpenAgenda,
       badge: unreadAgendaNotificationCount > 0 ? `${unreadAgendaNotificationCount} nao lidas` : undefined,
+    },
+    {
+      id: 'settings',
+      title: 'Configuracao do sistema',
+      metric: 'Senha, tema e marca',
+      footerLabel: 'Ajustar preferencias',
+      className: 'module-card-settings',
+      ariaLabel: 'Abrir configuracao do sistema',
+      icon: <Settings size={24} />,
+      onOpen: onOpenSettings,
     },
   ];
   const visibleModuleIds = availableModules.map((module) => module.id);
@@ -276,7 +291,7 @@ export function DashboardPage({
       <div className="dashboard-header">
         <div>
           <span className="eyebrow">Modulos</span>
-          <h2>Cadastros Hemodinks</h2>
+          <h2>Cadastros {companyName}</h2>
         </div>
       </div>
 

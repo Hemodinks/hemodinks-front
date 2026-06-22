@@ -1,0 +1,121 @@
+.system-settings-workspace {
+  display: grid;
+  gap: 16px;
+}
+
+.system-settings-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-left: 5px solid var(--action-primary);
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.11), transparent 68%),
+    var(--panel);
+}
+
+.settings-hero-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.settings-hero-icon,
+.settings-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--action-primary);
+  background: color-mix(in srgb, var(--action-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--action-primary) 26%, transparent);
+  border-radius: 8px;
+}
+
+.settings-hero-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.system-settings-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(320px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.system-settings-panel {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.system-settings-password-panel {
+  grid-column: 1 / -1;
+}
+
+.settings-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-section-heading h3 {
+  margin: 3px 0 0;
+  color: var(--ink);
+}
+
+.settings-section-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.system-settings-form {
+  display: grid;
+  gap: 14px;
+}
+
+.system-settings-form .primary-action {
+  justify-self: start;
+  min-width: 178px;
+}
+
+.theme-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.theme-choice {
+  min-height: 92px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: var(--ink);
+  background: var(--input-bg);
+  font-weight: 900;
+}
+
+.theme-choice:hover,
+.theme-choice.active {
+  border-color: var(--selection-accent);
+  box-shadow: 0 0 0 3px var(--selection-accent-soft);
+}
+
+.theme-choice.active {
+  color: var(--action-primary);
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.1), transparent 70%),
+    var(--input-bg);
+}
+
+@media (max-width: 860px) {
+  .system-settings-grid,
+  .theme-choice-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .system-settings-hero {
+    align-items: flex-start;
+  }
+}

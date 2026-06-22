@@ -8,5 +8,6 @@
 @import './features/patients/patients.css';
 @import './features/billing/billing.css';
 @import './features/medicalGroups/medicalGroups.css';
+@import './features/settings/settings.css';
 @import './shared/components/modals.css';
 @import './styles/responsive.css';

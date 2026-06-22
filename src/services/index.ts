@@ -10,4 +10,5 @@ export * from './medicalGroupsService';
 export * from './opmeService';
 export * from './patientsService';
 export * from './publicHolidaysService';
+export * from './systemSettingsService';
 export * from './usersService';

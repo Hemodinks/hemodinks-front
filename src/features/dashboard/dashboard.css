@@ -22,6 +22,9 @@
   --dashboard-agenda: #b7791f;
   --dashboard-agenda-soft: rgba(183, 121, 31, 0.14);
   --dashboard-agenda-border: rgba(183, 121, 31, 0.34);
+  --dashboard-settings: #475569;
+  --dashboard-settings-soft: rgba(71, 85, 105, 0.12);
+  --dashboard-settings-border: rgba(71, 85, 105, 0.3);
   --dashboard-pending: #b7791f;
   --dashboard-pending-soft: rgba(183, 121, 31, 0.14);
   --dashboard-pending-border: rgba(183, 121, 31, 0.34);
@@ -289,4 +292,10 @@
   --module-color: var(--dashboard-agenda);
   --module-soft: var(--dashboard-agenda-soft);
   --module-border: var(--dashboard-agenda-border);
+}
+
+.module-card-settings {
+  --module-color: var(--dashboard-settings);
+  --module-soft: var(--dashboard-settings-soft);
+  --module-border: var(--dashboard-settings-border);
 }

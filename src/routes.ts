@@ -8,6 +8,7 @@ export const VIEW_PATHS: Record<AppView, string> = {
   billing: '/faturamento-medico',
   medicalGroups: '/grupos-medicos',
   agenda: '/agenda',
+  settings: '/configuracoes',
 };
 
 export function getViewFromPath(pathname: string): AppView | null {

@@ -9,6 +9,12 @@ import { queryClient } from './queryClient';
 import type { AuthSession, Paciente, PacienteObservacao, User } from './types';
 
 vi.mock('./services', () => ({
+  DEFAULT_SYSTEM_SETTINGS: {
+    id: 1,
+    nomeEmpresa: 'Hemodinks',
+    dataCadastro: '',
+    dataAtualizacao: null,
+  },
   authenticate: vi.fn(),
   completeAgendaEvent: vi.fn(),
   createAgendaEvent: vi.fn(),
@@ -21,6 +27,7 @@ vi.mock('./services', () => ({
   updateAgendaEvent: vi.fn(),
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
+  getSystemSettings: vi.fn(),
   getAllCbhpmGeral: vi.fn(),
   getCbhpmGeral: vi.fn(),
   getConvenios: vi.fn(),
@@ -47,6 +54,7 @@ vi.mock('./services', () => ({
   deleteUser: vi.fn(),
   changePassword: vi.fn(),
   resetPassword: vi.fn(),
+  updateSystemSettings: vi.fn(),
 }));
 
 const SESSION_KEY = 'hemodinks.session';
@@ -172,6 +180,18 @@ describe('App', () => {
       upcomingEventsCount: 0,
     });
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
+    vi.mocked(api.getSystemSettings).mockResolvedValue({
+      id: 1,
+      nomeEmpresa: 'Hemodinks',
+      dataCadastro: '2026-06-22T00:00:00Z',
+      dataAtualizacao: null,
+    });
+    vi.mocked(api.updateSystemSettings).mockResolvedValue({
+      id: 1,
+      nomeEmpresa: 'Clinica Alfa',
+      dataCadastro: '2026-06-22T00:00:00Z',
+      dataAtualizacao: '2026-06-22T12:00:00Z',
+    });
     vi.mocked(api.getAgendaEvents).mockResolvedValue([]);
     vi.mocked(api.getAgendaMedicalUsers).mockResolvedValue([]);
     vi.mocked(api.getAgendaNotificationRecipientOptions).mockResolvedValue({
@@ -400,15 +420,38 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(document.documentElement).not.toHaveAttribute('data-theme');
 
-    await user.click(screen.getByRole('button', { name: /tema escuro/i }));
+    await user.click(screen.getByRole('button', { name: /abrir configuracao do sistema/i }));
+    expect(await screen.findByRole('heading', { name: 'Configuracao do sistema', level: 1 })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /escuro/i }));
 
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
     expect(localStorage.getItem('hemodinks.theme')).toBe('dark');
 
-    await user.click(screen.getByRole('button', { name: /tema claro/i }));
+    await user.click(screen.getByRole('button', { name: /claro/i }));
 
     expect(document.documentElement).not.toHaveAttribute('data-theme');
     expect(localStorage.getItem('hemodinks.theme')).toBe('light');
+  });
+
+  it('atualiza o nome da empresa nas configuracoes do sistema', async () => {
+    const user = userEvent.setup();
+    mockSession();
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /abrir configuracao do sistema/i }));
+    expect(await screen.findByRole('heading', { name: 'Configuracao do sistema', level: 1 })).toBeInTheDocument();
+
+    const companyInput = screen.getByLabelText('Nome exibido no sistema');
+    await user.clear(companyInput);
+    await user.type(companyInput, 'Clinica Alfa');
+    await user.click(screen.getByRole('button', { name: /salvar nome/i }));
+
+    await waitFor(() => expect(api.updateSystemSettings).toHaveBeenCalledWith({ nomeEmpresa: 'Clinica Alfa' }, 'jwt-token'));
+    expect(within(screen.getByRole('banner')).getByText('Clinica Alfa')).toBeInTheDocument();
+    expect(screen.getByText('Nome da empresa atualizado.')).toBeInTheDocument();
   });
 
   it('abre as notificacoes do usuario logado', async () => {
@@ -1453,9 +1496,12 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /tema escuro/i }));
+    await user.click(screen.getByRole('button', { name: /abrir configuracao do sistema/i }));
+    expect(await screen.findByRole('heading', { name: 'Configuracao do sistema', level: 1 })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /escuro/i }));
 
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
-    expect(screen.getByRole('button', { name: /tema claro/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /claro/i })).toBeInTheDocument();
   });
 });

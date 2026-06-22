@@ -87,6 +87,7 @@ type UsePatientsDomainOptions = {
   session: AuthSession | null;
   activeView: AppView;
   moduleMode: ModuleMode;
+  companyName: string;
   isAdmin: boolean;
   isMedical: boolean;
   canCreatePatients: boolean;
@@ -103,6 +104,7 @@ export function usePatientsDomain({
   session,
   activeView,
   moduleMode,
+  companyName,
   isAdmin,
   isMedical,
   canCreatePatients,
@@ -493,7 +495,7 @@ export function usePatientsDomain({
       const rows = getPacienteExportRows(exportItems);
 
       if (format === 'xlsx') {
-        downloadBlob(createXlsxBlob(rows), getPatientExportFileName('xlsx'));
+        downloadBlob(createXlsxBlob(rows), getPatientExportFileName('xlsx', companyName));
         return;
       }
 
@@ -504,7 +506,7 @@ export function usePatientsDomain({
       const autoTable = autoTableModule.default;
       const document = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
       document.setFontSize(14);
-      document.text('Cadastro de pacientes', 40, 34);
+      document.text(`Cadastro de pacientes - ${companyName}`, 40, 34);
       document.setFontSize(9);
       document.text(`Gerado em ${new Intl.DateTimeFormat('pt-BR').format(new Date())}`, 40, 50);
       autoTable(document, {
@@ -529,7 +531,7 @@ export function usePatientsDomain({
         },
         margin: { left: 24, right: 24 },
       });
-      document.save(getPatientExportFileName('pdf'));
+      document.save(getPatientExportFileName('pdf', companyName));
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     } finally {

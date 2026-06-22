@@ -12,6 +12,7 @@ import {
 } from '../../shared/utils/formatters';
 
 type LoginScreenProps = {
+  companyName: string;
   isBusy: boolean;
   theme: Theme;
   loginEmail: string;
@@ -28,6 +29,7 @@ type LoginScreenProps = {
 };
 
 export function LoginScreen({
+  companyName,
   isBusy,
   theme,
   loginEmail,
@@ -49,9 +51,9 @@ export function LoginScreen({
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel">
         <div className="brand-block">
-          <img src={brandImage} alt="Hemodinks" className="brand-mark" />
+          <img src={brandImage} alt={companyName} className="brand-mark" />
           <div>
-            <span className="eyebrow">Hemodinks</span>
+            <span className="eyebrow">{companyName}</span>
             <h1>Acesso ao sistema</h1>
           </div>
         </div>

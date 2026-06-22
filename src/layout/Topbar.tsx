@@ -1,33 +1,28 @@
-import { Bell, KeyRound, LogOut } from 'lucide-react';
-import type { BreadcrumbItem, Theme } from '../appTypes';
+import { Bell, LogOut } from 'lucide-react';
+import type { BreadcrumbItem } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
-import { ThemeToggle } from '../shared/components/ThemeToggle';
 
 type TopbarProps = {
   appTitle: string;
+  companyName: string;
   session: AuthSession;
   breadcrumbItems: BreadcrumbItem[];
-  theme: Theme;
   notificationsOpen: boolean;
   notificationCount: number;
   onToggleNotifications: () => void;
-  onToggleTheme: () => void;
-  onOpenPasswordModal: () => void;
   onLogout: () => void;
 };
 
 export function Topbar({
   appTitle,
+  companyName,
   session,
   breadcrumbItems,
-  theme,
   notificationsOpen,
   notificationCount,
   onToggleNotifications,
-  onToggleTheme,
-  onOpenPasswordModal,
   onLogout,
 }: TopbarProps) {
   return (
@@ -36,7 +31,7 @@ export function Topbar({
         <div>
           <div className="brand-kicker">
             <span className="company-name">GM Tech Solutions</span>
-            <span className="product-name">Hemodinks</span>
+            <span className="product-name">{companyName}</span>
           </div>
           <h1>{appTitle}</h1>
           <Breadcrumbs items={breadcrumbItems} />
@@ -61,12 +56,6 @@ export function Topbar({
             <span className="notification-label notification-label-wide">Notificacoes</span>
             <span className="notification-label notification-label-short">Avisos</span>
             <span className="notification-count">{notificationCount}</span>
-          </button>
-          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-          <button type="button" className="ghost-button password-action-button" onClick={onOpenPasswordModal}>
-            <KeyRound size={17} />
-            <span className="action-label-wide">Alterar senha</span>
-            <span className="action-label-short">Senha</span>
           </button>
           <button type="button" className="ghost-button logout-button" onClick={onLogout}>
             <LogOut size={18} />

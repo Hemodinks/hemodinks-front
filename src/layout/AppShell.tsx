@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { AppView, BreadcrumbItem, Theme } from '../appTypes';
+import type { AppView, BreadcrumbItem } from '../appTypes';
 import type { AuthSession, Convenio, MedicalUserOption, OpmeFornecedor } from '../types';
 import { LoadingOverlay } from '../shared/components/LoadingOverlay';
 import {
@@ -16,9 +16,9 @@ type AppShellProps = {
   session: AuthSession;
   isBusy: boolean;
   appTitle: string;
+  companyName: string;
   activeView: AppView;
   breadcrumbItems: BreadcrumbItem[];
-  theme: Theme;
   notificationsOpen: boolean;
   notificationCount: number;
   currentUserProfile: string;
@@ -36,8 +36,6 @@ type AppShellProps = {
   convenios: Convenio[];
   opmeFornecedores: OpmeFornecedor[];
   onToggleNotifications: () => void;
-  onToggleTheme: () => void;
-  onOpenPasswordModal: () => void;
   onLogout: () => void;
   onOpenDashboard: () => void;
   onOpenUsersList: () => void;
@@ -46,6 +44,7 @@ type AppShellProps = {
   onOpenBilling: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
+  onOpenSettings: () => void;
 };
 
 export function AppShell({
@@ -54,9 +53,9 @@ export function AppShell({
   session,
   isBusy,
   appTitle,
+  companyName,
   activeView,
   breadcrumbItems,
-  theme,
   notificationsOpen,
   notificationCount,
   currentUserProfile,
@@ -74,8 +73,6 @@ export function AppShell({
   convenios,
   opmeFornecedores,
   onToggleNotifications,
-  onToggleTheme,
-  onOpenPasswordModal,
   onLogout,
   onOpenDashboard,
   onOpenUsersList,
@@ -84,6 +81,7 @@ export function AppShell({
   onOpenBilling,
   onOpenMedicalGroups,
   onOpenAgenda,
+  onOpenSettings,
 }: AppShellProps) {
   return (
     <main className="app-shell">
@@ -106,14 +104,12 @@ export function AppShell({
 
       <Topbar
         appTitle={appTitle}
+        companyName={companyName}
         session={session}
         breadcrumbItems={breadcrumbItems}
-        theme={theme}
         notificationsOpen={notificationsOpen}
         notificationCount={notificationCount}
         onToggleNotifications={onToggleNotifications}
-        onToggleTheme={onToggleTheme}
-        onOpenPasswordModal={onOpenPasswordModal}
         onLogout={onLogout}
       />
 
@@ -139,6 +135,7 @@ export function AppShell({
           onOpenBilling={onOpenBilling}
           onOpenMedicalGroups={onOpenMedicalGroups}
           onOpenAgenda={onOpenAgenda}
+          onOpenSettings={onOpenSettings}
         />
 
         <div className={`app-content ${activeView === 'dashboard' ? 'dashboard-content' : ''}`}>

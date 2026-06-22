@@ -16,12 +16,14 @@ import {
   getHospitais,
   getOpmeFornecedores,
   getPacienteObservacoes,
+  getSystemSettings,
   getUser,
   getUserProfilePhoto,
   getPacientes,
   getUsers,
   resetPassword,
   updatePaciente,
+  updateSystemSettings,
   updateUser,
   uploadPacienteArquivo,
   uploadUserArquivo,
@@ -451,6 +453,34 @@ describe('services api client', () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+      },
+    });
+  });
+
+  it('monta as chamadas de configuracao do sistema', async () => {
+    const requestSpy = vi.spyOn(apiClient, 'request');
+
+    requestSpy
+      .mockResolvedValueOnce(axiosResponse({ id: 1, nomeEmpresa: 'Hemodinks', dataCadastro: '2026-06-22T00:00:00Z', dataAtualizacao: null }))
+      .mockResolvedValueOnce(axiosResponse({ id: 1, nomeEmpresa: 'Clinica Alfa', dataCadastro: '2026-06-22T00:00:00Z', dataAtualizacao: '2026-06-22T12:00:00Z' }));
+
+    await expect(getSystemSettings()).resolves.toMatchObject({ nomeEmpresa: 'Hemodinks' });
+    await expect(updateSystemSettings({ nomeEmpresa: 'Clinica Alfa' }, 'jwt-token')).resolves.toMatchObject({ nomeEmpresa: 'Clinica Alfa' });
+
+    expect(requestSpy).toHaveBeenNthCalledWith(1, {
+      url: '/api/configuracoes-sistema/current',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    expect(requestSpy).toHaveBeenNthCalledWith(2, {
+      url: '/api/configuracoes-sistema/current',
+      method: 'PUT',
+      data: { nomeEmpresa: 'Clinica Alfa' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
       },
     });
   });
