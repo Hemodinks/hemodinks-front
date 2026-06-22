@@ -454,6 +454,22 @@ describe('App', () => {
     expect(screen.getByText('Nome da empresa atualizado.')).toBeInTheDocument();
   });
 
+  it('oculta a alteracao do nome da empresa para perfil nao administrador', async () => {
+    const user = userEvent.setup();
+    mockSession({ perfilId: 2, perfilNome: 'Médicos' });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /abrir configuracao do sistema/i }));
+    expect(await screen.findByRole('heading', { name: 'Configuracao do sistema', level: 1 })).toBeInTheDocument();
+
+    expect(screen.queryByText('Nome da empresa')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Nome exibido no sistema')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /escuro/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Alterar senha' })).toBeInTheDocument();
+  });
+
   it('abre as notificacoes do usuario logado', async () => {
     const user = userEvent.setup();
     mockSession();

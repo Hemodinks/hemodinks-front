@@ -74,7 +74,7 @@ export function SystemSettingsPage({
       <DataPanel className="system-settings-hero">
         <div className="settings-hero-copy">
           <span className="eyebrow">Configuracao do sistema</span>
-          <h2>Preferencias e marca</h2>
+          <h2>{isAdmin ? 'Preferencias e marca' : 'Preferencias da conta'}</h2>
         </div>
         <span className="settings-hero-icon" aria-hidden="true">
           <Palette size={24} />
@@ -82,40 +82,38 @@ export function SystemSettingsPage({
       </DataPanel>
 
       <div className="system-settings-grid">
-        <DataPanel className="system-settings-panel">
-          <div className="settings-section-heading">
-            <span className="settings-section-icon"><Building2 size={19} /></span>
-            <div>
-              <span className="eyebrow">Marca</span>
-              <h3>Nome da empresa</h3>
+        {isAdmin && (
+          <DataPanel className="system-settings-panel">
+            <div className="settings-section-heading">
+              <span className="settings-section-icon"><Building2 size={19} /></span>
+              <div>
+                <span className="eyebrow">Marca</span>
+                <h3>Nome da empresa</h3>
+              </div>
             </div>
-          </div>
 
-          {settingsError && <AlertMessage type="warning">{settingsError}</AlertMessage>}
+            {settingsError && <AlertMessage type="warning">{settingsError}</AlertMessage>}
 
-          <form className="system-settings-form" onSubmit={handleSubmitBrand}>
-            <TextField
-              label="Nome exibido no sistema"
-              value={nomeEmpresa}
-              onValueChange={(value) => setNomeEmpresa(value.slice(0, 120))}
-              disabled={!isAdmin || settingsLoading || saving}
-              maxLength={120}
-              required
-            />
+            <form className="system-settings-form" onSubmit={handleSubmitBrand}>
+              <TextField
+                label="Nome exibido no sistema"
+                value={nomeEmpresa}
+                onValueChange={(value) => setNomeEmpresa(value.slice(0, 120))}
+                disabled={settingsLoading || saving}
+                maxLength={120}
+                required
+              />
 
-            {!isAdmin && (
-              <AlertMessage type="warning">Apenas administradores podem alterar o nome da empresa.</AlertMessage>
-            )}
+              {brandError && <AlertMessage type="error">{brandError}</AlertMessage>}
+              {brandSuccess && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{brandSuccess}</AlertMessage>}
 
-            {brandError && <AlertMessage type="error">{brandError}</AlertMessage>}
-            {brandSuccess && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{brandSuccess}</AlertMessage>}
-
-            <Button variant="primary" type="submit" disabled={!isAdmin || settingsLoading || saving}>
-              <Save size={18} />
-              {saving ? 'Salvando...' : 'Salvar nome'}
-            </Button>
-          </form>
-        </DataPanel>
+              <Button variant="primary" type="submit" disabled={settingsLoading || saving}>
+                <Save size={18} />
+                {saving ? 'Salvando...' : 'Salvar nome'}
+              </Button>
+            </form>
+          </DataPanel>
+        )}
 
         <DataPanel className="system-settings-panel">
           <div className="settings-section-heading">
