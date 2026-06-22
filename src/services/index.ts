@@ -1,5 +1,6 @@
 export * from './api';
 export * from './authService';
+export * from './billingService';
 export * from './cbhpmService';
 export * from './conveniosService';
 export * from './dashboardService';

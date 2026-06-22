@@ -276,6 +276,71 @@
   min-height: 34px;
 }
 
+.billing-row-action {
+  margin: 0 auto;
+}
+
+.billing-detail-view,
+.billing-detail-page {
+  display: grid;
+  gap: 14px;
+}
+
+.billing-detail-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.billing-detail-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.billing-back-button {
+  padding: 0 16px;
+}
+
+.billing-detail-toolbar-note {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.billing-summary-modal {
+  width: min(820px, calc(100vw - 40px));
+  display: grid;
+  gap: 16px;
+}
+
+.billing-summary-modal-subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.billing-summary-info-list {
+  gap: 10px;
+}
+
+.billing-summary-info-list div {
+  background: var(--input-bg);
+}
+
+.billing-summary-info-list dd {
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.billing-summary-modal-footer {
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
 .billing-detail-panel {
   position: sticky;
   top: 18px;
@@ -384,13 +449,42 @@
   background: var(--input-bg);
 }
 
-.billing-procedure-list strong {
-  color: var(--ink);
+.billing-procedure-content {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
 }
 
-.billing-procedure-list span {
+.billing-procedure-list strong {
+  display: block;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.billing-procedure-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.billing-procedure-chip {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--action-accent) 8%, transparent);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.billing-procedure-value {
   color: var(--muted);
   font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .billing-checklist {
@@ -494,11 +588,20 @@
   }
 
   .billing-toolbar,
+  .billing-detail-toolbar,
   .billing-section-heading,
   .billing-detail-header,
   .billing-procedure-list li,
   .billing-ranking-list li {
     display: grid;
+  }
+
+  .billing-summary-info-list dd {
+    text-align: left;
+  }
+
+  .billing-detail-toolbar-actions {
+    justify-content: space-between;
   }
 
   .billing-inline-note,

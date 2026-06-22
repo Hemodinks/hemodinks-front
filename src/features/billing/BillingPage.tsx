@@ -1,17 +1,21 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Activity,
+  ArrowLeft,
   CheckCircle2,
   ClipboardList,
+  Eye,
   FileText,
   Info,
   ReceiptText,
   RefreshCw,
   TriangleAlert,
   Wallet,
+  X,
 } from 'lucide-react';
-import { getPacientes } from '../../services';
+import { useSearchParams } from 'react-router-dom';
+import { getFaturamentosMedicos } from '../../services';
+import { Modal } from '../../shared/components/Modal';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, DataPanel, IconButton, SearchField, SelectField, TextField } from '../../shared/components/ui';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
@@ -115,13 +119,118 @@ function BillingChecklist({ items }: { items: BillingChecklistItem[] }) {
   );
 }
 
+function BillingProcedureList({ procedures }: { procedures: BillingRecord['procedures'] }) {
+  return (
+    <ul className="billing-procedure-list">
+      {procedures.map((procedure, index) => (
+        <li key={`${procedure.cbhpmCodigo || procedure.procedimento}-${index}`}>
+          <div className="billing-procedure-content">
+            <strong>{procedure.procedimento}</strong>
+            <div className="billing-procedure-meta">
+              <span className="billing-procedure-chip">{procedure.cbhpmCodigo || 'Sem codigo'}</span>
+              {procedure.cbhpmPorte && (
+                <span className="billing-procedure-chip">Porte {procedure.cbhpmPorte}</span>
+              )}
+            </div>
+          </div>
+          <span className="billing-procedure-value">
+            {procedure.valorReferencia != null ? formatCurrency(procedure.valorReferencia) : 'Sem valor referencia'}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+type BillingSummaryModalProps = {
+  record: BillingRecord;
+  authToken: string;
+  onClose: () => void;
+};
+
+function BillingSummaryModal({ record, authToken, onClose }: BillingSummaryModalProps) {
+  return (
+    <Modal titleId="billing-summary-title" className="billing-summary-modal" onClose={onClose}>
+      <div className="panel-title">
+        <div>
+          <span className="eyebrow">Informacoes resumidas</span>
+          <h2 id="billing-summary-title">{record.patientName}</h2>
+          <p className="billing-summary-modal-subtitle">{record.doctorName} | {record.hospitalName}</p>
+        </div>
+        <IconButton label="Fechar informacoes resumidas" title="Fechar" tone="muted" onClick={onClose}>
+          <X size={18} />
+        </IconButton>
+      </div>
+
+      <dl className="info-list billing-summary-info-list">
+        <div>
+          <dt>Convenio / regime</dt>
+          <dd>{record.convenioName} / {record.regime === 'convenio' ? 'Convenio' : 'Particular'}</dd>
+        </div>
+        <div>
+          <dt>Faturado</dt>
+          <dd>{record.paymentHasNumericValue ? formatCurrency(record.paymentAmount) : record.paymentRaw || '-'}</dd>
+        </div>
+        <div>
+          <dt>Glosa</dt>
+          <dd>{record.glosaHasNumericValue ? formatCurrency(record.glosaAmount) : record.glosaRaw || '-'}</dd>
+        </div>
+        <div>
+          <dt>Liquido</dt>
+          <dd>{record.paymentHasNumericValue || record.glosaHasNumericValue ? formatCurrency(record.netAmount) : '-'}</dd>
+        </div>
+      </dl>
+
+      <section className="billing-detail-section">
+        <div className="billing-section-heading">
+          <div>
+            <span className="eyebrow">Procedimentos</span>
+            <h4>Resumo dos codigos vinculados</h4>
+          </div>
+        </div>
+
+        {record.procedures.length ? (
+          <BillingProcedureList procedures={record.procedures} />
+        ) : (
+          <p className="empty-row">Nenhum procedimento vinculado a esta cirurgia.</p>
+        )}
+      </section>
+
+      <div className="billing-summary-modal-footer">
+        <div className="billing-patient-cell">
+          <UserAvatar
+            userId={record.paciente.userId}
+            name={record.patientName}
+            photo={record.paciente.fotoPerfil}
+            authToken={authToken}
+            size="sm"
+          />
+          <div>
+            <strong>Status {record.statusLabel}</strong>
+            <span>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendencia(s)</span>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function parseBillingDetailId(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 async function loadBillingPatients(token: string, filters: { search: string; medico: string; convenio: string; procedimento: string }) {
   const items: Paciente[] = [];
   let page = 1;
   let totalPages = 1;
 
   do {
-    const response = await getPacientes(token, {
+    const response = await getFaturamentosMedicos(token, {
       page,
       pageSize: PATIENT_EXPORT_PAGE_SIZE,
       search: filters.search,
@@ -147,13 +256,15 @@ export function BillingPage({
   isAdmin,
   isMedical,
 }: BillingPageProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const defaultDoctorFilter = isMedical ? session.user.nome : '';
   const [filters, setFilters] = useState(() => createEmptyBillingFilters(defaultDoctorFilter));
-  const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
+  const [summaryRecordId, setSummaryRecordId] = useState<number | null>(null);
   const [debouncedSearch] = useDebouncedValue(filters.search);
   const [debouncedDoctor] = useDebouncedValue(filters.medico);
   const [debouncedConvenio] = useDebouncedValue(filters.convenio);
   const [debouncedProcedure] = useDebouncedValue(filters.procedimento);
+  const detailRecordId = parseBillingDetailId(searchParams.get('detalhe'));
 
   useEffect(() => {
     if (!isMedical) {
@@ -188,29 +299,198 @@ export function BillingPage({
   const summary = summarizeBillingRecords(billingRecords);
   const doctorBreakdown = groupBillingByDoctor(billingRecords).slice(0, 5);
   const convenioBreakdown = groupBillingByConvenio(billingRecords).slice(0, 5);
-  const selectedRecord = billingRecords.find((record) => record.id === selectedRecordId) ?? null;
+  const selectedRecord = detailRecordId == null
+    ? null
+    : billingRecords.find((record) => record.id === detailRecordId) ?? null;
+  const summaryRecord = summaryRecordId == null
+    ? null
+    : billingRecords.find((record) => record.id === summaryRecordId) ?? null;
   const lastUpdatedLabel = billingQuery.dataUpdatedAt
     ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(billingQuery.dataUpdatedAt))
     : '';
 
   useEffect(() => {
-    if (!billingRecords.length) {
-      if (selectedRecordId !== null) {
-        setSelectedRecordId(null);
-      }
+    if (summaryRecordId == null) {
       return;
     }
 
-    if (selectedRecordId != null && billingRecords.some((record) => record.id === selectedRecordId)) {
-      return;
+    if (!billingRecords.some((record) => record.id === summaryRecordId)) {
+      setSummaryRecordId(null);
     }
-
-    setSelectedRecordId(billingRecords[0].id);
-  }, [billingRecords, selectedRecordId]);
+  }, [billingRecords, summaryRecordId]);
 
   const clearFilters = () => {
     setFilters(createEmptyBillingFilters(defaultDoctorFilter));
   };
+
+  const openBillingDetail = (recordId: number) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('detalhe', String(recordId));
+    setSearchParams(nextParams);
+  };
+
+  const closeBillingDetail = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('detalhe');
+    setSearchParams(nextParams);
+  };
+
+  if (detailRecordId != null) {
+    return (
+      <section className="workspace billing-workspace">
+        <section className="billing-detail-view">
+          <div className="billing-detail-toolbar">
+            <Button className="billing-back-button" onClick={closeBillingDetail}>
+              <ArrowLeft size={16} />
+              Voltar para pacientes
+            </Button>
+
+            <div className="billing-detail-toolbar-actions">
+              {lastUpdatedLabel && <span className="billing-detail-toolbar-note">Atualizado em {lastUpdatedLabel}</span>}
+              <IconButton
+                label="Atualizar faturamento medico"
+                title="Atualizar faturamento"
+                onClick={() => void billingQuery.refetch()}
+                disabled={billingQuery.isFetching}
+              >
+                <RefreshCw size={18} />
+              </IconButton>
+            </div>
+          </div>
+
+          {isMedical && (
+            <AlertMessage type="warning" icon={<Info size={17} />}>
+              Visualizacao restrita aos pacientes vinculados ao medico {session.user.nome}.
+            </AlertMessage>
+          )}
+
+          {billingQuery.error && (
+            <AlertMessage type="error">
+              {billingQuery.error instanceof Error ? billingQuery.error.message : 'Nao foi possivel carregar o faturamento.'}
+            </AlertMessage>
+          )}
+
+          <DataPanel className="billing-detail-page">
+            {billingQuery.isPending ? (
+              <p className="empty-row" role="status">Carregando detalhes do faturamento...</p>
+            ) : selectedRecord ? (
+              <>
+                <div className="billing-detail-header">
+                  <div className="billing-patient-cell">
+                    <UserAvatar
+                      userId={selectedRecord.paciente.userId}
+                      name={selectedRecord.patientName}
+                      photo={selectedRecord.paciente.fotoPerfil}
+                      authToken={session.token}
+                      size="sm"
+                    />
+                    <div>
+                      <span className="eyebrow">Detalhe do faturamento</span>
+                      <h3>{selectedRecord.patientName}</h3>
+                      <p>{selectedRecord.doctorName} | {selectedRecord.hospitalName}</p>
+                    </div>
+                  </div>
+                  <span className={`status-pill ${selectedRecord.status === 'paid' ? 'ok' : selectedRecord.status === 'pending' ? 'warning' : 'inactive'}`}>
+                    {selectedRecord.statusLabel}
+                  </span>
+                </div>
+
+                <div className="billing-detail-kpis">
+                  <div>
+                    <span>Faturado</span>
+                    <strong>{selectedRecord.paymentHasNumericValue ? formatCurrency(selectedRecord.paymentAmount) : selectedRecord.paymentRaw || '-'}</strong>
+                  </div>
+                  <div>
+                    <span>Glosa</span>
+                    <strong>{selectedRecord.glosaHasNumericValue ? formatCurrency(selectedRecord.glosaAmount) : selectedRecord.glosaRaw || '-'}</strong>
+                  </div>
+                  <div>
+                    <span>Liquido</span>
+                    <strong>{selectedRecord.paymentHasNumericValue || selectedRecord.glosaHasNumericValue ? formatCurrency(selectedRecord.netAmount) : '-'}</strong>
+                  </div>
+                </div>
+
+                <section className="billing-detail-section">
+                  <div className="billing-section-heading">
+                    <div>
+                      <span className="eyebrow">Resumo clinico-administrativo</span>
+                      <h4>Dados usados no faturamento</h4>
+                    </div>
+                  </div>
+
+                  <dl className="billing-detail-list">
+                    <div>
+                      <dt>Data da cirurgia</dt>
+                      <dd>{selectedRecord.surgeryDateLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>Cirurgiao</dt>
+                      <dd>{selectedRecord.doctorName}</dd>
+                    </div>
+                    <div>
+                      <dt>Auxiliares</dt>
+                      <dd>{selectedRecord.assistantNames.length ? selectedRecord.assistantNames.join(', ') : '-'}</dd>
+                    </div>
+                    <div>
+                      <dt>Convenio / regime</dt>
+                      <dd>{selectedRecord.convenioName} / {selectedRecord.regime === 'convenio' ? 'Convenio' : 'Particular'}</dd>
+                    </div>
+                    <div>
+                      <dt>Autorizacao</dt>
+                      <dd>{selectedRecord.authorizationCode || '-'}</dd>
+                    </div>
+                    <div>
+                      <dt>Fornecedor OPME</dt>
+                      <dd>{selectedRecord.opmeSupplier}</dd>
+                    </div>
+                    <div>
+                      <dt>Arquivos de suporte</dt>
+                      <dd>{selectedRecord.filesCount}</dd>
+                    </div>
+                    <div>
+                      <dt>Pagamento bruto informado</dt>
+                      <dd>{selectedRecord.paymentRaw || '-'}</dd>
+                    </div>
+                  </dl>
+                </section>
+
+                <section className="billing-detail-section">
+                  <div className="billing-section-heading">
+                    <div>
+                      <span className="eyebrow">Codigos e procedimentos</span>
+                      <h4>Procedimento principal e associados</h4>
+                    </div>
+                  </div>
+
+                {selectedRecord.procedures.length ? (
+                    <BillingProcedureList procedures={selectedRecord.procedures} />
+                  ) : (
+                    <p className="empty-row">Nenhum procedimento vinculado a esta cirurgia.</p>
+                  )}
+                </section>
+
+                <section className="billing-detail-section">
+                  <div className="billing-section-heading">
+                    <div>
+                      <span className="eyebrow">Checklist do faturamento</span>
+                      <h4>Pontos solicitados para auditoria medica</h4>
+                    </div>
+                  </div>
+
+                  <BillingChecklist items={selectedRecord.billingChecklist} />
+                </section>
+              </>
+            ) : (
+              <div className="billing-detail-empty">
+                <TriangleAlert size={18} />
+                <p>Este faturamento nao esta disponivel para a sua visao atual ou nao foi encontrado.</p>
+              </div>
+            )}
+          </DataPanel>
+        </section>
+      </section>
+    );
+  }
 
   return (
     <section className="workspace billing-workspace">
@@ -413,222 +693,102 @@ export function BillingPage({
         </AlertMessage>
       )}
 
-      <section className="billing-results-layout">
-        <DataPanel className="billing-table-panel">
-          <div className="billing-section-heading">
-            <div>
-              <span className="eyebrow">Cirurgias faturadas</span>
-              <h3>Grade de consulta</h3>
-            </div>
-            <span className="billing-inline-note">Totais calculados a partir dos campos de pagamento e glosa do cadastro.</span>
+      <DataPanel className="billing-table-panel">
+        <div className="billing-section-heading">
+          <div>
+            <span className="eyebrow">Cirurgias faturadas</span>
+            <h3>Grade de consulta</h3>
           </div>
+          <span className="billing-inline-note">Totais calculados a partir dos campos de pagamento e glosa do cadastro.</span>
+        </div>
 
-          <div className="table-wrap">
-            <table className="billing-table">
-              <thead>
+        <div className="table-wrap">
+          <table className="billing-table">
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Data / hospital</th>
+                <th>Cirurgiao</th>
+                <th>Status</th>
+                <th>Resumo</th>
+                <th>Visualizar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {billingQuery.isPending ? (
                 <tr>
-                  <th>Paciente</th>
-                  <th>Data / hospital</th>
-                  <th>Cirurgiao</th>
-                  <th>Procedimento</th>
-                  <th>Convenio</th>
-                  <th>Faturado</th>
-                  <th>Glosa</th>
-                  <th>Liquido</th>
-                  <th>Status</th>
-                  <th>Acoes</th>
+                  <td colSpan={6} className="empty-row">Carregando faturamento medico...</td>
                 </tr>
-              </thead>
-              <tbody>
-                {billingQuery.isPending ? (
-                  <tr>
-                    <td colSpan={10} className="empty-row">Carregando faturamento medico...</td>
-                  </tr>
-                ) : billingRecords.length ? (
-                  billingRecords.map((record) => (
-                    <tr key={record.id} className={selectedRecordId === record.id ? 'is-selected' : undefined}>
-                      <td data-label="Paciente">
-                        <div className="billing-patient-cell">
-                          <UserAvatar
-                            userId={record.paciente.userId}
-                            name={record.patientName}
-                            photo={record.paciente.fotoPerfil}
-                            authToken={session.token}
-                            size="sm"
-                          />
-                          <div>
-                            <strong>{record.patientName}</strong>
-                            <span>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendencia(s)</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td data-label="Data / hospital">
-                        <strong>{record.surgeryDateLabel}</strong>
-                        <span>{record.hospitalName}</span>
-                      </td>
-                      <td data-label="Cirurgiao">
-                        <strong>{record.doctorName}</strong>
-                        <span>{record.assistantNames.length ? `Auxiliares: ${record.assistantNames.join(', ')}` : 'Sem auxiliares informados'}</span>
-                      </td>
-                      <td data-label="Procedimento">
-                        <strong>{record.primaryProcedureLabel || 'Nao informado'}</strong>
-                        <span>{record.procedures.length} procedimento(s)</span>
-                      </td>
-                      <td data-label="Convenio">
-                        <strong>{record.convenioName}</strong>
-                        <span>{record.authorizationCode || 'Sem autorizacao'}</span>
-                      </td>
-                      <td data-label="Faturado">{record.paymentHasNumericValue ? formatCurrency(record.paymentAmount) : record.paymentRaw || '-'}</td>
-                      <td data-label="Glosa">{record.glosaHasNumericValue ? formatCurrency(record.glosaAmount) : record.glosaRaw || '-'}</td>
-                      <td data-label="Liquido">{record.paymentHasNumericValue || record.glosaHasNumericValue ? formatCurrency(record.netAmount) : '-'}</td>
-                      <td data-label="Status">
-                        <span className={`status-pill ${record.status === 'paid' ? 'ok' : record.status === 'pending' ? 'warning' : 'inactive'}`}>
-                          {record.statusLabel}
-                        </span>
-                      </td>
-                      <td data-label="Acoes">
-                        <Button className="billing-row-button" onClick={() => setSelectedRecordId(record.id)}>
-                          Ver detalhes
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={10} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </DataPanel>
-
-        <DataPanel className="billing-detail-panel">
-          {selectedRecord ? (
-            <>
-              <div className="billing-detail-header">
-                <div className="billing-patient-cell">
-                  <UserAvatar
-                    userId={selectedRecord.paciente.userId}
-                    name={selectedRecord.patientName}
-                    photo={selectedRecord.paciente.fotoPerfil}
-                    authToken={session.token}
-                    size="sm"
-                  />
-                  <div>
-                    <span className="eyebrow">Detalhe do faturamento</span>
-                    <h3>{selectedRecord.patientName}</h3>
-                    <p>{selectedRecord.doctorName} | {selectedRecord.hospitalName}</p>
-                  </div>
-                </div>
-                <span className={`status-pill ${selectedRecord.status === 'paid' ? 'ok' : selectedRecord.status === 'pending' ? 'warning' : 'inactive'}`}>
-                  {selectedRecord.statusLabel}
-                </span>
-              </div>
-
-              <div className="billing-detail-kpis">
-                <div>
-                  <span>Faturado</span>
-                  <strong>{selectedRecord.paymentHasNumericValue ? formatCurrency(selectedRecord.paymentAmount) : selectedRecord.paymentRaw || '-'}</strong>
-                </div>
-                <div>
-                  <span>Glosa</span>
-                  <strong>{selectedRecord.glosaHasNumericValue ? formatCurrency(selectedRecord.glosaAmount) : selectedRecord.glosaRaw || '-'}</strong>
-                </div>
-                <div>
-                  <span>Liquido</span>
-                  <strong>{selectedRecord.paymentHasNumericValue || selectedRecord.glosaHasNumericValue ? formatCurrency(selectedRecord.netAmount) : '-'}</strong>
-                </div>
-              </div>
-
-              <section className="billing-detail-section">
-                <div className="billing-section-heading">
-                  <div>
-                    <span className="eyebrow">Resumo clinico-administrativo</span>
-                    <h4>Dados usados no faturamento</h4>
-                  </div>
-                </div>
-
-                <dl className="billing-detail-list">
-                  <div>
-                    <dt>Data da cirurgia</dt>
-                    <dd>{selectedRecord.surgeryDateLabel}</dd>
-                  </div>
-                  <div>
-                    <dt>Cirurgiao</dt>
-                    <dd>{selectedRecord.doctorName}</dd>
-                  </div>
-                  <div>
-                    <dt>Auxiliares</dt>
-                    <dd>{selectedRecord.assistantNames.length ? selectedRecord.assistantNames.join(', ') : '-'}</dd>
-                  </div>
-                  <div>
-                    <dt>Convenio / regime</dt>
-                    <dd>{selectedRecord.convenioName} / {selectedRecord.regime === 'convenio' ? 'Convenio' : 'Particular'}</dd>
-                  </div>
-                  <div>
-                    <dt>Autorizacao</dt>
-                    <dd>{selectedRecord.authorizationCode || '-'}</dd>
-                  </div>
-                  <div>
-                    <dt>Fornecedor OPME</dt>
-                    <dd>{selectedRecord.opmeSupplier}</dd>
-                  </div>
-                  <div>
-                    <dt>Arquivos de suporte</dt>
-                    <dd>{selectedRecord.filesCount}</dd>
-                  </div>
-                  <div>
-                    <dt>Pagamento bruto informado</dt>
-                    <dd>{selectedRecord.paymentRaw || '-'}</dd>
-                  </div>
-                </dl>
-              </section>
-
-              <section className="billing-detail-section">
-                <div className="billing-section-heading">
-                  <div>
-                    <span className="eyebrow">Codigos e procedimentos</span>
-                    <h4>Procedimento principal e associados</h4>
-                  </div>
-                </div>
-
-                {selectedRecord.procedures.length ? (
-                  <ul className="billing-procedure-list">
-                    {selectedRecord.procedures.map((procedure, index) => (
-                      <li key={`${procedure.cbhpmCodigo || procedure.procedimento}-${index}`}>
+              ) : billingRecords.length ? (
+                billingRecords.map((record) => (
+                  <tr key={record.id}>
+                    <td data-label="Paciente">
+                      <div className="billing-patient-cell">
+                        <UserAvatar
+                          userId={record.paciente.userId}
+                          name={record.patientName}
+                          photo={record.paciente.fotoPerfil}
+                          authToken={session.token}
+                          size="sm"
+                        />
                         <div>
-                          <strong>{procedure.procedimento}</strong>
-                          <span>{procedure.cbhpmCodigo || 'Sem codigo'} {procedure.cbhpmPorte ? `| Porte ${procedure.cbhpmPorte}` : ''}</span>
+                          <strong>{record.patientName}</strong>
+                          <span>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendencia(s)</span>
                         </div>
-                        <span>{procedure.valorReferencia != null ? formatCurrency(procedure.valorReferencia) : 'Sem valor referencia'}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="empty-row">Nenhum procedimento vinculado a esta cirurgia.</p>
-                )}
-              </section>
+                      </div>
+                    </td>
+                    <td data-label="Data / hospital">
+                      <strong>{record.surgeryDateLabel}</strong>
+                      <span>{record.hospitalName}</span>
+                    </td>
+                    <td data-label="Cirurgiao">
+                      <strong>{record.doctorName}</strong>
+                      <span>{record.assistantNames.length ? `Auxiliares: ${record.assistantNames.join(', ')}` : 'Sem auxiliares informados'}</span>
+                    </td>
+                    <td data-label="Status">
+                      <span className={`status-pill ${record.status === 'paid' ? 'ok' : record.status === 'pending' ? 'warning' : 'inactive'}`}>
+                        {record.statusLabel}
+                      </span>
+                    </td>
+                    <td data-label="Resumo">
+                      <IconButton
+                        className="billing-row-action"
+                        label={`Informacoes resumidas de ${record.patientName}`}
+                        title="Informacoes resumidas"
+                        onClick={() => setSummaryRecordId(record.id)}
+                      >
+                        <FileText size={18} />
+                      </IconButton>
+                    </td>
+                    <td data-label="Visualizar">
+                      <IconButton
+                        className="billing-row-action"
+                        label={`Visualizar faturamento de ${record.patientName}`}
+                        title="Visualizar faturamento"
+                        onClick={() => openBillingDetail(record.id)}
+                      >
+                        <Eye size={18} />
+                      </IconButton>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </DataPanel>
 
-              <section className="billing-detail-section">
-                <div className="billing-section-heading">
-                  <div>
-                    <span className="eyebrow">Checklist do faturamento</span>
-                    <h4>Pontos solicitados para auditoria medica</h4>
-                  </div>
-                </div>
-
-                <BillingChecklist items={selectedRecord.billingChecklist} />
-              </section>
-            </>
-          ) : (
-            <div className="billing-detail-empty">
-              <Activity size={18} />
-              <p>Selecione uma cirurgia na grade para ver o detalhamento completo do faturamento.</p>
-            </div>
-          )}
-        </DataPanel>
-      </section>
+      {summaryRecord && (
+        <BillingSummaryModal
+          record={summaryRecord}
+          authToken={session.token}
+          onClose={() => setSummaryRecordId(null)}
+        />
+      )}
     </section>
   );
 }

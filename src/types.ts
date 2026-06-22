@@ -278,6 +278,33 @@ export type PacienteArquivo = {
   dataUpload: string;
 };
 
+export type PacienteFaturamento = {
+  id: number;
+  pacienteId: number;
+  honorariosCirurgiao?: number | null;
+  honorariosAuxiliares?: number | null;
+  honorariosAnestesista?: number | null;
+  anestesistaFaturadoSeparado: boolean;
+  anestesista?: string | null;
+  codigoTussCbhpmAmb?: string | null;
+  porteCirurgicoAnestesico?: string | null;
+  guiaAutorizacaoConvenio?: string | null;
+  guiaInternacaoOuSadt?: string | null;
+  opmeMateriaisEspeciais?: string | null;
+  tissXmlStatus?: string | null;
+  valorGlosa?: number | null;
+  glosaStatus?: string | null;
+  recursoGlosa?: string | null;
+  conferenciaPagamentoRealizada: boolean;
+  repasseMedico?: number | null;
+  repasseMedicoObservacao?: string | null;
+  tipoFaturamentoParticular?: string | null;
+  reciboNotaContrato?: string | null;
+  observacoes?: string | null;
+  dataCadastro: string;
+  dataAtualizacao?: string | null;
+};
+
 export type Paciente = {
   id: number;
   userId: number;
@@ -320,6 +347,7 @@ export type Paciente = {
   ativo: boolean;
   arquivosCount: number;
   observacoesNaoLidasCount?: number;
+  faturamento?: PacienteFaturamento | null;
   arquivos: PacienteArquivo[];
 };
 
