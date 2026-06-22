@@ -310,10 +310,26 @@
   font-weight: 800;
 }
 
-.billing-summary-modal {
-  width: min(820px, calc(100vw - 40px));
-  display: grid;
+.modal-panel.billing-summary-modal {
+  width: min(1180px, calc(100vw - 48px));
+  max-height: min(88dvh, 860px);
+  align-self: start;
+  justify-self: center;
+  margin-top: clamp(10px, 3vh, 24px);
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+  overflow: hidden;
+}
+
+.billing-summary-titlebar {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.billing-summary-patient {
+  min-width: 0;
+  align-items: flex-start;
 }
 
 .billing-summary-modal-subtitle {
@@ -322,23 +338,92 @@
   font-weight: 800;
 }
 
-.billing-summary-info-list {
-  gap: 10px;
+.billing-summary-layout {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding-right: 4px;
+  overflow-y: auto;
 }
 
-.billing-summary-info-list div {
+.billing-summary-overview {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.75fr) minmax(360px, 1.45fr) minmax(230px, 0.8fr);
+  gap: 12px;
+}
+
+.billing-summary-info-card,
+.billing-summary-metric-card {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
   background: var(--input-bg);
 }
 
-.billing-summary-info-list dd {
-  min-width: 0;
-  text-align: right;
-  overflow-wrap: anywhere;
+.billing-summary-convenio-card {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--action-accent) 8%, transparent), transparent 72%),
+    var(--input-bg);
 }
 
-.billing-summary-modal-footer {
-  padding-top: 4px;
-  border-top: 1px solid var(--line);
+.billing-summary-info-card span,
+.billing-summary-metric-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-summary-info-card strong,
+.billing-summary-metric-card strong {
+  color: var(--ink);
+  font-size: 1.15rem;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+
+.billing-summary-info-card p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.billing-summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.billing-summary-metric-card {
+  align-content: center;
+  min-height: 92px;
+}
+
+.billing-summary-support-card {
+  border-left-width: 5px;
+  border-left-color: color-mix(in srgb, var(--action-primary) 44%, transparent);
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.08), transparent 72%),
+    var(--input-bg);
+}
+
+.billing-summary-support-card strong {
+  color: var(--action-primary);
+}
+
+.billing-summary-main .billing-procedure-list {
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.billing-summary-main .billing-procedure-list li {
+  align-items: flex-start;
 }
 
 .billing-detail-panel {
@@ -576,11 +661,23 @@
   .billing-detail-panel {
     position: static;
   }
+
+  .billing-summary-overview,
+  .billing-summary-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .billing-summary-support-card {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 760px) {
   .billing-filter-grid,
   .billing-summary-grid,
+  .billing-summary-overview,
+  .billing-summary-metrics,
+  .billing-summary-layout,
   .billing-insights-grid,
   .billing-detail-kpis,
   .billing-detail-list {
@@ -596,10 +693,6 @@
     display: grid;
   }
 
-  .billing-summary-info-list dd {
-    text-align: left;
-  }
-
   .billing-detail-toolbar-actions {
     justify-content: space-between;
   }
@@ -607,5 +700,16 @@
   .billing-inline-note,
   .billing-ranking-values {
     text-align: left;
+  }
+
+  .modal-panel.billing-summary-modal {
+    width: min(100%, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    margin-top: 8px;
+    padding: 16px;
+  }
+
+  .billing-summary-main .billing-procedure-list {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

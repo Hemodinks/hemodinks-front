@@ -64,7 +64,7 @@
   left: clamp(16px, 2.5vw, 40px);
   z-index: 40;
   color: var(--blood);
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0;
 }
@@ -111,7 +111,7 @@
   align-items: center;
   min-height: 18px;
   color: var(--blood);
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   font-weight: 900;
   line-height: 1;
   text-transform: uppercase;
@@ -120,7 +120,7 @@
 .product-name {
   color: var(--teal);
   min-height: 20px;
-  font-size: 0.92rem;
+  font-size: 1rem;
   font-weight: 950;
 }
 

@@ -126,6 +126,82 @@ textarea::placeholder {
   position: relative;
 }
 
+.combobox-field {
+  position: relative;
+}
+
+.combobox-control {
+  position: relative;
+}
+
+.combobox-input {
+  padding-right: 44px;
+}
+
+.combobox-toggle {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  width: 34px;
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--action-accent) 82%, black);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--action-text);
+  background: var(--action-accent);
+  transform: translateY(-50%);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-accent) 18%, transparent);
+}
+
+.combobox-toggle:hover {
+  background: var(--action-accent-hover);
+}
+
+.combobox-listbox {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 12;
+  display: grid;
+  gap: 4px;
+  max-height: min(260px, 38vh);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-strong);
+  box-shadow: 0 18px 32px rgba(24, 33, 47, 0.12);
+  overflow-y: auto;
+}
+
+.combobox-option {
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  text-align: left;
+  padding: 0 11px;
+  color: var(--ink);
+  background: transparent;
+  font-weight: 700;
+}
+
+.combobox-option:hover,
+.combobox-option.is-active {
+  background: var(--soft);
+}
+
+.combobox-empty {
+  padding: 10px 11px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
 .date-input-control > input[type="text"] {
   padding-right: 48px;
 }
@@ -245,6 +321,9 @@ textarea::placeholder {
 .password-visibility-button:focus,
 .password-visibility-button:focus-visible,
 .password-visibility-button:active,
+.combobox-toggle:focus,
+.combobox-toggle:focus-visible,
+.combobox-toggle:active,
 .date-picker-button:focus,
 .date-picker-button:focus-visible,
 .date-picker-button:active,

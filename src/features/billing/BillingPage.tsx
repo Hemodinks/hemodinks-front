@@ -17,9 +17,9 @@ import { useSearchParams } from 'react-router-dom';
 import { getFaturamentosMedicos } from '../../services';
 import { Modal } from '../../shared/components/Modal';
 import { DateInput } from '../../shared/components/DateInput';
-import { AlertMessage, Button, CheckboxField, DataPanel, IconButton, SearchField, SelectField, TextField } from '../../shared/components/ui';
+import { AlertMessage, Button, CheckboxField, ComboboxField, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
-import { CONVENIOS_DATALIST_ID, formatCurrency, MEDICAL_USERS_DATALIST_ID, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
+import { formatCurrency, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
 import type { AuthSession, Convenio, MedicalUserOption, Paciente } from '../../types';
 import { UserAvatar } from '../users/UserAvatar';
 import {
@@ -31,7 +31,9 @@ import {
   summarizeBillingRecords,
   type BillingBreakdownItem,
   type BillingChecklistItem,
+  type BillingRegimeFilter,
   type BillingRecord,
+  type BillingStatusFilter,
 } from './billingUtils';
 
 type BillingPageProps = {
@@ -49,6 +51,38 @@ type BillingSummaryCardProps = {
   tone: 'gross' | 'net' | 'glosa' | 'records' | 'paid' | 'attention';
   icon: ReactNode;
 };
+
+const BILLING_STATUS_FILTER_OPTIONS: Array<{ label: string; value: BillingStatusFilter }> = [
+  { label: 'Todos', value: 'all' },
+  { label: 'Pagos', value: 'paid' },
+  { label: 'Pendentes', value: 'pending' },
+  { label: 'Com glosa', value: 'glosa' },
+  { label: 'Sem valor informado', value: 'missing' },
+];
+
+const BILLING_REGIME_FILTER_OPTIONS: Array<{ label: string; value: BillingRegimeFilter }> = [
+  { label: 'Todos', value: 'all' },
+  { label: 'Convenio', value: 'convenio' },
+  { label: 'Particular', value: 'particular' },
+];
+
+function normalizeFilterOption(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR')
+    .trim();
+}
+
+function getFilterOptionLabel<TValue extends string>(options: Array<{ label: string; value: TValue }>, value: TValue) {
+  return options.find((option) => option.value === value)?.label ?? options[0]?.label ?? '';
+}
+
+function getFilterOptionValue<TValue extends string>(options: Array<{ label: string; value: TValue }>, label: string) {
+  const normalizedLabel = normalizeFilterOption(label);
+
+  return options.find((option) => normalizeFilterOption(option.label) === normalizedLabel)?.value;
+}
 
 function BillingSummaryCard({ title, value, caption, tone, icon }: BillingSummaryCardProps) {
   return (
@@ -151,53 +185,8 @@ type BillingSummaryModalProps = {
 function BillingSummaryModal({ record, authToken, onClose }: BillingSummaryModalProps) {
   return (
     <Modal titleId="billing-summary-title" className="billing-summary-modal" onClose={onClose}>
-      <div className="panel-title">
-        <div>
-          <span className="eyebrow">Informacoes resumidas</span>
-          <h2 id="billing-summary-title">{record.patientName}</h2>
-          <p className="billing-summary-modal-subtitle">{record.doctorName} | {record.hospitalName}</p>
-        </div>
-        <IconButton label="Fechar informacoes resumidas" title="Fechar" tone="muted" onClick={onClose}>
-          <X size={18} />
-        </IconButton>
-      </div>
-
-      <dl className="info-list billing-summary-info-list">
-        <div>
-          <dt>Convenio / regime</dt>
-          <dd>{record.convenioName} / {record.regime === 'convenio' ? 'Convenio' : 'Particular'}</dd>
-        </div>
-        <div>
-          <dt>Faturado</dt>
-          <dd>{record.paymentHasNumericValue ? formatCurrency(record.paymentAmount) : record.paymentRaw || '-'}</dd>
-        </div>
-        <div>
-          <dt>Glosa</dt>
-          <dd>{record.glosaHasNumericValue ? formatCurrency(record.glosaAmount) : record.glosaRaw || '-'}</dd>
-        </div>
-        <div>
-          <dt>Liquido</dt>
-          <dd>{record.paymentHasNumericValue || record.glosaHasNumericValue ? formatCurrency(record.netAmount) : '-'}</dd>
-        </div>
-      </dl>
-
-      <section className="billing-detail-section">
-        <div className="billing-section-heading">
-          <div>
-            <span className="eyebrow">Procedimentos</span>
-            <h4>Resumo dos codigos vinculados</h4>
-          </div>
-        </div>
-
-        {record.procedures.length ? (
-          <BillingProcedureList procedures={record.procedures} />
-        ) : (
-          <p className="empty-row">Nenhum procedimento vinculado a esta cirurgia.</p>
-        )}
-      </section>
-
-      <div className="billing-summary-modal-footer">
-        <div className="billing-patient-cell">
+      <div className="panel-title billing-summary-titlebar">
+        <div className="billing-patient-cell billing-summary-patient">
           <UserAvatar
             userId={record.paciente.userId}
             name={record.patientName}
@@ -206,10 +195,66 @@ function BillingSummaryModal({ record, authToken, onClose }: BillingSummaryModal
             size="sm"
           />
           <div>
-            <strong>Status {record.statusLabel}</strong>
-            <span>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendencia(s)</span>
+            <span className="eyebrow">Informacoes resumidas</span>
+            <h2 id="billing-summary-title">{record.patientName}</h2>
+            <p className="billing-summary-modal-subtitle">{record.doctorName}</p>
           </div>
         </div>
+        <IconButton label="Fechar informacoes resumidas" title="Fechar" tone="muted" onClick={onClose}>
+          <X size={18} />
+        </IconButton>
+      </div>
+
+      <div className="billing-summary-layout">
+        <section className="billing-summary-overview" aria-label="Dados gerais do faturamento">
+          <article className="billing-summary-info-card">
+            <span>Data / hospital</span>
+            <strong>{record.surgeryDateLabel}</strong>
+            <p>{record.hospitalName}</p>
+          </article>
+
+          <article className="billing-summary-info-card billing-summary-convenio-card">
+            <span>Convenio / regime</span>
+            <strong>{record.convenioName}</strong>
+            <p>{record.regime === 'convenio' ? 'Convenio' : 'Particular'} | {record.authorizationCode || 'Sem autorizacao informada'}</p>
+          </article>
+
+          <article className="billing-summary-info-card billing-summary-support-card">
+            <span>Status / suporte</span>
+            <strong>{record.statusLabel}</strong>
+            <p>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendencia(s)</p>
+          </article>
+        </section>
+
+        <section className="billing-summary-metrics" aria-label="Valores do faturamento">
+          <article className="billing-summary-metric-card">
+            <span>Faturado</span>
+            <strong>{record.paymentHasNumericValue ? formatCurrency(record.paymentAmount) : record.paymentRaw || '-'}</strong>
+          </article>
+          <article className="billing-summary-metric-card">
+            <span>Glosa</span>
+            <strong>{record.glosaHasNumericValue ? formatCurrency(record.glosaAmount) : record.glosaRaw || '-'}</strong>
+          </article>
+          <article className="billing-summary-metric-card">
+            <span>Liquido</span>
+            <strong>{record.paymentHasNumericValue || record.glosaHasNumericValue ? formatCurrency(record.netAmount) : '-'}</strong>
+          </article>
+        </section>
+
+        <section className="billing-detail-section billing-summary-main">
+          <div className="billing-section-heading">
+            <div>
+              <span className="eyebrow">Procedimentos</span>
+              <h4>Resumo dos codigos vinculados</h4>
+            </div>
+          </div>
+
+          {record.procedures.length ? (
+            <BillingProcedureList procedures={record.procedures} />
+          ) : (
+            <p className="empty-row">Nenhum procedimento vinculado a esta cirurgia.</p>
+          )}
+        </section>
       </div>
     </Modal>
   );
@@ -222,6 +267,14 @@ function parseBillingDetailId(value: string | null) {
 
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getUniqueSortedOptions(values: Array<string | null | undefined>) {
+  return [...new Set(
+    values
+      .map((value) => value?.trim() || '')
+      .filter(Boolean),
+  )].sort((left, right) => left.localeCompare(right, 'pt-BR', { sensitivity: 'base' }));
 }
 
 async function loadBillingPatients(token: string, filters: { search: string; medico: string; convenio: string; procedimento: string }) {
@@ -259,6 +312,8 @@ export function BillingPage({
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultDoctorFilter = isMedical ? session.user.nome : '';
   const [filters, setFilters] = useState(() => createEmptyBillingFilters(defaultDoctorFilter));
+  const [statusFilterInput, setStatusFilterInput] = useState(() => getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, 'all'));
+  const [regimeFilterInput, setRegimeFilterInput] = useState(() => getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, 'all'));
   const [summaryRecordId, setSummaryRecordId] = useState<number | null>(null);
   const [debouncedSearch] = useDebouncedValue(filters.search);
   const [debouncedDoctor] = useDebouncedValue(filters.medico);
@@ -276,6 +331,14 @@ export function BillingPage({
       : { ...current, medico: session.user.nome });
   }, [isMedical, session.user.nome]);
 
+  useEffect(() => {
+    setStatusFilterInput(getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, filters.status));
+  }, [filters.status]);
+
+  useEffect(() => {
+    setRegimeFilterInput(getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, filters.regime));
+  }, [filters.regime]);
+
   const billingQuery = useQuery({
     queryKey: ['billingRecords', session.token, debouncedSearch, debouncedDoctor, debouncedConvenio, debouncedProcedure, isMedical ? session.user.id : 'all'],
     queryFn: () => loadBillingPatients(session.token, {
@@ -287,14 +350,37 @@ export function BillingPage({
     staleTime: 30 * 1000,
   });
 
+  const billingScopeOptions = {
+    restrictToMedicalUser: isMedical,
+    currentMedicalUserId: session.user.id,
+    currentMedicalUserName: session.user.nome,
+  };
+  const allBillingRecords = buildBillingRecords(billingQuery.data ?? []);
+  const billingScopeRecords = filterBillingRecords(
+    allBillingRecords,
+    createEmptyBillingFilters(''),
+    billingScopeOptions,
+  );
   const billingRecords = filterBillingRecords(
-    buildBillingRecords(billingQuery.data ?? []),
+    allBillingRecords,
     filters,
-    {
-      restrictToMedicalUser: isMedical,
-      currentMedicalUserId: session.user.id,
-      currentMedicalUserName: session.user.nome,
-    },
+    billingScopeOptions,
+  );
+  const doctorFilterOptions = getUniqueSortedOptions([
+    ...medicalUsers.map((user) => user.nome),
+    ...billingScopeRecords.map((record) => record.doctorName),
+  ]);
+  const convenioFilterOptions = getUniqueSortedOptions([
+    ...convenios.map((item) => item.descricaoConvenio),
+    ...billingScopeRecords.map((record) => record.convenioName),
+  ]);
+  const hospitalFilterOptions = getUniqueSortedOptions(
+    billingScopeRecords
+      .map((record) => record.hospitalName)
+      .filter((value) => value !== 'Nao informado'),
+  );
+  const procedureFilterOptions = getUniqueSortedOptions(
+    billingScopeRecords.flatMap((record) => record.procedures.map((procedure) => procedure.procedimento)),
   );
   const summary = summarizeBillingRecords(billingRecords);
   const doctorBreakdown = groupBillingByDoctor(billingRecords).slice(0, 5);
@@ -321,6 +407,8 @@ export function BillingPage({
 
   const clearFilters = () => {
     setFilters(createEmptyBillingFilters(defaultDoctorFilter));
+    setStatusFilterInput(getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, 'all'));
+    setRegimeFilterInput(getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, 'all'));
   };
 
   const openBillingDetail = (recordId: number) => {
@@ -545,64 +633,76 @@ export function BillingPage({
         </div>
 
         <div className="billing-filter-grid">
-          <TextField
+          <ComboboxField
             className="filter-field"
             label="Cirurgiao"
-            type="search"
-            list={MEDICAL_USERS_DATALIST_ID}
             value={filters.medico}
+            options={doctorFilterOptions}
             onValueChange={(value) => setFilters((current) => ({ ...current, medico: value }))}
-            disabled={isMedical || !medicalUsers.length}
+            disabled={isMedical || !doctorFilterOptions.length}
             placeholder={isMedical ? session.user.nome : medicalUsers.length ? 'Todos os cirurgioes' : 'Nenhum medico cadastrado'}
+            noOptionsLabel="Nenhum cirurgiao encontrado."
           />
-          <TextField
+          <ComboboxField
             className="filter-field"
             label="Convenio"
-            type="search"
-            list={CONVENIOS_DATALIST_ID}
             value={filters.convenio}
+            options={convenioFilterOptions}
             onValueChange={(value) => setFilters((current) => ({ ...current, convenio: value }))}
             disabled={!convenios.length && !filters.convenio}
             placeholder={convenios.length ? 'Todos os convenios' : 'Nenhum convenio cadastrado'}
+            noOptionsLabel="Nenhum convenio encontrado."
           />
-          <TextField
+          <ComboboxField
             className="filter-field"
             label="Hospital"
-            type="search"
             value={filters.hospital}
+            options={hospitalFilterOptions}
             onValueChange={(value) => setFilters((current) => ({ ...current, hospital: value }))}
             placeholder="Todos os hospitais"
+            noOptionsLabel="Nenhum hospital encontrado."
           />
-          <TextField
+          <ComboboxField
             className="filter-field"
             label="Procedimento"
-            type="search"
             value={filters.procedimento}
+            options={procedureFilterOptions}
             onValueChange={(value) => setFilters((current) => ({ ...current, procedimento: value }))}
             placeholder="Principal ou associado"
+            noOptionsLabel="Nenhum procedimento encontrado."
           />
-          <SelectField
+          <ComboboxField
             className="filter-field"
             label="Status"
-            value={filters.status}
-            onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as typeof current.status }))}
-          >
-            <option value="all">Todos</option>
-            <option value="paid">Pagos</option>
-            <option value="pending">Pendentes</option>
-            <option value="glosa">Com glosa</option>
-            <option value="missing">Sem valor informado</option>
-          </SelectField>
-          <SelectField
+            value={statusFilterInput}
+            options={BILLING_STATUS_FILTER_OPTIONS.map((option) => option.label)}
+            onValueChange={(value) => {
+              setStatusFilterInput(value);
+
+              const nextStatus = getFilterOptionValue(BILLING_STATUS_FILTER_OPTIONS, value);
+
+              if (nextStatus) {
+                setFilters((current) => ({ ...current, status: nextStatus }));
+              }
+            }}
+            noOptionsLabel="Nenhum status encontrado."
+          />
+          <ComboboxField
             className="filter-field"
             label="Regime"
-            value={filters.regime}
-            onChange={(event) => setFilters((current) => ({ ...current, regime: event.target.value as typeof current.regime }))}
-          >
-            <option value="all">Todos</option>
-            <option value="convenio">Convenio</option>
-            <option value="particular">Particular</option>
-          </SelectField>
+            value={regimeFilterInput}
+            options={BILLING_REGIME_FILTER_OPTIONS.map((option) => option.label)}
+            onValueChange={(value) => {
+              setRegimeFilterInput(value);
+
+              const nextRegime = getFilterOptionValue(BILLING_REGIME_FILTER_OPTIONS, value);
+
+              if (nextRegime) {
+                setFilters((current) => ({ ...current, regime: nextRegime }));
+              }
+            }}
+            noOptionsLabel="Nenhum regime encontrado."
+          />
           <DateInput
             id="billing-period-start"
             label="Data inicial"
@@ -707,7 +807,6 @@ export function BillingPage({
             <thead>
               <tr>
                 <th>Paciente</th>
-                <th>Data / hospital</th>
                 <th>Cirurgiao</th>
                 <th>Status</th>
                 <th>Resumo</th>
@@ -717,7 +816,7 @@ export function BillingPage({
             <tbody>
               {billingQuery.isPending ? (
                 <tr>
-                  <td colSpan={6} className="empty-row">Carregando faturamento medico...</td>
+                  <td colSpan={5} className="empty-row">Carregando faturamento medico...</td>
                 </tr>
               ) : billingRecords.length ? (
                 billingRecords.map((record) => (
@@ -736,10 +835,6 @@ export function BillingPage({
                           <span>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendencia(s)</span>
                         </div>
                       </div>
-                    </td>
-                    <td data-label="Data / hospital">
-                      <strong>{record.surgeryDateLabel}</strong>
-                      <span>{record.hospitalName}</span>
                     </td>
                     <td data-label="Cirurgiao">
                       <strong>{record.doctorName}</strong>
@@ -774,7 +869,7 @@ export function BillingPage({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
+                  <td colSpan={5} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
                 </tr>
               )}
             </tbody>
