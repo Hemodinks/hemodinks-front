@@ -91,7 +91,13 @@
 .patient-form-clinical-grid {
   display: grid;
   grid-column: 1 / -1;
+  gap: 16px;
+}
+
+.patient-form-clinical-column {
+  display: grid;
   gap: 12px;
+  align-content: start;
 }
 
 .patient-form-slot {
@@ -100,39 +106,120 @@
   min-width: 0;
 }
 
+.patient-form-tall-field textarea {
+  min-height: 74px;
+  line-height: 1.45;
+}
+
+.patient-info-modal {
+  width: min(760px, calc(100vw - 40px));
+}
+
+.patient-info-titlebar {
+  align-items: flex-start;
+}
+
+.patient-info-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.patient-info-summary-grid,
+.patient-info-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.patient-info-card,
+.patient-info-procedures-card {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--input-bg);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+}
+
+.patient-info-card-highlight {
+  border-left: 5px solid color-mix(in srgb, var(--action-primary) 46%, transparent);
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.12), transparent 72%),
+    var(--input-bg);
+}
+
+.patient-info-card-accent {
+  border-left-color: color-mix(in srgb, var(--action-accent) 50%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--action-accent) 12%, transparent), transparent 72%),
+    var(--input-bg);
+}
+
+.patient-info-card > span,
+.patient-info-section-heading > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.patient-info-card-content {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.5;
+}
+
+.patient-info-card .copyable-value {
+  width: 100%;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.patient-info-card .copyable-value > span:first-child {
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.55;
+}
+
+.patient-info-card-highlight .copyable-value > span:first-child {
+  font-size: 1.08rem;
+}
+
+.patient-info-empty {
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.patient-info-section-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.patient-info-section-heading strong {
+  color: var(--ink);
+  font-size: 1.04rem;
+  line-height: 1.4;
+}
+
+.patient-info-procedure-list {
+  gap: 10px;
+}
+
+.patient-info-procedure-list li {
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
 @media (min-width: 761px) {
   .patient-form-clinical-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .patient-form-clinical-grid .patient-form-slot-cirurgiao {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .patient-form-clinical-grid .patient-form-slot-convenio {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .patient-form-clinical-grid .patient-form-slot-auxiliar-1 {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .patient-form-clinical-grid .patient-form-slot-hospital {
-    grid-column: 2;
-    grid-row: 2;
-  }
-
-  .patient-form-clinical-grid .patient-form-slot-auxiliar-2 {
-    grid-column: 1;
-    grid-row: 3;
-  }
-
-  .patient-form-clinical-grid .patient-form-slot-opme {
-    grid-column: 2;
-    grid-row: 3;
   }
 }
 

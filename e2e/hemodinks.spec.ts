@@ -74,6 +74,11 @@ const cbhpmItem = {
   valorReferencia: 120,
 };
 
+const opmeFornecedor = {
+  idFornecedor: 1,
+  fornecedor: 'Promedom',
+};
+
 const user = {
   id: 1,
   nome: 'Ana Hemodinks',
@@ -316,6 +321,14 @@ async function mockApi(page: Page) {
       return route.fulfill({ json: [{ idConvenio: 7, descricaoConvenio: 'Particular' }] });
     }
 
+    if (path === '/api/opme/') {
+      return route.fulfill({ json: [opmeFornecedor] });
+    }
+
+    if (path === '/api/grupos-medicos/medicos') {
+      return route.fulfill({ json: [{ id: user.id, nome: user.nome, email: user.email }] });
+    }
+
     if (path === '/api/cbhpm/') {
       return route.fulfill({ json: paged([cbhpmItem]) });
     }
@@ -477,24 +490,22 @@ test('cadastra e edita paciente usando o fluxo real do formulario', async ({ pag
   await page.getByRole('button', { name: 'Novo paciente' }).click();
   await expect(page.getByRole('heading', { name: 'Novo paciente' })).toBeVisible();
   await page.getByLabel('Paciente', { exact: true }).fill('Paciente Novo');
-  await page.getByLabel('CPF').fill('52998224725');
-  await page.getByLabel('Telefone').fill('81998765432');
-  await page.getByLabel('Hospital').selectOption('1');
-  await page.locator('input[list="hemodinks-medical-users-options"]').fill('Ana Hemodinks');
+  await page.getByLabel('Hospital').fill('Santa Clara - Mater Dei');
+  await page.getByLabel('Cirurgião').selectOption('1');
   await page.locator('input[list="hemodinks-convenios-options"]').fill('Particular');
 
   await page.getByRole('button', { name: 'Adicionar procedimento' }).click();
   await expect(page.getByRole('heading', { name: 'Selecionar procedimento' })).toBeVisible();
   await page.getByRole('button', { name: 'Adicionar', exact: true }).click();
-  await expect(page.getByText('1.01.01.01-2')).toBeVisible();
+  await expect(page.getByText('10101012')).toBeVisible();
 
   await page.getByRole('button', { name: 'Cadastrar paciente' }).click();
   await expect(page.getByText(/Paciente cadastrado/)).toBeVisible();
   await expect(page.getByText('Paciente Novo')).toBeVisible();
   expect(apiState.createdPacientePayload).toMatchObject({
     nomePaciente: 'Paciente Novo',
-    cpf: '52998224725',
-    telefone: '+5581998765432',
+    cpf: '',
+    telefone: '',
     hospitalId: 1,
     medicoUserId: 1,
     convenioId: 7,
@@ -509,7 +520,7 @@ test('cadastra e edita paciente usando o fluxo real do formulario', async ({ pag
   await expect(page.getByText('Paciente Editado')).toBeVisible();
   expect(apiState.updatedPacientePayload).toMatchObject({
     nomePaciente: 'Paciente Editado',
-    cpf: '52998224725',
+    cpf: '',
     procedimento: 'Consulta',
   });
 });

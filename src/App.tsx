@@ -35,6 +35,7 @@ import {
   getProfileName,
   isValidEmail,
   MEDICAL_PROFILE_ID,
+  PATIENT_PROFILE_ID,
 } from './shared/utils/formatters';
 import type {
   DashboardNotification,
@@ -179,11 +180,11 @@ function AppContent() {
   const isAdmin = currentPerfilId === 1;
   const isMedical = currentPerfilId === MEDICAL_PROFILE_ID;
   const isController = currentPerfilId === CONTROLLER_PROFILE_ID;
-  const isPatient = currentPerfilId === 3;
+  const isPatient = currentPerfilId === PATIENT_PROFILE_ID;
   const canAccessDashboard = !isController;
   const canAccessAgenda = !isController;
   const canAccessUsers = isAdmin;
-  const canEditOwnUser = isMedical;
+  const canEditOwnUser = isMedical || isPatient;
   const canAccessBilling = isAdmin || isMedical || isController;
   const canAccessMedicalGroups = isAdmin;
   const canCreatePatients = isAdmin || isController || isMedical;

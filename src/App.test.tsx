@@ -578,6 +578,26 @@ describe('App', () => {
     expect(within(dialog).getByText('Lida')).toBeInTheDocument();
   });
 
+  it('exibe hospital e destaque visual no popup de informacoes do paciente', async () => {
+    const user = userEvent.setup();
+    mockSession();
+    vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
+
+    render(<App />);
+
+    await openPatientsModule(user);
+    const row = await screen.findByText('Paciente Hemodinks');
+
+    await user.click(within(row.closest('tr')!).getByRole('button', { name: /informacoes adicionais de paciente hemodinks/i }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Paciente Hemodinks' });
+    expect(within(dialog).getByText('Hospital')).toBeInTheDocument();
+    expect(within(dialog).getByText('Santa Clara - Mater Dei')).toBeInTheDocument();
+    expect(within(dialog).getByText('Convênio')).toBeInTheDocument();
+    expect(within(dialog).getByText('Particular')).toBeInTheDocument();
+    expect(within(dialog).getByText('Procedimentos')).toBeInTheDocument();
+  });
+
   it('permite visualizar e ocultar a senha no login', async () => {
     const user = userEvent.setup();
 
@@ -1063,8 +1083,9 @@ describe('App', () => {
     expect(screen.queryByLabelText('Telefone')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Data de nascimento')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
-    expect(await screen.findByRole('option', { name: 'Santa Genoveva - Mater Dei' })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Hospital'), '2');
+    await user.type(screen.getByLabelText('Convênio'), 'Convenio Manual');
+    await user.type(screen.getByLabelText('Hospital'), 'Hospital Manual');
+    await user.type(screen.getByLabelText('Fornecedor OPME'), 'Fornecedor Manual');
     await user.selectOptions(screen.getByLabelText('Cirurgião'), '1');
     await user.selectOptions(screen.getByLabelText('Médico auxiliar 1'), '2');
     await user.selectOptions(screen.getByLabelText('Médico auxiliar 2'), '3');
@@ -1099,8 +1120,8 @@ describe('App', () => {
       telefone: '',
       fotoPerfil: null,
       dataNascimento: '1900-01-01',
-      hospitalId: 2,
-      hospital: 'Santa Genoveva - Mater Dei',
+      hospitalId: null,
+      hospital: 'Hospital Manual',
       medicoUserId: 1,
       medico: 'Ana Hemodinks',
       medicoAuxiliar1UserId: 2,
@@ -1108,9 +1129,9 @@ describe('App', () => {
       medicoAuxiliar2UserId: 3,
       medicoAuxiliar2: 'Clara Hemodinks',
       convenioId: null,
-      convenio: '',
+      convenio: 'Convenio Manual',
       opmeFornecedorId: null,
-      opmeFornecedor: '',
+      opmeFornecedor: 'Fornecedor Manual',
       cbhpmCodigo: '10101012',
       cbhpmPorte: '2B',
       procedimento: 'Consulta',
@@ -1230,6 +1251,36 @@ describe('App', () => {
     expect(screen.getByLabelText('Médico auxiliar 1')).toBeInTheDocument();
     expect(screen.getByLabelText('Médico auxiliar 2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
+  });
+
+  it('reativa o perfil paciente no cadastro de usuario', async () => {
+    const user = userEvent.setup();
+    mockSession();
+
+    render(<App />);
+
+    await openUsersModule(user);
+    await user.click(screen.getByRole('button', { name: /novo usuario/i }));
+    expect(await screen.findByRole('option', { name: 'Paciente' })).toBeInTheDocument();
+  });
+
+  it('permite ao perfil paciente abrir meu cadastro', async () => {
+    const user = userEvent.setup();
+    mockSession({
+      perfilId: 3,
+      perfilNome: 'Paciente',
+      nome: 'Paciente George',
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir meu cadastro/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/meu-cadastro');
   });
 
   it('redireciona medico que tenta acessar usuarios pela URL', async () => {

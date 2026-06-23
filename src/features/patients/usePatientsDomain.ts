@@ -29,6 +29,7 @@ import {
   CBHPM_PAGE_SIZE,
   DEFAULT_PASSWORD,
   findConvenioByDescription,
+  findHospitalByName,
   findMedicalUserByName,
   findOpmeFornecedorByName,
   getErrorMessage,
@@ -746,15 +747,12 @@ export function usePatientsDomain({
       return;
     }
 
+    const selectedHospital = pacienteFormData.hospitalId != null
+      ? hospitais.find((hospital) => hospital.id === pacienteFormData.hospitalId)
+      : findHospitalByName(hospitais, pacienteFormData.hospital);
     const selectedConvenio = pacienteFormData.convenioId != null
       ? convenios.find((convenio) => convenio.idConvenio === pacienteFormData.convenioId)
       : findConvenioByDescription(convenios, pacienteFormData.convenio);
-
-    if (pacienteFormData.convenio && !selectedConvenio) {
-      setPacienteFormError('Selecione um convenio cadastrado.');
-      return;
-    }
-
     const selectedOpmeFornecedor = pacienteFormData.opmeFornecedorId != null
       ? opmeFornecedores.find((fornecedor) => fornecedor.idFornecedor === pacienteFormData.opmeFornecedorId)
       : findOpmeFornecedorByName(opmeFornecedores, pacienteFormData.opmeFornecedor);
@@ -767,8 +765,10 @@ export function usePatientsDomain({
       medicoAuxiliar1: selectedMedicoAuxiliar1User?.nome ?? pacienteFormData.medicoAuxiliar1,
       medicoAuxiliar2UserId: selectedMedicoAuxiliar2User?.id ?? pacienteFormData.medicoAuxiliar2UserId,
       medicoAuxiliar2: selectedMedicoAuxiliar2User?.nome ?? pacienteFormData.medicoAuxiliar2,
+      hospitalId: selectedHospital?.id ?? null,
+      hospital: selectedHospital?.nome ?? pacienteFormData.hospital,
       convenioId: selectedConvenio?.idConvenio ?? null,
-      convenio: selectedConvenio?.descricaoConvenio ?? '',
+      convenio: selectedConvenio?.descricaoConvenio ?? pacienteFormData.convenio,
       opmeFornecedorId: selectedOpmeFornecedor?.idFornecedor ?? null,
       opmeFornecedor: selectedOpmeFornecedor?.fornecedor ?? pacienteFormData.opmeFornecedor,
     });
