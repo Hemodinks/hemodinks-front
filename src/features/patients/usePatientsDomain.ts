@@ -824,6 +824,8 @@ export function usePatientsDomain({
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardNotifications(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacienteObservacoesRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.convenios(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(session.token) }),
       ]);
       resetPacienteForm();
