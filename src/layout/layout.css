@@ -444,6 +444,11 @@ img.user-avatar {
   box-shadow: 0 8px 16px color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 16%, transparent);
   font-weight: 900;
   text-align: left;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .side-nav-count {
@@ -452,22 +457,34 @@ img.user-avatar {
   font-size: 0.78rem;
 }
 
+.side-nav-dashboard {
+  --side-nav-color: #9f1239;
+  --side-nav-soft: rgba(159, 18, 57, 0.12);
+  --side-nav-border: rgba(159, 18, 57, 0.32);
+}
+
 .side-nav-users {
   --side-nav-color: #0f766e;
-  --side-nav-soft: rgba(15, 118, 110, 0.1);
-  --side-nav-border: rgba(15, 118, 110, 0.3);
+  --side-nav-soft: rgba(15, 118, 110, 0.12);
+  --side-nav-border: rgba(15, 118, 110, 0.32);
 }
 
 .side-nav-patients {
   --side-nav-color: #2563eb;
-  --side-nav-soft: rgba(37, 99, 235, 0.1);
-  --side-nav-border: rgba(37, 99, 235, 0.3);
+  --side-nav-soft: rgba(37, 99, 235, 0.12);
+  --side-nav-border: rgba(37, 99, 235, 0.32);
 }
 
 .side-nav-billing {
   --side-nav-color: #b45309;
   --side-nav-soft: rgba(180, 83, 9, 0.12);
-  --side-nav-border: rgba(180, 83, 9, 0.32);
+  --side-nav-border: rgba(180, 83, 9, 0.3);
+}
+
+.side-nav-profile {
+  --side-nav-color: #7c3aed;
+  --side-nav-soft: rgba(124, 58, 237, 0.1);
+  --side-nav-border: rgba(124, 58, 237, 0.28);
 }
 
 .side-nav-medical-groups {
@@ -477,23 +494,30 @@ img.user-avatar {
 }
 
 .side-nav-agenda {
-  --side-nav-color: #8a5a15;
+  --side-nav-color: #b7791f;
   --side-nav-soft: rgba(183, 121, 31, 0.12);
   --side-nav-border: rgba(183, 121, 31, 0.34);
 }
 
+.side-nav-settings {
+  --side-nav-color: #475569;
+  --side-nav-soft: rgba(71, 85, 105, 0.12);
+  --side-nav-border: rgba(71, 85, 105, 0.3);
+}
+
 .side-nav button.active {
-  color: #fff;
+  color: var(--side-nav-color, var(--action-secondary));
   border-color: var(--selection-accent);
-  background: linear-gradient(135deg, var(--side-nav-color, #9a3412), color-mix(in srgb, var(--side-nav-color, #9a3412) 78%, black));
+  background: color-mix(in srgb, var(--side-nav-color, #9a3412) 40%, transparent);
   box-shadow:
     0 0 0 2px var(--selection-accent),
     0 0 0 4px var(--selection-accent-soft),
-    0 8px 16px color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 16%, transparent);
+    inset 0 0 0 1px color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 24%, transparent),
+    0 8px 16px color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 12%, transparent);
 }
 
 .side-nav button.active .side-nav-count {
-  color: #fff;
+  color: var(--side-nav-color, var(--action-secondary));
 }
 
 .side-nav button:not(.active):hover {
@@ -508,7 +532,8 @@ img.user-avatar {
   box-shadow:
     0 0 0 2px var(--selection-accent),
     0 0 0 4px var(--selection-accent-soft),
-    0 8px 16px color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 16%, transparent);
+    inset 0 0 0 1px color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 24%, transparent),
+    0 8px 16px color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 12%, transparent);
 }
 
 .app-content {

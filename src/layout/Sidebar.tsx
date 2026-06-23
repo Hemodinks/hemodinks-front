@@ -76,7 +76,7 @@ export function Sidebar({
           {canAccessDashboard && (
             <button
               type="button"
-              className={activeView === 'dashboard' ? 'active' : ''}
+              className={`side-nav-dashboard ${activeView === 'dashboard' ? 'active' : ''}`}
               aria-current={activeView === 'dashboard' ? 'page' : undefined}
               onClick={onOpenDashboard}
             >
@@ -99,7 +99,7 @@ export function Sidebar({
           {canEditOwnUser && (
             <button
               type="button"
-              className={activeView === 'profile' ? 'active' : ''}
+              className={`side-nav-profile ${activeView === 'profile' ? 'active' : ''}`}
               aria-current={activeView === 'profile' ? 'page' : undefined}
               onClick={onOpenMyProfile}
             >

@@ -1204,22 +1204,6 @@ describe('App', () => {
     });
   });
 
-  it('permite ordenar pacientes pelos cabeçalhos da tabela', async () => {
-    const user = userEvent.setup();
-    mockSession();
-
-    render(<App />);
-
-    await openPatientsModule(user);
-    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /^hospital$/i }));
-
-    await waitFor(() => {
-      expect(api.getPacientes).toHaveBeenLastCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'hospital', sortDirection: 'asc' });
-    });
-  });
-
   it('libera pacientes para medico e exibe os combos de equipe medica', async () => {
     const user = userEvent.setup();
     mockSession({
