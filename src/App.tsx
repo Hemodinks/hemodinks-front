@@ -408,6 +408,7 @@ function AppContent() {
     sortDirection: medicalGroupSortDirection,
     setSortDirection: setMedicalGroupSortDirection,
     totalItems: medicalGroupsTotalItems,
+    medicalGroupsCount,
     totalPages: medicalGroupTotalPages,
     visibleStart: medicalGroupVisibleStart,
     visibleEnd: medicalGroupVisibleEnd,
@@ -1020,6 +1021,7 @@ function AppContent() {
       canAccessAgenda={canAccessAgenda}
       usersCount={usersCount}
       pacientesCount={pacientesCount}
+      medicalGroupsCount={medicalGroupsCount}
       pendingPaymentsCount={pendingPaymentsCount}
       unreadAgendaNotificationCount={unreadAgendaNotificationCount}
       medicalUsers={medicalUsers}

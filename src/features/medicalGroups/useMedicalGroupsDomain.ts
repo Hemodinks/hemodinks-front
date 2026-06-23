@@ -18,6 +18,13 @@ import type { AuthSession, MedicalGroup, MedicalGroupFormData, MedicalUserOption
 
 const LIST_CACHE_TIME_MS = 20 * 1000;
 const LOOKUP_CACHE_TIME_MS = 30 * 60 * 1000;
+const GROUPS_COUNT_QUERY = {
+  page: 1,
+  pageSize: 1,
+  search: '',
+  sortBy: 'recent',
+  sortDirection: 'desc' as const,
+};
 
 const emptyMedicalGroupForm: MedicalGroupFormData = {
   nome: '',
@@ -74,6 +81,12 @@ export function useMedicalGroupsDomain({
     enabled: sessionReady && activeView === 'medicalGroups' && moduleMode === 'list',
     staleTime: LIST_CACHE_TIME_MS,
   });
+  const groupsCountQuery = useQuery({
+    queryKey: queryKeys.medicalGroups(session?.token ?? '', GROUPS_COUNT_QUERY),
+    queryFn: () => getMedicalGroups(session?.token ?? '', GROUPS_COUNT_QUERY),
+    enabled: sessionReady,
+    staleTime: LIST_CACHE_TIME_MS,
+  });
   const availableMedicalUsersQuery = useQuery({
     queryKey: queryKeys.medicalUsers(session?.token ?? ''),
     queryFn: () => getScopedMedicalUsers(session?.token ?? ''),
@@ -126,6 +139,7 @@ export function useMedicalGroupsDomain({
 
   const visibleStart = totalItems ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
   const visibleEnd = totalItems ? Math.min(totalItems, visibleStart + groups.length - 1) : 0;
+  const medicalGroupsCount = groupsCountQuery.data ? getPagedTotal(groupsCountQuery.data) : totalItems;
 
   const resetForm = () => {
     setEditingGroupId(null);
@@ -299,6 +313,7 @@ export function useMedicalGroupsDomain({
     sortDirection,
     setSortDirection,
     totalItems,
+    medicalGroupsCount,
     totalPages,
     visibleStart,
     visibleEnd,

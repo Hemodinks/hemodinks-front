@@ -15,6 +15,7 @@ type SidebarProps = {
   canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
+  medicalGroupsCount: number;
   pendingPaymentsCount: number;
   unreadAgendaNotificationCount: number;
   onOpenDashboard: () => void;
@@ -39,6 +40,7 @@ export function Sidebar({
   canAccessAgenda,
   usersCount,
   pacientesCount,
+  medicalGroupsCount,
   pendingPaymentsCount,
   unreadAgendaNotificationCount,
   onOpenDashboard,
@@ -140,6 +142,7 @@ export function Sidebar({
             >
               <ShieldPlus size={18} />
               <span>Grupos medicos</span>
+              <span className="side-nav-count">{medicalGroupsCount}</span>
             </button>
           )}
           {canAccessAgenda && (
