@@ -88,6 +88,54 @@
   font-weight: 900;
 }
 
+.patient-form-clinical-grid {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 12px;
+}
+
+.patient-form-slot {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+@media (min-width: 761px) {
+  .patient-form-clinical-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .patient-form-clinical-grid .patient-form-slot-cirurgiao {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .patient-form-clinical-grid .patient-form-slot-convenio {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .patient-form-clinical-grid .patient-form-slot-auxiliar-1 {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .patient-form-clinical-grid .patient-form-slot-hospital {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .patient-form-clinical-grid .patient-form-slot-auxiliar-2 {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .patient-form-clinical-grid .patient-form-slot-opme {
+    grid-column: 2;
+    grid-row: 3;
+  }
+}
+
 .filter-field input,
 .filter-field select {
   min-width: 0;

@@ -184,96 +184,110 @@ export function PatientForm({
             />
           </div>
 
-          <SelectField
-            label="Hospital"
-            value={pacienteFormData.hospitalId ?? (pacienteFormData.hospital ? 'legacy' : '')}
-            onChange={(event) => {
-              if (event.target.value === 'legacy') {
-                return;
-              }
+          <div className="patient-form-clinical-grid">
+            <div className="patient-form-slot patient-form-slot-hospital">
+              <SelectField
+                label="Hospital"
+                value={pacienteFormData.hospitalId ?? (pacienteFormData.hospital ? 'legacy' : '')}
+                onChange={(event) => {
+                  if (event.target.value === 'legacy') {
+                    return;
+                  }
 
-              const hospitalId = event.target.value ? Number(event.target.value) : null;
-              const hospital = hospitais.find((item) => item.id === hospitalId)?.nome ?? '';
-              setPacienteFormData((current) => ({ ...current, hospitalId, hospital }));
-            }}
-            disabled={formReadOnly || !hospitais.length}
-            required
-          >
-            <option value="">{hospitais.length ? 'Selecione um hospital' : 'Nenhum hospital cadastrado'}</option>
-            {pacienteFormData.hospital && !pacienteFormData.hospitalId && (
-              <option value="legacy">{pacienteFormData.hospital} (fora do cadastro)</option>
-            )}
-            {hospitais.map((hospital) => (
-              <option key={hospital.id} value={hospital.id}>{hospital.nome}</option>
-            ))}
-          </SelectField>
-          {hospitaisError && <AlertMessage type="error">{hospitaisError}</AlertMessage>}
+                  const hospitalId = event.target.value ? Number(event.target.value) : null;
+                  const hospital = hospitais.find((item) => item.id === hospitalId)?.nome ?? '';
+                  setPacienteFormData((current) => ({ ...current, hospitalId, hospital }));
+                }}
+                disabled={formReadOnly || !hospitais.length}
+                required
+              >
+                <option value="">{hospitais.length ? 'Selecione um hospital' : 'Nenhum hospital cadastrado'}</option>
+                {pacienteFormData.hospital && !pacienteFormData.hospitalId && (
+                  <option value="legacy">{pacienteFormData.hospital} (fora do cadastro)</option>
+                )}
+                {hospitais.map((hospital) => (
+                  <option key={hospital.id} value={hospital.id}>{hospital.nome}</option>
+                ))}
+              </SelectField>
+              {hospitaisError && <AlertMessage type="error">{hospitaisError}</AlertMessage>}
+            </div>
 
-          <SelectField
-            label="Cirurgião"
-            value={getMedicalSelectValue('medico')}
-            onChange={(event) => updateMedicalTeamMember('medico', event.target.value)}
-            disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
-          >
-            {renderMedicalOptions('medico', medicalUsers.length ? 'Selecione um cirurgiao' : 'Nenhum medico cadastrado')}
-          </SelectField>
+            <div className="patient-form-slot patient-form-slot-cirurgiao">
+              <SelectField
+                label="Cirurgião"
+                value={getMedicalSelectValue('medico')}
+                onChange={(event) => updateMedicalTeamMember('medico', event.target.value)}
+                disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
+              >
+                {renderMedicalOptions('medico', medicalUsers.length ? 'Selecione um cirurgiao' : 'Nenhum medico cadastrado')}
+              </SelectField>
+            </div>
 
-          <SelectField
-            label="Médico auxiliar 1"
-            value={getMedicalSelectValue('medicoAuxiliar1')}
-            onChange={(event) => updateMedicalTeamMember('medicoAuxiliar1', event.target.value)}
-            disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar1)}
-          >
-            {renderMedicalOptions('medicoAuxiliar1', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
-          </SelectField>
+            <div className="patient-form-slot patient-form-slot-auxiliar-1">
+              <SelectField
+                label="Médico auxiliar 1"
+                value={getMedicalSelectValue('medicoAuxiliar1')}
+                onChange={(event) => updateMedicalTeamMember('medicoAuxiliar1', event.target.value)}
+                disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar1)}
+              >
+                {renderMedicalOptions('medicoAuxiliar1', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
+              </SelectField>
+            </div>
 
-          <SelectField
-            label="Médico auxiliar 2"
-            value={getMedicalSelectValue('medicoAuxiliar2')}
-            onChange={(event) => updateMedicalTeamMember('medicoAuxiliar2', event.target.value)}
-            disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar2)}
-          >
-            {renderMedicalOptions('medicoAuxiliar2', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
-          </SelectField>
+            <div className="patient-form-slot patient-form-slot-auxiliar-2">
+              <SelectField
+                label="Médico auxiliar 2"
+                value={getMedicalSelectValue('medicoAuxiliar2')}
+                onChange={(event) => updateMedicalTeamMember('medicoAuxiliar2', event.target.value)}
+                disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar2)}
+              >
+                {renderMedicalOptions('medicoAuxiliar2', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
+              </SelectField>
+            </div>
 
-          <TextField
-            label="Convênio"
-            type="text"
-            list={CONVENIOS_DATALIST_ID}
-            value={pacienteFormData.convenio}
-            onValueChange={(value) => {
-              const convenio = value.slice(0, MAX_NAME_LENGTH);
-              const selectedConvenio = findConvenioByDescription(convenios, convenio);
-              setPacienteFormData((current) => ({
-                ...current,
-                convenioId: selectedConvenio?.idConvenio ?? null,
-                convenio,
-              }));
-            }}
-            disabled={formReadOnly || (!convenios.length && !pacienteFormData.convenio)}
-            maxLength={MAX_NAME_LENGTH}
-            placeholder={convenios.length ? 'Selecione ou digite o convenio' : 'Nenhum convenio cadastrado'}
-          />
-          {conveniosError && <AlertMessage type="error">{conveniosError}</AlertMessage>}
+            <div className="patient-form-slot patient-form-slot-convenio">
+              <TextField
+                label="Convênio"
+                type="text"
+                list={CONVENIOS_DATALIST_ID}
+                value={pacienteFormData.convenio}
+                onValueChange={(value) => {
+                  const convenio = value.slice(0, MAX_NAME_LENGTH);
+                  const selectedConvenio = findConvenioByDescription(convenios, convenio);
+                  setPacienteFormData((current) => ({
+                    ...current,
+                    convenioId: selectedConvenio?.idConvenio ?? null,
+                    convenio,
+                  }));
+                }}
+                disabled={formReadOnly || (!convenios.length && !pacienteFormData.convenio)}
+                maxLength={MAX_NAME_LENGTH}
+                placeholder={convenios.length ? 'Selecione ou digite o convenio' : 'Nenhum convenio cadastrado'}
+              />
+              {conveniosError && <AlertMessage type="error">{conveniosError}</AlertMessage>}
+            </div>
 
-          <TextField
-            label="Fornecedor OPME"
-            type="text"
-            list={OPME_FORNECEDORES_DATALIST_ID}
-            value={pacienteFormData.opmeFornecedor}
-            onValueChange={(value) => {
-              const opmeFornecedor = value.slice(0, MAX_NAME_LENGTH);
-              const selectedFornecedor = findOpmeFornecedorByName(opmeFornecedores, opmeFornecedor);
-              setPacienteFormData((current) => ({
-                ...current,
-                opmeFornecedorId: selectedFornecedor?.idFornecedor ?? null,
-                opmeFornecedor,
-              }));
-            }}
-            maxLength={MAX_NAME_LENGTH}
-            placeholder={opmeFornecedores.length ? 'Selecione ou digite o fornecedor OPME' : 'Digite o fornecedor OPME'}
-          />
-          {opmeFornecedoresError && <AlertMessage type="error">{opmeFornecedoresError}</AlertMessage>}
+            <div className="patient-form-slot patient-form-slot-opme">
+              <TextField
+                label="Fornecedor OPME"
+                type="text"
+                list={OPME_FORNECEDORES_DATALIST_ID}
+                value={pacienteFormData.opmeFornecedor}
+                onValueChange={(value) => {
+                  const opmeFornecedor = value.slice(0, MAX_NAME_LENGTH);
+                  const selectedFornecedor = findOpmeFornecedorByName(opmeFornecedores, opmeFornecedor);
+                  setPacienteFormData((current) => ({
+                    ...current,
+                    opmeFornecedorId: selectedFornecedor?.idFornecedor ?? null,
+                    opmeFornecedor,
+                  }));
+                }}
+                maxLength={MAX_NAME_LENGTH}
+                placeholder={opmeFornecedores.length ? 'Selecione ou digite o fornecedor OPME' : 'Digite o fornecedor OPME'}
+              />
+              {opmeFornecedoresError && <AlertMessage type="error">{opmeFornecedoresError}</AlertMessage>}
+            </div>
+          </div>
 
           <div className="procedure-field">
             <span className="field-label">Procedimento</span>
