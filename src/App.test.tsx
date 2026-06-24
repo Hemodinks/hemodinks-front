@@ -739,10 +739,10 @@ describe('App', () => {
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /novo usuario/i }));
 
+    expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Nome completo'), 'Bruno Hemodinks');
     await user.type(screen.getByLabelText('Email'), 'bruno@hemodinks.com');
     await user.type(screen.getByLabelText('Telefone'), '81988888888');
-    await user.type(screen.getByLabelText('CPF'), '11144477735');
     await user.type(screen.getByLabelText('Data de nascimento'), '10051992');
     expect(screen.getByLabelText('Perfil')).toHaveValue('2');
     await user.type(screen.getByLabelText('CRM'), '12345');
@@ -753,7 +753,7 @@ describe('App', () => {
       nome: 'Bruno Hemodinks',
       email: 'bruno@hemodinks.com',
       telefone: '+5581988888888',
-      cpf: '11144477735',
+      cpf: null,
       crm: '12345',
       crmUf: 'PE',
       fotoPerfil: null,
@@ -786,11 +786,10 @@ describe('App', () => {
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /novo usuario/i }));
 
+    expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Nome completo'), 'Clara Hemodinks');
     await user.type(screen.getByLabelText('Email'), 'clara@hemodinks.com');
     await user.type(screen.getByLabelText('Telefone'), '81997777777');
-    await user.type(screen.getByLabelText('CPF'), '93541134780');
-    await user.type(screen.getByLabelText('Data de nascimento'), '12031991');
     await user.type(screen.getByLabelText('CRM'), '98765');
     await user.selectOptions(screen.getByLabelText('UF do CRM'), 'SP');
     await user.upload(
@@ -806,11 +805,11 @@ describe('App', () => {
       nome: 'Clara Hemodinks',
       email: 'clara@hemodinks.com',
       telefone: '+5581997777777',
-      cpf: '93541134780',
+      cpf: null,
       crm: '98765',
       crmUf: 'SP',
       fotoPerfil: 'data:image/png;base64,YXZhdGFy',
-      dataNascimento: '1991-03-12',
+      dataNascimento: null,
       ativo: true,
       perfilId: 2,
     }, 'jwt-token');
@@ -1486,7 +1485,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Editar usuario' })).toBeInTheDocument();
     expect(screen.getByLabelText('Nome completo')).toHaveValue('Ana Hemodinks');
     expect(screen.getByLabelText('Telefone')).toHaveValue('+55 (81) 99999-9999');
-    expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25');
+    expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Data de nascimento')).toHaveValue('01/01/1990');
     expect(screen.getByLabelText('Perfil')).toHaveValue('2');
     expect(screen.getByLabelText('CRM')).toHaveValue('12345');

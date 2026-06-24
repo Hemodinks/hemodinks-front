@@ -289,7 +289,7 @@ export function formatDateInput(value: string) {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
-export function toDisplayDate(value: string) {
+export function toDisplayDate(value?: string | null) {
   if (!value) {
     return '';
   }

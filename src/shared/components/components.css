@@ -713,6 +713,16 @@ textarea::placeholder {
   gap: 12px;
 }
 
+.user-form-columns {
+  align-items: start;
+}
+
+.user-form-column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
 .profile-photo-field {
   display: grid;
   gap: 9px;

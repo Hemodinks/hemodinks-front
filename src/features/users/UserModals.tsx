@@ -54,7 +54,7 @@ export function InfoModal({ user, onClose }: InfoModalProps) {
           )}
           <div>
             <dt>Data de nascimento</dt>
-            <dd>{toDisplayDate(user.dataNascimento)}</dd>
+            <dd>{toDisplayDate(user.dataNascimento) || '-'}</dd>
           </div>
           <div>
             <dt>Troca de senha</dt>
