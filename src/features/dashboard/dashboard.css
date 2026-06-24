@@ -300,6 +300,136 @@
   --module-border: var(--dashboard-settings-border);
 }
 
+.notifications-modal {
+  width: min(620px, 100%);
+  max-height: min(82vh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.notification-summary-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--teal);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.notifications-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0 6px 0 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.notifications-modal .notifications-list {
+  max-height: min(56vh, 520px);
+}
+
+.notifications-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.notifications-list::-webkit-scrollbar-track {
+  background: var(--input-bg);
+  border-radius: 999px;
+}
+
+.notifications-list::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+}
+
+.notifications-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+.notifications-list li.is-unread {
+  border-color: color-mix(in srgb, var(--blood) 34%, var(--line));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--blood) 8%, var(--panel-strong)), var(--panel-strong));
+}
+
+.notification-item-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--amber);
+  background: rgba(251, 191, 36, 0.16);
+}
+
+.notification-item-body {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.notification-item-body strong {
+  color: var(--ink);
+}
+
+.notification-item-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.notification-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.notification-meta-row span {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 7px;
+  color: var(--ink);
+  background: var(--input-bg);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.notification-read-status {
+  border-radius: 999px;
+  padding: 4px 7px;
+}
+
+.notification-read-status.is-unread {
+  color: var(--blood);
+  background: color-mix(in srgb, var(--blood) 10%, var(--panel-strong));
+}
+
+.notification-read-status.is-read {
+  color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 10%, var(--panel-strong));
+}
+
+.notification-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.notification-open-thread-action {
+  width: auto;
+  min-height: 36px;
+}
+
 @media (max-width: 1280px) {
   .dashboard-info-panel {
     grid-template-columns: 1fr;

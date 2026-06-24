@@ -10,6 +10,7 @@ import {
   isMedicalProfileUser,
   toDisplayDate,
 } from '../../shared/utils/formatters';
+import './users.css';
 
 type InfoModalProps = {
   user: User;

@@ -1,0 +1,67 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(24, 33, 47, 0.54);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.modal-panel {
+  width: min(470px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  padding: 22px;
+}
+
+.info-modal {
+  width: min(520px, 100%);
+}
+
+.files-modal {
+  width: min(560px, 100%);
+}
+
+.modal-panel:focus {
+  outline: none;
+}
+
+@media (max-width: 760px) {
+  .modal-backdrop {
+    place-items: start center;
+    padding: 10px;
+    overflow-y: auto;
+  }
+
+  .modal-panel {
+    width: 100%;
+    padding: 16px;
+    max-height: calc(100dvh - 24px);
+  }
+
+  .modal-panel .panel-title {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+
+  .modal-panel .panel-title > div {
+    min-width: 0;
+  }
+
+  .modal-panel .panel-title h2 {
+    overflow-wrap: anywhere;
+  }
+
+  .modal-panel .panel-title .icon-button {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .modal-backdrop {
+    padding: 6px;
+  }
+}

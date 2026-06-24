@@ -110,7 +110,7 @@ export function PatientObservacoesModal({
                   <span className="patient-observation-destination">Para {observacao.destinatarioNome}</span>
                 </div>
                 <p>{observacao.texto}</p>
-                <div className="notification-meta-row">
+                <div className="patient-observation-meta-row">
                   <span>{observacao.autorPerfilNome}</span>
                   <span>{toNotificationDate(observacao.dataCadastro) || 'Agora'}</span>
                   {observacao.foiLida ? (
