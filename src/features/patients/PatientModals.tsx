@@ -4,6 +4,7 @@ import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
 import { getPacienteProcedimentosFromPaciente } from './patientUtils';
+import './patients.css';
 
 type PatientInfoModalProps = {
   paciente: Paciente;

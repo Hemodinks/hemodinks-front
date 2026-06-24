@@ -333,3 +333,5 @@ export function useMedicalGroupsDomain({
     handleSubmitMedicalGroup,
   };
 }
+
+export type MedicalGroupsDomainState = ReturnType<typeof useMedicalGroupsDomain>;

@@ -10,6 +10,7 @@ import {
   MAX_EMAIL_LENGTH,
   MAX_PASSWORD_LENGTH,
 } from '../../shared/utils/formatters';
+import './auth.css';
 
 type LoginScreenProps = {
   companyName: string;

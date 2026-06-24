@@ -3,6 +3,7 @@ import type { Paciente, PacienteObservacao } from '../../types';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, Button, IconButton, TextareaField } from '../../shared/components/ui';
 import { MAX_OBSERVATION_LENGTH, toNotificationDate } from '../../shared/utils/formatters';
+import './patients.css';
 
 type PatientObservacoesModalProps = {
   paciente: Paciente;

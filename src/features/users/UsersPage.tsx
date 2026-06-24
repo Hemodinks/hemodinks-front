@@ -2,6 +2,7 @@ import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } 
 import type { User, UserFormData } from '../../types';
 import { UserForm } from './UserForm';
 import { UserList } from './UserList';
+import './users.css';
 
 type UsersPageProps = {
   moduleMode: 'list' | 'form';

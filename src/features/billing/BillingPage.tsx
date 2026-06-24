@@ -18,6 +18,7 @@ import { getFaturamentosMedicos } from '../../services';
 import { Modal } from '../../shared/components/Modal';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, ComboboxField, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
+import './billing.css';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { formatCurrency, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
 import type { AuthSession, Convenio, MedicalUserOption, Paciente } from '../../types';

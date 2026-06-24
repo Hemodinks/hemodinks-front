@@ -1,0 +1,141 @@
+.copyable-value {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.copyable-value > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.copy-button {
+  width: 30px;
+  min-height: 30px;
+  border: 1px solid color-mix(in srgb, var(--action-accent) 82%, black);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--action-text);
+  background: var(--action-accent);
+}
+
+.copy-button:hover {
+  background: var(--action-accent-hover);
+}
+
+.copied-label {
+  color: var(--teal);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.page-indicator {
+  min-width: 104px;
+  color: var(--ink);
+  text-align: center;
+}
+
+.password-strength {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.strength-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--soft);
+}
+
+.strength-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 180ms ease, background 180ms ease;
+}
+
+.strength-0 .strength-track span,
+.strength-1 .strength-track span {
+  background: var(--danger);
+}
+
+.strength-2 .strength-track span,
+.strength-3 .strength-track span {
+  background: var(--amber);
+}
+
+.strength-4 .strength-track span,
+.strength-5 .strength-track span {
+  background: var(--teal);
+}
+
+.button-row {
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.button-row .primary-action {
+  width: auto;
+}
+
+.full-width {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .pagination-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pagination-actions {
+    width: 100%;
+    gap: 7px;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 520px) {
+  .button-row,
+  .button-row .primary-action,
+  .button-row .ghost-button {
+    width: 100%;
+  }
+
+  .button-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pagination-bar {
+    gap: 8px;
+  }
+
+  .page-indicator {
+    min-width: auto;
+  }
+}

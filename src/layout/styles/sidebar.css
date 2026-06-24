@@ -177,3 +177,85 @@
     inset 0 0 0 1px color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 24%, transparent),
     0 8px 16px color-mix(in srgb, var(--side-nav-color, var(--action-secondary)) 12%, transparent);
 }
+
+@media (min-width: 981px) and (max-width: 1180px) {
+  .session-card {
+    min-height: 76px;
+  }
+}
+
+@media (max-width: 980px) {
+  .sidebar-panel {
+    position: static;
+  }
+
+  .sidebar-card {
+    height: auto;
+    min-height: auto;
+    gap: 12px;
+  }
+
+  .side-nav {
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  }
+
+  .side-nav button {
+    justify-content: center;
+  }
+
+  .side-nav-count {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .sidebar-card {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .sidebar-heading {
+    gap: 4px;
+  }
+
+  .session-card {
+    min-height: 64px;
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .session-user-row .user-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .side-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .side-nav button {
+    min-height: 38px;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 8px;
+    font-size: 0.78rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .side-nav button {
+    justify-content: flex-start;
+  }
+
+  .side-nav-count {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .side-nav {
+    grid-template-columns: 1fr;
+  }
+}

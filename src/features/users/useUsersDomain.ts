@@ -596,3 +596,5 @@ export function useUsersDomain({
     refreshUsers,
   };
 }
+
+export type UsersDomainState = ReturnType<typeof useUsersDomain>;

@@ -12,6 +12,7 @@ import {
   ShieldPlus,
   Users,
 } from 'lucide-react';
+import './dashboard.css';
 
 type DashboardPageProps = {
   companyName: string;

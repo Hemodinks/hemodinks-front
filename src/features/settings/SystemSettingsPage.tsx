@@ -6,6 +6,7 @@ import type { AuthSession, SystemSettings } from '../../types';
 import { PasswordForm } from '../../shared/components/PasswordForm';
 import { AlertMessage, Button, DataPanel, TextField } from '../../shared/components/ui';
 import { getErrorMessage } from '../../shared/utils/formatters';
+import './settings.css';
 
 type SystemSettingsPageProps = {
   session: AuthSession;

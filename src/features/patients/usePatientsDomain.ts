@@ -10,18 +10,14 @@ import {
   getHospitais,
   getOpmeFornecedores,
   getPaciente,
-  getPacienteObservacoes,
   getPacientes,
   getScopedMedicalUsers,
-  markPacienteObservacoesAsRead,
   updatePaciente,
   uploadPacienteArquivo,
 } from '../../services';
 import type {
   AppView,
   ModuleMode,
-  PacienteExportFormat,
-  PacienteExportScope,
 } from '../../appTypes';
 import { queryClient } from '../../queryClient';
 import {
@@ -33,10 +29,8 @@ import {
   findMedicalUserByName,
   findOpmeFornecedorByName,
   getErrorMessage,
-  LOOKUP_PAGE_SIZE,
   MAX_PATIENT_FILE_BYTES,
   PAGE_SIZE,
-  PATIENT_EXPORT_PAGE_SIZE,
 } from '../../shared/utils/formatters';
 import {
   getPagedItems,
@@ -52,17 +46,9 @@ import type {
   CbhpmGeral,
   MedicalUserOption,
   Paciente,
-  PacienteObservacao,
 } from '../../types';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { queryKeys } from '../../shared/queryKeys';
-import {
-  createXlsxBlob,
-  downloadBlob,
-  getPacienteExportRows,
-  getPatientExportFileName,
-  pacienteExportColumns,
-} from './patientExport';
 import {
   CBHPM_CACHE_FETCH_PAGE_SIZE,
   filterCbhpmCachedItems,
@@ -77,9 +63,11 @@ import {
   withPrimaryProcedimento,
 } from './patientUtils';
 import { useCbhpmLookup } from './useCbhpmLookup';
+import { usePatientExport } from './usePatientExport';
 import { usePatientForm } from './usePatientForm';
 import { usePatientList } from './usePatientList';
 import { usePatientLookups } from './usePatientLookups';
+import { usePatientObservacoes } from './usePatientObservacoes';
 
 const LIST_CACHE_TIME_MS = 20 * 1000;
 const LOOKUP_CACHE_TIME_MS = 30 * 60 * 1000;
@@ -121,19 +109,10 @@ export function usePatientsDomain({
   const patientForm = usePatientForm(patientList.pacientes);
   const patientLookups = usePatientLookups();
   const cbhpmLookup = useCbhpmLookup();
-  const [pacienteExportLoading, setPacienteExportLoading] = useState<PacienteExportFormat | null>(null);
-  const [pacienteExportScope, setPacienteExportScope] = useState<PacienteExportScope>('visible');
   const [selectedPatientInfo, setSelectedPatientInfo] = useState<Paciente | null>(null);
   const [selectedPatientFiles, setSelectedPatientFiles] = useState<Paciente | null>(null);
   const [patientFilesModalLoading, setPatientFilesModalLoading] = useState(false);
   const [patientFilesModalError, setPatientFilesModalError] = useState('');
-  const [selectedPatientObservacoes, setSelectedPatientObservacoes] = useState<Paciente | null>(null);
-  const [patientObservacoes, setPatientObservacoes] = useState<PacienteObservacao[]>([]);
-  const [patientObservacoesLoading, setPatientObservacoesLoading] = useState(false);
-  const [patientObservacoesSaving, setPatientObservacoesSaving] = useState(false);
-  const [patientObservacoesError, setPatientObservacoesError] = useState('');
-  const [patientObservationDraft, setPatientObservationDraft] = useState('');
-  const [patientObservationReplyTo, setPatientObservationReplyTo] = useState<PacienteObservacao | null>(null);
 
   const {
     pacientes,
@@ -423,9 +402,6 @@ export function usePatientsDomain({
 
   const loadPacientes = async (
     token = session?.token,
-    _page = pacienteCurrentPage,
-    _search = debouncedPacienteSearchTerm,
-    _filters = debouncedPacienteFilters,
     forceRefresh = false,
   ) => {
     if (!token) {
@@ -438,112 +414,16 @@ export function usePatientsDomain({
 
     await pacientesQuery.refetch();
   };
-
-  const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>) => {
-    if (!session) {
-      return [];
-    }
-
-    const firstResult = await getPacientes(session.token, {
-      page: 1,
-      pageSize: PATIENT_EXPORT_PAGE_SIZE,
-      ...query,
-    });
-
-    const items = [...getPagedItems(firstResult)];
-    const totalPagesForExport = getPagedTotalPages(firstResult);
-
-    for (let page = 2; page <= totalPagesForExport; page += 1) {
-      const result = await getPacientes(session.token, {
-        ...query,
-        page,
-        pageSize: PATIENT_EXPORT_PAGE_SIZE,
-      });
-      items.push(...getPagedItems(result));
-    }
-
-    return sortPacientesForListing(items);
-  };
-
-  const loadPacientesForExport = async (scope: PacienteExportScope) => {
-    if (scope === 'visible') {
-      return paginatedPacientes;
-    }
-
-    if (scope === 'doctor') {
-      const medico = pacienteFilters.medico.trim();
-
-      if (!medico) {
-        throw new Error('Selecione um cirurgiao antes de exportar por cirurgiao.');
-      }
-
-      return fetchPacientesForExport({ medico });
-    }
-
-    return fetchPacientesForExport({});
-  };
-
-  const handleExportPacientes = async (format: PacienteExportFormat) => {
-    if (!session || pacienteExportLoading) {
-      return;
-    }
-
-    setPacienteExportLoading(format);
-    setPacientesError('');
-
-    try {
-      const exportItems = await loadPacientesForExport(pacienteExportScope);
-      const rows = getPacienteExportRows(exportItems);
-
-      if (format === 'xlsx') {
-        downloadBlob(createXlsxBlob(rows), getPatientExportFileName('xlsx', companyName));
-        return;
-      }
-
-      const [{ jsPDF }, autoTableModule] = await Promise.all([
-        import('jspdf'),
-        import('jspdf-autotable'),
-      ]);
-      const autoTable = autoTableModule.default;
-      const document = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-      document.setFontSize(14);
-      document.text(`Cadastro de pacientes - ${companyName}`, 40, 34);
-      document.setFontSize(9);
-      document.text(`Gerado em ${new Intl.DateTimeFormat('pt-BR').format(new Date())}`, 40, 50);
-      autoTable(document, {
-        head: [pacienteExportColumns.map((column) => column.header)],
-        body: exportItems.map((paciente) => pacienteExportColumns.map((column) => column.getValue(paciente))),
-        startY: 64,
-        columnStyles: {
-          0: { cellWidth: 80 },  // Coluna Paciente
-          1: { cellWidth: 50 },  // Coluna Data procedimento
-          7: { cellWidth: 40 },  // Coluna Codigo CBHPM
-          9: { cellWidth: 100 }, // Coluna Procedimento (geralmente mais longa)
-          15: { cellWidth: 35 }, // Coluna Arquivos
-        },
-        styles: {
-          fontSize: 6.6,
-          cellPadding: 3,
-          overflow: 'linebreak',
-        },
-        headStyles: {
-          fillColor: [15, 118, 110],
-          textColor: 255,
-        },
-        margin: { left: 24, right: 24 },
-      });
-      document.save(getPatientExportFileName('pdf', companyName));
-    } catch (error) {
-      setPacientesError(getErrorMessage(error));
-    } finally {
-      setPacienteExportLoading(null);
-    }
-  };
+  const patientExport = usePatientExport({
+    session,
+    companyName,
+    paginatedPacientes,
+    pacienteFilters,
+    setPacientesError,
+  });
 
   const loadCbhpm = async (
     token = session?.token,
-    _page = cbhpmCurrentPage,
-    _filters = debouncedCbhpmFilters,
     forceRefresh = false,
   ) => {
     if (!token) {
@@ -593,59 +473,28 @@ export function usePatientsDomain({
     await opmeFornecedoresQuery.refetch();
   };
 
+  const patientObservacoesState = usePatientObservacoes({
+    session,
+    activeView,
+    moduleMode,
+    pacientes,
+    editingPaciente,
+    setPacientes,
+    setEditingPacienteDetails,
+    loadPacientes,
+    loadDashboardSummary,
+  });
+
   const resetPatientsState = () => {
     resetPatientListState();
     resetPatientLookups();
     setSelectedPatientInfo(null);
     setSelectedPatientFiles(null);
-    setSelectedPatientObservacoes(null);
-    setPatientObservacoes([]);
-    setPatientObservacoesError('');
-    setPatientObservacoesLoading(false);
-    setPatientObservacoesSaving(false);
-    setPatientObservationDraft('');
-    setPatientObservationReplyTo(null);
+    patientObservacoesState.resetPatientObservacoesState();
     setPatientFilesModalError('');
     setPatientFilesModalLoading(false);
     resetCbhpmLookup();
     resetPacienteForm();
-  };
-
-  const clearObservationIndicators = (pacienteId: number) => {
-    setPacientes((current) => current.map((paciente) => (
-      paciente.id === pacienteId
-        ? { ...paciente, observacoesNaoLidasCount: 0 }
-        : paciente
-    )));
-    setSelectedPatientObservacoes((current) => (
-      current && current.id === pacienteId
-        ? { ...current, observacoesNaoLidasCount: 0 }
-        : current
-    ));
-    setEditingPacienteDetails((current) => (
-      current && current.id === pacienteId
-        ? { ...current, observacoesNaoLidasCount: 0 }
-        : current
-    ));
-  };
-
-  const syncObservationViews = async (token: string, pacienteId: number, clearUnread = false) => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(token) }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardNotifications(token) }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(token) }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.pacienteObservacoes(token, pacienteId) }),
-    ]);
-
-    if (clearUnread) {
-      clearObservationIndicators(pacienteId);
-    }
-
-    if (activeView === 'patients' && moduleMode === 'list') {
-      await loadPacientes(token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
-    }
-
-    await loadDashboardSummary(token, true);
   };
 
   const handleEditPaciente = async (paciente: Paciente) => {
@@ -831,7 +680,7 @@ export function usePatientsDomain({
       resetPacienteForm();
       setPacienteCurrentPage(1);
       setModuleMode('list');
-      await loadPacientes(session.token, 1, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
+      await loadPacientes(session.token, true);
       await loadDashboardSummary(session.token, true);
       if (warningMessage) {
         setPacientesError(warningMessage);
@@ -863,7 +712,7 @@ export function usePatientsDomain({
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
       ]);
       setPacienteSuccessMessage('Paciente excluido.');
-      await loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
+      await loadPacientes(session.token, true);
       await loadDashboardSummary(session.token, true);
     } catch (error) {
       setPacientesError(getErrorMessage(error));
@@ -901,7 +750,7 @@ export function usePatientsDomain({
       ]);
       const details = await getPaciente(paciente.id, session.token);
       setEditingPacienteDetails(details);
-      await loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
+      await loadPacientes(session.token, true);
       await loadDashboardSummary(session.token, true);
     } catch (error) {
       setPacientesError(getErrorMessage(error));
@@ -931,107 +780,6 @@ export function usePatientsDomain({
     } finally {
       setPatientFilesModalLoading(false);
     }
-  };
-
-  const openPacienteObservacoesModal = async (paciente: Paciente) => {
-    if (!session) {
-      return;
-    }
-
-    setSelectedPatientObservacoes(paciente);
-    setPatientObservacoes([]);
-    setPatientObservationDraft('');
-    setPatientObservationReplyTo(null);
-    setPatientObservacoesError('');
-    setPatientObservacoesLoading(true);
-
-    try {
-      const [details, observacoes] = await Promise.all([
-        getPaciente(paciente.id, session.token),
-        getPacienteObservacoes(paciente.id, session.token),
-      ]);
-      setSelectedPatientObservacoes(details);
-      setPatientObservacoes(observacoes);
-
-      const readResult = await markPacienteObservacoesAsRead(paciente.id, session.token);
-      if (readResult.updatedCount > 0) {
-        await syncObservationViews(session.token, paciente.id, true);
-      }
-    } catch (error) {
-      setPatientObservacoesError(getErrorMessage(error));
-    } finally {
-      setPatientObservacoesLoading(false);
-    }
-  };
-
-  const handleOpenPacienteObservacoes = async (paciente: Paciente) => {
-    await openPacienteObservacoesModal(paciente);
-  };
-
-  const handleOpenPacienteObservacoesById = async (pacienteId: number) => {
-    if (!session) {
-      return;
-    }
-
-    const currentPaciente = pacientes.find((item) => item.id === pacienteId)
-      ?? (editingPaciente?.id === pacienteId ? editingPaciente : null)
-      ?? (selectedPatientObservacoes?.id === pacienteId ? selectedPatientObservacoes : null);
-
-    if (currentPaciente) {
-      await openPacienteObservacoesModal(currentPaciente);
-      return;
-    }
-
-    try {
-      const details = await getPaciente(pacienteId, session.token);
-      await openPacienteObservacoesModal(details);
-    } catch (error) {
-      setPatientObservacoesError(getErrorMessage(error));
-    }
-  };
-
-  const handleSubmitPacienteObservacao = async () => {
-    if (!session || !selectedPatientObservacoes) {
-      return;
-    }
-
-    const texto = patientObservationDraft.trim();
-    if (!texto) {
-      setPatientObservacoesError('Informe a observacao.');
-      return;
-    }
-
-    setPatientObservacoesSaving(true);
-    setPatientObservacoesError('');
-
-    try {
-      await createPacienteObservacaoMutation.mutateAsync({
-        pacienteId: selectedPatientObservacoes.id,
-        texto,
-        observacaoPaiId: patientObservationReplyTo?.id ?? null,
-        token: session.token,
-      });
-
-      const observacoes = await getPacienteObservacoes(selectedPatientObservacoes.id, session.token);
-      setPatientObservacoes(observacoes);
-      setPatientObservationDraft('');
-      setPatientObservationReplyTo(null);
-      await syncObservationViews(session.token, selectedPatientObservacoes.id);
-    } catch (error) {
-      setPatientObservacoesError(getErrorMessage(error));
-    } finally {
-      setPatientObservacoesSaving(false);
-    }
-  };
-
-  const closePatientObservacoesModal = () => {
-    setSelectedPatientObservacoes(null);
-    setPatientObservacoes([]);
-    setPatientObservacoesError('');
-    setPatientObservacoesLoading(false);
-    setPatientObservacoesSaving(false);
-    setPatientObservationDraft('');
-    setPatientObservationReplyTo(null);
   };
 
   const handleOpenCbhpmModal = () => {
@@ -1117,13 +865,13 @@ export function usePatientsDomain({
 
   const refreshPacientes = () => {
     if (session) {
-      void loadPacientes(session.token, pacienteCurrentPage, debouncedPacienteSearchTerm, debouncedPacienteFilters, true);
+      void loadPacientes(session.token, true);
     }
   };
 
   const refreshCbhpm = () => {
     if (session) {
-      void loadCbhpm(session.token, cbhpmCurrentPage, debouncedCbhpmFilters, true);
+      void loadCbhpm(session.token, true);
     }
   };
 
@@ -1160,9 +908,9 @@ export function usePatientsDomain({
     pacienteSuccessMessage,
     pacienteSearchTerm,
     setPacienteSearchTerm,
-    pacienteExportLoading,
-    pacienteExportScope,
-    setPacienteExportScope,
+    pacienteExportLoading: patientExport.pacienteExportLoading,
+    pacienteExportScope: patientExport.pacienteExportScope,
+    setPacienteExportScope: patientExport.setPacienteExportScope,
     pacienteFilters,
     setPacienteFilters,
     debouncedPacienteSearchTerm,
@@ -1192,15 +940,15 @@ export function usePatientsDomain({
     selectedPatientFiles,
     patientFilesModalLoading,
     patientFilesModalError,
-    selectedPatientObservacoes,
-    patientObservacoes,
-    patientObservacoesLoading,
-    patientObservacoesSaving,
-    patientObservacoesError,
-    patientObservationDraft,
-    setPatientObservationDraft,
-    patientObservationReplyTo,
-    setPatientObservationReplyTo,
+    selectedPatientObservacoes: patientObservacoesState.selectedPatientObservacoes,
+    patientObservacoes: patientObservacoesState.patientObservacoes,
+    patientObservacoesLoading: patientObservacoesState.patientObservacoesLoading,
+    patientObservacoesSaving: patientObservacoesState.patientObservacoesSaving,
+    patientObservacoesError: patientObservacoesState.patientObservacoesError,
+    patientObservationDraft: patientObservacoesState.patientObservationDraft,
+    setPatientObservationDraft: patientObservacoesState.setPatientObservationDraft,
+    patientObservationReplyTo: patientObservacoesState.patientObservationReplyTo,
+    setPatientObservationReplyTo: patientObservacoesState.setPatientObservationReplyTo,
     medicalUsers,
     hospitais,
     hospitaisError,
@@ -1240,13 +988,13 @@ export function usePatientsDomain({
     handleDeletePaciente,
     handleDeletePacienteArquivo,
     handleOpenPacienteFiles,
-    handleOpenPacienteObservacoes,
-    handleOpenPacienteObservacoesById,
-    handleSubmitPacienteObservacao,
+    handleOpenPacienteObservacoes: patientObservacoesState.handleOpenPacienteObservacoes,
+    handleOpenPacienteObservacoesById: patientObservacoesState.handleOpenPacienteObservacoesById,
+    handleSubmitPacienteObservacao: patientObservacoesState.handleSubmitPacienteObservacao,
     handleOpenCbhpmModal,
     handleSelectCbhpm,
     handleRemovePacienteProcedimento,
-    handleExportPacientes,
+    handleExportPacientes: patientExport.handleExportPacientes,
     openPatientsList,
     openNewPacienteForm,
     closePacienteForm,
@@ -1254,6 +1002,8 @@ export function usePatientsDomain({
     refreshPacientes,
     refreshCbhpm,
     closePatientFilesModal,
-    closePatientObservacoesModal,
+    closePatientObservacoesModal: patientObservacoesState.closePatientObservacoesModal,
   };
 }
+
+export type PatientsDomainState = ReturnType<typeof usePatientsDomain>;

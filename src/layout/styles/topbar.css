@@ -157,6 +157,11 @@
   color: inherit;
 }
 
+.notification-label-short,
+.theme-label-short {
+  display: none;
+}
+
 .notification-count {
   min-width: 28px;
   height: 28px;
@@ -167,4 +172,221 @@
   color: var(--ink);
   background: rgba(93, 248, 234, 0.12);
   padding: 0 8px;
+}
+
+@media (max-width: 1280px) {
+  .topbar {
+    gap: 14px;
+    padding-inline: 24px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .topbar {
+    padding-top: 34px;
+    padding-bottom: 10px;
+  }
+
+  .topbar-brand h1 {
+    font-size: 1.95rem;
+  }
+}
+
+@media (max-width: 980px) {
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .topbar-right {
+    width: 100%;
+    justify-items: start;
+    gap: 8px;
+  }
+
+  .topbar-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .topbar-actions .ghost-button,
+  .topbar-info-panel {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 10px;
+    font-size: 0.82rem;
+  }
+
+  .theme-toggle {
+    min-width: 0;
+  }
+
+  .notification-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar-info-panel span {
+    flex: initial;
+  }
+
+  .notification-count {
+    min-width: 24px;
+    height: 24px;
+    margin-left: auto;
+    padding: 0 6px;
+  }
+
+  .current-user {
+    flex: 1 1 320px;
+    width: 100%;
+    max-width: none;
+  }
+
+  .current-user-meta {
+    max-width: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    position: static;
+    gap: 12px;
+    padding: 26px 14px 10px;
+  }
+
+  .topbar-brand {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .topbar-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .brand-kicker {
+    gap: 3px;
+    margin-bottom: 5px;
+  }
+
+  .company-name,
+  .product-name {
+    min-height: auto;
+  }
+
+  .topbar-brand h1 {
+    font-size: 1.65rem;
+  }
+
+  .topbar-user {
+    width: 100%;
+    min-height: 38px;
+  }
+
+  .topbar-user .user-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .topbar-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .topbar-actions .notification-chip {
+    grid-column: 1 / -1;
+    min-height: 40px;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 0 10px;
+    text-align: left;
+  }
+
+  .topbar-actions .theme-toggle,
+  .topbar-actions .logout-button {
+    min-height: 56px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .topbar-actions svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .notification-label-wide,
+  .theme-label-wide {
+    display: none;
+  }
+
+  .notification-label-short,
+  .theme-label-short {
+    display: inline;
+  }
+
+  .topbar-actions .notification-count {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    padding: 22px 9px 9px;
+  }
+
+  .topbar-actions {
+    gap: 7px;
+  }
+
+  .topbar-actions .theme-toggle,
+  .topbar-actions .logout-button {
+    min-height: 52px;
+    padding: 5px 6px;
+    font-size: 0.72rem;
+  }
+
+  .notification-count {
+    min-width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    font-size: 0.76rem;
+  }
+
+  .current-user {
+    flex: auto;
+    padding: 5px;
+  }
+
+  .current-user-name {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 360px) {
+  .topbar-actions {
+    gap: 6px;
+  }
+
+  .topbar-actions .theme-toggle,
+  .topbar-actions .logout-button {
+    min-height: 50px;
+    font-size: 0.68rem;
+  }
+
+  .topbar-actions svg {
+    width: 16px;
+    height: 16px;
+  }
 }
