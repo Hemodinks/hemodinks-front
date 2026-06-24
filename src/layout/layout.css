@@ -508,7 +508,7 @@ img.user-avatar {
 .side-nav button.active {
   color: var(--side-nav-color, var(--action-secondary));
   border-color: var(--selection-accent);
-  background: color-mix(in srgb, var(--side-nav-color, #9a3412) 40%, transparent);
+  background: color-mix(in srgb, var(--side-nav-color, #9a3412) 20%, transparent);
   box-shadow:
     0 0 0 2px var(--selection-accent),
     0 0 0 4px var(--selection-accent-soft),
