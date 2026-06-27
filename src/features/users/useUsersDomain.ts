@@ -352,6 +352,15 @@ export function useUsersDomain({
         }
       }
 
+      setUsers((current) => sortUsersForListing(
+        editingId
+          ? current.map((user) => (user.id === savedUser.id ? savedUser : user))
+          : [savedUser, ...current],
+      ));
+      if (!editingId) {
+        setUsersTotalItems((current) => current + 1);
+      }
+
       if (editingId && savedUser.id === session.user.id) {
         persistSession({
           ...session,
@@ -377,6 +386,7 @@ export function useUsersDomain({
       resetUserForm();
       setCurrentPage(1);
       setModuleMode('list');
+      await refreshUserList(true);
       if (!isAdmin) {
         navigateToView('dashboard');
       }
