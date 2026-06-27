@@ -136,9 +136,9 @@
 }
 
 .side-nav-agenda {
-  --side-nav-color: #b7791f;
-  --side-nav-soft: rgba(183, 121, 31, 0.12);
-  --side-nav-border: rgba(183, 121, 31, 0.34);
+  --side-nav-color: #8a5a14;
+  --side-nav-soft: rgba(138, 90, 20, 0.12);
+  --side-nav-border: rgba(138, 90, 20, 0.34);
 }
 
 .side-nav-settings {

@@ -337,6 +337,23 @@ async function mockApi(page: Page) {
       return route.fulfill({ json: [{ id: user.id, nome: user.nome }] });
     }
 
+    if (path === '/api/events/notification-recipients') {
+      return route.fulfill({
+        json: {
+          canNotifyAllAllowedRecipients: true,
+          allRecipientsLabel: 'Todos os destinatarios disponiveis',
+          users: [{
+            id: user.id,
+            nome: user.nome,
+            email: user.email,
+            perfilId: user.perfilId,
+            perfilNome: user.perfilNome,
+          }],
+          groups: [],
+        },
+      });
+    }
+
     if (path === '/api/events/') {
       if (method === 'POST') {
         const payload = request.postDataJSON() as Payload;
@@ -418,7 +435,10 @@ test('navega pelos fluxos principais autenticados', async ({ page }) => {
 
   await page.goto('/agenda');
   await expect(page.getByRole('heading', { name: 'Agenda' })).toBeVisible();
-  await expect(page.getByText('Novo evento')).toBeVisible();
+  const openNewEventButton = page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' });
+  await expect(openNewEventButton).toBeVisible();
+  await openNewEventButton.click();
+  await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
 });
 
 test('mantem telas criticas sem overflow horizontal no mobile', async ({ page }) => {
@@ -452,9 +472,8 @@ test('cadastra e edita usuario usando o formulario real', async ({ page }) => {
   await page.getByLabel('Nome completo').fill('Usuario E2E');
   await page.getByLabel('Email').fill('usuario.e2e@hemodinks.com');
   await page.getByLabel('Telefone').fill('81999999999');
-  await page.getByLabel('CPF').fill('39053344705');
   await page.locator('#user-birth-date').fill('10/05/1990');
-  await page.locator('form select').first().selectOption('1');
+  await page.locator('.module-form-grid select').first().selectOption('1');
   await page.getByRole('button', { name: 'Cadastrar usuario' }).click();
 
   await expect(page.getByText(/Usuario cadastrado/)).toBeVisible();
@@ -463,7 +482,7 @@ test('cadastra e edita usuario usando o formulario real', async ({ page }) => {
     nome: 'Usuario E2E',
     email: 'usuario.e2e@hemodinks.com',
     telefone: '+5581999999999',
-    cpf: '39053344705',
+    cpf: null,
     perfilId: 1,
   });
 
@@ -531,6 +550,8 @@ test('cadastra evento na agenda', async ({ page }) => {
 
   await page.goto('/agenda');
   await expect(page.getByRole('heading', { name: 'Agenda' })).toBeVisible();
+  await page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' }).click();
+  await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
   await page.getByLabel('Titulo').fill('Evento E2E');
   await page.getByLabel('Descricao').fill('Validacao automatizada da agenda');
   await page.getByRole('button', { name: 'Cadastrar evento' }).click();
