@@ -14,7 +14,7 @@ Aplicacao web do Hemodinks para administradores, medicos e pacientes. O front e 
 - axe-core para auditoria de acessibilidade
 - lucide-react
 - jsPDF + jsPDF AutoTable carregados sob demanda
-- Sentry opcional para rastreamento de erros
+- Sentry e New Relic opcionais para observabilidade
 - rollup-plugin-visualizer para auditoria de bundle
 - LHCI para Lighthouse automatizavel
 
@@ -55,6 +55,11 @@ Exemplo local:
 VITE_API_URL=http://localhost:5000
 VITE_APP_ENV=local
 VITE_APP_VERSION=local
+VITE_NEW_RELIC_ACCOUNT_ID=
+VITE_NEW_RELIC_AGENT_ID=
+VITE_NEW_RELIC_APPLICATION_ID=
+VITE_NEW_RELIC_LICENSE_KEY=
+VITE_NEW_RELIC_TRUST_KEY=
 VITE_SENTRY_DSN=
 VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
@@ -65,9 +70,16 @@ Exemplo producao/homologacao:
 VITE_API_URL=https://<api-publica>
 VITE_APP_ENV=production
 VITE_APP_VERSION=<sha-ou-versao>
+VITE_NEW_RELIC_ACCOUNT_ID=<account-id-opcional>
+VITE_NEW_RELIC_AGENT_ID=<agent-id-opcional>
+VITE_NEW_RELIC_APPLICATION_ID=<application-id-opcional>
+VITE_NEW_RELIC_LICENSE_KEY=<license-key-opcional>
+VITE_NEW_RELIC_TRUST_KEY=<trust-key-opcional>
 VITE_SENTRY_DSN=<dsn-opcional>
 VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
+
+Preencha os valores `VITE_NEW_RELIC_*` com os IDs mostrados em `Browser monitoring > Install with NPM`. Se eles nao existirem, o app segue normalmente sem inicializar o agent do New Relic.
 
 ## Executar
 
@@ -117,7 +129,7 @@ O Vite sobe em `http://localhost:5173` por padrao. O script usa `--host 0.0.0.0`
 - exportacao de pacientes em XLSX e PDF
 - tema claro/escuro
 - Error Boundary com fallback visual
-- observabilidade opcional via Sentry
+- observabilidade opcional via Sentry e New Relic Browser
 - layout responsivo testado em 360px, 390px e 768px
 - modais com fechamento por ESC, foco inicial e restauracao de foco
 - componentes base aplicados em listas, formularios, agenda e modais principais
@@ -142,9 +154,11 @@ src/
 Pontos principais:
 
 - `src/App.tsx` orquestra sessao, rotas, layout e modais globais.
+- `src/main.tsx` sobe o Browser agent do New Relic antes do bootstrap do React quando as envs existem.
 - `src/routes.ts` mapeia as rotas da SPA.
 - `src/queryClient.ts` centraliza configuracao do TanStack Query.
 - `src/observability.ts` inicializa Sentry quando `VITE_SENTRY_DSN` existe.
+- `src/newRelic.ts` concentra a configuracao opcional do Browser monitoring.
 - `src/shared/queryKeys.ts` centraliza chaves de cache.
 - `src/shared/components/ui.tsx` concentra componentes base de UI.
 - `src/shared/components/ErrorBoundary.tsx` captura erros inesperados da arvore React.
