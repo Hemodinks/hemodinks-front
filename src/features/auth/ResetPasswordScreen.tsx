@@ -20,6 +20,7 @@ type ResetPasswordScreenProps = {
   token: string;
   onThemeToggle: () => void;
   onBackToLogin: () => void;
+  onResetCompleted: (message: string) => void;
 };
 
 export function ResetPasswordScreen({
@@ -28,6 +29,7 @@ export function ResetPasswordScreen({
   token,
   onThemeToggle,
   onBackToLogin,
+  onResetCompleted,
 }: ResetPasswordScreenProps) {
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
@@ -40,6 +42,7 @@ export function ResetPasswordScreen({
     event.preventDefault();
     setError('');
     setSuccess('');
+    let successMessage = '';
 
     if (!token.trim()) {
       setError('Link de redefinicao invalido ou incompleto.');
@@ -60,13 +63,17 @@ export function ResetPasswordScreen({
 
     try {
       const result = await confirmPasswordReset(token, novaSenha);
-      setSuccess(result.message || 'Senha redefinida com sucesso. Voce ja pode entrar com a nova senha.');
+      successMessage = result.message || 'Senha redefinida com sucesso. Voce ja pode entrar com a nova senha.';
+      setSuccess(successMessage);
       setNovaSenha('');
       setConfirmacao('');
     } catch (submitError) {
       setError(getErrorMessage(submitError));
     } finally {
       setLoading(false);
+      if (successMessage) {
+        onResetCompleted(successMessage);
+      }
     }
   };
 

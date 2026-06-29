@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { authenticate, resetPassword } from '../services';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { PasswordRequiredScreen } from '../features/auth/PasswordRequiredScreen';
@@ -48,6 +49,8 @@ function updateSort(
 }
 
 export function AppContent() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { session, persistSession, clearSession } = useAuthSession();
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
@@ -93,10 +96,26 @@ export function AppContent() {
     canUseSettingsRoute,
   });
   const appChrome = useAppChrome({ session });
-  const isResetPasswordRoute = window.location.pathname === '/reset-password';
+  const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
+  const isResetPasswordRoute = normalizedPath === '/reset-password';
   const resetToken = isResetPasswordRoute
-    ? new URLSearchParams(window.location.search).get('token')?.trim() ?? ''
+    ? new URLSearchParams(location.search).get('token')?.trim() ?? ''
     : '';
+
+  const returnToLogin = (infoMessage = '') => {
+    setLoginError('');
+    setLoginInfo(infoMessage);
+    setLoginPassword('');
+    navigate('/', { replace: true });
+  };
+
+  const handleResetPasswordCompleted = (message: string) => {
+    const nextMessage = /nova senha/i.test(message)
+      ? message
+      : `${message}. Entre com a nova senha.`;
+
+    returnToLogin(nextMessage);
+  };
 
   function logout() {
     queryClient.clear();
@@ -331,11 +350,8 @@ export function AppContent() {
         theme={theme}
         token={resetToken}
         onThemeToggle={toggleTheme}
-        onBackToLogin={() => {
-          window.history.replaceState(null, '', '/');
-          setLoginError('');
-          setLoginInfo('');
-        }}
+        onBackToLogin={() => returnToLogin()}
+        onResetCompleted={handleResetPasswordCompleted}
       />
     );
   }

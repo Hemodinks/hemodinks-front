@@ -691,7 +691,23 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /redefinir senha/i }));
 
     expect(api.confirmPasswordReset).toHaveBeenCalledWith('token-123', 'NovaSenha@123');
-    expect(await screen.findByText('Senha redefinida com sucesso')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(screen.getByText('Senha redefinida com sucesso. Entre com a nova senha.')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/');
+  });
+
+  it('permite voltar da tela publica de redefinicao para o login', async () => {
+    const user = userEvent.setup();
+    window.history.pushState(null, '', '/reset-password?token=token-123');
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Redefinir senha' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /voltar ao login/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/');
   });
 
   it('bloqueia o primeiro acesso ate a troca da senha padrao', async () => {
