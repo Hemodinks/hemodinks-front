@@ -53,6 +53,7 @@ vi.mock('./services', () => ({
   updateUser: vi.fn(),
   deleteUser: vi.fn(),
   changePassword: vi.fn(),
+  confirmPasswordReset: vi.fn(),
   resetPassword: vi.fn(),
   updateSystemSettings: vi.fn(),
 }));
@@ -668,6 +669,29 @@ describe('App', () => {
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
     expect(await screen.findByRole('heading', { name: 'Troque sua senha' })).toBeInTheDocument();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
+  });
+
+  it('mostra a tela publica de nova senha quando o link de reset possui token', async () => {
+    const user = userEvent.setup();
+    window.history.pushState(null, '', '/reset-password?token=token-123');
+    vi.mocked(api.confirmPasswordReset).mockResolvedValue({
+      id: 99,
+      precisaTrocarSenha: false,
+      message: 'Senha redefinida com sucesso',
+    });
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Redefinir senha' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Nova senha'), 'NovaSenha@123');
+    await user.type(screen.getByLabelText('Confirmar nova senha'), 'NovaSenha@123');
+    await user.click(screen.getByRole('button', { name: /redefinir senha/i }));
+
+    expect(api.confirmPasswordReset).toHaveBeenCalledWith('token-123', 'NovaSenha@123');
+    expect(await screen.findByText('Senha redefinida com sucesso')).toBeInTheDocument();
   });
 
   it('bloqueia o primeiro acesso ate a troca da senha padrao', async () => {

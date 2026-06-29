@@ -37,6 +37,20 @@
   min-width: 0;
 }
 
+.reset-password-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.reset-password-actions .ghost-button,
+.reset-password-actions .primary-action {
+  width: 100%;
+  min-width: 0;
+}
+
 @media (max-width: 760px) {
   .auth-screen {
     min-height: 100vh;
@@ -93,7 +107,8 @@
     height: 54px;
   }
 
-  .login-actions {
+  .login-actions,
+  .reset-password-actions {
     grid-template-columns: 1fr;
   }
 }

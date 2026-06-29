@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react';
 import { authenticate, resetPassword } from '../services';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { PasswordRequiredScreen } from '../features/auth/PasswordRequiredScreen';
+import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
 import { useAuthSession } from '../features/auth/useAuthSession';
 import { useMedicalGroupsDomain } from '../features/medicalGroups/useMedicalGroupsDomain';
 import { usePatientsDomain } from '../features/patients/usePatientsDomain';
@@ -92,6 +93,10 @@ export function AppContent() {
     canUseSettingsRoute,
   });
   const appChrome = useAppChrome({ session });
+  const isResetPasswordRoute = window.location.pathname === '/reset-password';
+  const resetToken = isResetPasswordRoute
+    ? new URLSearchParams(window.location.search).get('token')?.trim() ?? ''
+    : '';
 
   function logout() {
     queryClient.clear();
@@ -318,6 +323,22 @@ export function AppContent() {
       field === 'recent' ? 'desc' : 'asc',
     );
   };
+
+  if (!session && isResetPasswordRoute) {
+    return (
+      <ResetPasswordScreen
+        companyName={appChrome.companyName}
+        theme={theme}
+        token={resetToken}
+        onThemeToggle={toggleTheme}
+        onBackToLogin={() => {
+          window.history.replaceState(null, '', '/');
+          setLoginError('');
+          setLoginInfo('');
+        }}
+      />
+    );
+  }
 
   if (!session) {
     return (
