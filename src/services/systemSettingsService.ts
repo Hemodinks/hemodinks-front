@@ -1,5 +1,5 @@
 import type { SystemSettings, UpdateSystemSettingsPayload } from '../types';
-import { get, put } from './api';
+import { get, getBlob, put } from './api';
 
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   id: 1,
@@ -11,6 +11,10 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
 
 export function getSystemSettings() {
   return get<SystemSettings>('/api/configuracoes-sistema/current');
+}
+
+export function getSystemSettingsCompanyPhoto() {
+  return getBlob('/api/configuracoes-sistema/current/foto-empresa');
 }
 
 export function updateSystemSettings(payload: UpdateSystemSettingsPayload, token: string) {

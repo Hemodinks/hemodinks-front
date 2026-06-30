@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import defaultCompanyLogo from '../../../imagem hemodinks github.jpg';
+import { getSystemSettingsCompanyPhoto } from '../../services';
 import { resolveProfilePhotoSource } from '../utils/formatters';
 
 type CompanyLogoProps = {
@@ -15,13 +16,55 @@ export function CompanyLogo({
   className,
   decorative = false,
 }: CompanyLogoProps) {
+  const trimmedPhoto = photo?.trim() || '';
+  const canLoadFromApi = Boolean(trimmedPhoto && !/^(data:image\/|blob:)/i.test(trimmedPhoto));
   const [useFallback, setUseFallback] = useState(false);
-  const resolvedPhoto = resolveProfilePhotoSource(photo);
-  const src = useFallback || !resolvedPhoto ? defaultCompanyLogo : resolvedPhoto;
+  const [photoSource, setPhotoSource] = useState(() => (canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto)));
 
   useEffect(() => {
     setUseFallback(false);
-  }, [photo]);
+
+    if (!trimmedPhoto) {
+      setPhotoSource('');
+      return undefined;
+    }
+
+    if (!canLoadFromApi) {
+      setPhotoSource(resolveProfilePhotoSource(trimmedPhoto));
+      return undefined;
+    }
+
+    let objectUrl = '';
+    let active = true;
+
+    setPhotoSource('');
+
+    void getSystemSettingsCompanyPhoto()
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+
+        if (active) {
+          setPhotoSource(objectUrl);
+        } else {
+          URL.revokeObjectURL(objectUrl);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPhotoSource(resolveProfilePhotoSource(trimmedPhoto));
+        }
+      });
+
+    return () => {
+      active = false;
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [canLoadFromApi, trimmedPhoto]);
+
+  const src = useFallback || !photoSource ? defaultCompanyLogo : photoSource;
 
   return (
     <img

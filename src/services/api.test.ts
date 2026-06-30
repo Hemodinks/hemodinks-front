@@ -17,6 +17,7 @@ import {
   getOpmeFornecedores,
   getPacienteObservacoes,
   getSystemSettings,
+  getSystemSettingsCompanyPhoto,
   getUser,
   getUserProfilePhoto,
   getPacientes,
@@ -113,6 +114,24 @@ describe('services api client', () => {
       headers: {
         Authorization: 'Bearer jwt-token',
       },
+    });
+  });
+
+  it('busca a foto da empresa sem exigir token bearer', async () => {
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(
+      axiosResponse(new Blob(['brand'], { type: 'image/png' })),
+    );
+
+    const result = await getSystemSettingsCompanyPhoto();
+
+    expect(result.size).toBe(5);
+    expect(result.type).toBe('image/png');
+    await expect(result.text()).resolves.toBe('brand');
+    expect(requestSpy).toHaveBeenCalledWith({
+      url: '/api/configuracoes-sistema/current/foto-empresa',
+      method: 'GET',
+      responseType: 'blob',
+      headers: {},
     });
   });
 

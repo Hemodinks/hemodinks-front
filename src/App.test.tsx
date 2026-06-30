@@ -29,6 +29,7 @@ vi.mock('./services', () => ({
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
   getSystemSettings: vi.fn(),
+  getSystemSettingsCompanyPhoto: vi.fn(),
   getAllCbhpmGeral: vi.fn(),
   getCbhpmGeral: vi.fn(),
   getConvenios: vi.fn(),
@@ -691,6 +692,25 @@ describe('App', () => {
     fireEvent.error(avatar);
 
     expect(screen.getByLabelText('Sem foto de George Marcone')).toBeInTheDocument();
+  });
+
+  it('carrega a foto da empresa pela API quando a configuracao usa o storage', async () => {
+    vi.mocked(api.getSystemSettings).mockResolvedValue({
+      id: 1,
+      nomeEmpresa: 'Clinica Alfa',
+      fotoEmpresa: '/profile-photos/clinica-alfa.png',
+      dataCadastro: '2026-06-22T00:00:00Z',
+      dataAtualizacao: '2026-06-22T12:00:00Z',
+    });
+    vi.mocked(api.getSystemSettingsCompanyPhoto).mockResolvedValue(new Blob(['brand'], { type: 'image/png' }));
+
+    render(<App />);
+
+    const brandMark = await screen.findByAltText('Clinica Alfa');
+    await waitFor(() => {
+      expect(brandMark).toHaveAttribute('src', 'blob:hemodinks-avatar');
+      expect(api.getSystemSettingsCompanyPhoto).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('reseta para a senha padrao e exige troca ao entrar', async () => {
