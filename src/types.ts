@@ -254,12 +254,14 @@ export type AuthSession = {
 export type SystemSettings = {
   id: number;
   nomeEmpresa: string;
+  fotoEmpresa?: string | null;
   dataCadastro: string;
   dataAtualizacao?: string | null;
 };
 
 export type UpdateSystemSettingsPayload = {
   nomeEmpresa: string;
+  fotoEmpresa?: string | null;
 };
 
 export type UserFormData = {

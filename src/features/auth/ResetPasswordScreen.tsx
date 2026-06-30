@@ -1,6 +1,7 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { KeyRound } from 'lucide-react';
 import type { Theme } from '../../appTypes';
+import { CompanyLogo } from '../../shared/components/CompanyLogo';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
@@ -16,6 +17,7 @@ import './auth.css';
 
 type ResetPasswordScreenProps = {
   companyName: string;
+  companyPhoto?: string | null;
   theme: Theme;
   token: string;
   onThemeToggle: () => void;
@@ -25,6 +27,7 @@ type ResetPasswordScreenProps = {
 
 export function ResetPasswordScreen({
   companyName,
+  companyPhoto,
   theme,
   token,
   onThemeToggle,
@@ -84,7 +87,7 @@ export function ResetPasswordScreen({
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel password-required">
         <div className="brand-block">
-          <KeyRound size={36} strokeWidth={1.8} />
+          <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
           <div>
             <span className="eyebrow">{companyName}</span>
             <h1>Redefinir senha</h1>

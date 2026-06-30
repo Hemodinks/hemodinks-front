@@ -461,11 +461,14 @@ describe('services api client', () => {
     const requestSpy = vi.spyOn(apiClient, 'request');
 
     requestSpy
-      .mockResolvedValueOnce(axiosResponse({ id: 1, nomeEmpresa: 'Hemodinks', dataCadastro: '2026-06-22T00:00:00Z', dataAtualizacao: null }))
-      .mockResolvedValueOnce(axiosResponse({ id: 1, nomeEmpresa: 'Clinica Alfa', dataCadastro: '2026-06-22T00:00:00Z', dataAtualizacao: '2026-06-22T12:00:00Z' }));
+      .mockResolvedValueOnce(axiosResponse({ id: 1, nomeEmpresa: 'Hemodinks', fotoEmpresa: null, dataCadastro: '2026-06-22T00:00:00Z', dataAtualizacao: null }))
+      .mockResolvedValueOnce(axiosResponse({ id: 1, nomeEmpresa: 'Clinica Alfa', fotoEmpresa: 'data:image/png;base64,YnJhbmQ=', dataCadastro: '2026-06-22T00:00:00Z', dataAtualizacao: '2026-06-22T12:00:00Z' }));
 
     await expect(getSystemSettings()).resolves.toMatchObject({ nomeEmpresa: 'Hemodinks' });
-    await expect(updateSystemSettings({ nomeEmpresa: 'Clinica Alfa' }, 'jwt-token')).resolves.toMatchObject({ nomeEmpresa: 'Clinica Alfa' });
+    await expect(updateSystemSettings({
+      nomeEmpresa: 'Clinica Alfa',
+      fotoEmpresa: 'data:image/png;base64,YnJhbmQ=',
+    }, 'jwt-token')).resolves.toMatchObject({ nomeEmpresa: 'Clinica Alfa' });
 
     expect(requestSpy).toHaveBeenNthCalledWith(1, {
       url: '/api/configuracoes-sistema/current',
@@ -477,7 +480,10 @@ describe('services api client', () => {
     expect(requestSpy).toHaveBeenNthCalledWith(2, {
       url: '/api/configuracoes-sistema/current',
       method: 'PUT',
-      data: { nomeEmpresa: 'Clinica Alfa' },
+      data: {
+        nomeEmpresa: 'Clinica Alfa',
+        fotoEmpresa: 'data:image/png;base64,YnJhbmQ=',
+      },
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',

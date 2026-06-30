@@ -2,11 +2,13 @@ import { Bell, LogOut } from 'lucide-react';
 import type { BreadcrumbItem } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
+import { CompanyLogo } from '../shared/components/CompanyLogo';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
 
 type TopbarProps = {
   appTitle: string;
   companyName: string;
+  companyPhoto?: string | null;
   session: AuthSession;
   breadcrumbItems: BreadcrumbItem[];
   notificationsOpen: boolean;
@@ -18,6 +20,7 @@ type TopbarProps = {
 export function Topbar({
   appTitle,
   companyName,
+  companyPhoto,
   session,
   breadcrumbItems,
   notificationsOpen,
@@ -28,6 +31,7 @@ export function Topbar({
   return (
     <header className="topbar">
       <div className="topbar-brand">
+        <CompanyLogo companyName={companyName} photo={companyPhoto} className="topbar-logo" decorative />
         <div>
           <div className="brand-kicker">
             <span className="company-name">GM Tech Solutions</span>

@@ -347,6 +347,7 @@ export function AppContent() {
     return (
       <ResetPasswordScreen
         companyName={appChrome.companyName}
+        companyPhoto={appChrome.systemSettings.fotoEmpresa}
         theme={theme}
         token={resetToken}
         onThemeToggle={toggleTheme}
@@ -360,6 +361,7 @@ export function AppContent() {
     return (
       <LoginScreen
         companyName={appChrome.companyName}
+        companyPhoto={appChrome.systemSettings.fotoEmpresa}
         isBusy={isBusy}
         theme={theme}
         loginEmail={loginEmail}
@@ -438,6 +440,7 @@ export function AppContent() {
       isBusy={isBusy}
       appTitle={getAppTitle(activeView)}
       companyName={appChrome.companyName}
+      companyPhoto={appChrome.systemSettings.fotoEmpresa}
       activeView={activeView}
       breadcrumbItems={breadcrumbItems}
       notificationsOpen={appChrome.notificationsOpen}

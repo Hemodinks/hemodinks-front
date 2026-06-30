@@ -4,6 +4,7 @@ import { get, put } from './api';
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   id: 1,
   nomeEmpresa: 'Hemodinks',
+  fotoEmpresa: null,
   dataCadastro: '',
   dataAtualizacao: null,
 };

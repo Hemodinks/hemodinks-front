@@ -1,11 +1,17 @@
-import { type FormEvent, useEffect, useState } from 'react';
-import { Building2, CheckCircle2, KeyRound, Moon, Palette, Save, Sun } from 'lucide-react';
+import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import { Building2, CheckCircle2, ImagePlus, KeyRound, Moon, Palette, Save, Sun, Trash2 } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import { updateSystemSettings } from '../../services';
 import type { AuthSession, SystemSettings } from '../../types';
+import { CompanyLogo } from '../../shared/components/CompanyLogo';
 import { PasswordForm } from '../../shared/components/PasswordForm';
 import { AlertMessage, Button, DataPanel, TextField } from '../../shared/components/ui';
-import { getErrorMessage } from '../../shared/utils/formatters';
+import { readProfilePhoto } from '../../shared/utils/files';
+import {
+  ALLOWED_PROFILE_PHOTO_TYPES,
+  getErrorMessage,
+  MAX_PROFILE_PHOTO_BYTES,
+} from '../../shared/utils/formatters';
 import './settings.css';
 
 type SystemSettingsPageProps = {
@@ -32,14 +38,53 @@ export function SystemSettingsPage({
   onPasswordChanged,
 }: SystemSettingsPageProps) {
   const [nomeEmpresa, setNomeEmpresa] = useState(settings.nomeEmpresa);
+  const [fotoEmpresa, setFotoEmpresa] = useState(settings.fotoEmpresa ?? null);
   const [brandError, setBrandError] = useState('');
   const [brandSuccess, setBrandSuccess] = useState('');
+  const [brandPhotoInputKey, setBrandPhotoInputKey] = useState(0);
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setNomeEmpresa(settings.nomeEmpresa);
-  }, [settings.nomeEmpresa]);
+    setFotoEmpresa(settings.fotoEmpresa ?? null);
+  }, [settings.fotoEmpresa, settings.nomeEmpresa]);
+
+  const handleCompanyPhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    setBrandError('');
+    setBrandSuccess('');
+
+    if (!ALLOWED_PROFILE_PHOTO_TYPES.has(file.type)) {
+      setBrandError('Use uma foto PNG, JPG ou WEBP.');
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
+      setBrandError('A foto deve ter no maximo 1 MB.');
+      return;
+    }
+
+    try {
+      const nextPhoto = await readProfilePhoto(file);
+      setFotoEmpresa(nextPhoto);
+    } catch (error) {
+      setBrandError(getErrorMessage(error));
+    }
+  };
+
+  const handleRemoveCompanyPhoto = () => {
+    setFotoEmpresa(null);
+    setBrandError('');
+    setBrandSuccess('');
+    setBrandPhotoInputKey((current) => current + 1);
+  };
 
   const handleSubmitBrand = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -60,9 +105,12 @@ export function SystemSettingsPage({
     setSaving(true);
 
     try {
-      const updated = await updateSystemSettings({ nomeEmpresa: nextName }, session.token);
+      const updated = await updateSystemSettings({
+        nomeEmpresa: nextName,
+        fotoEmpresa,
+      }, session.token);
       onSettingsUpdated(updated);
-      setBrandSuccess('Nome da empresa atualizado.');
+      setBrandSuccess('Marca da empresa atualizada.');
     } catch (error) {
       setBrandError(getErrorMessage(error));
     } finally {
@@ -89,13 +137,48 @@ export function SystemSettingsPage({
               <span className="settings-section-icon"><Building2 size={19} /></span>
               <div>
                 <span className="eyebrow">Marca</span>
-                <h3>Nome da empresa</h3>
+                <h3>Marca da empresa</h3>
               </div>
             </div>
 
             {settingsError && <AlertMessage type="warning">{settingsError}</AlertMessage>}
 
             <form className="system-settings-form" onSubmit={handleSubmitBrand}>
+              <div className="company-brand-preview">
+                <CompanyLogo
+                  companyName={nomeEmpresa.trim() || settings.nomeEmpresa || 'Hemodinks'}
+                  photo={fotoEmpresa}
+                  className="company-brand-photo"
+                />
+                <div className="company-brand-copy">
+                  <strong>{nomeEmpresa.trim() || settings.nomeEmpresa || 'Hemodinks'}</strong>
+                  <span>Esta foto sera exibida na tela de login e nos pontos de marca da aplicacao.</span>
+                </div>
+              </div>
+
+              <div className="company-brand-actions">
+                <label className="ghost-button file-action" htmlFor="company-photo-input">
+                  <ImagePlus size={17} />
+                  {fotoEmpresa ? 'Trocar foto' : 'Adicionar foto'}
+                </label>
+                {fotoEmpresa && (
+                  <Button variant="danger-ghost" onClick={handleRemoveCompanyPhoto} disabled={settingsLoading || saving}>
+                    <Trash2 size={17} />
+                    Remover
+                  </Button>
+                )}
+              </div>
+              <input
+                key={brandPhotoInputKey}
+                id="company-photo-input"
+                className="sr-only"
+                type="file"
+                aria-label="Foto da empresa"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => void handleCompanyPhotoChange(event)}
+              />
+              <span className="file-hint">PNG, JPG ou WEBP ate 1 MB.</span>
+
               <TextField
                 label="Nome exibido no sistema"
                 value={nomeEmpresa}
@@ -110,7 +193,7 @@ export function SystemSettingsPage({
 
               <Button variant="primary" type="submit" disabled={settingsLoading || saving}>
                 <Save size={18} />
-                {saving ? 'Salvando...' : 'Salvar nome'}
+                {saving ? 'Salvando...' : 'Salvar marca'}
               </Button>
             </form>
           </DataPanel>

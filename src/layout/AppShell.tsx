@@ -17,6 +17,7 @@ type AppShellProps = {
   isBusy: boolean;
   appTitle: string;
   companyName: string;
+  companyPhoto?: string | null;
   activeView: AppView;
   breadcrumbItems: BreadcrumbItem[];
   notificationsOpen: boolean;
@@ -55,6 +56,7 @@ export function AppShell({
   isBusy,
   appTitle,
   companyName,
+  companyPhoto,
   activeView,
   breadcrumbItems,
   notificationsOpen,
@@ -107,6 +109,7 @@ export function AppShell({
       <Topbar
         appTitle={appTitle}
         companyName={companyName}
+        companyPhoto={companyPhoto}
         session={session}
         breadcrumbItems={breadcrumbItems}
         notificationsOpen={notificationsOpen}

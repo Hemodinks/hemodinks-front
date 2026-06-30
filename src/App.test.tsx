@@ -12,6 +12,7 @@ vi.mock('./services', () => ({
   DEFAULT_SYSTEM_SETTINGS: {
     id: 1,
     nomeEmpresa: 'Hemodinks',
+    fotoEmpresa: null,
     dataCadastro: '',
     dataAtualizacao: null,
   },
@@ -132,7 +133,7 @@ function getVisibleFirstColumnValues() {
 }
 
 function mockSession(overrides?: Partial<AuthSession['user']>) {
-  const session: AuthSession = {
+  return {
     token: 'jwt-token',
     user: {
       id: 99,
@@ -146,9 +147,45 @@ function mockSession(overrides?: Partial<AuthSession['user']>) {
       ...overrides,
     },
   };
+}
 
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  return session;
+function toLoginResponse(session: AuthSession) {
+  return {
+    id: session.user.id,
+    nome: session.user.nome,
+    email: session.user.email,
+    cpf: session.user.cpf ?? null,
+    crm: session.user.crm ?? null,
+    crmUf: session.user.crmUf ?? null,
+    token: session.token,
+    fotoPerfil: session.user.fotoPerfil ?? null,
+    precisaTrocarSenha: session.user.precisaTrocarSenha,
+    perfilId: session.user.perfilId,
+    perfilNome: session.user.perfilNome,
+  };
+}
+
+async function renderAuthenticatedApp(options?: {
+  initialPath?: string;
+  sessionOverrides?: Partial<AuthSession['user']>;
+  password?: string;
+}) {
+  const user = userEvent.setup();
+  const session = mockSession(options?.sessionOverrides);
+
+  vi.mocked(api.authenticate).mockResolvedValue(toLoginResponse(session));
+
+  if (options?.initialPath) {
+    window.history.pushState({}, '', options.initialPath);
+  }
+
+  render(<App />);
+
+  await user.type(screen.getByLabelText('Email'), session.user.email);
+  await user.type(screen.getByLabelText('Senha'), options?.password ?? 'SenhaAlterada@123');
+  await user.click(screen.getByRole('button', { name: /entrar/i }));
+
+  return { user, session };
 }
 
 async function openUsersModule(user: ReturnType<typeof userEvent.setup>) {
@@ -184,12 +221,14 @@ describe('App', () => {
     vi.mocked(api.getSystemSettings).mockResolvedValue({
       id: 1,
       nomeEmpresa: 'Hemodinks',
+      fotoEmpresa: null,
       dataCadastro: '2026-06-22T00:00:00Z',
       dataAtualizacao: null,
     });
     vi.mocked(api.updateSystemSettings).mockResolvedValue({
       id: 1,
       nomeEmpresa: 'Clinica Alfa',
+      fotoEmpresa: 'data:image/png;base64,YnJhbmQ=',
       dataCadastro: '2026-06-22T00:00:00Z',
       dataAtualizacao: '2026-06-22T12:00:00Z',
     });
@@ -322,18 +361,38 @@ describe('App', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ana Hemodinks' })).not.toBeInTheDocument());
 
     const storedSession = JSON.parse(localStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
-    expect(storedSession.token).toBe('jwt-token');
-    expect(storedSession.user.precisaTrocarSenha).toBe(false);
-    expect(storedSession.user.fotoPerfil).toBe('data:image/png;base64,george');
-    expect(storedSession.user.perfilNome).toBe('Administrador');
+    expect(storedSession.token).toBeUndefined();
+    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+  });
+
+  it('sempre inicia no login mesmo com uma sessao salva anteriormente', () => {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+  });
+
+  it('usa a foto configurada da empresa na tela de login', async () => {
+    vi.mocked(api.getSystemSettings).mockResolvedValue({
+      id: 1,
+      nomeEmpresa: 'Hemodinks',
+      fotoEmpresa: 'data:image/png;base64,YnJhbmQ=',
+      dataCadastro: '2026-06-22T00:00:00Z',
+      dataAtualizacao: null,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Hemodinks')).toHaveAttribute('src', 'data:image/png;base64,YnJhbmQ=');
+    });
   });
 
   it('abre a agenda por URL direta', async () => {
-    const user = userEvent.setup();
-    mockSession();
-    window.history.replaceState(null, '', '/agenda');
-
-    render(<App />);
+    const { user } = await renderAuthenticatedApp({ initialPath: '/agenda' });
 
     expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes' })).toBeInTheDocument();
     const newEventButtons = await screen.findAllByRole('button', { name: /^novo evento$/i });
@@ -344,8 +403,6 @@ describe('App', () => {
   });
 
   it('exclui apenas o evento clicado na agenda', async () => {
-    const user = userEvent.setup();
-    mockSession();
     const today = new Date();
     const todayKey = `${today.getFullYear()}-${`${today.getMonth() + 1}`.padStart(2, '0')}-${`${today.getDate()}`.padStart(2, '0')}`;
     vi.mocked(api.getAgendaEvents).mockResolvedValue([
@@ -391,7 +448,7 @@ describe('App', () => {
       },
     ]);
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(within(screen.getByLabelText('Sessao ativa')).getByRole('button', { name: /agenda e notificacoes/i }));
@@ -413,10 +470,7 @@ describe('App', () => {
   });
 
   it('alterna entre tema claro e escuro no painel logado', async () => {
-    const user = userEvent.setup();
-    mockSession();
-
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(document.documentElement).not.toHaveAttribute('data-theme');
@@ -435,11 +489,8 @@ describe('App', () => {
     expect(localStorage.getItem('hemodinks.theme')).toBe('light');
   });
 
-  it('atualiza o nome da empresa nas configuracoes do sistema', async () => {
-    const user = userEvent.setup();
-    mockSession();
-
-    render(<App />);
+  it('atualiza a marca da empresa nas configuracoes do sistema', async () => {
+    const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /abrir configuracao do sistema/i }));
@@ -448,32 +499,39 @@ describe('App', () => {
     const companyInput = screen.getByLabelText('Nome exibido no sistema');
     await user.clear(companyInput);
     await user.type(companyInput, 'Clinica Alfa');
-    await user.click(screen.getByRole('button', { name: /salvar nome/i }));
+    await user.upload(
+      screen.getByLabelText('Foto da empresa'),
+      new File(['brand'], 'brand.png', { type: 'image/png' }),
+    );
 
-    await waitFor(() => expect(api.updateSystemSettings).toHaveBeenCalledWith({ nomeEmpresa: 'Clinica Alfa' }, 'jwt-token'));
+    await user.click(screen.getByRole('button', { name: /salvar marca/i }));
+
+    await waitFor(() => expect(api.updateSystemSettings).toHaveBeenCalledWith({
+      nomeEmpresa: 'Clinica Alfa',
+      fotoEmpresa: 'data:image/png;base64,YnJhbmQ=',
+    }, 'jwt-token'));
     expect(within(screen.getByRole('banner')).getByText('Clinica Alfa')).toBeInTheDocument();
-    expect(screen.getByText('Nome da empresa atualizado.')).toBeInTheDocument();
+    expect(screen.getByText('Marca da empresa atualizada.')).toBeInTheDocument();
+    expect(screen.getByAltText('Clinica Alfa')).toHaveAttribute('src', 'data:image/png;base64,YnJhbmQ=');
   });
 
   it('oculta a alteracao do nome da empresa para perfil nao administrador', async () => {
-    const user = userEvent.setup();
-    mockSession({ perfilId: 2, perfilNome: 'Médicos' });
-
-    render(<App />);
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: { perfilId: 2, perfilNome: 'Médicos' },
+    });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /abrir configuracao do sistema/i }));
     expect(await screen.findByRole('heading', { name: 'Configuracao do sistema', level: 1 })).toBeInTheDocument();
 
-    expect(screen.queryByText('Nome da empresa')).not.toBeInTheDocument();
+    expect(screen.queryByText('Marca da empresa')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Nome exibido no sistema')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Foto da empresa')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /escuro/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Alterar senha' })).toBeInTheDocument();
   });
 
   it('abre as notificacoes do usuario logado', async () => {
-    const user = userEvent.setup();
-    mockSession();
     vi.mocked(api.getDashboardSummary).mockResolvedValue({
       usersCount: 1,
       activeUsersCount: 1,
@@ -497,7 +555,7 @@ describe('App', () => {
       },
     ]);
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /avisos/i }));
@@ -513,8 +571,6 @@ describe('App', () => {
   });
 
   it('destaca observacoes nao lidas na lista de pacientes e no modal', async () => {
-    const user = userEvent.setup();
-    mockSession();
     const pacienteComNaoLidas: Paciente = {
       ...basePaciente,
       observacoesNaoLidasCount: 3,
@@ -561,7 +617,7 @@ describe('App', () => {
     vi.mocked(api.getPacienteObservacoes).mockResolvedValue(observacoes);
     vi.mocked(api.markPacienteObservacoesAsRead).mockResolvedValue({ pacienteId: basePaciente.id, updatedCount: 0 });
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
@@ -580,11 +636,9 @@ describe('App', () => {
   });
 
   it('exibe hospital e destaque visual no popup de informacoes do paciente', async () => {
-    const user = userEvent.setup();
-    mockSession();
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openPatientsModule(user);
     const row = await screen.findByText('Paciente Hemodinks');
@@ -618,12 +672,12 @@ describe('App', () => {
   });
 
   it('carrega foto de perfil pela API e exibe iniciais se a imagem falhar', async () => {
-    mockSession({
-      nome: 'George Marcone',
-      fotoPerfil: '/profile-photos/george.png',
+    await renderAuthenticatedApp({
+      sessionOverrides: {
+        nome: 'George Marcone',
+        fotoPerfil: '/profile-photos/george.png',
+      },
     });
-
-    render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
 
@@ -757,8 +811,6 @@ describe('App', () => {
   });
 
   it('cadastra usuario com senha inicial padrao e recarrega a lista', async () => {
-    const user = userEvent.setup();
-    mockSession();
     vi.mocked(api.createUser).mockResolvedValue({
       ...baseUser,
       id: 2,
@@ -773,7 +825,7 @@ describe('App', () => {
       perfilNome: 'Médicos',
     });
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openUsersModule(user);
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
@@ -806,8 +858,6 @@ describe('App', () => {
   });
 
   it('permite anexar foto de perfil no cadastro', async () => {
-    const user = userEvent.setup();
-    mockSession();
     vi.mocked(api.createUser).mockResolvedValue({
       ...baseUser,
       id: 3,
@@ -820,7 +870,7 @@ describe('App', () => {
       precisaTrocarSenha: true,
     });
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openUsersModule(user);
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
@@ -856,8 +906,6 @@ describe('App', () => {
   });
 
   it('filtra usuarios pelo campo de busca', async () => {
-    const user = userEvent.setup();
-    mockSession();
     vi.mocked(api.getUsers)
       .mockResolvedValueOnce(paged([
       baseUser,
@@ -879,7 +927,7 @@ describe('App', () => {
         },
       ]));
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openUsersModule(user);
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
@@ -896,8 +944,6 @@ describe('App', () => {
   });
 
   it('ordena usuarios por registro recente e nome', async () => {
-    const user = userEvent.setup();
-    mockSession();
     vi.mocked(api.getUsers).mockResolvedValue(paged([
       {
         ...baseUser,
@@ -925,7 +971,7 @@ describe('App', () => {
       },
     ]));
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openUsersModule(user);
     expect(await screen.findByText('Ana Recente')).toBeInTheDocument();
@@ -1060,8 +1106,6 @@ describe('App', () => {
   });
 
   it('lista e cadastra pacientes', async () => {
-    const user = userEvent.setup();
-    mockSession();
     const auxiliar1: User = {
       ...baseUser,
       id: 2,
@@ -1105,7 +1149,7 @@ describe('App', () => {
       statusPago: false,
     });
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openPatientsModule(user);
 
@@ -1198,13 +1242,11 @@ describe('App', () => {
   });
 
   it('permite ao administrador filtrar pacientes por cirurgiao, convenio e procedimento', async () => {
-    const user = userEvent.setup();
-    mockSession();
     vi.mocked(api.getPacientes)
       .mockResolvedValueOnce(paged([basePaciente]))
       .mockResolvedValue(paged([{ ...basePaciente, nomePaciente: 'Paciente Filtrado' }]));
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
@@ -1228,10 +1270,7 @@ describe('App', () => {
   });
 
   it('permite ordenar usuarios pelos cabeçalhos da tabela', async () => {
-    const user = userEvent.setup();
-    mockSession();
-
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openUsersModule(user);
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
@@ -1244,14 +1283,13 @@ describe('App', () => {
   });
 
   it('libera pacientes para medico e exibe os combos de equipe medica', async () => {
-    const user = userEvent.setup();
-    mockSession({
-      perfilId: 2,
-      perfilNome: 'Medicos',
-      nome: 'Dra. Ana',
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+      },
     });
-
-    render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /abrir usuarios/i })).not.toBeInTheDocument();
@@ -1277,10 +1315,7 @@ describe('App', () => {
   });
 
   it('reativa o perfil paciente no cadastro de usuario', async () => {
-    const user = userEvent.setup();
-    mockSession();
-
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openUsersModule(user);
     await user.click(screen.getByRole('button', { name: /novo usuario/i }));
@@ -1288,14 +1323,13 @@ describe('App', () => {
   });
 
   it('permite ao perfil paciente abrir meu cadastro', async () => {
-    const user = userEvent.setup();
-    mockSession({
-      perfilId: 3,
-      perfilNome: 'Paciente',
-      nome: 'Paciente George',
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 3,
+        perfilNome: 'Paciente',
+        nome: 'Paciente George',
+      },
     });
-
-    render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir meu cadastro/i })).toBeInTheDocument();
@@ -1307,14 +1341,14 @@ describe('App', () => {
   });
 
   it('redireciona medico que tenta acessar usuarios pela URL', async () => {
-    mockSession({
-      perfilId: 2,
-      perfilNome: 'Medicos',
-      nome: 'Dra. Ana',
+    await renderAuthenticatedApp({
+      initialPath: '/usuarios',
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+      },
     });
-    window.history.pushState({}, '', '/usuarios');
-
-    render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await waitFor(() => {
@@ -1324,14 +1358,13 @@ describe('App', () => {
   });
 
   it('permite ao medico fechar o proprio cadastro e voltar ao painel', async () => {
-    const user = userEvent.setup();
-    mockSession({
-      perfilId: 2,
-      perfilNome: 'Medicos',
-      nome: 'Dra. Ana',
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+      },
     });
-
-    render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
@@ -1359,18 +1392,18 @@ describe('App', () => {
   });
 
   it('permite ao medico navegar pelo menu enquanto o proprio cadastro ainda carrega', async () => {
-    const user = userEvent.setup();
     let resolveProfile: (user: User) => void = () => {};
-    mockSession({
-      perfilId: 2,
-      perfilNome: 'Medicos',
-      nome: 'Dra. Ana',
-    });
     vi.mocked(api.getUser).mockReturnValue(new Promise((resolve) => {
       resolveProfile = resolve;
     }));
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+      },
+    });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
@@ -1409,13 +1442,13 @@ describe('App', () => {
   });
 
   it('permite controller editar pacientes e restringe usuarios e agenda', async () => {
-    mockSession({
-      perfilId: 4,
-      perfilNome: 'Controller',
+    await renderAuthenticatedApp({
+      initialPath: '/dashboard',
+      sessionOverrides: {
+        perfilId: 4,
+        perfilNome: 'Controller',
+      },
     });
-    window.history.pushState({}, '', '/dashboard');
-
-    render(<App />);
 
     expect(await screen.findByRole('heading', { name: /pacientes/i })).toBeInTheDocument();
     await waitFor(() => {
@@ -1433,8 +1466,6 @@ describe('App', () => {
   });
 
   it('ordena pacientes por registro recente e nome', async () => {
-    const user = userEvent.setup();
-    mockSession();
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
     vi.mocked(api.getPacientes).mockResolvedValue(paged([
       {
@@ -1466,7 +1497,7 @@ describe('App', () => {
       },
     ]));
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openPatientsModule(user);
     expect(await screen.findByText('Ana Recente')).toBeInTheDocument();
@@ -1474,19 +1505,10 @@ describe('App', () => {
   });
 
   it('abre popup de informacoes, preenche o formulario ao editar e exclui usuario', async () => {
-    const user = userEvent.setup();
-    const writeText = vi.fn().mockResolvedValue(undefined);
-
-    Object.defineProperty(navigator, 'clipboard', {
-      value: { writeText },
-      configurable: true,
-    });
-
-    mockSession();
     vi.mocked(api.updateUser).mockResolvedValue(baseUser);
     vi.mocked(api.deleteUser).mockResolvedValue(undefined);
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openUsersModule(user);
     const row = await screen.findByText('Ana Hemodinks');
@@ -1507,7 +1529,7 @@ describe('App', () => {
     expect(within(infoDialog).getByText('Senha alterada')).toBeInTheDocument();
     expect(within(infoDialog).getByText('Ativo')).toBeInTheDocument();
     await user.click(within(infoDialog).getByRole('button', { name: /copiar cpf/i }));
-    expect(writeText).toHaveBeenCalledWith('529.982.247-25');
+    expect(await within(infoDialog).findByText('Copiado')).toBeInTheDocument();
     await user.click(screen.getByTitle('Fechar'));
 
     await user.click(within(tableRow).getByLabelText('Contato de Ana Hemodinks'));
@@ -1517,7 +1539,7 @@ describe('App', () => {
     expect(within(contactDialog).getByText('Telefone')).toBeInTheDocument();
     expect(within(contactDialog).getByText('ana@hemodinks.com')).toBeInTheDocument();
     await user.click(within(contactDialog).getByRole('button', { name: /copiar email/i }));
-    expect(writeText).toHaveBeenCalledWith('ana@hemodinks.com');
+    expect(await within(contactDialog).findByText('Copiado')).toBeInTheDocument();
     await user.click(screen.getByTitle('Fechar'));
 
     await user.click(within(tableRow).getByTitle('Editar'));
@@ -1546,8 +1568,6 @@ describe('App', () => {
   });
 
   it('pagina a lista com 10 registros por tela', async () => {
-    const user = userEvent.setup();
-    mockSession();
     const allUsers = Array.from({ length: 12 }, (_, index) => ({
       ...baseUser,
       id: index + 1,
@@ -1561,7 +1581,7 @@ describe('App', () => {
       .mockResolvedValueOnce(paged(allUsers.slice(10), 2, 10, 12))
       .mockResolvedValue(paged(allUsers.slice(10), 2, 10, 12));
 
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     await openUsersModule(user);
     expect(await screen.findByText('Usuario 1')).toBeInTheDocument();
@@ -1579,10 +1599,7 @@ describe('App', () => {
   });
 
   it('alterna tema claro e escuro', async () => {
-    const user = userEvent.setup();
-    mockSession();
-
-    render(<App />);
+    const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
 
