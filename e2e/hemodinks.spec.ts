@@ -1,7 +1,7 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-const LOGIN_PASSWORD = 'SenhaAlterada@123';
+const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
 const session = {
   token: 'jwt-token',
@@ -419,7 +419,7 @@ test('faz login pelo formulario e abre o dashboard', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   expect(apiState.loginPayload).toMatchObject({
     email: 'gmarcone@gmail.com',
-    senha: 'SenhaAlterada@123',
+    senha: LOGIN_PASSWORD,
   });
 });
 
