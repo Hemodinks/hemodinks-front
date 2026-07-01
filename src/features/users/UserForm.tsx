@@ -6,10 +6,8 @@ import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField
 import {
   BRAZIL_UF_OPTIONS,
   DEFAULT_PASSWORD,
-  formatCpfInput,
   formatPhoneInput,
   isMedicalProfileId,
-  MAX_CPF_LENGTH,
   MAX_CRM_LENGTH,
   MAX_EMAIL_LENGTH,
   MAX_NAME_LENGTH,
@@ -109,76 +107,72 @@ export function UserForm({
           <span className="file-hint">PNG, JPG ou WEBP ate 1 MB.</span>
         </div>
 
-        <TextField
-          label="Nome completo"
-          type="text"
-          value={formData.nome}
-          onValueChange={(value) => setFormData((current) => ({ ...current, nome: value.slice(0, MAX_NAME_LENGTH) }))}
-          maxLength={MAX_NAME_LENGTH}
-          required
-        />
+        <div className="two-column-fields user-form-columns">
+          <div className="user-form-column">
+            <SelectField
+              label="Perfil"
+              value={formData.perfilId}
+              onChange={(event) => {
+                const perfilId = Number(event.target.value);
+                setFormData((current) => ({
+                  ...current,
+                  perfilId,
+                  crm: isMedicalProfileId(perfilId) ? current.crm : '',
+                  crmUf: isMedicalProfileId(perfilId) ? current.crmUf : '',
+                }));
+              }}
+              disabled={!canAccessUsers}
+              required
+            >
+              {PROFILE_OPTIONS.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.nome}
+                </option>
+              ))}
+            </SelectField>
 
-        <TextField
-          label="Email"
-          type="email"
-          value={formData.email}
-          onValueChange={(value) => setFormData((current) => ({ ...current, email: value.slice(0, MAX_EMAIL_LENGTH) }))}
-          maxLength={MAX_EMAIL_LENGTH}
-          required
-        />
+            <TextField
+              label="Nome completo"
+              type="text"
+              value={formData.nome}
+              onValueChange={(value) => setFormData((current) => ({ ...current, nome: value.slice(0, MAX_NAME_LENGTH) }))}
+              maxLength={MAX_NAME_LENGTH}
+              required
+            />
 
-        <TextField
-          label="Telefone"
-          type="tel"
-          value={formData.telefone}
-          onFocus={() => setFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
-          onValueChange={(value) => setFormData((current) => ({ ...current, telefone: formatPhoneInput(value) }))}
-          inputMode="numeric"
-          maxLength={MAX_PHONE_LENGTH}
-          placeholder="+55 (81) 99999-9999"
-          required
-        />
+            <div className="user-form-date-field">
+              <DateInput
+                id="user-birth-date"
+                label="Data de nascimento"
+                value={formData.dataNascimento}
+                onChange={(value) => setFormData((current) => ({ ...current, dataNascimento: value }))}
+              />
+            </div>
+          </div>
 
-        <TextField
-          label="CPF"
-          type="text"
-          value={formData.cpf}
-          onValueChange={(value) => setFormData((current) => ({ ...current, cpf: formatCpfInput(value) }))}
-          inputMode="numeric"
-          maxLength={MAX_CPF_LENGTH}
-          placeholder="000.000.000-00"
-          required
-        />
+          <div className="user-form-column">
+            <TextField
+              label="Email"
+              type="email"
+              value={formData.email}
+              onValueChange={(value) => setFormData((current) => ({ ...current, email: value.slice(0, MAX_EMAIL_LENGTH) }))}
+              maxLength={MAX_EMAIL_LENGTH}
+              required
+            />
 
-        <DateInput
-          id="user-birth-date"
-          label="Data de nascimento"
-          value={formData.dataNascimento}
-          onChange={(value) => setFormData((current) => ({ ...current, dataNascimento: value }))}
-          required
-        />
-
-        <SelectField
-          label="Perfil"
-          value={formData.perfilId}
-          onChange={(event) => {
-            const perfilId = Number(event.target.value);
-            setFormData((current) => ({
-              ...current,
-              perfilId,
-              crm: isMedicalProfileId(perfilId) ? current.crm : '',
-              crmUf: isMedicalProfileId(perfilId) ? current.crmUf : '',
-            }));
-          }}
-          disabled={!canAccessUsers}
-          required
-        >
-          {PROFILE_OPTIONS.map((profile) => (
-            <option key={profile.id} value={profile.id}>
-              {profile.nome}
-            </option>
-          ))}
-        </SelectField>
+            <TextField
+              label="Telefone"
+              type="tel"
+              value={formData.telefone}
+              onFocus={() => setFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
+              onValueChange={(value) => setFormData((current) => ({ ...current, telefone: formatPhoneInput(value) }))}
+              inputMode="numeric"
+              maxLength={MAX_PHONE_LENGTH}
+              placeholder="+55 (81) 99999-9999"
+              required
+            />
+          </div>
+        </div>
 
         {isMedicalProfileId(formData.perfilId) && (
           <div className="two-column-fields medical-registration-fields">

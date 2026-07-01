@@ -1,6 +1,8 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
+
 const session = {
   token: 'jwt-token',
   user: {
@@ -72,6 +74,11 @@ const cbhpmItem = {
   porte: '2B',
   procedimento: 'Consulta',
   valorReferencia: 120,
+};
+
+const opmeFornecedor = {
+  idFornecedor: 1,
+  fornecedor: 'Promedom',
 };
 
 const user = {
@@ -184,13 +191,14 @@ function buildAgendaEventFromPayload(id: number, payload: Payload) {
   };
 }
 
-async function useStoredSession(page: Page, storedSession = session) {
-  await page.addInitScript((value) => {
-    localStorage.setItem('hemodinks.session', JSON.stringify(value));
-  }, storedSession);
+async function loginViaUi(page: Page, initialRoute = '/', loginSession = session) {
+  await page.goto(initialRoute);
+  await page.getByLabel('Email').fill(loginSession.user.email);
+  await page.locator('#login-password').fill(LOGIN_PASSWORD);
+  await page.getByRole('button', { name: /entrar/i }).click();
 }
 
-async function mockApi(page: Page) {
+async function mockApi(page: Page, loginSession = session) {
   const state = {
     users: [user],
     pacientes: [paciente],
@@ -214,15 +222,15 @@ async function mockApi(page: Page) {
       state.loginPayload = request.postDataJSON() as Payload;
       return route.fulfill({
         json: {
-          id: session.user.id,
-          nome: session.user.nome,
-          email: session.user.email,
-          token: session.token,
-          cpf: session.user.cpf,
-          fotoPerfil: session.user.fotoPerfil,
+          id: loginSession.user.id,
+          nome: loginSession.user.nome,
+          email: loginSession.user.email,
+          token: loginSession.token,
+          cpf: loginSession.user.cpf,
+          fotoPerfil: loginSession.user.fotoPerfil,
           precisaTrocarSenha: false,
-          perfilId: session.user.perfilId,
-          perfilNome: session.user.perfilNome,
+          perfilId: loginSession.user.perfilId,
+          perfilNome: loginSession.user.perfilNome,
         },
       });
     }
@@ -316,12 +324,37 @@ async function mockApi(page: Page) {
       return route.fulfill({ json: [{ idConvenio: 7, descricaoConvenio: 'Particular' }] });
     }
 
+    if (path === '/api/opme/') {
+      return route.fulfill({ json: [opmeFornecedor] });
+    }
+
+    if (path === '/api/grupos-medicos/medicos') {
+      return route.fulfill({ json: [{ id: user.id, nome: user.nome, email: user.email }] });
+    }
+
     if (path === '/api/cbhpm/') {
       return route.fulfill({ json: paged([cbhpmItem]) });
     }
 
     if (path === '/api/events/medical-users') {
       return route.fulfill({ json: [{ id: user.id, nome: user.nome }] });
+    }
+
+    if (path === '/api/events/notification-recipients') {
+      return route.fulfill({
+        json: {
+          canNotifyAllAllowedRecipients: true,
+          allRecipientsLabel: 'Todos os destinatarios disponiveis',
+          users: [{
+            id: user.id,
+            nome: user.nome,
+            email: user.email,
+            perfilId: user.perfilId,
+            perfilNome: user.perfilNome,
+          }],
+          groups: [],
+        },
+      });
     }
 
     if (path === '/api/events/') {
@@ -363,7 +396,7 @@ async function expectNoGlobalHorizontalOverflow(page: Page) {
 
 async function captureRouteScreenshot(page: Page, testInfo: TestInfo, route: string, width: number) {
   await page.setViewportSize({ width, height: width < 600 ? 860 : 900 });
-  await page.goto(route);
+  await loginViaUi(page, route);
   await page.screenshot({ path: testInfo.outputPath(`${route.replace('/', '') || 'home'}-${width}.png`), fullPage: true });
   await expectNoGlobalHorizontalOverflow(page);
 }
@@ -379,22 +412,20 @@ test('faz login pelo formulario e abre o dashboard', async ({ page }) => {
 
   await page.goto('/');
   await page.getByLabel('Email').fill('gmarcone@gmail.com');
-  await page.locator('#login-password').fill('SenhaAlterada@123');
+  await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: /entrar/i }).click();
 
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   expect(apiState.loginPayload).toMatchObject({
     email: 'gmarcone@gmail.com',
-    senha: 'SenhaAlterada@123',
+    senha: LOGIN_PASSWORD,
   });
 });
 
 test('navega pelos fluxos principais autenticados', async ({ page }) => {
   await mockApi(page);
-  await useStoredSession(page);
-
-  await page.goto('/dashboard');
+  await loginViaUi(page, '/dashboard');
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   await expect(page.getByRole('button', { name: /abrir pacientes/i })).toBeVisible();
 
@@ -403,24 +434,27 @@ test('navega pelos fluxos principais autenticados', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible();
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
 
-  await page.goto('/agenda');
-  await expect(page.getByRole('heading', { name: 'Agenda' })).toBeVisible();
-  await expect(page.getByText('Novo evento')).toBeVisible();
+  await page.getByLabel('Sessao ativa').getByRole('button', { name: /agenda/i }).click();
+  await expect(page).toHaveURL(/\/agenda$/);
+  await expect(page.getByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeVisible();
+  const openNewEventButton = page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' });
+  await expect(openNewEventButton).toBeVisible();
+  await openNewEventButton.click();
+  await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
 });
 
 test('mantem telas criticas sem overflow horizontal no mobile', async ({ page }) => {
   await mockApi(page);
-  await useStoredSession(page);
 
   for (const width of [360, 390, 768]) {
     await page.setViewportSize({ width, height: 860 });
 
-    await page.goto('/agenda');
-    await expect(page.getByRole('heading', { name: 'Agenda' })).toBeVisible();
+    await loginViaUi(page, '/agenda');
+    await expect(page.getByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeVisible();
     await expect(page.locator('.agenda-calendar')).toBeVisible();
     await expectNoGlobalHorizontalOverflow(page);
 
-    await page.goto('/pacientes');
+    await loginViaUi(page, '/pacientes');
     await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible();
     await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
     await expectNoGlobalHorizontalOverflow(page);
@@ -429,9 +463,7 @@ test('mantem telas criticas sem overflow horizontal no mobile', async ({ page })
 
 test('cadastra e edita usuario usando o formulario real', async ({ page }) => {
   const apiState = await mockApi(page);
-  await useStoredSession(page);
-
-  await page.goto('/usuarios');
+  await loginViaUi(page, '/usuarios');
   await expect(page.getByText('Ana Hemodinks')).toBeVisible();
 
   await page.getByRole('button', { name: 'Novo usuario' }).click();
@@ -439,9 +471,8 @@ test('cadastra e edita usuario usando o formulario real', async ({ page }) => {
   await page.getByLabel('Nome completo').fill('Usuario E2E');
   await page.getByLabel('Email').fill('usuario.e2e@hemodinks.com');
   await page.getByLabel('Telefone').fill('81999999999');
-  await page.getByLabel('CPF').fill('39053344705');
   await page.locator('#user-birth-date').fill('10/05/1990');
-  await page.locator('form select').first().selectOption('1');
+  await page.locator('.module-form-grid select').first().selectOption('1');
   await page.getByRole('button', { name: 'Cadastrar usuario' }).click();
 
   await expect(page.getByText(/Usuario cadastrado/)).toBeVisible();
@@ -450,12 +481,13 @@ test('cadastra e edita usuario usando o formulario real', async ({ page }) => {
     nome: 'Usuario E2E',
     email: 'usuario.e2e@hemodinks.com',
     telefone: '+5581999999999',
-    cpf: '39053344705',
+    cpf: null,
     perfilId: 1,
   });
 
   await page.locator('tr', { hasText: 'Usuario E2E' }).getByTitle('Editar').click();
   await expect(page.getByRole('heading', { name: 'Editar usuario' })).toBeVisible();
+  await expect(page.getByLabel('Email')).toHaveValue('usuario.e2e@hemodinks.com');
   await page.getByLabel('Nome completo').fill('Usuario Editado');
   await page.getByRole('button', { name: 'Salvar alteracoes' }).click();
 
@@ -469,32 +501,28 @@ test('cadastra e edita usuario usando o formulario real', async ({ page }) => {
 
 test('cadastra e edita paciente usando o fluxo real do formulario', async ({ page }) => {
   const apiState = await mockApi(page);
-  await useStoredSession(page);
-
-  await page.goto('/pacientes');
+  await loginViaUi(page, '/pacientes');
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
 
   await page.getByRole('button', { name: 'Novo paciente' }).click();
   await expect(page.getByRole('heading', { name: 'Novo paciente' })).toBeVisible();
   await page.getByLabel('Paciente', { exact: true }).fill('Paciente Novo');
-  await page.getByLabel('CPF').fill('52998224725');
-  await page.getByLabel('Telefone').fill('81998765432');
-  await page.getByLabel('Hospital').selectOption('1');
-  await page.locator('input[list="hemodinks-medical-users-options"]').fill('Ana Hemodinks');
+  await page.getByLabel('Hospital').fill('Santa Clara - Mater Dei');
+  await page.getByLabel('Cirurgião').selectOption('1');
   await page.locator('input[list="hemodinks-convenios-options"]').fill('Particular');
 
   await page.getByRole('button', { name: 'Adicionar procedimento' }).click();
   await expect(page.getByRole('heading', { name: 'Selecionar procedimento' })).toBeVisible();
   await page.getByRole('button', { name: 'Adicionar', exact: true }).click();
-  await expect(page.getByText('1.01.01.01-2')).toBeVisible();
+  await expect(page.getByText('10101012')).toBeVisible();
 
   await page.getByRole('button', { name: 'Cadastrar paciente' }).click();
   await expect(page.getByText(/Paciente cadastrado/)).toBeVisible();
   await expect(page.getByText('Paciente Novo')).toBeVisible();
   expect(apiState.createdPacientePayload).toMatchObject({
     nomePaciente: 'Paciente Novo',
-    cpf: '52998224725',
-    telefone: '+5581998765432',
+    cpf: '',
+    telefone: '',
     hospitalId: 1,
     medicoUserId: 1,
     convenioId: 7,
@@ -509,17 +537,17 @@ test('cadastra e edita paciente usando o fluxo real do formulario', async ({ pag
   await expect(page.getByText('Paciente Editado')).toBeVisible();
   expect(apiState.updatedPacientePayload).toMatchObject({
     nomePaciente: 'Paciente Editado',
-    cpf: '52998224725',
+    cpf: '',
     procedimento: 'Consulta',
   });
 });
 
 test('cadastra evento na agenda', async ({ page }) => {
   const apiState = await mockApi(page);
-  await useStoredSession(page);
-
-  await page.goto('/agenda');
-  await expect(page.getByRole('heading', { name: 'Agenda' })).toBeVisible();
+  await loginViaUi(page, '/agenda');
+  await expect(page.getByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeVisible();
+  await page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' }).click();
+  await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
   await page.getByLabel('Titulo').fill('Evento E2E');
   await page.getByLabel('Descricao').fill('Validacao automatizada da agenda');
   await page.getByRole('button', { name: 'Cadastrar evento' }).click();
@@ -535,9 +563,7 @@ test('cadastra evento na agenda', async ({ page }) => {
 
 test('exporta pacientes em XLSX e PDF', async ({ page }) => {
   await mockApi(page);
-  await useStoredSession(page);
-
-  await page.goto('/pacientes');
+  await loginViaUi(page, '/pacientes');
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
 
   const xlsxDownloadPromise = page.waitForEvent('download');
@@ -552,10 +578,8 @@ test('exporta pacientes em XLSX e PDF', async ({ page }) => {
 });
 
 test('bloqueia rota de usuarios para perfil paciente', async ({ page }) => {
-  await mockApi(page);
-  await useStoredSession(page, patientSession);
-
-  await page.goto('/usuarios');
+  await mockApi(page, patientSession);
+  await loginViaUi(page, '/usuarios', patientSession);
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   await expect(page.getByRole('button', { name: /abrir usuarios/i })).toHaveCount(0);
@@ -563,10 +587,9 @@ test('bloqueia rota de usuarios para perfil paciente', async ({ page }) => {
 
 test('nao apresenta violacoes serias de acessibilidade nas rotas principais', async ({ page }) => {
   await mockApi(page);
-  await useStoredSession(page);
 
   for (const route of ['/dashboard', '/usuarios', '/pacientes', '/agenda']) {
-    await page.goto(route);
+    await loginViaUi(page, route);
     await expect(page.locator('main, .app-shell, .login-shell').first()).toBeVisible();
 
     const results = await new AxeBuilder({ page })
@@ -582,7 +605,6 @@ test('nao apresenta violacoes serias de acessibilidade nas rotas principais', as
 
 test('gera evidencias visuais desktop e mobile das telas principais', async ({ page }, testInfo) => {
   await mockApi(page);
-  await useStoredSession(page);
 
   for (const width of [390, 1440]) {
     await captureRouteScreenshot(page, testInfo, '/dashboard', width);
@@ -590,12 +612,12 @@ test('gera evidencias visuais desktop e mobile das telas principais', async ({ p
     await captureRouteScreenshot(page, testInfo, '/pacientes', width);
     await captureRouteScreenshot(page, testInfo, '/agenda', width);
 
-    await page.goto('/usuarios');
+    await loginViaUi(page, '/usuarios');
     await page.getByRole('button', { name: 'Novo usuario' }).click();
     await expect(page.getByRole('heading', { name: 'Novo usuario' })).toBeVisible();
     await captureCurrentScreenshot(page, testInfo, 'usuarios-formulario', width);
 
-    await page.goto('/pacientes');
+    await loginViaUi(page, '/pacientes');
     await page.getByRole('button', { name: 'Novo paciente' }).click();
     await expect(page.getByRole('heading', { name: 'Novo paciente' })).toBeVisible();
     await captureCurrentScreenshot(page, testInfo, 'pacientes-formulario', width);
