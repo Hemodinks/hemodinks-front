@@ -28,9 +28,18 @@ export function getPacienteExportRows(items: Paciente[]) {
   ));
 }
 
-export function getPatientExportFileName(extension: 'xlsx' | 'pdf') {
+function slugifyFilePart(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'empresa';
+}
+
+export function getPatientExportFileName(extension: 'xlsx' | 'pdf', companyName = 'Hemodinks') {
   const date = new Date().toISOString().slice(0, 10);
-  return `pacientes-hemodinks-${date}.${extension}`;
+  return `pacientes-${slugifyFilePart(companyName)}-${date}.${extension}`;
 }
 
 function escapeXml(value: string) {

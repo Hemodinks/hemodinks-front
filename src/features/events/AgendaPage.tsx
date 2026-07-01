@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import './events.css';
 import {
   completeAgendaEvent,
   createAgendaEvent,

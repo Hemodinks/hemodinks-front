@@ -3,6 +3,7 @@ import type { DashboardNotification } from '../../types';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
 import { toNotificationDate } from '../../shared/utils/formatters';
+import './dashboard.css';
 
 type NotificationsModalProps = {
   notifications: DashboardNotification[];
@@ -56,10 +57,10 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
                       </span>
                     </div>
                     {notification.tipo === 'ObservacaoPaciente' && notification.pacienteId > 0 && (
-                      <div className="patient-observation-actions">
+                      <div className="notification-actions">
                         <button
                           type="button"
-                          className="ghost-button patient-observation-reply-action"
+                          className="ghost-button notification-open-thread-action"
                           onClick={() => void onOpenObservation(notification.pacienteId)}
                         >
                           Abrir conversa

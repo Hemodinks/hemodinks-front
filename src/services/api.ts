@@ -82,7 +82,7 @@ export function get<T>(path: string, token?: string, config: RequestConfig = {})
   });
 }
 
-export function getBlob(path: string, token: string, config: RequestConfig = {}) {
+export function getBlob(path: string, token?: string, config: RequestConfig = {}) {
   return executeRequest<Blob>(apiClient, {
     url: path,
     method: 'GET',

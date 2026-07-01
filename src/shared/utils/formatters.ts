@@ -1,4 +1,4 @@
-import type { Convenio, MedicalUserOption, OpmeFornecedor, User } from '../../types';
+import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, User } from '../../types';
 
 export const DEFAULT_PASSWORD = 'Senha@123';
 export const DEFAULT_PATIENT_BIRTH_DATE = '1900-01-01';
@@ -18,10 +18,12 @@ export const MAX_PASSWORD_LENGTH = 500;
 export const MAX_CURRENCY_DIGITS = 15;
 export const MEDICAL_USERS_DATALIST_ID = 'hemodinks-medical-users-options';
 export const CONVENIOS_DATALIST_ID = 'hemodinks-convenios-options';
+export const HOSPITAIS_DATALIST_ID = 'hemodinks-hospitais-options';
 export const OPME_FORNECEDORES_DATALIST_ID = 'hemodinks-opme-fornecedores-options';
 export const MAX_PROFILE_PHOTO_BYTES = 1024 * 1024;
 export const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
 export const MEDICAL_PROFILE_ID = 2;
+export const PATIENT_PROFILE_ID = 3;
 export const CONTROLLER_PROFILE_ID = 4;
 export const DEFAULT_PROFILE_ID = MEDICAL_PROFILE_ID;
 export const API_ASSET_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
@@ -29,6 +31,7 @@ export const API_ASSET_BASE_URL = (import.meta.env.VITE_API_URL || 'http://local
 export const PROFILE_OPTIONS = [
   { id: 1, nome: 'Administrador' },
   { id: 2, nome: 'Médicos' },
+  { id: 3, nome: 'Paciente' },
   { id: 4, nome: 'Controller' },
 ] as const;
 
@@ -84,6 +87,13 @@ export function findConvenioByDescription(convenios: Convenio[], descricao: stri
   const normalizedDescricao = normalizeLookupText(descricao);
   return normalizedDescricao
     ? convenios.find((convenio) => normalizeLookupText(convenio.descricaoConvenio) === normalizedDescricao)
+    : undefined;
+}
+
+export function findHospitalByName(hospitais: Hospital[], nome: string) {
+  const normalizedNome = normalizeLookupText(nome);
+  return normalizedNome
+    ? hospitais.find((hospital) => normalizeLookupText(hospital.nome) === normalizedNome)
     : undefined;
 }
 
@@ -279,7 +289,7 @@ export function formatDateInput(value: string) {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
-export function toDisplayDate(value: string) {
+export function toDisplayDate(value?: string | null) {
   if (!value) {
     return '';
   }

@@ -222,12 +222,6 @@ export function PatientList({
                 </th>
                 <th>Info</th>
                 <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('hospital')} aria-sort={sortBy === 'hospital' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Hospital
-                    {sortBy === 'hospital' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
                   <button type="button" className="sort-header-button" onClick={() => onSortChange('medico')} aria-sort={sortBy === 'medico' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                     Cirurgiao
                     {sortBy === 'medico' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
@@ -252,7 +246,7 @@ export function PatientList({
             <tbody>
               {pacientesLoading ? (
                 <tr>
-                  <td colSpan={8} className="empty-row">Carregando pacientes...</td>
+                  <td colSpan={7} className="empty-row">Carregando pacientes...</td>
                 </tr>
               ) : pacientes.length ? (
                 pacientes.map((paciente) => {
@@ -278,7 +272,6 @@ export function PatientList({
                         <Info size={18} />
                       </button>
                     </td>
-                    <td data-label="Hospital">{paciente.hospital || '-'}</td>
                     <td data-label="Cirurgiao">{paciente.medico || '-'}</td>
                     <td data-label="Status Pago">
                       <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
@@ -350,7 +343,7 @@ export function PatientList({
                 })
               ) : (
                 <tr>
-                  <td colSpan={8} className="empty-row">Nenhum paciente encontrado.</td>
+                  <td colSpan={7} className="empty-row">Nenhum paciente encontrado.</td>
                 </tr>
               )}
             </tbody>

@@ -1,0 +1,153 @@
+.primary-action,
+.ghost-button,
+.icon-button {
+  min-height: 40px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.primary-action:focus,
+.primary-action:focus-visible,
+.primary-action:active,
+.ghost-button:focus,
+.ghost-button:focus-visible,
+.ghost-button:active,
+.icon-button:focus,
+.icon-button:focus-visible,
+.icon-button:active,
+.copy-button:focus,
+.copy-button:focus-visible,
+.copy-button:active,
+.status-info-button:focus,
+.status-info-button:focus-visible,
+.status-info-button:active,
+.breadcrumb-button:focus,
+.breadcrumb-button:focus-visible,
+.breadcrumb-button:active,
+.view-switch button:focus,
+.view-switch button:focus-visible,
+.view-switch button:active,
+.password-visibility-button:focus,
+.password-visibility-button:focus-visible,
+.password-visibility-button:active,
+.combobox-toggle:focus,
+.combobox-toggle:focus-visible,
+.combobox-toggle:active,
+.date-picker-button:focus,
+.date-picker-button:focus-visible,
+.date-picker-button:active,
+.side-nav button:focus,
+.side-nav button:focus-visible,
+.side-nav button:active,
+.agenda-day:focus,
+.agenda-day:focus-visible,
+.agenda-day:active {
+  border-color: var(--selection-accent);
+  box-shadow: 0 0 0 4px var(--selection-accent-soft);
+}
+
+.primary-action {
+  width: 100%;
+  color: var(--action-text);
+  background: var(--action-primary);
+  border-color: color-mix(in srgb, var(--action-primary) 82%, black);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--action-primary) 28%, transparent);
+  padding: 0 16px;
+}
+
+.primary-action:hover {
+  background: var(--action-primary-hover);
+  border-color: color-mix(in srgb, var(--action-primary-hover) 82%, black);
+}
+
+.ghost-button {
+  color: var(--action-text);
+  background: var(--action-secondary);
+  border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-secondary) 20%, transparent);
+  padding: 0 13px;
+}
+
+.ghost-button:hover,
+.icon-button:hover {
+  background: var(--action-secondary-hover);
+  border-color: color-mix(in srgb, var(--action-secondary-hover) 82%, black);
+}
+
+.icon-button {
+  width: 40px;
+  color: var(--action-text);
+  background: var(--action-accent);
+  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-accent) 18%, transparent);
+}
+
+.icon-button.muted {
+  color: var(--action-text);
+  background: var(--action-secondary);
+  border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
+}
+
+.icon-button.danger {
+  color: var(--action-text);
+  background: var(--action-danger);
+  border-color: color-mix(in srgb, var(--action-danger) 82%, black);
+}
+
+.danger-text {
+  color: var(--action-text);
+  background: var(--action-danger);
+  border-color: color-mix(in srgb, var(--action-danger) 82%, black);
+}
+
+.alert {
+  gap: 8px;
+  margin: 0;
+  border-radius: 8px;
+  padding: 11px 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.alert.error {
+  color: #8a1f13;
+  background: #fff0ed;
+  border: 1px solid #ffd4ce;
+}
+
+.alert.success {
+  color: #106349;
+  background: #e9f8f0;
+  border: 1px solid #bcebd1;
+}
+
+.alert.warning {
+  color: #805100;
+  background: #fff6db;
+  border: 1px solid #f2d68a;
+}
+
+@media (max-width: 760px) {
+  .primary-action,
+  .ghost-button,
+  .icon-button {
+    min-height: 38px;
+    font-size: 0.84rem;
+  }
+
+  .icon-button {
+    width: 38px;
+  }
+}

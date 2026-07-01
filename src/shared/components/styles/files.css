@@ -1,0 +1,67 @@
+.file-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-list li,
+.attachment-count {
+  display: inline-flex;
+  align-items: center;
+}
+
+.file-list li {
+  min-width: 0;
+  gap: 8px;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: var(--panel-strong);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.file-list span,
+.file-list a {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon-button.mini {
+  width: 28px;
+  min-height: 28px;
+}
+
+.attachment-count {
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.modal-file-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.file-list a.download-link {
+  color: var(--teal);
+}
+
+.download-link:hover {
+  text-decoration: underline;
+}

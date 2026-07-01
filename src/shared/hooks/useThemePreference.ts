@@ -34,8 +34,13 @@ export function useThemePreference() {
     setTheme((current) => current === 'light' ? 'dark' : 'light');
   }, []);
 
+  const setThemePreference = useCallback((nextTheme: Theme) => {
+    setTheme(nextTheme);
+  }, []);
+
   return {
     theme,
     toggleTheme,
+    setThemePreference,
   };
 }

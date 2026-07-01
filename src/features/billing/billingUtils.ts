@@ -51,6 +51,17 @@ export type BillingRecord = {
   glosaRaw: string;
   glosaAmount: number;
   glosaHasNumericValue: boolean;
+  assistantFeesAmount?: number | null;
+  anesthesiologistFeesAmount?: number | null;
+  anesthesiologistName: string;
+  anesthesiologistBilledSeparately: boolean;
+  guiaInternacaoOuSadt: string;
+  tissXmlStatus: string;
+  glosaStatus: string;
+  recursoGlosa: string;
+  repasseMedicoObservacao: string;
+  tipoFaturamentoParticular: string;
+  reciboNotaContrato: string;
   netAmount: number;
   status: BillingRecordStatus;
   statusLabel: string;
@@ -212,7 +223,13 @@ function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 
             value: 'Nao informado',
             status: 'missing',
           },
-    record.assistantNames.length
+    record.assistantFeesAmount != null
+      ? {
+          label: 'Honorarios de auxiliares cirurgicos',
+          value: formatCurrency(record.assistantFeesAmount),
+          status: 'ok',
+        }
+      : record.assistantNames.length
       ? {
           label: 'Honorarios de auxiliares cirurgicos',
           value: record.assistantNames.join(', '),
@@ -224,11 +241,21 @@ function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 
           value: 'Nao informado',
           status: 'missing',
         },
-    {
-      label: 'Anestesista faturado separado',
-      value: 'Nao informado no cadastro',
-      status: 'missing',
-    },
+    record.anesthesiologistBilledSeparately || record.anesthesiologistFeesAmount != null || record.anesthesiologistName
+      ? {
+          label: 'Anestesista faturado separado',
+          value: [
+            record.anesthesiologistName,
+            record.anesthesiologistFeesAmount != null ? formatCurrency(record.anesthesiologistFeesAmount) : '',
+            record.anesthesiologistBilledSeparately ? 'Faturado separado' : '',
+          ].filter(Boolean).join(' | '),
+          status: record.anesthesiologistFeesAmount != null || record.anesthesiologistBilledSeparately ? 'ok' : 'warning',
+        }
+      : {
+          label: 'Anestesista faturado separado',
+          value: 'Nao informado no cadastro',
+          status: 'missing',
+        },
     record.primaryProcedureLabel
       ? {
           label: 'Procedimento principal',
@@ -296,6 +323,12 @@ function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 
           value: 'Nao se aplica ao faturamento particular',
           status: 'ok',
         }
+      : record.guiaInternacaoOuSadt
+        ? {
+            label: 'Guia de internacao ou SADT',
+            value: record.guiaInternacaoOuSadt,
+            status: 'ok',
+          }
       : record.filesCount > 0
         ? {
             label: 'Guia de internacao ou SADT',
@@ -319,7 +352,13 @@ function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 
           value: 'Nao informado',
           status: 'warning',
         },
-    record.filesCount > 0
+    record.tissXmlStatus
+      ? {
+          label: 'Envio em padrao TISS/XML',
+          value: record.tissXmlStatus,
+          status: 'ok',
+        }
+      : record.filesCount > 0
       ? {
           label: 'Envio em padrao TISS/XML',
           value: `${record.filesCount} anexo(s) de suporte`,
@@ -331,7 +370,13 @@ function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 
           value: 'Sem evidencia no cadastro',
           status: 'missing',
         },
-    record.glosaHasNumericValue && record.glosaAmount > 0
+    record.glosaStatus || record.recursoGlosa
+      ? {
+          label: 'Glosas, recursos e conferencia',
+          value: [record.glosaStatus, record.recursoGlosa].filter(Boolean).join(' | '),
+          status: record.glosaHasNumericValue && record.glosaAmount > 0 ? 'warning' : 'ok',
+        }
+      : record.glosaHasNumericValue && record.glosaAmount > 0
       ? {
           label: 'Glosas, recursos e conferencia',
           value: formatCurrency(record.glosaAmount),
@@ -351,7 +396,7 @@ function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 
     record.paymentHasNumericValue && record.hospitalName
       ? {
           label: 'Repasse medico via hospital/clinica',
-          value: formatCurrency(record.netAmount),
+          value: [formatCurrency(record.netAmount), record.repasseMedicoObservacao].filter(Boolean).join(' | '),
           status: 'warning',
           hint: 'Liquido estimado a partir de pagamento menos glosa.',
         }
@@ -361,10 +406,16 @@ function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 
           status: 'missing',
         },
     record.regime === 'particular'
-      ? record.filesCount > 0
+      ? record.reciboNotaContrato
         ? {
             label: 'Faturamento particular com suporte',
-            value: `${record.filesCount} anexo(s) de suporte`,
+            value: record.reciboNotaContrato,
+            status: 'ok',
+          }
+        : record.filesCount > 0
+        ? {
+            label: 'Faturamento particular com suporte',
+            value: `${record.tipoFaturamentoParticular || 'Particular'} | ${record.filesCount} anexo(s) de suporte`,
             status: 'ok',
           }
         : {
@@ -402,9 +453,14 @@ export function createEmptyBillingFilters(defaultDoctor = ''): BillingFilters {
 
 export function buildBillingRecords(pacientes: Paciente[]) {
   return pacientes.map((paciente) => {
+    const faturamento = paciente.faturamento ?? null;
     const procedures = getPacienteProcedimentosFromPaciente(paciente);
-    const paymentInfo = parseCurrencyLikeValue(paciente.pagamento);
-    const glosaInfo = parseCurrencyLikeValue(paciente.repasseGlosa);
+    const paymentInfo = faturamento?.honorariosCirurgiao != null
+      ? { amount: faturamento.honorariosCirurgiao, hasNumericValue: true }
+      : parseCurrencyLikeValue(paciente.pagamento);
+    const glosaInfo = faturamento?.valorGlosa != null
+      ? { amount: faturamento.valorGlosa, hasNumericValue: true }
+      : parseCurrencyLikeValue(paciente.repasseGlosa);
     const doctorName = paciente.medico?.trim() || 'Nao informado';
     const assistantNames = [paciente.medicoAuxiliar1, paciente.medicoAuxiliar2]
       .map((value) => value?.trim() || '')
@@ -429,26 +485,41 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       regime: paciente.convenio?.trim() ? 'convenio' : 'particular',
       surgeryDate: paciente.data ?? null,
       surgeryDateLabel: paciente.data ? toDisplayDate(paciente.data) : '-',
-      authorizationCode: paciente.autorizacao?.trim() || '',
-      paymentRaw: paciente.pagamento?.trim() || '',
+      authorizationCode: faturamento?.guiaAutorizacaoConvenio?.trim() || paciente.autorizacao?.trim() || '',
+      paymentRaw: faturamento?.honorariosCirurgiao != null ? formatCurrency(faturamento.honorariosCirurgiao) : paciente.pagamento?.trim() || '',
       paymentAmount: paymentInfo.amount,
       paymentHasNumericValue: paymentInfo.hasNumericValue,
-      glosaRaw: paciente.repasseGlosa?.trim() || '',
+      glosaRaw: faturamento?.valorGlosa != null ? formatCurrency(faturamento.valorGlosa) : paciente.repasseGlosa?.trim() || '',
       glosaAmount: glosaInfo.amount,
       glosaHasNumericValue: glosaInfo.hasNumericValue,
-      netAmount: paymentInfo.amount - glosaInfo.amount,
+      assistantFeesAmount: faturamento?.honorariosAuxiliares ?? null,
+      anesthesiologistFeesAmount: faturamento?.honorariosAnestesista ?? null,
+      anesthesiologistName: faturamento?.anestesista?.trim() || '',
+      anesthesiologistBilledSeparately: faturamento?.anestesistaFaturadoSeparado ?? false,
+      guiaInternacaoOuSadt: faturamento?.guiaInternacaoOuSadt?.trim() || '',
+      tissXmlStatus: faturamento?.tissXmlStatus?.trim() || '',
+      glosaStatus: faturamento?.glosaStatus?.trim() || '',
+      recursoGlosa: faturamento?.recursoGlosa?.trim() || '',
+      repasseMedicoObservacao: faturamento?.repasseMedicoObservacao?.trim() || '',
+      tipoFaturamentoParticular: faturamento?.tipoFaturamentoParticular?.trim() || '',
+      reciboNotaContrato: faturamento?.reciboNotaContrato?.trim() || '',
+      netAmount: faturamento?.repasseMedico ?? paymentInfo.amount - glosaInfo.amount,
       status,
       statusLabel: getBillingStatusLabel(status),
       filesCount: paciente.arquivosCount ?? paciente.arquivos.length,
-      hasOpme: Boolean(paciente.opmeFornecedor?.trim()),
-      opmeSupplier: paciente.opmeFornecedor?.trim() || 'Nao informado',
+      hasOpme: Boolean(faturamento?.opmeMateriaisEspeciais?.trim() || paciente.opmeFornecedor?.trim()),
+      opmeSupplier: faturamento?.opmeMateriaisEspeciais?.trim() || paciente.opmeFornecedor?.trim() || 'Nao informado',
       procedureSummary: procedures.length
         ? procedures.map((item) => item.procedimento).join(', ')
         : 'Nao informado',
-      procedureCodes,
+      procedureCodes: faturamento?.codigoTussCbhpmAmb
+        ? faturamento.codigoTussCbhpmAmb.split(',').map((item) => item.trim()).filter(Boolean)
+        : procedureCodes,
       primaryProcedureLabel,
       procedures,
-      surgicalPortes: procedures.map((item) => item.cbhpmPorte?.trim() || '').filter(Boolean),
+      surgicalPortes: faturamento?.porteCirurgicoAnestesico
+        ? faturamento.porteCirurgicoAnestesico.split(',').map((item) => item.trim()).filter(Boolean)
+        : procedures.map((item) => item.cbhpmPorte?.trim() || '').filter(Boolean),
     };
     const checklist = buildBillingChecklist(baseRecord);
 
