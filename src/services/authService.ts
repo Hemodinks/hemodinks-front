@@ -8,3 +8,20 @@ export function authenticate(email: string, senha: string) {
 export function resetPassword(email: string) {
   return post<{ id: number; precisaTrocarSenha: boolean; message: string }>('/api/users/password/reset', { email });
 }
+
+export function confirmPasswordReset(token: string, novaSenha: string) {
+  const idempotencyKey = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random()}`;
+
+  return post<{ id: number; precisaTrocarSenha: boolean; message: string }>(
+    '/api/users/password/reset/confirm',
+    { token, novaSenha },
+    undefined,
+    {
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
+    },
+  );
+}

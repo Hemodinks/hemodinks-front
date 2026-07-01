@@ -251,6 +251,19 @@ export type AuthSession = {
   user: SessionUser;
 };
 
+export type SystemSettings = {
+  id: number;
+  nomeEmpresa: string;
+  fotoEmpresa?: string | null;
+  dataCadastro: string;
+  dataAtualizacao?: string | null;
+};
+
+export type UpdateSystemSettingsPayload = {
+  nomeEmpresa: string;
+  fotoEmpresa?: string | null;
+};
+
 export type UserFormData = {
   nome: string;
   email: string;
@@ -262,6 +275,11 @@ export type UserFormData = {
   dataNascimento: string;
   ativo: boolean;
   perfilId: number;
+};
+
+export type UserPayload = Omit<UserFormData, 'cpf' | 'dataNascimento'> & {
+  cpf?: string | null;
+  dataNascimento?: string | null;
 };
 
 export type ChangePasswordPayload = {
@@ -276,6 +294,33 @@ export type PacienteArquivo = {
   tamanhoBytes: number;
   url: string;
   dataUpload: string;
+};
+
+export type PacienteFaturamento = {
+  id: number;
+  pacienteId: number;
+  honorariosCirurgiao?: number | null;
+  honorariosAuxiliares?: number | null;
+  honorariosAnestesista?: number | null;
+  anestesistaFaturadoSeparado: boolean;
+  anestesista?: string | null;
+  codigoTussCbhpmAmb?: string | null;
+  porteCirurgicoAnestesico?: string | null;
+  guiaAutorizacaoConvenio?: string | null;
+  guiaInternacaoOuSadt?: string | null;
+  opmeMateriaisEspeciais?: string | null;
+  tissXmlStatus?: string | null;
+  valorGlosa?: number | null;
+  glosaStatus?: string | null;
+  recursoGlosa?: string | null;
+  conferenciaPagamentoRealizada: boolean;
+  repasseMedico?: number | null;
+  repasseMedicoObservacao?: string | null;
+  tipoFaturamentoParticular?: string | null;
+  reciboNotaContrato?: string | null;
+  observacoes?: string | null;
+  dataCadastro: string;
+  dataAtualizacao?: string | null;
 };
 
 export type Paciente = {
@@ -316,10 +361,11 @@ export type Paciente = {
   email: string;
   telefone: string;
   fotoPerfil?: string | null;
-  dataNascimento: string;
+  dataNascimento?: string | null;
   ativo: boolean;
   arquivosCount: number;
   observacoesNaoLidasCount?: number;
+  faturamento?: PacienteFaturamento | null;
   arquivos: PacienteArquivo[];
 };
 

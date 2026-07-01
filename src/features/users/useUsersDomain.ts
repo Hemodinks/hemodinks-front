@@ -31,7 +31,7 @@ import {
   getPagedTotalPages,
   sortUsersForListing,
 } from '../../shared/utils/listing';
-import type { AuthSession, User, UserFormData } from '../../types';
+import type { AuthSession, User, UserFormData, UserPayload } from '../../types';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import {
   toUserPayload,
@@ -141,7 +141,7 @@ export function useUsersDomain({
     staleTime: LIST_CACHE_TIME_MS,
   });
   const saveUserMutation = useMutation({
-    mutationFn: ({ id, payload, token }: { id: number | null; payload: UserFormData; token: string }) => (
+    mutationFn: ({ id, payload, token }: { id: number | null; payload: UserPayload; token: string }) => (
       id ? updateUser(id, payload, token) : createUser(payload, token)
     ),
   });
@@ -352,6 +352,15 @@ export function useUsersDomain({
         }
       }
 
+      setUsers((current) => sortUsersForListing(
+        editingId
+          ? current.map((user) => (user.id === savedUser.id ? savedUser : user))
+          : [savedUser, ...current],
+      ));
+      if (!editingId) {
+        setUsersTotalItems((current) => current + 1);
+      }
+
       if (editingId && savedUser.id === session.user.id) {
         persistSession({
           ...session,
@@ -377,6 +386,7 @@ export function useUsersDomain({
       resetUserForm();
       setCurrentPage(1);
       setModuleMode('list');
+      await refreshUserList(true);
       if (!isAdmin) {
         navigateToView('dashboard');
       }
@@ -596,3 +606,5 @@ export function useUsersDomain({
     refreshUsers,
   };
 }
+
+export type UsersDomainState = ReturnType<typeof useUsersDomain>;

@@ -1,0 +1,177 @@
+.patients-workspace .data-header {
+  align-items: flex-start;
+}
+
+.patients-workspace .table-tools {
+  flex: 1 1 560px;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.patients-workspace .table-tools > .search-box {
+  flex: 1 1 280px;
+  min-width: min(230px, 100%);
+  max-width: 420px;
+}
+
+.patients-workspace .table-tools > .icon-button {
+  flex: 0 0 40px;
+}
+
+.patient-export-actions {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) auto auto;
+  align-items: end;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.patient-export-actions .ghost-button {
+  width: auto;
+  min-width: 168px;
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.patient-export-actions .ghost-button:first-of-type {
+  background: var(--action-success);
+  border-color: color-mix(in srgb, var(--action-success) 82%, black);
+}
+
+.patient-export-actions .ghost-button:first-of-type:hover {
+  background: var(--action-success-hover);
+}
+
+.patient-export-actions .ghost-button:last-of-type {
+  background: var(--action-accent);
+  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
+}
+
+.patient-export-actions .ghost-button:last-of-type:hover {
+  background: var(--action-accent-hover);
+}
+
+.export-scope-field {
+  width: 100%;
+  min-width: min(230px, 100%);
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.export-scope-field select {
+  min-height: 40px;
+}
+
+.patient-filter-grid {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(150px, auto);
+  gap: 10px;
+  align-items: end;
+}
+
+.filter-field {
+  min-width: 0;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.filter-field input,
+.filter-field select {
+  min-width: 0;
+  min-height: 38px;
+}
+
+.patient-clear-filters {
+  width: 100%;
+  min-height: 38px;
+  padding-inline: 12px;
+  background: var(--action-danger);
+  border-color: color-mix(in srgb, var(--action-danger) 82%, black);
+}
+
+.patient-clear-filters:hover {
+  background: var(--action-danger-hover);
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  .patients-workspace .table-tools {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+
+  .patients-workspace .table-tools > .search-box {
+    max-width: none;
+  }
+
+  .patient-export-actions {
+    flex: 1 1 100%;
+    grid-template-columns: minmax(220px, 1fr) minmax(154px, auto) minmax(154px, auto);
+  }
+
+  .patient-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .patient-clear-filters {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .patient-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .patients-carousel-wrap tbody tr {
+    flex-basis: min(88vw, 430px);
+    width: min(88vw, 430px);
+  }
+
+  .patients-carousel-wrap td {
+    grid-template-columns: minmax(96px, 0.36fr) minmax(0, 1fr);
+  }
+
+  .patients-workspace .table-tools {
+    justify-content: flex-start;
+  }
+
+  .patients-workspace .table-tools > .search-box {
+    flex-basis: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .patients-workspace .table-tools > .icon-button {
+    flex: 0 0 40px;
+  }
+
+  .patient-export-actions,
+  .export-scope-field,
+  .patient-export-actions .ghost-button {
+    width: 100%;
+  }
+
+  .patient-export-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .patients-carousel-wrap tbody tr:only-child {
+    flex-basis: min(100%, 430px);
+    width: min(100%, 430px);
+  }
+}

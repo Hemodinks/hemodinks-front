@@ -1,0 +1,150 @@
+.form-panel,
+.data-panel,
+.modal-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px rgba(24, 33, 47, 0.08);
+}
+
+.form-panel,
+.data-panel {
+  min-width: 0;
+  padding: 22px;
+}
+
+.module-form-panel {
+  width: min(980px, 100%);
+  margin: 0 auto;
+}
+
+.panel-title,
+.data-header {
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.panel-title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.module-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-fieldset {
+  display: contents;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.module-form-grid .profile-photo-field,
+.module-form-grid .two-column-fields,
+.module-form-grid .toggle-row,
+.module-form-grid .alert,
+.module-form-grid .primary-action {
+  grid-column: 1 / -1;
+}
+
+.password-chip {
+  color: var(--blood);
+  border: 1px solid #f0c8cf;
+  background: #fff4f6;
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.toggle-row {
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  font-weight: 800;
+}
+
+.toggle-row input {
+  min-height: auto;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--teal);
+}
+
+.two-column-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profile-photo-field {
+  display: grid;
+  gap: 9px;
+}
+
+.field-label {
+  display: block;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.photo-uploader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.file-action {
+  width: auto;
+  min-height: 38px;
+  background: var(--action-accent);
+  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
+}
+
+.file-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .form-panel,
+  .data-panel {
+    padding: 16px;
+  }
+
+  .panel-title,
+  .data-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .module-form-grid,
+  .two-column-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .photo-uploader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .photo-actions,
+  .photo-actions .ghost-button,
+  .file-action {
+    width: 100%;
+  }
+}

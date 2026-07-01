@@ -1,4 +1,4 @@
-import type { UserFormData } from '../../types';
+import type { UserFormData, UserPayload } from '../../types';
 import {
   DEFAULT_PROFILE_ID,
   formatCpfInput,
@@ -6,7 +6,6 @@ import {
   isMedicalProfileId,
   isValidBirthDate,
   isValidBrazilMobilePhone,
-  isValidCpf,
   isValidEmail,
   isValidProfileId,
   MAX_CRM_LENGTH,
@@ -43,7 +42,7 @@ export function getUserFormData(data: {
   crm?: string | null;
   crmUf?: string | null;
   fotoPerfil?: string | null;
-  dataNascimento: string;
+  dataNascimento?: string | null;
   ativo: boolean;
   perfilId: number;
 }): UserFormData {
@@ -62,6 +61,8 @@ export function getUserFormData(data: {
 }
 
 export function validateUserForm(data: UserFormData) {
+  const birthDate = data.dataNascimento.trim();
+
   if (!data.nome.trim()) {
     return 'Informe o nome completo.';
   }
@@ -78,11 +79,7 @@ export function validateUserForm(data: UserFormData) {
     return 'Informe um celular valido com DDD e 9 digitos.';
   }
 
-  if (!isValidCpf(data.cpf)) {
-    return 'Informe um CPF valido.';
-  }
-
-  if (!isValidBirthDate(data.dataNascimento)) {
+  if (birthDate && !isValidBirthDate(birthDate)) {
     return 'Informe a data de nascimento no formato dd/mm/yyyy.';
   }
 
@@ -107,16 +104,19 @@ export function validateUserForm(data: UserFormData) {
   return '';
 }
 
-export function toUserPayload(data: UserFormData): UserFormData {
+export function toUserPayload(data: UserFormData): UserPayload {
+  const cpf = normalizeCpfForPayload(data.cpf);
+  const birthDate = data.dataNascimento.trim();
+
   return {
     nome: data.nome.trim(),
     email: data.email.trim(),
     telefone: normalizePhoneForPayload(data.telefone),
-    cpf: normalizeCpfForPayload(data.cpf),
+    cpf: cpf || null,
     crm: isMedicalProfileId(data.perfilId) ? data.crm.trim() : '',
     crmUf: isMedicalProfileId(data.perfilId) ? data.crmUf.trim().toUpperCase() : '',
     fotoPerfil: data.fotoPerfil || null,
-    dataNascimento: toApiDate(data.dataNascimento),
+    dataNascimento: birthDate ? toApiDate(birthDate) : null,
     ativo: data.ativo,
     perfilId: data.perfilId,
   };
