@@ -27,7 +27,7 @@
 }
 
 .agenda-section-tab.is-active {
-  color: #fff;
+  color: #221601;
   border-color: var(--selection-accent);
   background: linear-gradient(135deg, var(--selection-accent), color-mix(in srgb, var(--selection-accent) 78%, black));
   box-shadow:
@@ -42,6 +42,7 @@
 
 .agenda-tools .ghost-button,
 .agenda-tools .icon-button {
+  color: #221601;
   background: var(--action-warning);
   border-color: color-mix(in srgb, var(--action-warning) 82%, black);
 }
@@ -53,6 +54,7 @@
 
 .agenda-tools .agenda-new-event-button,
 .agenda-tools .agenda-new-event-button:hover {
+  color: #fff;
   background: var(--action-secondary);
   border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
 }
