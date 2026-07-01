@@ -15,6 +15,7 @@ Aplicacao web do Hemodinks para administradores, medicos e pacientes. O front e 
 - lucide-react
 - jsPDF + jsPDF AutoTable carregados sob demanda
 - Sentry e New Relic opcionais para observabilidade
+- OpenTelemetry opcional para traces de browser via OTLP
 - rollup-plugin-visualizer para auditoria de bundle
 - LHCI para Lighthouse automatizavel
 
@@ -60,6 +61,12 @@ VITE_NEW_RELIC_AGENT_ID=
 VITE_NEW_RELIC_APPLICATION_ID=
 VITE_NEW_RELIC_LICENSE_KEY=
 VITE_NEW_RELIC_TRUST_KEY=
+VITE_OTEL_EXPORTER_OTLP_ENDPOINT=
+VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=
+VITE_OTEL_EXPORTER_OTLP_HEADERS=
+VITE_OTEL_EXPORTER_OTLP_TRACES_HEADERS=
+VITE_OTEL_SERVICE_NAME=hemodinks-front
+VITE_OTEL_TRACES_SAMPLE_RATE=1
 VITE_SENTRY_DSN=
 VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
@@ -75,11 +82,19 @@ VITE_NEW_RELIC_AGENT_ID=<agent-id-opcional>
 VITE_NEW_RELIC_APPLICATION_ID=<application-id-opcional>
 VITE_NEW_RELIC_LICENSE_KEY=<license-key-opcional>
 VITE_NEW_RELIC_TRUST_KEY=<trust-key-opcional>
+VITE_OTEL_EXPORTER_OTLP_ENDPOINT=<endpoint-base-otlp-opcional>
+VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=<endpoint-completo-v1-traces-opcional>
+VITE_OTEL_EXPORTER_OTLP_HEADERS=<headers-publicos-opcional>
+VITE_OTEL_EXPORTER_OTLP_TRACES_HEADERS=<headers-publicos-opcional>
+VITE_OTEL_SERVICE_NAME=hemodinks-front
+VITE_OTEL_TRACES_SAMPLE_RATE=1
 VITE_SENTRY_DSN=<dsn-opcional>
 VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 Preencha os valores `VITE_NEW_RELIC_*` com os IDs mostrados em `Browser monitoring > Install with NPM`. Se eles nao existirem, o app segue normalmente sem inicializar o agent do New Relic.
+
+Quando o front sobe pelo `Hemodinks.AppHost`, nao e necessario preencher as variaveis `VITE_OTEL_*` para o dashboard local do Aspire: o script `scripts/write-otel-runtime-config.mjs` aproveita o endpoint e os headers OTLP que o `AppHost` injeta no processo do Vite. Em build publicado, use `VITE_OTEL_*` so com valores seguros para browser. Se o backend OTLP exigir segredo privado, prefira um collector ou proxy seu em vez de expor a credencial no bundle.
 
 ## Executar
 
@@ -130,6 +145,7 @@ O Vite sobe em `http://localhost:5173` por padrao. O script usa `--host 0.0.0.0`
 - tema claro/escuro
 - Error Boundary com fallback visual
 - observabilidade opcional via Sentry e New Relic Browser
+- traces de browser opcionais via OpenTelemetry/OTLP para Aspire Dashboard ou backend externo
 - layout responsivo testado em 360px, 390px e 768px
 - modais com fechamento por ESC, foco inicial e restauracao de foco
 - componentes base aplicados em listas, formularios, agenda e modais principais
@@ -159,6 +175,7 @@ Pontos principais:
 - `src/queryClient.ts` centraliza configuracao do TanStack Query.
 - `src/observability.ts` inicializa Sentry quando `VITE_SENTRY_DSN` existe.
 - `src/newRelic.ts` concentra a configuracao opcional do Browser monitoring.
+- `src/otel.ts` inicializa traces de browser via OTLP quando existe configuracao valida.
 - `src/shared/queryKeys.ts` centraliza chaves de cache.
 - `src/shared/components/ui.tsx` concentra componentes base de UI.
 - `src/shared/components/ErrorBoundary.tsx` captura erros inesperados da arvore React.
