@@ -1,4 +1,4 @@
-import type { ChangePasswordPayload, ListQuery, PagedResult, User, UserArquivo, UserFormData } from '../types';
+import type { ChangePasswordPayload, ListQuery, PagedResult, User, UserArquivo, UserPayload } from '../types';
 import { del, get, getBlob, post, put, upload } from './api';
 import { buildListQueryParams } from './queryParams';
 
@@ -16,11 +16,11 @@ export function getUserProfilePhoto(id: number, token: string) {
   return getBlob(`/api/users/${id}/foto-perfil`, token);
 }
 
-export function createUser(payload: UserFormData, token: string) {
+export function createUser(payload: UserPayload, token: string) {
   return post<User>('/api/users/', payload, token);
 }
 
-export function updateUser(id: number, payload: UserFormData, token: string) {
+export function updateUser(id: number, payload: UserPayload, token: string) {
   return put<User>(`/api/users/${id}`, payload, token);
 }
 

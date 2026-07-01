@@ -3,6 +3,7 @@ import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, P
 import type { ModuleMode, PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
 import { PatientForm } from './PatientForm';
 import { PatientList } from './PatientList';
+import './patients.css';
 
 type PatientsPageProps = {
   moduleMode: ModuleMode;

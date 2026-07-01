@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ReceiptText, ShieldPlus, Users } from 'lucide-react';
+import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -15,6 +15,7 @@ type SidebarProps = {
   canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
+  medicalGroupsCount: number;
   pendingPaymentsCount: number;
   unreadAgendaNotificationCount: number;
   onOpenDashboard: () => void;
@@ -24,6 +25,7 @@ type SidebarProps = {
   onOpenBilling: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
+  onOpenSettings: () => void;
 };
 
 export function Sidebar({
@@ -38,6 +40,7 @@ export function Sidebar({
   canAccessAgenda,
   usersCount,
   pacientesCount,
+  medicalGroupsCount,
   pendingPaymentsCount,
   unreadAgendaNotificationCount,
   onOpenDashboard,
@@ -47,6 +50,7 @@ export function Sidebar({
   onOpenBilling,
   onOpenMedicalGroups,
   onOpenAgenda,
+  onOpenSettings,
 }: SidebarProps) {
   return (
     <aside className="sidebar-panel" aria-label="Sessao ativa">
@@ -74,7 +78,7 @@ export function Sidebar({
           {canAccessDashboard && (
             <button
               type="button"
-              className={activeView === 'dashboard' ? 'active' : ''}
+              className={`side-nav-dashboard ${activeView === 'dashboard' ? 'active' : ''}`}
               aria-current={activeView === 'dashboard' ? 'page' : undefined}
               onClick={onOpenDashboard}
             >
@@ -97,7 +101,7 @@ export function Sidebar({
           {canEditOwnUser && (
             <button
               type="button"
-              className={activeView === 'profile' ? 'active' : ''}
+              className={`side-nav-profile ${activeView === 'profile' ? 'active' : ''}`}
               aria-current={activeView === 'profile' ? 'page' : undefined}
               onClick={onOpenMyProfile}
             >
@@ -138,6 +142,7 @@ export function Sidebar({
             >
               <ShieldPlus size={18} />
               <span>Grupos medicos</span>
+              <span className="side-nav-count">{medicalGroupsCount}</span>
             </button>
           )}
           {canAccessAgenda && (
@@ -154,6 +159,15 @@ export function Sidebar({
               )}
             </button>
           )}
+          <button
+            type="button"
+            className={`side-nav-settings ${activeView === 'settings' ? 'active' : ''}`}
+            aria-current={activeView === 'settings' ? 'page' : undefined}
+            onClick={onOpenSettings}
+          >
+            <Settings size={18} />
+            <span>Configuracao</span>
+          </button>
         </nav>
       </div>
     </aside>

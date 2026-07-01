@@ -1,5 +1,6 @@
 export * from './api';
 export * from './authService';
+export * from './billingService';
 export * from './cbhpmService';
 export * from './conveniosService';
 export * from './dashboardService';
@@ -9,4 +10,5 @@ export * from './medicalGroupsService';
 export * from './opmeService';
 export * from './patientsService';
 export * from './publicHolidaysService';
+export * from './systemSettingsService';
 export * from './usersService';
