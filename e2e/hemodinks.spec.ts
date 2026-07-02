@@ -127,6 +127,19 @@ function paged<T>(items: T[]) {
 
 type Payload = Record<string, unknown>;
 
+function toDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function toTimeInputValue(date: Date) {
+  const hours = `${date.getHours()}`.padStart(2, '0');
+  const minutes = `${date.getMinutes()}`.padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
 function buildPacienteFromPayload(id: number, payload: Payload) {
   const procedimentos = Array.isArray(payload.procedimentos)
     ? payload.procedimentos
@@ -544,12 +557,21 @@ test('cadastra e edita paciente usando o fluxo real do formulario', async ({ pag
 
 test('cadastra evento na agenda', async ({ page }) => {
   const apiState = await mockApi(page);
+  const start = new Date();
+  start.setMinutes(0, 0, 0);
+  start.setHours(start.getHours() + 1);
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+
   await loginViaUi(page, '/agenda');
   await expect(page.getByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeVisible();
   await page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' }).click();
   await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
   await page.getByLabel('Titulo').fill('Evento E2E');
   await page.getByLabel('Descricao').fill('Validacao automatizada da agenda');
+  await page.getByLabel('Inicio').fill(toDateInputValue(start));
+  await page.getByLabel('Hora').first().fill(toTimeInputValue(start));
+  await page.getByLabel('Termino').fill(toDateInputValue(end));
+  await page.getByLabel('Hora').nth(1).fill(toTimeInputValue(end));
   await page.getByRole('button', { name: 'Cadastrar evento' }).click();
 
   await expect(page.getByText('Evento cadastrado.')).toBeVisible();
