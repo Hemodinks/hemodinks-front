@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { buildEmptyForm } from './features/events/AgendaPage';
 import * as api from './services';
 import { CbhpmLookupModal } from './features/patients/CbhpmLookupModal';
 import { queryClient } from './queryClient';
@@ -401,6 +402,15 @@ describe('App', () => {
     await user.click(newEventButtons[0]);
     expect(await screen.findByRole('heading', { name: 'Novo evento', level: 2 })).toBeInTheDocument();
     expect(api.getAgendaEvents).toHaveBeenCalled();
+  });
+
+  it('mantem o formulario da agenda valido quando o horario padrao cruza a meia-noite', () => {
+    const form = buildEmptyForm('2026-07-02', false, undefined, new Date(2026, 6, 2, 22, 20, 0));
+
+    expect(form.startDate).toBe('2026-07-02');
+    expect(form.startTime).toBe('23:00');
+    expect(form.endDate).toBe('2026-07-03');
+    expect(form.endTime).toBe('00:00');
   });
 
   it('exclui apenas o evento clicado na agenda', async () => {
