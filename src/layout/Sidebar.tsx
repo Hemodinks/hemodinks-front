@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ShieldPlus, Users } from 'lucide-react';
+import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -10,17 +10,22 @@ type SidebarProps = {
   canAccessDashboard: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
+  canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
   canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
+  medicalGroupsCount: number;
+  pendingPaymentsCount: number;
   unreadAgendaNotificationCount: number;
   onOpenDashboard: () => void;
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenBilling: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
+  onOpenSettings: () => void;
 };
 
 export function Sidebar({
@@ -30,17 +35,22 @@ export function Sidebar({
   canAccessDashboard,
   canAccessUsers,
   canEditOwnUser,
+  canAccessBilling,
   canAccessMedicalGroups,
   canAccessAgenda,
   usersCount,
   pacientesCount,
+  medicalGroupsCount,
+  pendingPaymentsCount,
   unreadAgendaNotificationCount,
   onOpenDashboard,
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenBilling,
   onOpenMedicalGroups,
   onOpenAgenda,
+  onOpenSettings,
 }: SidebarProps) {
   return (
     <aside className="sidebar-panel" aria-label="Sessao ativa">
@@ -68,7 +78,7 @@ export function Sidebar({
           {canAccessDashboard && (
             <button
               type="button"
-              className={activeView === 'dashboard' ? 'active' : ''}
+              className={`side-nav-dashboard ${activeView === 'dashboard' ? 'active' : ''}`}
               aria-current={activeView === 'dashboard' ? 'page' : undefined}
               onClick={onOpenDashboard}
             >
@@ -91,7 +101,7 @@ export function Sidebar({
           {canEditOwnUser && (
             <button
               type="button"
-              className={activeView === 'profile' ? 'active' : ''}
+              className={`side-nav-profile ${activeView === 'profile' ? 'active' : ''}`}
               aria-current={activeView === 'profile' ? 'page' : undefined}
               onClick={onOpenMyProfile}
             >
@@ -109,6 +119,20 @@ export function Sidebar({
             <span>Pacientes</span>
             <span className="side-nav-count">{pacientesCount}</span>
           </button>
+          {canAccessBilling && (
+            <button
+              type="button"
+              className={`side-nav-billing ${activeView === 'billing' ? 'active' : ''}`}
+              aria-current={activeView === 'billing' ? 'page' : undefined}
+              onClick={onOpenBilling}
+            >
+              <ReceiptText size={18} />
+              <span>Faturamento medico</span>
+              {pendingPaymentsCount > 0 && (
+                <span className="side-nav-count">{pendingPaymentsCount}</span>
+              )}
+            </button>
+          )}
           {canAccessMedicalGroups && (
             <button
               type="button"
@@ -118,6 +142,7 @@ export function Sidebar({
             >
               <ShieldPlus size={18} />
               <span>Grupos medicos</span>
+              <span className="side-nav-count">{medicalGroupsCount}</span>
             </button>
           )}
           {canAccessAgenda && (
@@ -134,6 +159,15 @@ export function Sidebar({
               )}
             </button>
           )}
+          <button
+            type="button"
+            className={`side-nav-settings ${activeView === 'settings' ? 'active' : ''}`}
+            aria-current={activeView === 'settings' ? 'page' : undefined}
+            onClick={onOpenSettings}
+          >
+            <Settings size={18} />
+            <span>Configuracao</span>
+          </button>
         </nav>
       </div>
     </aside>

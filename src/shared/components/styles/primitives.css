@@ -1,0 +1,94 @@
+.brand-block,
+.topbar-brand,
+.panel-title,
+.data-header,
+.topbar-actions,
+.current-user,
+.button-row,
+.alert,
+.toggle-row {
+  display: flex;
+  align-items: center;
+}
+
+.brand-block {
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.brand-mark,
+.topbar-logo {
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.brand-mark {
+  width: 62px;
+  height: 62px;
+  background: #000;
+  object-fit: contain;
+}
+
+.topbar-logo {
+  width: 48px;
+  height: 48px;
+}
+
+.eyebrow {
+  color: var(--blood);
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 1.85rem;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 1.15rem;
+}
+
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+label {
+  display: grid;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  h1 {
+    font-size: 1.55rem;
+  }
+}
+
+@media (max-width: 520px) {
+  h1 {
+    font-size: 1.4rem;
+  }
+}

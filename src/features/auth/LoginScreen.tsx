@@ -1,7 +1,7 @@
 import { type FormEvent } from 'react';
 import { LogIn } from 'lucide-react';
-import brandImage from '../../../imagem hemodinks github.jpg';
 import type { Theme } from '../../appTypes';
+import { CompanyLogo } from '../../shared/components/CompanyLogo';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
@@ -10,8 +10,11 @@ import {
   MAX_EMAIL_LENGTH,
   MAX_PASSWORD_LENGTH,
 } from '../../shared/utils/formatters';
+import './auth.css';
 
 type LoginScreenProps = {
+  companyName: string;
+  companyPhoto?: string | null;
   isBusy: boolean;
   theme: Theme;
   loginEmail: string;
@@ -28,6 +31,8 @@ type LoginScreenProps = {
 };
 
 export function LoginScreen({
+  companyName,
+  companyPhoto,
   isBusy,
   theme,
   loginEmail,
@@ -49,9 +54,9 @@ export function LoginScreen({
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel">
         <div className="brand-block">
-          <img src={brandImage} alt="Hemodinks" className="brand-mark" />
+          <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
           <div>
-            <span className="eyebrow">Hemodinks</span>
+            <span className="eyebrow">{companyName}</span>
             <h1>Acesso ao sistema</h1>
           </div>
         </div>

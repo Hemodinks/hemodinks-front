@@ -10,6 +10,9 @@
   --dashboard-patients: #2563eb;
   --dashboard-patients-soft: rgba(37, 99, 235, 0.12);
   --dashboard-patients-border: rgba(37, 99, 235, 0.32);
+  --dashboard-billing: #b45309;
+  --dashboard-billing-soft: rgba(180, 83, 9, 0.12);
+  --dashboard-billing-border: rgba(180, 83, 9, 0.3);
   --dashboard-profile: #7c3aed;
   --dashboard-profile-soft: rgba(124, 58, 237, 0.1);
   --dashboard-profile-border: rgba(124, 58, 237, 0.28);
@@ -19,6 +22,9 @@
   --dashboard-agenda: #b7791f;
   --dashboard-agenda-soft: rgba(183, 121, 31, 0.14);
   --dashboard-agenda-border: rgba(183, 121, 31, 0.34);
+  --dashboard-settings: #475569;
+  --dashboard-settings-soft: rgba(71, 85, 105, 0.12);
+  --dashboard-settings-border: rgba(71, 85, 105, 0.3);
   --dashboard-pending: #b7791f;
   --dashboard-pending-soft: rgba(183, 121, 31, 0.14);
   --dashboard-pending-border: rgba(183, 121, 31, 0.34);
@@ -151,11 +157,31 @@
   background: linear-gradient(135deg, var(--module-color, var(--action-secondary)), color-mix(in srgb, var(--module-color, var(--action-secondary)) 78%, black));
   box-shadow: 0 12px 24px color-mix(in srgb, var(--module-color, var(--action-secondary)) 18%, transparent);
   text-align: left;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    opacity 0.18s ease;
 }
 
 .module-card:hover {
   border-color: color-mix(in srgb, var(--module-color, var(--action-secondary)) 82%, black);
   background: linear-gradient(135deg, color-mix(in srgb, var(--module-color, var(--action-secondary)) 92%, white), color-mix(in srgb, var(--module-color, var(--action-secondary)) 70%, black));
+}
+
+.module-card.is-dragging {
+  opacity: 0.56;
+  transform: scale(0.985);
+}
+
+.module-card.is-drop-target {
+  border-color: #fff;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, white 24%, transparent),
+    0 18px 32px color-mix(in srgb, var(--module-color, var(--action-secondary)) 24%, transparent);
+  transform: translateY(-2px);
 }
 
 .module-card-menu {
@@ -170,6 +196,12 @@
   border-radius: 8px;
   color: var(--module-color, var(--action-secondary));
   background: #fff;
+  cursor: grab;
+  user-select: none;
+}
+
+.module-card-menu:active {
+  cursor: grabbing;
 }
 
 .module-icon {
@@ -238,6 +270,12 @@
   --module-border: var(--dashboard-patients-border);
 }
 
+.module-card-billing {
+  --module-color: var(--dashboard-billing);
+  --module-soft: var(--dashboard-billing-soft);
+  --module-border: var(--dashboard-billing-border);
+}
+
 .module-card-profile {
   --module-color: var(--dashboard-profile);
   --module-soft: var(--dashboard-profile-soft);
@@ -254,4 +292,236 @@
   --module-color: var(--dashboard-agenda);
   --module-soft: var(--dashboard-agenda-soft);
   --module-border: var(--dashboard-agenda-border);
+}
+
+.module-card-settings {
+  --module-color: var(--dashboard-settings);
+  --module-soft: var(--dashboard-settings-soft);
+  --module-border: var(--dashboard-settings-border);
+}
+
+.notifications-modal {
+  width: min(620px, 100%);
+  max-height: min(82vh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.notification-summary-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--teal);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.notifications-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0 6px 0 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.notifications-modal .notifications-list {
+  max-height: min(56vh, 520px);
+}
+
+.notifications-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.notifications-list::-webkit-scrollbar-track {
+  background: var(--input-bg);
+  border-radius: 999px;
+}
+
+.notifications-list::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+}
+
+.notifications-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+.notifications-list li.is-unread {
+  border-color: color-mix(in srgb, var(--blood) 34%, var(--line));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--blood) 8%, var(--panel-strong)), var(--panel-strong));
+}
+
+.notification-item-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--amber);
+  background: rgba(251, 191, 36, 0.16);
+}
+
+.notification-item-body {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.notification-item-body strong {
+  color: var(--ink);
+}
+
+.notification-item-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.notification-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.notification-meta-row span {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 7px;
+  color: var(--ink);
+  background: var(--input-bg);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.notification-read-status {
+  border-radius: 999px;
+  padding: 4px 7px;
+}
+
+.notification-read-status.is-unread {
+  color: var(--blood);
+  background: color-mix(in srgb, var(--blood) 10%, var(--panel-strong));
+}
+
+.notification-read-status.is-read {
+  color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 10%, var(--panel-strong));
+}
+
+.notification-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.notification-open-thread-action {
+  width: auto;
+  min-height: 36px;
+}
+
+@media (max-width: 1280px) {
+  .dashboard-info-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-info-title {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 1180px) {
+  .module-card {
+    min-height: 128px;
+    padding: 18px 52px 18px 18px;
+  }
+}
+
+@media (max-width: 980px) {
+  .info-summary-grid {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .module-grid,
+  .info-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-info-panel {
+    gap: 10px;
+    padding: 16px;
+  }
+
+  .dashboard-info-title h3 {
+    font-size: 1.22rem;
+  }
+
+  .module-grid {
+    gap: 10px;
+  }
+
+  .module-card {
+    min-height: 82px;
+    gap: 6px;
+    padding: 12px 38px 12px 12px;
+  }
+
+  .module-card,
+  .info-summary-item {
+    min-height: auto;
+  }
+
+  .module-card-menu {
+    top: 9px;
+    right: 9px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .module-icon,
+  .info-summary-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .module-metric {
+    font-size: 0.92rem;
+  }
+
+  .module-card-foot {
+    margin-top: 2px;
+    gap: 8px;
+  }
+
+  .info-summary-item {
+    min-height: 78px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  .module-card {
+    min-height: 76px;
+  }
+
+  .module-title,
+  .info-summary-label {
+    font-size: 0.72rem;
+  }
+
+  .module-card-foot span {
+    font-size: 0.76rem;
+  }
 }

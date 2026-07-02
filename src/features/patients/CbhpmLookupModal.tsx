@@ -6,6 +6,7 @@ import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, Button, IconButton, TextField } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
 import { normalizeCbhpmCodigo } from './patientUtils';
+import './patients.css';
 
 type CbhpmLookupModalProps = {
   items: CbhpmGeral[];

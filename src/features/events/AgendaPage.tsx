@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import './events.css';
 import {
   completeAgendaEvent,
   createAgendaEvent,
@@ -23,7 +24,7 @@ import {
   getAgendaNotificationRecipientOptions,
   getBrazilPublicHolidays,
   updateAgendaEvent,
-} from '../../api';
+} from '../../services';
 import type {
   AgendaEvent,
   AgendaEventPayload,
@@ -99,8 +100,12 @@ function toTimeInput(date: Date) {
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
-function buildEmptyForm(dateKey = toDateKey(new Date()), isMedical = false, userId?: number): AgendaFormData {
-  const now = new Date();
+export function buildEmptyForm(
+  dateKey = toDateKey(new Date()),
+  isMedical = false,
+  userId?: number,
+  now = new Date(),
+): AgendaFormData {
   const start = toDateKey(now) === dateKey ? new Date(now.getTime() + 60 * 60 * 1000) : new Date(`${dateKey}T09:00:00`);
   start.setMinutes(0, 0, 0);
   const end = new Date(start.getTime() + 60 * 60 * 1000);
@@ -108,9 +113,9 @@ function buildEmptyForm(dateKey = toDateKey(new Date()), isMedical = false, user
   return {
     title: '',
     description: '',
-    startDate: dateKey,
+    startDate: toDateKey(start),
     startTime: toTimeInput(start),
-    endDate: dateKey,
+    endDate: toDateKey(end),
     endTime: toTimeInput(end),
     notifyMedicalProfile: false,
     medicalUserId: isMedical && userId ? String(userId) : '',
@@ -139,6 +144,11 @@ function eventTouchesDate(event: AgendaEvent, dateKey: string) {
   const startKey = toDateKey(new Date(event.start));
   const endKey = toDateKey(new Date(event.end));
   return startKey <= dateKey && endKey >= dateKey;
+}
+
+function mergeAgendaEvent(currentEvents: AgendaEvent[], agendaEvent: AgendaEvent) {
+  return [...currentEvents.filter((item) => item.id !== agendaEvent.id), agendaEvent]
+    .sort((first, second) => new Date(first.start).getTime() - new Date(second.start).getTime());
 }
 
 function composeDateTime(dateKey: string, timeValue: string) {
@@ -382,12 +392,13 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
         ? await updateAgendaEvent(editingEventId, payload, session.token)
         : await createAgendaEvent(payload, session.token);
 
+      setEvents((current) => mergeAgendaEvent(current, savedEvent));
       setSuccessMessage(editingEventId ? 'Evento atualizado.' : 'Evento cadastrado.');
       setSelectedDate(toDateKey(new Date(savedEvent.start)));
       setVisibleMonth(new Date(new Date(savedEvent.start).getFullYear(), new Date(savedEvent.start).getMonth(), 1));
       resetForm(toDateKey(new Date(savedEvent.start)));
       setActiveSection('calendario');
-      await loadEvents();
+      void loadEvents();
     } catch (caughtError) {
       setError(getErrorMessage(caughtError));
     } finally {

@@ -8,3 +8,4 @@ test-results
 playwright-report
 reports
 .lighthouseci
+public/otel-runtime-config.json

@@ -3,6 +3,7 @@ import type { Paciente, PacienteObservacao } from '../../types';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, Button, IconButton, TextareaField } from '../../shared/components/ui';
 import { MAX_OBSERVATION_LENGTH, toNotificationDate } from '../../shared/utils/formatters';
+import './patients.css';
 
 type PatientObservacoesModalProps = {
   paciente: Paciente;
@@ -109,7 +110,7 @@ export function PatientObservacoesModal({
                   <span className="patient-observation-destination">Para {observacao.destinatarioNome}</span>
                 </div>
                 <p>{observacao.texto}</p>
-                <div className="notification-meta-row">
+                <div className="patient-observation-meta-row">
                   <span>{observacao.autorPerfilNome}</span>
                   <span>{toNotificationDate(observacao.dataCadastro) || 'Agora'}</span>
                   {observacao.foiLida ? (

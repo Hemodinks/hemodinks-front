@@ -20,6 +20,11 @@ Variavel obrigatoria em ambientes publicados:
 VITE_API_URL=https://<api-publica>
 VITE_APP_ENV=production
 VITE_APP_VERSION=<versao-ou-sha>
+VITE_NEW_RELIC_ACCOUNT_ID=<account-id-opcional>
+VITE_NEW_RELIC_AGENT_ID=<agent-id-opcional>
+VITE_NEW_RELIC_APPLICATION_ID=<application-id-opcional>
+VITE_NEW_RELIC_LICENSE_KEY=<license-key-opcional>
+VITE_NEW_RELIC_TRUST_KEY=<trust-key-opcional>
 VITE_SENTRY_DSN=<dsn-opcional>
 VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
@@ -82,11 +87,16 @@ VERCEL_TOKEN
 VERCEL_ORG_ID
 VERCEL_PROJECT_ID
 VITE_API_URL
+VITE_NEW_RELIC_ACCOUNT_ID
+VITE_NEW_RELIC_AGENT_ID
+VITE_NEW_RELIC_APPLICATION_ID
+VITE_NEW_RELIC_LICENSE_KEY
+VITE_NEW_RELIC_TRUST_KEY
 VITE_SENTRY_DSN
 VITE_SENTRY_TRACES_SAMPLE_RATE
 ```
 
-`VITE_APP_ENV=production` e `VITE_APP_VERSION=<sha>` sao definidos pelo workflow. Cadastre `VITE_SENTRY_DSN` nos secrets do GitHub e tambem no painel da Vercel caso o build seja disparado diretamente por la.
+`VITE_APP_ENV=production` e `VITE_APP_VERSION=<sha>` sao definidos pelo workflow. Cadastre `VITE_SENTRY_DSN` e, se quiser Browser monitoring no front, as `VITE_NEW_RELIC_*` nos secrets do GitHub e tambem no painel da Vercel caso o build seja disparado diretamente por la.
 
 Workflow atual:
 
@@ -116,6 +126,11 @@ NODE_VERSION=22.12.0
 VITE_API_URL=https://<api-publica>
 VITE_APP_ENV=production
 VITE_APP_VERSION=<versao-ou-sha>
+VITE_NEW_RELIC_ACCOUNT_ID=<account-id-opcional>
+VITE_NEW_RELIC_AGENT_ID=<agent-id-opcional>
+VITE_NEW_RELIC_APPLICATION_ID=<application-id-opcional>
+VITE_NEW_RELIC_LICENSE_KEY=<license-key-opcional>
+VITE_NEW_RELIC_TRUST_KEY=<trust-key-opcional>
 VITE_SENTRY_DSN=<dsn-opcional>
 VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
@@ -136,13 +151,18 @@ Variavel de referencia:
 VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
 VITE_APP_ENV=confirmation
 VITE_APP_VERSION=<versao-ou-sha>
+VITE_NEW_RELIC_ACCOUNT_ID=<account-id-opcional>
+VITE_NEW_RELIC_AGENT_ID=<agent-id-opcional>
+VITE_NEW_RELIC_APPLICATION_ID=<application-id-opcional>
+VITE_NEW_RELIC_LICENSE_KEY=<license-key-opcional>
+VITE_NEW_RELIC_TRUST_KEY=<trust-key-opcional>
 VITE_SENTRY_DSN=<dsn-opcional>
 VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 O arquivo `.env.confirmation.example` contem o mesmo valor para build local ou configuracao manual.
 
-Para Sentry em Render, cadastre `VITE_SENTRY_DSN` como secret/environment variable no servico. Sem esse valor, o Error Boundary continua funcionando, mas os erros nao sao enviados ao Sentry.
+Para Sentry em Render, cadastre `VITE_SENTRY_DSN` como secret/environment variable no servico. Para New Relic Browser, copie os valores da tela `Browser monitoring > Install with NPM` para as `VITE_NEW_RELIC_*`. Sem esses valores, o front publica normalmente, mas sem enviar telemetria do Browser monitoring.
 
 No backend de homologacao, libere a origem do front:
 
@@ -171,6 +191,7 @@ Validar no navegador:
 - layout sem scroll horizontal em 360px, 390px e 768px
 - fallback do Error Boundary
 - evento de erro chegando ao Sentry quando `VITE_SENTRY_DSN` estiver configurado
+- page views e requests aparecendo no New Relic Browser quando `VITE_NEW_RELIC_*` estiverem configuradas
 
 ## CORS
 

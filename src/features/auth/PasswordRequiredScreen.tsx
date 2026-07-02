@@ -5,6 +5,7 @@ import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordForm } from '../../shared/components/PasswordForm';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
+import './auth.css';
 
 type PasswordRequiredScreenProps = {
   session: AuthSession;

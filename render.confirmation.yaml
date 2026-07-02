@@ -16,6 +16,16 @@ services:
         value: confirmation
       - key: VITE_APP_VERSION
         sync: false
+      - key: VITE_NEW_RELIC_ACCOUNT_ID
+        sync: false
+      - key: VITE_NEW_RELIC_AGENT_ID
+        sync: false
+      - key: VITE_NEW_RELIC_APPLICATION_ID
+        sync: false
+      - key: VITE_NEW_RELIC_LICENSE_KEY
+        sync: false
+      - key: VITE_NEW_RELIC_TRUST_KEY
+        sync: false
       - key: VITE_SENTRY_DSN
         sync: false
       - key: VITE_SENTRY_TRACES_SAMPLE_RATE

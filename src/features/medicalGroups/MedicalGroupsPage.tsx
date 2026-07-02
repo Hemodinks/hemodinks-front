@@ -3,6 +3,7 @@ import type { MedicalGroup, MedicalGroupFormData, MedicalUserOption } from '../.
 import type { ModuleMode } from '../../appTypes';
 import { MedicalGroupForm } from './MedicalGroupForm';
 import { MedicalGroupList } from './MedicalGroupList';
+import './medicalGroups.css';
 
 type MedicalGroupsPageProps = {
   moduleMode: ModuleMode;
