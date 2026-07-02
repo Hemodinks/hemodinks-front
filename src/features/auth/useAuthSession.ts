@@ -3,31 +3,23 @@ import type { AuthSession } from '../../types';
 
 const SESSION_KEY = 'hemodinks.session';
 
-function loadStoredSession(): AuthSession | null {
-  const rawSession = localStorage.getItem(SESSION_KEY);
-
-  if (!rawSession) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(rawSession) as AuthSession;
-  } catch {
-    localStorage.removeItem(SESSION_KEY);
-    return null;
-  }
+function clearStoredSession() {
+  localStorage.removeItem(SESSION_KEY);
 }
 
 export function useAuthSession() {
-  const [session, setSession] = useState<AuthSession | null>(() => loadStoredSession());
+  const [session, setSession] = useState<AuthSession | null>(() => {
+    clearStoredSession();
+    return null;
+  });
 
   const persistSession = useCallback((nextSession: AuthSession) => {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
+    clearStoredSession();
     setSession(nextSession);
   }, []);
 
   const clearSession = useCallback(() => {
-    localStorage.removeItem(SESSION_KEY);
+    clearStoredSession();
     setSession(null);
   }, []);
 

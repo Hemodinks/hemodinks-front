@@ -1,0 +1,33 @@
+.user-avatar {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--soft);
+  color: var(--teal);
+  font-weight: 900;
+}
+
+.user-avatar.sm {
+  width: 34px;
+  height: 34px;
+  font-size: 0.74rem;
+}
+
+.user-avatar.lg {
+  width: 76px;
+  height: 76px;
+  font-size: 1.15rem;
+}
+
+.user-avatar.fallback {
+  text-transform: uppercase;
+}
+
+img.user-avatar {
+  display: inline-block;
+}

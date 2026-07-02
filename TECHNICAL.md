@@ -21,6 +21,7 @@ src/
   App.tsx
   appTypes.ts
   main.tsx
+  newRelic.ts
   observability.ts
   queryClient.ts
   routes.ts
@@ -45,10 +46,12 @@ Responsabilidades:
 
 | Caminho | Responsabilidade |
 | --- | --- |
-| `src/api.ts` | cliente HTTP e contratos de endpoint |
+| `src/services/api.ts` | cliente HTTP centralizado com axios |
+| `src/services/*Service.ts` | servicos por dominio e endpoint da aplicacao |
 | `src/App.tsx` | sessao, rotas, layout, modais globais e integracao entre dominios |
 | `src/routes.ts` | mapeamento entre views internas e paths da SPA |
 | `src/queryClient.ts` | configuracao global do TanStack Query |
+| `src/newRelic.ts` | inicializacao opcional do Browser agent do New Relic |
 | `src/observability.ts` | Sentry opcional e captura centralizada de erros |
 | `src/shared/queryKeys.ts` | chaves padronizadas de cache/invalidation |
 | `src/shared/components/ui.tsx` | componentes base do design system |
@@ -266,6 +269,7 @@ Lighthouse:
 
 Arquivos:
 
+- `src/newRelic.ts`
 - `src/observability.ts`
 - `src/shared/components/ErrorBoundary.tsx`
 
@@ -274,12 +278,20 @@ Variaveis:
 ```text
 VITE_APP_ENV=production
 VITE_APP_VERSION=<versao-ou-sha>
+VITE_NEW_RELIC_ACCOUNT_ID=<account-id-opcional>
+VITE_NEW_RELIC_AGENT_ID=<agent-id-opcional>
+VITE_NEW_RELIC_APPLICATION_ID=<application-id-opcional>
+VITE_NEW_RELIC_LICENSE_KEY=<license-key-opcional>
+VITE_NEW_RELIC_TRUST_KEY=<trust-key-opcional>
 VITE_SENTRY_DSN=<dsn-opcional>
 VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 Comportamento:
 
+- `src/main.tsx` tenta subir o Browser agent do New Relic antes do bootstrap do React
+- sem `VITE_NEW_RELIC_*` completos, o Browser monitoring fica desativado sem bloquear o app
+- com `VITE_NEW_RELIC_*`, page views, requests e metricas de SPA passam a ser enviadas ao New Relic Browser
 - sem `VITE_SENTRY_DSN`, erros sao registrados apenas no console em desenvolvimento
 - com `VITE_SENTRY_DSN`, excecoes sao enviadas ao Sentry
 - usuario logado e associado ao contexto do Sentry
@@ -380,7 +392,7 @@ npx playwright install chromium
 
 Arquivos principais:
 
-- `src/api.test.ts`
+- `src/services/api.test.ts`
 - `src/App.test.tsx`
 - `e2e/hemodinks.spec.ts`
 - `playwright.config.ts`
@@ -427,7 +439,7 @@ Artifacts publicados:
 - `test-results`
 - `reports/lighthouse`
 
-O CI tambem define `VITE_APP_ENV=ci`, `VITE_APP_VERSION` com o SHA do commit e aceita `VITE_SENTRY_DSN` via secret para validar o build com observabilidade habilitada quando desejado.
+O CI tambem define `VITE_APP_ENV=ci`, `VITE_APP_VERSION` com o SHA do commit e aceita `VITE_SENTRY_DSN` e `VITE_NEW_RELIC_*` via secret para validar o build com observabilidade habilitada quando desejado.
 
 ## Contratos de API
 

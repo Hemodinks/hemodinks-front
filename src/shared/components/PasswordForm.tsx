@@ -1,6 +1,6 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { KeyRound, X } from 'lucide-react';
-import { changePassword } from '../../api';
+import { changePassword } from '../../services';
 import type { AuthSession } from '../../types';
 import {
   DEFAULT_PASSWORD,

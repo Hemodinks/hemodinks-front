@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getUserProfilePhoto } from '../../api';
+import { getUserProfilePhoto } from '../../services';
 import { getUserInitials, resolveProfilePhotoSource } from '../../shared/utils/formatters';
 
 type UserAvatarProps = {

@@ -1,11 +1,4 @@
 @import './styles/base.css';
-@import './features/auth/auth.css';
 @import './shared/components/components.css';
 @import './layout/layout.css';
-@import './features/dashboard/dashboard.css';
-@import './features/events/events.css';
-@import './features/users/users.css';
-@import './features/patients/patients.css';
-@import './features/medicalGroups/medicalGroups.css';
 @import './shared/components/modals.css';
-@import './styles/responsive.css';
