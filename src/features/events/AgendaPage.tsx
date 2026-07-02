@@ -142,6 +142,11 @@ function eventTouchesDate(event: AgendaEvent, dateKey: string) {
   return startKey <= dateKey && endKey >= dateKey;
 }
 
+function mergeAgendaEvent(currentEvents: AgendaEvent[], agendaEvent: AgendaEvent) {
+  return [...currentEvents.filter((item) => item.id !== agendaEvent.id), agendaEvent]
+    .sort((first, second) => new Date(first.start).getTime() - new Date(second.start).getTime());
+}
+
 function composeDateTime(dateKey: string, timeValue: string) {
   return new Date(`${dateKey}T${timeValue || '00:00'}:00`);
 }
@@ -383,12 +388,13 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
         ? await updateAgendaEvent(editingEventId, payload, session.token)
         : await createAgendaEvent(payload, session.token);
 
+      setEvents((current) => mergeAgendaEvent(current, savedEvent));
       setSuccessMessage(editingEventId ? 'Evento atualizado.' : 'Evento cadastrado.');
       setSelectedDate(toDateKey(new Date(savedEvent.start)));
       setVisibleMonth(new Date(new Date(savedEvent.start).getFullYear(), new Date(savedEvent.start).getMonth(), 1));
       resetForm(toDateKey(new Date(savedEvent.start)));
       setActiveSection('calendario');
-      await loadEvents();
+      void loadEvents();
     } catch (caughtError) {
       setError(getErrorMessage(caughtError));
     } finally {
