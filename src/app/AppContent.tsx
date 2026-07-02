@@ -225,9 +225,16 @@ export function AppContent() {
     setResetPasswordLoading(true);
 
     try {
-      await resetPassword(loginEmail.trim());
-      setLoginPassword(DEFAULT_PASSWORD);
-      setLoginInfo(`Senha redefinida para ${DEFAULT_PASSWORD}. Use-a para entrar e altere a seguir.`);
+      const result = await resetPassword(loginEmail.trim());
+
+      if (result.mode === 'default-password') {
+        setLoginPassword(DEFAULT_PASSWORD);
+        setLoginInfo(`Senha redefinida para ${DEFAULT_PASSWORD}. Use-a para entrar e altere a seguir.`);
+        return;
+      }
+
+      setLoginPassword('');
+      setLoginInfo(result.message || 'Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.');
     } catch (error) {
       setLoginError(getErrorMessage(error));
     } finally {

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { buildEmptyForm } from './features/events/AgendaPage';
 import * as api from './services';
 import { CbhpmLookupModal } from './features/patients/CbhpmLookupModal';
 import { queryClient } from './queryClient';
@@ -403,6 +404,15 @@ describe('App', () => {
     expect(api.getAgendaEvents).toHaveBeenCalled();
   });
 
+  it('mantem o formulario da agenda valido quando o horario padrao cruza a meia-noite', () => {
+    const form = buildEmptyForm('2026-07-02', false, undefined, new Date(2026, 6, 2, 22, 20, 0));
+
+    expect(form.startDate).toBe('2026-07-02');
+    expect(form.startTime).toBe('23:00');
+    expect(form.endDate).toBe('2026-07-03');
+    expect(form.endTime).toBe('00:00');
+  });
+
   it('exclui apenas o evento clicado na agenda', async () => {
     const today = new Date();
     const todayKey = `${today.getFullYear()}-${`${today.getMonth() + 1}`.padStart(2, '0')}-${`${today.getDate()}`.padStart(2, '0')}`;
@@ -715,6 +725,12 @@ describe('App', () => {
 
   it('reseta para a senha padrao e exige troca ao entrar', async () => {
     const user = userEvent.setup();
+    vi.mocked(api.resetPassword).mockResolvedValue({
+      id: 99,
+      precisaTrocarSenha: true,
+      message: 'Nao foi possivel enviar o email de redefinicao agora. A senha padrao foi aplicada para voce entrar e trocar a seguir.',
+      mode: 'default-password',
+    });
     vi.mocked(api.authenticate).mockResolvedValue({
       id: 99,
       nome: 'George Marcone',
@@ -743,6 +759,28 @@ describe('App', () => {
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
     expect(await screen.findByRole('heading', { name: 'Troque sua senha' })).toBeInTheDocument();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
+  });
+
+  it('mostra a instrucao de email quando o backend confirma o envio', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.resetPassword).mockResolvedValue({
+      message: 'Enviamos um email com o link para redefinir sua senha. Use o link recebido para cadastrar uma nova senha.',
+      mode: 'email-token',
+    });
+
+    render(<App />);
+
+    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
+
+    await waitFor(() => {
+      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com');
+    });
+
+    expect(screen.getByLabelText('Senha')).toHaveValue('');
+    expect(screen.getByText(
+      'Enviamos um email com o link para redefinir sua senha. Use o link recebido para cadastrar uma nova senha.',
+    )).toBeInTheDocument();
   });
 
   it('mostra a tela publica de nova senha quando o link de reset possui token', async () => {
