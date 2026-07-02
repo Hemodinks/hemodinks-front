@@ -100,8 +100,12 @@ function toTimeInput(date: Date) {
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
-function buildEmptyForm(dateKey = toDateKey(new Date()), isMedical = false, userId?: number): AgendaFormData {
-  const now = new Date();
+export function buildEmptyForm(
+  dateKey = toDateKey(new Date()),
+  isMedical = false,
+  userId?: number,
+  now = new Date(),
+): AgendaFormData {
   const start = toDateKey(now) === dateKey ? new Date(now.getTime() + 60 * 60 * 1000) : new Date(`${dateKey}T09:00:00`);
   start.setMinutes(0, 0, 0);
   const end = new Date(start.getTime() + 60 * 60 * 1000);
@@ -109,9 +113,9 @@ function buildEmptyForm(dateKey = toDateKey(new Date()), isMedical = false, user
   return {
     title: '',
     description: '',
-    startDate: dateKey,
+    startDate: toDateKey(start),
     startTime: toTimeInput(start),
-    endDate: dateKey,
+    endDate: toDateKey(end),
     endTime: toTimeInput(end),
     notifyMedicalProfile: false,
     medicalUserId: isMedical && userId ? String(userId) : '',
