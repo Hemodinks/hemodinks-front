@@ -1,6 +1,6 @@
 # Hemodinks Front
 
-Aplicacao web do Hemodinks para administradores, medicos e pacientes. O front e uma SPA em React/Vite com rotas autenticadas, dashboard, usuarios, pacientes, agenda, exportacao de relatorios e integracao com CBHPM.
+SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front cobre autenticacao, redefinicao de senha, dashboard, usuarios, meu cadastro, pacientes, observacoes, faturamento medico, grupos medicos, agenda/notificacoes e configuracao do sistema.
 
 ## Stack
 
@@ -10,14 +10,17 @@ Aplicacao web do Hemodinks para administradores, medicos e pacientes. O front e 
 - React Router
 - TanStack Query
 - Vitest + Testing Library
-- Playwright
-- axe-core para auditoria de acessibilidade
+- Playwright + axe-core
 - lucide-react
 - jsPDF + jsPDF AutoTable carregados sob demanda
-- Sentry e New Relic opcionais para observabilidade
-- OpenTelemetry opcional para traces de browser via OTLP
-- rollup-plugin-visualizer para auditoria de bundle
-- LHCI para Lighthouse automatizavel
+- Sentry, New Relic Browser e OpenTelemetry opcionais para observabilidade
+- Lighthouse CI e bundle analyzer para auditoria
+
+## Mapa da documentacao
+
+- `README.md`: onboarding rapido, stack, rotas e fluxo de desenvolvimento
+- `TECHNICAL.md`: arquitetura, contratos de API e convencoes de manutencao
+- `DEPLOYMENT.md`: deploy, ambientes, CORS e checklist operacional
 
 ## URLs
 
@@ -25,26 +28,37 @@ Aplicacao web do Hemodinks para administradores, medicos e pacientes. O front e 
 | --- | --- |
 | Front local | `http://localhost:5173` |
 | Front producao | `https://hemodinks-saude.vercel.app` |
+| Front confirmation (Render blueprint) | `https://hemodinks-front-confirmation.onrender.com` |
 | API local | `http://localhost:5000` |
-| Swagger API local | `http://localhost:5000/swagger` |
-| Scalar API local | `http://localhost:5000/scalar` |
+| Swagger local | `http://localhost:5000/swagger` |
+| Scalar local | `http://localhost:5000/scalar` |
+| OpenAPI local | `http://localhost:5000/openapi/v1.json` |
+
+Em ambiente publicado, o front conversa com a base configurada em `VITE_API_URL`. Se a API publicada expuser documentacao interativa com `ApiDocumentation__Enabled=true`, os atalhos ficam em:
+
+- `${VITE_API_URL}/swagger`
+- `${VITE_API_URL}/scalar`
+- `${VITE_API_URL}/openapi/v1.json`
 
 ## Requisitos
 
-- Node.js 22 recomendado
+- Node.js 22
 - npm
-- Chromium do Playwright para testes E2E
+- Chromium do Playwright para E2E e auditoria de acessibilidade
 
-Em uma maquina nova:
+Bootstrap em maquina nova:
 
 ```powershell
 npm ci
+Copy-Item .env.example .env.local
 npx playwright install chromium
 ```
 
 ## Configuracao
 
-O front usa `VITE_API_URL` para localizar a API. Se a variavel nao existir, o codigo usa `http://localhost:5000`.
+O front usa `VITE_API_URL` para localizar a API. Sem essa variavel, o fallback de desenvolvimento e `http://localhost:5000`.
+
+Arquivo base:
 
 ```powershell
 Copy-Item .env.example .env.local
@@ -59,6 +73,8 @@ VITE_APP_VERSION=local
 VITE_NEW_RELIC_ACCOUNT_ID=
 VITE_NEW_RELIC_AGENT_ID=
 VITE_NEW_RELIC_APPLICATION_ID=
+VITE_NEW_RELIC_BEACON=
+VITE_NEW_RELIC_ERROR_BEACON=
 VITE_NEW_RELIC_LICENSE_KEY=
 VITE_NEW_RELIC_TRUST_KEY=
 VITE_OTEL_EXPORTER_OTLP_ENDPOINT=
@@ -71,30 +87,18 @@ VITE_SENTRY_DSN=
 VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
-Exemplo producao/homologacao:
+Exemplo confirmation:
 
-```text
-VITE_API_URL=https://<api-publica>
-VITE_APP_ENV=production
-VITE_APP_VERSION=<sha-ou-versao>
-VITE_NEW_RELIC_ACCOUNT_ID=<account-id-opcional>
-VITE_NEW_RELIC_AGENT_ID=<agent-id-opcional>
-VITE_NEW_RELIC_APPLICATION_ID=<application-id-opcional>
-VITE_NEW_RELIC_LICENSE_KEY=<license-key-opcional>
-VITE_NEW_RELIC_TRUST_KEY=<trust-key-opcional>
-VITE_OTEL_EXPORTER_OTLP_ENDPOINT=<endpoint-base-otlp-opcional>
-VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=<endpoint-completo-v1-traces-opcional>
-VITE_OTEL_EXPORTER_OTLP_HEADERS=<headers-publicos-opcional>
-VITE_OTEL_EXPORTER_OTLP_TRACES_HEADERS=<headers-publicos-opcional>
-VITE_OTEL_SERVICE_NAME=hemodinks-front
-VITE_OTEL_TRACES_SAMPLE_RATE=1
-VITE_SENTRY_DSN=<dsn-opcional>
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
+```powershell
+Copy-Item .env.confirmation.example .env.local
 ```
 
-Preencha os valores `VITE_NEW_RELIC_*` com os IDs mostrados em `Browser monitoring > Install with NPM`. Se eles nao existirem, o app segue normalmente sem inicializar o agent do New Relic.
+Observacoes:
 
-Quando o front sobe pelo `Hemodinks.AppHost`, nao e necessario preencher as variaveis `VITE_OTEL_*` para o dashboard local do Aspire: o script `scripts/write-otel-runtime-config.mjs` aproveita o endpoint e os headers OTLP que o `AppHost` injeta no processo do Vite. Em build publicado, use `VITE_OTEL_*` so com valores seguros para browser. Se o backend OTLP exigir segredo privado, prefira um collector ou proxy seu em vez de expor a credencial no bundle.
+- `VITE_NEW_RELIC_BEACON` e `VITE_NEW_RELIC_ERROR_BEACON` sao avancadas. Se ficarem vazias, o app usa `bam.nr-data.net`.
+- `scripts/write-otel-runtime-config.mjs` gera `public/otel-runtime-config.json` antes de `dev`, `build` e `analyze`.
+- Quando o front sobe via `Hemodinks.AppHost`, o script reaproveita `ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL` e `OTEL_EXPORTER_OTLP_*` injetados pelo host local.
+- Use `VITE_OTEL_*` em build publicado apenas com endpoints e headers seguros para browser.
 
 ## Executar
 
@@ -102,156 +106,150 @@ Quando o front sobe pelo `Hemodinks.AppHost`, nao e necessario preencher as vari
 npm run dev
 ```
 
-O Vite sobe em `http://localhost:5173` por padrao. O script usa `--host 0.0.0.0`, entao tambem aceita acesso pela rede local.
+O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 
 ## Scripts
 
 | Script | O que faz |
 | --- | --- |
-| `npm run dev` | inicia o Vite em modo desenvolvimento |
+| `npm run dev` | inicia o Vite em desenvolvimento |
 | `npm run build` | roda TypeScript e gera `dist` |
 | `npm run analyze` | gera build com relatorio em `dist/bundle-stats.html` |
-| `npm run budget` | valida limites de tamanho do bundle gerado |
-| `npm run audit:a11y` | roda a auditoria axe nas rotas principais |
-| `npm run audit:lighthouse` | roda build e auditoria Lighthouse via LHCI |
-| `npm test` | roda testes unitarios/integracao com Vitest |
+| `npm run budget` | valida limites de tamanho do bundle |
+| `npm run audit:a11y` | roda Playwright com axe nas rotas criticas |
+| `npm run audit:lighthouse` | roda build e LHCI autenticado |
+| `npm test` | roda testes unitarios e de integracao |
 | `npm run test:e2e` | roda testes E2E com Playwright |
 | `npm run preview` | serve o build gerado em `dist` |
 
 ## Rotas
 
-| Rota | Tela |
+| Rota | Uso |
 | --- | --- |
-| `/` | redireciona para dashboard |
+| `/` | login ou redirecionamento para dashboard quando a sessao existe |
+| `/reset-password?token=...` | confirmacao de reset de senha por token |
 | `/dashboard` | painel inicial |
-| `/usuarios` | listagem/cadastro/edicao de usuarios |
-| `/pacientes` | listagem/cadastro/edicao/exportacao de pacientes |
-| `/agenda` | agenda e cadastro de eventos |
+| `/usuarios` | listagem e cadastro de usuarios |
+| `/meu-cadastro` | autoatendimento do medico ou paciente |
+| `/pacientes` | listagem, cadastro, observacoes e exportacoes de pacientes |
+| `/faturamento-medico` | leitura financeira consolidada a partir dos pacientes |
+| `/grupos-medicos` | grupos de medicos usados em notificacoes da agenda |
+| `/agenda` | agenda e notificacoes internas |
+| `/configuracoes` | marca da empresa, tema e troca de senha |
+
+## Perfis e acesso
+
+| Perfil | Acesso principal |
+| --- | --- |
+| Administrador | dashboard, usuarios, pacientes, faturamento, grupos medicos, agenda e configuracoes |
+| Medicos | dashboard, meu cadastro, pacientes, faturamento, agenda e configuracoes |
+| Controller | pacientes, faturamento e configuracoes |
+| Paciente | meu cadastro, pacientes em modo leitura e configuracoes |
 
 ## Funcionalidades
 
-- login com JWT e persistencia local de sessao
+- login com JWT
+- sessao mantida apenas em memoria do React
 - troca obrigatoria de senha no primeiro acesso
-- reset de senha
-- dashboard com resumo e notificacoes
-- CRUD de usuarios
-- CRUD de pacientes
-- upload, listagem e exclusao de arquivos
-- filtros administrativos de pacientes
-- agenda com calendario e eventos
-- modal CBHPM com filtros por codigo, procedimento e porte
-- selecao de procedimentos CBHPM no cadastro/edicao de paciente
+- reset de senha por email/token quando a API publica esse fluxo
+- fallback de reset para senha padrao quando a API estiver nesse modo
+- dashboard com resumo, notificacoes e contadores operacionais
+- CRUD de usuarios com foto de perfil e anexos do cadastro medico
+- tela "Meu cadastro" para medico e paciente
+- CRUD de pacientes com vinculo medico, convenio, hospital, OPME e procedimentos CBHPM
+- observacoes por paciente com leitura, resposta e contadores de nao lidas
 - exportacao de pacientes em XLSX e PDF
+- faturamento medico derivado dos dados de pacientes e procedimentos
+- grupos medicos usados como destinatarios de notificacao
+- agenda com eventos, lembretes e notificacoes internas
+- configuracao do nome e da foto da empresa
 - tema claro/escuro
 - Error Boundary com fallback visual
-- observabilidade opcional via Sentry e New Relic Browser
-- traces de browser opcionais via OpenTelemetry/OTLP para Aspire Dashboard ou backend externo
-- layout responsivo testado em 360px, 390px e 768px
-- modais com fechamento por ESC, foco inicial e restauracao de foco
-- componentes base aplicados em listas, formularios, agenda e modais principais
+- observabilidade opcional via Sentry, New Relic Browser e OTLP
 
-## Arquitetura Resumida
-
-O projeto segue uma divisao por dominio em `src/features`:
+## Arquitetura resumida
 
 ```text
 src/
+  app/
   features/
     auth/
+    billing/
     dashboard/
     events/
+    medicalGroups/
     patients/
+    settings/
     users/
   layout/
+  services/
   shared/
   styles/
 ```
 
 Pontos principais:
 
-- `src/App.tsx` orquestra sessao, rotas, layout e modais globais.
-- `src/main.tsx` sobe o Browser agent do New Relic antes do bootstrap do React quando as envs existem.
-- `src/routes.ts` mapeia as rotas da SPA.
-- `src/queryClient.ts` centraliza configuracao do TanStack Query.
-- `src/observability.ts` inicializa Sentry quando `VITE_SENTRY_DSN` existe.
-- `src/newRelic.ts` concentra a configuracao opcional do Browser monitoring.
-- `src/otel.ts` inicializa traces de browser via OTLP quando existe configuracao valida.
+- `src/app/AppContent.tsx` concentra autenticacao, regras de acesso por perfil, navegacao e composicao dos dominios.
+- `src/app/useAppChrome.ts` carrega resumo, notificacoes e configuracao do sistema.
+- `src/features/auth/useAuthSession.ts` limpa `localStorage` e mantem a sessao apenas em memoria.
+- `src/queryClient.ts` define `staleTime`, `gcTime` e retries globais.
 - `src/shared/queryKeys.ts` centraliza chaves de cache.
-- `src/shared/components/ui.tsx` concentra componentes base de UI.
-- `src/shared/components/ErrorBoundary.tsx` captura erros inesperados da arvore React.
-- `src/features/users/useUsersDomain.ts` coordena o dominio de usuarios.
-- `src/features/patients/usePatientsDomain.ts` coordena o dominio de pacientes.
-- hooks menores (`useUserList`, `useUserForm`, `usePatientList`, `usePatientForm`, `usePatientLookups`, `useCbhpmLookup`) isolam estados de lista, formulario e lookups.
-- paginas e modais principais sao carregados com `React.lazy`.
-- bibliotecas pesadas de PDF sao carregadas apenas no momento da exportacao PDF.
+- `src/features/patients/usePatientsDomain.ts` coordena formulario, listagem, lookups, observacoes e exportacoes.
+- `src/features/users/useUsersDomain.ts` cobre listagem, autoedicao, upload de arquivos e troca de senha.
+- `src/features/billing/BillingPage.tsx` compoe a tela financeira a partir de `GET /api/faturamentos-medicos`.
+- `src/features/settings/SystemSettingsPage.tsx` administra marca, tema e senha.
+- `src/observability.ts`, `src/newRelic.ts` e `src/otel.ts` inicializam a telemetria opcional.
 
 Mais detalhes em [TECHNICAL.md](./TECHNICAL.md).
 
 ## Cache e API
 
-O front usa TanStack Query para leituras principais e mutacoes de usuarios/pacientes.
+O front usa TanStack Query para leituras principais e invalidacao consistente.
 
 Cache atual:
 
+- configuracao do sistema
 - dashboard summary
-- notificacoes
+- dashboard notifications
 - usuarios
-- pacientes
 - usuarios medicos
+- grupos medicos
+- pacientes
+- observacoes de pacientes
 - hospitais
 - convenios
+- fornecedores OPME
 - CBHPM
 
-As invalidacoes passam por `queryKeys`, evitando chaves duplicadas ou inconsistentes.
+Observacoes:
 
-## CBHPM
+- a tela de faturamento usa uma query propria (`billingRecords`) e carrega paginas de `GET /api/faturamentos-medicos` ate compor a visao agregada
+- a tela de notificacoes marca avisos da agenda como lidos via `POST /api/events/notifications/mark-read`
+- a confirmacao de reset envia `Idempotency-Key` em `POST /api/users/password/reset/confirm`
 
-Endpoint usado pelo modal:
+## Testes e qualidade
 
-```http
-GET /api/cbhpm?page=1&pageSize=10&codigo=&procedimento=&porte=
-Authorization: Bearer <token>
-```
-
-Ao selecionar um item, o formulario de paciente recebe:
-
-- `cbhpmCodigo`
-- `cbhpmPorte`
-- `procedimento`
-- `procedimentos`
-
-O backend continua responsavel por validar o codigo antes de salvar.
-
-## Testes e Qualidade
-
-Rodar a suite principal:
+Suite principal:
 
 ```powershell
 npm test
 npm run build
 npm run budget
 npm run test:e2e
+npm run audit:a11y
 npm run analyze
 npm run audit:lighthouse
 ```
 
-Cobertura atual:
+Cobertura atual inclui:
 
-- testes unitarios/integracao para API e App
-- E2E de login pelo formulario
-- E2E de navegacao autenticada
-- E2E de responsividade mobile em telas criticas
-- E2E de cadastro e edicao de usuario
-- E2E de cadastro e edicao de paciente
-- E2E de cadastro de evento na agenda
-- E2E de permissao por perfil
-- E2E de exportacao XLSX e PDF
-- auditoria axe para violacoes serias/criticas de acessibilidade
-- budget de bundle para chunk principal e CSS
-- Lighthouse autenticado via LHCI nas rotas internas principais
-- evidencias visuais desktop/mobile das telas e formularios principais
-- auditoria de bundle via `dist/bundle-stats.html`
+- testes unitarios e de integracao para `App`, `api.ts`, utilitarios de pacientes e faturamento
+- E2E de login, reset, navegacao autenticada e regras por perfil
+- E2E de usuarios, pacientes, agenda e mobile
+- axe para acessibilidade seria/critica
+- Lighthouse autenticado via LHCI
+- budget de bundle e analise visual do build
 
 ## Deploy
 
-Detalhes de Vercel, Render, homologacao e checklist de validacao em [DEPLOYMENT.md](./DEPLOYMENT.md).
+Detalhes de Vercel, Render, confirmation e checklist operacional em [DEPLOYMENT.md](./DEPLOYMENT.md).
