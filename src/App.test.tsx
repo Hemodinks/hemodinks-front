@@ -139,6 +139,8 @@ function mockSession(overrides?: Partial<AuthSession['user']>) {
     token: 'jwt-token',
     user: {
       id: 99,
+      clinicaId: 1,
+      clinicaSlug: 'hemodinks',
       nome: 'George Marcone',
       email: 'gmarcone@gmail.com',
       cpf: '00000000191',
@@ -154,6 +156,8 @@ function mockSession(overrides?: Partial<AuthSession['user']>) {
 function toLoginResponse(session: AuthSession) {
   return {
     id: session.user.id,
+    clinicaId: session.user.clinicaId,
+    clinicaSlug: session.user.clinicaSlug ?? null,
     nome: session.user.nome,
     email: session.user.email,
     cpf: session.user.cpf ?? null,
