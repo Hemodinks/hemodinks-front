@@ -70,6 +70,8 @@ Exemplo local:
 VITE_API_URL=http://localhost:5000
 VITE_APP_ENV=local
 VITE_APP_VERSION=local
+VITE_CLINICA_ID=
+VITE_CLINICA_SLUG=
 VITE_NEW_RELIC_ACCOUNT_ID=
 VITE_NEW_RELIC_AGENT_ID=
 VITE_NEW_RELIC_APPLICATION_ID=
@@ -95,6 +97,9 @@ Copy-Item .env.confirmation.example .env.local
 
 Observacoes:
 
+- Em ambiente multi-clinica, o front envia automaticamente `X-Clinica-Slug` ou `X-Clinica-Id` nas chamadas publicas quando `VITE_CLINICA_SLUG` ou `VITE_CLINICA_ID` estiverem preenchidos.
+- Em chamadas autenticadas, o front reaproveita os claims `clinicaId` e `clinicaSlug` do JWT para manter o contexto da clinica atual.
+- Se o front estiver em um dominio customizado por clinica, como `clinica-a.seudominio.com`, o client tambem tenta inferir o slug pela URL. Hosts compartilhados de plataforma, como `onrender.com` e `vercel.app`, sao ignorados nessa inferencia para evitar falsos positivos.
 - `VITE_NEW_RELIC_BEACON` e `VITE_NEW_RELIC_ERROR_BEACON` sao avancadas. Se ficarem vazias, o app usa `bam.nr-data.net`.
 - `scripts/write-otel-runtime-config.mjs` gera `public/otel-runtime-config.json` antes de `dev`, `build` e `analyze`.
 - Quando o front sobe via `Hemodinks.AppHost`, o script reaproveita `ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL` e `OTEL_EXPORTER_OTLP_*` injetados pelo host local.

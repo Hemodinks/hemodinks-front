@@ -232,6 +232,8 @@ export type PublicHoliday = {
 
 export type LoginResponse = {
   id: number;
+  clinicaId?: number;
+  clinicaSlug?: string | null;
   nome: string;
   email: string;
   cpf?: string | null;
@@ -244,7 +246,7 @@ export type LoginResponse = {
   perfilNome: string;
 };
 
-export type SessionUser = Pick<LoginResponse, 'id' | 'nome' | 'email' | 'cpf' | 'crm' | 'crmUf' | 'fotoPerfil' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome'>;
+export type SessionUser = Pick<LoginResponse, 'id' | 'clinicaId' | 'clinicaSlug' | 'nome' | 'email' | 'cpf' | 'crm' | 'crmUf' | 'fotoPerfil' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome'>;
 
 export type AuthSession = {
   token: string;
