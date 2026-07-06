@@ -13,7 +13,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_PHONE_LENGTH,
   MEDICAL_PROFILE_ID,
-  PROFILE_OPTIONS,
+  USER_PROFILE_OPTIONS,
 } from '../../shared/utils/formatters';
 import { UserAvatar } from './UserAvatar';
 
@@ -124,7 +124,7 @@ export function UserForm({
               disabled={!canAccessUsers}
               required
             >
-              {PROFILE_OPTIONS.map((profile) => (
+              {USER_PROFILE_OPTIONS.map((profile) => (
                 <option key={profile.id} value={profile.id}>
                   {profile.nome}
                 </option>
