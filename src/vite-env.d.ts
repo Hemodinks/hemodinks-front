@@ -4,6 +4,8 @@ interface ImportMetaEnv {
   readonly VITE_API_URL?: string;
   readonly VITE_APP_ENV?: string;
   readonly VITE_APP_VERSION?: string;
+  readonly VITE_CLINICA_ID?: string;
+  readonly VITE_CLINICA_SLUG?: string;
   readonly VITE_NEW_RELIC_ACCOUNT_ID?: string;
   readonly VITE_NEW_RELIC_AGENT_ID?: string;
   readonly VITE_NEW_RELIC_APPLICATION_ID?: string;

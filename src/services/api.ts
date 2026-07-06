@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import { resolveClinicaRequestHeaders } from './clinicaContext';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 const DEFAULT_ERROR_MESSAGE = 'Nao foi possivel concluir a operacao.';
@@ -16,6 +17,7 @@ function buildJsonHeaders(token?: string, headers?: AxiosRequestConfig['headers'
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...resolveClinicaRequestHeaders(token),
     ...(headers ?? {}),
   };
 }
@@ -23,6 +25,7 @@ function buildJsonHeaders(token?: string, headers?: AxiosRequestConfig['headers'
 function buildAuthHeaders(token?: string, headers?: AxiosRequestConfig['headers']) {
   return {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...resolveClinicaRequestHeaders(token),
     ...(headers ?? {}),
   };
 }

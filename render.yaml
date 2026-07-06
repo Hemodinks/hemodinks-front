@@ -16,6 +16,10 @@ services:
         value: production
       - key: VITE_APP_VERSION
         sync: false
+      - key: VITE_CLINICA_ID
+        sync: false
+      - key: VITE_CLINICA_SLUG
+        sync: false
       - key: VITE_NEW_RELIC_ACCOUNT_ID
         sync: false
       - key: VITE_NEW_RELIC_AGENT_ID

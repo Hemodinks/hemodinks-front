@@ -30,6 +30,10 @@ import {
   uploadUserArquivo,
 } from './index';
 import { apiClient, publicApiClient } from './api';
+import {
+  extractClinicaContextFromToken,
+  resolveClinicaSlugFromHostname,
+} from './clinicaContext';
 
 function axiosResponse<T>(data: T, status = 200): AxiosResponse<T> {
   return {
@@ -54,11 +58,19 @@ function apiError(status: number, data?: unknown) {
 describe('services api client', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
+
+  function createJwtToken(payload: Record<string, unknown>) {
+    const encodedHeader = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const encodedPayload = btoa(JSON.stringify(payload));
+    return `${encodedHeader}.${encodedPayload}.signature`;
+  }
 
   it('autentica enviando email e senha para a rota correta', async () => {
     const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(axiosResponse({
@@ -82,17 +94,46 @@ describe('services api client', () => {
     });
   });
 
+  it('envia o slug da clinica em autenticacao publica quando configurado no front', async () => {
+    vi.stubEnv('VITE_CLINICA_SLUG', 'clinica-alfa');
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(axiosResponse({
+      id: 1,
+      nome: 'George',
+      email: 'gmarcone@gmail.com',
+      token: 'jwt-token',
+      precisaTrocarSenha: false,
+      perfilId: 1,
+      perfilNome: 'Administrador',
+    }));
+
+    await authenticate('gmarcone@gmail.com', 'Senha@123');
+
+    expect(requestSpy).toHaveBeenCalledWith({
+      url: '/api/users/authenticate',
+      method: 'POST',
+      data: { email: 'gmarcone@gmail.com', senha: 'Senha@123' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Clinica-Slug': 'clinica-alfa',
+      },
+    });
+  });
+
   it('inclui o token bearer ao buscar usuarios', async () => {
     const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(axiosResponse([]));
 
-    await getUsers('jwt-token');
+    const token = createJwtToken({ clinicaId: '7', clinicaSlug: 'clinica-beta' });
+
+    await getUsers(token);
 
     expect(requestSpy).toHaveBeenCalledWith({
       url: '/api/users/',
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Bearer jwt-token',
+        Authorization: `Bearer ${token}`,
+        'X-Clinica-Id': '7',
+        'X-Clinica-Slug': 'clinica-beta',
       },
     });
   });
@@ -118,6 +159,7 @@ describe('services api client', () => {
   });
 
   it('busca a foto da empresa sem exigir token bearer', async () => {
+    vi.stubEnv('VITE_CLINICA_ID', '12');
     const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(
       axiosResponse(new Blob(['brand'], { type: 'image/png' })),
     );
@@ -131,7 +173,9 @@ describe('services api client', () => {
       url: '/api/configuracoes-sistema/current/foto-empresa',
       method: 'GET',
       responseType: 'blob',
-      headers: {},
+      headers: {
+        'X-Clinica-Id': '12',
+      },
     });
   });
 
@@ -477,6 +521,7 @@ describe('services api client', () => {
   });
 
   it('monta as chamadas de configuracao do sistema', async () => {
+    vi.stubEnv('VITE_CLINICA_SLUG', 'hemodinks');
     const requestSpy = vi.spyOn(apiClient, 'request');
 
     requestSpy
@@ -494,6 +539,7 @@ describe('services api client', () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'X-Clinica-Slug': 'hemodinks',
       },
     });
     expect(requestSpy).toHaveBeenNthCalledWith(2, {
@@ -506,8 +552,24 @@ describe('services api client', () => {
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
+        'X-Clinica-Slug': 'hemodinks',
       },
     });
+  });
+
+  it('extrai o contexto da clinica a partir do token JWT', () => {
+    const token = createJwtToken({ clinicaId: '3', clinicaSlug: 'clinica-alfa' });
+
+    expect(extractClinicaContextFromToken(token)).toEqual({
+      clinicaId: 3,
+      clinicaSlug: 'clinica-alfa',
+    });
+  });
+
+  it('resolve slug de clinica a partir de hostname customizado', () => {
+    expect(resolveClinicaSlugFromHostname('clinica-alfa.hemodinks.com')).toBe('clinica-alfa');
+    expect(resolveClinicaSlugFromHostname('hemodinks-front-confirmation.onrender.com')).toBeNull();
+    expect(resolveClinicaSlugFromHostname('localhost')).toBeNull();
   });
 
   it('normaliza mensagens de erro da API', async () => {

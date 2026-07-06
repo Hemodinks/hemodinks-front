@@ -3,11 +3,11 @@ import {
   DEFAULT_PROFILE_ID,
   formatCpfInput,
   formatPhoneInput,
+  isAssignableUserProfileId,
   isMedicalProfileId,
   isValidBirthDate,
   isValidBrazilMobilePhone,
   isValidEmail,
-  isValidProfileId,
   MAX_CRM_LENGTH,
   MAX_NAME_LENGTH,
   normalizeCpfForPayload,
@@ -83,7 +83,7 @@ export function validateUserForm(data: UserFormData) {
     return 'Informe a data de nascimento no formato dd/mm/yyyy.';
   }
 
-  if (!isValidProfileId(data.perfilId)) {
+  if (!isAssignableUserProfileId(data.perfilId)) {
     return 'Selecione um perfil valido.';
   }
 
