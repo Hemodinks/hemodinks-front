@@ -32,7 +32,6 @@ type CbhpmLookupModalProps = {
 export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
   items,
   filters,
-  isAdmin,
   loading,
   error,
   currentPage,
@@ -84,10 +83,10 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
     porte: filters.porte.trim().toUpperCase(),
   }), [filters.codigo, filters.procedimento, filters.porte]);
 
-  const canAddManual = Boolean(manualValues.codigo && manualValues.procedimento);
+  const canAddManual = Boolean(manualValues.procedimento);
 
   const updateFilter = useCallback((field: keyof CbhpmFilters, value: string) => {
-  setManualValidationError('');
+    setManualValidationError('');
     onFiltersChange((current) => ({
       ...current,
       [field]: value,
@@ -100,7 +99,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
       return;
     }
 
-    if (!isAdmin && !canAddManual) {
+    if (!canAddManual) {
       return;
     }
 
@@ -111,7 +110,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
       porte: manualValues.porte || null,
       valorReferencia: null,
     });
-  }, [isAdmin, canAddManual, manualValues, onSelect]);
+  }, [canAddManual, manualValues, onSelect]);
 
   return (
     <Modal titleId="cbhpm-title" className="cbhpm-modal" onClose={onClose}>
@@ -160,7 +159,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
         </div>
 
         <div className="manual-procedure-row">
-          <Button className="manual-procedure-action" onClick={handleAddManual} disabled={!isAdmin && !canAddManual}>
+          <Button className="manual-procedure-action" onClick={handleAddManual} disabled={!canAddManual}>
             <Plus size={17} />
             Cadastrar manualmente
           </Button>

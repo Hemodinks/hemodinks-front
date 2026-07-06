@@ -1083,7 +1083,7 @@ describe('App', () => {
     });
   });
 
-  it('mantem cadastro manual desbloqueado para administrador no modal CBHPM', async () => {
+  it('permite cadastrar procedimento manual sem codigo no modal CBHPM', async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
 
@@ -1092,10 +1092,10 @@ describe('App', () => {
         items={[]}
         filters={{
           codigo: '',
-          procedimento: '',
+          procedimento: 'Procedimento sem codigo',
           porte: '',
         }}
-        isAdmin
+        isAdmin={false}
         loading={false}
         error=""
         currentPage={1}
@@ -1118,8 +1118,13 @@ describe('App', () => {
 
     expect(manualButton).toBeEnabled();
     await user.click(manualButton);
-    expect(onSelect).not.toHaveBeenCalled();
-    expect(screen.getByText('Informe a descricao do procedimento para cadastrar manualmente.')).toBeInTheDocument();
+    expect(onSelect).toHaveBeenCalledWith({
+      id: 0,
+      codigo: '',
+      procedimento: 'Procedimento sem codigo',
+      porte: null,
+      valorReferencia: null,
+    });
   });
 
   it('mantem foco ao digitar nos filtros do modal CBHPM', async () => {
@@ -1376,12 +1381,13 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
   });
 
-  it('reativa o perfil paciente no cadastro de usuario', async () => {
+  it('nao exibe perfil paciente no cadastro de usuario', async () => {
     const { user } = await renderAuthenticatedApp();
 
     await openUsersModule(user);
     await user.click(screen.getByRole('button', { name: /novo usuario/i }));
-    expect(await screen.findByRole('option', { name: 'Paciente' })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: 'Médicos' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Paciente' })).not.toBeInTheDocument();
   });
 
   it('permite ao perfil paciente abrir meu cadastro', async () => {
