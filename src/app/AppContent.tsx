@@ -195,6 +195,8 @@ export function AppContent() {
         token: result.token,
         user: {
           id: result.id,
+          clinicaId: result.clinicaId,
+          clinicaSlug: result.clinicaSlug ?? null,
           nome: result.nome,
           email: result.email,
           cpf: result.cpf ?? null,
