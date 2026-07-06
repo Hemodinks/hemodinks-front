@@ -35,6 +35,8 @@ export const PROFILE_OPTIONS = [
   { id: 4, nome: 'Controller' },
 ] as const;
 
+export const USER_PROFILE_OPTIONS = PROFILE_OPTIONS.filter((profile) => profile.id !== PATIENT_PROFILE_ID);
+
 export const BRAZIL_UF_OPTIONS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
   'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
@@ -106,6 +108,10 @@ export function findOpmeFornecedorByName(fornecedores: OpmeFornecedor[], fornece
 
 export function isValidProfileId(perfilId: number) {
   return PROFILE_OPTIONS.some((profile) => profile.id === perfilId);
+}
+
+export function isAssignableUserProfileId(perfilId: number) {
+  return USER_PROFILE_OPTIONS.some((profile) => profile.id === perfilId);
 }
 
 export function isMedicalProfileId(perfilId: number) {
