@@ -16,6 +16,10 @@ import type { AuthSession, DashboardNotification, DashboardSummary } from '../ty
 const DASHBOARD_CACHE_TIME_MS = 30 * 1000;
 const NOTIFICATIONS_CACHE_TIME_MS = 15 * 1000;
 
+function isForbiddenError(error: unknown) {
+  return error instanceof Error && /\b403\b|forbidden/i.test(error.message);
+}
+
 type UseAppChromeOptions = {
   session: AuthSession | null;
 };
@@ -34,6 +38,7 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
     queryFn: () => getDashboardSummary(session?.token ?? ''),
     enabled: sessionReady,
     staleTime: DASHBOARD_CACHE_TIME_MS,
+    retry: (failureCount, error) => !isForbiddenError(error) && failureCount < 3,
   });
   const notificationsQuery = useQuery({
     queryKey: queryKeys.dashboardNotifications(session?.token ?? ''),
@@ -68,6 +73,11 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
 
   useEffect(() => {
     if (dashboardSummaryQuery.error) {
+      if (isForbiddenError(dashboardSummaryQuery.error)) {
+        setDashboardError('');
+        return;
+      }
+
       setDashboardError(getErrorMessage(dashboardSummaryQuery.error));
     }
   }, [dashboardSummaryQuery.error]);
