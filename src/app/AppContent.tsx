@@ -78,7 +78,7 @@ export function AppContent() {
   const isPatient = currentPerfilId === PATIENT_PROFILE_ID;
   const canAccessDashboard = hasSessionFeature(session?.user, LICENSE_FEATURES.dashboardVisualizar) || isMedical;
   const canAccessPatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesVisualizar) || isMedical;
-  const canManagePatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar);
+  const canManagePatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar) || isMedical;
   const canConsultCbhpm = hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar);
   const canAccessAgenda = !isController;
   const canAccessUsers = isAdmin;

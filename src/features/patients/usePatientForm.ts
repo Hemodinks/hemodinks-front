@@ -9,6 +9,7 @@ export function usePatientForm(pacientes: Paciente[]) {
   const [pacienteFormLoading, setPacienteFormLoading] = useState(false);
   const [pacienteFormError, setPacienteFormError] = useState('');
   const [patientFileInputKey, setPatientFileInputKey] = useState(0);
+  const [patientPhotoInputKey, setPatientPhotoInputKey] = useState(0);
   const [pendingPatientFiles, setPendingPatientFiles] = useState<File[]>([]);
 
   const editingPaciente = useMemo(
@@ -23,6 +24,7 @@ export function usePatientForm(pacientes: Paciente[]) {
     setPacienteFormError('');
     setPendingPatientFiles([]);
     setPatientFileInputKey((key) => key + 1);
+    setPatientPhotoInputKey((key) => key + 1);
   };
 
   const applyPacienteToForm = (paciente: Paciente) => {
@@ -30,6 +32,7 @@ export function usePatientForm(pacientes: Paciente[]) {
     setEditingPacienteDetails(paciente);
     setPacienteFormData(getPacienteFormData(paciente));
     setPatientFileInputKey((key) => key + 1);
+    setPatientPhotoInputKey((key) => key + 1);
   };
 
   return {
@@ -45,6 +48,8 @@ export function usePatientForm(pacientes: Paciente[]) {
     pacienteFormError,
     setPacienteFormError,
     patientFileInputKey,
+    patientPhotoInputKey,
+    setPatientPhotoInputKey,
     pendingPatientFiles,
     setPendingPatientFiles,
     resetPacienteForm,

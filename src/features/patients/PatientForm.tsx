@@ -1,8 +1,9 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import { FileText, FileUp, MessageSquareText, Plus, Save, Search, Trash2, X } from 'lucide-react';
+import { FileText, FileUp, ImagePlus, MessageSquareText, Plus, Save, Search, Trash2, X } from 'lucide-react';
 import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
+import { UserAvatar } from '../users/UserAvatar';
 import {
   CONVENIOS_DATALIST_ID,
   DEFAULT_PASSWORD,
@@ -29,6 +30,7 @@ type PatientFormProps = {
   pacienteFormLoading: boolean;
   pendingPatientFiles: File[];
   patientFileInputKey: number;
+  patientPhotoInputKey: number;
   hospitais: Hospital[];
   hospitaisError: string;
   medicalUsers: MedicalUserOption[];
@@ -37,6 +39,7 @@ type PatientFormProps = {
   opmeFornecedores: OpmeFornecedor[];
   opmeFornecedoresError: string;
   isMedical: boolean;
+  sessionToken: string;
   setPacienteFormData: Dispatch<SetStateAction<PacienteFormData>>;
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -44,6 +47,8 @@ type PatientFormProps = {
   onRemovePacienteProcedimento: (index: number) => void;
   onPacienteFilesChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onRemovePendingPatientFile: (index: number) => void;
+  onPacientePhotoChange: (event: ChangeEvent<HTMLInputElement>) => void | Promise<void>;
+  onRemovePacientePhoto: () => void;
   onDeletePacienteArquivo: (paciente: Paciente, arquivoId: number) => void | Promise<void>;
   onOpenPacienteObservacoes?: () => void;
 };
@@ -66,6 +71,7 @@ export function PatientForm({
   pacienteFormLoading,
   pendingPatientFiles,
   patientFileInputKey,
+  patientPhotoInputKey,
   hospitais,
   hospitaisError,
   medicalUsers,
@@ -73,6 +79,7 @@ export function PatientForm({
   conveniosError,
   opmeFornecedores,
   opmeFornecedoresError,
+  sessionToken,
   isMedical,
   setPacienteFormData,
   onClose,
@@ -81,6 +88,8 @@ export function PatientForm({
   onRemovePacienteProcedimento,
   onPacienteFilesChange,
   onRemovePendingPatientFile,
+  onPacientePhotoChange,
+  onRemovePacientePhoto,
   onDeletePacienteArquivo,
   onOpenPacienteObservacoes,
 }: PatientFormProps) {
@@ -173,6 +182,47 @@ export function PatientForm({
 
       <form className="stack module-form-grid" onSubmit={onSubmit}>
         <fieldset className="form-fieldset" disabled={formReadOnly}>
+          <div className="profile-photo-field">
+            <label className="field-label" htmlFor="patient-photo-input">
+              Foto do paciente
+            </label>
+            <div className="photo-uploader">
+              <UserAvatar
+                userId={editingPaciente?.userId}
+                name={pacienteFormData.nomePaciente || 'Paciente'}
+                photo={pacienteFormData.fotoPerfil}
+                authToken={sessionToken}
+                size="lg"
+              />
+              {!formReadOnly && (
+                <div className="photo-actions">
+                  <label className="ghost-button file-action" htmlFor="patient-photo-input">
+                    <ImagePlus size={17} />
+                    {pacienteFormData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
+                  </label>
+                  {pacienteFormData.fotoPerfil && (
+                    <Button variant="danger-ghost" onClick={onRemovePacientePhoto}>
+                      <Trash2 size={17} />
+                      Remover
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+            {!formReadOnly && (
+              <input
+                key={patientPhotoInputKey}
+                id="patient-photo-input"
+                className="sr-only"
+                type="file"
+                aria-label="Foto do paciente"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => void onPacientePhotoChange(event)}
+              />
+            )}
+            <span className="file-hint">PNG, JPG ou WEBP até 1 MB.</span>
+          </div>
+
           <DateInput
             id="patient-procedure-date"
             label="Data procedimento"
