@@ -2,60 +2,66 @@
   gap: 16px;
 }
 
-.billing-hero {
+.billing-filters-accordion {
   display: grid;
-  gap: 12px;
-  padding: 20px 22px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(14, 116, 144, 0.1), rgba(185, 28, 28, 0.08) 72%),
-    var(--panel);
+  gap: 14px;
 }
 
-.billing-hero h2 {
-  margin: 4px 0 8px;
-  font-size: 1.55rem;
-}
-
-.billing-hero p {
-  max-width: 860px;
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.billing-hero-meta {
+.billing-filters-summary {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  cursor: pointer;
+  list-style: none;
 }
 
-.billing-hero-meta span {
-  min-height: 34px;
+.billing-filters-summary::-webkit-details-marker {
+  display: none;
+}
+
+.billing-filters-summary h2 {
+  margin: 4px 0 0;
+  font-size: 1.2rem;
+}
+
+.billing-filters-toggle {
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--input-bg);
-  color: var(--ink);
-  font-size: 0.78rem;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: var(--action-primary);
+  color: var(--button-ink);
+  box-shadow: var(--shadow-soft);
+  font-size: 0.86rem;
   font-weight: 900;
 }
 
-.billing-filter-panel .data-header {
-  gap: 18px;
+.billing-filters-toggle::after {
+  content: "▾";
+  font-size: 0.84rem;
+  transition: transform 180ms ease;
+}
+
+.billing-filters-accordion[open] .billing-filters-toggle::after {
+  transform: rotate(180deg);
+}
+
+.billing-filters-content {
+  display: grid;
+  gap: 14px;
+  padding-top: 4px;
 }
 
 .billing-toolbar {
-  flex: 1 1 420px;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .billing-toolbar > .search-box {
   flex: 1 1 320px;
-  max-width: 460px;
+  max-width: none;
 }
 
 .billing-filter-grid {
