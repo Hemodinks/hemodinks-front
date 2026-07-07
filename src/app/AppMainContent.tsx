@@ -18,6 +18,7 @@ import {
 } from './lazyModules';
 
 type AccessState = {
+  canAccessPatients: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
@@ -100,6 +101,7 @@ export function AppMainContent({
   onPasswordChanged,
 }: AppMainContentProps) {
   const {
+    canAccessPatients,
     canAccessUsers,
     canEditOwnUser,
     canAccessBilling,
@@ -128,6 +130,7 @@ export function AppMainContent({
       {activeView === 'dashboard' ? (
         <DashboardPage
           companyName={companyName}
+          canAccessPatients={canAccessPatients}
           canAccessUsers={canAccessUsers}
           canEditOwnUser={canEditOwnUser}
           canAccessBilling={canAccessBilling}

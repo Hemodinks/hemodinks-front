@@ -87,15 +87,37 @@ export function PatientForm({
   const formReadOnly = patientReadOnly || (editingPacienteId ? !canEditPatients : false);
   const canSubmitForm = !formReadOnly && (!editingPacienteId || canEditPatients);
 
+  const getLegacyMedicalOption = (field: MedicalTeamField) => {
+    const config = medicalTeamFields[field];
+    const userId = pacienteFormData[config.idKey];
+    const legacyName = pacienteFormData[config.nameKey].trim();
+
+    if (!legacyName) {
+      return null;
+    }
+
+    if (userId != null && medicalUsers.some((user) => user.id === userId)) {
+      return null;
+    }
+
+    return {
+      value: userId != null ? `legacy:${userId}` : 'legacy',
+      label: userId != null
+        ? `${legacyName} (fora da sua lista)`
+        : `${legacyName} (fora do cadastro)`,
+    };
+  };
+
   const getMedicalSelectValue = (field: MedicalTeamField) => {
     const config = medicalTeamFields[field];
     const userId = pacienteFormData[config.idKey];
+    const legacyOption = getLegacyMedicalOption(field);
 
-    if (userId != null) {
+    if (userId != null && !legacyOption) {
       return String(userId);
     }
 
-    return pacienteFormData[config.nameKey] ? 'legacy' : '';
+    return legacyOption?.value ?? '';
   };
 
   const isMedicalUserSelectedElsewhere = (field: MedicalTeamField, userId: number) => (
@@ -106,7 +128,7 @@ export function PatientForm({
 
   const updateMedicalTeamMember = (field: MedicalTeamField, value: string) => {
     const config = medicalTeamFields[field];
-    const userId = value && value !== 'legacy' ? Number(value) : null;
+    const userId = value && !value.startsWith('legacy') ? Number(value) : null;
     const selectedUser = userId != null ? medicalUsers.find((user) => user.id === userId) : undefined;
 
     setPacienteFormData((current) => ({
@@ -117,14 +139,13 @@ export function PatientForm({
   };
 
   const renderMedicalOptions = (field: MedicalTeamField, emptyLabel: string) => {
-    const config = medicalTeamFields[field];
-    const legacyName = pacienteFormData[config.nameKey];
+    const legacyOption = getLegacyMedicalOption(field);
 
     return (
       <>
         <option value="">{emptyLabel}</option>
-        {legacyName && pacienteFormData[config.idKey] == null && (
-          <option value="legacy">{legacyName} (fora do cadastro)</option>
+        {legacyOption && (
+          <option value={legacyOption.value}>{legacyOption.label}</option>
         )}
         {medicalUsers.map((user) => (
           <option key={user.id} value={user.id} disabled={isMedicalUserSelectedElsewhere(field, user.id)}>

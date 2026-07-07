@@ -5,7 +5,7 @@ import {
   createPacienteObservacao,
   deletePaciente,
   deletePacienteArquivo,
-  getAllCbhpmGeral,
+  getCbhpmGeral,
   getConvenios,
   getHospitais,
   getOpmeFornecedores,
@@ -43,6 +43,7 @@ import {
 } from '../../shared/utils/listing';
 import type {
   AuthSession,
+  CbhpmListQuery,
   CbhpmGeral,
   MedicalUserOption,
   Paciente,
@@ -50,9 +51,9 @@ import type {
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { queryKeys } from '../../shared/queryKeys';
 import {
-  CBHPM_CACHE_FETCH_PAGE_SIZE,
-  filterCbhpmCachedItems,
-  isCbhpmCacheSearchReady,
+  areCbhpmFiltersSearchable,
+  buildCbhpmQueryFilters,
+  getCbhpmFilterValidationMessage,
 } from './cbhpmLookupUtils';
 import {
   emptyPacienteFilters,
@@ -79,9 +80,11 @@ type UsePatientsDomainOptions = {
   companyName: string;
   isAdmin: boolean;
   isMedical: boolean;
+  canAccessPatients: boolean;
   canCreatePatients: boolean;
   canEditPatients: boolean;
   canDeletePatients: boolean;
+  canConsultCbhpm: boolean;
   patientReadOnly: boolean;
   setModuleMode: Dispatch<SetStateAction<ModuleMode>>;
   navigateToView: (view: AppView, replace?: boolean) => void;
@@ -96,9 +99,11 @@ export function usePatientsDomain({
   companyName,
   isAdmin,
   isMedical,
+  canAccessPatients,
   canCreatePatients,
   canEditPatients,
   canDeletePatients,
+  canConsultCbhpm,
   patientReadOnly,
   setModuleMode,
   navigateToView,
@@ -186,7 +191,8 @@ export function usePatientsDomain({
     setCbhpmItems,
     cbhpmFilters,
     setCbhpmFilters,
-    debouncedCbhpmFilters,
+    appliedCbhpmFilters,
+    applyCbhpmFiltersNow,
     cbhpmCurrentPage,
     setCbhpmCurrentPage,
     sortBy: cbhpmSortBy,
@@ -218,13 +224,13 @@ export function usePatientsDomain({
   const pacientesQuery = useQuery({
     queryKey: queryKeys.pacientes(session?.token ?? '', pacientesQueryParams),
     queryFn: () => getPacientes(session?.token ?? '', pacientesQueryParams),
-    enabled: sessionReady && activeView === 'patients' && moduleMode === 'list',
+    enabled: sessionReady && canAccessPatients && activeView === 'patients' && moduleMode === 'list',
     staleTime: LIST_CACHE_TIME_MS,
   });
   const medicalUsersQuery = useQuery({
     queryKey: queryKeys.medicalUsers(session?.token ?? ''),
     queryFn: () => getScopedMedicalUsers(session?.token ?? ''),
-    enabled: sessionReady && activeView === 'patients' && !patientReadOnly,
+    enabled: sessionReady && canAccessPatients && activeView === 'patients' && !patientReadOnly,
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
   const hospitaisQuery = useQuery({
@@ -245,12 +251,30 @@ export function usePatientsDomain({
     enabled: sessionReady,
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
-  const cbhpmCacheQuery = useQuery({
-    queryKey: queryKeys.cbhpmCache(session?.token ?? ''),
-    queryFn: () => getAllCbhpmGeral(session?.token ?? '', CBHPM_CACHE_FETCH_PAGE_SIZE),
-    enabled: sessionReady && cbhpmModalOpen,
-    staleTime: LOOKUP_CACHE_TIME_MS,
-    gcTime: 60 * 60 * 1000,
+  const appliedCbhpmFilterValidationMessage = useMemo(
+    () => getCbhpmFilterValidationMessage(appliedCbhpmFilters),
+    [appliedCbhpmFilters],
+  );
+  const cbhpmFilterHint = useMemo(
+    () => getCbhpmFilterValidationMessage(cbhpmFilters),
+    [cbhpmFilters],
+  );
+  const canSearchCbhpm = useMemo(
+    () => areCbhpmFiltersSearchable(cbhpmFilters),
+    [cbhpmFilters],
+  );
+  const cbhpmQueryParams = useMemo<CbhpmListQuery>(() => ({
+    page: cbhpmCurrentPage,
+    pageSize: CBHPM_PAGE_SIZE,
+    ...buildCbhpmQueryFilters(appliedCbhpmFilters),
+    sortBy: cbhpmSortBy,
+    sortDirection: cbhpmSortDirection,
+  }), [appliedCbhpmFilters, cbhpmCurrentPage, cbhpmSortBy, cbhpmSortDirection]);
+  const cbhpmQuery = useQuery({
+    queryKey: queryKeys.cbhpm(session?.token ?? '', cbhpmQueryParams),
+    queryFn: () => getCbhpmGeral(session?.token ?? '', cbhpmQueryParams),
+    enabled: sessionReady && canConsultCbhpm && cbhpmModalOpen && !appliedCbhpmFilterValidationMessage,
+    staleTime: LIST_CACHE_TIME_MS,
   });
   const savePacienteMutation = useMutation({
     mutationFn: ({ id, payload, token }: { id: number | null; payload: ReturnType<typeof toPacientePayload>; token: string }) => (
@@ -270,19 +294,6 @@ export function usePatientsDomain({
       createPacienteObservacao(pacienteId, { texto, observacaoPaiId }, token)
     ),
   });
-  const filteredCbhpmItems = useMemo(
-    () => {
-      if (!cbhpmCacheQuery.data) return [];
-      // Se nenhum filtro foi aplicado (debouncedCbhpmFilters vazio), mostra todos os itens
-      if (!isCbhpmCacheSearchReady(debouncedCbhpmFilters)) {
-        return cbhpmCacheQuery.data;
-      }
-      // Caso contrário, filtra normalmente
-      return filterCbhpmCachedItems(cbhpmCacheQuery.data, debouncedCbhpmFilters);
-    },
-    [cbhpmCacheQuery.data, debouncedCbhpmFilters],
-  );
-
   useEffect(() => {
     setPacientesLoading(pacientesQuery.isFetching);
   }, [pacientesQuery.isFetching, setPacientesLoading]);
@@ -356,26 +367,29 @@ export function usePatientsDomain({
   }, [opmeFornecedoresQuery.error, setOpmeFornecedoresError]);
 
   useEffect(() => {
-    setCbhpmLoading(cbhpmCacheQuery.isLoading || (cbhpmCacheQuery.isFetching && !cbhpmCacheQuery.data?.length));
-  }, [cbhpmCacheQuery.data?.length, cbhpmCacheQuery.isFetching, cbhpmCacheQuery.isLoading, setCbhpmLoading]);
+    setCbhpmLoading(cbhpmQuery.isFetching);
+  }, [cbhpmQuery.isFetching, setCbhpmLoading]);
 
   useEffect(() => {
-    if (!cbhpmModalOpen || !cbhpmCacheQuery.data) {
+    if (!cbhpmModalOpen || appliedCbhpmFilterValidationMessage) {
       return;
     }
 
-    const cbhpmPageStart = (cbhpmCurrentPage - 1) * CBHPM_PAGE_SIZE;
-    const cbhpmPageEnd = cbhpmPageStart + CBHPM_PAGE_SIZE;
-
-    setCbhpmItems(filteredCbhpmItems.slice(cbhpmPageStart, cbhpmPageEnd));
-    setCbhpmTotalItems(filteredCbhpmItems.length);
-    setCbhpmTotalPages(Math.max(1, Math.ceil(filteredCbhpmItems.length / CBHPM_PAGE_SIZE)));
     setCbhpmError('');
+  }, [appliedCbhpmFilterValidationMessage, cbhpmModalOpen, setCbhpmError]);
+
+  useEffect(() => {
+    if (!cbhpmModalOpen || !appliedCbhpmFilterValidationMessage) {
+      return;
+    }
+
+    setCbhpmItems([]);
+    setCbhpmTotalItems(0);
+    setCbhpmTotalPages(1);
+    setCbhpmError(appliedCbhpmFilterValidationMessage);
   }, [
-    cbhpmCacheQuery.data,
-    cbhpmCurrentPage,
+    appliedCbhpmFilterValidationMessage,
     cbhpmModalOpen,
-    filteredCbhpmItems,
     setCbhpmError,
     setCbhpmItems,
     setCbhpmTotalItems,
@@ -383,10 +397,29 @@ export function usePatientsDomain({
   ]);
 
   useEffect(() => {
-    if (cbhpmCacheQuery.error) {
-      setCbhpmError(getErrorMessage(cbhpmCacheQuery.error));
+    if (!cbhpmModalOpen || !cbhpmQuery.data || appliedCbhpmFilterValidationMessage) {
+      return;
     }
-  }, [cbhpmCacheQuery.error, setCbhpmError]);
+
+    setCbhpmItems(getPagedItems(cbhpmQuery.data));
+    setCbhpmTotalItems(getPagedTotal(cbhpmQuery.data));
+    setCbhpmTotalPages(getPagedTotalPages(cbhpmQuery.data));
+    setCbhpmError('');
+  }, [
+    appliedCbhpmFilterValidationMessage,
+    cbhpmModalOpen,
+    cbhpmQuery.data,
+    setCbhpmError,
+    setCbhpmItems,
+    setCbhpmTotalItems,
+    setCbhpmTotalPages,
+  ]);
+
+  useEffect(() => {
+    if (cbhpmQuery.error) {
+      setCbhpmError(getErrorMessage(cbhpmQuery.error));
+    }
+  }, [cbhpmQuery.error, setCbhpmError]);
 
   const loadMedicalUsers = async (token = session?.token, forceRefresh = false) => {
     if (!token) {
@@ -404,7 +437,7 @@ export function usePatientsDomain({
     token = session?.token,
     forceRefresh = false,
   ) => {
-    if (!token) {
+    if (!token || !canAccessPatients) {
       return;
     }
 
@@ -426,15 +459,15 @@ export function usePatientsDomain({
     token = session?.token,
     forceRefresh = false,
   ) => {
-    if (!token) {
+    if (!token || !canConsultCbhpm) {
       return;
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmCache(token) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmRoot(token) });
     }
 
-    await cbhpmCacheQuery.refetch();
+    await cbhpmQuery.refetch();
   };
 
   const loadHospitais = async (token = session?.token, forceRefresh = false) => {
@@ -547,6 +580,22 @@ export function usePatientsDomain({
     setPendingPatientFiles((current) => current.filter((_, index) => index !== indexToRemove));
   };
 
+  const resolveMedicalSelection = (
+    userId: number | null,
+    nome: string,
+  ) => {
+    const trimmedName = nome.trim();
+    const selectedUser = userId != null
+      ? medicalUsers.find((user) => user.id === userId)
+      : findMedicalUserByName(medicalUsers, trimmedName);
+
+    return {
+      selectedUser,
+      trimmedName,
+      hasScopedSelection: Boolean(trimmedName && userId != null && !selectedUser),
+    };
+  };
+
   const handleSubmitPaciente = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -571,27 +620,30 @@ export function usePatientsDomain({
       return;
     }
 
-    const selectedMedicoUser = pacienteFormData.medicoUserId != null
-      ? medicalUsers.find((user) => user.id === pacienteFormData.medicoUserId)
-      : findMedicalUserByName(medicalUsers, pacienteFormData.medico);
-    const selectedMedicoAuxiliar1User = pacienteFormData.medicoAuxiliar1UserId != null
-      ? medicalUsers.find((user) => user.id === pacienteFormData.medicoAuxiliar1UserId)
-      : findMedicalUserByName(medicalUsers, pacienteFormData.medicoAuxiliar1);
-    const selectedMedicoAuxiliar2User = pacienteFormData.medicoAuxiliar2UserId != null
-      ? medicalUsers.find((user) => user.id === pacienteFormData.medicoAuxiliar2UserId)
-      : findMedicalUserByName(medicalUsers, pacienteFormData.medicoAuxiliar2);
+    const selectedMedico = resolveMedicalSelection(
+      pacienteFormData.medicoUserId,
+      pacienteFormData.medico,
+    );
+    const selectedMedicoAuxiliar1 = resolveMedicalSelection(
+      pacienteFormData.medicoAuxiliar1UserId,
+      pacienteFormData.medicoAuxiliar1,
+    );
+    const selectedMedicoAuxiliar2 = resolveMedicalSelection(
+      pacienteFormData.medicoAuxiliar2UserId,
+      pacienteFormData.medicoAuxiliar2,
+    );
 
-    if (pacienteFormData.medico && !selectedMedicoUser) {
+    if (selectedMedico.trimmedName && !selectedMedico.selectedUser && !selectedMedico.hasScopedSelection) {
       setPacienteFormError('Selecione um cirurgiao cadastrado com perfil Medicos.');
       return;
     }
 
-    if (pacienteFormData.medicoAuxiliar1 && !selectedMedicoAuxiliar1User) {
+    if (selectedMedicoAuxiliar1.trimmedName && !selectedMedicoAuxiliar1.selectedUser && !selectedMedicoAuxiliar1.hasScopedSelection) {
       setPacienteFormError('Selecione o medico auxiliar 1 no cadastro de medicos.');
       return;
     }
 
-    if (pacienteFormData.medicoAuxiliar2 && !selectedMedicoAuxiliar2User) {
+    if (selectedMedicoAuxiliar2.trimmedName && !selectedMedicoAuxiliar2.selectedUser && !selectedMedicoAuxiliar2.hasScopedSelection) {
       setPacienteFormError('Selecione o medico auxiliar 2 no cadastro de medicos.');
       return;
     }
@@ -608,12 +660,12 @@ export function usePatientsDomain({
 
     const payload = toPacientePayload({
       ...pacienteFormData,
-      medicoUserId: selectedMedicoUser?.id ?? pacienteFormData.medicoUserId,
-      medico: selectedMedicoUser?.nome ?? pacienteFormData.medico,
-      medicoAuxiliar1UserId: selectedMedicoAuxiliar1User?.id ?? pacienteFormData.medicoAuxiliar1UserId,
-      medicoAuxiliar1: selectedMedicoAuxiliar1User?.nome ?? pacienteFormData.medicoAuxiliar1,
-      medicoAuxiliar2UserId: selectedMedicoAuxiliar2User?.id ?? pacienteFormData.medicoAuxiliar2UserId,
-      medicoAuxiliar2: selectedMedicoAuxiliar2User?.nome ?? pacienteFormData.medicoAuxiliar2,
+      medicoUserId: selectedMedico.selectedUser?.id ?? pacienteFormData.medicoUserId,
+      medico: selectedMedico.selectedUser?.nome ?? selectedMedico.trimmedName,
+      medicoAuxiliar1UserId: selectedMedicoAuxiliar1.selectedUser?.id ?? pacienteFormData.medicoAuxiliar1UserId,
+      medicoAuxiliar1: selectedMedicoAuxiliar1.selectedUser?.nome ?? selectedMedicoAuxiliar1.trimmedName,
+      medicoAuxiliar2UserId: selectedMedicoAuxiliar2.selectedUser?.id ?? pacienteFormData.medicoAuxiliar2UserId,
+      medicoAuxiliar2: selectedMedicoAuxiliar2.selectedUser?.nome ?? selectedMedicoAuxiliar2.trimmedName,
       hospitalId: selectedHospital?.id ?? null,
       hospital: selectedHospital?.nome ?? pacienteFormData.hospital,
       convenioId: selectedConvenio?.idConvenio ?? null,
@@ -656,9 +708,6 @@ export function usePatientsDomain({
           ? current.map((paciente) => (paciente.id === savedPaciente.id ? savedPaciente : paciente))
           : [savedPaciente, ...current],
       ));
-      if (!editingPacienteId) {
-        setPacientesTotalItems((current) => current + 1);
-      }
       const baseSuccessMessage = editingPacienteId
         ? 'Paciente atualizado.'
         : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`;
@@ -783,7 +832,7 @@ export function usePatientsDomain({
   };
 
   const handleOpenCbhpmModal = () => {
-    if (patientReadOnly) {
+    if (patientReadOnly || !canEditPatients) {
       return;
     }
 
@@ -820,6 +869,10 @@ export function usePatientsDomain({
   };
 
   const openPatientsList = () => {
+    if (!canAccessPatients) {
+      return;
+    }
+
     navigateToView('patients');
     setModuleMode('list');
   };
@@ -870,9 +923,13 @@ export function usePatientsDomain({
   };
 
   const refreshCbhpm = () => {
-    if (session) {
-      void loadCbhpm(session.token, true);
+    applyCbhpmFiltersNow();
+
+    if (!session || !canSearchCbhpm || !canConsultCbhpm) {
+      return;
     }
+
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmRoot(session.token) });
   };
 
   const closePatientFilesModal = () => {
@@ -961,6 +1018,9 @@ export function usePatientsDomain({
     cbhpmItems,
     cbhpmFilters,
     setCbhpmFilters,
+    cbhpmFilterHint,
+    canConsultCbhpm,
+    canSearchCbhpm,
     cbhpmLoading,
     cbhpmError,
     cbhpmCurrentPage,
