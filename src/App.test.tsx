@@ -1294,19 +1294,38 @@ describe('App', () => {
     await user.selectOptions(screen.getByLabelText('Médico auxiliar 2'), '3');
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
+    const refreshProceduresButton = within(cbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
+    await waitFor(() => {
+      expect(refreshProceduresButton).toBeEnabled();
+    });
     fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), { target: { value: 'Consulta' } });
+    await user.click(refreshProceduresButton);
     await waitFor(() => {
       expect(api.getCbhpmGeral).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ procedimento: 'Consulta' }));
-    }, { timeout: 2000 });
-    expect(await within(cbhpmDialog).findByText('10101012')).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(within(cbhpmDialog).queryByText('Carregando procedimentos...')).not.toBeInTheDocument();
+    });
+    expect(within(cbhpmDialog).getByText('10101012')).toBeInTheDocument();
     const firstProcedureRow = within(cbhpmDialog).getByText('10101012').closest('tr');
     expect(firstProcedureRow).not.toBeNull();
     await user.click(within(firstProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const secondCbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     const secondCodigoField = within(secondCbhpmDialog).getByLabelText('Codigo');
+    const refreshSecondProceduresButton = within(secondCbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
+    await waitFor(() => {
+      expect(refreshSecondProceduresButton).toBeEnabled();
+    });
     fireEvent.change(secondCodigoField, { target: { value: '1010201' } });
-    expect(await within(secondCbhpmDialog).findByText('10102019')).toBeInTheDocument();
+    await user.click(refreshSecondProceduresButton);
+    await waitFor(() => {
+      expect(api.getCbhpmGeral).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ codigo: '1010201' }));
+    });
+    await waitFor(() => {
+      expect(within(secondCbhpmDialog).queryByText('Carregando procedimentos...')).not.toBeInTheDocument();
+    });
+    expect(within(secondCbhpmDialog).getByText('10102019')).toBeInTheDocument();
     const secondProcedureRow = within(secondCbhpmDialog).getByText('10102019').closest('tr');
     expect(secondProcedureRow).not.toBeNull();
     await user.click(within(secondProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
