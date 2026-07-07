@@ -1,20 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { CbhpmFilters } from '../../appTypes';
+import { useCallback, useRef, useState } from 'react';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { CBHPM_PAGE_SIZE } from '../../shared/utils/formatters';
 import type { CbhpmGeral } from '../../types';
+import type { CbhpmFilters } from '../../appTypes';
+import {
+  areCbhpmAutoSearchFiltersEqual,
+  buildAppliedCbhpmFilters,
+  CBHPM_AUTO_SEARCH_DELAY_MS,
+  getCbhpmAutoSearchFilters,
+} from './cbhpmLookupUtils';
 
 const emptyCbhpmFilters: CbhpmFilters = {
   codigo: '',
   procedimento: '',
   porte: '',
 };
-
-function areCbhpmFiltersEqual(current: CbhpmFilters, debounced: CbhpmFilters) {
-  return current.codigo === debounced.codigo
-    && current.procedimento === debounced.procedimento
-    && current.porte === debounced.porte;
-}
 
 export function useCbhpmLookup() {
   const [cbhpmModalOpen, setCbhpmModalOpen] = useState(false);
@@ -25,19 +25,23 @@ export function useCbhpmLookup() {
   const [sortBy, setSortBy] = useState('codigo');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const resetCbhpmPage = useCallback(() => setCbhpmCurrentPage(1), []);
-  const [debouncedCbhpmFilters] = useDebouncedValue(cbhpmFilters, {
-    delayMs: 800,
-    isEqual: areCbhpmFiltersEqual,
-    onCommit: resetCbhpmPage,
+  const latestCbhpmFiltersRef = useRef(cbhpmFilters);
+  latestCbhpmFiltersRef.current = cbhpmFilters;
+
+  const commitDebouncedAutoSearch = useCallback(() => {
+    resetCbhpmPage();
+    setAppliedCbhpmFilters(buildAppliedCbhpmFilters(latestCbhpmFiltersRef.current));
+  }, [resetCbhpmPage]);
+
+  const [, setDebouncedCbhpmAutoFilters] = useDebouncedValue(getCbhpmAutoSearchFilters(cbhpmFilters), {
+    delayMs: CBHPM_AUTO_SEARCH_DELAY_MS,
+    isEqual: areCbhpmAutoSearchFiltersEqual,
+    onCommit: commitDebouncedAutoSearch,
   });
   const [cbhpmTotalItems, setCbhpmTotalItems] = useState(0);
   const [cbhpmTotalPages, setCbhpmTotalPages] = useState(1);
   const [cbhpmLoading, setCbhpmLoading] = useState(false);
   const [cbhpmError, setCbhpmError] = useState('');
-
-  useEffect(() => {
-    setAppliedCbhpmFilters(debouncedCbhpmFilters);
-  }, [debouncedCbhpmFilters]);
 
   const cbhpmTotalPageCount = Math.max(1, cbhpmTotalPages);
   const cbhpmPageStart = (cbhpmCurrentPage - 1) * CBHPM_PAGE_SIZE;
@@ -50,6 +54,7 @@ export function useCbhpmLookup() {
     setCbhpmItems([]);
     setCbhpmFilters(emptyCbhpmFilters);
     setAppliedCbhpmFilters(emptyCbhpmFilters);
+    setDebouncedCbhpmAutoFilters(getCbhpmAutoSearchFilters(emptyCbhpmFilters));
     setCbhpmCurrentPage(1);
     setCbhpmTotalItems(0);
     setCbhpmTotalPages(1);
@@ -60,8 +65,9 @@ export function useCbhpmLookup() {
 
   const applyCbhpmFiltersNow = useCallback(() => {
     resetCbhpmPage();
-    setAppliedCbhpmFilters(cbhpmFilters);
-  }, [cbhpmFilters, resetCbhpmPage]);
+    setDebouncedCbhpmAutoFilters(getCbhpmAutoSearchFilters(cbhpmFilters));
+    setAppliedCbhpmFilters(buildAppliedCbhpmFilters(cbhpmFilters));
+  }, [cbhpmFilters, resetCbhpmPage, setDebouncedCbhpmAutoFilters]);
 
   return {
     cbhpmModalOpen,
@@ -70,7 +76,6 @@ export function useCbhpmLookup() {
     setCbhpmItems,
     cbhpmFilters,
     setCbhpmFilters,
-    debouncedCbhpmFilters,
     appliedCbhpmFilters,
     applyCbhpmFiltersNow,
     cbhpmCurrentPage,
