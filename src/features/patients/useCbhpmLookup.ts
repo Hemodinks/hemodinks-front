@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { CbhpmFilters } from '../../appTypes';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { CBHPM_PAGE_SIZE } from '../../shared/utils/formatters';
@@ -20,6 +20,7 @@ export function useCbhpmLookup() {
   const [cbhpmModalOpen, setCbhpmModalOpen] = useState(false);
   const [cbhpmItems, setCbhpmItems] = useState<CbhpmGeral[]>([]);
   const [cbhpmFilters, setCbhpmFilters] = useState<CbhpmFilters>(emptyCbhpmFilters);
+  const [appliedCbhpmFilters, setAppliedCbhpmFilters] = useState<CbhpmFilters>(emptyCbhpmFilters);
   const [cbhpmCurrentPage, setCbhpmCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState('codigo');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -34,6 +35,10 @@ export function useCbhpmLookup() {
   const [cbhpmLoading, setCbhpmLoading] = useState(false);
   const [cbhpmError, setCbhpmError] = useState('');
 
+  useEffect(() => {
+    setAppliedCbhpmFilters(debouncedCbhpmFilters);
+  }, [debouncedCbhpmFilters]);
+
   const cbhpmTotalPageCount = Math.max(1, cbhpmTotalPages);
   const cbhpmPageStart = (cbhpmCurrentPage - 1) * CBHPM_PAGE_SIZE;
   const cbhpmPageEnd = cbhpmPageStart + CBHPM_PAGE_SIZE;
@@ -44,6 +49,7 @@ export function useCbhpmLookup() {
     setCbhpmModalOpen(false);
     setCbhpmItems([]);
     setCbhpmFilters(emptyCbhpmFilters);
+    setAppliedCbhpmFilters(emptyCbhpmFilters);
     setCbhpmCurrentPage(1);
     setCbhpmTotalItems(0);
     setCbhpmTotalPages(1);
@@ -51,6 +57,11 @@ export function useCbhpmLookup() {
     setSortBy('codigo');
     setSortDirection('asc');
   };
+
+  const applyCbhpmFiltersNow = useCallback(() => {
+    resetCbhpmPage();
+    setAppliedCbhpmFilters(cbhpmFilters);
+  }, [cbhpmFilters, resetCbhpmPage]);
 
   return {
     cbhpmModalOpen,
@@ -60,6 +71,8 @@ export function useCbhpmLookup() {
     cbhpmFilters,
     setCbhpmFilters,
     debouncedCbhpmFilters,
+    appliedCbhpmFilters,
+    applyCbhpmFiltersNow,
     cbhpmCurrentPage,
     setCbhpmCurrentPage,
     sortBy,
