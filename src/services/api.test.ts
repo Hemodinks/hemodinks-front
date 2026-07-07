@@ -12,6 +12,7 @@ import {
   getAllCbhpmGeral,
   getBrazilPublicHolidays,
   getConvenios,
+  getCurrentLicenca,
   getDashboardNotifications,
   getHospitais,
   getOpmeFornecedores,
@@ -186,6 +187,25 @@ describe('services api client', () => {
 
     expect(requestSpy).toHaveBeenCalledWith({
       url: '/api/dashboard/notifications',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer jwt-token',
+      },
+    });
+  });
+
+  it('consulta a licenca atual com token bearer', async () => {
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(axiosResponse({
+      userId: 99,
+      featuresEfetivas: ['Pacientes.Visualizar'],
+    }));
+
+    const result = await getCurrentLicenca('jwt-token');
+
+    expect(result?.featuresEfetivas).toEqual(['Pacientes.Visualizar']);
+    expect(requestSpy).toHaveBeenCalledWith({
+      url: '/api/licencas/current',
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

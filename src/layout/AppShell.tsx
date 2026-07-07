@@ -29,6 +29,7 @@ type AppShellProps = {
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
+  canAccessSettings: boolean;
   canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
@@ -69,6 +70,7 @@ export function AppShell({
   canEditOwnUser,
   canAccessBilling,
   canAccessMedicalGroups,
+  canAccessSettings,
   canAccessAgenda,
   usersCount,
   pacientesCount,
@@ -131,6 +133,7 @@ export function AppShell({
           canEditOwnUser={canEditOwnUser}
           canAccessBilling={canAccessBilling}
           canAccessMedicalGroups={canAccessMedicalGroups}
+          canAccessSettings={canAccessSettings}
           canAccessAgenda={canAccessAgenda}
           usersCount={usersCount}
           pacientesCount={pacientesCount}
