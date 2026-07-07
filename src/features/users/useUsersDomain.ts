@@ -357,9 +357,6 @@ export function useUsersDomain({
           ? current.map((user) => (user.id === savedUser.id ? savedUser : user))
           : [savedUser, ...current],
       ));
-      if (!editingId) {
-        setUsersTotalItems((current) => current + 1);
-      }
 
       if (editingId && savedUser.id === session.user.id) {
         persistSession({

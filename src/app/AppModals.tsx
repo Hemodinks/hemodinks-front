@@ -71,8 +71,11 @@ export function AppModals({
           items={patientsDomain.cbhpmItems}
           filters={patientsDomain.cbhpmFilters}
           isAdmin={isAdmin}
+          canConsult={patientsDomain.canConsultCbhpm}
           loading={patientsDomain.cbhpmLoading}
           error={patientsDomain.cbhpmError}
+          canSearch={patientsDomain.canSearchCbhpm}
+          filterHint={patientsDomain.cbhpmFilterHint}
           currentPage={patientsDomain.cbhpmCurrentPage}
           totalPages={patientsDomain.cbhpmTotalPageCount}
           totalItems={patientsDomain.cbhpmTotalItems}

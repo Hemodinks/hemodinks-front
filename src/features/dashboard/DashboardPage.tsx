@@ -16,6 +16,7 @@ import './dashboard.css';
 
 type DashboardPageProps = {
   companyName: string;
+  canAccessPatients: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
@@ -109,6 +110,7 @@ function reorderDashboardModuleOrder(currentOrder: DashboardModuleId[], draggedM
 
 export function DashboardPage({
   companyName,
+  canAccessPatients,
   canAccessUsers,
   canEditOwnUser,
   canAccessBilling,
@@ -161,16 +163,18 @@ export function DashboardPage({
           onOpen: onOpenMyProfile,
         }]
       : []),
-    {
-      id: 'patients',
-      title: 'Pacientes',
-      metric: patientReadOnly ? 'Visualizar cadastro' : 'Administrar atendimentos',
-      footerLabel: `${pacientesCount} cadastrados`,
-      className: 'module-card-patients',
-      ariaLabel: 'Abrir pacientes',
-      icon: <ClipboardList size={24} />,
-      onOpen: onOpenPatientsList,
-    },
+    ...(canAccessPatients
+      ? [{
+          id: 'patients' as const,
+          title: 'Pacientes',
+          metric: patientReadOnly ? 'Visualizar cadastro' : 'Administrar atendimentos',
+          footerLabel: `${pacientesCount} cadastrados`,
+          className: 'module-card-patients',
+          ariaLabel: 'Abrir pacientes',
+          icon: <ClipboardList size={24} />,
+          onOpen: onOpenPatientsList,
+        }]
+      : []),
     ...(canAccessBilling
       ? [{
           id: 'billing' as const,

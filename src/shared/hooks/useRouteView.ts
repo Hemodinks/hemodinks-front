@@ -7,6 +7,7 @@ import type { AuthSession } from '../../types';
 type UseRouteViewOptions = {
   session: AuthSession | null;
   canUseDashboardRoute: boolean;
+  canUsePatientsRoute: boolean;
   canUseUsersRoute: boolean;
   canUseProfileRoute: boolean;
   canUseBillingRoute: boolean;
@@ -18,6 +19,7 @@ type UseRouteViewOptions = {
 export function useRouteView({
   session,
   canUseDashboardRoute,
+  canUsePatientsRoute,
   canUseUsersRoute,
   canUseProfileRoute,
   canUseBillingRoute,
@@ -30,13 +32,28 @@ export function useRouteView({
   const routeView = getViewFromPath(location.pathname);
   const isRootRoute = isRootPath(location.pathname);
   const routeBlocked = (routeView === 'dashboard' && !canUseDashboardRoute)
+    || (routeView === 'patients' && !canUsePatientsRoute)
     || (routeView === 'users' && !canUseUsersRoute)
     || (routeView === 'profile' && !canUseProfileRoute)
     || (routeView === 'billing' && !canUseBillingRoute)
     || (routeView === 'medicalGroups' && !canUseMedicalGroupsRoute)
     || (routeView === 'agenda' && !canUseAgendaRoute)
     || (routeView === 'settings' && !canUseSettingsRoute);
-  const fallbackView: AppView = canUseDashboardRoute ? 'dashboard' : 'patients';
+  const fallbackView: AppView = canUseDashboardRoute
+    ? 'dashboard'
+    : canUsePatientsRoute
+      ? 'patients'
+      : canUseUsersRoute
+        ? 'users'
+        : canUseProfileRoute
+          ? 'profile'
+          : canUseBillingRoute
+            ? 'billing'
+            : canUseMedicalGroupsRoute
+              ? 'medicalGroups'
+              : canUseAgendaRoute
+                ? 'agenda'
+                : 'settings';
   const activeView: AppView = !routeView || routeBlocked
     ? fallbackView
     : routeView;

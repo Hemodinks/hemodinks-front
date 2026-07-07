@@ -24,6 +24,7 @@ type AppShellProps = {
   notificationCount: number;
   currentUserProfile: string;
   canAccessDashboard: boolean;
+  canAccessPatients: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
@@ -63,6 +64,7 @@ export function AppShell({
   notificationCount,
   currentUserProfile,
   canAccessDashboard,
+  canAccessPatients,
   canAccessUsers,
   canEditOwnUser,
   canAccessBilling,
@@ -124,6 +126,7 @@ export function AppShell({
           activeView={activeView}
           currentUserProfile={currentUserProfile}
           canAccessDashboard={canAccessDashboard}
+          canAccessPatients={canAccessPatients}
           canAccessUsers={canAccessUsers}
           canEditOwnUser={canEditOwnUser}
           canAccessBilling={canAccessBilling}

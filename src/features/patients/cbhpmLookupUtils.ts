@@ -1,9 +1,9 @@
 import type { CbhpmFilters } from '../../appTypes';
-import type { CbhpmGeral } from '../../types';
 import { normalizeCbhpmCodigo } from './patientUtils';
 
-export const CBHPM_CACHE_FETCH_PAGE_SIZE = 100;
-export const CBHPM_SEARCH_MIN_LENGTH = 7;
+export const CBHPM_SEARCH_MIN_LENGTH = 3;
+export const CBHPM_AUTO_SEARCH_DELAY_MS = 3000;
+export type CbhpmAutoSearchFilters = Pick<CbhpmFilters, 'codigo' | 'procedimento'>;
 
 export function normalizeCbhpmSearchText(value?: string | null) {
   return (value ?? '')
@@ -13,33 +13,75 @@ export function normalizeCbhpmSearchText(value?: string | null) {
     .toLocaleLowerCase('pt-BR');
 }
 
-export function isCbhpmCacheSearchReady(filters: CbhpmFilters) {
-  const codigo = normalizeCbhpmCodigo(filters.codigo);
-  const procedimento = normalizeCbhpmSearchText(filters.procedimento);
-  const codigoReady = codigo.length >= CBHPM_SEARCH_MIN_LENGTH;
-  const procedimentoReady = procedimento.length >= CBHPM_SEARCH_MIN_LENGTH;
-
-  return codigoReady || procedimentoReady;
+export function getCbhpmAutoSearchFilters(filters: CbhpmFilters): CbhpmAutoSearchFilters {
+  return {
+    codigo: normalizeCbhpmCodigo(filters.codigo),
+    procedimento: filters.procedimento,
+  };
 }
 
-export function filterCbhpmCachedItems(items: CbhpmGeral[], filters: CbhpmFilters) {
-  if (!isCbhpmCacheSearchReady(filters)) {
-    return [];
-  }
+export function areCbhpmAutoSearchFiltersEqual(
+  current: CbhpmAutoSearchFilters,
+  debounced: CbhpmAutoSearchFilters,
+) {
+  return normalizeCbhpmCodigo(current.codigo) === normalizeCbhpmCodigo(debounced.codigo)
+    && current.procedimento.trim() === debounced.procedimento.trim();
+}
 
+export function buildAppliedCbhpmFilters(
+  filters: CbhpmFilters,
+  autoSearchFilters = getCbhpmAutoSearchFilters(filters),
+): CbhpmFilters {
+  return {
+    codigo: autoSearchFilters.codigo,
+    procedimento: autoSearchFilters.procedimento,
+    porte: filters.porte.trim().toUpperCase(),
+  };
+}
+
+export function getCbhpmFilterValidationMessage(filters: CbhpmFilters) {
   const codigo = normalizeCbhpmCodigo(filters.codigo);
   const procedimento = normalizeCbhpmSearchText(filters.procedimento);
+  const hasInvalidCodigo = codigo.length > 0 && codigo.length < CBHPM_SEARCH_MIN_LENGTH;
+  const hasInvalidProcedimento = procedimento.length > 0 && procedimento.length < CBHPM_SEARCH_MIN_LENGTH;
+
+  if (hasInvalidCodigo && hasInvalidProcedimento) {
+    return 'Informe pelo menos 3 digitos no codigo e 3 caracteres na descricao para consultar.';
+  }
+
+  if (hasInvalidCodigo) {
+    return 'Informe pelo menos 3 digitos no codigo para consultar.';
+  }
+
+  if (hasInvalidProcedimento) {
+    return 'Informe pelo menos 3 caracteres na descricao para consultar.';
+  }
+
+  return '';
+}
+
+export function areCbhpmFiltersSearchable(filters: CbhpmFilters) {
+  return !getCbhpmFilterValidationMessage(filters);
+}
+
+export function buildCbhpmQueryFilters(filters: CbhpmFilters): Partial<CbhpmFilters> {
+  const codigo = normalizeCbhpmCodigo(filters.codigo);
+  const procedimento = filters.procedimento.trim();
+  const normalizedProcedimento = normalizeCbhpmSearchText(filters.procedimento);
   const porte = filters.porte.trim().toUpperCase();
-  const shouldFilterCodigo = codigo.length >= CBHPM_SEARCH_MIN_LENGTH;
-  const shouldFilterProcedimento = procedimento.length >= CBHPM_SEARCH_MIN_LENGTH;
+  const queryFilters: Partial<CbhpmFilters> = {};
 
-  return items.filter((item) => {
-    const itemCodigo = normalizeCbhpmCodigo(item.codigo);
-    const itemDescricao = normalizeCbhpmSearchText(`${item.procedimento} ${item.grupo ?? ''} ${item.capitulo ?? ''}`);
-    const itemPorte = item.porte?.trim().toUpperCase() ?? '';
+  if (codigo.length >= CBHPM_SEARCH_MIN_LENGTH) {
+    queryFilters.codigo = codigo;
+  }
 
-    return (!shouldFilterCodigo || itemCodigo.includes(codigo))
-      && (!shouldFilterProcedimento || itemDescricao.includes(procedimento))
-      && (!porte || itemPorte === porte);
-  });
+  if (normalizedProcedimento.length >= CBHPM_SEARCH_MIN_LENGTH) {
+    queryFilters.procedimento = procedimento;
+  }
+
+  if (porte) {
+    queryFilters.porte = porte;
+  }
+
+  return queryFilters;
 }

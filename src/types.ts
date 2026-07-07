@@ -230,6 +230,34 @@ export type PublicHoliday = {
   types: string[];
 };
 
+export type LicencaFeature =
+  | 'Dashboard.Visualizar'
+  | 'Pacientes.Visualizar'
+  | 'Pacientes.Gerenciar'
+  | 'Cbhpm.Consultar'
+  | (string & {});
+
+export type Licenca = {
+  id?: number | null;
+  userId: number;
+  controleAplicavel?: boolean;
+  plano?: string;
+  status?: string;
+  dataInicioTrial?: string | null;
+  dataFimTrial?: string | null;
+  dataFimLicenca?: string | null;
+  featuresLiberadas?: LicencaFeature[];
+  featuresEfetivas: LicencaFeature[];
+  trialExpirado?: boolean;
+  licencaExpirada?: boolean;
+  ativa?: boolean;
+  acessoCompleto?: boolean;
+  diasRestantesTrial?: number;
+  observacoes?: string | null;
+  dataCadastro?: string | null;
+  dataAtualizacao?: string | null;
+};
+
 export type LoginResponse = {
   id: number;
   clinicaId?: number;
@@ -244,9 +272,10 @@ export type LoginResponse = {
   precisaTrocarSenha: boolean;
   perfilId: number;
   perfilNome: string;
+  licenca?: Licenca | null;
 };
 
-export type SessionUser = Pick<LoginResponse, 'id' | 'clinicaId' | 'clinicaSlug' | 'nome' | 'email' | 'cpf' | 'crm' | 'crmUf' | 'fotoPerfil' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome'>;
+export type SessionUser = Pick<LoginResponse, 'id' | 'clinicaId' | 'clinicaSlug' | 'nome' | 'email' | 'cpf' | 'crm' | 'crmUf' | 'fotoPerfil' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome' | 'licenca'>;
 
 export type AuthSession = {
   token: string;
