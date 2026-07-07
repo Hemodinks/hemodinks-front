@@ -505,7 +505,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
               aria-pressed={activeSection === 'calendario'}
             >
               <CalendarDays size={17} />
-              Calendario
+              Calendário
             </Button>
             <Button
               type="button"
@@ -656,10 +656,10 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
               <div className="agenda-panel-actions">
                 <Button type="button" variant="ghost" onClick={openCalendarSection}>
                   <ChevronLeft size={17} />
-                  Calendario
+                  Calendário
                 </Button>
                 {editingEventId && (
-                  <IconButton label="Cancelar edicao" tone="muted" onClick={() => resetForm()}>
+                  <IconButton label="Cancelar edição" tone="muted" onClick={() => resetForm()}>
                     <X size={18} />
                   </IconButton>
                 )}
@@ -669,7 +669,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
             <form className="stack agenda-form" onSubmit={handleSubmit}>
               <div className="agenda-form-section">
                 <TextField
-                  label="Titulo"
+                  label="Título"
                   type="text"
                   value={formData.title}
                   onValueChange={(value) => setFormData((current) => ({ ...current, title: value.slice(0, 255) }))}
@@ -678,7 +678,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
                 />
 
                 <TextField
-                  label="Descricao"
+                  label="Descrição"
                   type="text"
                   value={formData.description}
                   onValueChange={(value) => setFormData((current) => ({ ...current, description: value.slice(0, 2000) }))}
@@ -687,7 +687,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
 
                 <div className="two-column-fields">
                   <TextField
-                    label="Inicio"
+                    label="Início"
                     type="date"
                     value={formData.startDate}
                     onValueChange={(value) => setFormData((current) => ({ ...current, startDate: value }))}
@@ -704,7 +704,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
 
                 <div className="two-column-fields">
                   <TextField
-                    label="Termino"
+                    label="Término"
                     type="date"
                     value={formData.endDate}
                     onValueChange={(value) => setFormData((current) => ({ ...current, endDate: value }))}
@@ -727,7 +727,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
 
                 {formData.notifyMedicalProfile && (
                   <SelectField
-                    label="Medico"
+                    label="Médico"
                     value={formData.medicalUserId}
                     onChange={(event) => setFormData((current) => ({ ...current, medicalUserId: event.target.value }))}
                   >
@@ -814,9 +814,9 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
                     Não foi possível carregar os destinatários. {notificationRecipientsError}
                   </p>
                 ) : notificationRecipientsLoading ? (
-                  <p className="agenda-empty">Carregando destinatarios disponiveis...</p>
+                  <p className="agenda-empty">Carregando destinatários disponíveis...</p>
                 ) : (
-                  <p className="agenda-empty">Nenhum destinatario disponivel.</p>
+                  <p className="agenda-empty">Nenhum destinatário disponível.</p>
                 )}
               </div>
 

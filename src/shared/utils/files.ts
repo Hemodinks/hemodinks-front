@@ -8,10 +8,10 @@ export function readProfilePhoto(file: File) {
         return;
       }
 
-      reject(new Error('Nao foi possivel carregar a foto.'));
+      reject(new Error('Não foi possível carregar a foto.'));
     };
 
-    reader.onerror = () => reject(new Error('Nao foi possivel carregar a foto.'));
+    reader.onerror = () => reject(new Error('Não foi possível carregar a foto.'));
     reader.readAsDataURL(file);
   });
 }

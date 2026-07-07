@@ -63,7 +63,7 @@ const BILLING_STATUS_FILTER_OPTIONS: Array<{ label: string; value: BillingStatus
 
 const BILLING_REGIME_FILTER_OPTIONS: Array<{ label: string; value: BillingRegimeFilter }> = [
   { label: 'Todos', value: 'all' },
-  { label: 'Convenio', value: 'convenio' },
+  { label: 'Convênio', value: 'convenio' },
   { label: 'Particular', value: 'particular' },
 ];
 
@@ -119,11 +119,11 @@ function BillingRankingPanel({ title, subtitle, items, emptyLabel }: BillingRank
             <li key={item.label}>
               <div>
                 <strong>{item.label}</strong>
-                <span>{item.totalRecords} cirurgia(s) | {item.pendingCount} com pendencias</span>
+                <span>{item.totalRecords} cirurgia(s) | {item.pendingCount} com pendências</span>
               </div>
               <div className="billing-ranking-values">
                 <strong>{formatCurrency(item.totalGrossAmount)}</strong>
-                <span>Liquido {formatCurrency(item.totalNetAmount)}</span>
+                <span>Líquido {formatCurrency(item.totalNetAmount)}</span>
               </div>
             </li>
           ))}
@@ -141,7 +141,7 @@ function BillingChecklist({ items }: { items: BillingChecklistItem[] }) {
       {items.map((item) => (
         <div key={item.label} className="billing-checklist-row">
           <dt>
-            <span className={`billing-flag ${item.status}`}>{item.status === 'ok' ? 'Ok' : item.status === 'warning' ? 'Atencao' : 'Pendente'}</span>
+            <span className={`billing-flag ${item.status}`}>{item.status === 'ok' ? 'Ok' : item.status === 'warning' ? 'Atenção' : 'Pendente'}</span>
             {item.label}
           </dt>
           <dd>
@@ -162,14 +162,14 @@ function BillingProcedureList({ procedures }: { procedures: BillingRecord['proce
           <div className="billing-procedure-content">
             <strong>{procedure.procedimento}</strong>
             <div className="billing-procedure-meta">
-              <span className="billing-procedure-chip">{procedure.cbhpmCodigo || 'Sem codigo'}</span>
+              <span className="billing-procedure-chip">{procedure.cbhpmCodigo || 'Sem código'}</span>
               {procedure.cbhpmPorte && (
                 <span className="billing-procedure-chip">Porte {procedure.cbhpmPorte}</span>
               )}
             </div>
           </div>
           <span className="billing-procedure-value">
-            {procedure.valorReferencia != null ? formatCurrency(procedure.valorReferencia) : 'Sem valor referencia'}
+            {procedure.valorReferencia != null ? formatCurrency(procedure.valorReferencia) : 'Sem valor referência'}
           </span>
         </li>
       ))}
@@ -196,12 +196,12 @@ function BillingSummaryModal({ record, authToken, onClose }: BillingSummaryModal
             size="sm"
           />
           <div>
-            <span className="eyebrow">Informacoes resumidas</span>
+            <span className="eyebrow">Informações resumidas</span>
             <h2 id="billing-summary-title">{record.patientName}</h2>
             <p className="billing-summary-modal-subtitle">{record.doctorName}</p>
           </div>
         </div>
-        <IconButton label="Fechar informacoes resumidas" title="Fechar" tone="muted" onClick={onClose}>
+        <IconButton label="Fechar informações resumidas" title="Fechar" tone="muted" onClick={onClose}>
           <X size={18} />
         </IconButton>
       </div>
@@ -215,15 +215,15 @@ function BillingSummaryModal({ record, authToken, onClose }: BillingSummaryModal
           </article>
 
           <article className="billing-summary-info-card billing-summary-convenio-card">
-            <span>Convenio / regime</span>
+            <span>Convênio / regime</span>
             <strong>{record.convenioName}</strong>
-            <p>{record.regime === 'convenio' ? 'Convenio' : 'Particular'} | {record.authorizationCode || 'Sem autorizacao informada'}</p>
+            <p>{record.regime === 'convenio' ? 'Convênio' : 'Particular'} | {record.authorizationCode || 'Sem autorização informada'}</p>
           </article>
 
           <article className="billing-summary-info-card billing-summary-support-card">
             <span>Status / suporte</span>
             <strong>{record.statusLabel}</strong>
-            <p>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendencia(s)</p>
+            <p>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendência(s)</p>
           </article>
         </section>
 
@@ -237,7 +237,7 @@ function BillingSummaryModal({ record, authToken, onClose }: BillingSummaryModal
             <strong>{record.glosaHasNumericValue ? formatCurrency(record.glosaAmount) : record.glosaRaw || '-'}</strong>
           </article>
           <article className="billing-summary-metric-card">
-            <span>Liquido</span>
+            <span>Líquido</span>
             <strong>{record.paymentHasNumericValue || record.glosaHasNumericValue ? formatCurrency(record.netAmount) : '-'}</strong>
           </article>
         </section>
@@ -246,7 +246,7 @@ function BillingSummaryModal({ record, authToken, onClose }: BillingSummaryModal
           <div className="billing-section-heading">
             <div>
               <span className="eyebrow">Procedimentos</span>
-              <h4>Resumo dos codigos vinculados</h4>
+              <h4>Resumo dos códigos vinculados</h4>
             </div>
           </div>
 
@@ -378,7 +378,7 @@ export function BillingPage({
   const hospitalFilterOptions = getUniqueSortedOptions(
     billingScopeRecords
       .map((record) => record.hospitalName)
-      .filter((value) => value !== 'Nao informado'),
+      .filter((value) => value !== 'Não informado'),
   );
   const procedureFilterOptions = getUniqueSortedOptions(
     billingScopeRecords.flatMap((record) => record.procedures.map((procedure) => procedure.procedimento)),
@@ -437,7 +437,7 @@ export function BillingPage({
             <div className="billing-detail-toolbar-actions">
               {lastUpdatedLabel && <span className="billing-detail-toolbar-note">Atualizado em {lastUpdatedLabel}</span>}
               <IconButton
-                label="Atualizar faturamento medico"
+                label="Atualizar faturamento médico"
                 title="Atualizar faturamento"
                 onClick={() => void billingQuery.refetch()}
                 disabled={billingQuery.isFetching}
@@ -449,13 +449,13 @@ export function BillingPage({
 
           {isMedical && (
             <AlertMessage type="warning" icon={<Info size={17} />}>
-              Visualizacao restrita aos pacientes vinculados ao medico {session.user.nome}.
+              Visualização restrita aos pacientes vinculados ao médico {session.user.nome}.
             </AlertMessage>
           )}
 
           {billingQuery.error && (
             <AlertMessage type="error">
-              {billingQuery.error instanceof Error ? billingQuery.error.message : 'Nao foi possivel carregar o faturamento.'}
+              {billingQuery.error instanceof Error ? billingQuery.error.message : 'Não foi possível carregar o faturamento.'}
             </AlertMessage>
           )}
 
@@ -494,7 +494,7 @@ export function BillingPage({
                     <strong>{selectedRecord.glosaHasNumericValue ? formatCurrency(selectedRecord.glosaAmount) : selectedRecord.glosaRaw || '-'}</strong>
                   </div>
                   <div>
-                    <span>Liquido</span>
+                    <span>Líquido</span>
                     <strong>{selectedRecord.paymentHasNumericValue || selectedRecord.glosaHasNumericValue ? formatCurrency(selectedRecord.netAmount) : '-'}</strong>
                   </div>
                 </div>
@@ -502,7 +502,7 @@ export function BillingPage({
                 <section className="billing-detail-section">
                   <div className="billing-section-heading">
                     <div>
-                      <span className="eyebrow">Resumo clinico-administrativo</span>
+                      <span className="eyebrow">Resumo clínico-administrativo</span>
                       <h4>Dados usados no faturamento</h4>
                     </div>
                   </div>
@@ -513,7 +513,7 @@ export function BillingPage({
                       <dd>{selectedRecord.surgeryDateLabel}</dd>
                     </div>
                     <div>
-                      <dt>Cirurgiao</dt>
+                      <dt>Cirurgião</dt>
                       <dd>{selectedRecord.doctorName}</dd>
                     </div>
                     <div>
@@ -521,11 +521,11 @@ export function BillingPage({
                       <dd>{selectedRecord.assistantNames.length ? selectedRecord.assistantNames.join(', ') : '-'}</dd>
                     </div>
                     <div>
-                      <dt>Convenio / regime</dt>
-                      <dd>{selectedRecord.convenioName} / {selectedRecord.regime === 'convenio' ? 'Convenio' : 'Particular'}</dd>
+                      <dt>Convênio / regime</dt>
+                      <dd>{selectedRecord.convenioName} / {selectedRecord.regime === 'convenio' ? 'Convênio' : 'Particular'}</dd>
                     </div>
                     <div>
-                      <dt>Autorizacao</dt>
+                      <dt>Autorização</dt>
                       <dd>{selectedRecord.authorizationCode || '-'}</dd>
                     </div>
                     <div>
@@ -546,7 +546,7 @@ export function BillingPage({
                 <section className="billing-detail-section">
                   <div className="billing-section-heading">
                     <div>
-                      <span className="eyebrow">Codigos e procedimentos</span>
+                      <span className="eyebrow">Códigos e procedimentos</span>
                       <h4>Procedimento principal e associados</h4>
                     </div>
                   </div>
@@ -562,7 +562,7 @@ export function BillingPage({
                   <div className="billing-section-heading">
                     <div>
                       <span className="eyebrow">Checklist do faturamento</span>
-                      <h4>Pontos solicitados para auditoria medica</h4>
+                      <h4>Pontos solicitados para auditoria médica</h4>
                     </div>
                   </div>
 
@@ -572,7 +572,7 @@ export function BillingPage({
             ) : (
               <div className="billing-detail-empty">
                 <TriangleAlert size={18} />
-                <p>Este faturamento nao esta disponivel para a sua visao atual ou nao foi encontrado.</p>
+                <p>Este faturamento não está disponível para a sua visão atual ou não foi encontrado.</p>
               </div>
             )}
           </DataPanel>
@@ -585,11 +585,11 @@ export function BillingPage({
     <section className="workspace billing-workspace">
       <section className="billing-hero">
         <div>
-          <span className="eyebrow">Faturamento medico</span>
+          <span className="eyebrow">Faturamento médico</span>
           <h2>Consulta financeira das cirurgias realizadas</h2>
           <p>
-            Esta tela consolida o que ja foi preenchido no cadastro de pacientes para transformar cirurgia,
-            convenio, OPME, autorizacao, pagamento, glosa e anexos em uma visao de faturamento para a equipe medica.
+            Esta tela consolida o que já foi preenchido no cadastro de pacientes para transformar cirurgia,
+            convênio, OPME, autorização, pagamento, glosa e anexos em uma visão de faturamento para a equipe médica.
           </p>
         </div>
 
@@ -597,14 +597,14 @@ export function BillingPage({
           <span>Baseado no cadastro de pacientes</span>
           {lastUpdatedLabel && <span>Atualizado em {lastUpdatedLabel}</span>}
           {isMedical && <span>Consulta filtrada para {session.user.nome}</span>}
-          {isAdmin && <span>Visao administrativa habilitada</span>}
+          {isAdmin && <span>Visão administrativa habilitada</span>}
         </div>
       </section>
 
       {(summary.nonNumericPaymentCount > 0 || summary.nonNumericGlosaCount > 0) && (
         <AlertMessage type="warning" icon={<TriangleAlert size={17} />}>
-          {summary.nonNumericPaymentCount > 0 && `${summary.nonNumericPaymentCount} registro(s) possuem pagamento preenchido sem valor monetario estruturado. `}
-          {summary.nonNumericGlosaCount > 0 && `${summary.nonNumericGlosaCount} registro(s) possuem glosa preenchida sem valor monetario estruturado.`}
+          {summary.nonNumericPaymentCount > 0 && `${summary.nonNumericPaymentCount} registro(s) possuem pagamento preenchido sem valor monetário estruturado. `}
+          {summary.nonNumericGlosaCount > 0 && `${summary.nonNumericGlosaCount} registro(s) possuem glosa preenchida sem valor monetário estruturado.`}
         </AlertMessage>
       )}
 
@@ -620,10 +620,10 @@ export function BillingPage({
               label="Buscar cirurgia faturada"
               value={filters.search}
               onValueChange={(value) => setFilters((current) => ({ ...current, search: value }))}
-              placeholder="Paciente, procedimento, codigo, hospital..."
+              placeholder="Paciente, procedimento, código, hospital..."
             />
             <IconButton
-              label="Atualizar faturamento medico"
+              label="Atualizar faturamento médico"
               title="Atualizar faturamento"
               onClick={() => void billingQuery.refetch()}
               disabled={billingQuery.isFetching}
@@ -636,23 +636,23 @@ export function BillingPage({
         <div className="billing-filter-grid">
           <ComboboxField
             className="filter-field"
-            label="Cirurgiao"
+            label="Cirurgião"
             value={filters.medico}
             options={doctorFilterOptions}
             onValueChange={(value) => setFilters((current) => ({ ...current, medico: value }))}
             disabled={isMedical || !doctorFilterOptions.length}
-            placeholder={isMedical ? session.user.nome : medicalUsers.length ? 'Todos os cirurgioes' : 'Nenhum medico cadastrado'}
-            noOptionsLabel="Nenhum cirurgiao encontrado."
+            placeholder={isMedical ? session.user.nome : medicalUsers.length ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
+            noOptionsLabel="Nenhum cirurgião encontrado."
           />
           <ComboboxField
             className="filter-field"
-            label="Convenio"
+            label="Convênio"
             value={filters.convenio}
             options={convenioFilterOptions}
             onValueChange={(value) => setFilters((current) => ({ ...current, convenio: value }))}
             disabled={!convenios.length && !filters.convenio}
-            placeholder={convenios.length ? 'Todos os convenios' : 'Nenhum convenio cadastrado'}
-            noOptionsLabel="Nenhum convenio encontrado."
+            placeholder={convenios.length ? 'Todos os convênios' : 'Nenhum convênio cadastrado'}
+            noOptionsLabel="Nenhum convênio encontrado."
           />
           <ComboboxField
             className="filter-field"
@@ -718,7 +718,7 @@ export function BillingPage({
           />
           <CheckboxField
             className="billing-checkbox"
-            label="Mostrar apenas cirurgias com pendencias de faturamento"
+            label="Mostrar apenas cirurgias com pendências de faturamento"
             checked={filters.onlyPendingItems}
             onCheckedChange={(checked) => setFilters((current) => ({ ...current, onlyPendingItems: checked }))}
           />
@@ -737,7 +737,7 @@ export function BillingPage({
           icon={<Wallet size={18} />}
         />
         <BillingSummaryCard
-          title="Liquido estimado"
+          title="Líquido estimado"
           value={formatCurrency(summary.totalNetAmount)}
           caption="Pagamento menos glosa informada"
           tone="net"
@@ -753,7 +753,7 @@ export function BillingPage({
         <BillingSummaryCard
           title="Cirurgias"
           value={String(summary.totalRecords)}
-          caption={`${summary.particularCount} particulares | ${summary.convenioCount} por convenio`}
+          caption={`${summary.particularCount} particulares | ${summary.convenioCount} por convênio`}
           tone="records"
           icon={<ClipboardList size={18} />}
         />
@@ -765,9 +765,9 @@ export function BillingPage({
           icon={<CheckCircle2 size={18} />}
         />
         <BillingSummaryCard
-          title="Pendencias"
+          title="Pendências"
           value={String(summary.recordsWithPendingItems)}
-          caption={`${summary.authorizationCount} autorizacoes | ${summary.attachmentCount} com anexos`}
+          caption={`${summary.authorizationCount} autorizações | ${summary.attachmentCount} com anexos`}
           tone="attention"
           icon={<Info size={18} />}
         />
@@ -775,22 +775,22 @@ export function BillingPage({
 
       <section className="billing-insights-grid">
         <BillingRankingPanel
-          title="Cirurgioes com maior valor informado"
+          title="Cirurgiões com maior valor informado"
           subtitle="Equipe"
           items={doctorBreakdown}
-          emptyLabel="Nenhum cirurgiao com faturamento no filtro atual."
+          emptyLabel="Nenhum cirurgião com faturamento no filtro atual."
         />
         <BillingRankingPanel
-          title="Convenios e regime com maior concentracao"
+          title="Convênios e regime com maior concentração"
           subtitle="Pagadores"
           items={convenioBreakdown}
-          emptyLabel="Nenhum convenio ou regime encontrado."
+          emptyLabel="Nenhum convênio ou regime encontrado."
         />
       </section>
 
       {billingQuery.error && (
         <AlertMessage type="error">
-          {billingQuery.error instanceof Error ? billingQuery.error.message : 'Nao foi possivel carregar o faturamento.'}
+          {billingQuery.error instanceof Error ? billingQuery.error.message : 'Não foi possível carregar o faturamento.'}
         </AlertMessage>
       )}
 
@@ -808,7 +808,7 @@ export function BillingPage({
             <thead>
               <tr>
                 <th>Paciente</th>
-                <th>Cirurgiao</th>
+                <th>Cirurgião</th>
                 <th>Status</th>
                 <th>Resumo</th>
                 <th>Visualizar</th>
@@ -817,7 +817,7 @@ export function BillingPage({
             <tbody>
               {billingQuery.isPending ? (
                 <tr>
-                  <td colSpan={5} className="empty-row">Carregando faturamento medico...</td>
+                  <td colSpan={5} className="empty-row">Carregando faturamento médico...</td>
                 </tr>
               ) : billingRecords.length ? (
                 billingRecords.map((record) => (
@@ -833,11 +833,11 @@ export function BillingPage({
                         />
                         <div>
                           <strong>{record.patientName}</strong>
-                          <span>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendencia(s)</span>
+                          <span>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendência(s)</span>
                         </div>
                       </div>
                     </td>
-                    <td data-label="Cirurgiao">
+                    <td data-label="Cirurgião">
                       <strong>{record.doctorName}</strong>
                       <span>{record.assistantNames.length ? `Auxiliares: ${record.assistantNames.join(', ')}` : 'Sem auxiliares informados'}</span>
                     </td>
@@ -849,8 +849,8 @@ export function BillingPage({
                     <td data-label="Resumo">
                       <IconButton
                         className="billing-row-action"
-                        label={`Informacoes resumidas de ${record.patientName}`}
-                        title="Informacoes resumidas"
+                        label={`Informações resumidas de ${record.patientName}`}
+                        title="Informações resumidas"
                         onClick={() => setSummaryRecordId(record.id)}
                       >
                         <FileText size={18} />

@@ -137,7 +137,7 @@ export function PatientList({
               onChange={(event) => onExportScopeChange(event.target.value as PacienteExportScope)}
             >
               <option value="all">Todos os pacientes</option>
-              {isAdmin && <option value="doctor">Cirurgiao selecionado</option>}
+              {isAdmin && <option value="doctor">Cirurgião selecionado</option>}
               <option value="visible">Dados da tela</option>
             </SelectField>
             <Button
@@ -159,23 +159,23 @@ export function PatientList({
             <div className="patient-filter-grid" aria-label="Filtros administrativos de pacientes">
               <TextField
                 className="filter-field"
-                label="Cirurgiao"
+                label="Cirurgião"
                 type="search"
                 list={MEDICAL_USERS_DATALIST_ID}
                 value={pacienteFilters.medico}
                 onValueChange={(value) => onFiltersChange((current) => ({ ...current, medico: value }))}
                 disabled={!hasMedicalUsers}
-                placeholder={hasMedicalUsers ? 'Todos os cirurgioes' : 'Nenhum medico cadastrado'}
+                placeholder={hasMedicalUsers ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
               />
               <TextField
                 className="filter-field"
-                label="Convenio"
+                label="Convênio"
                 type="search"
                 list={CONVENIOS_DATALIST_ID}
                 value={pacienteFilters.convenio}
                 onValueChange={(value) => onFiltersChange((current) => ({ ...current, convenio: value }))}
                 disabled={!hasConvenios}
-                placeholder={hasConvenios ? 'Convenio' : 'Nenhum convenio cadastrado'}
+                placeholder={hasConvenios ? 'Convênio' : 'Nenhum convênio cadastrado'}
               />
               <TextField
                 className="filter-field"
@@ -223,7 +223,7 @@ export function PatientList({
                 <th>Info</th>
                 <th>
                   <button type="button" className="sort-header-button" onClick={() => onSortChange('medico')} aria-sort={sortBy === 'medico' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Cirurgiao
+                    Cirurgião
                     {sortBy === 'medico' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
                   </button>
                 </th>
@@ -240,7 +240,7 @@ export function PatientList({
                   </button>
                 </th>
                 <th>Obs.</th>
-                <th aria-label="Acoes" />
+                <th aria-label="Ações" />
               </tr>
             </thead>
             <tbody>
@@ -265,14 +265,14 @@ export function PatientList({
                       <button
                         type="button"
                         className="status-info-button"
-                        title="Ver informacoes adicionais"
-                        aria-label={`Informacoes adicionais de ${paciente.nomePaciente}`}
+                        title="Ver informações adicionais"
+                        aria-label={`Informações adicionais de ${paciente.nomePaciente}`}
                         onClick={() => onSelectPatientInfo(paciente)}
                       >
                         <Info size={18} />
                       </button>
                     </td>
-                    <td data-label="Cirurgiao">{paciente.medico || '-'}</td>
+                    <td data-label="Cirurgião">{paciente.medico || '-'}</td>
                     <td data-label="Status Pago">
                       <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
                         {paciente.statusPago ? 'Pago' : 'Pendente'}
@@ -297,14 +297,14 @@ export function PatientList({
                         </span>
                       )}
                     </td>
-                    <td data-label="Observacoes">
+                    <td data-label="Observações">
                       {canManageObservacoes && !patientReadOnly ? (
                         <button
                           type="button"
                           className={`patient-observation-button${hasUnreadObservations ? ' has-unread-observations' : ''}`}
                           onClick={() => void onOpenPacienteObservacoes(paciente)}
-                          title="Abrir observacoes"
-                          aria-label={`Observacoes de ${paciente.nomePaciente}`}
+                          title="Abrir observações"
+                          aria-label={`Observações de ${paciente.nomePaciente}`}
                         >
                           <MessageSquareText size={16} />
                           <span className="patient-observation-count">{unreadObservations}</span>
@@ -316,7 +316,7 @@ export function PatientList({
                         </span>
                       )}
                     </td>
-                    <td data-label="Acoes">
+                    <td data-label="Ações">
                       <div className="row-actions">
                         <IconButton
                           label={`${patientActionLabel} ${paciente.nomePaciente}`}
@@ -353,8 +353,8 @@ export function PatientList({
           type="button"
           className="carousel-nav carousel-nav-right"
           onClick={(event) => scrollListCarousel(event, 'next')}
-          aria-label="Avancar no carrossel de pacientes"
-          title="Avancar no carrossel"
+          aria-label="Avançar no carrossel de pacientes"
+          title="Avançar no carrossel"
         >
           <ChevronRight size={20} />
         </button>
@@ -366,19 +366,19 @@ export function PatientList({
         </span>
         <div className="pagination-actions">
           <IconButton
-            label="Pagina anterior de pacientes"
+            label="Página anterior de pacientes"
             onClick={() => onPageChange((page) => Math.max(1, page - 1))}
             disabled={pacienteCurrentPage === 1}
-            title="Pagina anterior"
+            title="Página anterior"
           >
             <ChevronLeft size={18} />
           </IconButton>
-          <span className="page-indicator">Pagina {pacienteCurrentPage} de {pacienteTotalPages}</span>
+          <span className="page-indicator">Página {pacienteCurrentPage} de {pacienteTotalPages}</span>
           <IconButton
-            label="Proxima pagina de pacientes"
+            label="Próxima página de pacientes"
             onClick={() => onPageChange((page) => Math.min(pacienteTotalPages, page + 1))}
             disabled={pacienteCurrentPage === pacienteTotalPages}
-            title="Proxima pagina"
+            title="Próxima página"
           >
             <ChevronRight size={18} />
           </IconButton>

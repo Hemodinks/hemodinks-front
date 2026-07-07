@@ -34,7 +34,7 @@ export function ConfirmationDialog({
   title,
   message,
   confirmLabel = 'Sim',
-  cancelLabel = 'Nao',
+  cancelLabel = 'Não',
   loading,
   onConfirm,
   onCancel,
@@ -47,7 +47,7 @@ export function ConfirmationDialog({
         {getToneIcon(tone)}
       </div>
       <div className="confirmation-copy">
-        <span className="eyebrow">{tone === 'delete' ? 'Confirmar exclusao' : 'Confirmar alteracao'}</span>
+        <span className="eyebrow">{tone === 'delete' ? 'Confirmar exclusão' : 'Confirmar alteração'}</span>
         <h2 id={titleId}>{title}</h2>
         <p>{message}</p>
       </div>

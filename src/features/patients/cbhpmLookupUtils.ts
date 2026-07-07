@@ -46,15 +46,15 @@ export function getCbhpmFilterValidationMessage(filters: CbhpmFilters) {
   const hasInvalidProcedimento = procedimento.length > 0 && procedimento.length < CBHPM_SEARCH_MIN_LENGTH;
 
   if (hasInvalidCodigo && hasInvalidProcedimento) {
-    return 'Informe pelo menos 3 digitos no codigo e 3 caracteres na descricao para consultar.';
+    return 'Informe pelo menos 3 dígitos no código e 3 caracteres na descrição para consultar.';
   }
 
   if (hasInvalidCodigo) {
-    return 'Informe pelo menos 3 digitos no codigo para consultar.';
+    return 'Informe pelo menos 3 dígitos no código para consultar.';
   }
 
   if (hasInvalidProcedimento) {
-    return 'Informe pelo menos 3 caracteres na descricao para consultar.';
+    return 'Informe pelo menos 3 caracteres na descrição para consultar.';
   }
 
   return '';
