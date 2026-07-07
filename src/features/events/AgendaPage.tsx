@@ -33,7 +33,7 @@ import type {
   AuthSession,
   PublicHoliday,
 } from '../../types';
-import { getErrorMessage } from '../../shared/utils/formatters';
+import { formatProfileName, getErrorMessage } from '../../shared/utils/formatters';
 import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
 import { AlertMessage, Button, CheckboxField, DataPanel, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
 
@@ -375,12 +375,12 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
       || formData.notificationGroupIds.length > 0;
 
     if (hasNotificationRecipients && !hasNotificationMessage) {
-      setError('Informe a mensagem da notificacao.');
+      setError('Informe a mensagem da notificação.');
       return;
     }
 
     if (hasNotificationMessage && !hasNotificationRecipients) {
-      setError('Selecione ao menos um destinatario para enviar a notificacao.');
+      setError('Selecione ao menos um destinatário para enviar a notificação.');
       return;
     }
 
@@ -452,7 +452,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
       title: 'Concluir evento?',
       message: `Deseja marcar "${agendaEvent.title}" como concluido?`,
       confirmLabel: 'Sim',
-      cancelLabel: 'Nao',
+      cancelLabel: 'Não',
       onConfirm: () => completeSelectedEvent(agendaEvent),
     });
   };
@@ -480,9 +480,9 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     confirmAction({
       tone: 'delete',
       title: 'Excluir evento?',
-      message: `Deseja excluir "${agendaEvent.title}"? Esta acao nao podera ser desfeita.`,
+      message: `Deseja excluir "${agendaEvent.title}"? Esta ação não poderá ser desfeita.`,
       confirmLabel: 'Sim',
-      cancelLabel: 'Nao',
+      cancelLabel: 'Não',
       onConfirm: () => deleteSelectedEvent(agendaEvent),
     });
   };
@@ -492,8 +492,8 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
       <DataPanel className="agenda-panel">
         <div className="data-header agenda-header">
           <div>
-            <span className="eyebrow">Agenda e notificacoes</span>
-            <h2>Agenda e notificacoes</h2>
+            <span className="eyebrow">Agenda e notificações</span>
+            <h2>Agenda e notificações</h2>
             <span className="agenda-subtitle">{pendingEventsCount} eventos ativos</span>
           </div>
           <div className="table-tools agenda-tools">
@@ -590,7 +590,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
               <div className="agenda-day-actions">
                 <div className="agenda-day-actions-copy">
                   <strong>Adicionar neste dia</strong>
-                  <span>Clique para criar um evento ou uma notificacao com a data ja preenchida.</span>
+                  <span>Clique para criar um evento ou uma notificação com a data já preenchida.</span>
                 </div>
                 <div className="agenda-day-actions-buttons">
                   <Button type="button" variant="ghost" onClick={openDraftForSelectedDate}>
@@ -618,7 +618,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
                           {agendaEvent.description && <p>{agendaEvent.description}</p>}
                           <div className="agenda-event-meta">
                             {agendaEvent.notifyUser && <span><Bell size={14} /> Usuario</span>}
-                            {agendaEvent.notifyMedicalProfile && <span><Bell size={14} /> {agendaEvent.medicalUserName || 'Perfil medico'}</span>}
+                            {agendaEvent.notifyMedicalProfile && <span><Bell size={14} /> {agendaEvent.medicalUserName || 'Perfil médico'}</span>}
                             {agendaEvent.isCompleted && <span><Check size={14} /> Concluido</span>}
                           </div>
                         </div>
@@ -650,7 +650,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
           <FormPanel className="agenda-form-panel">
             <div className="panel-title">
               <div>
-                <span className="eyebrow">{editingEventId ? 'Edicao' : 'Cadastro'}</span>
+                <span className="eyebrow">{editingEventId ? 'Edição' : 'Cadastro'}</span>
                 <h2>{editingEventId ? 'Editar evento' : 'Novo evento'}</h2>
               </div>
               <div className="agenda-panel-actions">
@@ -720,7 +720,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
                 </div>
 
                 <CheckboxField
-                  label="Notificar perfil medico"
+                  label="Notificar perfil médico"
                   checked={formData.notifyMedicalProfile}
                   onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyMedicalProfile: checked }))}
                 />
@@ -731,7 +731,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
                     value={formData.medicalUserId}
                     onChange={(event) => setFormData((current) => ({ ...current, medicalUserId: event.target.value }))}
                   >
-                    <option value="">Perfil medico</option>
+                    <option value="">Perfil médico</option>
                     {medicalUsers.map((user) => (
                       <option key={user.id} value={user.id}>{user.nome}</option>
                     ))}
@@ -761,11 +761,11 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
 
               <div className="agenda-form-section agenda-notification-section">
                 <TextareaField
-                  label="Mensagem da notificacao"
+                  label="Mensagem da notificação"
                   value={formData.notificationMessage}
                   onValueChange={(value) => setFormData((current) => ({ ...current, notificationMessage: value.slice(0, 500) }))}
                   maxLength={500}
-                  placeholder="Explique a reuniao, evento, auditoria ou videoconferencia."
+                  placeholder="Explique a reunião, evento, auditoria ou videoconferência."
                   className="agenda-notification-message"
                 />
 
@@ -779,12 +779,12 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
 
                     {notificationRecipientOptions.users.length > 0 && (
                       <div className="agenda-recipient-group">
-                        <strong>Destinatarios individuais</strong>
+                        <strong>Destinatários individuais</strong>
                         <div className="agenda-recipient-list">
                           {notificationRecipientOptions.users.map((user) => (
                             <CheckboxField
                               key={user.id}
-                              label={`${user.nome} (${user.perfilNome})`}
+                              label={`${user.nome} (${formatProfileName(user.perfilId, user.perfilNome)})`}
                               checked={formData.notificationUserIds.includes(user.id)}
                               onCheckedChange={() => toggleNotificationUser(user.id)}
                             />
@@ -795,7 +795,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
 
                     {notificationRecipientOptions.groups.length > 0 && (
                       <div className="agenda-recipient-group">
-                        <strong>Grupos medicos</strong>
+                        <strong>Grupos médicos</strong>
                         <div className="agenda-recipient-list">
                           {notificationRecipientOptions.groups.map((group) => (
                             <CheckboxField
@@ -811,7 +811,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
                   </>
                 ) : notificationRecipientsError ? (
                   <p className="agenda-empty agenda-empty-error">
-                    Nao foi possivel carregar os destinatarios. {notificationRecipientsError}
+                    Não foi possível carregar os destinatários. {notificationRecipientsError}
                   </p>
                 ) : notificationRecipientsLoading ? (
                   <p className="agenda-empty">Carregando destinatarios disponiveis...</p>

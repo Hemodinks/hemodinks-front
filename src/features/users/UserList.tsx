@@ -1,7 +1,7 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Info, Mail, Pencil, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { User } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
-import { getProfileName } from '../../shared/utils/formatters';
+import { formatProfileName } from '../../shared/utils/formatters';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { UserAvatar } from './UserAvatar';
 
@@ -58,21 +58,21 @@ export function UserList({
     <DataPanel>
       <div className="data-header">
         <div>
-          <span className="eyebrow">Base de usuarios</span>
+          <span className="eyebrow">Base de usuários</span>
           <h2>{usersTotalItems} cadastrados</h2>
         </div>
 
         <div className="table-tools">
           <Button onClick={onOpenNewUserForm}>
             <Plus size={17} />
-            Novo usuario
+            Novo usuário
           </Button>
           <SearchField
-            label="Buscar usuarios"
+            label="Buscar usuários"
             value={searchTerm}
             onValueChange={onSearchChange}
           />
-          <IconButton label="Atualizar lista de usuarios" onClick={onRefresh} title="Atualizar lista">
+          <IconButton label="Atualizar lista de usuários" onClick={onRefresh} title="Atualizar lista">
             <RefreshCw size={18} />
           </IconButton>
         </div>
@@ -86,7 +86,7 @@ export function UserList({
           type="button"
           className="carousel-nav carousel-nav-left"
           onClick={(event) => scrollListCarousel(event, 'previous')}
-          aria-label="Voltar no carrossel de usuarios"
+          aria-label="Voltar no carrossel de usuários"
           title="Voltar no carrossel"
         >
           <ChevronLeft size={20} />
@@ -109,13 +109,13 @@ export function UserList({
                 </th>
                 <th>Info</th>
                 <th>Contato</th>
-                <th aria-label="Acoes" />
+                <th aria-label="Ações" />
               </tr>
             </thead>
             <tbody>
               {usersLoading ? (
                 <tr>
-                  <td colSpan={5} className="empty-row">Carregando usuarios...</td>
+                  <td colSpan={5} className="empty-row">Carregando usuários...</td>
                 </tr>
               ) : users.length ? (
                 users.map((user) => (
@@ -126,7 +126,7 @@ export function UserList({
                         <span>{user.nome}</span>
                       </div>
                     </td>
-                    <td data-label="Perfil">{user.perfilNome || getProfileName(user.perfilId)}</td>
+                    <td data-label="Perfil">{formatProfileName(user.perfilId, user.perfilNome)}</td>
                     <td data-label="Info">
                       <button
                         type="button"
@@ -151,7 +151,7 @@ export function UserList({
                         <Phone size={14} />
                       </button>
                     </td>
-                    <td data-label="Acoes">
+                    <td data-label="Ações">
                       <div className="row-actions">
                         <IconButton label={`Editar ${user.nome}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
                           <Pencil size={17} />
@@ -165,7 +165,7 @@ export function UserList({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="empty-row">Nenhum usuario encontrado.</td>
+                  <td colSpan={5} className="empty-row">Nenhum usuário encontrado.</td>
                 </tr>
               )}
             </tbody>
@@ -175,8 +175,8 @@ export function UserList({
           type="button"
           className="carousel-nav carousel-nav-right"
           onClick={(event) => scrollListCarousel(event, 'next')}
-          aria-label="Avancar no carrossel de usuarios"
-          title="Avancar no carrossel"
+          aria-label="Avançar no carrossel de usuários"
+          title="Avançar no carrossel"
         >
           <ChevronRight size={20} />
         </button>
@@ -188,19 +188,19 @@ export function UserList({
         </span>
         <div className="pagination-actions">
           <IconButton
-            label="Pagina anterior de usuarios"
+            label="Página anterior de usuários"
             onClick={() => onPageChange((page) => Math.max(1, page - 1))}
             disabled={currentPage === 1}
-            title="Pagina anterior"
+            title="Página anterior"
           >
             <ChevronLeft size={18} />
           </IconButton>
-          <span className="page-indicator">Pagina {currentPage} de {totalPages}</span>
+          <span className="page-indicator">Página {currentPage} de {totalPages}</span>
           <IconButton
-            label="Proxima pagina de usuarios"
+            label="Próxima página de usuários"
             onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
             disabled={currentPage === totalPages}
-            title="Proxima pagina"
+            title="Próxima página"
           >
             <ChevronRight size={18} />
           </IconButton>

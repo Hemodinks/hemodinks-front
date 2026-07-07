@@ -239,7 +239,7 @@ export function useMedicalGroupsDomain({
 
     try {
       await deleteMedicalGroupMutation.mutateAsync({ id: group.id, token: session.token });
-      setSuccessMessage('Grupo medico excluido.');
+      setSuccessMessage('Grupo médico excluído.');
       await loadMedicalGroups(session.token, true);
     } catch (error) {
       setGroupsError(getErrorMessage(error));
@@ -249,10 +249,10 @@ export function useMedicalGroupsDomain({
   const handleDeleteMedicalGroup = (group: MedicalGroup) => {
     confirmAction({
       tone: 'delete',
-      title: 'Excluir grupo medico?',
-      message: `Deseja excluir "${group.nome}"? Esta acao nao podera ser desfeita.`,
+      title: 'Excluir grupo médico?',
+      message: `Deseja excluir "${group.nome}"? Esta ação não poderá ser desfeita.`,
       confirmLabel: 'Sim',
-      cancelLabel: 'Nao',
+      cancelLabel: 'Não',
       onConfirm: () => deleteSelectedMedicalGroup(group),
     });
   };
@@ -270,7 +270,7 @@ export function useMedicalGroupsDomain({
     }
 
     if (!formData.medicoUserIds.length) {
-      setFormError('Selecione ao menos um medico para o grupo.');
+      setFormError('Selecione ao menos um médico para o grupo.');
       return;
     }
 
@@ -289,7 +289,7 @@ export function useMedicalGroupsDomain({
         },
         token: session.token,
       });
-      setSuccessMessage(editingGroupId ? 'Grupo medico atualizado.' : 'Grupo medico cadastrado.');
+      setSuccessMessage(editingGroupId ? 'Grupo médico atualizado.' : 'Grupo médico cadastrado.');
       openMedicalGroupsList();
       await loadMedicalGroups(session.token, true);
     } catch (error) {
