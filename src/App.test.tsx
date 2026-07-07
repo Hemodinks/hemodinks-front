@@ -625,7 +625,7 @@ describe('App', () => {
 
     expect(api.getDashboardNotifications).toHaveBeenCalledWith('jwt-token');
 
-    const dialog = await screen.findByRole('dialog', { name: 'Notificacoes' });
+    const dialog = await screen.findByRole('dialog', { name: 'Notificações' });
     expect(within(dialog).getByText('1 aviso encontrado')).toBeInTheDocument();
     expect(within(dialog).getByText('Pagamento pendente')).toBeInTheDocument();
     expect(within(dialog).getByText('Paciente Hemodinks')).toBeInTheDocument();
@@ -693,7 +693,7 @@ describe('App', () => {
     await user.click(observationButton);
 
     const dialog = await screen.findByRole('dialog', { name: 'Paciente Hemodinks' });
-    expect(within(dialog).getByText('3 observacoes nao lidas')).toBeInTheDocument();
+    expect(within(dialog).getByText('3 observações não lidas')).toBeInTheDocument();
     expect(within(dialog).getByText('Não lida')).toBeInTheDocument();
     expect(within(dialog).getByText('Lida')).toBeInTheDocument();
   });
