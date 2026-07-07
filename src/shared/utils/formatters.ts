@@ -140,7 +140,7 @@ export function formatProfileName(perfilId?: number | null, perfilNome?: string 
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 
-  if (asciiProfileName.includes('medico') || /^m.dicos$/i.test(profileName)) {
+  if (asciiProfileName.includes('medico') || /^m.{1,2}dicos$/i.test(profileName)) {
     return getProfileName(MEDICAL_PROFILE_ID);
   }
 

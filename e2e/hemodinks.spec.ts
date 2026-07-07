@@ -571,11 +571,11 @@ test('cadastra evento na agenda', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeVisible();
   await page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' }).click();
   await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
-  await page.getByLabel('Titulo').fill('Evento E2E');
-  await page.getByLabel('Descricao').fill('Validacao automatizada da agenda');
-  await page.getByLabel('Inicio').fill(toDateInputValue(start));
+  await page.getByLabel('Título').fill('Evento E2E');
+  await page.getByLabel('Descrição').fill('Validação automatizada da agenda');
+  await page.getByLabel('Início').fill(toDateInputValue(start));
   await page.getByLabel('Hora').first().fill(toTimeInputValue(start));
-  await page.getByLabel('Termino').fill(toDateInputValue(end));
+  await page.getByLabel('Término').fill(toDateInputValue(end));
   await page.getByLabel('Hora').nth(1).fill(toTimeInputValue(end));
   await page.getByRole('button', { name: 'Cadastrar evento' }).click();
 
@@ -583,7 +583,7 @@ test('cadastra evento na agenda', async ({ page }) => {
   await expect(page.getByText('Evento E2E')).toBeVisible();
   expect(apiState.createdEventPayload).toMatchObject({
     title: 'Evento E2E',
-    description: 'Validacao automatizada da agenda',
+    description: 'Validação automatizada da agenda',
     notifyUser: true,
   });
 });
