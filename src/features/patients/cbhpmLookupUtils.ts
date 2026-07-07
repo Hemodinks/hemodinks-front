@@ -2,6 +2,8 @@ import type { CbhpmFilters } from '../../appTypes';
 import { normalizeCbhpmCodigo } from './patientUtils';
 
 export const CBHPM_SEARCH_MIN_LENGTH = 3;
+export const CBHPM_AUTO_SEARCH_DELAY_MS = 3000;
+export type CbhpmAutoSearchFilters = Pick<CbhpmFilters, 'codigo' | 'procedimento'>;
 
 export function normalizeCbhpmSearchText(value?: string | null) {
   return (value ?? '')
@@ -9,6 +11,32 @@ export function normalizeCbhpmSearchText(value?: string | null) {
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toLocaleLowerCase('pt-BR');
+}
+
+export function getCbhpmAutoSearchFilters(filters: CbhpmFilters): CbhpmAutoSearchFilters {
+  return {
+    codigo: normalizeCbhpmCodigo(filters.codigo),
+    procedimento: filters.procedimento,
+  };
+}
+
+export function areCbhpmAutoSearchFiltersEqual(
+  current: CbhpmAutoSearchFilters,
+  debounced: CbhpmAutoSearchFilters,
+) {
+  return normalizeCbhpmCodigo(current.codigo) === normalizeCbhpmCodigo(debounced.codigo)
+    && current.procedimento.trim() === debounced.procedimento.trim();
+}
+
+export function buildAppliedCbhpmFilters(
+  filters: CbhpmFilters,
+  autoSearchFilters = getCbhpmAutoSearchFilters(filters),
+): CbhpmFilters {
+  return {
+    codigo: autoSearchFilters.codigo,
+    procedimento: autoSearchFilters.procedimento,
+    porte: filters.porte.trim().toUpperCase(),
+  };
 }
 
 export function getCbhpmFilterValidationMessage(filters: CbhpmFilters) {
