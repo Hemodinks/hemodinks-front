@@ -381,7 +381,9 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /abrir usuários/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
     expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
-    expect(api.getPacientes).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
+    });
 
     await user.click(screen.getByRole('button', { name: /abrir usuários/i }));
     expect(window.location.pathname).toBe('/usuarios');
@@ -432,6 +434,10 @@ describe('App', () => {
     await waitFor(() => {
       expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
     });
+    await waitFor(() => {
+      expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
+    });
+    expect(await screen.findByText('1 cadastrados')).toBeInTheDocument();
     expect(screen.queryByText(/request failed with status code 403/i)).not.toBeInTheDocument();
   });
 
