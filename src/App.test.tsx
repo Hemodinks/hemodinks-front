@@ -7,7 +7,7 @@ import { buildEmptyForm } from './features/events/AgendaPage';
 import * as api from './services';
 import { CbhpmLookupModal } from './features/patients/CbhpmLookupModal';
 import { queryClient } from './queryClient';
-import type { AuthSession, Paciente, PacienteObservacao, User } from './types';
+import type { AuthSession, Licenca, Paciente, PacienteObservacao, User } from './types';
 
 vi.mock('./services', () => ({
   DEFAULT_SYSTEM_SETTINGS: {
@@ -134,22 +134,54 @@ function getVisibleFirstColumnValues() {
   return rows.map((row) => within(row).getAllByRole('cell')[0].textContent?.trim() ?? '');
 }
 
+function buildMedicalLicense(featuresEfetivas: string[] = [
+  'Dashboard.Visualizar',
+  'Pacientes.Visualizar',
+  'Cbhpm.Consultar',
+]): Licenca {
+  return {
+    id: 1,
+    userId: 99,
+    controleAplicavel: true,
+    plano: 'Trial',
+    status: 'Ativa',
+    dataInicioTrial: '2026-06-01T00:00:00Z',
+    dataFimTrial: '2026-07-15T00:00:00Z',
+    featuresLiberadas: featuresEfetivas,
+    featuresEfetivas,
+    trialExpirado: false,
+    licencaExpirada: false,
+    ativa: true,
+    acessoCompleto: false,
+    diasRestantesTrial: 9,
+    observacoes: null,
+    dataCadastro: '2026-06-01T00:00:00Z',
+    dataAtualizacao: '2026-06-22T12:00:00Z',
+  };
+}
+
 function mockSession(overrides?: Partial<AuthSession['user']>) {
+  const user: AuthSession['user'] = {
+    id: 99,
+    clinicaId: 1,
+    clinicaSlug: 'hemodinks',
+    nome: 'George Marcone',
+    email: 'gmarcone@gmail.com',
+    cpf: '00000000191',
+    fotoPerfil: null,
+    precisaTrocarSenha: false,
+    perfilId: 1,
+    perfilNome: 'Administrador',
+    ...overrides,
+  };
+
+  if (user.perfilId === 2 && user.licenca === undefined) {
+    user.licenca = buildMedicalLicense();
+  }
+
   return {
     token: 'jwt-token',
-    user: {
-      id: 99,
-      clinicaId: 1,
-      clinicaSlug: 'hemodinks',
-      nome: 'George Marcone',
-      email: 'gmarcone@gmail.com',
-      cpf: '00000000191',
-      fotoPerfil: null,
-      precisaTrocarSenha: false,
-      perfilId: 1,
-      perfilNome: 'Administrador',
-      ...overrides,
-    },
+    user,
   };
 }
 
@@ -168,6 +200,7 @@ function toLoginResponse(session: AuthSession) {
     precisaTrocarSenha: session.user.precisaTrocarSenha,
     perfilId: session.user.perfilId,
     perfilNome: session.user.perfilNome,
+    licenca: session.user.licenca ?? null,
   };
 }
 
@@ -1053,6 +1086,7 @@ describe('App', () => {
           porte: '1A',
         }}
         isAdmin={false}
+        canConsult
         loading={false}
         error=""
         canSearch
@@ -1098,6 +1132,7 @@ describe('App', () => {
           porte: '',
         }}
         isAdmin={false}
+        canConsult
         loading={false}
         error=""
         canSearch
@@ -1146,6 +1181,7 @@ describe('App', () => {
           items={[]}
           filters={filters}
           isAdmin
+          canConsult
           loading={false}
           error=""
           canSearch
@@ -1369,12 +1405,18 @@ describe('App', () => {
     });
   });
 
-  it('libera pacientes para medico e exibe os combos de equipe medica', async () => {
+  it('libera gestao de pacientes para medico com feature de gerenciamento', async () => {
     const { user } = await renderAuthenticatedApp({
       sessionOverrides: {
         perfilId: 2,
         perfilNome: 'Medicos',
         nome: 'Dra. Ana',
+        licenca: buildMedicalLicense([
+          'Dashboard.Visualizar',
+          'Pacientes.Visualizar',
+          'Pacientes.Gerenciar',
+          'Cbhpm.Consultar',
+        ]),
       },
     });
 
@@ -1399,6 +1441,112 @@ describe('App', () => {
     expect(screen.getByLabelText('Médico auxiliar 1')).toBeInTheDocument();
     expect(screen.getByLabelText('Médico auxiliar 2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
+  });
+
+  it('restringe cadastro e edicao quando o medico nao possui gerenciamento de pacientes', async () => {
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+        licenca: buildMedicalLicense(),
+      },
+    });
+
+    await openPatientsModule(user);
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+
+    expect(screen.queryByRole('button', { name: /novo paciente/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /visualizar paciente hemodinks/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Visualizar paciente' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /salvar paciente/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Selecionar arquivos')).not.toBeInTheDocument();
+  });
+
+  it('permite cadastro manual de procedimento quando a licenca nao libera consulta CBHPM', async () => {
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+        licenca: buildMedicalLicense([
+          'Dashboard.Visualizar',
+          'Pacientes.Visualizar',
+          'Pacientes.Gerenciar',
+        ]),
+      },
+    });
+
+    await openPatientsModule(user);
+    await user.click(screen.getByRole('button', { name: /novo paciente/i }));
+    await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
+
+    const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
+    const consultButton = within(cbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
+
+    expect(within(cbhpmDialog).getByText(/sua licenca nao libera a consulta cbhpm/i)).toBeInTheDocument();
+    expect(consultButton).toBeDisabled();
+
+    fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), {
+      target: { value: 'Procedimento manual sem consulta' },
+    });
+    await user.click(within(cbhpmDialog).getByRole('button', { name: /cadastrar manualmente/i }));
+
+    expect(api.getCbhpmGeral).not.toHaveBeenCalled();
+    expect(await screen.findByText('Procedimento manual sem consulta')).toBeInTheDocument();
+  });
+
+  it('preserva medico fora da lista escopada ao editar e salvar paciente', async () => {
+    vi.mocked(api.getPaciente).mockResolvedValue({
+      ...basePaciente,
+      medicoUserId: 55,
+      medico: 'Dr. Fora da Lista',
+      medicoAuxiliar1UserId: 2,
+      medicoAuxiliar1: 'Bruno Hemodinks',
+      medicoAuxiliar2UserId: null,
+      medicoAuxiliar2: '',
+    });
+    vi.mocked(api.updatePaciente).mockResolvedValue({
+      ...basePaciente,
+      medicoUserId: 55,
+      medico: 'Dr. Fora da Lista',
+      medicoAuxiliar1UserId: 2,
+      medicoAuxiliar1: 'Bruno Hemodinks',
+      medicoAuxiliar2UserId: null,
+      medicoAuxiliar2: '',
+    });
+
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+        licenca: buildMedicalLicense([
+          'Dashboard.Visualizar',
+          'Pacientes.Visualizar',
+          'Pacientes.Gerenciar',
+          'Cbhpm.Consultar',
+        ]),
+      },
+    });
+
+    await openPatientsModule(user);
+    await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /dr\. fora da lista \(fora da sua lista\)/i })).toBeInTheDocument();
+    expect(screen.getByLabelText('Cirurgião')).toHaveValue('legacy:55');
+
+    await user.click(screen.getByRole('button', { name: /salvar paciente/i }));
+
+    await waitFor(() => {
+      expect(api.updatePaciente).toHaveBeenCalledWith(10, expect.objectContaining({
+        medicoUserId: 55,
+        medico: 'Dr. Fora da Lista',
+      }), 'jwt-token');
+    });
   });
 
   it('nao exibe perfil paciente no cadastro de usuario', async () => {
@@ -1529,7 +1677,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeInTheDocument();
   });
 
-  it('permite controller editar pacientes e restringe usuarios e agenda', async () => {
+  it('permite controller visualizar pacientes e restringe edicao, usuarios e agenda', async () => {
     await renderAuthenticatedApp({
       initialPath: '/dashboard',
       sessionOverrides: {
@@ -1545,11 +1693,11 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: /abrir usuarios/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /abrir agenda/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /abrir painel/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /novo paciente/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar xlsx/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar pdf/i })).toBeInTheDocument();
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /visualizar paciente hemodinks/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();
   });
 
