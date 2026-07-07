@@ -80,9 +80,11 @@ type UsePatientsDomainOptions = {
   companyName: string;
   isAdmin: boolean;
   isMedical: boolean;
+  canAccessPatients: boolean;
   canCreatePatients: boolean;
   canEditPatients: boolean;
   canDeletePatients: boolean;
+  canConsultCbhpm: boolean;
   patientReadOnly: boolean;
   setModuleMode: Dispatch<SetStateAction<ModuleMode>>;
   navigateToView: (view: AppView, replace?: boolean) => void;
@@ -97,9 +99,11 @@ export function usePatientsDomain({
   companyName,
   isAdmin,
   isMedical,
+  canAccessPatients,
   canCreatePatients,
   canEditPatients,
   canDeletePatients,
+  canConsultCbhpm,
   patientReadOnly,
   setModuleMode,
   navigateToView,
@@ -220,13 +224,13 @@ export function usePatientsDomain({
   const pacientesQuery = useQuery({
     queryKey: queryKeys.pacientes(session?.token ?? '', pacientesQueryParams),
     queryFn: () => getPacientes(session?.token ?? '', pacientesQueryParams),
-    enabled: sessionReady && activeView === 'patients' && moduleMode === 'list',
+    enabled: sessionReady && canAccessPatients && activeView === 'patients' && moduleMode === 'list',
     staleTime: LIST_CACHE_TIME_MS,
   });
   const medicalUsersQuery = useQuery({
     queryKey: queryKeys.medicalUsers(session?.token ?? ''),
     queryFn: () => getScopedMedicalUsers(session?.token ?? ''),
-    enabled: sessionReady && activeView === 'patients' && !patientReadOnly,
+    enabled: sessionReady && canAccessPatients && activeView === 'patients' && !patientReadOnly,
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
   const hospitaisQuery = useQuery({
@@ -269,7 +273,7 @@ export function usePatientsDomain({
   const cbhpmQuery = useQuery({
     queryKey: queryKeys.cbhpm(session?.token ?? '', cbhpmQueryParams),
     queryFn: () => getCbhpmGeral(session?.token ?? '', cbhpmQueryParams),
-    enabled: sessionReady && cbhpmModalOpen && !appliedCbhpmFilterValidationMessage,
+    enabled: sessionReady && canConsultCbhpm && cbhpmModalOpen && !appliedCbhpmFilterValidationMessage,
     staleTime: LIST_CACHE_TIME_MS,
   });
   const savePacienteMutation = useMutation({
@@ -433,7 +437,7 @@ export function usePatientsDomain({
     token = session?.token,
     forceRefresh = false,
   ) => {
-    if (!token) {
+    if (!token || !canAccessPatients) {
       return;
     }
 
@@ -455,7 +459,7 @@ export function usePatientsDomain({
     token = session?.token,
     forceRefresh = false,
   ) => {
-    if (!token) {
+    if (!token || !canConsultCbhpm) {
       return;
     }
 
@@ -576,6 +580,22 @@ export function usePatientsDomain({
     setPendingPatientFiles((current) => current.filter((_, index) => index !== indexToRemove));
   };
 
+  const resolveMedicalSelection = (
+    userId: number | null,
+    nome: string,
+  ) => {
+    const trimmedName = nome.trim();
+    const selectedUser = userId != null
+      ? medicalUsers.find((user) => user.id === userId)
+      : findMedicalUserByName(medicalUsers, trimmedName);
+
+    return {
+      selectedUser,
+      trimmedName,
+      hasScopedSelection: Boolean(trimmedName && userId != null && !selectedUser),
+    };
+  };
+
   const handleSubmitPaciente = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -600,27 +620,30 @@ export function usePatientsDomain({
       return;
     }
 
-    const selectedMedicoUser = pacienteFormData.medicoUserId != null
-      ? medicalUsers.find((user) => user.id === pacienteFormData.medicoUserId)
-      : findMedicalUserByName(medicalUsers, pacienteFormData.medico);
-    const selectedMedicoAuxiliar1User = pacienteFormData.medicoAuxiliar1UserId != null
-      ? medicalUsers.find((user) => user.id === pacienteFormData.medicoAuxiliar1UserId)
-      : findMedicalUserByName(medicalUsers, pacienteFormData.medicoAuxiliar1);
-    const selectedMedicoAuxiliar2User = pacienteFormData.medicoAuxiliar2UserId != null
-      ? medicalUsers.find((user) => user.id === pacienteFormData.medicoAuxiliar2UserId)
-      : findMedicalUserByName(medicalUsers, pacienteFormData.medicoAuxiliar2);
+    const selectedMedico = resolveMedicalSelection(
+      pacienteFormData.medicoUserId,
+      pacienteFormData.medico,
+    );
+    const selectedMedicoAuxiliar1 = resolveMedicalSelection(
+      pacienteFormData.medicoAuxiliar1UserId,
+      pacienteFormData.medicoAuxiliar1,
+    );
+    const selectedMedicoAuxiliar2 = resolveMedicalSelection(
+      pacienteFormData.medicoAuxiliar2UserId,
+      pacienteFormData.medicoAuxiliar2,
+    );
 
-    if (pacienteFormData.medico && !selectedMedicoUser) {
+    if (selectedMedico.trimmedName && !selectedMedico.selectedUser && !selectedMedico.hasScopedSelection) {
       setPacienteFormError('Selecione um cirurgiao cadastrado com perfil Medicos.');
       return;
     }
 
-    if (pacienteFormData.medicoAuxiliar1 && !selectedMedicoAuxiliar1User) {
+    if (selectedMedicoAuxiliar1.trimmedName && !selectedMedicoAuxiliar1.selectedUser && !selectedMedicoAuxiliar1.hasScopedSelection) {
       setPacienteFormError('Selecione o medico auxiliar 1 no cadastro de medicos.');
       return;
     }
 
-    if (pacienteFormData.medicoAuxiliar2 && !selectedMedicoAuxiliar2User) {
+    if (selectedMedicoAuxiliar2.trimmedName && !selectedMedicoAuxiliar2.selectedUser && !selectedMedicoAuxiliar2.hasScopedSelection) {
       setPacienteFormError('Selecione o medico auxiliar 2 no cadastro de medicos.');
       return;
     }
@@ -637,12 +660,12 @@ export function usePatientsDomain({
 
     const payload = toPacientePayload({
       ...pacienteFormData,
-      medicoUserId: selectedMedicoUser?.id ?? pacienteFormData.medicoUserId,
-      medico: selectedMedicoUser?.nome ?? pacienteFormData.medico,
-      medicoAuxiliar1UserId: selectedMedicoAuxiliar1User?.id ?? pacienteFormData.medicoAuxiliar1UserId,
-      medicoAuxiliar1: selectedMedicoAuxiliar1User?.nome ?? pacienteFormData.medicoAuxiliar1,
-      medicoAuxiliar2UserId: selectedMedicoAuxiliar2User?.id ?? pacienteFormData.medicoAuxiliar2UserId,
-      medicoAuxiliar2: selectedMedicoAuxiliar2User?.nome ?? pacienteFormData.medicoAuxiliar2,
+      medicoUserId: selectedMedico.selectedUser?.id ?? pacienteFormData.medicoUserId,
+      medico: selectedMedico.selectedUser?.nome ?? selectedMedico.trimmedName,
+      medicoAuxiliar1UserId: selectedMedicoAuxiliar1.selectedUser?.id ?? pacienteFormData.medicoAuxiliar1UserId,
+      medicoAuxiliar1: selectedMedicoAuxiliar1.selectedUser?.nome ?? selectedMedicoAuxiliar1.trimmedName,
+      medicoAuxiliar2UserId: selectedMedicoAuxiliar2.selectedUser?.id ?? pacienteFormData.medicoAuxiliar2UserId,
+      medicoAuxiliar2: selectedMedicoAuxiliar2.selectedUser?.nome ?? selectedMedicoAuxiliar2.trimmedName,
       hospitalId: selectedHospital?.id ?? null,
       hospital: selectedHospital?.nome ?? pacienteFormData.hospital,
       convenioId: selectedConvenio?.idConvenio ?? null,
@@ -809,7 +832,7 @@ export function usePatientsDomain({
   };
 
   const handleOpenCbhpmModal = () => {
-    if (patientReadOnly) {
+    if (patientReadOnly || !canEditPatients) {
       return;
     }
 
@@ -846,6 +869,10 @@ export function usePatientsDomain({
   };
 
   const openPatientsList = () => {
+    if (!canAccessPatients) {
+      return;
+    }
+
     navigateToView('patients');
     setModuleMode('list');
   };
@@ -898,7 +925,7 @@ export function usePatientsDomain({
   const refreshCbhpm = () => {
     applyCbhpmFiltersNow();
 
-    if (!session || !canSearchCbhpm) {
+    if (!session || !canSearchCbhpm || !canConsultCbhpm) {
       return;
     }
 
@@ -992,6 +1019,7 @@ export function usePatientsDomain({
     cbhpmFilters,
     setCbhpmFilters,
     cbhpmFilterHint,
+    canConsultCbhpm,
     canSearchCbhpm,
     cbhpmLoading,
     cbhpmError,

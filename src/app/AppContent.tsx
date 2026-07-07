@@ -14,6 +14,7 @@ import { queryClient } from '../queryClient';
 import { useConfirmationDialog } from '../shared/components/ConfirmationDialog';
 import { useRouteView } from '../shared/hooks/useRouteView';
 import { useThemePreference } from '../shared/hooks/useThemePreference';
+import { LICENSE_FEATURES, hasSessionFeature } from '../shared/utils/license';
 import {
   CONTROLLER_PROFILE_ID,
   DEFAULT_PASSWORD,
@@ -67,18 +68,22 @@ export function AppContent() {
   const isMedical = currentPerfilId === MEDICAL_PROFILE_ID;
   const isController = currentPerfilId === CONTROLLER_PROFILE_ID;
   const isPatient = currentPerfilId === PATIENT_PROFILE_ID;
-  const canAccessDashboard = !isController;
+  const canAccessDashboard = hasSessionFeature(session?.user, LICENSE_FEATURES.dashboardVisualizar);
+  const canAccessPatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesVisualizar);
+  const canManagePatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar);
+  const canConsultCbhpm = hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar);
   const canAccessAgenda = !isController;
   const canAccessUsers = isAdmin;
   const canEditOwnUser = isMedical || isPatient;
   const canAccessBilling = isAdmin || isMedical || isController;
   const canAccessMedicalGroups = isAdmin;
-  const canCreatePatients = isAdmin || isController || isMedical;
-  const canEditPatients = isAdmin || isMedical || isController;
+  const canCreatePatients = canManagePatients;
+  const canEditPatients = canManagePatients;
   const canDeletePatients = isAdmin;
-  const canManagePatientObservacoes = isAdmin || isMedical || isController;
+  const canManagePatientObservacoes = canManagePatients;
   const patientReadOnly = isPatient;
   const canUseDashboardRoute = canAccessDashboard;
+  const canUsePatientsRoute = canAccessPatients;
   const canUseUsersRoute = canAccessUsers;
   const canUseProfileRoute = canEditOwnUser;
   const canUseBillingRoute = canAccessBilling;
@@ -88,6 +93,7 @@ export function AppContent() {
   const { activeView, navigateToView } = useRouteView({
     session,
     canUseDashboardRoute,
+    canUsePatientsRoute,
     canUseUsersRoute,
     canUseProfileRoute,
     canUseBillingRoute,
@@ -151,9 +157,11 @@ export function AppContent() {
     companyName: appChrome.companyName,
     isAdmin,
     isMedical,
+    canAccessPatients,
     canCreatePatients,
     canEditPatients,
     canDeletePatients,
+    canConsultCbhpm,
     patientReadOnly,
     setModuleMode,
     navigateToView,
@@ -206,6 +214,7 @@ export function AppContent() {
           precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
           perfilId: result.perfilId || DEFAULT_PROFILE_ID,
           perfilNome: result.perfilNome || getProfileName(result.perfilId || DEFAULT_PROFILE_ID),
+          licenca: result.licenca ?? null,
         },
       });
     } catch (error) {
@@ -253,12 +262,35 @@ export function AppContent() {
   const openDashboard = () => {
     resetProfileRouteState();
 
-    if (!canAccessDashboard) {
+    if (canAccessDashboard) {
+      navigateToView('dashboard');
+      setModuleMode('list');
+      return;
+    }
+
+    if (canAccessPatients) {
       patientsDomain.openPatientsList();
       return;
     }
 
-    navigateToView('dashboard');
+    if (canEditOwnUser) {
+      usersDomain.openMyProfile();
+      return;
+    }
+
+    if (canAccessBilling) {
+      navigateToView('billing');
+      setModuleMode('list');
+      return;
+    }
+
+    if (canAccessAgenda) {
+      navigateToView('agenda');
+      setModuleMode('list');
+      return;
+    }
+
+    navigateToView('settings');
     setModuleMode('list');
   };
 
@@ -266,7 +298,7 @@ export function AppContent() {
     resetProfileRouteState();
 
     if (!canAccessAgenda) {
-      patientsDomain.openPatientsList();
+      openDashboard();
       return;
     }
 
@@ -283,7 +315,7 @@ export function AppContent() {
     resetProfileRouteState();
 
     if (!canAccessMedicalGroups) {
-      patientsDomain.openPatientsList();
+      openDashboard();
       return;
     }
 
@@ -294,7 +326,7 @@ export function AppContent() {
     resetProfileRouteState();
 
     if (!canAccessBilling) {
-      patientsDomain.openPatientsList();
+      openDashboard();
       return;
     }
 
@@ -456,6 +488,7 @@ export function AppContent() {
       notificationCount={notificationCount}
       currentUserProfile={currentUserProfile}
       canAccessDashboard={canAccessDashboard}
+      canAccessPatients={canAccessPatients}
       canAccessUsers={canAccessUsers}
       canEditOwnUser={canEditOwnUser}
       canAccessBilling={canAccessBilling}
@@ -507,6 +540,7 @@ export function AppContent() {
         moduleMode={moduleMode}
         companyName={appChrome.companyName}
         access={{
+          canAccessPatients,
           canAccessUsers,
           canEditOwnUser,
           canAccessBilling,
