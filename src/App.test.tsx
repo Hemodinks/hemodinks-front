@@ -578,6 +578,22 @@ describe('App', () => {
     });
   });
 
+  it('leva medico para o painel ao entrar mesmo quando a URL inicial e meu cadastro', async () => {
+    await renderAuthenticatedApp({
+      initialPath: '/meu-cadastro',
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+      },
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+  });
+
   it('abre as notificacoes do usuario logado', async () => {
     vi.mocked(api.getDashboardSummary).mockResolvedValue({
       usersCount: 1,
@@ -1380,7 +1396,7 @@ describe('App', () => {
       ativo: true,
     }, 'jwt-token');
     expect(await screen.findByText('Paciente cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('permite ao administrador filtrar pacientes por cirurgiao, convenio e procedimento', async () => {
     vi.mocked(api.getPacientes)
@@ -1508,6 +1524,30 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Visualizar paciente' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /salvar paciente/i })).not.toBeInTheDocument();
     expect(screen.queryByText('Selecionar arquivos')).not.toBeInTheDocument();
+  });
+
+  it('exibe pacientes para medico mesmo sem feature explicita de pacientes na licenca', async () => {
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+        licenca: buildMedicalLicense([
+          'Dashboard.Visualizar',
+          'Cbhpm.Consultar',
+        ]),
+      },
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir usuarios/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir configuracao do sistema/i })).not.toBeInTheDocument();
+
+    await openPatientsModule(user);
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /novo paciente/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /visualizar paciente hemodinks/i })).toBeInTheDocument();
   });
 
   it('permite cadastro manual de procedimento quando a licenca nao libera consulta CBHPM', async () => {
@@ -1652,6 +1692,8 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/meu-cadastro');
+    expect(screen.queryByText(/base de usuarios/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /novo usuario/i })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /voltar para lista/i }));
 

@@ -91,9 +91,11 @@ export function UsersPage({
   setSelectedContactUser,
   refreshUsers,
 }: UsersPageProps) {
+  const shouldShowUserForm = moduleMode === 'form' || !canAccessUsers;
+
   return (
     <section className="workspace">
-      {moduleMode === 'form' ? (
+      {shouldShowUserForm ? (
         <UserForm
           canAccessUsers={canAccessUsers}
           canUseUserForm={canUseUserForm}
