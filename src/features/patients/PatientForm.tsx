@@ -6,7 +6,6 @@ import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField
 import { UserAvatar } from '../users/UserAvatar';
 import {
   CONVENIOS_DATALIST_ID,
-  DEFAULT_PASSWORD,
   findConvenioByDescription,
   findHospitalByName,
   findOpmeFornecedorByName,
@@ -173,7 +172,6 @@ export function PatientForm({
           <h2>{editingPacienteId ? formReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'}</h2>
         </div>
         <div className="panel-title-actions">
-          {!editingPacienteId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
           <IconButton label="Voltar para lista" tone="muted" onClick={onClose}>
             <X size={18} />
           </IconButton>
