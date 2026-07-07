@@ -207,7 +207,7 @@ export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
   for (const member of medicalTeam) {
     if (member.userId != null) {
       if (selectedUserIds.has(member.userId)) {
-        return 'Cirurgiao e medicos auxiliares devem ser diferentes.';
+          return 'Cirurgião e médicos auxiliares devem ser diferentes.';
       }
 
       selectedUserIds.add(member.userId);
@@ -220,7 +220,7 @@ export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
     }
 
     if (selectedNames.has(normalizedName)) {
-      return 'Cirurgiao e medicos auxiliares devem ser diferentes.';
+      return 'Cirurgião e médicos auxiliares devem ser diferentes.';
     }
 
     selectedNames.add(normalizedName);
