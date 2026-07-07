@@ -150,7 +150,7 @@ export function usePatientObservacoes({
 
     const texto = patientObservationDraft.trim();
     if (!texto) {
-      setPatientObservacoesError('Informe a observacao.');
+      setPatientObservacoesError('Informe a observação.');
       return;
     }
 

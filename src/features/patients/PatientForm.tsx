@@ -234,7 +234,7 @@ export function PatientForm({
                   }}
                   disabled={formReadOnly}
                   maxLength={MAX_NAME_LENGTH}
-                  placeholder={convenios.length ? 'Selecione ou digite o convenio' : 'Digite o convenio'}
+                  placeholder={convenios.length ? 'Selecione ou digite o convênio' : 'Digite o convênio'}
                 />
                 {conveniosError && <AlertMessage type="error">{conveniosError}</AlertMessage>}
               </div>
@@ -292,7 +292,7 @@ export function PatientForm({
                   onChange={(event) => updateMedicalTeamMember('medico', event.target.value)}
                   disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
                 >
-                  {renderMedicalOptions('medico', medicalUsers.length ? 'Selecione um cirurgiao' : 'Nenhum medico cadastrado')}
+                  {renderMedicalOptions('medico', medicalUsers.length ? 'Selecione um cirurgião' : 'Nenhum médico cadastrado')}
                 </SelectField>
               </div>
 
@@ -303,7 +303,7 @@ export function PatientForm({
                   onChange={(event) => updateMedicalTeamMember('medicoAuxiliar1', event.target.value)}
                   disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar1)}
                 >
-                  {renderMedicalOptions('medicoAuxiliar1', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
+                  {renderMedicalOptions('medicoAuxiliar1', medicalUsers.length ? 'Selecione um médico auxiliar' : 'Nenhum médico cadastrado')}
                 </SelectField>
               </div>
 
@@ -314,7 +314,7 @@ export function PatientForm({
                   onChange={(event) => updateMedicalTeamMember('medicoAuxiliar2', event.target.value)}
                   disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar2)}
                 >
-                  {renderMedicalOptions('medicoAuxiliar2', medicalUsers.length ? 'Selecione um medico auxiliar' : 'Nenhum medico cadastrado')}
+                  {renderMedicalOptions('medicoAuxiliar2', medicalUsers.length ? 'Selecione um médico auxiliar' : 'Nenhum médico cadastrado')}
                 </SelectField>
               </div>
             </div>
@@ -333,7 +333,7 @@ export function PatientForm({
                   {pacienteFormData.procedimentos.map((procedimento, index) => (
                     <div className="selected-procedure" key={`${procedimento.cbhpmCodigo || procedimento.procedimento}-${index}`}>
                       <div className="selected-procedure-main">
-                        <span>{procedimento.cbhpmCodigo || 'Sem codigo'}</span>
+                        <span>{procedimento.cbhpmCodigo || 'Sem código'}</span>
                         <strong>{procedimento.procedimento}</strong>
                         {procedimento.valorReferencia != null && (
                           <small>Valor referência: {formatCurrency(procedimento.valorReferencia)}</small>
@@ -357,7 +357,7 @@ export function PatientForm({
           </div>
 
           <TextField
-            label="Autorizacao"
+            label="Autorização"
             type="text"
             value={pacienteFormData.autorizacao}
             onValueChange={(value) => setPacienteFormData((current) => ({ ...current, autorizacao: value.slice(0, MAX_NAME_LENGTH) }))}

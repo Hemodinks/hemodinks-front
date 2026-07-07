@@ -122,8 +122,8 @@ export function SystemSettingsPage({
     <section className="workspace system-settings-workspace">
       <DataPanel className="system-settings-hero">
         <div className="settings-hero-copy">
-          <span className="eyebrow">Configuracao do sistema</span>
-          <h2>{isAdmin ? 'Preferencias e marca' : 'Preferencias da conta'}</h2>
+          <span className="eyebrow">Configuração do sistema</span>
+          <h2>{isAdmin ? 'Preferências e marca' : 'Preferências da conta'}</h2>
         </div>
         <span className="settings-hero-icon" aria-hidden="true">
           <Palette size={24} />
@@ -152,7 +152,7 @@ export function SystemSettingsPage({
                 />
                 <div className="company-brand-copy">
                   <strong>{nomeEmpresa.trim() || settings.nomeEmpresa || 'Hemodinks'}</strong>
-                  <span>Esta foto sera exibida na tela de login e nos pontos de marca da aplicacao.</span>
+                  <span>Esta foto será exibida na tela de login e nos pontos de marca da aplicação.</span>
                 </div>
               </div>
 

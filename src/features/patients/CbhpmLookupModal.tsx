@@ -75,7 +75,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
 
   const handleAddManual = useCallback(() => {
     if (!manualValues.procedimento) {
-      setManualValidationError('Informe a descricao do procedimento para cadastrar manualmente.');
+      setManualValidationError('Informe a descrição do procedimento para cadastrar manualmente.');
       return;
     }
 
@@ -99,14 +99,14 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
             <span className="eyebrow">CBHPM</span>
             <h2 id="cbhpm-title">Selecionar procedimento</h2>
           </div>
-          <IconButton label="Fechar selecao de procedimento" title="Fechar" tone="muted" onClick={onClose}>
+          <IconButton label="Fechar seleção de procedimento" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
           </IconButton>
         </div>
 
         <div className="cbhpm-filters">
           <TextField
-            label="Codigo"
+            label="Código"
             type="search"
             
             autoComplete="on"
@@ -152,7 +152,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
 
         {!canConsult && (
           <AlertMessage type="warning">
-            Sua licenca nao libera a consulta CBHPM. Use o cadastro manual quando necessario.
+            Sua licença não libera a consulta CBHPM. Use o cadastro manual quando necessário.
           </AlertMessage>
         )}
         {manualValidationError && <AlertMessage type="error">{manualValidationError}</AlertMessage>}
@@ -165,7 +165,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
               <tr>
                 <th>
                   <button type="button" className="sort-header-button" onClick={() => onSortChange('codigo')} aria-sort={sortBy === 'codigo' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Codigo
+                    Código
                     {sortBy === 'codigo' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
                   </button>
                 </th>
@@ -183,7 +183,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
                 </th>
                 <th>
                   <button type="button" className="sort-header-button" onClick={() => onSortChange('valorreferencia')} aria-sort={sortBy === 'valorreferencia' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Valor referencia
+                    Valor referência
                     {sortBy === 'valorreferencia' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
                   </button>
                 </th>
@@ -198,10 +198,10 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
               ) : items.length ? (
                 items.map((item) => (
                   <tr key={item.id}>
-                    <td data-label="Codigo">{normalizeCbhpmCodigo(item.codigo) || item.codigo}</td>
+                    <td data-label="Código">{normalizeCbhpmCodigo(item.codigo) || item.codigo}</td>
                     <td data-label="Procedimento">{item.procedimento}</td>
                     <td data-label="Porte">{item.porte || '-'}</td>
-                    <td data-label="Valor referencia">{formatCurrency(item.valorReferencia)}</td>
+                    <td data-label="Valor referência">{formatCurrency(item.valorReferencia)}</td>
                     <td data-label="Selecionar">
                       <Button className="select-procedure-action" onClick={() => onSelect(item)}>
                         <CheckCircle2 size={17} />
@@ -225,15 +225,15 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
           </span>
           <div className="pagination-actions">
             <IconButton
-              label="Pagina anterior"
+              label="Página anterior"
               onClick={() => onPageChange((page) => Math.max(1, page - 1))}
               disabled={currentPage === 1}
             >
               <ChevronLeft size={18} />
             </IconButton>
-            <span className="page-indicator">Pagina {currentPage} de {totalPages}</span>
+            <span className="page-indicator">Página {currentPage} de {totalPages}</span>
             <IconButton
-              label="Proxima pagina"
+              label="Próxima página"
               onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
               disabled={currentPage === totalPages}
             >

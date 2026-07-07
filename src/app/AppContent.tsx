@@ -528,11 +528,11 @@ export function AppContent() {
             : activeView === 'settings' ? openSettings : openAgenda;
   const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
     ? [
-      { label: 'Inicio', onClick: openDashboard },
+      { label: 'Início', onClick: openDashboard },
       { label: 'Painel inicial' },
     ]
     : [
-      { label: 'Inicio', onClick: openDashboard },
+      { label: 'Início', onClick: openDashboard },
       {
         label: activeModuleLabel,
         onClick: moduleMode === 'form' ? openActiveModuleList : undefined,
