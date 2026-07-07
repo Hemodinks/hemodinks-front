@@ -4,9 +4,9 @@ import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
 import { IconButton } from '../../shared/components/ui';
 import {
+  formatProfileName,
   formatCpfInput,
   formatPhoneInput,
-  getProfileName,
   isMedicalProfileUser,
   toDisplayDate,
 } from '../../shared/utils/formatters';
@@ -24,10 +24,10 @@ export function InfoModal({ user, onClose }: InfoModalProps) {
     <Modal titleId="info-title" className="info-modal" onClose={onClose}>
         <div className="panel-title">
           <div>
-            <span className="eyebrow">Informacoes</span>
+            <span className="eyebrow">Informações</span>
             <h2 id="info-title">{user.nome}</h2>
           </div>
-          <IconButton label="Fechar informacoes do usuario" title="Fechar" tone="muted" onClick={onClose}>
+          <IconButton label="Fechar informações do usuário" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
           </IconButton>
         </div>
@@ -35,7 +35,7 @@ export function InfoModal({ user, onClose }: InfoModalProps) {
         <dl className="info-list">
           <div>
             <dt>Perfil</dt>
-            <dd>{user.perfilNome || getProfileName(user.perfilId)}</dd>
+            <dd>{formatProfileName(user.perfilId, user.perfilNome)}</dd>
           </div>
           <div>
             <dt>CPF</dt>
@@ -62,7 +62,7 @@ export function InfoModal({ user, onClose }: InfoModalProps) {
             <dd>{user.precisaTrocarSenha ? 'Senha inicial' : 'Senha alterada'}</dd>
           </div>
           <div>
-            <dt>Situacao</dt>
+            <dt>Situação</dt>
             <dd className={user.ativo ? 'detail-active' : 'detail-inactive'}>
               {user.ativo ? <CircleCheck size={17} /> : <CircleX size={17} />}
               {user.ativo ? 'Ativo' : 'Inativo'}
@@ -88,7 +88,7 @@ export function ContactModal({ user, onClose }: ContactModalProps) {
             <span className="eyebrow">Contato</span>
             <h2 id="contact-title">{user.nome}</h2>
           </div>
-          <IconButton label="Fechar contato do usuario" title="Fechar" tone="muted" onClick={onClose}>
+          <IconButton label="Fechar contato do usuário" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
           </IconButton>
         </div>

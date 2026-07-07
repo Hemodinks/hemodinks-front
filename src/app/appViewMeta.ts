@@ -11,22 +11,22 @@ type FormBreadcrumbOptions = {
 export function getAppTitle(activeView: AppView) {
   return activeView === 'dashboard'
     ? 'Painel inicial'
-    : activeView === 'users' ? 'Usuarios'
+    : activeView === 'users' ? 'Usuários'
       : activeView === 'profile' ? 'Meu cadastro'
         : activeView === 'patients' ? 'Pacientes'
-          : activeView === 'billing' ? 'Faturamento medico'
-            : activeView === 'medicalGroups' ? 'Grupos medicos'
-              : activeView === 'settings' ? 'Configuracao do sistema' : 'Agenda e notificacoes';
+          : activeView === 'billing' ? 'Faturamento médico'
+            : activeView === 'medicalGroups' ? 'Grupos médicos'
+              : activeView === 'settings' ? 'Configuração do sistema' : 'Agenda e notificações';
 }
 
 export function getActiveModuleLabel(activeView: AppView) {
   return activeView === 'users'
-    ? 'Usuarios'
+    ? 'Usuários'
     : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? 'Pacientes'
-        : activeView === 'billing' ? 'Faturamento medico'
-          : activeView === 'medicalGroups' ? 'Grupos medicos'
-            : activeView === 'settings' ? 'Configuracao do sistema' : 'Agenda e notificacoes';
+        : activeView === 'billing' ? 'Faturamento médico'
+          : activeView === 'medicalGroups' ? 'Grupos médicos'
+            : activeView === 'settings' ? 'Configuração do sistema' : 'Agenda e notificações';
 }
 
 export function getFormBreadcrumbLabel({
@@ -37,10 +37,10 @@ export function getFormBreadcrumbLabel({
   editingGroupId,
 }: FormBreadcrumbOptions) {
   return activeView === 'users'
-    ? editingId ? 'Editar usuario' : 'Novo usuario'
+    ? editingId ? 'Editar usuário' : 'Novo usuário'
     : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
-        : activeView === 'medicalGroups' ? editingGroupId ? 'Editar grupo medico' : 'Novo grupo medico'
-          : activeView === 'settings' ? 'Configuracao do sistema'
-            : 'Agenda e notificacoes';
+        : activeView === 'medicalGroups' ? editingGroupId ? 'Editar grupo médico' : 'Novo grupo médico'
+          : activeView === 'settings' ? 'Configuração do sistema'
+            : 'Agenda e notificações';
 }

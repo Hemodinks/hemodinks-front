@@ -452,9 +452,9 @@ test('navega pelos fluxos principais autenticados', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible();
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
 
-  await page.getByLabel('Sessao ativa').getByRole('button', { name: /agenda/i }).click();
+  await page.getByLabel('Sessão ativa').getByRole('button', { name: /agenda/i }).click();
   await expect(page).toHaveURL(/\/agenda$/);
-  await expect(page.getByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeVisible();
   const openNewEventButton = page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' });
   await expect(openNewEventButton).toBeVisible();
   await openNewEventButton.click();
@@ -468,7 +468,7 @@ test('mantem telas criticas sem overflow horizontal no mobile', async ({ page })
     await page.setViewportSize({ width, height: 860 });
 
     await loginViaUi(page, '/agenda');
-    await expect(page.getByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeVisible();
     await expect(page.locator('.agenda-calendar')).toBeVisible();
     await expectNoGlobalHorizontalOverflow(page);
 
@@ -484,16 +484,16 @@ test('cadastra e edita usuario usando o formulario real', async ({ page }) => {
   await loginViaUi(page, '/usuarios');
   await expect(page.getByText('Ana Hemodinks')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Novo usuario' }).click();
-  await expect(page.getByRole('heading', { name: 'Novo usuario' })).toBeVisible();
+  await page.getByRole('button', { name: 'Novo usuário' }).click();
+  await expect(page.getByRole('heading', { name: 'Novo usuário' })).toBeVisible();
   await page.getByLabel('Nome completo').fill('Usuario E2E');
   await page.getByLabel('Email').fill('usuario.e2e@hemodinks.com');
   await page.getByLabel('Telefone').fill('81999999999');
   await page.locator('#user-birth-date').fill('10/05/1990');
   await page.locator('.module-form-grid select').first().selectOption('1');
-  await page.getByRole('button', { name: 'Cadastrar usuario' }).click();
+  await page.getByRole('button', { name: 'Cadastrar usuário' }).click();
 
-  await expect(page.getByText(/Usuario cadastrado/)).toBeVisible();
+  await expect(page.getByText(/Usuário cadastrado/)).toBeVisible();
   await expect(page.getByText('Usuario E2E')).toBeVisible();
   expect(apiState.createdUserPayload).toMatchObject({
     nome: 'Usuario E2E',
@@ -504,13 +504,13 @@ test('cadastra e edita usuario usando o formulario real', async ({ page }) => {
   });
 
   await page.locator('tr', { hasText: 'Usuario E2E' }).getByTitle('Editar').click();
-  await expect(page.getByRole('heading', { name: 'Editar usuario' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Editar usuário' })).toBeVisible();
   await expect(page.getByLabel('Email')).toHaveValue('usuario.e2e@hemodinks.com');
   await page.getByLabel('Nome completo').fill('Usuario Editado');
-  await page.getByRole('button', { name: 'Salvar alteracoes' }).click();
+  await page.getByRole('button', { name: 'Salvar alterações' }).click();
 
-  await expect(page.getByText('Usuario atualizado.')).toBeVisible();
-  await expectTableRowVisible(page, '.users-table', 'Usuario Editado', 'Carregando usuarios...');
+  await expect(page.getByText('Usuário atualizado.')).toBeVisible();
+  await expectTableRowVisible(page, '.users-table', 'Usuario Editado', 'Carregando usuários...');
   expect(apiState.updatedUserPayload).toMatchObject({
     nome: 'Usuario Editado',
     email: 'usuario.e2e@hemodinks.com',
@@ -568,14 +568,14 @@ test('cadastra evento na agenda', async ({ page }) => {
   const end = new Date(start.getTime() + 60 * 60 * 1000);
 
   await loginViaUi(page, '/agenda');
-  await expect(page.getByRole('heading', { name: 'Agenda e notificacoes', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeVisible();
   await page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' }).click();
   await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
-  await page.getByLabel('Titulo').fill('Evento E2E');
-  await page.getByLabel('Descricao').fill('Validacao automatizada da agenda');
-  await page.getByLabel('Inicio').fill(toDateInputValue(start));
+  await page.getByLabel('Título').fill('Evento E2E');
+  await page.getByLabel('Descrição').fill('Validação automatizada da agenda');
+  await page.getByLabel('Início').fill(toDateInputValue(start));
   await page.getByLabel('Hora').first().fill(toTimeInputValue(start));
-  await page.getByLabel('Termino').fill(toDateInputValue(end));
+  await page.getByLabel('Término').fill(toDateInputValue(end));
   await page.getByLabel('Hora').nth(1).fill(toTimeInputValue(end));
   await page.getByRole('button', { name: 'Cadastrar evento' }).click();
 
@@ -583,7 +583,7 @@ test('cadastra evento na agenda', async ({ page }) => {
   await expect(page.getByText('Evento E2E')).toBeVisible();
   expect(apiState.createdEventPayload).toMatchObject({
     title: 'Evento E2E',
-    description: 'Validacao automatizada da agenda',
+    description: 'Validação automatizada da agenda',
     notifyUser: true,
   });
 });
@@ -609,7 +609,7 @@ test('bloqueia rota de usuarios para perfil paciente', async ({ page }) => {
   await loginViaUi(page, '/usuarios', patientSession);
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /abrir usuarios/i })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /abrir usuários/i })).toHaveCount(0);
 });
 
 test('nao apresenta violacoes serias de acessibilidade nas rotas principais', async ({ page }) => {
@@ -640,8 +640,8 @@ test('gera evidencias visuais desktop e mobile das telas principais', async ({ p
     await captureRouteScreenshot(page, testInfo, '/agenda', width);
 
     await loginViaUi(page, '/usuarios');
-    await page.getByRole('button', { name: 'Novo usuario' }).click();
-    await expect(page.getByRole('heading', { name: 'Novo usuario' })).toBeVisible();
+    await page.getByRole('button', { name: 'Novo usuário' }).click();
+    await expect(page.getByRole('heading', { name: 'Novo usuário' })).toBeVisible();
     await captureCurrentScreenshot(page, testInfo, 'usuarios-formulario', width);
 
     await loginViaUi(page, '/pacientes');

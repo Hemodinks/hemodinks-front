@@ -95,7 +95,7 @@ describe('patientUtils', () => {
       medico: 'Dra. Ana',
       medicoAuxiliar1UserId: 1,
       medicoAuxiliar1: 'Dra. Ana',
-    })).toBe('Cirurgiao e medicos auxiliares devem ser diferentes.');
+    })).toBe('Cirurgião e médicos auxiliares devem ser diferentes.');
 
     expect(getDuplicatedMedicalTeamError({
       ...emptyPacienteForm,
