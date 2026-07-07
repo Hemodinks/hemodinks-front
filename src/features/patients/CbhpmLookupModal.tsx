@@ -12,6 +12,7 @@ type CbhpmLookupModalProps = {
   items: CbhpmGeral[];
   filters: CbhpmFilters;
   isAdmin: boolean;
+  canConsult: boolean;
   loading: boolean;
   error: string;
   canSearch: boolean;
@@ -34,6 +35,7 @@ type CbhpmLookupModalProps = {
 export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
   items,
   filters,
+  canConsult,
   loading,
   error,
   canSearch,
@@ -135,7 +137,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
             label="Consultar procedimentos"
             title="Consultar procedimentos"
             onClick={onRefresh}
-            disabled={loading || !canSearch}
+            disabled={loading || !canConsult || !canSearch}
           >
             <RefreshCw size={18} />
           </IconButton>
@@ -148,6 +150,11 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
           </Button>
         </div>
 
+        {!canConsult && (
+          <AlertMessage type="warning">
+            Sua licenca nao libera a consulta CBHPM. Use o cadastro manual quando necessario.
+          </AlertMessage>
+        )}
         {manualValidationError && <AlertMessage type="error">{manualValidationError}</AlertMessage>}
         {shouldShowFilterHint && <AlertMessage type="warning">{filterHint}</AlertMessage>}
         {error && <AlertMessage type="error">{error}</AlertMessage>}

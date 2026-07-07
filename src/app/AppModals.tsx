@@ -71,6 +71,7 @@ export function AppModals({
           items={patientsDomain.cbhpmItems}
           filters={patientsDomain.cbhpmFilters}
           isAdmin={isAdmin}
+          canConsult={patientsDomain.canConsultCbhpm}
           loading={patientsDomain.cbhpmLoading}
           error={patientsDomain.cbhpmError}
           canSearch={patientsDomain.canSearchCbhpm}
