@@ -500,7 +500,7 @@ export function AppContent() {
 
   const currentUserProfile = formatProfileName(session.user.perfilId, session.user.perfilNome);
   const activeUsersCount = appChrome.dashboardSummary?.activeUsersCount ?? 0;
-  const activePatientsCount = appChrome.dashboardSummary?.activePatientsCount ?? 0;
+  const activePatientsCount = appChrome.dashboardSummary?.activePatientsCount ?? patientsDomain.pacientesTotalItems;
   const pendingPaymentsCount = appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;
   const patientFilesCount = appChrome.dashboardSummary?.patientFilesCount ?? 0;
   const upcomingEventsCount = appChrome.dashboardSummary?.upcomingEventsCount ?? 0;
