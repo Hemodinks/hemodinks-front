@@ -60,6 +60,8 @@ export function UserForm({
   onRemovePendingUserFile,
   onDeleteUserArquivo,
 }: UserFormProps) {
+  const isFormBusy = formLoading;
+
   return (
     <FormPanel className="module-form-panel">
       <div className="panel-title">
@@ -75,7 +77,7 @@ export function UserForm({
         </div>
       </div>
 
-      <form className="stack module-form-grid" onSubmit={onSubmit}>
+      <form className="stack module-form-grid" onSubmit={onSubmit} aria-busy={isFormBusy}>
         <div className="profile-photo-field">
           <label className="field-label" htmlFor="profile-photo-input">
             Foto do perfil
@@ -102,6 +104,7 @@ export function UserForm({
             type="file"
             aria-label="Foto do perfil"
             accept="image/png,image/jpeg,image/webp"
+            disabled={isFormBusy}
             onChange={(event) => void onProfilePhotoChange(event)}
           />
           <span className="file-hint">PNG, JPG ou WEBP ate 1 MB.</span>
@@ -121,7 +124,7 @@ export function UserForm({
                   crmUf: isMedicalProfileId(perfilId) ? current.crmUf : '',
                 }));
               }}
-              disabled={!canAccessUsers}
+              disabled={isFormBusy || !canAccessUsers}
               required
             >
               {USER_PROFILE_OPTIONS.map((profile) => (
@@ -137,6 +140,7 @@ export function UserForm({
               value={formData.nome}
               onValueChange={(value) => setFormData((current) => ({ ...current, nome: value.slice(0, MAX_NAME_LENGTH) }))}
               maxLength={MAX_NAME_LENGTH}
+              disabled={isFormBusy}
               required
             />
 
@@ -146,6 +150,7 @@ export function UserForm({
                 label="Data de nascimento"
                 value={formData.dataNascimento}
                 onChange={(value) => setFormData((current) => ({ ...current, dataNascimento: value }))}
+                disabled={isFormBusy}
               />
             </div>
           </div>
@@ -157,6 +162,7 @@ export function UserForm({
               value={formData.email}
               onValueChange={(value) => setFormData((current) => ({ ...current, email: value.slice(0, MAX_EMAIL_LENGTH) }))}
               maxLength={MAX_EMAIL_LENGTH}
+              disabled={isFormBusy}
               required
             />
 
@@ -169,6 +175,7 @@ export function UserForm({
               inputMode="numeric"
               maxLength={MAX_PHONE_LENGTH}
               placeholder="+55 (81) 99999-9999"
+              disabled={isFormBusy}
               required
             />
           </div>
@@ -183,7 +190,7 @@ export function UserForm({
               onValueChange={(value) => setFormData((current) => ({ ...current, crm: value.slice(0, MAX_CRM_LENGTH) }))}
               maxLength={MAX_CRM_LENGTH}
               placeholder="Ex.: 12345"
-              disabled={!canUseUserForm}
+              disabled={isFormBusy || !canUseUserForm}
               required
             />
 
@@ -191,7 +198,7 @@ export function UserForm({
               label="UF do CRM"
               value={formData.crmUf}
               onChange={(event) => setFormData((current) => ({ ...current, crmUf: event.target.value }))}
-              disabled={!canUseUserForm}
+              disabled={isFormBusy || !canUseUserForm}
               required
             >
                 <option value="">Selecione</option>
@@ -219,6 +226,7 @@ export function UserForm({
               aria-label="Documentos do medico"
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt,.csv,.ppt,.pptx"
               multiple
+              disabled={isFormBusy}
               onChange={onUserFilesChange}
             />
             <span className="file-hint">PDF, Office, imagens, TXT ou CSV ate 10 MB.</span>
@@ -257,7 +265,7 @@ export function UserForm({
           label="Usuario ativo"
           checked={formData.ativo}
           onCheckedChange={(checked) => setFormData((current) => ({ ...current, ativo: checked }))}
-          disabled={!canAccessUsers}
+          disabled={isFormBusy || !canAccessUsers}
         />
 
         {formError && <AlertMessage type="error">{formError}</AlertMessage>}
