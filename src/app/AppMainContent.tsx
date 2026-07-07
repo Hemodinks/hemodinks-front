@@ -216,6 +216,7 @@ export function AppMainContent({
           pacienteFormLoading={patientsDomain.pacienteFormLoading}
           pendingPatientFiles={patientsDomain.pendingPatientFiles}
           patientFileInputKey={patientsDomain.patientFileInputKey}
+          patientPhotoInputKey={patientsDomain.patientPhotoInputKey}
           pacientes={patientsDomain.paginatedPacientes}
           pacientesLoading={patientsDomain.pacientesLoading}
           pacientesError={patientsDomain.pacientesError}
@@ -254,6 +255,8 @@ export function AppMainContent({
           handleRemovePacienteProcedimento={patientsDomain.handleRemovePacienteProcedimento}
           handlePacienteFilesChange={patientsDomain.handlePacienteFilesChange}
           removePendingPatientFile={patientsDomain.removePendingPatientFile}
+          handlePacientePhotoChange={patientsDomain.handlePacientePhotoChange}
+          handleRemovePacientePhoto={patientsDomain.handleRemovePacientePhoto}
           handleDeletePacienteArquivo={patientsDomain.handleDeletePacienteArquivo}
           handleExportPacientes={patientsDomain.handleExportPacientes}
           handleEditPaciente={patientsDomain.handleEditPaciente}

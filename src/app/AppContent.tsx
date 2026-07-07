@@ -78,8 +78,8 @@ export function AppContent() {
   const isPatient = currentPerfilId === PATIENT_PROFILE_ID;
   const canAccessDashboard = hasSessionFeature(session?.user, LICENSE_FEATURES.dashboardVisualizar) || isMedical;
   const canAccessPatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesVisualizar) || isMedical;
-  const canManagePatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar);
-  const canConsultCbhpm = hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar);
+  const canManagePatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar) || isMedical;
+  const canConsultCbhpm = hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar) || isMedical;
   const canAccessAgenda = !isController;
   const canAccessUsers = isAdmin;
   const canEditOwnUser = isMedical || isPatient;
@@ -500,7 +500,7 @@ export function AppContent() {
 
   const currentUserProfile = formatProfileName(session.user.perfilId, session.user.perfilNome);
   const activeUsersCount = appChrome.dashboardSummary?.activeUsersCount ?? 0;
-  const activePatientsCount = appChrome.dashboardSummary?.activePatientsCount ?? 0;
+  const activePatientsCount = appChrome.dashboardSummary?.activePatientsCount ?? patientsDomain.pacientesTotalItems;
   const pendingPaymentsCount = appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;
   const patientFilesCount = appChrome.dashboardSummary?.patientFilesCount ?? 0;
   const upcomingEventsCount = appChrome.dashboardSummary?.upcomingEventsCount ?? 0;
