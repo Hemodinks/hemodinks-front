@@ -1537,6 +1537,14 @@ describe('App', () => {
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
     expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /novo paciente/i }));
+    expect(await screen.findByRole('heading', { name: 'Novo paciente' })).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Convênio'), 'Convênio manual do médico');
+    await user.type(screen.getByLabelText('Hospital'), 'Hospital manual do médico');
+    expect(screen.getByLabelText('Convênio')).toHaveValue('Convênio manual do médico');
+    expect(screen.getByLabelText('Hospital')).toHaveValue('Hospital manual do médico');
+    await user.click(screen.getByRole('button', { name: /voltar para lista/i }));
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
 
@@ -1570,7 +1578,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
   });
 
-  it('permite cadastro manual de procedimento quando a licenca nao libera consulta CBHPM', async () => {
+  it('trata medico como licenca full para consultar CBHPM e cadastrar procedimento manual', async () => {
     const { user } = await renderAuthenticatedApp({
       sessionOverrides: {
         perfilId: 2,
@@ -1591,16 +1599,25 @@ describe('App', () => {
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     const consultButton = within(cbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
 
-    expect(within(cbhpmDialog).getByText(/sua licença não libera a consulta cbhpm/i)).toBeInTheDocument();
-    expect(consultButton).toBeDisabled();
+    expect(within(cbhpmDialog).queryByText(/sua licença não libera a consulta cbhpm/i)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(consultButton).toBeEnabled();
+    });
+    fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), {
+      target: { value: 'Consulta' },
+    });
+    await user.click(consultButton);
+
+    await waitFor(() => {
+      expect(api.getCbhpmGeral).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ procedimento: 'Consulta' }));
+    });
 
     fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), {
-      target: { value: 'Procedimento manual sem consulta' },
+      target: { value: 'Procedimento manual com licença full' },
     });
     await user.click(within(cbhpmDialog).getByRole('button', { name: /cadastrar manualmente/i }));
 
-    expect(api.getCbhpmGeral).not.toHaveBeenCalled();
-    expect(await screen.findByText('Procedimento manual sem consulta')).toBeInTheDocument();
+    expect(await screen.findByText('Procedimento manual com licença full')).toBeInTheDocument();
   });
 
   it('preserva medico fora da lista escopada ao editar e salvar paciente', async () => {
