@@ -29,6 +29,7 @@ vi.mock('./services', () => ({
   updateAgendaEvent: vi.fn(),
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
+  getCurrentLicenca: vi.fn(),
   getSystemSettings: vi.fn(),
   getSystemSettingsCompanyPhoto: vi.fn(),
   getAllCbhpmGeral: vi.fn(),
@@ -257,6 +258,7 @@ describe('App', () => {
       upcomingEventsCount: 0,
     });
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
+    vi.mocked(api.getCurrentLicenca).mockResolvedValue(buildMedicalLicense());
     vi.mocked(api.getSystemSettings).mockResolvedValue({
       id: 1,
       nomeEmpresa: 'Hemodinks',
@@ -563,20 +565,17 @@ describe('App', () => {
     expect(screen.getByAltText('Clinica Alfa')).toHaveAttribute('src', 'data:image/png;base64,YnJhbmQ=');
   });
 
-  it('oculta a alteracao do nome da empresa para perfil nao administrador', async () => {
-    const { user } = await renderAuthenticatedApp({
+  it('oculta configuracao para medico e bloqueia a rota direta', async () => {
+    await renderAuthenticatedApp({
+      initialPath: '/configuracoes',
       sessionOverrides: { perfilId: 2, perfilNome: 'Médicos' },
     });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /abrir configuracao do sistema/i }));
-    expect(await screen.findByRole('heading', { name: 'Configuracao do sistema', level: 1 })).toBeInTheDocument();
-
-    expect(screen.queryByText('Marca da empresa')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Nome exibido no sistema')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Foto da empresa')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /escuro/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Alterar senha' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir configuracao do sistema/i })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
   });
 
   it('abre as notificacoes do usuario logado', async () => {
@@ -1294,19 +1293,38 @@ describe('App', () => {
     await user.selectOptions(screen.getByLabelText('Médico auxiliar 2'), '3');
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
+    const refreshProceduresButton = within(cbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
+    await waitFor(() => {
+      expect(refreshProceduresButton).toBeEnabled();
+    });
     fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), { target: { value: 'Consulta' } });
+    await user.click(refreshProceduresButton);
     await waitFor(() => {
       expect(api.getCbhpmGeral).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ procedimento: 'Consulta' }));
-    }, { timeout: 2000 });
-    expect(await within(cbhpmDialog).findByText('10101012')).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(within(cbhpmDialog).queryByText('Carregando procedimentos...')).not.toBeInTheDocument();
+    });
+    expect(within(cbhpmDialog).getByText('10101012')).toBeInTheDocument();
     const firstProcedureRow = within(cbhpmDialog).getByText('10101012').closest('tr');
     expect(firstProcedureRow).not.toBeNull();
     await user.click(within(firstProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const secondCbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     const secondCodigoField = within(secondCbhpmDialog).getByLabelText('Codigo');
+    const refreshSecondProceduresButton = within(secondCbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
+    await waitFor(() => {
+      expect(refreshSecondProceduresButton).toBeEnabled();
+    });
     fireEvent.change(secondCodigoField, { target: { value: '1010201' } });
-    expect(await within(secondCbhpmDialog).findByText('10102019')).toBeInTheDocument();
+    await user.click(refreshSecondProceduresButton);
+    await waitFor(() => {
+      expect(api.getCbhpmGeral).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ codigo: '1010201' }));
+    });
+    await waitFor(() => {
+      expect(within(secondCbhpmDialog).queryByText('Carregando procedimentos...')).not.toBeInTheDocument();
+    });
+    expect(within(secondCbhpmDialog).getByText('10102019')).toBeInTheDocument();
     const secondProcedureRow = within(secondCbhpmDialog).getByText('10102019').closest('tr');
     expect(secondProcedureRow).not.toBeNull();
     await user.click(within(secondProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
@@ -1441,6 +1459,33 @@ describe('App', () => {
     expect(screen.getByLabelText('Médico auxiliar 1')).toBeInTheDocument();
     expect(screen.getByLabelText('Médico auxiliar 2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
+  });
+
+  it('carrega a licenca atual do medico quando ela nao vem no login e libera pacientes', async () => {
+    vi.mocked(api.getCurrentLicenca).mockResolvedValue(buildMedicalLicense([
+      'Dashboard.Visualizar',
+      'Pacientes.Visualizar',
+      'Pacientes.Gerenciar',
+      'Cbhpm.Consultar',
+    ]));
+
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+        licenca: null,
+      },
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(api.getCurrentLicenca).toHaveBeenCalledWith('jwt-token');
+    });
+
+    await openPatientsModule(user);
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
   });
 
   it('restringe cadastro e edicao quando o medico nao possui gerenciamento de pacientes', async () => {

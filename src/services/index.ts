@@ -6,6 +6,7 @@ export * from './conveniosService';
 export * from './dashboardService';
 export * from './eventsService';
 export * from './hospitalsService';
+export * from './licencaService';
 export * from './medicalGroupsService';
 export * from './opmeService';
 export * from './patientsService';

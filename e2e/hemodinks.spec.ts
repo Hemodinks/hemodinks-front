@@ -407,6 +407,11 @@ async function expectNoGlobalHorizontalOverflow(page: Page) {
   await expect(page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).resolves.toBe(true);
 }
 
+async function expectTableRowVisible(page: Page, tableSelector: string, rowText: string, loadingText: string) {
+  await expect(page.getByText(loadingText)).toHaveCount(0);
+  await expect(page.locator(`${tableSelector} tbody tr`, { hasText: rowText }).first()).toBeVisible();
+}
+
 async function captureRouteScreenshot(page: Page, testInfo: TestInfo, route: string, width: number) {
   await page.setViewportSize({ width, height: width < 600 ? 860 : 900 });
   await loginViaUi(page, route);
@@ -505,7 +510,7 @@ test('cadastra e edita usuario usando o formulario real', async ({ page }) => {
   await page.getByRole('button', { name: 'Salvar alteracoes' }).click();
 
   await expect(page.getByText('Usuario atualizado.')).toBeVisible();
-  await expect(page.getByText('Usuario Editado')).toBeVisible();
+  await expectTableRowVisible(page, '.users-table', 'Usuario Editado', 'Carregando usuarios...');
   expect(apiState.updatedUserPayload).toMatchObject({
     nome: 'Usuario Editado',
     email: 'usuario.e2e@hemodinks.com',
@@ -547,7 +552,7 @@ test('cadastra e edita paciente usando o fluxo real do formulario', async ({ pag
   await page.getByLabel('Paciente', { exact: true }).fill('Paciente Editado');
   await page.getByRole('button', { name: 'Salvar paciente' }).click();
   await expect(page.getByText('Paciente atualizado.')).toBeVisible();
-  await expect(page.getByText('Paciente Editado')).toBeVisible();
+  await expectTableRowVisible(page, '.patients-table', 'Paciente Editado', 'Carregando pacientes...');
   expect(apiState.updatedPacientePayload).toMatchObject({
     nomePaciente: 'Paciente Editado',
     cpf: '',
