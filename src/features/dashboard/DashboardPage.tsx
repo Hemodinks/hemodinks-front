@@ -144,11 +144,11 @@ export function DashboardPage({
     ...(canAccessUsers
       ? [{
           id: 'users' as const,
-          title: 'Usuarios',
-          metric: 'Gerenciar usuarios',
+          title: 'Usuários',
+          metric: 'Gerenciar usuários',
           footerLabel: `${usersCount} cadastrados`,
           className: 'module-card-users',
-          ariaLabel: 'Abrir usuarios',
+          ariaLabel: 'Abrir usuários',
           icon: <Users size={24} />,
           onOpen: onOpenUsersList,
         }]
@@ -180,11 +180,11 @@ export function DashboardPage({
     ...(canAccessBilling
       ? [{
           id: 'billing' as const,
-          title: 'Faturamento medico',
-          metric: 'Honorarios, glosas e repasses',
-          footerLabel: `${pendingPaymentsCount} pendencias financeiras`,
+          title: 'Faturamento médico',
+          metric: 'Honorários, glosas e repasses',
+          footerLabel: `${pendingPaymentsCount} pendências financeiras`,
           className: 'module-card-billing',
-          ariaLabel: 'Abrir faturamento medico',
+          ariaLabel: 'Abrir faturamento médico',
           icon: <FileText size={24} />,
           onOpen: onOpenBilling,
         }]
@@ -192,34 +192,34 @@ export function DashboardPage({
     ...(canAccessMedicalGroups
       ? [{
           id: 'medicalGroups' as const,
-          title: 'Grupos medicos',
+          title: 'Grupos médicos',
           metric: 'Relacionar equipes e escopos',
           footerLabel: 'Definir compartilhamento',
           className: 'module-card-medical-groups',
-          ariaLabel: 'Abrir grupos medicos',
+          ariaLabel: 'Abrir grupos médicos',
           icon: <ShieldPlus size={24} />,
           onOpen: onOpenMedicalGroups,
         }]
       : []),
     {
       id: 'agenda',
-      title: 'Agenda e notificacoes',
+      title: 'Agenda e notificações',
       metric: 'Eventos, lembretes e avisos',
-      footerLabel: `${upcomingEventsCount} proximos`,
+      footerLabel: `${upcomingEventsCount} próximos`,
       className: 'module-card-agenda',
-      ariaLabel: 'Abrir agenda e notificacoes',
+      ariaLabel: 'Abrir agenda e notificações',
       icon: <CalendarDays size={24} />,
       onOpen: onOpenAgenda,
-      badge: unreadAgendaNotificationCount > 0 ? `${unreadAgendaNotificationCount} nao lidas` : undefined,
+      badge: unreadAgendaNotificationCount > 0 ? `${unreadAgendaNotificationCount} não lidas` : undefined,
     },
     ...(canAccessSettings
       ? [{
           id: 'settings' as const,
-          title: 'Configuracao do sistema',
+          title: 'Configuração do sistema',
           metric: 'Senha, tema e marca',
-          footerLabel: 'Ajustar preferencias',
+          footerLabel: 'Ajustar preferências',
           className: 'module-card-settings',
-          ariaLabel: 'Abrir configuracao do sistema',
+          ariaLabel: 'Abrir configuração do sistema',
           icon: <Settings size={24} />,
           onOpen: onOpenSettings,
         }]
@@ -353,7 +353,7 @@ export function DashboardPage({
           {canAccessUsers && (
             <div className="info-summary-item info-summary-users">
               <span className="info-summary-icon"><Users size={18} /></span>
-              <span className="info-summary-label">Usuarios ativos</span>
+              <span className="info-summary-label">Usuários ativos</span>
               <strong>{activeUsersCount}</strong>
             </div>
           )}

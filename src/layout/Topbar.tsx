@@ -43,7 +43,7 @@ export function Topbar({
       </div>
 
       <div className="topbar-right">
-        <div className="current-user topbar-user" aria-label="Usuario logado">
+        <div className="current-user topbar-user" aria-label="Usuário logado">
           <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" />
           <span className="current-user-name">{session.user.nome}</span>
         </div>
@@ -57,7 +57,7 @@ export function Topbar({
             aria-haspopup="dialog"
           >
             <Bell size={17} />
-            <span className="notification-label notification-label-wide">Notificacoes</span>
+            <span className="notification-label notification-label-wide">Notificações</span>
             <span className="notification-label notification-label-short">Avisos</span>
             <span className="notification-count">{notificationCount}</span>
           </button>

@@ -20,9 +20,9 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
         <div className="panel-title">
           <div>
             <span className="eyebrow">Central de avisos</span>
-            <h2 id="notifications-title">Notificacoes</h2>
+            <h2 id="notifications-title">Notificações</h2>
           </div>
-          <IconButton label="Fechar notificacoes" title="Fechar" tone="muted" onClick={onClose}>
+          <IconButton label="Fechar notificações" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
           </IconButton>
         </div>
@@ -32,7 +32,7 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
           <span>{totalCount === 1 ? '1 aviso encontrado' : `${totalCount} avisos encontrados`}</span>
         </div>
 
-        {loading && <AlertMessage type="success" icon={<Bell size={17} />}>Carregando notificacoes...</AlertMessage>}
+        {loading && <AlertMessage type="success" icon={<Bell size={17} />}>Carregando notificações...</AlertMessage>}
         {error && <AlertMessage type="error">{error}</AlertMessage>}
 
         {notifications.length ? (
@@ -49,11 +49,11 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
                     <div className="notification-meta-row">
                       {notification.nomePaciente && <span>{notification.nomePaciente}</span>}
                       {notification.autor && <span>De: {notification.autor}</span>}
-                      {notification.medico && <span>Medico: {notification.medico}</span>}
+                      {notification.medico && <span>Médico: {notification.medico}</span>}
                       {notification.procedimento && <span>Procedimento: {notification.procedimento}</span>}
                       {date && <span>{date}</span>}
                       <span className={`notification-read-status ${notification.dataLeitura ? 'is-read' : 'is-unread'}`}>
-                        {notification.dataLeitura ? 'Lida' : 'Nao lida'}
+                        {notification.dataLeitura ? 'Lida' : 'Não lida'}
                       </span>
                     </div>
                     {notification.tipo === 'ObservacaoPaciente' && notification.pacienteId > 0 && (
@@ -73,7 +73,7 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
             })}
           </ul>
         ) : !loading && !error ? (
-          <p className="empty-row">Nenhuma notificacao para este usuario.</p>
+          <p className="empty-row">Nenhuma notificação para este usuário.</p>
         ) : null}
       </Modal>
   );

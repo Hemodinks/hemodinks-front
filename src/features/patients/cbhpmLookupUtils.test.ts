@@ -19,11 +19,11 @@ describe('cbhpmLookupUtils', () => {
     expect(buildCbhpmQueryFilters(filters)).toEqual({});
   });
 
-  it('exige ao menos 3 caracteres em codigo e descricao quando preenchidos', () => {
+  it('exige ao menos 3 caracteres em código e descrição quando preenchidos', () => {
     expect(areCbhpmFiltersSearchable({ codigo: '10', procedimento: '', porte: '' })).toBe(false);
     expect(areCbhpmFiltersSearchable({ codigo: '', procedimento: 'tu', porte: '' })).toBe(false);
     expect(getCbhpmFilterValidationMessage({ codigo: '10', procedimento: 'tu', porte: '' }))
-      .toBe('Informe pelo menos 3 digitos no codigo e 3 caracteres na descricao para consultar.');
+      .toBe('Informe pelo menos 3 dígitos no código e 3 caracteres na descrição para consultar.');
   });
 
   it('monta parametros somente com filtros validos para a API', () => {

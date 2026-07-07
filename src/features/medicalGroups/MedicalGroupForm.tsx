@@ -38,8 +38,8 @@ export function MedicalGroupForm({
     <FormPanel className="module-form-panel">
       <div className="panel-title">
         <div>
-          <span className="eyebrow">{editingGroupId ? 'Edicao' : 'Cadastro'}</span>
-          <h2>{editingGroupId ? 'Editar grupo medico' : 'Novo grupo medico'}</h2>
+          <span className="eyebrow">{editingGroupId ? 'Edição' : 'Cadastro'}</span>
+          <h2>{editingGroupId ? 'Editar grupo médico' : 'Novo grupo médico'}</h2>
         </div>
         <div className="panel-title-actions">
           <IconButton label="Voltar para lista" tone="muted" onClick={onClose}>
@@ -93,7 +93,7 @@ export function MedicalGroupForm({
                 })}
               </div>
             ) : (
-              <p className="file-hint">Nenhum medico cadastrado para vincular ao grupo.</p>
+              <p className="file-hint">Nenhum médico cadastrado para vincular ao grupo.</p>
             )}
           </section>
         </fieldset>
@@ -102,7 +102,7 @@ export function MedicalGroupForm({
 
         <Button variant="primary" type="submit" disabled={formLoading}>
           {editingGroupId ? <Save size={18} /> : <Plus size={18} />}
-          {formLoading ? 'Salvando...' : editingGroupId ? 'Salvar grupo medico' : 'Cadastrar grupo medico'}
+          {formLoading ? 'Salvando...' : editingGroupId ? 'Salvar grupo médico' : 'Cadastrar grupo médico'}
         </Button>
       </form>
     </FormPanel>

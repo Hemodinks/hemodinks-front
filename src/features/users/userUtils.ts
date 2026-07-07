@@ -89,7 +89,7 @@ export function validateUserForm(data: UserFormData) {
 
   if (isMedicalProfileId(data.perfilId)) {
     if (!data.crm.trim()) {
-      return 'Informe o CRM do medico.';
+      return 'Informe o CRM do médico.';
     }
 
     if (data.crm.trim().length > MAX_CRM_LENGTH) {
