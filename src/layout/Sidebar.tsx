@@ -13,6 +13,7 @@ type SidebarProps = {
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
+  canAccessSettings: boolean;
   canAccessAgenda: boolean;
   usersCount: number;
   pacientesCount: number;
@@ -39,6 +40,7 @@ export function Sidebar({
   canEditOwnUser,
   canAccessBilling,
   canAccessMedicalGroups,
+  canAccessSettings,
   canAccessAgenda,
   usersCount,
   pacientesCount,
@@ -163,15 +165,17 @@ export function Sidebar({
               )}
             </button>
           )}
-          <button
-            type="button"
-            className={`side-nav-settings ${activeView === 'settings' ? 'active' : ''}`}
-            aria-current={activeView === 'settings' ? 'page' : undefined}
-            onClick={onOpenSettings}
-          >
-            <Settings size={18} />
-            <span>Configuracao</span>
-          </button>
+          {canAccessSettings && (
+            <button
+              type="button"
+              className={`side-nav-settings ${activeView === 'settings' ? 'active' : ''}`}
+              aria-current={activeView === 'settings' ? 'page' : undefined}
+              onClick={onOpenSettings}
+            >
+              <Settings size={18} />
+              <span>Configuracao</span>
+            </button>
+          )}
         </nav>
       </div>
     </aside>
