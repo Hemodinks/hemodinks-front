@@ -32,7 +32,7 @@ const CONTROLLER_IMPLICIT_FEATURES = new Set<string>([
   LICENSE_FEATURES.cbhpmConsultar,
 ]);
 
-const MEDICAL_LEGACY_FALLBACK_FEATURES = new Set<string>([
+const MEDICAL_FULL_FEATURES = new Set<string>([
   LICENSE_FEATURES.dashboardVisualizar,
   LICENSE_FEATURES.pacientesVisualizar,
   LICENSE_FEATURES.pacientesGerenciar,
@@ -57,9 +57,7 @@ export function getSessionFeatures(user: SessionUser | null | undefined): Readon
   }
 
   if (user.perfilId === MEDICAL_PROFILE_ID) {
-    return user.licenca
-      ? new Set(user.licenca.featuresEfetivas)
-      : MEDICAL_LEGACY_FALLBACK_FEATURES;
+    return MEDICAL_FULL_FEATURES;
   }
 
   return new Set();

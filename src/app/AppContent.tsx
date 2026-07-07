@@ -79,7 +79,7 @@ export function AppContent() {
   const canAccessDashboard = hasSessionFeature(session?.user, LICENSE_FEATURES.dashboardVisualizar) || isMedical;
   const canAccessPatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesVisualizar) || isMedical;
   const canManagePatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar) || isMedical;
-  const canConsultCbhpm = hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar);
+  const canConsultCbhpm = hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar) || isMedical;
   const canAccessAgenda = !isController;
   const canAccessUsers = isAdmin;
   const canEditOwnUser = isMedical || isPatient;
