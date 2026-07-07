@@ -23,6 +23,7 @@ type AccessState = {
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
+  canAccessSettings: boolean;
   canCreatePatients: boolean;
   canEditPatients: boolean;
   canDeletePatients: boolean;
@@ -106,6 +107,7 @@ export function AppMainContent({
     canEditOwnUser,
     canAccessBilling,
     canAccessMedicalGroups,
+    canAccessSettings,
     canCreatePatients,
     canEditPatients,
     canDeletePatients,
@@ -135,6 +137,7 @@ export function AppMainContent({
           canEditOwnUser={canEditOwnUser}
           canAccessBilling={canAccessBilling}
           canAccessMedicalGroups={canAccessMedicalGroups}
+          canAccessSettings={canAccessSettings}
           patientReadOnly={patientReadOnly}
           usersCount={usersCount}
           pacientesCount={pacientesCount}
