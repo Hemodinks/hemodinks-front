@@ -583,24 +583,6 @@ export function BillingPage({
 
   return (
     <section className="workspace billing-workspace">
-      <section className="billing-hero">
-        <div>
-          <span className="eyebrow">Faturamento médico</span>
-          <h2>Consulta financeira das cirurgias realizadas</h2>
-          <p>
-            Esta tela consolida o que já foi preenchido no cadastro de pacientes para transformar cirurgia,
-            convênio, OPME, autorização, pagamento, glosa e anexos em uma visão de faturamento para a equipe médica.
-          </p>
-        </div>
-
-        <div className="billing-hero-meta">
-          <span>Baseado no cadastro de pacientes</span>
-          {lastUpdatedLabel && <span>Atualizado em {lastUpdatedLabel}</span>}
-          {isMedical && <span>Consulta filtrada para {session.user.nome}</span>}
-          {isAdmin && <span>Visão administrativa habilitada</span>}
-        </div>
-      </section>
-
       {(summary.nonNumericPaymentCount > 0 || summary.nonNumericGlosaCount > 0) && (
         <AlertMessage type="warning" icon={<TriangleAlert size={17} />}>
           {summary.nonNumericPaymentCount > 0 && `${summary.nonNumericPaymentCount} registro(s) possuem pagamento preenchido sem valor monetário estruturado. `}
@@ -609,123 +591,128 @@ export function BillingPage({
       )}
 
       <DataPanel className="billing-filter-panel">
-        <div className="data-header">
-          <div>
-            <span className="eyebrow">Consulta de faturamento</span>
-            <h2>{summary.totalRecords} cirurgia(s) encontradas</h2>
+        <details className="billing-filters-accordion">
+          <summary className="billing-filters-summary">
+            <div>
+              <span className="eyebrow">Consulta de faturamento</span>
+              <h2>{summary.totalRecords} cirurgia(s) encontradas</h2>
+            </div>
+            <span className="billing-filters-toggle">Filtros</span>
+          </summary>
+
+          <div className="billing-filters-content">
+            <div className="table-tools billing-toolbar">
+              <SearchField
+                label="Buscar cirurgia faturada"
+                value={filters.search}
+                onValueChange={(value) => setFilters((current) => ({ ...current, search: value }))}
+                placeholder="Paciente, procedimento, código, hospital..."
+              />
+              <IconButton
+                label="Atualizar faturamento médico"
+                title="Atualizar faturamento"
+                onClick={() => void billingQuery.refetch()}
+                disabled={billingQuery.isFetching}
+              >
+                <RefreshCw size={18} />
+              </IconButton>
+            </div>
+
+            <div className="billing-filter-grid">
+              <ComboboxField
+                className="filter-field"
+                label="Cirurgião"
+                value={filters.medico}
+                options={doctorFilterOptions}
+                onValueChange={(value) => setFilters((current) => ({ ...current, medico: value }))}
+                disabled={isMedical || !doctorFilterOptions.length}
+                placeholder={isMedical ? session.user.nome : medicalUsers.length ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
+                noOptionsLabel="Nenhum cirurgião encontrado."
+              />
+              <ComboboxField
+                className="filter-field"
+                label="Convênio"
+                value={filters.convenio}
+                options={convenioFilterOptions}
+                onValueChange={(value) => setFilters((current) => ({ ...current, convenio: value }))}
+                disabled={!convenios.length && !filters.convenio}
+                placeholder={convenios.length ? 'Todos os convênios' : 'Nenhum convênio cadastrado'}
+                noOptionsLabel="Nenhum convênio encontrado."
+              />
+              <ComboboxField
+                className="filter-field"
+                label="Hospital"
+                value={filters.hospital}
+                options={hospitalFilterOptions}
+                onValueChange={(value) => setFilters((current) => ({ ...current, hospital: value }))}
+                placeholder="Todos os hospitais"
+                noOptionsLabel="Nenhum hospital encontrado."
+              />
+              <ComboboxField
+                className="filter-field"
+                label="Procedimento"
+                value={filters.procedimento}
+                options={procedureFilterOptions}
+                onValueChange={(value) => setFilters((current) => ({ ...current, procedimento: value }))}
+                placeholder="Principal ou associado"
+                noOptionsLabel="Nenhum procedimento encontrado."
+              />
+              <ComboboxField
+                className="filter-field"
+                label="Status"
+                value={statusFilterInput}
+                options={BILLING_STATUS_FILTER_OPTIONS.map((option) => option.label)}
+                onValueChange={(value) => {
+                  setStatusFilterInput(value);
+
+                  const nextStatus = getFilterOptionValue(BILLING_STATUS_FILTER_OPTIONS, value);
+
+                  if (nextStatus) {
+                    setFilters((current) => ({ ...current, status: nextStatus }));
+                  }
+                }}
+                noOptionsLabel="Nenhum status encontrado."
+              />
+              <ComboboxField
+                className="filter-field"
+                label="Regime"
+                value={regimeFilterInput}
+                options={BILLING_REGIME_FILTER_OPTIONS.map((option) => option.label)}
+                onValueChange={(value) => {
+                  setRegimeFilterInput(value);
+
+                  const nextRegime = getFilterOptionValue(BILLING_REGIME_FILTER_OPTIONS, value);
+
+                  if (nextRegime) {
+                    setFilters((current) => ({ ...current, regime: nextRegime }));
+                  }
+                }}
+                noOptionsLabel="Nenhum regime encontrado."
+              />
+              <DateInput
+                id="billing-period-start"
+                label="Data inicial"
+                value={filters.periodStart}
+                onChange={(value) => setFilters((current) => ({ ...current, periodStart: value }))}
+              />
+              <DateInput
+                id="billing-period-end"
+                label="Data final"
+                value={filters.periodEnd}
+                onChange={(value) => setFilters((current) => ({ ...current, periodEnd: value }))}
+              />
+              <CheckboxField
+                className="billing-checkbox"
+                label="Mostrar apenas cirurgias com pendências de faturamento"
+                checked={filters.onlyPendingItems}
+                onCheckedChange={(checked) => setFilters((current) => ({ ...current, onlyPendingItems: checked }))}
+              />
+              <Button className="patient-clear-filters" onClick={clearFilters}>
+                Limpar filtros
+              </Button>
+            </div>
           </div>
-
-          <div className="table-tools billing-toolbar">
-            <SearchField
-              label="Buscar cirurgia faturada"
-              value={filters.search}
-              onValueChange={(value) => setFilters((current) => ({ ...current, search: value }))}
-              placeholder="Paciente, procedimento, código, hospital..."
-            />
-            <IconButton
-              label="Atualizar faturamento médico"
-              title="Atualizar faturamento"
-              onClick={() => void billingQuery.refetch()}
-              disabled={billingQuery.isFetching}
-            >
-              <RefreshCw size={18} />
-            </IconButton>
-          </div>
-        </div>
-
-        <div className="billing-filter-grid">
-          <ComboboxField
-            className="filter-field"
-            label="Cirurgião"
-            value={filters.medico}
-            options={doctorFilterOptions}
-            onValueChange={(value) => setFilters((current) => ({ ...current, medico: value }))}
-            disabled={isMedical || !doctorFilterOptions.length}
-            placeholder={isMedical ? session.user.nome : medicalUsers.length ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
-            noOptionsLabel="Nenhum cirurgião encontrado."
-          />
-          <ComboboxField
-            className="filter-field"
-            label="Convênio"
-            value={filters.convenio}
-            options={convenioFilterOptions}
-            onValueChange={(value) => setFilters((current) => ({ ...current, convenio: value }))}
-            disabled={!convenios.length && !filters.convenio}
-            placeholder={convenios.length ? 'Todos os convênios' : 'Nenhum convênio cadastrado'}
-            noOptionsLabel="Nenhum convênio encontrado."
-          />
-          <ComboboxField
-            className="filter-field"
-            label="Hospital"
-            value={filters.hospital}
-            options={hospitalFilterOptions}
-            onValueChange={(value) => setFilters((current) => ({ ...current, hospital: value }))}
-            placeholder="Todos os hospitais"
-            noOptionsLabel="Nenhum hospital encontrado."
-          />
-          <ComboboxField
-            className="filter-field"
-            label="Procedimento"
-            value={filters.procedimento}
-            options={procedureFilterOptions}
-            onValueChange={(value) => setFilters((current) => ({ ...current, procedimento: value }))}
-            placeholder="Principal ou associado"
-            noOptionsLabel="Nenhum procedimento encontrado."
-          />
-          <ComboboxField
-            className="filter-field"
-            label="Status"
-            value={statusFilterInput}
-            options={BILLING_STATUS_FILTER_OPTIONS.map((option) => option.label)}
-            onValueChange={(value) => {
-              setStatusFilterInput(value);
-
-              const nextStatus = getFilterOptionValue(BILLING_STATUS_FILTER_OPTIONS, value);
-
-              if (nextStatus) {
-                setFilters((current) => ({ ...current, status: nextStatus }));
-              }
-            }}
-            noOptionsLabel="Nenhum status encontrado."
-          />
-          <ComboboxField
-            className="filter-field"
-            label="Regime"
-            value={regimeFilterInput}
-            options={BILLING_REGIME_FILTER_OPTIONS.map((option) => option.label)}
-            onValueChange={(value) => {
-              setRegimeFilterInput(value);
-
-              const nextRegime = getFilterOptionValue(BILLING_REGIME_FILTER_OPTIONS, value);
-
-              if (nextRegime) {
-                setFilters((current) => ({ ...current, regime: nextRegime }));
-              }
-            }}
-            noOptionsLabel="Nenhum regime encontrado."
-          />
-          <DateInput
-            id="billing-period-start"
-            label="Data inicial"
-            value={filters.periodStart}
-            onChange={(value) => setFilters((current) => ({ ...current, periodStart: value }))}
-          />
-          <DateInput
-            id="billing-period-end"
-            label="Data final"
-            value={filters.periodEnd}
-            onChange={(value) => setFilters((current) => ({ ...current, periodEnd: value }))}
-          />
-          <CheckboxField
-            className="billing-checkbox"
-            label="Mostrar apenas cirurgias com pendências de faturamento"
-            checked={filters.onlyPendingItems}
-            onCheckedChange={(checked) => setFilters((current) => ({ ...current, onlyPendingItems: checked }))}
-          />
-          <Button className="patient-clear-filters" onClick={clearFilters}>
-            Limpar filtros
-          </Button>
-        </div>
+        </details>
       </DataPanel>
 
       <section className="billing-summary-grid" aria-label="Resumo financeiro">

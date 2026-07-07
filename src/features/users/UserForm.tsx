@@ -5,7 +5,6 @@ import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
 import {
   BRAZIL_UF_OPTIONS,
-  DEFAULT_PASSWORD,
   formatPhoneInput,
   isMedicalProfileId,
   MAX_CRM_LENGTH,
@@ -70,7 +69,6 @@ export function UserForm({
           <h2>{canAccessUsers ? editingId ? 'Editar usuário' : 'Novo usuário' : 'Meu cadastro'}</h2>
         </div>
         <div className="panel-title-actions">
-          {canAccessUsers && !editingId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
           <IconButton label="Voltar para lista" tone="muted" onClick={onClose}>
             <X size={18} />
           </IconButton>
