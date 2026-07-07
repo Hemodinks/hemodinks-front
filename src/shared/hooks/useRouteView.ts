@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useLayoutEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { AppView } from '../../appTypes';
 import { getViewFromPath, isRootPath, VIEW_PATHS } from '../../routes';
@@ -14,6 +14,7 @@ type UseRouteViewOptions = {
   canUseMedicalGroupsRoute: boolean;
   canUseAgendaRoute: boolean;
   canUseSettingsRoute: boolean;
+  forceDashboardRoute?: boolean;
 };
 
 export function useRouteView({
@@ -26,11 +27,13 @@ export function useRouteView({
   canUseMedicalGroupsRoute,
   canUseAgendaRoute,
   canUseSettingsRoute,
+  forceDashboardRoute = false,
 }: UseRouteViewOptions) {
   const location = useLocation();
   const navigate = useNavigate();
   const routeView = getViewFromPath(location.pathname);
   const isRootRoute = isRootPath(location.pathname);
+  const shouldForceDashboardRoute = forceDashboardRoute && canUseDashboardRoute;
   const routeBlocked = (routeView === 'dashboard' && !canUseDashboardRoute)
     || (routeView === 'patients' && !canUsePatientsRoute)
     || (routeView === 'users' && !canUseUsersRoute)
@@ -54,19 +57,19 @@ export function useRouteView({
               : canUseAgendaRoute
                 ? 'agenda'
                 : 'settings';
-  const activeView: AppView = !routeView || routeBlocked
+  const activeView: AppView = shouldForceDashboardRoute || !routeView || routeBlocked
     ? fallbackView
     : routeView;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!session || session.user.precisaTrocarSenha) {
       return;
     }
 
-    if (isRootRoute || !routeView || routeBlocked) {
+    if (shouldForceDashboardRoute || isRootRoute || !routeView || routeBlocked) {
       navigate(VIEW_PATHS[fallbackView], { replace: true });
     }
-  }, [fallbackView, isRootRoute, navigate, routeBlocked, routeView, session]);
+  }, [fallbackView, isRootRoute, navigate, routeBlocked, routeView, session, shouldForceDashboardRoute]);
 
   const navigateToView = useCallback((view: AppView, replace = false) => {
     navigate(VIEW_PATHS[view], { replace });

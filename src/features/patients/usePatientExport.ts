@@ -65,7 +65,7 @@ export function usePatientExport({
       const medico = pacienteFilters.medico.trim();
 
       if (!medico) {
-        throw new Error('Selecione um cirurgiao antes de exportar por cirurgiao.');
+        throw new Error('Selecione um cirurgião antes de exportar por cirurgião.');
       }
 
       return fetchPacientesForExport({ medico });

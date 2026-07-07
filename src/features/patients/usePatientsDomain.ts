@@ -634,17 +634,17 @@ export function usePatientsDomain({
     );
 
     if (selectedMedico.trimmedName && !selectedMedico.selectedUser && !selectedMedico.hasScopedSelection) {
-      setPacienteFormError('Selecione um cirurgiao cadastrado com perfil Medicos.');
+      setPacienteFormError('Selecione um cirurgião cadastrado com perfil Médicos.');
       return;
     }
 
     if (selectedMedicoAuxiliar1.trimmedName && !selectedMedicoAuxiliar1.selectedUser && !selectedMedicoAuxiliar1.hasScopedSelection) {
-      setPacienteFormError('Selecione o medico auxiliar 1 no cadastro de medicos.');
+      setPacienteFormError('Selecione o médico auxiliar 1 no cadastro de médicos.');
       return;
     }
 
     if (selectedMedicoAuxiliar2.trimmedName && !selectedMedicoAuxiliar2.selectedUser && !selectedMedicoAuxiliar2.hasScopedSelection) {
-      setPacienteFormError('Selecione o medico auxiliar 2 no cadastro de medicos.');
+      setPacienteFormError('Selecione o médico auxiliar 2 no cadastro de médicos.');
       return;
     }
 
@@ -712,9 +712,9 @@ export function usePatientsDomain({
         ? 'Paciente atualizado.'
         : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`;
       const successMessage = warningMessage
-        ? `${baseSuccessMessage} Paciente salvo, mas a observacao nao foi enviada.`
+        ? `${baseSuccessMessage} Paciente salvo, mas a observação não foi enviada.`
         : observationText
-          ? `${baseSuccessMessage} Observacao enviada.`
+          ? `${baseSuccessMessage} Observação enviada.`
           : baseSuccessMessage;
       setPacienteSuccessMessage(successMessage);
       await Promise.all([
@@ -760,7 +760,7 @@ export function usePatientsDomain({
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
       ]);
-      setPacienteSuccessMessage('Paciente excluido.');
+      setPacienteSuccessMessage('Paciente excluído.');
       await loadPacientes(session.token, true);
       await loadDashboardSummary(session.token, true);
     } catch (error) {
@@ -772,9 +772,9 @@ export function usePatientsDomain({
     confirmAction({
       tone: 'delete',
       title: 'Excluir paciente?',
-      message: `Deseja excluir "${paciente.nomePaciente}"? Esta acao nao podera ser desfeita.`,
+      message: `Deseja excluir "${paciente.nomePaciente}"? Esta ação não poderá ser desfeita.`,
       confirmLabel: 'Sim',
-      cancelLabel: 'Nao',
+      cancelLabel: 'Não',
       onConfirm: () => deleteSelectedPaciente(paciente),
     });
   };
