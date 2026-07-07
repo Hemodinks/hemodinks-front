@@ -18,8 +18,8 @@ import {
   ALLOWED_PROFILE_PHOTO_TYPES,
   DEFAULT_PASSWORD,
   DEFAULT_PROFILE_ID,
+  formatProfileName,
   getErrorMessage,
-  getProfileName,
   MAX_PATIENT_FILE_BYTES,
   MAX_PROFILE_PHOTO_BYTES,
   MEDICAL_PROFILE_ID,
@@ -281,7 +281,7 @@ export function useUsersDomain({
     const invalidFile = files.find((file) => !ALLOWED_PATIENT_FILE_TYPES.has(file.type) || file.size > MAX_PATIENT_FILE_BYTES);
 
     if (invalidFile) {
-      setFormError('Use PDF, DOC, DOCX, JPG, JPEG, PNG, XLS, XLSX, TXT, CSV, PPT ou PPTX de ate 10 MB.');
+      setFormError('Use PDF, DOC, DOCX, JPG, JPEG, PNG, XLS, XLSX, TXT, CSV, PPT ou PPTX de até 10 MB.');
       return;
     }
 
@@ -340,10 +340,10 @@ export function useUsersDomain({
 
       if (editingId) {
         savedUser = await saveUserMutation.mutateAsync({ id: editingId, payload, token: session.token });
-        setSuccessMessage('Usuario atualizado.');
+        setSuccessMessage('Usuário atualizado.');
       } else {
         savedUser = await saveUserMutation.mutateAsync({ id: null, payload, token: session.token });
-        setSuccessMessage(`Usuario cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
+        setSuccessMessage(`Usuário cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
       }
 
       if (savedUser.perfilId === MEDICAL_PROFILE_ID) {
@@ -370,7 +370,7 @@ export function useUsersDomain({
             crmUf: savedUser.crmUf ?? null,
             fotoPerfil: savedUser.fotoPerfil ?? null,
             perfilId: savedUser.perfilId || DEFAULT_PROFILE_ID,
-            perfilNome: savedUser.perfilNome || getProfileName(savedUser.perfilId || DEFAULT_PROFILE_ID),
+            perfilNome: formatProfileName(savedUser.perfilId || DEFAULT_PROFILE_ID, savedUser.perfilNome),
           },
         });
       }
@@ -416,7 +416,7 @@ export function useUsersDomain({
         queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(session.token) }),
       ]);
-      setSuccessMessage('Usuario excluido.');
+      setSuccessMessage('Usuário excluído.');
       await refreshUserList(true);
       await loadDashboardSummary(session.token, true);
     } catch (error) {
@@ -427,10 +427,10 @@ export function useUsersDomain({
   const handleDeleteUser = (user: User) => {
     confirmAction({
       tone: 'delete',
-      title: 'Excluir usuario?',
-      message: `Deseja excluir "${user.nome}"? Esta acao nao podera ser desfeita.`,
+      title: 'Excluir usuário?',
+      message: `Deseja excluir "${user.nome}"? Esta ação não poderá ser desfeita.`,
       confirmLabel: 'Sim',
-      cancelLabel: 'Nao',
+      cancelLabel: 'Não',
       onConfirm: () => deleteSelectedUser(user),
     });
   };
@@ -517,7 +517,7 @@ export function useUsersDomain({
       ativo: true,
       precisaTrocarSenha: session.user.precisaTrocarSenha,
       perfilId: session.user.perfilId,
-      perfilNome: session.user.perfilNome,
+      perfilNome: formatProfileName(session.user.perfilId, session.user.perfilNome),
       arquivosCount: 0,
       arquivos: [],
     });

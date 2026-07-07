@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { authenticate, getCurrentLicenca, resetPassword } from '../services';
 import { LoginScreen } from '../features/auth/LoginScreen';
@@ -9,7 +9,7 @@ import { useMedicalGroupsDomain } from '../features/medicalGroups/useMedicalGrou
 import { usePatientsDomain } from '../features/patients/usePatientsDomain';
 import { useUsersDomain } from '../features/users/useUsersDomain';
 import { AppShell } from '../layout/AppShell';
-import type { BreadcrumbItem, ModuleMode } from '../appTypes';
+import type { AppView, BreadcrumbItem, ModuleMode } from '../appTypes';
 import { queryClient } from '../queryClient';
 import { useConfirmationDialog } from '../shared/components/ConfirmationDialog';
 import { useRouteView } from '../shared/hooks/useRouteView';
@@ -19,8 +19,8 @@ import {
   CONTROLLER_PROFILE_ID,
   DEFAULT_PASSWORD,
   DEFAULT_PROFILE_ID,
+  formatProfileName,
   getErrorMessage,
-  getProfileName,
   isValidEmail,
   MEDICAL_PROFILE_ID,
   PATIENT_PROFILE_ID,
@@ -49,6 +49,13 @@ function updateSort(
   setDirection(defaultDirection);
 }
 
+const MEDICAL_ALLOWED_ENTRY_PATHS = new Set([
+  '/agenda',
+  '/faturamento-medico',
+  '/meu-cadastro',
+  '/pacientes',
+]);
+
 export function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -62,14 +69,15 @@ export function AppContent() {
   const [loginInfo, setLoginInfo] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  const [openDashboardAfterLogin, setOpenDashboardAfterLogin] = useState(false);
 
   const currentPerfilId = session?.user.perfilId ?? 0;
   const isAdmin = currentPerfilId === 1;
   const isMedical = currentPerfilId === MEDICAL_PROFILE_ID;
   const isController = currentPerfilId === CONTROLLER_PROFILE_ID;
   const isPatient = currentPerfilId === PATIENT_PROFILE_ID;
-  const canAccessDashboard = hasSessionFeature(session?.user, LICENSE_FEATURES.dashboardVisualizar);
-  const canAccessPatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesVisualizar);
+  const canAccessDashboard = hasSessionFeature(session?.user, LICENSE_FEATURES.dashboardVisualizar) || isMedical;
+  const canAccessPatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesVisualizar) || isMedical;
   const canManagePatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar);
   const canConsultCbhpm = hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar);
   const canAccessAgenda = !isController;
@@ -91,6 +99,7 @@ export function AppContent() {
   const canUseMedicalGroupsRoute = canAccessMedicalGroups;
   const canUseAgendaRoute = canAccessAgenda;
   const canUseSettingsRoute = canAccessSettings;
+  const forceDashboardRoute = openDashboardAfterLogin && Boolean(session && !session.user.precisaTrocarSenha);
   const { activeView, navigateToView } = useRouteView({
     session,
     canUseDashboardRoute,
@@ -101,6 +110,7 @@ export function AppContent() {
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
     canUseSettingsRoute,
+    forceDashboardRoute,
   });
   const appChrome = useAppChrome({ session });
   const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
@@ -108,6 +118,10 @@ export function AppContent() {
   const resetToken = isResetPasswordRoute
     ? new URLSearchParams(location.search).get('token')?.trim() ?? ''
     : '';
+  const navigateToViewFromInteraction = useCallback((view: AppView, replace = false) => {
+    setOpenDashboardAfterLogin(false);
+    navigateToView(view, replace);
+  }, [navigateToView]);
 
   const returnToLogin = (infoMessage = '') => {
     setLoginError('');
@@ -133,6 +147,7 @@ export function AppContent() {
     medicalGroupsDomain.resetMedicalGroupsState();
     navigateToView('dashboard', true);
     setModuleMode('list');
+    setOpenDashboardAfterLogin(false);
     setLoginPassword('');
   }
 
@@ -144,7 +159,7 @@ export function AppContent() {
     canEditOwnUser,
     isAdmin,
     setModuleMode,
-    navigateToView,
+    navigateToView: navigateToViewFromInteraction,
     persistSession,
     loadDashboardSummary: appChrome.loadDashboardSummary,
     onDeleteCurrentUser: logout,
@@ -165,7 +180,7 @@ export function AppContent() {
     canConsultCbhpm,
     patientReadOnly,
     setModuleMode,
-    navigateToView,
+    navigateToView: navigateToViewFromInteraction,
     loadDashboardSummary: appChrome.loadDashboardSummary,
     confirmAction,
   });
@@ -175,7 +190,7 @@ export function AppContent() {
     moduleMode,
     canAccessMedicalGroups,
     setModuleMode,
-    navigateToView,
+    navigateToView: navigateToViewFromInteraction,
     confirmAction,
   });
 
@@ -217,6 +232,14 @@ export function AppContent() {
     };
   }, [persistSession, session]);
 
+  useLayoutEffect(() => {
+    if (!openDashboardAfterLogin || MEDICAL_ALLOWED_ENTRY_PATHS.has(normalizedPath)) {
+      return;
+    }
+
+    setOpenDashboardAfterLogin(false);
+  }, [normalizedPath, openDashboardAfterLogin]);
+
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoginError('');
@@ -231,7 +254,10 @@ export function AppContent() {
 
     try {
       const result = await authenticate(loginEmail.trim(), loginPassword);
+      const shouldOpenDashboardAfterLogin = (result.perfilId || DEFAULT_PROFILE_ID) === MEDICAL_PROFILE_ID;
       queryClient.clear();
+      setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin);
+
       persistSession({
         token: result.token,
         user: {
@@ -246,7 +272,7 @@ export function AppContent() {
           fotoPerfil: result.fotoPerfil ?? null,
           precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
           perfilId: result.perfilId || DEFAULT_PROFILE_ID,
-          perfilNome: result.perfilNome || getProfileName(result.perfilId || DEFAULT_PROFILE_ID),
+          perfilNome: formatProfileName(result.perfilId || DEFAULT_PROFILE_ID, result.perfilNome),
           licenca: result.licenca ?? null,
         },
       });
@@ -296,7 +322,7 @@ export function AppContent() {
     resetProfileRouteState();
 
     if (canAccessDashboard) {
-      navigateToView('dashboard');
+      navigateToViewFromInteraction('dashboard');
       setModuleMode('list');
       return;
     }
@@ -312,18 +338,18 @@ export function AppContent() {
     }
 
     if (canAccessBilling) {
-      navigateToView('billing');
+      navigateToViewFromInteraction('billing');
       setModuleMode('list');
       return;
     }
 
     if (canAccessAgenda) {
-      navigateToView('agenda');
+      navigateToViewFromInteraction('agenda');
       setModuleMode('list');
       return;
     }
 
-    navigateToView('settings');
+    navigateToViewFromInteraction('settings');
     setModuleMode('list');
   };
 
@@ -335,7 +361,7 @@ export function AppContent() {
       return;
     }
 
-    navigateToView('agenda');
+    navigateToViewFromInteraction('agenda');
     setModuleMode('list');
   };
 
@@ -363,7 +389,7 @@ export function AppContent() {
       return;
     }
 
-    navigateToView('billing');
+    navigateToViewFromInteraction('billing');
     setModuleMode('list');
   };
 
@@ -375,7 +401,7 @@ export function AppContent() {
       return;
     }
 
-    navigateToView('settings');
+    navigateToViewFromInteraction('settings');
     setModuleMode('list');
   };
 
@@ -472,7 +498,7 @@ export function AppContent() {
     );
   }
 
-  const currentUserProfile = session.user.perfilNome || getProfileName(session.user.perfilId);
+  const currentUserProfile = formatProfileName(session.user.perfilId, session.user.perfilNome);
   const activeUsersCount = appChrome.dashboardSummary?.activeUsersCount ?? 0;
   const activePatientsCount = appChrome.dashboardSummary?.activePatientsCount ?? 0;
   const pendingPaymentsCount = appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;
