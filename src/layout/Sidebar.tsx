@@ -8,6 +8,7 @@ type SidebarProps = {
   activeView: AppView;
   currentUserProfile: string;
   canAccessDashboard: boolean;
+  canAccessPatients: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
@@ -33,6 +34,7 @@ export function Sidebar({
   activeView,
   currentUserProfile,
   canAccessDashboard,
+  canAccessPatients,
   canAccessUsers,
   canEditOwnUser,
   canAccessBilling,
@@ -109,16 +111,18 @@ export function Sidebar({
               <span>Meu cadastro</span>
             </button>
           )}
-          <button
-            type="button"
-            className={`side-nav-patients ${activeView === 'patients' ? 'active' : ''}`}
-            aria-current={activeView === 'patients' ? 'page' : undefined}
-            onClick={onOpenPatientsList}
-          >
-            <ClipboardList size={18} />
-            <span>Pacientes</span>
-            <span className="side-nav-count">{pacientesCount}</span>
-          </button>
+          {canAccessPatients && (
+            <button
+              type="button"
+              className={`side-nav-patients ${activeView === 'patients' ? 'active' : ''}`}
+              aria-current={activeView === 'patients' ? 'page' : undefined}
+              onClick={onOpenPatientsList}
+            >
+              <ClipboardList size={18} />
+              <span>Pacientes</span>
+              <span className="side-nav-count">{pacientesCount}</span>
+            </button>
+          )}
           {canAccessBilling && (
             <button
               type="button"
