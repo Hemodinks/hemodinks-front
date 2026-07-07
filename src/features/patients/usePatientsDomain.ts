@@ -5,7 +5,7 @@ import {
   createPacienteObservacao,
   deletePaciente,
   deletePacienteArquivo,
-  getAllCbhpmGeral,
+  getCbhpmGeral,
   getConvenios,
   getHospitais,
   getOpmeFornecedores,
@@ -43,6 +43,7 @@ import {
 } from '../../shared/utils/listing';
 import type {
   AuthSession,
+  CbhpmListQuery,
   CbhpmGeral,
   MedicalUserOption,
   Paciente,
@@ -50,9 +51,9 @@ import type {
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { queryKeys } from '../../shared/queryKeys';
 import {
-  CBHPM_CACHE_FETCH_PAGE_SIZE,
-  filterCbhpmCachedItems,
-  isCbhpmCacheSearchReady,
+  areCbhpmFiltersSearchable,
+  buildCbhpmQueryFilters,
+  getCbhpmFilterValidationMessage,
 } from './cbhpmLookupUtils';
 import {
   emptyPacienteFilters,
@@ -186,7 +187,8 @@ export function usePatientsDomain({
     setCbhpmItems,
     cbhpmFilters,
     setCbhpmFilters,
-    debouncedCbhpmFilters,
+    appliedCbhpmFilters,
+    applyCbhpmFiltersNow,
     cbhpmCurrentPage,
     setCbhpmCurrentPage,
     sortBy: cbhpmSortBy,
@@ -245,12 +247,30 @@ export function usePatientsDomain({
     enabled: sessionReady,
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
-  const cbhpmCacheQuery = useQuery({
-    queryKey: queryKeys.cbhpmCache(session?.token ?? ''),
-    queryFn: () => getAllCbhpmGeral(session?.token ?? '', CBHPM_CACHE_FETCH_PAGE_SIZE),
-    enabled: sessionReady && cbhpmModalOpen,
-    staleTime: LOOKUP_CACHE_TIME_MS,
-    gcTime: 60 * 60 * 1000,
+  const appliedCbhpmFilterValidationMessage = useMemo(
+    () => getCbhpmFilterValidationMessage(appliedCbhpmFilters),
+    [appliedCbhpmFilters],
+  );
+  const cbhpmFilterHint = useMemo(
+    () => getCbhpmFilterValidationMessage(cbhpmFilters),
+    [cbhpmFilters],
+  );
+  const canSearchCbhpm = useMemo(
+    () => areCbhpmFiltersSearchable(cbhpmFilters),
+    [cbhpmFilters],
+  );
+  const cbhpmQueryParams = useMemo<CbhpmListQuery>(() => ({
+    page: cbhpmCurrentPage,
+    pageSize: CBHPM_PAGE_SIZE,
+    ...buildCbhpmQueryFilters(appliedCbhpmFilters),
+    sortBy: cbhpmSortBy,
+    sortDirection: cbhpmSortDirection,
+  }), [appliedCbhpmFilters, cbhpmCurrentPage, cbhpmSortBy, cbhpmSortDirection]);
+  const cbhpmQuery = useQuery({
+    queryKey: queryKeys.cbhpm(session?.token ?? '', cbhpmQueryParams),
+    queryFn: () => getCbhpmGeral(session?.token ?? '', cbhpmQueryParams),
+    enabled: sessionReady && cbhpmModalOpen && !appliedCbhpmFilterValidationMessage,
+    staleTime: LIST_CACHE_TIME_MS,
   });
   const savePacienteMutation = useMutation({
     mutationFn: ({ id, payload, token }: { id: number | null; payload: ReturnType<typeof toPacientePayload>; token: string }) => (
@@ -270,19 +290,6 @@ export function usePatientsDomain({
       createPacienteObservacao(pacienteId, { texto, observacaoPaiId }, token)
     ),
   });
-  const filteredCbhpmItems = useMemo(
-    () => {
-      if (!cbhpmCacheQuery.data) return [];
-      // Se nenhum filtro foi aplicado (debouncedCbhpmFilters vazio), mostra todos os itens
-      if (!isCbhpmCacheSearchReady(debouncedCbhpmFilters)) {
-        return cbhpmCacheQuery.data;
-      }
-      // Caso contrário, filtra normalmente
-      return filterCbhpmCachedItems(cbhpmCacheQuery.data, debouncedCbhpmFilters);
-    },
-    [cbhpmCacheQuery.data, debouncedCbhpmFilters],
-  );
-
   useEffect(() => {
     setPacientesLoading(pacientesQuery.isFetching);
   }, [pacientesQuery.isFetching, setPacientesLoading]);
@@ -356,26 +363,29 @@ export function usePatientsDomain({
   }, [opmeFornecedoresQuery.error, setOpmeFornecedoresError]);
 
   useEffect(() => {
-    setCbhpmLoading(cbhpmCacheQuery.isLoading || (cbhpmCacheQuery.isFetching && !cbhpmCacheQuery.data?.length));
-  }, [cbhpmCacheQuery.data?.length, cbhpmCacheQuery.isFetching, cbhpmCacheQuery.isLoading, setCbhpmLoading]);
+    setCbhpmLoading(cbhpmQuery.isFetching);
+  }, [cbhpmQuery.isFetching, setCbhpmLoading]);
 
   useEffect(() => {
-    if (!cbhpmModalOpen || !cbhpmCacheQuery.data) {
+    if (!cbhpmModalOpen || appliedCbhpmFilterValidationMessage) {
       return;
     }
 
-    const cbhpmPageStart = (cbhpmCurrentPage - 1) * CBHPM_PAGE_SIZE;
-    const cbhpmPageEnd = cbhpmPageStart + CBHPM_PAGE_SIZE;
-
-    setCbhpmItems(filteredCbhpmItems.slice(cbhpmPageStart, cbhpmPageEnd));
-    setCbhpmTotalItems(filteredCbhpmItems.length);
-    setCbhpmTotalPages(Math.max(1, Math.ceil(filteredCbhpmItems.length / CBHPM_PAGE_SIZE)));
     setCbhpmError('');
+  }, [appliedCbhpmFilterValidationMessage, cbhpmModalOpen, setCbhpmError]);
+
+  useEffect(() => {
+    if (!cbhpmModalOpen || !appliedCbhpmFilterValidationMessage) {
+      return;
+    }
+
+    setCbhpmItems([]);
+    setCbhpmTotalItems(0);
+    setCbhpmTotalPages(1);
+    setCbhpmError(appliedCbhpmFilterValidationMessage);
   }, [
-    cbhpmCacheQuery.data,
-    cbhpmCurrentPage,
+    appliedCbhpmFilterValidationMessage,
     cbhpmModalOpen,
-    filteredCbhpmItems,
     setCbhpmError,
     setCbhpmItems,
     setCbhpmTotalItems,
@@ -383,10 +393,29 @@ export function usePatientsDomain({
   ]);
 
   useEffect(() => {
-    if (cbhpmCacheQuery.error) {
-      setCbhpmError(getErrorMessage(cbhpmCacheQuery.error));
+    if (!cbhpmModalOpen || !cbhpmQuery.data || appliedCbhpmFilterValidationMessage) {
+      return;
     }
-  }, [cbhpmCacheQuery.error, setCbhpmError]);
+
+    setCbhpmItems(getPagedItems(cbhpmQuery.data));
+    setCbhpmTotalItems(getPagedTotal(cbhpmQuery.data));
+    setCbhpmTotalPages(getPagedTotalPages(cbhpmQuery.data));
+    setCbhpmError('');
+  }, [
+    appliedCbhpmFilterValidationMessage,
+    cbhpmModalOpen,
+    cbhpmQuery.data,
+    setCbhpmError,
+    setCbhpmItems,
+    setCbhpmTotalItems,
+    setCbhpmTotalPages,
+  ]);
+
+  useEffect(() => {
+    if (cbhpmQuery.error) {
+      setCbhpmError(getErrorMessage(cbhpmQuery.error));
+    }
+  }, [cbhpmQuery.error, setCbhpmError]);
 
   const loadMedicalUsers = async (token = session?.token, forceRefresh = false) => {
     if (!token) {
@@ -431,10 +460,10 @@ export function usePatientsDomain({
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmCache(token) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmRoot(token) });
     }
 
-    await cbhpmCacheQuery.refetch();
+    await cbhpmQuery.refetch();
   };
 
   const loadHospitais = async (token = session?.token, forceRefresh = false) => {
@@ -656,9 +685,6 @@ export function usePatientsDomain({
           ? current.map((paciente) => (paciente.id === savedPaciente.id ? savedPaciente : paciente))
           : [savedPaciente, ...current],
       ));
-      if (!editingPacienteId) {
-        setPacientesTotalItems((current) => current + 1);
-      }
       const baseSuccessMessage = editingPacienteId
         ? 'Paciente atualizado.'
         : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`;
@@ -870,9 +896,13 @@ export function usePatientsDomain({
   };
 
   const refreshCbhpm = () => {
-    if (session) {
-      void loadCbhpm(session.token, true);
+    applyCbhpmFiltersNow();
+
+    if (!session || !canSearchCbhpm) {
+      return;
     }
+
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmRoot(session.token) });
   };
 
   const closePatientFilesModal = () => {
@@ -961,6 +991,8 @@ export function usePatientsDomain({
     cbhpmItems,
     cbhpmFilters,
     setCbhpmFilters,
+    cbhpmFilterHint,
+    canSearchCbhpm,
     cbhpmLoading,
     cbhpmError,
     cbhpmCurrentPage,
