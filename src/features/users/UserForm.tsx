@@ -66,8 +66,8 @@ export function UserForm({
     <FormPanel className="module-form-panel">
       <div className="panel-title">
         <div>
-          <span className="eyebrow">{canAccessUsers ? editingId ? 'Edicao' : 'Cadastro' : 'Perfil'}</span>
-          <h2>{canAccessUsers ? editingId ? 'Editar usuario' : 'Novo usuario' : 'Meu cadastro'}</h2>
+          <span className="eyebrow">{canAccessUsers ? editingId ? 'Edição' : 'Cadastro' : 'Perfil'}</span>
+          <h2>{canAccessUsers ? editingId ? 'Editar usuário' : 'Novo usuário' : 'Meu cadastro'}</h2>
         </div>
         <div className="panel-title-actions">
           {canAccessUsers && !editingId && <span className="password-chip">Senha: {DEFAULT_PASSWORD}</span>}
@@ -83,7 +83,7 @@ export function UserForm({
             Foto do perfil
           </label>
           <div className="photo-uploader">
-            <UserAvatar userId={editingId ?? undefined} name={formData.nome || 'Usuario'} photo={formData.fotoPerfil} authToken={sessionToken} size="lg" />
+            <UserAvatar userId={editingId ?? undefined} name={formData.nome || 'Usuário'} photo={formData.fotoPerfil} authToken={sessionToken} size="lg" />
             <div className="photo-actions">
               <label className="ghost-button file-action" htmlFor="profile-photo-input">
                 <ImagePlus size={17} />
@@ -107,7 +107,7 @@ export function UserForm({
             disabled={isFormBusy}
             onChange={(event) => void onProfilePhotoChange(event)}
           />
-          <span className="file-hint">PNG, JPG ou WEBP ate 1 MB.</span>
+          <span className="file-hint">PNG, JPG ou WEBP até 1 MB.</span>
         </div>
 
         <div className="two-column-fields user-form-columns">
@@ -223,13 +223,13 @@ export function UserForm({
               id="user-file-input"
               className="sr-only"
               type="file"
-              aria-label="Documentos do medico"
+              aria-label="Documentos do médico"
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt,.csv,.ppt,.pptx"
               multiple
               disabled={isFormBusy}
               onChange={onUserFilesChange}
             />
-            <span className="file-hint">PDF, Office, imagens, TXT ou CSV ate 10 MB.</span>
+            <span className="file-hint">PDF, Office, imagens, TXT ou CSV até 10 MB.</span>
 
             {pendingUserFiles.length > 0 && (
               <ul className="file-list">
@@ -262,7 +262,7 @@ export function UserForm({
         )}
 
         <CheckboxField
-          label="Usuario ativo"
+          label="Usuário ativo"
           checked={formData.ativo}
           onCheckedChange={(checked) => setFormData((current) => ({ ...current, ativo: checked }))}
           disabled={isFormBusy || !canAccessUsers}
@@ -272,7 +272,7 @@ export function UserForm({
 
         <Button variant="primary" type="submit" disabled={formLoading}>
           {editingId ? <Save size={18} /> : <Plus size={18} />}
-          {formLoading ? 'Salvando...' : editingId ? 'Salvar alteracoes' : 'Cadastrar usuario'}
+          {formLoading ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Cadastrar usuário'}
         </Button>
       </form>
     </FormPanel>

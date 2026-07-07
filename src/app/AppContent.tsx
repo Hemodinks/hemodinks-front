@@ -19,8 +19,8 @@ import {
   CONTROLLER_PROFILE_ID,
   DEFAULT_PASSWORD,
   DEFAULT_PROFILE_ID,
+  formatProfileName,
   getErrorMessage,
-  getProfileName,
   isValidEmail,
   MEDICAL_PROFILE_ID,
   PATIENT_PROFILE_ID,
@@ -272,7 +272,7 @@ export function AppContent() {
           fotoPerfil: result.fotoPerfil ?? null,
           precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
           perfilId: result.perfilId || DEFAULT_PROFILE_ID,
-          perfilNome: result.perfilNome || getProfileName(result.perfilId || DEFAULT_PROFILE_ID),
+          perfilNome: formatProfileName(result.perfilId || DEFAULT_PROFILE_ID, result.perfilNome),
           licenca: result.licenca ?? null,
         },
       });
@@ -498,7 +498,7 @@ export function AppContent() {
     );
   }
 
-  const currentUserProfile = session.user.perfilNome || getProfileName(session.user.perfilId);
+  const currentUserProfile = formatProfileName(session.user.perfilId, session.user.perfilNome);
   const activeUsersCount = appChrome.dashboardSummary?.activeUsersCount ?? 0;
   const activePatientsCount = appChrome.dashboardSummary?.activePatientsCount ?? 0;
   const pendingPaymentsCount = appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;

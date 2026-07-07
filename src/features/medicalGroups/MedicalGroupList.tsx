@@ -50,21 +50,21 @@ export function MedicalGroupList({
     <DataPanel>
       <div className="data-header">
         <div>
-          <span className="eyebrow">Equipes medicas</span>
+          <span className="eyebrow">Equipes médicas</span>
           <h2>{totalItems} grupos cadastrados</h2>
         </div>
 
         <div className="table-tools">
           <Button onClick={onOpenNewForm}>
             <Plus size={17} />
-            Novo grupo medico
+            Novo grupo médico
           </Button>
           <SearchField
-            label="Buscar grupos medicos"
+            label="Buscar grupos médicos"
             value={searchTerm}
             onValueChange={onSearchChange}
           />
-          <IconButton label="Atualizar lista de grupos medicos" onClick={onRefresh} title="Atualizar lista">
+          <IconButton label="Atualizar lista de grupos médicos" onClick={onRefresh} title="Atualizar lista">
             <RefreshCw size={18} />
           </IconButton>
         </div>
@@ -78,7 +78,7 @@ export function MedicalGroupList({
           type="button"
           className="carousel-nav carousel-nav-left"
           onClick={(event) => scrollListCarousel(event, 'previous')}
-          aria-label="Voltar no carrossel de grupos medicos"
+          aria-label="Voltar no carrossel de grupos médicos"
           title="Voltar no carrossel"
         >
           <ChevronLeft size={20} />
@@ -95,7 +95,7 @@ export function MedicalGroupList({
                 </th>
                 <th>
                   <button type="button" className="sort-header-button" onClick={() => onSortChange('membros')} aria-sort={sortBy === 'membros' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Medicos
+                    Médicos
                     {sortBy === 'membros' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
                   </button>
                 </th>
@@ -106,13 +106,13 @@ export function MedicalGroupList({
                   </button>
                 </th>
                 <th>Membros</th>
-                <th aria-label="Acoes" />
+                <th aria-label="Ações" />
               </tr>
             </thead>
             <tbody>
               {groupsLoading ? (
                 <tr>
-                  <td colSpan={5} className="empty-row">Carregando grupos medicos...</td>
+                  <td colSpan={5} className="empty-row">Carregando grupos médicos...</td>
                 </tr>
               ) : groups.length ? (
                 groups.map((group) => (
@@ -125,7 +125,7 @@ export function MedicalGroupList({
                         <span>{group.nome}</span>
                       </div>
                     </td>
-                    <td data-label="Medicos">{group.membrosCount}</td>
+                    <td data-label="Médicos">{group.membrosCount}</td>
                     <td data-label="Status">
                       <span className={`status-pill ${group.ativo ? 'ok' : 'warning'}`}>
                         {group.ativo ? <CircleCheck size={14} /> : <CircleX size={14} />}
@@ -137,7 +137,7 @@ export function MedicalGroupList({
                         {group.membros.length ? group.membros.map((member) => member.nome).join(', ') : '-'}
                       </span>
                     </td>
-                    <td data-label="Acoes">
+                    <td data-label="Ações">
                       <div className="row-actions">
                         <IconButton label={`Editar ${group.nome}`} tone="muted" onClick={() => void onEditGroup(group)} title="Editar">
                           <Pencil size={17} />
@@ -151,7 +151,7 @@ export function MedicalGroupList({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="empty-row">Nenhum grupo medico encontrado.</td>
+                  <td colSpan={5} className="empty-row">Nenhum grupo médico encontrado.</td>
                 </tr>
               )}
             </tbody>
@@ -161,8 +161,8 @@ export function MedicalGroupList({
           type="button"
           className="carousel-nav carousel-nav-right"
           onClick={(event) => scrollListCarousel(event, 'next')}
-          aria-label="Avancar no carrossel de grupos medicos"
-          title="Avancar no carrossel"
+          aria-label="Avançar no carrossel de grupos médicos"
+          title="Avançar no carrossel"
         >
           <ChevronRight size={20} />
         </button>
@@ -174,19 +174,19 @@ export function MedicalGroupList({
         </span>
         <div className="pagination-actions">
           <IconButton
-            label="Pagina anterior de grupos medicos"
+            label="Página anterior de grupos médicos"
             onClick={() => onPageChange((page) => Math.max(1, page - 1))}
             disabled={currentPage === 1}
-            title="Pagina anterior"
+            title="Página anterior"
           >
             <ChevronLeft size={18} />
           </IconButton>
-          <span className="page-indicator">Pagina {currentPage} de {totalPages}</span>
+          <span className="page-indicator">Página {currentPage} de {totalPages}</span>
           <IconButton
-            label="Proxima pagina de grupos medicos"
+            label="Próxima página de grupos médicos"
             onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
             disabled={currentPage === totalPages}
-            title="Proxima pagina"
+            title="Próxima página"
           >
             <ChevronRight size={18} />
           </IconButton>
