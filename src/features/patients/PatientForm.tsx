@@ -397,11 +397,11 @@ export function PatientForm({
               )}
             </div>
             <TextareaField
-              label="Nova observacao"
+              label="Nova observação"
               value={pacienteFormData.novaObservacao}
               onValueChange={(value) => setPacienteFormData((current) => ({ ...current, novaObservacao: value.slice(0, MAX_OBSERVATION_LENGTH) }))}
               maxLength={MAX_OBSERVATION_LENGTH}
-              placeholder="Escreva uma observacao para os envolvidos neste paciente."
+              placeholder="Escreva uma observação para os envolvidos neste paciente."
               className="observation-textarea"
             />
             <span className="file-hint">{pacienteFormData.novaObservacao.length}/{MAX_OBSERVATION_LENGTH} caracteres</span>
