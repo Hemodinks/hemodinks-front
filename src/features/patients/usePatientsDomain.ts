@@ -229,7 +229,10 @@ export function usePatientsDomain({
   const pacientesQuery = useQuery({
     queryKey: queryKeys.pacientes(session?.token ?? '', pacientesQueryParams),
     queryFn: () => getPacientes(session?.token ?? '', pacientesQueryParams),
-    enabled: sessionReady && canAccessPatients && activeView === 'patients' && moduleMode === 'list',
+    enabled: sessionReady
+      && canAccessPatients
+      && moduleMode === 'list'
+      && (activeView === 'patients' || activeView === 'dashboard'),
     staleTime: LIST_CACHE_TIME_MS,
   });
   const medicalUsersQuery = useQuery({
