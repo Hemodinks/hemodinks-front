@@ -381,7 +381,9 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /abrir usuários/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
     expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
-    expect(api.getPacientes).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
+    });
 
     await user.click(screen.getByRole('button', { name: /abrir usuários/i }));
     expect(window.location.pathname).toBe('/usuarios');
@@ -414,6 +416,29 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
+  });
+
+  it('nao exibe erro no dashboard quando o resumo retorna 403 para medico', async () => {
+    vi.mocked(api.getDashboardSummary).mockRejectedValue(new Error('Request failed with status code 403'));
+
+    await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+        licenca: buildMedicalLicense(),
+      },
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
+    });
+    await waitFor(() => {
+      expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
+    });
+    expect(await screen.findByText('1 cadastrados')).toBeInTheDocument();
+    expect(screen.queryByText(/request failed with status code 403/i)).not.toBeInTheDocument();
   });
 
   it('usa a foto configurada da empresa na tela de login', async () => {
@@ -1300,7 +1325,7 @@ describe('App', () => {
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Telefone')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Data de nascimento')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Foto do paciente')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Convênio'), 'Convenio Manual');
     await user.type(screen.getByLabelText('Hospital'), 'Hospital Manual');
     await user.type(screen.getByLabelText('Fornecedor OPME'), 'Fornecedor Manual');
@@ -1504,7 +1529,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
   });
 
-  it('restringe cadastro e edicao quando o medico nao possui gerenciamento de pacientes', async () => {
+  it('libera cadastro, edicao, arquivos e foto para medico mesmo sem feature de gerenciamento', async () => {
     const { user } = await renderAuthenticatedApp({
       sessionOverrides: {
         perfilId: 2,
@@ -1517,13 +1542,22 @@ describe('App', () => {
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
-    expect(screen.queryByRole('button', { name: /novo paciente/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /novo paciente/i }));
+    expect(await screen.findByRole('heading', { name: 'Novo paciente' })).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Convênio'), 'Convênio manual do médico');
+    await user.type(screen.getByLabelText('Hospital'), 'Hospital manual do médico');
+    expect(screen.getByLabelText('Convênio')).toHaveValue('Convênio manual do médico');
+    expect(screen.getByLabelText('Hospital')).toHaveValue('Hospital manual do médico');
+    await user.click(screen.getByRole('button', { name: /voltar para lista/i }));
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /visualizar paciente hemodinks/i }));
+    await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
 
-    expect(await screen.findByRole('heading', { name: 'Visualizar paciente' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /salvar paciente/i })).not.toBeInTheDocument();
-    expect(screen.queryByText('Selecionar arquivos')).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
+    expect(screen.getByText('Selecionar arquivos')).toBeInTheDocument();
+    expect(screen.getByLabelText('Foto do paciente')).toBeInTheDocument();
   });
 
   it('exibe pacientes para medico mesmo sem feature explicita de pacientes na licenca', async () => {
@@ -1546,11 +1580,11 @@ describe('App', () => {
 
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /novo paciente/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /visualizar paciente hemodinks/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
   });
 
-  it('permite cadastro manual de procedimento quando a licenca nao libera consulta CBHPM', async () => {
+  it('trata medico como licenca full para consultar CBHPM e cadastrar procedimento manual', async () => {
     const { user } = await renderAuthenticatedApp({
       sessionOverrides: {
         perfilId: 2,
@@ -1571,16 +1605,25 @@ describe('App', () => {
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     const consultButton = within(cbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
 
-    expect(within(cbhpmDialog).getByText(/sua licença não libera a consulta cbhpm/i)).toBeInTheDocument();
-    expect(consultButton).toBeDisabled();
+    expect(within(cbhpmDialog).queryByText(/sua licença não libera a consulta cbhpm/i)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(consultButton).toBeEnabled();
+    });
+    fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), {
+      target: { value: 'Consulta' },
+    });
+    await user.click(consultButton);
+
+    await waitFor(() => {
+      expect(api.getCbhpmGeral).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ procedimento: 'Consulta' }));
+    });
 
     fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), {
-      target: { value: 'Procedimento manual sem consulta' },
+      target: { value: 'Procedimento manual com licença full' },
     });
     await user.click(within(cbhpmDialog).getByRole('button', { name: /cadastrar manualmente/i }));
 
-    expect(api.getCbhpmGeral).not.toHaveBeenCalled();
-    expect(await screen.findByText('Procedimento manual sem consulta')).toBeInTheDocument();
+    expect(await screen.findByText('Procedimento manual com licença full')).toBeInTheDocument();
   });
 
   it('preserva medico fora da lista escopada ao editar e salvar paciente', async () => {
