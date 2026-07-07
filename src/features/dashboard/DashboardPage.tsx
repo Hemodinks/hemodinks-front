@@ -21,6 +21,7 @@ type DashboardPageProps = {
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
+  canAccessSettings: boolean;
   patientReadOnly: boolean;
   usersCount: number;
   pacientesCount: number;
@@ -115,6 +116,7 @@ export function DashboardPage({
   canEditOwnUser,
   canAccessBilling,
   canAccessMedicalGroups,
+  canAccessSettings,
   patientReadOnly,
   usersCount,
   pacientesCount,
@@ -210,16 +212,18 @@ export function DashboardPage({
       onOpen: onOpenAgenda,
       badge: unreadAgendaNotificationCount > 0 ? `${unreadAgendaNotificationCount} nao lidas` : undefined,
     },
-    {
-      id: 'settings',
-      title: 'Configuracao do sistema',
-      metric: 'Senha, tema e marca',
-      footerLabel: 'Ajustar preferencias',
-      className: 'module-card-settings',
-      ariaLabel: 'Abrir configuracao do sistema',
-      icon: <Settings size={24} />,
-      onOpen: onOpenSettings,
-    },
+    ...(canAccessSettings
+      ? [{
+          id: 'settings' as const,
+          title: 'Configuracao do sistema',
+          metric: 'Senha, tema e marca',
+          footerLabel: 'Ajustar preferencias',
+          className: 'module-card-settings',
+          ariaLabel: 'Abrir configuracao do sistema',
+          icon: <Settings size={24} />,
+          onOpen: onOpenSettings,
+        }]
+      : []),
   ];
   const visibleModuleIds = availableModules.map((module) => module.id);
   const normalizedModuleOrder = normalizeDashboardModuleOrder(moduleOrder, visibleModuleIds);
