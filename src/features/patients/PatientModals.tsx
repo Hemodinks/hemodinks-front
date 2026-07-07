@@ -14,7 +14,7 @@ type PatientInfoModalProps = {
 function renderInfoValue(label: string, value?: string | null) {
   return value?.trim()
     ? <CopyValue label={label} value={value} />
-    : <span className="patient-info-empty">Nao informado</span>;
+    : <span className="patient-info-empty">Não informado</span>;
 }
 
 export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
@@ -24,10 +24,10 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
     <Modal titleId="patient-info-title" className="info-modal patient-info-modal" onClose={onClose}>
         <div className="panel-title patient-info-titlebar">
           <div>
-            <span className="eyebrow">Informacoes adicionais</span>
+            <span className="eyebrow">Informações adicionais</span>
             <h2 id="patient-info-title">{paciente.nomePaciente}</h2>
           </div>
-          <IconButton label="Fechar informacoes do paciente" title="Fechar" tone="muted" onClick={onClose}>
+          <IconButton label="Fechar informações do paciente" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
           </IconButton>
         </div>
@@ -44,30 +44,30 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
             <article className="patient-info-card patient-info-card-highlight patient-info-card-accent">
               <span>Convênio</span>
               <div className="patient-info-card-content">
-                {renderInfoValue('convenio do paciente', paciente.convenio)}
+                {renderInfoValue('convênio do paciente', paciente.convenio)}
               </div>
             </article>
           </section>
 
-          <section className="patient-info-detail-grid" aria-label="Informacoes clinicas do paciente">
+          <section className="patient-info-detail-grid" aria-label="Informações clínicas do paciente">
             <article className="patient-info-card">
               <span>Diagnóstico</span>
               <div className="patient-info-card-content">
-                {renderInfoValue('diagnostico do paciente', paciente.diagnostico)}
+                {renderInfoValue('diagnóstico do paciente', paciente.diagnostico)}
               </div>
             </article>
 
             <article className="patient-info-card">
               <span>Tratamento médico</span>
               <div className="patient-info-card-content">
-                {renderInfoValue('tratamento medico do paciente', paciente.tratamentoMedico)}
+                {renderInfoValue('tratamento médico do paciente', paciente.tratamentoMedico)}
               </div>
             </article>
 
             <article className="patient-info-card">
               <span>Cirurgião</span>
               <div className="patient-info-card-content">
-                {renderInfoValue('cirurgiao do paciente', paciente.medico)}
+                {renderInfoValue('cirurgião do paciente', paciente.medico)}
               </div>
             </article>
 
@@ -89,7 +89,7 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
               <ol className="info-procedure-list patient-info-procedure-list">
                 {procedimentos.map((procedimento, index) => (
                   <li key={`${procedimento.cbhpmCodigo || procedimento.procedimento}-${index}`}>
-                    <CopyValue label="procedimento medico" value={`${procedimento.cbhpmCodigo || 'Sem codigo'} - ${procedimento.procedimento}`} />
+                    <CopyValue label="procedimento médico" value={`${procedimento.cbhpmCodigo || 'Sem código'} - ${procedimento.procedimento}`} />
                     {procedimento.cbhpmPorte && <span className="status-pill active">{procedimento.cbhpmPorte}</span>}
                   </li>
                 ))}

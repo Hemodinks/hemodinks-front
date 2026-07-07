@@ -57,15 +57,15 @@ export function Sidebar({
   onOpenSettings,
 }: SidebarProps) {
   return (
-    <aside className="sidebar-panel" aria-label="Sessao ativa">
+    <aside className="sidebar-panel" aria-label="Sessão ativa">
       <div className="sidebar-card">
         <div className="sidebar-heading">
           <span className="eyebrow">Painel</span>
-          <h2>Sessao ativa</h2>
+          <h2>Sessão ativa</h2>
         </div>
 
         <div className="session-card">
-          <span className="session-label">Usuario</span>
+          <span className="session-label">Usuário</span>
           <div className="session-user-row">
             <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" decorative />
             <strong>{session.user.nome}</strong>
@@ -78,7 +78,7 @@ export function Sidebar({
           <span className="session-meta">{currentUserProfile} | {session.user.email}</span>
         </div>
 
-        <nav className="side-nav" aria-label="Navegacao principal">
+        <nav className="side-nav" aria-label="Navegação principal">
           {canAccessDashboard && (
             <button
               type="button"
@@ -98,7 +98,7 @@ export function Sidebar({
               onClick={onOpenUsersList}
             >
               <Users size={18} />
-              <span>Usuarios</span>
+              <span>Usuários</span>
               <span className="side-nav-count">{usersCount}</span>
             </button>
           )}
@@ -133,7 +133,7 @@ export function Sidebar({
               onClick={onOpenBilling}
             >
               <ReceiptText size={18} />
-              <span>Faturamento medico</span>
+              <span>Faturamento médico</span>
               {pendingPaymentsCount > 0 && (
                 <span className="side-nav-count">{pendingPaymentsCount}</span>
               )}
@@ -147,7 +147,7 @@ export function Sidebar({
               onClick={onOpenMedicalGroups}
             >
               <ShieldPlus size={18} />
-              <span>Grupos medicos</span>
+              <span>Grupos médicos</span>
               <span className="side-nav-count">{medicalGroupsCount}</span>
             </button>
           )}
@@ -159,7 +159,7 @@ export function Sidebar({
               onClick={onOpenAgenda}
             >
               <CalendarDays size={18} />
-              <span>Agenda e notificacoes</span>
+              <span>Agenda e notificações</span>
               {unreadAgendaNotificationCount > 0 && (
                 <span className="side-nav-count">{unreadAgendaNotificationCount}</span>
               )}
@@ -173,7 +173,7 @@ export function Sidebar({
               onClick={onOpenSettings}
             >
               <Settings size={18} />
-              <span>Configuracao</span>
+              <span>Configuração</span>
             </button>
           )}
         </nav>

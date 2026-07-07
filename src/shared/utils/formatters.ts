@@ -122,6 +122,31 @@ export function getProfileName(perfilId: number) {
   return PROFILE_OPTIONS.find((profile) => profile.id === perfilId)?.nome ?? 'Médicos';
 }
 
+export function formatProfileName(perfilId?: number | null, perfilNome?: string | null) {
+  const profile = PROFILE_OPTIONS.find((item) => item.id === perfilId);
+
+  if (profile) {
+    return profile.nome;
+  }
+
+  const profileName = perfilNome?.trim() ?? '';
+
+  if (!profileName) {
+    return getProfileName(DEFAULT_PROFILE_ID);
+  }
+
+  const asciiProfileName = profileName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  if (asciiProfileName.includes('medico') || /^m.{1,2}dicos$/i.test(profileName)) {
+    return getProfileName(MEDICAL_PROFILE_ID);
+  }
+
+  return profileName;
+}
+
 export function isMedicalProfileUser(user: User) {
   const profileName = (user.perfilNome || '')
     .normalize('NFD')

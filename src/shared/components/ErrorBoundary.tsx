@@ -41,12 +41,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <AlertTriangle size={36} aria-hidden="true" />
           <div>
             <span className="eyebrow">Erro inesperado</span>
-            <h1>Nao foi possivel continuar</h1>
-            <p>Atualize a pagina para tentar novamente. O erro foi registrado para analise tecnica.</p>
+            <h1>Não foi possível continuar</h1>
+            <p>Atualize a página para tentar novamente. O erro foi registrado para análise técnica.</p>
           </div>
           <button type="button" className="primary-action" onClick={this.handleReload}>
             <RotateCw size={18} />
-            Atualizar pagina
+            Atualizar página
           </button>
         </section>
       </main>
