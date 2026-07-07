@@ -29,6 +29,7 @@ vi.mock('./services', () => ({
   updateAgendaEvent: vi.fn(),
   getDashboardNotifications: vi.fn(),
   getDashboardSummary: vi.fn(),
+  getCurrentLicenca: vi.fn(),
   getSystemSettings: vi.fn(),
   getSystemSettingsCompanyPhoto: vi.fn(),
   getAllCbhpmGeral: vi.fn(),
@@ -257,6 +258,7 @@ describe('App', () => {
       upcomingEventsCount: 0,
     });
     vi.mocked(api.getDashboardNotifications).mockResolvedValue([]);
+    vi.mocked(api.getCurrentLicenca).mockResolvedValue(buildMedicalLicense());
     vi.mocked(api.getSystemSettings).mockResolvedValue({
       id: 1,
       nomeEmpresa: 'Hemodinks',
@@ -563,20 +565,17 @@ describe('App', () => {
     expect(screen.getByAltText('Clinica Alfa')).toHaveAttribute('src', 'data:image/png;base64,YnJhbmQ=');
   });
 
-  it('oculta a alteracao do nome da empresa para perfil nao administrador', async () => {
-    const { user } = await renderAuthenticatedApp({
+  it('oculta configuracao para medico e bloqueia a rota direta', async () => {
+    await renderAuthenticatedApp({
+      initialPath: '/configuracoes',
       sessionOverrides: { perfilId: 2, perfilNome: 'Médicos' },
     });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /abrir configuracao do sistema/i }));
-    expect(await screen.findByRole('heading', { name: 'Configuracao do sistema', level: 1 })).toBeInTheDocument();
-
-    expect(screen.queryByText('Marca da empresa')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Nome exibido no sistema')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Foto da empresa')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /escuro/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Alterar senha' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir configuracao do sistema/i })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
   });
 
   it('abre as notificacoes do usuario logado', async () => {
@@ -1460,6 +1459,33 @@ describe('App', () => {
     expect(screen.getByLabelText('Médico auxiliar 1')).toBeInTheDocument();
     expect(screen.getByLabelText('Médico auxiliar 2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
+  });
+
+  it('carrega a licenca atual do medico quando ela nao vem no login e libera pacientes', async () => {
+    vi.mocked(api.getCurrentLicenca).mockResolvedValue(buildMedicalLicense([
+      'Dashboard.Visualizar',
+      'Pacientes.Visualizar',
+      'Pacientes.Gerenciar',
+      'Cbhpm.Consultar',
+    ]));
+
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 2,
+        perfilNome: 'Medicos',
+        nome: 'Dra. Ana',
+        licenca: null,
+      },
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(api.getCurrentLicenca).toHaveBeenCalledWith('jwt-token');
+    });
+
+    await openPatientsModule(user);
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
   });
 
   it('restringe cadastro e edicao quando o medico nao possui gerenciamento de pacientes', async () => {
