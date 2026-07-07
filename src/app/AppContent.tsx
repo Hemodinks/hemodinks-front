@@ -1,6 +1,6 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { authenticate, resetPassword } from '../services';
+import { authenticate, getCurrentLicenca, resetPassword } from '../services';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { PasswordRequiredScreen } from '../features/auth/PasswordRequiredScreen';
 import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
@@ -77,6 +77,7 @@ export function AppContent() {
   const canEditOwnUser = isMedical || isPatient;
   const canAccessBilling = isAdmin || isMedical || isController;
   const canAccessMedicalGroups = isAdmin;
+  const canAccessSettings = isAdmin;
   const canCreatePatients = canManagePatients;
   const canEditPatients = canManagePatients;
   const canDeletePatients = isAdmin;
@@ -89,7 +90,7 @@ export function AppContent() {
   const canUseBillingRoute = canAccessBilling;
   const canUseMedicalGroupsRoute = canAccessMedicalGroups;
   const canUseAgendaRoute = canAccessAgenda;
-  const canUseSettingsRoute = true;
+  const canUseSettingsRoute = canAccessSettings;
   const { activeView, navigateToView } = useRouteView({
     session,
     canUseDashboardRoute,
@@ -183,6 +184,38 @@ export function AppContent() {
     || usersDomain.formLoading
     || patientsDomain.pacienteFormLoading
     || medicalGroupsDomain.formLoading;
+
+  useEffect(() => {
+    if (!session || session.user.perfilId !== MEDICAL_PROFILE_ID || session.user.licenca) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const licenca = await getCurrentLicenca(session.token);
+
+        if (!licenca || cancelled) {
+          return;
+        }
+
+        persistSession({
+          ...session,
+          user: {
+            ...session.user,
+            licenca,
+          },
+        });
+      } catch {
+        // Mantem o fallback legado do medico quando a API ainda nao retorna a licenca no login.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [persistSession, session]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -336,6 +369,12 @@ export function AppContent() {
 
   const openSettings = () => {
     resetProfileRouteState();
+
+    if (!canAccessSettings) {
+      openDashboard();
+      return;
+    }
+
     navigateToView('settings');
     setModuleMode('list');
   };
@@ -493,6 +532,7 @@ export function AppContent() {
       canEditOwnUser={canEditOwnUser}
       canAccessBilling={canAccessBilling}
       canAccessMedicalGroups={canAccessMedicalGroups}
+      canAccessSettings={canAccessSettings}
       canAccessAgenda={canAccessAgenda}
       usersCount={usersCount}
       pacientesCount={pacientesCount}
@@ -545,6 +585,7 @@ export function AppContent() {
           canEditOwnUser,
           canAccessBilling,
           canAccessMedicalGroups,
+          canAccessSettings,
           canCreatePatients,
           canEditPatients,
           canDeletePatients,
