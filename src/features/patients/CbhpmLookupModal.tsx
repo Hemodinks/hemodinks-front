@@ -14,6 +14,8 @@ type CbhpmLookupModalProps = {
   isAdmin: boolean;
   loading: boolean;
   error: string;
+  canSearch: boolean;
+  filterHint: string;
   currentPage: number;
   totalPages: number;
   totalItems: number;
@@ -34,6 +36,8 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
   filters,
   loading,
   error,
+  canSearch,
+  filterHint,
   currentPage,
   totalPages,
   totalItems,
@@ -49,33 +53,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
   onClose,
 }: CbhpmLookupModalProps) {
   const [manualValidationError, setManualValidationError] = useState('');
-
-  const sortedItems = useMemo(() => {
-    const compareText = (first: string | null | undefined, second: string | null | undefined) => {
-      const result = (first ?? '').localeCompare(second ?? '', 'pt-BR', { numeric: true, sensitivity: 'base' });
-      return result;
-    };
-
-    const ordered = [...items].sort((first, second) => {
-      const direction = sortDirection === 'asc' ? 1 : -1;
-
-      switch (sortBy) {
-        case 'procedimento':
-          return compareText(first.procedimento, second.procedimento) * direction || (first.id - second.id) * direction;
-        case 'porte':
-          return compareText(first.porte, second.porte) * direction || (first.id - second.id) * direction;
-        case 'valorreferencia':
-          return (((first.valorReferencia ?? Number.NEGATIVE_INFINITY) - (second.valorReferencia ?? Number.NEGATIVE_INFINITY)) * direction)
-            || compareText(first.codigo, second.codigo) * direction
-            || (first.id - second.id) * direction;
-        case 'codigo':
-        default:
-          return compareText(first.codigo, second.codigo) * direction || (first.id - second.id) * direction;
-      }
-    });
-
-    return ordered;
-  }, [items, sortBy, sortDirection]);
+  const shouldShowFilterHint = Boolean(filterHint && filterHint !== error);
 
   const manualValues = useMemo(() => ({
     codigo: normalizeCbhpmCodigo(filters.codigo),
@@ -153,7 +131,12 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
             placeholder="2B"
             maxLength={10}
           />
-          <IconButton label="Atualizar procedimentos" onClick={onRefresh}>
+          <IconButton
+            label="Consultar procedimentos"
+            title="Consultar procedimentos"
+            onClick={onRefresh}
+            disabled={loading || !canSearch}
+          >
             <RefreshCw size={18} />
           </IconButton>
         </div>
@@ -166,6 +149,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
         </div>
 
         {manualValidationError && <AlertMessage type="error">{manualValidationError}</AlertMessage>}
+        {shouldShowFilterHint && <AlertMessage type="warning">{filterHint}</AlertMessage>}
         {error && <AlertMessage type="error">{error}</AlertMessage>}
 
         <div className="table-wrap cbhpm-table-wrap">
@@ -204,8 +188,8 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
                 <tr>
                   <td colSpan={5} className="empty-row">Carregando procedimentos...</td>
                 </tr>
-              ) : sortedItems.length ? (
-                sortedItems.map((item) => (
+              ) : items.length ? (
+                items.map((item) => (
                   <tr key={item.id}>
                     <td data-label="Codigo">{normalizeCbhpmCodigo(item.codigo) || item.codigo}</td>
                     <td data-label="Procedimento">{item.procedimento}</td>

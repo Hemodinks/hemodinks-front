@@ -1,4 +1,5 @@
-import type { CbhpmFilters, PacienteFilters } from '../appTypes';
+import type { PacienteFilters } from '../appTypes';
+import type { CbhpmListQuery } from '../types';
 
 export const queryKeys = {
   systemSettings: () => ['systemSettings'] as const,
@@ -21,7 +22,8 @@ export const queryKeys = {
   opmeFornecedores: (token: string) => ['opmeFornecedores', token] as const,
   cbhpm: (
     token: string,
-    query?: { page: number; pageSize: number } & CbhpmFilters,
+    query?: CbhpmListQuery,
   ) => ['cbhpm', token, query] as const,
+  cbhpmRoot: (token: string) => ['cbhpm', token] as const,
   cbhpmCache: (token: string) => ['cbhpm', token, 'cache'] as const,
 };

@@ -295,7 +295,7 @@ describe('App', () => {
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
     vi.mocked(api.createPacienteObservacao).mockResolvedValue({ pacienteId: basePaciente.id, createdCount: 1 });
     vi.mocked(api.markPacienteObservacoesAsRead).mockResolvedValue({ pacienteId: basePaciente.id, updatedCount: 0 });
-    vi.mocked(api.getAllCbhpmGeral).mockResolvedValue([]);
+    vi.mocked(api.getCbhpmGeral).mockResolvedValue(paged([]));
     Object.defineProperty(URL, 'createObjectURL', {
       value: vi.fn(() => 'blob:hemodinks-avatar'),
       configurable: true,
@@ -1055,6 +1055,8 @@ describe('App', () => {
         isAdmin={false}
         loading={false}
         error=""
+        canSearch
+        filterHint=""
         currentPage={1}
         totalPages={1}
         totalItems={0}
@@ -1098,6 +1100,8 @@ describe('App', () => {
         isAdmin={false}
         loading={false}
         error=""
+        canSearch
+        filterHint=""
         currentPage={1}
         totalPages={1}
         totalItems={0}
@@ -1144,6 +1148,8 @@ describe('App', () => {
           isAdmin
           loading={false}
           error=""
+          canSearch
+          filterHint=""
           currentPage={1}
           totalPages={1}
           totalItems={0}
@@ -1188,7 +1194,7 @@ describe('App', () => {
       cpf: '93541134780',
     };
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser, auxiliar1, auxiliar2]));
-    vi.mocked(api.getAllCbhpmGeral).mockResolvedValue([
+    const cbhpmProcedures = [
       {
         id: 1,
         codigo: '1.01.01.01-2',
@@ -1203,7 +1209,18 @@ describe('App', () => {
         porte: '2A',
         valorReferencia: 180,
       },
-    ]);
+    ];
+    vi.mocked(api.getCbhpmGeral).mockImplementation(async (_token, query) => {
+      const codigo = query?.codigo ?? '';
+      const procedimento = query?.procedimento?.toLocaleLowerCase('pt-BR') ?? '';
+      const items = codigo.includes('1010201')
+        ? [cbhpmProcedures[1]]
+        : codigo.includes('1010101') || procedimento.includes('consulta')
+          ? [cbhpmProcedures[0]]
+          : cbhpmProcedures;
+
+      return paged(items, query?.page ?? 1, query?.pageSize ?? 10);
+    });
     vi.mocked(api.createPaciente).mockResolvedValue({
       ...basePaciente,
       id: 11,
@@ -1241,7 +1258,10 @@ describe('App', () => {
     await user.selectOptions(screen.getByLabelText('Médico auxiliar 2'), '3');
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
-    fireEvent.change(within(cbhpmDialog).getByLabelText('Codigo'), { target: { value: '1010101' } });
+    fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), { target: { value: 'Consulta' } });
+    await waitFor(() => {
+      expect(api.getCbhpmGeral).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ procedimento: 'Consulta' }));
+    }, { timeout: 2000 });
     expect(await within(cbhpmDialog).findByText('10101012')).toBeInTheDocument();
     const firstProcedureRow = within(cbhpmDialog).getByText('10101012').closest('tr');
     expect(firstProcedureRow).not.toBeNull();
