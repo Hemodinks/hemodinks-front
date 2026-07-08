@@ -254,7 +254,9 @@ export function AppContent() {
 
     try {
       const result = await authenticate(loginEmail.trim(), loginPassword);
-      const shouldOpenDashboardAfterLogin = (result.perfilId || DEFAULT_PROFILE_ID) === MEDICAL_PROFILE_ID;
+      const resultPerfilId = result.perfilId || DEFAULT_PROFILE_ID;
+      const shouldOpenDashboardAfterLogin = resultPerfilId === MEDICAL_PROFILE_ID
+        || resultPerfilId === CONTROLLER_PROFILE_ID;
       queryClient.clear();
       setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin);
 
@@ -271,8 +273,8 @@ export function AppContent() {
           crmUf: result.crmUf ?? null,
           fotoPerfil: result.fotoPerfil ?? null,
           precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
-          perfilId: result.perfilId || DEFAULT_PROFILE_ID,
-          perfilNome: formatProfileName(result.perfilId || DEFAULT_PROFILE_ID, result.perfilNome),
+          perfilId: resultPerfilId,
+          perfilNome: formatProfileName(resultPerfilId, result.perfilNome),
           licenca: result.licenca ?? null,
         },
       });

@@ -19,7 +19,6 @@ type PatientsPageProps = {
   pacienteFormLoading: boolean;
   pendingPatientFiles: File[];
   patientFileInputKey: number;
-  patientPhotoInputKey: number;
   pacientes: Paciente[];
   pacientesLoading: boolean;
   pacientesError: string;
@@ -58,8 +57,6 @@ type PatientsPageProps = {
   handleRemovePacienteProcedimento: (index: number) => void;
   handlePacienteFilesChange: (event: ChangeEvent<HTMLInputElement>) => void;
   removePendingPatientFile: (index: number) => void;
-  handlePacientePhotoChange: (event: ChangeEvent<HTMLInputElement>) => void | Promise<void>;
-  handleRemovePacientePhoto: () => void;
   handleDeletePacienteArquivo: (paciente: Paciente, arquivoId: number) => void | Promise<void>;
   handleExportPacientes: (format: PacienteExportFormat) => void | Promise<void>;
   handleEditPaciente: (paciente: Paciente) => void | Promise<void>;
@@ -85,7 +82,6 @@ export function PatientsPage({
   pacienteFormLoading,
   pendingPatientFiles,
   patientFileInputKey,
-  patientPhotoInputKey,
   pacientes,
   pacientesLoading,
   pacientesError,
@@ -124,8 +120,6 @@ export function PatientsPage({
   handleRemovePacienteProcedimento,
   handlePacienteFilesChange,
   removePendingPatientFile,
-  handlePacientePhotoChange,
-  handleRemovePacientePhoto,
   handleDeletePacienteArquivo,
   handleExportPacientes,
   handleEditPaciente,
@@ -149,7 +143,6 @@ export function PatientsPage({
           pacienteFormLoading={pacienteFormLoading}
           pendingPatientFiles={pendingPatientFiles}
           patientFileInputKey={patientFileInputKey}
-          patientPhotoInputKey={patientPhotoInputKey}
           hospitais={hospitais}
           hospitaisError={hospitaisError}
           medicalUsers={medicalUsers}
@@ -158,7 +151,6 @@ export function PatientsPage({
           opmeFornecedores={opmeFornecedores}
           opmeFornecedoresError={opmeFornecedoresError}
           isMedical={isMedical}
-          sessionToken={sessionToken}
           setPacienteFormData={setPacienteFormData}
           onClose={closePacienteForm}
           onSubmit={handleSubmitPaciente}
@@ -166,8 +158,6 @@ export function PatientsPage({
           onRemovePacienteProcedimento={handleRemovePacienteProcedimento}
           onPacienteFilesChange={handlePacienteFilesChange}
           onRemovePendingPatientFile={removePendingPatientFile}
-          onPacientePhotoChange={handlePacientePhotoChange}
-          onRemovePacientePhoto={handleRemovePacientePhoto}
           onDeletePacienteArquivo={handleDeletePacienteArquivo}
           onOpenPacienteObservacoes={editingPaciente ? () => void handleOpenPacienteObservacoes(editingPaciente) : undefined}
         />
