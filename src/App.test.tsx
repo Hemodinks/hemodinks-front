@@ -1807,8 +1807,8 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeInTheDocument();
   });
 
-  it('permite controller visualizar pacientes e restringe edicao, usuarios e agenda', async () => {
-    await renderAuthenticatedApp({
+  it('permite controller cadastrar, editar, anexar arquivos e alterar foto de pacientes', async () => {
+    const { user } = await renderAuthenticatedApp({
       initialPath: '/dashboard',
       sessionOverrides: {
         perfilId: 4,
@@ -1823,12 +1823,26 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: /abrir usuários/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /abrir agenda/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /abrir painel/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /novo paciente/i })).not.toBeInTheDocument();
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar xlsx/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar pdf/i })).toBeInTheDocument();
-    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /visualizar paciente hemodinks/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /novo paciente/i }));
+    expect(await screen.findByRole('heading', { name: 'Novo paciente' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /cadastrar paciente/i })).toBeInTheDocument();
+    expect(screen.getByLabelText('Foto do paciente')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /voltar para lista/i }));
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
+    expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
+    expect(screen.getByText('Selecionar arquivos')).toBeInTheDocument();
+    expect(screen.getByLabelText('Foto do paciente')).toBeInTheDocument();
   });
 
   it('ordena pacientes por registro recente e nome', async () => {
