@@ -28,6 +28,7 @@ const PATIENT_IMPLICIT_FEATURES = new Set<string>([
 ]);
 
 const CONTROLLER_IMPLICIT_FEATURES = new Set<string>([
+  LICENSE_FEATURES.dashboardVisualizar,
   LICENSE_FEATURES.pacientesVisualizar,
   LICENSE_FEATURES.pacientesGerenciar,
   LICENSE_FEATURES.cbhpmConsultar,
