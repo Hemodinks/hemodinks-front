@@ -22,7 +22,6 @@ import type {
 import { queryClient } from '../../queryClient';
 import {
   ALLOWED_PATIENT_FILE_TYPES,
-  ALLOWED_PROFILE_PHOTO_TYPES,
   CBHPM_PAGE_SIZE,
   DEFAULT_PASSWORD,
   findConvenioByDescription,
@@ -31,10 +30,8 @@ import {
   findOpmeFornecedorByName,
   getErrorMessage,
   MAX_PATIENT_FILE_BYTES,
-  MAX_PROFILE_PHOTO_BYTES,
   PAGE_SIZE,
 } from '../../shared/utils/formatters';
-import { readProfilePhoto } from '../../shared/utils/files';
 import {
   getPagedItems,
   getPagedTotal,
@@ -165,8 +162,6 @@ export function usePatientsDomain({
     pacienteFormError,
     setPacienteFormError,
     patientFileInputKey,
-    patientPhotoInputKey,
-    setPatientPhotoInputKey,
     pendingPatientFiles,
     setPendingPatientFiles,
     resetPacienteForm,
@@ -588,38 +583,6 @@ export function usePatientsDomain({
     setPendingPatientFiles((current) => current.filter((_, index) => index !== indexToRemove));
   };
 
-  const handlePacientePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-
-    if (patientReadOnly || !file) {
-      return;
-    }
-
-    if (!ALLOWED_PROFILE_PHOTO_TYPES.has(file.type)) {
-      setPacienteFormError('Use uma foto PNG, JPG ou WEBP.');
-      return;
-    }
-
-    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
-      setPacienteFormError('A foto deve ter no máximo 1 MB.');
-      return;
-    }
-
-    try {
-      const fotoPerfil = await readProfilePhoto(file);
-      setPacienteFormData((current) => ({ ...current, fotoPerfil }));
-      setPacienteFormError('');
-    } catch (error) {
-      setPacienteFormError(getErrorMessage(error));
-    }
-  };
-
-  const handleRemovePacientePhoto = () => {
-    setPacienteFormData((current) => ({ ...current, fotoPerfil: null }));
-    setPatientPhotoInputKey((key) => key + 1);
-  };
-
   const resolveMedicalSelection = (
     userId: number | null,
     nome: string,
@@ -1032,7 +995,6 @@ export function usePatientsDomain({
     pacienteFormLoading,
     pendingPatientFiles,
     patientFileInputKey,
-    patientPhotoInputKey,
     selectedPatientInfo,
     setSelectedPatientInfo,
     selectedPatientFiles,
@@ -1085,8 +1047,6 @@ export function usePatientsDomain({
     handleEditPaciente,
     handlePacienteFilesChange,
     removePendingPatientFile,
-    handlePacientePhotoChange,
-    handleRemovePacientePhoto,
     handleSubmitPaciente,
     handleDeletePaciente,
     handleDeletePacienteArquivo,

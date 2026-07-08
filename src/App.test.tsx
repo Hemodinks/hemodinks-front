@@ -1325,7 +1325,7 @@ describe('App', () => {
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Telefone')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Data de nascimento')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Foto do paciente')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Convênio'), 'Convenio Manual');
     await user.type(screen.getByLabelText('Hospital'), 'Hospital Manual');
     await user.type(screen.getByLabelText('Fornecedor OPME'), 'Fornecedor Manual');
@@ -1557,7 +1557,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
     expect(screen.getByText('Selecionar arquivos')).toBeInTheDocument();
-    expect(screen.getByLabelText('Foto do paciente')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
   });
 
   it('exibe pacientes para medico mesmo sem feature explicita de pacientes na licenca', async () => {
@@ -1807,7 +1807,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeInTheDocument();
   });
 
-  it('permite controller cadastrar, editar, anexar arquivos e alterar foto de pacientes', async () => {
+  it('abre painel para controller e permite cadastrar, editar e anexar arquivos de pacientes sem foto', async () => {
     const { user } = await renderAuthenticatedApp({
       initialPath: '/dashboard',
       sessionOverrides: {
@@ -1816,13 +1816,14 @@ describe('App', () => {
       },
     });
 
-    expect(await screen.findByRole('heading', { name: /pacientes/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await waitFor(() => {
-      expect(window.location.pathname).toBe('/pacientes');
+      expect(window.location.pathname).toBe('/dashboard');
     });
     expect(screen.queryByRole('button', { name: /abrir usuários/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /abrir agenda/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /abrir painel/i })).not.toBeInTheDocument();
+    expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
+
+    await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar xlsx/i })).toBeInTheDocument();
@@ -1833,7 +1834,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
     expect(await screen.findByRole('heading', { name: 'Novo paciente' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /cadastrar paciente/i })).toBeInTheDocument();
-    expect(screen.getByLabelText('Foto do paciente')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /voltar para lista/i }));
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
@@ -1842,7 +1843,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
     expect(screen.getByText('Selecionar arquivos')).toBeInTheDocument();
-    expect(screen.getByLabelText('Foto do paciente')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
   });
 
   it('ordena pacientes por registro recente e nome', async () => {
