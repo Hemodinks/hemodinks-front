@@ -9,3 +9,4 @@ playwright-report
 reports
 .lighthouseci
 public/otel-runtime-config.json
+vercel.json.example
