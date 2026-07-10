@@ -4,10 +4,11 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [
+  "redirects": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/:path*",
+      "destination": "https://hemodinks.gestao-saude.tec.br/:path*",
+      "permanent": true
     }
   ]
 }
