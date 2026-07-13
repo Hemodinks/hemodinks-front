@@ -85,6 +85,16 @@
   margin: 0;
 }
 
+.billing-month-field {
+  display: grid;
+}
+
+.billing-month-field span {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
 .billing-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

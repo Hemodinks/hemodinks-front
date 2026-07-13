@@ -81,6 +81,8 @@ export type PacienteListQuery = ListQuery & {
   medico?: string;
   convenio?: string;
   procedimento?: string;
+  competenciaInicio?: string;
+  competenciaFinal?: string;
 };
 
 export type CbhpmListQuery = {
@@ -352,6 +354,8 @@ export type PacienteFaturamento = {
   observacoes?: string | null;
   dataCadastro: string;
   dataAtualizacao?: string | null;
+  competenciaInicio?: string | null;
+  competenciaFinal?: string | null;
 };
 
 export type Paciente = {
