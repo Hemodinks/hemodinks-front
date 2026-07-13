@@ -78,6 +78,8 @@
 }
 
 .billing-checkbox {
+  grid-column: span 2;
+  max-width: 360px;
   min-height: 38px;
   align-items: center;
   gap: 10px;
@@ -85,6 +87,7 @@
   color: var(--ink);
   font-size: 0.84rem;
   font-weight: 800;
+  line-height: 1.28;
 }
 
 .billing-checkbox input {
@@ -92,7 +95,7 @@
 }
 
 .billing-filter-actions {
-  grid-column: 2 / -1;
+  grid-column: 3 / -1;
   justify-self: stretch;
   display: flex;
   flex-wrap: wrap;
@@ -726,6 +729,11 @@
   }
 
   .billing-summary-support-card {
+    grid-column: 1 / -1;
+  }
+
+  .billing-checkbox,
+  .billing-filter-actions {
     grid-column: 1 / -1;
   }
 }
