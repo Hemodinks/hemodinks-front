@@ -155,7 +155,7 @@ VITE_OTEL_SERVICE_NAME
 VITE_OTEL_TRACES_SAMPLE_RATE
 ```
 
-O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate principal para PRs e pushes, pois ele roda tambem E2E e Lighthouse.
+O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate principal para PRs e pushes, pois ele roda testes, build, budget e E2E. Lighthouse fica separado em `.github/workflows/lighthouse.yml` e deve ser iniciado manualmente quando necessario.
 
 ## Render producao
 
