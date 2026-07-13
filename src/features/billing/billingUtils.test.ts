@@ -73,6 +73,13 @@ function createFaturamento(overrides: Partial<NonNullable<Paciente['faturamento'
 }
 
 describe('billingUtils', () => {
+  it('inicia filtros de faturamento sem competencia selecionada', () => {
+    const filters = createEmptyBillingFilters('');
+
+    expect(filters.competenciaInicio).toBe('');
+    expect(filters.competenciaFinal).toBe('');
+  });
+
   it('transforma paciente em registro de faturamento com totais e checklist', () => {
     const [record] = buildBillingRecords([basePaciente]);
 

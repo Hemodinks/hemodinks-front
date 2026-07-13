@@ -9,6 +9,7 @@ import {
   Info,
   ReceiptText,
   RefreshCw,
+  Search,
   TriangleAlert,
   Wallet,
   X,
@@ -18,7 +19,6 @@ import { getFaturamentosMedicos } from '../../services';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, Button, CheckboxField, ComboboxField, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
 import './billing.css';
-import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { formatCurrency, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
 import type { AuthSession, Convenio, MedicalUserOption, Paciente } from '../../types';
 import { UserAvatar } from '../users/UserAvatar';
@@ -29,6 +29,7 @@ import {
   groupBillingByConvenio,
   groupBillingByDoctor,
   summarizeBillingRecords,
+  type BillingFilters,
   type BillingBreakdownItem,
   type BillingChecklistItem,
   type BillingRegimeFilter,
@@ -298,6 +299,23 @@ function getUniqueSortedOptions(values: Array<string | null | undefined>) {
   )].sort((left, right) => left.localeCompare(right, 'pt-BR', { sensitivity: 'base' }));
 }
 
+function normalizeBillingFilterText(value: string) {
+  return value.trim();
+}
+
+function areBillingFiltersEqual(left: BillingFilters, right: BillingFilters) {
+  return normalizeBillingFilterText(left.search) === normalizeBillingFilterText(right.search)
+    && normalizeBillingFilterText(left.medico) === normalizeBillingFilterText(right.medico)
+    && normalizeBillingFilterText(left.convenio) === normalizeBillingFilterText(right.convenio)
+    && normalizeBillingFilterText(left.hospital) === normalizeBillingFilterText(right.hospital)
+    && normalizeBillingFilterText(left.procedimento) === normalizeBillingFilterText(right.procedimento)
+    && left.competenciaInicio === right.competenciaInicio
+    && left.competenciaFinal === right.competenciaFinal
+    && left.status === right.status
+    && left.regime === right.regime
+    && left.onlyPendingItems === right.onlyPendingItems;
+}
+
 function toCompetenciaQueryValue(value: string) {
   if (!/^\d{4}-\d{2}$/.test(value)) {
     return undefined;
@@ -355,16 +373,12 @@ export function BillingPage({
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultDoctorFilter = isMedical ? session.user.nome : '';
   const [filters, setFilters] = useState(() => createEmptyBillingFilters(defaultDoctorFilter));
+  const [appliedFilters, setAppliedFilters] = useState(() => createEmptyBillingFilters(defaultDoctorFilter));
   const [statusFilterInput, setStatusFilterInput] = useState(() => getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, 'all'));
   const [regimeFilterInput, setRegimeFilterInput] = useState(() => getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, 'all'));
   const [summaryRecordId, setSummaryRecordId] = useState<number | null>(null);
-  const [debouncedSearch] = useDebouncedValue(filters.search);
-  const [debouncedDoctor] = useDebouncedValue(filters.medico);
-  const [debouncedConvenio] = useDebouncedValue(filters.convenio);
-  const [debouncedProcedure] = useDebouncedValue(filters.procedimento);
-  const competenciaInicio = filters.competenciaInicio;
-  const competenciaFinal = filters.competenciaFinal;
   const detailRecordId = parseBillingDetailId(searchParams.get('detalhe'));
+  const hasPendingFilterChanges = !areBillingFiltersEqual(filters, appliedFilters);
 
   useEffect(() => {
     if (!isMedical) {
@@ -372,6 +386,9 @@ export function BillingPage({
     }
 
     setFilters((current) => current.medico === session.user.nome
+      ? current
+      : { ...current, medico: session.user.nome });
+    setAppliedFilters((current) => current.medico === session.user.nome
       ? current
       : { ...current, medico: session.user.nome });
   }, [isMedical, session.user.nome]);
@@ -388,21 +405,21 @@ export function BillingPage({
     queryKey: [
       'billingRecords',
       session.token,
-      debouncedSearch,
-      debouncedDoctor,
-      debouncedConvenio,
-      debouncedProcedure,
-      competenciaInicio,
-      competenciaFinal,
+      appliedFilters.search,
+      appliedFilters.medico,
+      appliedFilters.convenio,
+      appliedFilters.procedimento,
+      appliedFilters.competenciaInicio,
+      appliedFilters.competenciaFinal,
       isMedical ? session.user.id : 'all',
     ],
     queryFn: () => loadBillingPatients(session.token, {
-      search: debouncedSearch.trim(),
-      medico: debouncedDoctor.trim(),
-      convenio: debouncedConvenio.trim(),
-      procedimento: debouncedProcedure.trim(),
-      competenciaInicio,
-      competenciaFinal,
+      search: appliedFilters.search.trim(),
+      medico: appliedFilters.medico.trim(),
+      convenio: appliedFilters.convenio.trim(),
+      procedimento: appliedFilters.procedimento.trim(),
+      competenciaInicio: appliedFilters.competenciaInicio,
+      competenciaFinal: appliedFilters.competenciaFinal,
     }),
     staleTime: 30 * 1000,
   });
@@ -420,7 +437,7 @@ export function BillingPage({
   );
   const billingRecords = filterBillingRecords(
     allBillingRecords,
-    filters,
+    appliedFilters,
     billingScopeOptions,
   );
   const doctorFilterOptions = getUniqueSortedOptions([
@@ -463,9 +480,22 @@ export function BillingPage({
   }, [billingRecords, summaryRecordId]);
 
   const clearFilters = () => {
-    setFilters(createEmptyBillingFilters(defaultDoctorFilter));
+    const nextFilters = createEmptyBillingFilters(defaultDoctorFilter);
+    setFilters(nextFilters);
+    setAppliedFilters(nextFilters);
     setStatusFilterInput(getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, 'all'));
     setRegimeFilterInput(getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, 'all'));
+  };
+
+  const applyFilters = () => {
+    setAppliedFilters({
+      ...filters,
+      search: filters.search.trim(),
+      medico: filters.medico.trim(),
+      convenio: filters.convenio.trim(),
+      hospital: filters.hospital.trim(),
+      procedimento: filters.procedimento.trim(),
+    });
   };
 
   const updateCompetenciaInicio = (value: string) => {
@@ -783,9 +813,20 @@ export function BillingPage({
                 checked={filters.onlyPendingItems}
                 onCheckedChange={(checked) => setFilters((current) => ({ ...current, onlyPendingItems: checked }))}
               />
-              <Button className="patient-clear-filters" onClick={clearFilters}>
-                Limpar filtros
-              </Button>
+              <div className="billing-filter-actions">
+                <Button
+                  className="billing-apply-filters"
+                  variant="primary"
+                  onClick={applyFilters}
+                  disabled={!hasPendingFilterChanges || billingQuery.isFetching}
+                >
+                  <Search size={16} />
+                  Consultar
+                </Button>
+                <Button className="patient-clear-filters" onClick={clearFilters}>
+                  Limpar filtros
+                </Button>
+              </div>
             </div>
           </div>
         </details>

@@ -85,6 +85,21 @@
   margin: 0;
 }
 
+.billing-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.billing-apply-filters {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 .billing-month-field {
   display: grid;
 }
