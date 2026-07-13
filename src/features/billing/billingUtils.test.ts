@@ -54,6 +54,7 @@ const basePaciente: Paciente = {
   cpf: '12345678900',
   email: 'maria@example.com',
   telefone: '+5581999999999',
+  dataCadastro: '2026-06-30T15:25:50Z',
   fotoPerfil: null,
   dataNascimento: '1988-06-12T00:00:00Z',
   ativo: true,
@@ -157,6 +158,36 @@ describe('billingUtils', () => {
 
     expect(records.find((record) => record.id === 4)?.competenciaInicio).toBe('2026-07-05T10:00:00Z');
     expect(filtered.map((record) => record.id)).toEqual([4]);
+  });
+
+  it('filtra competencia pela data de cadastro exibida quando o faturamento ainda nao existe', () => {
+    const records = buildBillingRecords([
+      {
+        ...basePaciente,
+        id: 6,
+        nomePaciente: 'Cadastro Junho',
+        data: null,
+        dataCadastro: '2026-06-30T15:25:50Z',
+        faturamento: null,
+      },
+      {
+        ...basePaciente,
+        id: 7,
+        nomePaciente: 'Cadastro Novembro',
+        data: null,
+        dataCadastro: '2026-11-02T10:00:00Z',
+        faturamento: null,
+      },
+    ]);
+
+    const filtered = filterBillingRecords(records, {
+      ...createEmptyBillingFilters(''),
+      competenciaInicio: '2026-03',
+      competenciaFinal: '2026-08',
+    });
+
+    expect(records.find((record) => record.id === 6)?.competenciaInicio).toBe('2026-06-30T15:25:50Z');
+    expect(filtered.map((record) => record.id)).toEqual([6]);
   });
 
   it('filtra registros para medico atual, periodo, glosa e pendencias', () => {
