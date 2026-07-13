@@ -198,13 +198,6 @@ function getCompetenciaMonthTimestamp(value: string, endOfMonth = false) {
   return Number.isFinite(timestamp) ? timestamp : null;
 }
 
-function getCurrentCompetenciaMonth() {
-  const today = new Date();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-
-  return `${today.getFullYear()}-${month}`;
-}
-
 function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 'pendingChecklistItems'>) {
   const checklist: BillingChecklistItem[] = [
     record.paymentHasNumericValue
@@ -438,7 +431,7 @@ function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 
   };
 }
 
-export function createEmptyBillingFilters(defaultDoctor = '', defaultCompetencia = getCurrentCompetenciaMonth()): BillingFilters {
+export function createEmptyBillingFilters(defaultDoctor = '', defaultCompetencia = ''): BillingFilters {
   return {
     search: '',
     medico: defaultDoctor,
