@@ -1,5 +1,7 @@
 .billing-workspace {
   gap: 16px;
+  --billing-filter-button-width: 150px;
+  --billing-filter-button-height: 50px;
 }
 
 .billing-filters-accordion {
@@ -26,17 +28,21 @@
 }
 
 .billing-filters-toggle {
-  min-height: 40px;
+  width: var(--billing-filter-button-width);
+  min-height: var(--billing-filter-button-height);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 0 16px;
   border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 82%, black);
   background: var(--action-primary);
-  color: var(--button-ink);
-  box-shadow: var(--shadow-soft);
-  font-size: 0.86rem;
+  color: var(--action-text);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--action-primary) 28%, transparent);
+  font-size: 0.9rem;
   font-weight: 900;
+  line-height: 1;
 }
 
 .billing-filters-toggle::after {
@@ -86,18 +92,39 @@
 }
 
 .billing-filter-actions {
+  grid-column: 2 / -1;
+  justify-self: stretch;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+  justify-content: flex-end;
 }
 
-.billing-apply-filters {
-  min-height: 40px;
+.billing-apply-filters,
+.billing-clear-filters {
+  width: var(--billing-filter-button-width);
+  min-height: var(--billing-filter-button-height);
+  flex: 0 0 var(--billing-filter-button-width);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  color: var(--action-text);
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.billing-clear-filters {
+  background: var(--action-secondary);
+  border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-secondary) 20%, transparent);
+}
+
+.billing-clear-filters:hover {
+  background: var(--action-secondary-hover);
+  border-color: color-mix(in srgb, var(--action-secondary-hover) 82%, black);
 }
 
 .billing-month-field {
@@ -722,6 +749,18 @@
   .billing-procedure-list li,
   .billing-ranking-list li {
     display: grid;
+  }
+
+  .billing-filter-actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .billing-filters-toggle,
+  .billing-apply-filters,
+  .billing-clear-filters {
+    width: 100%;
+    flex-basis: 100%;
   }
 
   .billing-detail-toolbar-actions {
