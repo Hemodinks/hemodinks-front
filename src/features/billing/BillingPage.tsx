@@ -16,7 +16,6 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import { getFaturamentosMedicos } from '../../services';
 import { Modal } from '../../shared/components/Modal';
-import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, ComboboxField, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
 import './billing.css';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
@@ -103,6 +102,13 @@ type BillingRankingPanelProps = {
   emptyLabel: string;
 };
 
+type BillingMonthFieldProps = {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+};
+
 function BillingRankingPanel({ title, subtitle, items, emptyLabel }: BillingRankingPanelProps) {
   return (
     <article className="billing-ranking-panel">
@@ -132,6 +138,20 @@ function BillingRankingPanel({ title, subtitle, items, emptyLabel }: BillingRank
         <p className="empty-row">{emptyLabel}</p>
       )}
     </article>
+  );
+}
+
+function BillingMonthField({ id, label, value, onChange }: BillingMonthFieldProps) {
+  return (
+    <label className="filter-field billing-month-field" htmlFor={id}>
+      <span>{label}</span>
+      <input
+        id={id}
+        type="month"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
   );
 }
 
@@ -278,7 +298,27 @@ function getUniqueSortedOptions(values: Array<string | null | undefined>) {
   )].sort((left, right) => left.localeCompare(right, 'pt-BR', { sensitivity: 'base' }));
 }
 
-async function loadBillingPatients(token: string, filters: { search: string; medico: string; convenio: string; procedimento: string }) {
+function toCompetenciaQueryValue(value: string) {
+  if (!/^\d{4}-\d{2}$/.test(value)) {
+    return undefined;
+  }
+
+  const [year, month] = value.split('-');
+
+  return `${month}/${year}`;
+}
+
+async function loadBillingPatients(
+  token: string,
+  filters: {
+    search: string;
+    medico: string;
+    convenio: string;
+    procedimento: string;
+    competenciaInicio: string;
+    competenciaFinal: string;
+  },
+) {
   const items: Paciente[] = [];
   let page = 1;
   let totalPages = 1;
@@ -291,6 +331,8 @@ async function loadBillingPatients(token: string, filters: { search: string; med
       medico: filters.medico || undefined,
       convenio: filters.convenio || undefined,
       procedimento: filters.procedimento || undefined,
+      competenciaInicio: toCompetenciaQueryValue(filters.competenciaInicio),
+      competenciaFinal: toCompetenciaQueryValue(filters.competenciaFinal),
       sortBy: 'recent',
       sortDirection: 'desc',
     });
@@ -320,6 +362,8 @@ export function BillingPage({
   const [debouncedDoctor] = useDebouncedValue(filters.medico);
   const [debouncedConvenio] = useDebouncedValue(filters.convenio);
   const [debouncedProcedure] = useDebouncedValue(filters.procedimento);
+  const competenciaInicio = filters.competenciaInicio;
+  const competenciaFinal = filters.competenciaFinal;
   const detailRecordId = parseBillingDetailId(searchParams.get('detalhe'));
 
   useEffect(() => {
@@ -341,12 +385,24 @@ export function BillingPage({
   }, [filters.regime]);
 
   const billingQuery = useQuery({
-    queryKey: ['billingRecords', session.token, debouncedSearch, debouncedDoctor, debouncedConvenio, debouncedProcedure, isMedical ? session.user.id : 'all'],
+    queryKey: [
+      'billingRecords',
+      session.token,
+      debouncedSearch,
+      debouncedDoctor,
+      debouncedConvenio,
+      debouncedProcedure,
+      competenciaInicio,
+      competenciaFinal,
+      isMedical ? session.user.id : 'all',
+    ],
     queryFn: () => loadBillingPatients(session.token, {
       search: debouncedSearch.trim(),
       medico: debouncedDoctor.trim(),
       convenio: debouncedConvenio.trim(),
       procedimento: debouncedProcedure.trim(),
+      competenciaInicio,
+      competenciaFinal,
     }),
     staleTime: 30 * 1000,
   });
@@ -359,7 +415,7 @@ export function BillingPage({
   const allBillingRecords = buildBillingRecords(billingQuery.data ?? []);
   const billingScopeRecords = filterBillingRecords(
     allBillingRecords,
-    createEmptyBillingFilters(''),
+    createEmptyBillingFilters('', ''),
     billingScopeOptions,
   );
   const billingRecords = filterBillingRecords(
@@ -410,6 +466,26 @@ export function BillingPage({
     setFilters(createEmptyBillingFilters(defaultDoctorFilter));
     setStatusFilterInput(getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, 'all'));
     setRegimeFilterInput(getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, 'all'));
+  };
+
+  const updateCompetenciaInicio = (value: string) => {
+    setFilters((current) => ({
+      ...current,
+      competenciaInicio: value,
+      competenciaFinal: value && current.competenciaFinal && current.competenciaFinal < value
+        ? value
+        : current.competenciaFinal,
+    }));
+  };
+
+  const updateCompetenciaFinal = (value: string) => {
+    setFilters((current) => ({
+      ...current,
+      competenciaInicio: value && current.competenciaInicio && current.competenciaInicio > value
+        ? value
+        : current.competenciaInicio,
+      competenciaFinal: value,
+    }));
   };
 
   const openBillingDetail = (recordId: number) => {
@@ -689,17 +765,17 @@ export function BillingPage({
                 }}
                 noOptionsLabel="Nenhum regime encontrado."
               />
-              <DateInput
+              <BillingMonthField
                 id="billing-period-start"
-                label="Data inicial"
-                value={filters.periodStart}
-                onChange={(value) => setFilters((current) => ({ ...current, periodStart: value }))}
+                label="Competência inicial"
+                value={filters.competenciaInicio}
+                onChange={updateCompetenciaInicio}
               />
-              <DateInput
+              <BillingMonthField
                 id="billing-period-end"
-                label="Data final"
-                value={filters.periodEnd}
-                onChange={(value) => setFilters((current) => ({ ...current, periodEnd: value }))}
+                label="Competência final"
+                value={filters.competenciaFinal}
+                onChange={updateCompetenciaFinal}
               />
               <CheckboxField
                 className="billing-checkbox"

@@ -3,7 +3,6 @@ import { getPacienteProcedimentosFromPaciente, normalizeCbhpmCodigo } from '../p
 import {
   formatCurrency,
   normalizeLookupText,
-  parseDisplayDate,
   toDisplayDate,
 } from '../../shared/utils/formatters';
 
@@ -25,8 +24,8 @@ export type BillingFilters = {
   convenio: string;
   hospital: string;
   procedimento: string;
-  periodStart: string;
-  periodEnd: string;
+  competenciaInicio: string;
+  competenciaFinal: string;
   status: BillingStatusFilter;
   regime: BillingRegimeFilter;
   onlyPendingItems: boolean;
@@ -44,6 +43,8 @@ export type BillingRecord = {
   regime: 'convenio' | 'particular';
   surgeryDate: string | null;
   surgeryDateLabel: string;
+  competenciaInicio: string | null;
+  competenciaFinal: string | null;
   authorizationCode: string;
   paymentRaw: string;
   paymentAmount: number;
@@ -179,28 +180,29 @@ function getDateTimestamp(value?: string | null) {
   return Number.isFinite(timestamp) ? timestamp : null;
 }
 
-function getDisplayDateTimestamp(value: string, endOfDay = false) {
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+function getCompetenciaMonthTimestamp(value: string, endOfMonth = false) {
+  if (!/^\d{4}-\d{2}$/.test(value)) {
     return null;
   }
 
-  const { day, month, year } = parseDisplayDate(value);
+  const [year, month] = value.split('-').map(Number);
 
-  if (!day || !month || !year) {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
     return null;
   }
 
-  const timestamp = new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    endOfDay ? 23 : 0,
-    endOfDay ? 59 : 0,
-    endOfDay ? 59 : 0,
-    endOfDay ? 999 : 0,
-  ).getTime();
+  const timestamp = endOfMonth
+    ? new Date(year, month, 0, 23, 59, 59, 999).getTime()
+    : new Date(year, month - 1, 1).getTime();
 
   return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function getCurrentCompetenciaMonth() {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+
+  return `${today.getFullYear()}-${month}`;
 }
 
 function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 'pendingChecklistItems'>) {
@@ -436,15 +438,15 @@ function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 
   };
 }
 
-export function createEmptyBillingFilters(defaultDoctor = ''): BillingFilters {
+export function createEmptyBillingFilters(defaultDoctor = '', defaultCompetencia = getCurrentCompetenciaMonth()): BillingFilters {
   return {
     search: '',
     medico: defaultDoctor,
     convenio: '',
     hospital: '',
     procedimento: '',
-    periodStart: '',
-    periodEnd: '',
+    competenciaInicio: defaultCompetencia,
+    competenciaFinal: defaultCompetencia,
     status: 'all',
     regime: 'all',
     onlyPendingItems: false,
@@ -485,6 +487,8 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       regime: paciente.convenio?.trim() ? 'convenio' : 'particular',
       surgeryDate: paciente.data ?? null,
       surgeryDateLabel: paciente.data ? toDisplayDate(paciente.data) : '-',
+      competenciaInicio: faturamento?.competenciaInicio ?? paciente.data ?? null,
+      competenciaFinal: faturamento?.competenciaFinal ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
       authorizationCode: faturamento?.guiaAutorizacaoConvenio?.trim() || paciente.autorizacao?.trim() || '',
       paymentRaw: faturamento?.honorariosCirurgiao != null ? formatCurrency(faturamento.honorariosCirurgiao) : paciente.pagamento?.trim() || '',
       paymentAmount: paymentInfo.amount,
@@ -588,8 +592,8 @@ function matchesCurrentMedicalUser(record: BillingRecord, options: FilterBilling
 }
 
 export function filterBillingRecords(records: BillingRecord[], filters: BillingFilters, options: FilterBillingOptions = {}) {
-  const periodStart = getDisplayDateTimestamp(filters.periodStart);
-  const periodEnd = getDisplayDateTimestamp(filters.periodEnd, true);
+  const competenciaInicio = getCompetenciaMonthTimestamp(filters.competenciaInicio);
+  const competenciaFinal = getCompetenciaMonthTimestamp(filters.competenciaFinal, true);
 
   return [...records]
     .filter((record) => matchesCurrentMedicalUser(record, options))
@@ -646,13 +650,14 @@ export function filterBillingRecords(records: BillingRecord[], filters: BillingF
       return record.pendingChecklistItems > 0;
     })
     .filter((record) => {
-      const surgeryTimestamp = getDateTimestamp(record.surgeryDate);
+      const competenciaRecordStart = getDateTimestamp(record.competenciaInicio);
+      const competenciaRecordEnd = getDateTimestamp(record.competenciaFinal);
 
-      if (periodStart != null && (surgeryTimestamp == null || surgeryTimestamp < periodStart)) {
+      if (competenciaInicio != null && (competenciaRecordEnd == null || competenciaRecordEnd < competenciaInicio)) {
         return false;
       }
 
-      if (periodEnd != null && (surgeryTimestamp == null || surgeryTimestamp > periodEnd)) {
+      if (competenciaFinal != null && (competenciaRecordStart == null || competenciaRecordStart > competenciaFinal)) {
         return false;
       }
 
