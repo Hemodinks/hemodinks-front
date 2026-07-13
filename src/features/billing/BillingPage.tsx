@@ -378,7 +378,6 @@ export function BillingPage({
   const [regimeFilterInput, setRegimeFilterInput] = useState(() => getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, 'all'));
   const [summaryRecordId, setSummaryRecordId] = useState<number | null>(null);
   const detailRecordId = parseBillingDetailId(searchParams.get('detalhe'));
-  const hasPendingFilterChanges = !areBillingFiltersEqual(filters, appliedFilters);
 
   useEffect(() => {
     if (!isMedical) {
@@ -488,14 +487,21 @@ export function BillingPage({
   };
 
   const applyFilters = () => {
-    setAppliedFilters({
+    const nextFilters = {
       ...filters,
       search: filters.search.trim(),
       medico: filters.medico.trim(),
       convenio: filters.convenio.trim(),
       hospital: filters.hospital.trim(),
       procedimento: filters.procedimento.trim(),
-    });
+    };
+
+    if (areBillingFiltersEqual(nextFilters, appliedFilters)) {
+      void billingQuery.refetch();
+      return;
+    }
+
+    setAppliedFilters(nextFilters);
   };
 
   const updateCompetenciaInicio = (value: string) => {
@@ -818,7 +824,7 @@ export function BillingPage({
                   className="billing-apply-filters"
                   variant="primary"
                   onClick={applyFilters}
-                  disabled={!hasPendingFilterChanges || billingQuery.isFetching}
+                  disabled={billingQuery.isFetching}
                 >
                   <Search size={16} />
                   Consultar
