@@ -468,6 +468,7 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       ? `${primaryProcedure.cbhpmCodigo ? `${primaryProcedure.cbhpmCodigo} - ` : ''}${primaryProcedure.procedimento}`
       : '';
     const status = getBillingStatus(paciente, paymentInfo.hasNumericValue, glosaInfo.hasNumericValue);
+    const billingCadastroDate = faturamento?.dataCadastro ?? paciente.dataCadastro ?? null;
     const baseRecord: Omit<BillingRecord, 'billingChecklist' | 'pendingChecklistItems'> = {
       id: paciente.id,
       paciente,
@@ -480,8 +481,8 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       regime: paciente.convenio?.trim() ? 'convenio' : 'particular',
       surgeryDate: paciente.data ?? null,
       surgeryDateLabel: paciente.data ? toDisplayDate(paciente.data) : '-',
-      competenciaInicio: faturamento?.dataCadastro ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
-      competenciaFinal: faturamento?.dataCadastro ?? faturamento?.competenciaFinal ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
+      competenciaInicio: billingCadastroDate ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
+      competenciaFinal: billingCadastroDate ?? faturamento?.competenciaFinal ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
       authorizationCode: faturamento?.guiaAutorizacaoConvenio?.trim() || paciente.autorizacao?.trim() || '',
       paymentRaw: faturamento?.honorariosCirurgiao != null ? formatCurrency(faturamento.honorariosCirurgiao) : paciente.pagamento?.trim() || '',
       paymentAmount: paymentInfo.amount,
