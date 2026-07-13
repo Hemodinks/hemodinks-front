@@ -124,8 +124,8 @@ describe('billingUtils', () => {
 
     const filtered = filterBillingRecords(records, {
       ...createEmptyBillingFilters(''),
-      periodStart: '10/06/2026',
-      periodEnd: '30/06/2026',
+      competenciaInicio: '2026-06',
+      competenciaFinal: '2026-06',
       status: 'glosa',
       onlyPendingItems: true,
     }, {
