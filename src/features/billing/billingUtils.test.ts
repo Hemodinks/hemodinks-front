@@ -61,6 +61,17 @@ const basePaciente: Paciente = {
   arquivos: [],
 };
 
+function createFaturamento(overrides: Partial<NonNullable<Paciente['faturamento']>> = {}): NonNullable<Paciente['faturamento']> {
+  return {
+    id: 1,
+    pacienteId: 1,
+    anestesistaFaturadoSeparado: false,
+    conferenciaPagamentoRealizada: false,
+    dataCadastro: '2026-07-05T10:00:00Z',
+    ...overrides,
+  };
+}
+
 describe('billingUtils', () => {
   it('transforma paciente em registro de faturamento com totais e checklist', () => {
     const [record] = buildBillingRecords([basePaciente]);
@@ -103,6 +114,42 @@ describe('billingUtils', () => {
     expect(doctorGroups[0].label).toBe('Dra. Helena Cortez');
     expect(doctorGroups[0].totalRecords).toBe(2);
     expect(convenioGroups.map((item) => item.label)).toEqual(['Unimed', 'Particular']);
+  });
+
+  it('filtra competencia pela data de cadastro do faturamento quando informada', () => {
+    const records = buildBillingRecords([
+      {
+        ...basePaciente,
+        id: 4,
+        nomePaciente: 'Cadastro Julho',
+        data: '2026-06-18T00:00:00Z',
+        faturamento: createFaturamento({
+          id: 4,
+          pacienteId: 4,
+          dataCadastro: '2026-07-05T10:00:00Z',
+        }),
+      },
+      {
+        ...basePaciente,
+        id: 5,
+        nomePaciente: 'Cadastro Agosto',
+        data: '2026-07-10T00:00:00Z',
+        faturamento: createFaturamento({
+          id: 5,
+          pacienteId: 5,
+          dataCadastro: '2026-08-02T10:00:00Z',
+        }),
+      },
+    ]);
+
+    const filtered = filterBillingRecords(records, {
+      ...createEmptyBillingFilters(''),
+      competenciaInicio: '2026-07',
+      competenciaFinal: '2026-07',
+    });
+
+    expect(records.find((record) => record.id === 4)?.competenciaInicio).toBe('2026-07-05T10:00:00Z');
+    expect(filtered.map((record) => record.id)).toEqual([4]);
   });
 
   it('filtra registros para medico atual, periodo, glosa e pendencias', () => {
