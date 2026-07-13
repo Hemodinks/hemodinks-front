@@ -829,7 +829,7 @@ export function BillingPage({
                   <Search size={16} />
                   Consultar
                 </Button>
-                <Button className="patient-clear-filters" onClick={clearFilters}>
+                <Button className="billing-clear-filters" onClick={clearFilters}>
                   Limpar filtros
                 </Button>
               </div>
