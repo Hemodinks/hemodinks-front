@@ -124,6 +124,18 @@ describe('billingUtils', () => {
     expect(convenioGroups.map((item) => item.label)).toEqual(['Unimed', 'Particular']);
   });
 
+  it('normaliza nomes de convenio com encoding quebrado nos registros de faturamento', () => {
+    const [record] = buildBillingRecords([
+      {
+        ...basePaciente,
+        convenio: 'Bradesco Sa\uFFFDde',
+      },
+    ]);
+
+    expect(record.convenioName).toBe('Bradesco Saúde');
+    expect(groupBillingByConvenio([record])[0].label).toBe('Bradesco Saúde');
+  });
+
   it('filtra competencia pela data de cadastro do faturamento quando informada', () => {
     const records = buildBillingRecords([
       {
