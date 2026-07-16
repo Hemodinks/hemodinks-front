@@ -1,5 +1,5 @@
 import { getFaturamentosMedicos } from '../../services';
-import { PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
+import { normalizeDisplayText, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
 import type { Paciente } from '../../types';
 import type { BillingFilters, BillingRegimeFilter, BillingStatusFilter } from './billingUtils';
 
@@ -47,7 +47,7 @@ export function parseBillingDetailId(value: string | null) {
 export function getUniqueSortedOptions(values: Array<string | null | undefined>) {
   return [...new Set(
     values
-      .map((value) => value?.trim() || '')
+      .map((value) => normalizeDisplayText(value))
       .filter(Boolean),
   )].sort((left, right) => left.localeCompare(right, 'pt-BR', { sensitivity: 'base' }));
 }
