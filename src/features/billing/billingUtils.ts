@@ -2,6 +2,7 @@ import type { Paciente } from '../../types';
 import { getPacienteProcedimentosFromPaciente, normalizeCbhpmCodigo } from '../patients/patientUtils';
 import {
   formatCurrency,
+  normalizeDisplayText,
   normalizeLookupText,
   toDisplayDate,
 } from '../../shared/utils/formatters';
@@ -469,6 +470,7 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       : '';
     const status = getBillingStatus(paciente, paymentInfo.hasNumericValue, glosaInfo.hasNumericValue);
     const billingCadastroDate = faturamento?.dataCadastro ?? paciente.dataCadastro ?? null;
+    const convenioName = normalizeDisplayText(paciente.convenio);
     const baseRecord: Omit<BillingRecord, 'billingChecklist' | 'pendingChecklistItems'> = {
       id: paciente.id,
       paciente,
@@ -477,8 +479,8 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       doctorUserId: paciente.medicoUserId ?? null,
       assistantNames,
       hospitalName: paciente.hospital?.trim() || 'Não informado',
-      convenioName: paciente.convenio?.trim() || 'Particular',
-      regime: paciente.convenio?.trim() ? 'convenio' : 'particular',
+      convenioName: convenioName || 'Particular',
+      regime: convenioName ? 'convenio' : 'particular',
       surgeryDate: paciente.data ?? null,
       surgeryDateLabel: paciente.data ? toDisplayDate(paciente.data) : '-',
       competenciaInicio: billingCadastroDate ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
