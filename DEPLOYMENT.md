@@ -7,7 +7,8 @@ Frontend React/Vite publicado como SPA. O build final fica em `dist` e toda rota
 | Ambiente | URL |
 | --- | --- |
 | Local | `http://localhost:5173` |
-| Producao | `https://hemodinks-saude.vercel.app` |
+| Producao | `https://hemodinks.gestao-saude.tec.br` |
+| Producao legado | `https://hemodinks-saude.vercel.app` |
 | Confirmation (Render blueprint) | `https://hemodinks-front-confirmation.onrender.com` |
 | API local | `http://localhost:5000` |
 | Swagger local | `http://localhost:5000/swagger` |
@@ -218,7 +219,8 @@ A API precisa permitir a origem do front publicado.
 Producao:
 
 ```text
-Cors__AllowedOrigins__0=https://hemodinks-saude.vercel.app
+Cors__AllowedOrigins__0=https://hemodinks.gestao-saude.tec.br
+Cors__AllowedOrigins__1=https://hemodinks-saude.vercel.app
 ```
 
 Preview Vercel ou outros dominios:
