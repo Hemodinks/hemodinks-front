@@ -35,6 +35,14 @@ export function buildListQueryParams(query?: ListQuery | PacienteListQuery | Cbh
     params.set('procedimento', query.procedimento.trim());
   }
 
+  if (query && 'competenciaInicio' in query && query.competenciaInicio?.trim()) {
+    params.set('competenciaInicio', query.competenciaInicio.trim());
+  }
+
+  if (query && 'competenciaFinal' in query && query.competenciaFinal?.trim()) {
+    params.set('competenciaFinal', query.competenciaFinal.trim());
+  }
+
   if (query && 'porte' in query && query.porte?.trim()) {
     params.set('porte', query.porte.trim());
   }

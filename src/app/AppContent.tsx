@@ -14,47 +14,20 @@ import { queryClient } from '../queryClient';
 import { useConfirmationDialog } from '../shared/components/ConfirmationDialog';
 import { useRouteView } from '../shared/hooks/useRouteView';
 import { useThemePreference } from '../shared/hooks/useThemePreference';
-import { LICENSE_FEATURES, hasSessionFeature } from '../shared/utils/license';
 import {
-  CONTROLLER_PROFILE_ID,
   DEFAULT_PASSWORD,
-  DEFAULT_PROFILE_ID,
   formatProfileName,
   getErrorMessage,
   isValidEmail,
   MEDICAL_PROFILE_ID,
-  PATIENT_PROFILE_ID,
 } from '../shared/utils/formatters';
+import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from './appAccess';
 import { AppMainContent } from './AppMainContent';
 import { AppModals } from './AppModals';
+import { buildSessionFromLogin, getResetPasswordCompletedMessage, shouldOpenDashboardAfterLogin } from './appSession';
+import { updateSort } from './appSort';
 import { getActiveModuleLabel, getAppTitle, getFormBreadcrumbLabel } from './appViewMeta';
 import { useAppChrome } from './useAppChrome';
-
-function updateSort(
-  field: string,
-  currentField: string,
-  setCurrentPage: (page: number) => void,
-  setField: (value: string) => void,
-  setDirection: (value: 'asc' | 'desc' | ((current: 'asc' | 'desc') => 'asc' | 'desc')) => void,
-  defaultDirection: 'asc' | 'desc',
-) {
-  setCurrentPage(1);
-
-  if (currentField === field) {
-    setDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
-    return;
-  }
-
-  setField(field);
-  setDirection(defaultDirection);
-}
-
-const MEDICAL_ALLOWED_ENTRY_PATHS = new Set([
-  '/agenda',
-  '/faturamento-medico',
-  '/meu-cadastro',
-  '/pacientes',
-]);
 
 export function AppContent() {
   const location = useLocation();
@@ -71,34 +44,32 @@ export function AppContent() {
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [openDashboardAfterLogin, setOpenDashboardAfterLogin] = useState(false);
 
-  const currentPerfilId = session?.user.perfilId ?? 0;
-  const isAdmin = currentPerfilId === 1;
-  const isMedical = currentPerfilId === MEDICAL_PROFILE_ID;
-  const isController = currentPerfilId === CONTROLLER_PROFILE_ID;
-  const isPatient = currentPerfilId === PATIENT_PROFILE_ID;
-  const canAccessDashboard = hasSessionFeature(session?.user, LICENSE_FEATURES.dashboardVisualizar) || isMedical;
-  const canAccessPatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesVisualizar) || isMedical;
-  const canManagePatients = hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar) || isMedical;
-  const canConsultCbhpm = hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar) || isMedical;
-  const canAccessAgenda = !isController;
-  const canAccessUsers = isAdmin;
-  const canEditOwnUser = isMedical || isPatient;
-  const canAccessBilling = isAdmin || isMedical || isController;
-  const canAccessMedicalGroups = isAdmin;
-  const canAccessSettings = isAdmin;
-  const canCreatePatients = canManagePatients;
-  const canEditPatients = canManagePatients;
-  const canDeletePatients = isAdmin;
-  const canManagePatientObservacoes = canManagePatients;
-  const patientReadOnly = isPatient;
-  const canUseDashboardRoute = canAccessDashboard;
-  const canUsePatientsRoute = canAccessPatients;
-  const canUseUsersRoute = canAccessUsers;
-  const canUseProfileRoute = canEditOwnUser;
-  const canUseBillingRoute = canAccessBilling;
-  const canUseMedicalGroupsRoute = canAccessMedicalGroups;
-  const canUseAgendaRoute = canAccessAgenda;
-  const canUseSettingsRoute = canAccessSettings;
+  const {
+    isAdmin,
+    isMedical,
+    canAccessDashboard,
+    canAccessPatients,
+    canConsultCbhpm,
+    canAccessAgenda,
+    canAccessUsers,
+    canEditOwnUser,
+    canAccessBilling,
+    canAccessMedicalGroups,
+    canAccessSettings,
+    canCreatePatients,
+    canEditPatients,
+    canDeletePatients,
+    canManagePatientObservacoes,
+    patientReadOnly,
+    canUseDashboardRoute,
+    canUsePatientsRoute,
+    canUseUsersRoute,
+    canUseProfileRoute,
+    canUseBillingRoute,
+    canUseMedicalGroupsRoute,
+    canUseAgendaRoute,
+    canUseSettingsRoute,
+  } = getAppAccess(session);
   const forceDashboardRoute = openDashboardAfterLogin && Boolean(session && !session.user.precisaTrocarSenha);
   const { activeView, navigateToView } = useRouteView({
     session,
@@ -131,11 +102,7 @@ export function AppContent() {
   };
 
   const handleResetPasswordCompleted = (message: string) => {
-    const nextMessage = /nova senha/i.test(message)
-      ? message
-      : `${message}. Entre com a nova senha.`;
-
-    returnToLogin(nextMessage);
+    returnToLogin(getResetPasswordCompletedMessage(message));
   };
 
   function logout() {
@@ -254,30 +221,10 @@ export function AppContent() {
 
     try {
       const result = await authenticate(loginEmail.trim(), loginPassword);
-      const resultPerfilId = result.perfilId || DEFAULT_PROFILE_ID;
-      const shouldOpenDashboardAfterLogin = resultPerfilId === MEDICAL_PROFILE_ID
-        || resultPerfilId === CONTROLLER_PROFILE_ID;
+      const nextSession = buildSessionFromLogin(result, loginPassword);
       queryClient.clear();
-      setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin);
-
-      persistSession({
-        token: result.token,
-        user: {
-          id: result.id,
-          clinicaId: result.clinicaId,
-          clinicaSlug: result.clinicaSlug ?? null,
-          nome: result.nome,
-          email: result.email,
-          cpf: result.cpf ?? null,
-          crm: result.crm ?? null,
-          crmUf: result.crmUf ?? null,
-          fotoPerfil: result.fotoPerfil ?? null,
-          precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
-          perfilId: resultPerfilId,
-          perfilNome: formatProfileName(resultPerfilId, result.perfilNome),
-          licenca: result.licenca ?? null,
-        },
-      });
+      setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin(nextSession.user.perfilId));
+      persistSession(nextSession);
     } catch (error) {
       setLoginError(getErrorMessage(error));
     } finally {

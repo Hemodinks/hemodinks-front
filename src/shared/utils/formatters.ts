@@ -75,7 +75,30 @@ export function getErrorMessage(error: unknown) {
 }
 
 export function normalizeLookupText(value: string) {
-  return value.trim().toLocaleLowerCase('pt-BR');
+  return normalizeDisplayText(value).trim().toLocaleLowerCase('pt-BR');
+}
+
+const DISPLAY_TEXT_FIXES = new Map<string, string>([
+  ['Bradesco Sa\u00c3\u00bade', 'Bradesco Saúde'],
+  ['Bradesco Sa\uFFFDde', 'Bradesco Saúde'],
+  ['Cemig Sa\u00c3\u00bade', 'Cemig Saúde'],
+  ['Cemig Sa\uFFFDde', 'Cemig Saúde'],
+  ['Sul Am\u00c3\u00a9rica', 'Sul América'],
+  ['Sul Am\uFFFDrica', 'Sul América'],
+  [
+    'Unimed Uberl\u00c3\u00a2ndia - Plano  Unimed Interc\u00c3\u00a2mbio',
+    'Unimed Uberlândia - Plano  Unimed Intercâmbio',
+  ],
+  [
+    'Unimed Uberl\uFFFDndia - Plano  Unimed Interc\uFFFDmbio',
+    'Unimed Uberlândia - Plano  Unimed Intercâmbio',
+  ],
+]);
+
+export function normalizeDisplayText(value?: string | null) {
+  const trimmedValue = value?.trim() ?? '';
+
+  return DISPLAY_TEXT_FIXES.get(trimmedValue) ?? trimmedValue;
 }
 
 export function findMedicalUserByName(users: Array<User | MedicalUserOption>, name: string) {
