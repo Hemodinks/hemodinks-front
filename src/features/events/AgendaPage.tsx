@@ -1,18 +1,9 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import {
-  Bell,
   CalendarDays,
-  Check,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Pencil,
   Plus,
   RefreshCw,
-  Save,
-  Trash2,
-  X,
 } from 'lucide-react';
 import './events.css';
 import {
@@ -33,9 +24,24 @@ import type {
   AuthSession,
   PublicHoliday,
 } from '../../types';
-import { formatProfileName, getErrorMessage } from '../../shared/utils/formatters';
+import { getErrorMessage } from '../../shared/utils/formatters';
 import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
-import { AlertMessage, Button, CheckboxField, DataPanel, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
+import { AlertMessage, Button, DataPanel, IconButton } from '../../shared/components/ui';
+import { AgendaCalendarSection } from './AgendaCalendarSection';
+import { AgendaEventForm } from './AgendaEventForm';
+import {
+  type AgendaFormData,
+  type AgendaSection,
+  buildEmptyForm,
+  composeDateTime,
+  defaultReminderMinutes,
+  eventTouchesDate,
+  fromDateKey,
+  mergeAgendaEvent,
+  monthGrid,
+  toDateKey,
+  toTimeInput,
+} from './agendaUtils';
 
 type AgendaPageProps = {
   session: AuthSession;
@@ -43,125 +49,7 @@ type AgendaPageProps = {
   isMedical: boolean;
 };
 
-type AgendaFormData = {
-  title: string;
-  description: string;
-  startDate: string;
-  startTime: string;
-  endDate: string;
-  endTime: string;
-  notifyMedicalProfile: boolean;
-  medicalUserId: string;
-  notifyUser: boolean;
-  reminderPeriodMinutes: string;
-  notificationMessage: string;
-  notifyAllAllowedRecipients: boolean;
-  notificationUserIds: number[];
-  notificationGroupIds: number[];
-};
-
-type AgendaSection = 'calendario' | 'cadastro';
-
-const weekdayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
-const defaultReminderMinutes = '1440';
-
-function toDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function fromDateKey(value: string) {
-  const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function monthTitle(date: Date) {
-  return new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(date);
-}
-
-function formatDateTime(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
-
-function toTimeInput(date: Date) {
-  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-}
-
-export function buildEmptyForm(
-  dateKey = toDateKey(new Date()),
-  isMedical = false,
-  userId?: number,
-  now = new Date(),
-): AgendaFormData {
-  const start = toDateKey(now) === dateKey ? new Date(now.getTime() + 60 * 60 * 1000) : new Date(`${dateKey}T09:00:00`);
-  start.setMinutes(0, 0, 0);
-  const end = new Date(start.getTime() + 60 * 60 * 1000);
-
-  return {
-    title: '',
-    description: '',
-    startDate: toDateKey(start),
-    startTime: toTimeInput(start),
-    endDate: toDateKey(end),
-    endTime: toTimeInput(end),
-    notifyMedicalProfile: false,
-    medicalUserId: isMedical && userId ? String(userId) : '',
-    notifyUser: true,
-    reminderPeriodMinutes: defaultReminderMinutes,
-    notificationMessage: '',
-    notifyAllAllowedRecipients: false,
-    notificationUserIds: [],
-    notificationGroupIds: [],
-  };
-}
-
-function monthGrid(monthDate: Date) {
-  const firstOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-  const start = new Date(firstOfMonth);
-  start.setDate(start.getDate() - start.getDay());
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    return date;
-  });
-}
-
-function eventTouchesDate(event: AgendaEvent, dateKey: string) {
-  const startKey = toDateKey(new Date(event.start));
-  const endKey = toDateKey(new Date(event.end));
-  return startKey <= dateKey && endKey >= dateKey;
-}
-
-function mergeAgendaEvent(currentEvents: AgendaEvent[], agendaEvent: AgendaEvent) {
-  return [...currentEvents.filter((item) => item.id !== agendaEvent.id), agendaEvent]
-    .sort((first, second) => new Date(first.start).getTime() - new Date(second.start).getTime());
-}
-
-function composeDateTime(dateKey: string, timeValue: string) {
-  return new Date(`${dateKey}T${timeValue || '00:00'}:00`);
-}
-
-function getHolidayTitle(holiday?: PublicHoliday) {
-  if (!holiday) {
-    return '';
-  }
-
-  return holiday.localName || holiday.name;
-}
+export { buildEmptyForm } from './agendaUtils';
 
 export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
@@ -532,300 +420,43 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
         {holidayError && <AlertMessage type="warning">{holidayError}</AlertMessage>}
 
         {activeSection === 'calendario' ? (
-          <>
-            <div className="agenda-monthbar">
-              <IconButton label="Mes anterior" onClick={handlePreviousMonth}>
-                <ChevronLeft size={18} />
-              </IconButton>
-              <strong>{monthTitle(visibleMonth)}</strong>
-              <IconButton label="Proximo mes" onClick={handleNextMonth}>
-                <ChevronRight size={18} />
-              </IconButton>
-            </div>
-
-            <div className="agenda-calendar" aria-busy={loading || holidayLoading}>
-              {weekdayLabels.map((label) => (
-                <span className="agenda-weekday" key={label}>{label}</span>
-              ))}
-              {days.map((date) => {
-                const dateKey = toDateKey(date);
-                const holiday = holidayByDate.get(dateKey);
-                const dayEvents = events.filter((agendaEvent) => eventTouchesDate(agendaEvent, dateKey));
-                const isCurrentMonth = date.getMonth() === visibleMonth.getMonth();
-                const isToday = dateKey === todayKey;
-                const isSelected = dateKey === selectedDate;
-
-                return (
-                  <button
-                    type="button"
-                    key={dateKey}
-                    className={[
-                      'agenda-day',
-                      isCurrentMonth ? '' : 'muted',
-                      isToday ? 'today' : '',
-                      isSelected ? 'selected' : '',
-                      holiday ? 'holiday' : '',
-                    ].filter(Boolean).join(' ')}
-                    onClick={() => handleSelectDate(date)}
-                    title={getHolidayTitle(holiday)}
-                  >
-                    <span className="agenda-day-number">{date.getDate()}</span>
-                    {holiday && <span className="agenda-holiday-dot">{getHolidayTitle(holiday)}</span>}
-                    {dayEvents.length > 0 && (
-                      <span className="agenda-event-count">
-                        {dayEvents.length}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="agenda-selected">
-              <div className="agenda-selected-title">
-                <span>{new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(fromDateKey(selectedDate))}</span>
-                {selectedHoliday && <strong>{getHolidayTitle(selectedHoliday)}</strong>}
-              </div>
-
-              <div className="agenda-day-actions">
-                <div className="agenda-day-actions-copy">
-                  <strong>Adicionar neste dia</strong>
-                  <span>Clique para criar um evento ou uma notificação com a data já preenchida.</span>
-                </div>
-                <div className="agenda-day-actions-buttons">
-                  <Button type="button" variant="ghost" onClick={openDraftForSelectedDate}>
-                    <Plus size={17} />
-                    Novo evento
-                  </Button>
-                </div>
-              </div>
-
-              <div className="agenda-event-list">
-                {loading ? (
-                  <p className="agenda-empty">Carregando eventos...</p>
-                ) : selectedEvents.length ? (
-                  selectedEvents.map((agendaEvent) => {
-                    const canManage = isAdmin || agendaEvent.userId === session.user.id;
-
-                    return (
-                      <article className={`agenda-event-item ${agendaEvent.isCompleted ? 'completed' : ''}`} key={agendaEvent.id}>
-                        <div className="agenda-event-main">
-                          <span className="agenda-event-time">
-                            <Clock size={15} />
-                            {formatDateTime(agendaEvent.start)} - {formatDateTime(agendaEvent.end)}
-                          </span>
-                          <strong>{agendaEvent.title}</strong>
-                          {agendaEvent.description && <p>{agendaEvent.description}</p>}
-                          <div className="agenda-event-meta">
-                            {agendaEvent.notifyUser && <span><Bell size={14} /> Usuario</span>}
-                            {agendaEvent.notifyMedicalProfile && <span><Bell size={14} /> {agendaEvent.medicalUserName || 'Perfil médico'}</span>}
-                            {agendaEvent.isCompleted && <span><Check size={14} /> Concluido</span>}
-                          </div>
-                        </div>
-                        {canManage && (
-                          <div className="agenda-event-actions">
-                            {!agendaEvent.isCompleted && (
-                              <IconButton label="Concluir" tone="muted" onClick={() => handleComplete(agendaEvent)}>
-                                <Check size={17} />
-                              </IconButton>
-                            )}
-                            <IconButton label="Editar" tone="muted" onClick={() => handleEdit(agendaEvent)}>
-                              <Pencil size={17} />
-                            </IconButton>
-                            <IconButton label="Excluir" tone="danger" onClick={() => handleDelete(agendaEvent)}>
-                              <Trash2 size={17} />
-                            </IconButton>
-                          </div>
-                        )}
-                      </article>
-                    );
-                  })
-                ) : (
-                  <p className="agenda-empty">Nenhum evento nesta data.</p>
-                )}
-              </div>
-            </div>
-          </>
+          <AgendaCalendarSection
+            visibleMonth={visibleMonth}
+            days={days}
+            events={events}
+            selectedDate={selectedDate}
+            selectedEvents={selectedEvents}
+            selectedHoliday={selectedHoliday}
+            holidayByDate={holidayByDate}
+            todayKey={todayKey}
+            loading={loading}
+            holidayLoading={holidayLoading}
+            isAdmin={isAdmin}
+            currentUserId={session.user.id}
+            onPreviousMonth={handlePreviousMonth}
+            onNextMonth={handleNextMonth}
+            onSelectDate={handleSelectDate}
+            onOpenDraftForSelectedDate={openDraftForSelectedDate}
+            onComplete={handleComplete}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         ) : (
-          <FormPanel className="agenda-form-panel">
-            <div className="panel-title">
-              <div>
-                <span className="eyebrow">{editingEventId ? 'Edição' : 'Cadastro'}</span>
-                <h2>{editingEventId ? 'Editar evento' : 'Novo evento'}</h2>
-              </div>
-              <div className="agenda-panel-actions">
-                <Button type="button" variant="ghost" onClick={openCalendarSection}>
-                  <ChevronLeft size={17} />
-                  Calendário
-                </Button>
-                {editingEventId && (
-                  <IconButton label="Cancelar edição" tone="muted" onClick={() => resetForm()}>
-                    <X size={18} />
-                  </IconButton>
-                )}
-              </div>
-            </div>
-
-            <form className="stack agenda-form" onSubmit={handleSubmit}>
-              <div className="agenda-form-section">
-                <TextField
-                  label="Título"
-                  type="text"
-                  value={formData.title}
-                  onValueChange={(value) => setFormData((current) => ({ ...current, title: value.slice(0, 255) }))}
-                  maxLength={255}
-                  required
-                />
-
-                <TextField
-                  label="Descrição"
-                  type="text"
-                  value={formData.description}
-                  onValueChange={(value) => setFormData((current) => ({ ...current, description: value.slice(0, 2000) }))}
-                  maxLength={2000}
-                />
-
-                <div className="two-column-fields">
-                  <TextField
-                    label="Início"
-                    type="date"
-                    value={formData.startDate}
-                    onValueChange={(value) => setFormData((current) => ({ ...current, startDate: value }))}
-                    required
-                  />
-                  <TextField
-                    label="Hora"
-                    type="time"
-                    value={formData.startTime}
-                    onValueChange={(value) => setFormData((current) => ({ ...current, startTime: value }))}
-                    required
-                  />
-                </div>
-
-                <div className="two-column-fields">
-                  <TextField
-                    label="Término"
-                    type="date"
-                    value={formData.endDate}
-                    onValueChange={(value) => setFormData((current) => ({ ...current, endDate: value }))}
-                    required
-                  />
-                  <TextField
-                    label="Hora"
-                    type="time"
-                    value={formData.endTime}
-                    onValueChange={(value) => setFormData((current) => ({ ...current, endTime: value }))}
-                    required
-                  />
-                </div>
-
-                <CheckboxField
-                  label="Notificar perfil médico"
-                  checked={formData.notifyMedicalProfile}
-                  onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyMedicalProfile: checked }))}
-                />
-
-                {formData.notifyMedicalProfile && (
-                  <SelectField
-                    label="Médico"
-                    value={formData.medicalUserId}
-                    onChange={(event) => setFormData((current) => ({ ...current, medicalUserId: event.target.value }))}
-                  >
-                    <option value="">Perfil médico</option>
-                    {medicalUsers.map((user) => (
-                      <option key={user.id} value={user.id}>{user.nome}</option>
-                    ))}
-                  </SelectField>
-                )}
-
-                <CheckboxField
-                  label="Receber lembretes"
-                  checked={formData.notifyUser}
-                  onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyUser: checked }))}
-                />
-
-                {(formData.notifyUser || formData.notifyMedicalProfile) && (
-                  <SelectField
-                    label="Intervalo de lembretes"
-                    value={formData.reminderPeriodMinutes}
-                    onChange={(event) => setFormData((current) => ({ ...current, reminderPeriodMinutes: event.target.value }))}
-                  >
-                    <option value="60">A cada 1 hora</option>
-                    <option value="360">A cada 6 horas</option>
-                    <option value="720">A cada 12 horas</option>
-                    <option value="1440">A cada 1 dia</option>
-                    <option value="2880">A cada 2 dias</option>
-                  </SelectField>
-                )}
-              </div>
-
-              <div className="agenda-form-section agenda-notification-section">
-                <TextareaField
-                  label="Mensagem da notificação"
-                  value={formData.notificationMessage}
-                  onValueChange={(value) => setFormData((current) => ({ ...current, notificationMessage: value.slice(0, 500) }))}
-                  maxLength={500}
-                  placeholder="Explique a reunião, evento, auditoria ou videoconferência."
-                  className="agenda-notification-message"
-                />
-
-                {notificationRecipientOptions ? (
-                  <>
-                    <CheckboxField
-                      label={notificationRecipientOptions.allRecipientsLabel}
-                      checked={formData.notifyAllAllowedRecipients}
-                      onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyAllAllowedRecipients: checked }))}
-                    />
-
-                    {notificationRecipientOptions.users.length > 0 && (
-                      <div className="agenda-recipient-group">
-                        <strong>Destinatários individuais</strong>
-                        <div className="agenda-recipient-list">
-                          {notificationRecipientOptions.users.map((user) => (
-                            <CheckboxField
-                              key={user.id}
-                              label={`${user.nome} (${formatProfileName(user.perfilId, user.perfilNome)})`}
-                              checked={formData.notificationUserIds.includes(user.id)}
-                              onCheckedChange={() => toggleNotificationUser(user.id)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {notificationRecipientOptions.groups.length > 0 && (
-                      <div className="agenda-recipient-group">
-                        <strong>Grupos médicos</strong>
-                        <div className="agenda-recipient-list">
-                          {notificationRecipientOptions.groups.map((group) => (
-                            <CheckboxField
-                              key={group.id}
-                              label={`${group.nome} (${group.membrosCount})`}
-                              checked={formData.notificationGroupIds.includes(group.id)}
-                              onCheckedChange={() => toggleNotificationGroup(group.id)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : notificationRecipientsError ? (
-                  <p className="agenda-empty agenda-empty-error">
-                    Não foi possível carregar os destinatários. {notificationRecipientsError}
-                  </p>
-                ) : notificationRecipientsLoading ? (
-                  <p className="agenda-empty">Carregando destinatários disponíveis...</p>
-                ) : (
-                  <p className="agenda-empty">Nenhum destinatário disponível.</p>
-                )}
-              </div>
-
-              <Button variant="primary" type="submit" disabled={formLoading}>
-                {editingEventId ? <Save size={18} /> : <Plus size={18} />}
-                {formLoading ? 'Salvando...' : editingEventId ? 'Salvar evento' : 'Cadastrar evento'}
-              </Button>
-            </form>
-          </FormPanel>
+          <AgendaEventForm
+            editingEventId={editingEventId}
+            formData={formData}
+            formLoading={formLoading}
+            medicalUsers={medicalUsers}
+            notificationRecipientOptions={notificationRecipientOptions}
+            notificationRecipientsLoading={notificationRecipientsLoading}
+            notificationRecipientsError={notificationRecipientsError}
+            setFormData={setFormData}
+            onSubmit={handleSubmit}
+            onOpenCalendarSection={openCalendarSection}
+            onResetForm={() => resetForm()}
+            onToggleNotificationUser={toggleNotificationUser}
+            onToggleNotificationGroup={toggleNotificationGroup}
+          />
         )}
       </DataPanel>
       {confirmationDialog}
