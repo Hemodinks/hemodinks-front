@@ -9,6 +9,8 @@ Frontend React/Vite publicado como SPA. O build final fica em `dist` e toda rota
 | Local | `http://localhost:5173` |
 | Producao | `https://hemodinks.gestao-saude.tec.br` |
 | Producao legado | `https://hemodinks-saude.vercel.app` |
+| Homologacao | `https://hemodinks-homologacao.gestao-saude.tec.br` |
+| Homologacao legado | `https://hemodinks-homologacao.vercel.app` |
 | Confirmation (Render blueprint) | `https://hemodinks-front-confirmation.onrender.com` |
 | API local | `http://localhost:5000` |
 | Swagger local | `http://localhost:5000/swagger` |
@@ -232,13 +234,15 @@ Cors__AllowedOrigins__1=https://<preview>.vercel.app
 Confirmation Render:
 
 ```text
-Cors__AllowedOrigins__0=https://hemodinks-front-confirmation.onrender.com
+Cors__AllowedOrigins__0=https://hemodinks-homologacao.gestao-saude.tec.br
+Cors__AllowedOrigins__1=https://hemodinks-homologacao.vercel.app
+Cors__AllowedOrigins__2=https://hemodinks-front-confirmation.onrender.com
 ```
 
-Se a API confirmation tambem aceitar a homologacao Vercel, ela pode manter:
+Se a API confirmation tambem aceitar outros previews Vercel, adicione o proximo indice:
 
 ```text
-Cors__AllowedOrigins__1=https://hemodinks-homologacao.vercel.app
+Cors__AllowedOrigins__3=https://<preview>.vercel.app
 ```
 
 ## Smoke test apos deploy
