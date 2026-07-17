@@ -24,6 +24,7 @@ import {
 } from './test/appTestUi';
 
 vi.mock('./services', () => ({
+  AUTH_EXPIRED_EVENT: 'hemodinks:auth-expired',
   DEFAULT_SYSTEM_SETTINGS: {
     id: 1,
     nomeEmpresa: 'Hemodinks',
@@ -75,6 +76,12 @@ vi.mock('./services', () => ({
   resetPassword: vi.fn(),
   updateSystemSettings: vi.fn(),
 }));
+
+function createJwtToken(payload: Record<string, unknown>) {
+  const encodedHeader = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const encodedPayload = btoa(JSON.stringify(payload));
+  return `${encodedHeader}.${encodedPayload}.signature`;
+}
 
 describe('App', () => {
   beforeEach(() => {
@@ -252,6 +259,47 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
+  });
+
+  it('encerra a sessao quando a API sinaliza token expirado', async () => {
+    await renderAuthenticatedApp();
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+
+    fireEvent(window, new Event(api.AUTH_EXPIRED_EVENT));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    });
+    expect(screen.getByText('Sua sessao expirou. Entre novamente para continuar.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Painel inicial' })).not.toBeInTheDocument();
+  });
+
+  it('nao mantem uma sessao criada com token JWT expirado', async () => {
+    const user = userEvent.setup();
+    const expiredToken = createJwtToken({ exp: Math.floor(Date.now() / 1000) - 60 });
+    vi.mocked(api.authenticate).mockResolvedValue({
+      id: 99,
+      nome: 'George Marcone',
+      email: 'gmarcone@gmail.com',
+      token: expiredToken,
+      cpf: '00000000191',
+      fotoPerfil: null,
+      precisaTrocarSenha: false,
+      perfilId: 1,
+      perfilNome: 'Administrador',
+    });
+
+    render(<App />);
+
+    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    });
+    expect(screen.getByText('Sua sessao expirou. Entre novamente para continuar.')).toBeInTheDocument();
   });
 
   it('nao exibe erro no dashboard quando o resumo retorna 403 para medico', async () => {

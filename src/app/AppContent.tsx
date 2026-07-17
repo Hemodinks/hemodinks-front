@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { authenticate, getCurrentLicenca, resetPassword } from '../services';
+import { AUTH_EXPIRED_EVENT, authenticate, getCurrentLicenca, resetPassword } from '../services';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { PasswordRequiredScreen } from '../features/auth/PasswordRequiredScreen';
 import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
@@ -21,6 +21,7 @@ import {
   isValidEmail,
   MEDICAL_PROFILE_ID,
 } from '../shared/utils/formatters';
+import { getJwtExpirationDelayMs, isJwtExpired } from '../shared/utils/jwt';
 import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from './appAccess';
 import { AppMainContent } from './AppMainContent';
 import { AppModals } from './AppModals';
@@ -28,6 +29,9 @@ import { buildSessionFromLogin, getResetPasswordCompletedMessage, shouldOpenDash
 import { updateSort } from './appSort';
 import { getActiveModuleLabel, getAppTitle, getFormBreadcrumbLabel } from './appViewMeta';
 import { useAppChrome } from './useAppChrome';
+
+const SESSION_EXPIRED_MESSAGE = 'Sua sessao expirou. Entre novamente para continuar.';
+const SESSION_EXPIRATION_LEEWAY_MS = 30_000;
 
 export function AppContent() {
   const location = useLocation();
@@ -105,17 +109,27 @@ export function AppContent() {
     returnToLogin(getResetPasswordCompletedMessage(message));
   };
 
-  function logout() {
+  function endSession(infoMessage = '') {
     queryClient.clear();
     clearSession();
     appChrome.resetAppChrome();
     usersDomain.resetUsersState();
     patientsDomain.resetPatientsState();
     medicalGroupsDomain.resetMedicalGroupsState();
-    navigateToView('dashboard', true);
+    if (infoMessage) {
+      navigate('/', { replace: true });
+    } else {
+      navigateToView('dashboard', true);
+    }
     setModuleMode('list');
     setOpenDashboardAfterLogin(false);
+    setLoginError('');
+    setLoginInfo(infoMessage);
     setLoginPassword('');
+  }
+
+  function logout() {
+    endSession();
   }
 
   const usersDomain = useUsersDomain({
@@ -166,6 +180,40 @@ export function AppContent() {
     || usersDomain.formLoading
     || patientsDomain.pacienteFormLoading
     || medicalGroupsDomain.formLoading;
+
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    const expireSession = () => {
+      endSession(SESSION_EXPIRED_MESSAGE);
+    };
+
+    const handleAuthExpired = () => {
+      expireSession();
+    };
+
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+
+    if (isJwtExpired(session.token, Date.now(), SESSION_EXPIRATION_LEEWAY_MS)) {
+      expireSession();
+      return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+    }
+
+    const expirationDelayMs = getJwtExpirationDelayMs(session.token, Date.now(), SESSION_EXPIRATION_LEEWAY_MS);
+    const timeoutId = expirationDelayMs === null
+      ? null
+      : window.setTimeout(expireSession, expirationDelayMs);
+
+    return () => {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [session?.token]);
 
   useEffect(() => {
     if (!session || session.user.perfilId !== MEDICAL_PROFILE_ID || session.user.licenca) {

@@ -4,6 +4,7 @@ import { resolveClinicaRequestHeaders } from './clinicaContext';
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 const DEFAULT_ERROR_MESSAGE = 'Nao foi possivel concluir a operacao.';
 const UNAUTHORIZED_ERROR_MESSAGE = 'Credenciais invalidas ou sessao expirada.';
+export const AUTH_EXPIRED_EVENT = 'hemodinks:auth-expired';
 
 type RequestConfig = Omit<AxiosRequestConfig, 'data' | 'method' | 'url'>;
 
@@ -30,9 +31,19 @@ function buildAuthHeaders(token?: string, headers?: AxiosRequestConfig['headers'
   };
 }
 
-function toApiError(error: unknown) {
+function notifyAuthExpired() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+  }
+}
+
+function toApiError(error: unknown, notifyUnauthorized = false) {
   if (axios.isAxiosError(error)) {
     if (error.response?.status === 401) {
+      if (notifyUnauthorized) {
+        notifyAuthExpired();
+      }
+
       return new Error(UNAUTHORIZED_ERROR_MESSAGE);
     }
 
@@ -62,7 +73,7 @@ function toApiError(error: unknown) {
   return new Error(DEFAULT_ERROR_MESSAGE);
 }
 
-async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConfig): Promise<T> {
+async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConfig, notifyUnauthorized = false): Promise<T> {
   try {
     const response = await client.request<T>(config);
 
@@ -72,7 +83,7 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
 
     return response.data;
   } catch (error) {
-    throw toApiError(error);
+    throw toApiError(error, notifyUnauthorized);
   }
 }
 
@@ -82,7 +93,7 @@ export function get<T>(path: string, token?: string, config: RequestConfig = {})
     method: 'GET',
     ...config,
     headers: buildJsonHeaders(token, config.headers),
-  });
+  }, Boolean(token));
 }
 
 export function getBlob(path: string, token?: string, config: RequestConfig = {}) {
@@ -92,7 +103,7 @@ export function getBlob(path: string, token?: string, config: RequestConfig = {}
     responseType: 'blob',
     ...config,
     headers: buildAuthHeaders(token, config.headers),
-  });
+  }, Boolean(token));
 }
 
 export function getExternal<T>(url: string, config: RequestConfig = {}) {
@@ -111,7 +122,7 @@ export function post<T>(path: string, data?: unknown, token?: string, config: Re
     data,
     ...config,
     headers: buildJsonHeaders(token, config.headers),
-  });
+  }, Boolean(token));
 }
 
 export function put<T>(path: string, data?: unknown, token?: string, config: RequestConfig = {}) {
@@ -121,7 +132,7 @@ export function put<T>(path: string, data?: unknown, token?: string, config: Req
     data,
     ...config,
     headers: buildJsonHeaders(token, config.headers),
-  });
+  }, Boolean(token));
 }
 
 export function del<T>(path: string, token?: string, config: RequestConfig = {}) {
@@ -130,7 +141,7 @@ export function del<T>(path: string, token?: string, config: RequestConfig = {})
     method: 'DELETE',
     ...config,
     headers: buildJsonHeaders(token, config.headers),
-  });
+  }, Boolean(token));
 }
 
 export function upload<T>(path: string, body: FormData, token: string, config: RequestConfig = {}) {
@@ -140,5 +151,5 @@ export function upload<T>(path: string, body: FormData, token: string, config: R
     data: body,
     ...config,
     headers: buildAuthHeaders(token, config.headers),
-  });
+  }, Boolean(token));
 }
