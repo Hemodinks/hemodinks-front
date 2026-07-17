@@ -21,6 +21,8 @@
   --app-glass-strong: rgba(255, 255, 255, 0.84);
   --app-chip-bg: rgba(255, 255, 255, 0.9);
   --app-chip-border: rgba(15, 118, 110, 0.22);
+  --app-layout-max-width: 1440px;
+  --app-layout-gutter: clamp(24px, 5vw, 56px);
   background-color: var(--background);
   background-image:
     var(--app-overlay),
@@ -70,7 +72,7 @@
 }
 
 .app-layout {
-  width: min(1216px, calc(100% - clamp(24px, 5vw, 56px)));
+  width: min(var(--app-layout-max-width), calc(100% - var(--app-layout-gutter)));
   min-width: 0;
   min-height: calc(100vh - 154px);
   margin: 8px auto 0;

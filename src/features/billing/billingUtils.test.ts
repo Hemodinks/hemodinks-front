@@ -54,6 +54,7 @@ const basePaciente: Paciente = {
   cpf: '12345678900',
   email: 'maria@example.com',
   telefone: '+5581999999999',
+  dataCadastro: '2026-06-30T15:25:50Z',
   fotoPerfil: null,
   dataNascimento: '1988-06-12T00:00:00Z',
   ativo: true,
@@ -61,7 +62,25 @@ const basePaciente: Paciente = {
   arquivos: [],
 };
 
+function createFaturamento(overrides: Partial<NonNullable<Paciente['faturamento']>> = {}): NonNullable<Paciente['faturamento']> {
+  return {
+    id: 1,
+    pacienteId: 1,
+    anestesistaFaturadoSeparado: false,
+    conferenciaPagamentoRealizada: false,
+    dataCadastro: '2026-07-05T10:00:00Z',
+    ...overrides,
+  };
+}
+
 describe('billingUtils', () => {
+  it('inicia filtros de faturamento sem competencia selecionada', () => {
+    const filters = createEmptyBillingFilters('');
+
+    expect(filters.competenciaInicio).toBe('');
+    expect(filters.competenciaFinal).toBe('');
+  });
+
   it('transforma paciente em registro de faturamento com totais e checklist', () => {
     const [record] = buildBillingRecords([basePaciente]);
 
@@ -105,6 +124,84 @@ describe('billingUtils', () => {
     expect(convenioGroups.map((item) => item.label)).toEqual(['Unimed', 'Particular']);
   });
 
+  it('normaliza nomes de convenio com encoding quebrado nos registros de faturamento', () => {
+    const [record] = buildBillingRecords([
+      {
+        ...basePaciente,
+        convenio: 'Bradesco Sa\uFFFDde',
+      },
+    ]);
+
+    expect(record.convenioName).toBe('Bradesco Saúde');
+    expect(groupBillingByConvenio([record])[0].label).toBe('Bradesco Saúde');
+  });
+
+  it('filtra competencia pela data de cadastro do faturamento quando informada', () => {
+    const records = buildBillingRecords([
+      {
+        ...basePaciente,
+        id: 4,
+        nomePaciente: 'Cadastro Julho',
+        data: '2026-06-18T00:00:00Z',
+        faturamento: createFaturamento({
+          id: 4,
+          pacienteId: 4,
+          dataCadastro: '2026-07-05T10:00:00Z',
+        }),
+      },
+      {
+        ...basePaciente,
+        id: 5,
+        nomePaciente: 'Cadastro Agosto',
+        data: '2026-07-10T00:00:00Z',
+        faturamento: createFaturamento({
+          id: 5,
+          pacienteId: 5,
+          dataCadastro: '2026-08-02T10:00:00Z',
+        }),
+      },
+    ]);
+
+    const filtered = filterBillingRecords(records, {
+      ...createEmptyBillingFilters(''),
+      competenciaInicio: '2026-07',
+      competenciaFinal: '2026-07',
+    });
+
+    expect(records.find((record) => record.id === 4)?.competenciaInicio).toBe('2026-07-05T10:00:00Z');
+    expect(filtered.map((record) => record.id)).toEqual([4]);
+  });
+
+  it('filtra competencia pela data de cadastro exibida quando o faturamento ainda nao existe', () => {
+    const records = buildBillingRecords([
+      {
+        ...basePaciente,
+        id: 6,
+        nomePaciente: 'Cadastro Junho',
+        data: null,
+        dataCadastro: '2026-06-30T15:25:50Z',
+        faturamento: null,
+      },
+      {
+        ...basePaciente,
+        id: 7,
+        nomePaciente: 'Cadastro Novembro',
+        data: null,
+        dataCadastro: '2026-11-02T10:00:00Z',
+        faturamento: null,
+      },
+    ]);
+
+    const filtered = filterBillingRecords(records, {
+      ...createEmptyBillingFilters(''),
+      competenciaInicio: '2026-03',
+      competenciaFinal: '2026-08',
+    });
+
+    expect(records.find((record) => record.id === 6)?.competenciaInicio).toBe('2026-06-30T15:25:50Z');
+    expect(filtered.map((record) => record.id)).toEqual([6]);
+  });
+
   it('filtra registros para medico atual, periodo, glosa e pendencias', () => {
     const records = buildBillingRecords([
       basePaciente,
@@ -124,8 +221,8 @@ describe('billingUtils', () => {
 
     const filtered = filterBillingRecords(records, {
       ...createEmptyBillingFilters(''),
-      periodStart: '10/06/2026',
-      periodEnd: '30/06/2026',
+      competenciaInicio: '2026-06',
+      competenciaFinal: '2026-06',
       status: 'glosa',
       onlyPendingItems: true,
     }, {
