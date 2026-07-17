@@ -30,7 +30,7 @@ import {
   uploadPacienteArquivo,
   uploadUserArquivo,
 } from './index';
-import { apiClient, publicApiClient } from './api';
+import { AUTH_EXPIRED_EVENT, apiClient, publicApiClient } from './api';
 import {
   extractClinicaContextFromToken,
   resolveClinicaSlugFromHostname,
@@ -602,6 +602,17 @@ describe('services api client', () => {
     vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(401));
 
     await expect(authenticate('email@teste.com', 'senha')).rejects.toThrow('Credenciais invalidas ou sessao expirada.');
+  });
+
+  it('notifica a aplicacao quando uma chamada autenticada retorna 401', async () => {
+    const authExpiredHandler = vi.fn();
+    window.addEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
+    vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(401));
+
+    await expect(getUsers('jwt-token')).rejects.toThrow('Credenciais invalidas ou sessao expirada.');
+
+    expect(authExpiredHandler).toHaveBeenCalledTimes(1);
+    window.removeEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
   });
 
   it('usa mensagem especifica ao falhar consulta de feriados nacionais', async () => {
