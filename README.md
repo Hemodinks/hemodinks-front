@@ -27,7 +27,8 @@ SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front
 | Recurso | URL |
 | --- | --- |
 | Front local | `http://localhost:5173` |
-| Front producao | `https://hemodinks-saude.vercel.app` |
+| Front producao | `https://hemodinks.gestao-saude.tec.br` |
+| Front producao legado | `https://hemodinks-saude.vercel.app` |
 | Front confirmation (Render blueprint) | `https://hemodinks-front-confirmation.onrender.com` |
 | API local | `http://localhost:5000` |
 | Swagger local | `http://localhost:5000/swagger` |
