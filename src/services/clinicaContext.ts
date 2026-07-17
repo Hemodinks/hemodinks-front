@@ -1,3 +1,5 @@
+import { decodeJwtPayload } from '../shared/utils/jwt';
+
 type ClinicaRequestContext = {
   clinicaId?: number;
   clinicaSlug?: string;
@@ -25,24 +27,6 @@ function parseClinicaId(value?: string | null) {
 
   const parsed = Number.parseInt(value.trim(), 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-}
-
-function decodeJwtPayload(token: string) {
-  const segments = token.split('.');
-  if (segments.length < 2) {
-    return null;
-  }
-
-  try {
-    const base64 = segments[1]
-      .replace(/-/g, '+')
-      .replace(/_/g, '/')
-      .padEnd(Math.ceil(segments[1].length / 4) * 4, '=');
-
-    return JSON.parse(atob(base64)) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
 }
 
 function getBrowserHostname() {
