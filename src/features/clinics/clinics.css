@@ -7,12 +7,15 @@
 .clinic-form-panel { display: grid; gap: 18px; }
 .clinic-form { display: grid; gap: 16px; }
 .clinic-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.clinic-brand-editor { display: flex; align-items: center; gap: 16px; }
-.clinic-brand-editor > div { display: flex; gap: 10px; flex-wrap: wrap; }
+.clinic-brand-editor { display: grid; gap: 10px; justify-items: start; width: fit-content; }
+.clinic-brand-photo { width: 160px; height: 160px; border-radius: 12px; object-fit: cover; background: #000; }
+.clinic-brand-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .clinic-admin-fields { border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
 .clinic-admin-fields legend { color: var(--muted); font-weight: 800; padding: 0 6px; }
 .clinic-modules-fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
 .clinic-modules-fieldset legend { color: var(--muted); font-weight: 800; padding: 0 6px; }
 .clinic-module-options { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 .clinic-module-options label { display: flex; align-items: center; gap: 7px; font-weight: 700; }
-@media (max-width: 720px) { .clinic-form-grid { grid-template-columns: 1fr; } .clinic-brand-editor { align-items: flex-start; flex-direction: column; } }
+.clinic-module-options input { min-height: auto; width: 18px; height: 18px; accent-color: var(--teal); }
+@media (max-width: 720px) { .clinic-form-grid { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .clinic-brand-photo { width: 128px; height: 128px; } .clinic-brand-actions, .clinic-brand-actions .ghost-button, .clinic-brand-actions .file-action { width: 100%; } }

@@ -52,8 +52,7 @@ export function AppContent() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [openDashboardAfterLogin, setOpenDashboardAfterLogin] = useState(false);
-  const clinicOptionValue = (clinic: PublicClinic) => `${clinic.nome} — ${clinic.slug}`;
-  const selectedLoginClinic = publicClinics.find((clinic) => clinicOptionValue(clinic) === loginClinicValue);
+  const selectedLoginClinic = publicClinics.find((clinic) => String(clinic.id) === loginClinicValue);
 
   useEffect(() => {
     if (session) {
@@ -66,7 +65,7 @@ export function AppContent() {
       .then((clinics) => {
         if (cancelled) return;
         setPublicClinics(clinics);
-        if (clinics.length === 1) setLoginClinicValue(clinicOptionValue(clinics[0]));
+        if (clinics.length === 1) setLoginClinicValue(String(clinics[0].id));
       })
       .catch((error) => {
         if (!cancelled) setLoginError(getErrorMessage(error));
@@ -77,23 +76,6 @@ export function AppContent() {
 
     return () => { cancelled = true; };
   }, [session]);
-
-  useEffect(() => {
-    const search = loginClinicValue.trim();
-    if (session || !search || selectedLoginClinic) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setPublicClinicsLoading(true);
-      void listPublicClinics(search)
-        .then(setPublicClinics)
-        .catch((error) => setLoginError(getErrorMessage(error)))
-        .finally(() => setPublicClinicsLoading(false));
-    }, 300);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [loginClinicValue, selectedLoginClinic, session]);
 
   const {
     isAdmin,

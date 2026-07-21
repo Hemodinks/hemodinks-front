@@ -268,7 +268,7 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
-    expect(await screen.findByDisplayValue('Hemodinks — hemodinks')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('Hemodinks')).toBeInTheDocument();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
   });
@@ -293,7 +293,9 @@ describe('App', () => {
 
     render(<App />);
     const clinicInput = await screen.findByLabelText('Clínica');
-    await user.type(clinicInput, 'Clinica Beta — clinica-beta');
+    await user.selectOptions(clinicInput, '2');
+    expect(clinicInput).toHaveValue('2');
+    expect(screen.queryByText('clinica-beta')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'Senha@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
@@ -333,11 +335,11 @@ describe('App', () => {
     expect(navigationButtons.at(-1)).toHaveTextContent('Configuração');
   });
 
-  it('oculta no menu e no dashboard os modulos nao contratados no plano parcial', async () => {
+  it('oculta no menu e no dashboard os modulos nao contratados ate para superadministrador', async () => {
     await renderAuthenticatedApp({
       sessionOverrides: {
-        perfilId: 1,
-        perfilNome: 'Administrador',
+        perfilId: 5,
+        perfilNome: 'SuperAdministrador',
         modulosLiberados: ['pacientes'],
       },
     });
@@ -347,6 +349,7 @@ describe('App', () => {
     expect(within(sidebar).queryByRole('button', { name: /usuários/i })).not.toBeInTheDocument();
     expect(within(sidebar).queryByRole('button', { name: /faturamento médico/i })).not.toBeInTheDocument();
     expect(within(sidebar).queryByRole('button', { name: /agenda e notificações/i })).not.toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /^clínicas$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /abrir usuários/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /abrir agenda/i })).not.toBeInTheDocument();

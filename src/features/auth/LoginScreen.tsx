@@ -73,21 +73,19 @@ export function LoginScreen({
         <form className="stack" onSubmit={onSubmit}>
           <label>
             Clínica
-            <input
-              type="text"
-              list="login-clinic-options"
+            <select
               value={loginClinicValue}
               onChange={(event) => onLoginClinicChange(event.target.value)}
-              placeholder={clinicsLoading ? 'Carregando clínicas...' : 'Digite para localizar a clínica'}
-              autoComplete="off"
               disabled={clinicsLoading}
               required
-            />
-            <datalist id="login-clinic-options">
+            >
+              <option value="">
+                {clinicsLoading ? 'Carregando clínicas...' : 'Selecione uma clínica'}
+              </option>
               {clinics.map((clinic) => (
-                <option key={clinic.id} value={`${clinic.nome} — ${clinic.slug}`} />
+                <option key={clinic.id} value={String(clinic.id)}>{clinic.nome}</option>
               ))}
-            </datalist>
+            </select>
           </label>
 
           <label>
