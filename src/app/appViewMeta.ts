@@ -16,7 +16,8 @@ export function getAppTitle(activeView: AppView) {
         : activeView === 'patients' ? 'Pacientes'
           : activeView === 'billing' ? 'Faturamento médico'
             : activeView === 'medicalGroups' ? 'Grupos médicos'
-              : activeView === 'settings' ? 'Configuração do sistema' : 'Agenda e notificações';
+              : activeView === 'settings' ? 'Configuração do sistema'
+                : activeView === 'clinics' ? 'Clínicas' : 'Agenda e notificações';
 }
 
 export function getActiveModuleLabel(activeView: AppView) {
@@ -26,7 +27,8 @@ export function getActiveModuleLabel(activeView: AppView) {
       : activeView === 'patients' ? 'Pacientes'
         : activeView === 'billing' ? 'Faturamento médico'
           : activeView === 'medicalGroups' ? 'Grupos médicos'
-            : activeView === 'settings' ? 'Configuração do sistema' : 'Agenda e notificações';
+            : activeView === 'settings' ? 'Configuração do sistema'
+              : activeView === 'clinics' ? 'Clínicas' : 'Agenda e notificações';
 }
 
 export function getFormBreadcrumbLabel({

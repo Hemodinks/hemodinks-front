@@ -3,6 +3,7 @@ import { lazy } from 'react';
 export const NotificationsModal = lazy(() => import('../features/dashboard/NotificationsModal').then((module) => ({ default: module.NotificationsModal })));
 export const AgendaPage = lazy(() => import('../features/events/AgendaPage').then((module) => ({ default: module.AgendaPage })));
 export const BillingPage = lazy(() => import('../features/billing/BillingPage').then((module) => ({ default: module.BillingPage })));
+export const ClinicsPage = lazy(() => import('../features/clinics/ClinicsPage').then((module) => ({ default: module.ClinicsPage })));
 export const MedicalGroupsPage = lazy(() => import('../features/medicalGroups/MedicalGroupsPage').then((module) => ({ default: module.MedicalGroupsPage })));
 export const SystemSettingsPage = lazy(() => import('../features/settings/SystemSettingsPage').then((module) => ({ default: module.SystemSettingsPage })));
 export const CbhpmLookupModal = lazy(() => import('../features/patients/CbhpmLookupModal').then((module) => ({ default: module.CbhpmLookupModal })));

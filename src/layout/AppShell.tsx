@@ -31,6 +31,7 @@ type AppShellProps = {
   canAccessMedicalGroups: boolean;
   canAccessSettings: boolean;
   canAccessAgenda: boolean;
+  canAccessClinics: boolean;
   usersCount: number;
   pacientesCount: number;
   medicalGroupsCount: number;
@@ -49,6 +50,7 @@ type AppShellProps = {
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
+  onOpenClinics: () => void;
 };
 
 export function AppShell({
@@ -72,6 +74,7 @@ export function AppShell({
   canAccessMedicalGroups,
   canAccessSettings,
   canAccessAgenda,
+  canAccessClinics,
   usersCount,
   pacientesCount,
   medicalGroupsCount,
@@ -90,6 +93,7 @@ export function AppShell({
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
+  onOpenClinics,
 }: AppShellProps) {
   return (
     <main className="app-shell">
@@ -127,6 +131,7 @@ export function AppShell({
           session={session}
           activeView={activeView}
           currentUserProfile={currentUserProfile}
+          clinicName={companyName}
           canAccessDashboard={canAccessDashboard}
           canAccessPatients={canAccessPatients}
           canAccessUsers={canAccessUsers}
@@ -135,6 +140,7 @@ export function AppShell({
           canAccessMedicalGroups={canAccessMedicalGroups}
           canAccessSettings={canAccessSettings}
           canAccessAgenda={canAccessAgenda}
+          canAccessClinics={canAccessClinics}
           usersCount={usersCount}
           pacientesCount={pacientesCount}
           medicalGroupsCount={medicalGroupsCount}
@@ -148,6 +154,7 @@ export function AppShell({
           onOpenMedicalGroups={onOpenMedicalGroups}
           onOpenAgenda={onOpenAgenda}
           onOpenSettings={onOpenSettings}
+          onOpenClinics={onOpenClinics}
         />
 
         <div className={`app-content ${activeView === 'dashboard' ? 'dashboard-content' : ''}`}>

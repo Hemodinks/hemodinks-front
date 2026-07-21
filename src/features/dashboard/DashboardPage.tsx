@@ -21,6 +21,7 @@ type DashboardPageProps = {
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
+  canAccessAgenda: boolean;
   canAccessSettings: boolean;
   patientReadOnly: boolean;
   usersCount: number;
@@ -116,6 +117,7 @@ export function DashboardPage({
   canEditOwnUser,
   canAccessBilling,
   canAccessMedicalGroups,
+  canAccessAgenda,
   canAccessSettings,
   patientReadOnly,
   usersCount,
@@ -201,17 +203,19 @@ export function DashboardPage({
           onOpen: onOpenMedicalGroups,
         }]
       : []),
-    {
-      id: 'agenda',
-      title: 'Agenda e notificações',
-      metric: 'Eventos, lembretes e avisos',
-      footerLabel: `${upcomingEventsCount} próximos`,
-      className: 'module-card-agenda',
-      ariaLabel: 'Abrir agenda e notificações',
-      icon: <CalendarDays size={24} />,
-      onOpen: onOpenAgenda,
-      badge: unreadAgendaNotificationCount > 0 ? `${unreadAgendaNotificationCount} não lidas` : undefined,
-    },
+    ...(canAccessAgenda
+      ? [{
+          id: 'agenda' as const,
+          title: 'Agenda e notificações',
+          metric: 'Eventos, lembretes e avisos',
+          footerLabel: `${upcomingEventsCount} próximos`,
+          className: 'module-card-agenda',
+          ariaLabel: 'Abrir agenda e notificações',
+          icon: <CalendarDays size={24} />,
+          onOpen: onOpenAgenda,
+          badge: unreadAgendaNotificationCount > 0 ? `${unreadAgendaNotificationCount} não lidas` : undefined,
+        }]
+      : []),
     ...(canAccessSettings
       ? [{
           id: 'settings' as const,

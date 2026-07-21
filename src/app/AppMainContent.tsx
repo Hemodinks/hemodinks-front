@@ -4,12 +4,11 @@ import { DashboardPage } from '../features/dashboard/DashboardPage';
 import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
 import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
 import type { UsersDomainState } from '../features/users/useUsersDomain';
-import { queryClient } from '../queryClient';
-import { queryKeys } from '../shared/queryKeys';
-import type { AuthSession, SystemSettings } from '../types';
+import type { AuthSession, SelectClinicResponse } from '../types';
 import {
   AgendaPage,
   BillingPage,
+  ClinicsPage,
   MedicalGroupsPage,
   ModuleFallback,
   PatientsPage,
@@ -23,6 +22,7 @@ type AccessState = {
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
+  canAccessAgenda: boolean;
   canAccessSettings: boolean;
   canCreatePatients: boolean;
   canEditPatients: boolean;
@@ -31,6 +31,7 @@ type AccessState = {
   patientReadOnly: boolean;
   isAdmin: boolean;
   isMedical: boolean;
+  canAccessClinics: boolean;
 };
 
 type DashboardCounts = {
@@ -72,13 +73,11 @@ type AppMainContentProps = {
   medicalGroupsDomain: MedicalGroupsDomainState;
   dashboardError: string;
   theme: Theme;
-  systemSettings: SystemSettings;
-  settingsLoading: boolean;
-  settingsError: string;
   navigation: NavigationActions;
   sortHandlers: SortHandlers;
   onThemeChange: (theme: Theme) => void;
   onPasswordChanged: (message: string) => void;
+  onClinicSelected: (result: SelectClinicResponse) => void;
 };
 
 export function AppMainContent({
@@ -93,13 +92,11 @@ export function AppMainContent({
   medicalGroupsDomain,
   dashboardError,
   theme,
-  systemSettings,
-  settingsLoading,
-  settingsError,
   navigation,
   sortHandlers,
   onThemeChange,
   onPasswordChanged,
+  onClinicSelected,
 }: AppMainContentProps) {
   const {
     canAccessPatients,
@@ -107,6 +104,7 @@ export function AppMainContent({
     canEditOwnUser,
     canAccessBilling,
     canAccessMedicalGroups,
+    canAccessAgenda,
     canAccessSettings,
     canCreatePatients,
     canEditPatients,
@@ -115,6 +113,7 @@ export function AppMainContent({
     patientReadOnly,
     isAdmin,
     isMedical,
+    canAccessClinics,
   } = access;
   const {
     usersCount,
@@ -137,6 +136,7 @@ export function AppMainContent({
           canEditOwnUser={canEditOwnUser}
           canAccessBilling={canAccessBilling}
           canAccessMedicalGroups={canAccessMedicalGroups}
+          canAccessAgenda={canAccessAgenda}
           canAccessSettings={canAccessSettings}
           patientReadOnly={patientReadOnly}
           usersCount={usersCount}
@@ -264,6 +264,8 @@ export function AppMainContent({
           clearPacienteFilters={patientsDomain.clearPacienteFilters}
           refreshPacientes={patientsDomain.refreshPacientes}
         />
+      ) : activeView === 'clinics' && canAccessClinics ? (
+        <ClinicsPage session={session} onClinicSelected={onClinicSelected} />
       ) : activeView === 'billing' ? (
         <BillingPage
           session={session}
@@ -308,13 +310,8 @@ export function AppMainContent({
       ) : activeView === 'settings' ? (
         <SystemSettingsPage
           session={session}
-          settings={systemSettings}
-          settingsLoading={settingsLoading}
-          settingsError={settingsError}
-          isAdmin={isAdmin}
           theme={theme}
           onThemeChange={onThemeChange}
-          onSettingsUpdated={(updated) => queryClient.setQueryData(queryKeys.systemSettings(), updated)}
           onPasswordChanged={onPasswordChanged}
         />
       ) : (

@@ -2,6 +2,7 @@ export * from './api';
 export * from './authService';
 export * from './billingService';
 export * from './cbhpmService';
+export * from './clinicsService';
 export * from './conveniosService';
 export * from './dashboardService';
 export * from './eventsService';

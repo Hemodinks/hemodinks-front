@@ -33,6 +33,13 @@ vi.mock('./services', () => ({
     dataAtualizacao: null,
   },
   authenticate: vi.fn(),
+  listPublicClinics: vi.fn(),
+  listPlatformClinics: vi.fn(),
+  createPlatformClinic: vi.fn(),
+  updatePlatformClinic: vi.fn(),
+  deactivatePlatformClinic: vi.fn(),
+  listSessionClinics: vi.fn(),
+  selectSessionClinic: vi.fn(),
   completeAgendaEvent: vi.fn(),
   createAgendaEvent: vi.fn(),
   deleteAgendaEvent: vi.fn(),
@@ -91,6 +98,10 @@ describe('App', () => {
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
     vi.clearAllMocks();
+    vi.mocked(api.listPublicClinics).mockResolvedValue([
+      { id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null },
+    ]);
+    vi.mocked(api.listPlatformClinics).mockResolvedValue([]);
     vi.mocked(api.getDashboardSummary).mockResolvedValue({
       usersCount: 1,
       activeUsersCount: 1,
@@ -211,7 +222,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
-    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123');
+    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123', 'hemodinks');
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/dashboard');
     expect(screen.getByText('Administrador | gmarcone@gmail.com')).toBeInTheDocument();
@@ -251,14 +262,94 @@ describe('App', () => {
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
   });
 
-  it('sempre inicia no login mesmo com uma sessao salva anteriormente', () => {
+  it('sempre inicia no login mesmo com uma sessao salva anteriormente', async () => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
 
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('Hemodinks — hemodinks')).toBeInTheDocument();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
+  });
+
+  it('exige e envia a clinica escolhida no login pesquisavel', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.listPublicClinics).mockResolvedValue([
+      { id: 1, nome: 'Clinica Alfa', slug: 'clinica-alfa', fotoUrl: null },
+      { id: 2, nome: 'Clinica Beta', slug: 'clinica-beta', fotoUrl: null },
+    ]);
+    vi.mocked(api.authenticate).mockResolvedValue({
+      id: 2,
+      clinicaId: 2,
+      clinicaSlug: 'clinica-beta',
+      nome: 'George Beta',
+      email: 'gmarcone@gmail.com',
+      token: 'jwt-token',
+      precisaTrocarSenha: false,
+      perfilId: 1,
+      perfilNome: 'Administrador',
+    });
+
+    render(<App />);
+    const clinicInput = await screen.findByLabelText('Clínica');
+    await user.type(clinicInput, 'Clinica Beta — clinica-beta');
+    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(screen.getByLabelText('Senha'), 'Senha@123');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
+
+    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123', 'clinica-beta');
+  });
+
+  it('libera menu administrativo completo e CRUD de clinicas para superadministrador', async () => {
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: { perfilId: 5, perfilNome: 'SuperAdministrador' },
+    });
+    vi.mocked(api.listPlatformClinics).mockResolvedValue([]);
+
+    const sidebar = screen.getByLabelText('Sessão ativa');
+    expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /faturamento médico/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /grupos médicos/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /^clínicas$/i })).toBeInTheDocument();
+
+    await user.click(within(sidebar).getByRole('button', { name: /^clínicas$/i }));
+    expect(await screen.findByRole('heading', { name: 'Clínicas', level: 1 })).toBeInTheDocument();
+    expect(await screen.findByText('0 clinicas cadastradas')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /nova clinica/i }));
+    const planSelect = screen.getByLabelText('Plano');
+    expect(planSelect).toHaveValue('Trial');
+    expect(within(planSelect).getByRole('option', { name: 'Completa' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Trial ate')).toBeInTheDocument();
+    await user.selectOptions(planSelect, 'Completa');
+    expect(screen.queryByLabelText('Trial ate')).not.toBeInTheDocument();
+    await user.selectOptions(planSelect, 'Parcial');
+    expect(screen.queryByLabelText('Trial ate')).not.toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Módulos contratados' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Pacientes')).toBeInTheDocument();
+
+    const navigationButtons = within(within(sidebar).getByRole('navigation', { name: 'Navegação principal' })).getAllByRole('button');
+    expect(navigationButtons.at(-1)).toHaveTextContent('Configuração');
+  });
+
+  it('oculta no menu e no dashboard os modulos nao contratados no plano parcial', async () => {
+    await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 1,
+        perfilNome: 'Administrador',
+        modulosLiberados: ['pacientes'],
+      },
+    });
+
+    const sidebar = screen.getByLabelText('Sessão ativa');
+    expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
+    expect(within(sidebar).queryByRole('button', { name: /usuários/i })).not.toBeInTheDocument();
+    expect(within(sidebar).queryByRole('button', { name: /faturamento médico/i })).not.toBeInTheDocument();
+    expect(within(sidebar).queryByRole('button', { name: /agenda e notificações/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir usuários/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir agenda/i })).not.toBeInTheDocument();
   });
 
   it('encerra a sessao quando a API sinaliza token expirado', async () => {
@@ -325,19 +416,15 @@ describe('App', () => {
     expect(screen.queryByText(/request failed with status code 403/i)).not.toBeInTheDocument();
   });
 
-  it('usa a foto configurada da empresa na tela de login', async () => {
-    vi.mocked(api.getSystemSettings).mockResolvedValue({
-      id: 1,
-      nomeEmpresa: 'Hemodinks',
-      fotoEmpresa: 'data:image/png;base64,YnJhbmQ=',
-      dataCadastro: '2026-06-22T00:00:00Z',
-      dataAtualizacao: null,
-    });
+  it('usa a foto publica da clinica selecionada na tela de login', async () => {
+    vi.mocked(api.listPublicClinics).mockResolvedValue([
+      { id: 1, nome: 'Clinica Alfa', slug: 'clinica-alfa', fotoUrl: '/api/public/clinicas/clinica-alfa/foto' },
+    ]);
 
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByAltText('Hemodinks')).toHaveAttribute('src', 'data:image/png;base64,YnJhbmQ=');
+      expect(screen.getByAltText('Clinica Alfa')).toHaveAttribute('src', 'http://localhost:5000/api/public/clinicas/clinica-alfa/foto');
     });
   });
 
@@ -448,30 +535,17 @@ describe('App', () => {
     expect(localStorage.getItem('hemodinks.theme')).toBe('light');
   });
 
-  it('atualiza a marca da empresa nas configuracoes do sistema', async () => {
+  it('remove a edicao da marca das configuracoes do sistema', async () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /abrir configuração do sistema/i }));
     expect(await screen.findByRole('heading', { name: 'Configuração do sistema', level: 1 })).toBeInTheDocument();
 
-    const companyInput = screen.getByLabelText('Nome exibido no sistema');
-    await user.clear(companyInput);
-    await user.type(companyInput, 'Clinica Alfa');
-    await user.upload(
-      screen.getByLabelText('Foto da empresa'),
-      new File(['brand'], 'brand.png', { type: 'image/png' }),
-    );
-
-    await user.click(screen.getByRole('button', { name: /salvar marca/i }));
-
-    await waitFor(() => expect(api.updateSystemSettings).toHaveBeenCalledWith({
-      nomeEmpresa: 'Clinica Alfa',
-      fotoEmpresa: 'data:image/png;base64,YnJhbmQ=',
-    }, 'jwt-token'));
-    expect(within(screen.getByRole('banner')).getByText('Clinica Alfa')).toBeInTheDocument();
-    expect(screen.getByText('Marca da empresa atualizada.')).toBeInTheDocument();
-    expect(screen.getByAltText('Clinica Alfa')).toHaveAttribute('src', 'data:image/png;base64,YnJhbmQ=');
+    expect(screen.queryByLabelText('Nome exibido no sistema')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Foto da empresa')).not.toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Tema do sistema' })).toBeInTheDocument();
+    expect(api.updateSystemSettings).not.toHaveBeenCalled();
   });
 
   it('oculta configuracao para medico e bloqueia a rota direta', async () => {
@@ -665,22 +739,17 @@ describe('App', () => {
     expect(screen.getByLabelText('Sem foto de George Marcone')).toBeInTheDocument();
   });
 
-  it('carrega a foto da empresa pela API quando a configuracao usa o storage', async () => {
-    vi.mocked(api.getSystemSettings).mockResolvedValue({
-      id: 1,
-      nomeEmpresa: 'Clinica Alfa',
-      fotoEmpresa: '/profile-photos/clinica-alfa.png',
-      dataCadastro: '2026-06-22T00:00:00Z',
-      dataAtualizacao: '2026-06-22T12:00:00Z',
-    });
-    vi.mocked(api.getSystemSettingsCompanyPhoto).mockResolvedValue(new Blob(['brand'], { type: 'image/png' }));
+  it('carrega diretamente a foto publica da clinica', async () => {
+    vi.mocked(api.listPublicClinics).mockResolvedValue([
+      { id: 1, nome: 'Clinica Alfa', slug: 'clinica-alfa', fotoUrl: '/api/public/clinicas/clinica-alfa/foto' },
+    ]);
 
     render(<App />);
 
     const brandMark = await screen.findByAltText('Clinica Alfa');
     await waitFor(() => {
-      expect(brandMark).toHaveAttribute('src', 'blob:hemodinks-avatar');
-      expect(api.getSystemSettingsCompanyPhoto).toHaveBeenCalledTimes(1);
+      expect(brandMark).toHaveAttribute('src', 'http://localhost:5000/api/public/clinicas/clinica-alfa/foto');
+      expect(api.getSystemSettingsCompanyPhoto).not.toHaveBeenCalled();
     });
   });
 
@@ -710,14 +779,14 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
 
     await waitFor(() => {
-      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com');
+      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com', 'hemodinks');
     });
 
     expect(screen.getByLabelText('Senha')).toHaveValue('Senha@123');
 
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
-    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
+    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123', 'hemodinks');
     expect(await screen.findByRole('heading', { name: 'Troque sua senha' })).toBeInTheDocument();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
   });
@@ -735,7 +804,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
 
     await waitFor(() => {
-      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com');
+      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com', 'hemodinks');
     });
 
     expect(screen.getByLabelText('Senha')).toHaveValue('');

@@ -1,6 +1,7 @@
 import { type FormEvent } from 'react';
 import { LogIn } from 'lucide-react';
 import type { Theme } from '../../appTypes';
+import type { PublicClinic } from '../../types';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
@@ -19,6 +20,9 @@ type LoginScreenProps = {
   theme: Theme;
   loginEmail: string;
   loginPassword: string;
+  loginClinicValue: string;
+  clinics: PublicClinic[];
+  clinicsLoading: boolean;
   loginError: string;
   loginInfo: string;
   loginLoading: boolean;
@@ -26,6 +30,7 @@ type LoginScreenProps = {
   onThemeToggle: () => void;
   onLoginEmailChange: (value: string) => void;
   onLoginPasswordChange: (value: string) => void;
+  onLoginClinicChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onResetPassword: () => void;
 };
@@ -37,6 +42,9 @@ export function LoginScreen({
   theme,
   loginEmail,
   loginPassword,
+  loginClinicValue,
+  clinics,
+  clinicsLoading,
   loginError,
   loginInfo,
   loginLoading,
@@ -44,6 +52,7 @@ export function LoginScreen({
   onThemeToggle,
   onLoginEmailChange,
   onLoginPasswordChange,
+  onLoginClinicChange,
   onSubmit,
   onResetPassword,
 }: LoginScreenProps) {
@@ -62,6 +71,25 @@ export function LoginScreen({
         </div>
 
         <form className="stack" onSubmit={onSubmit}>
+          <label>
+            Clínica
+            <input
+              type="text"
+              list="login-clinic-options"
+              value={loginClinicValue}
+              onChange={(event) => onLoginClinicChange(event.target.value)}
+              placeholder={clinicsLoading ? 'Carregando clínicas...' : 'Digite para localizar a clínica'}
+              autoComplete="off"
+              disabled={clinicsLoading}
+              required
+            />
+            <datalist id="login-clinic-options">
+              {clinics.map((clinic) => (
+                <option key={clinic.id} value={`${clinic.nome} — ${clinic.slug}`} />
+              ))}
+            </datalist>
+          </label>
+
           <label>
             Email
             <input

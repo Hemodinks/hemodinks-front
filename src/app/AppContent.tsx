@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AUTH_EXPIRED_EVENT, authenticate, getCurrentLicenca, resetPassword } from '../services';
+import { AUTH_EXPIRED_EVENT, authenticate, getCurrentLicenca, listPublicClinics, resetPassword } from '../services';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { PasswordRequiredScreen } from '../features/auth/PasswordRequiredScreen';
 import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
@@ -19,8 +19,10 @@ import {
   formatProfileName,
   getErrorMessage,
   isValidEmail,
+  API_ASSET_BASE_URL,
   MEDICAL_PROFILE_ID,
 } from '../shared/utils/formatters';
+import type { PublicClinic } from '../types';
 import { getJwtExpirationDelayMs, isJwtExpired } from '../shared/utils/jwt';
 import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from './appAccess';
 import { AppMainContent } from './AppMainContent';
@@ -42,11 +44,56 @@ export function AppContent() {
   const [moduleMode, setModuleMode] = useState<ModuleMode>('list');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginClinicValue, setLoginClinicValue] = useState('');
+  const [publicClinics, setPublicClinics] = useState<PublicClinic[]>([]);
+  const [publicClinicsLoading, setPublicClinicsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginInfo, setLoginInfo] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [openDashboardAfterLogin, setOpenDashboardAfterLogin] = useState(false);
+  const clinicOptionValue = (clinic: PublicClinic) => `${clinic.nome} — ${clinic.slug}`;
+  const selectedLoginClinic = publicClinics.find((clinic) => clinicOptionValue(clinic) === loginClinicValue);
+
+  useEffect(() => {
+    if (session) {
+      return;
+    }
+
+    let cancelled = false;
+    setPublicClinicsLoading(true);
+    void listPublicClinics()
+      .then((clinics) => {
+        if (cancelled) return;
+        setPublicClinics(clinics);
+        if (clinics.length === 1) setLoginClinicValue(clinicOptionValue(clinics[0]));
+      })
+      .catch((error) => {
+        if (!cancelled) setLoginError(getErrorMessage(error));
+      })
+      .finally(() => {
+        if (!cancelled) setPublicClinicsLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [session]);
+
+  useEffect(() => {
+    const search = loginClinicValue.trim();
+    if (session || !search || selectedLoginClinic) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPublicClinicsLoading(true);
+      void listPublicClinics(search)
+        .then(setPublicClinics)
+        .catch((error) => setLoginError(getErrorMessage(error)))
+        .finally(() => setPublicClinicsLoading(false));
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loginClinicValue, selectedLoginClinic, session]);
 
   const {
     isAdmin,
@@ -73,6 +120,8 @@ export function AppContent() {
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
     canUseSettingsRoute,
+    canAccessClinics,
+    canUseClinicsRoute,
   } = getAppAccess(session);
   const forceDashboardRoute = openDashboardAfterLogin && Boolean(session && !session.user.precisaTrocarSenha);
   const { activeView, navigateToView } = useRouteView({
@@ -85,6 +134,7 @@ export function AppContent() {
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
     canUseSettingsRoute,
+    canUseClinicsRoute,
     forceDashboardRoute,
   });
   const appChrome = useAppChrome({ session });
@@ -264,11 +314,15 @@ export function AppContent() {
       setLoginError('Informe um email valido.');
       return;
     }
+    if (!selectedLoginClinic) {
+      setLoginError('Selecione uma clinica cadastrada.');
+      return;
+    }
 
     setLoginLoading(true);
 
     try {
-      const result = await authenticate(loginEmail.trim(), loginPassword);
+      const result = await authenticate(loginEmail.trim(), loginPassword, selectedLoginClinic.slug);
       const nextSession = buildSessionFromLogin(result, loginPassword);
       queryClient.clear();
       setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin(nextSession.user.perfilId));
@@ -292,7 +346,11 @@ export function AppContent() {
     setResetPasswordLoading(true);
 
     try {
-      const result = await resetPassword(loginEmail.trim());
+      if (!selectedLoginClinic) {
+        setLoginError('Selecione a clinica para redefinir a senha.');
+        return;
+      }
+      const result = await resetPassword(loginEmail.trim(), selectedLoginClinic.slug);
 
       if (result.mode === 'default-password') {
         setLoginPassword(DEFAULT_PASSWORD);
@@ -402,6 +460,36 @@ export function AppContent() {
     setModuleMode('list');
   };
 
+  const openClinics = () => {
+    resetProfileRouteState();
+    if (!canAccessClinics) {
+      openDashboard();
+      return;
+    }
+    navigateToViewFromInteraction('clinics');
+    setModuleMode('list');
+  };
+
+  const handleClinicSelected = (result: import('../types').SelectClinicResponse) => {
+    if (!session) return;
+    queryClient.clear();
+    appChrome.resetAppChrome();
+    persistSession({
+      token: result.token,
+      user: {
+        ...session.user,
+        id: result.clinica.userId,
+        clinicaId: result.clinica.clinicaId,
+        clinicaSlug: result.clinica.slug,
+        perfilId: result.clinica.perfilId,
+        perfilNome: result.clinica.perfil,
+        modulosLiberados: result.clinica.modulosLiberados,
+      },
+    });
+    setModuleMode('list');
+    navigateToViewFromInteraction('dashboard', true);
+  };
+
   const handleUserSortChange = (field: string) => {
     updateSort(
       field,
@@ -463,12 +551,15 @@ export function AppContent() {
   if (!session) {
     return (
       <LoginScreen
-        companyName={appChrome.companyName}
-        companyPhoto={appChrome.systemSettings.fotoEmpresa}
+        companyName={selectedLoginClinic?.nome ?? appChrome.companyName}
+        companyPhoto={selectedLoginClinic?.fotoUrl ? `${API_ASSET_BASE_URL}${selectedLoginClinic.fotoUrl}` : appChrome.systemSettings.fotoEmpresa}
         isBusy={isBusy}
         theme={theme}
         loginEmail={loginEmail}
         loginPassword={loginPassword}
+        loginClinicValue={loginClinicValue}
+        clinics={publicClinics}
+        clinicsLoading={publicClinicsLoading}
         loginError={loginError}
         loginInfo={loginInfo}
         loginLoading={loginLoading}
@@ -476,6 +567,7 @@ export function AppContent() {
         onThemeToggle={toggleTheme}
         onLoginEmailChange={setLoginEmail}
         onLoginPasswordChange={setLoginPassword}
+        onLoginClinicChange={setLoginClinicValue}
         onSubmit={handleLogin}
         onResetPassword={() => void handleResetPassword()}
       />
@@ -508,6 +600,9 @@ export function AppContent() {
     : pendingPaymentsCount + upcomingEventsCount + unreadObservationCount + unreadAgendaNotificationCount;
   const usersCount = appChrome.dashboardSummary?.usersCount ?? usersDomain.usersTotalItems;
   const pacientesCount = appChrome.dashboardSummary?.pacientesCount ?? patientsDomain.pacientesTotalItems;
+  const currentClinicPhoto = appChrome.systemSettings.fotoEmpresa && session.user.clinicaSlug
+    ? `${API_ASSET_BASE_URL}/api/public/clinicas/${session.user.clinicaSlug}/foto`
+    : null;
   const activeModuleLabel = getActiveModuleLabel(activeView);
   const formBreadcrumbLabel = getFormBreadcrumbLabel({
     activeView,
@@ -523,6 +618,7 @@ export function AppContent() {
         : activeView === 'billing' ? openBilling
           : activeView === 'medicalGroups' ? openMedicalGroups
             : activeView === 'settings' ? openSettings : openAgenda;
+  const resolvedOpenActiveModuleList = activeView === 'clinics' ? openClinics : openActiveModuleList;
   const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
     ? [
       { label: 'Início', onClick: openDashboard },
@@ -532,7 +628,7 @@ export function AppContent() {
       { label: 'Início', onClick: openDashboard },
       {
         label: activeModuleLabel,
-        onClick: moduleMode === 'form' ? openActiveModuleList : undefined,
+        onClick: moduleMode === 'form' ? resolvedOpenActiveModuleList : undefined,
       },
       ...(moduleMode === 'form' ? [{ label: formBreadcrumbLabel }] : []),
     ];
@@ -543,7 +639,7 @@ export function AppContent() {
       isBusy={isBusy}
       appTitle={getAppTitle(activeView)}
       companyName={appChrome.companyName}
-      companyPhoto={appChrome.systemSettings.fotoEmpresa}
+      companyPhoto={currentClinicPhoto}
       activeView={activeView}
       breadcrumbItems={breadcrumbItems}
       notificationsOpen={appChrome.notificationsOpen}
@@ -557,6 +653,7 @@ export function AppContent() {
       canAccessMedicalGroups={canAccessMedicalGroups}
       canAccessSettings={canAccessSettings}
       canAccessAgenda={canAccessAgenda}
+      canAccessClinics={canAccessClinics}
       usersCount={usersCount}
       pacientesCount={pacientesCount}
       medicalGroupsCount={medicalGroupsDomain.medicalGroupsCount}
@@ -575,6 +672,7 @@ export function AppContent() {
       onOpenMedicalGroups={openMedicalGroups}
       onOpenAgenda={openAgenda}
       onOpenSettings={openSettings}
+      onOpenClinics={openClinics}
       modals={(
         <AppModals
           session={session}
@@ -608,6 +706,7 @@ export function AppContent() {
           canEditOwnUser,
           canAccessBilling,
           canAccessMedicalGroups,
+          canAccessAgenda,
           canAccessSettings,
           canCreatePatients,
           canEditPatients,
@@ -616,6 +715,7 @@ export function AppContent() {
           patientReadOnly,
           isAdmin,
           isMedical,
+          canAccessClinics,
         }}
         counts={{
           usersCount,
@@ -632,9 +732,6 @@ export function AppContent() {
         medicalGroupsDomain={medicalGroupsDomain}
         dashboardError={appChrome.dashboardError}
         theme={theme}
-        systemSettings={appChrome.systemSettings}
-        settingsLoading={appChrome.systemSettingsQuery.isLoading || appChrome.systemSettingsQuery.isFetching}
-        settingsError={appChrome.systemSettingsError}
         navigation={{
           openUsersList: usersDomain.openUsersList,
           openMyProfile: usersDomain.openMyProfile,
@@ -651,6 +748,7 @@ export function AppContent() {
         }}
         onThemeChange={setThemePreference}
         onPasswordChanged={usersDomain.handlePasswordChanged}
+        onClinicSelected={handleClinicSelected}
       />
     </AppShell>
   );

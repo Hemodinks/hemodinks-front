@@ -25,6 +25,7 @@ export const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
 export const MEDICAL_PROFILE_ID = 2;
 export const PATIENT_PROFILE_ID = 3;
 export const CONTROLLER_PROFILE_ID = 4;
+export const SUPER_ADMIN_PROFILE_ID = 5;
 export const DEFAULT_PROFILE_ID = MEDICAL_PROFILE_ID;
 export const API_ASSET_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
@@ -33,9 +34,11 @@ export const PROFILE_OPTIONS = [
   { id: 2, nome: 'Médicos' },
   { id: 3, nome: 'Paciente' },
   { id: 4, nome: 'Controller' },
+  { id: 5, nome: 'SuperAdministrador' },
 ] as const;
 
-export const USER_PROFILE_OPTIONS = PROFILE_OPTIONS.filter((profile) => profile.id !== PATIENT_PROFILE_ID);
+export const USER_PROFILE_OPTIONS = PROFILE_OPTIONS.filter((profile) =>
+  profile.id !== PATIENT_PROFILE_ID && profile.id !== SUPER_ADMIN_PROFILE_ID);
 
 export const BRAZIL_UF_OPTIONS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',

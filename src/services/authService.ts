@@ -8,12 +8,16 @@ export type ResetPasswordResponse = {
   mode?: string | null;
 };
 
-export function authenticate(email: string, senha: string) {
-  return post<LoginResponse>('/api/users/authenticate', { email, senha });
+export function authenticate(email: string, senha: string, clinicaSlug?: string) {
+  return post<LoginResponse>('/api/users/authenticate', { email, senha }, undefined, {
+    headers: clinicaSlug ? { 'X-Clinica-Slug': clinicaSlug } : undefined,
+  });
 }
 
-export function resetPassword(email: string) {
-  return post<ResetPasswordResponse>('/api/users/password/reset', { email });
+export function resetPassword(email: string, clinicaSlug?: string) {
+  return post<ResetPasswordResponse>('/api/users/password/reset', { email }, undefined, {
+    headers: clinicaSlug ? { 'X-Clinica-Slug': clinicaSlug } : undefined,
+  });
 }
 
 export function confirmPasswordReset(token: string, novaSenha: string) {

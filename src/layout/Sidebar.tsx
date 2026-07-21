@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
+import { Building2, CalendarDays, ClipboardList, FileText, LayoutDashboard, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -7,6 +7,7 @@ type SidebarProps = {
   session: AuthSession;
   activeView: AppView;
   currentUserProfile: string;
+  clinicName: string;
   canAccessDashboard: boolean;
   canAccessPatients: boolean;
   canAccessUsers: boolean;
@@ -15,6 +16,7 @@ type SidebarProps = {
   canAccessMedicalGroups: boolean;
   canAccessSettings: boolean;
   canAccessAgenda: boolean;
+  canAccessClinics: boolean;
   usersCount: number;
   pacientesCount: number;
   medicalGroupsCount: number;
@@ -28,12 +30,14 @@ type SidebarProps = {
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
+  onOpenClinics: () => void;
 };
 
 export function Sidebar({
   session,
   activeView,
   currentUserProfile,
+  clinicName,
   canAccessDashboard,
   canAccessPatients,
   canAccessUsers,
@@ -42,6 +46,7 @@ export function Sidebar({
   canAccessMedicalGroups,
   canAccessSettings,
   canAccessAgenda,
+  canAccessClinics,
   usersCount,
   pacientesCount,
   medicalGroupsCount,
@@ -55,6 +60,7 @@ export function Sidebar({
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
+  onOpenClinics,
 }: SidebarProps) {
   return (
     <aside className="sidebar-panel" aria-label="Sessão ativa">
@@ -70,6 +76,12 @@ export function Sidebar({
             <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" decorative />
             <strong>{session.user.nome}</strong>
           </div>
+        </div>
+
+        <div className="session-card">
+          <span className="session-label">Clínica atual</span>
+          <strong>{clinicName}</strong>
+          <span className="session-meta">{session.user.clinicaSlug}</span>
         </div>
 
         <div className="session-card">
@@ -163,6 +175,17 @@ export function Sidebar({
               {unreadAgendaNotificationCount > 0 && (
                 <span className="side-nav-count">{unreadAgendaNotificationCount}</span>
               )}
+            </button>
+          )}
+          {canAccessClinics && (
+            <button
+              type="button"
+              className={`side-nav-clinics ${activeView === 'clinics' ? 'active' : ''}`}
+              aria-current={activeView === 'clinics' ? 'page' : undefined}
+              onClick={onOpenClinics}
+            >
+              <Building2 size={18} />
+              <span>Clínicas</span>
             </button>
           )}
           {canAccessSettings && (

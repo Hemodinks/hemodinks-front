@@ -47,8 +47,9 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
     staleTime: NOTIFICATIONS_CACHE_TIME_MS,
   });
   const systemSettingsQuery = useQuery({
-    queryKey: queryKeys.systemSettings(),
-    queryFn: getSystemSettings,
+    queryKey: queryKeys.systemSettings(session?.token ?? ''),
+    queryFn: () => getSystemSettings(session?.token),
+    enabled: Boolean(session),
     staleTime: 5 * 60 * 1000,
   });
 

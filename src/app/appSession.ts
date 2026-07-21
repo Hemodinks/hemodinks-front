@@ -29,6 +29,7 @@ export function buildSessionFromLogin(result: LoginResponse, loginPassword: stri
       precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
       perfilId: resultPerfilId,
       perfilNome: formatProfileName(resultPerfilId, result.perfilNome),
+      modulosLiberados: result.modulosLiberados,
       licenca: result.licenca ?? null,
     },
   };

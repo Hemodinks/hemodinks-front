@@ -3,6 +3,7 @@ import {
   CONTROLLER_PROFILE_ID,
   MEDICAL_PROFILE_ID,
   PATIENT_PROFILE_ID,
+  SUPER_ADMIN_PROFILE_ID,
 } from './formatters';
 
 const ADMIN_PROFILE_ID = 1;
@@ -46,7 +47,7 @@ export function getSessionFeatures(user: SessionUser | null | undefined): Readon
     return new Set();
   }
 
-  if (user.perfilId === ADMIN_PROFILE_ID) {
+  if (user.perfilId === ADMIN_PROFILE_ID || user.perfilId === SUPER_ADMIN_PROFILE_ID) {
     return ADMIN_FEATURES;
   }
 

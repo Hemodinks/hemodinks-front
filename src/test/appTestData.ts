@@ -134,6 +134,7 @@ export function toLoginResponse(session: AuthSession) {
     precisaTrocarSenha: session.user.precisaTrocarSenha,
     perfilId: session.user.perfilId,
     perfilNome: session.user.perfilNome,
+    modulosLiberados: session.user.modulosLiberados,
     licenca: session.user.licenca ?? null,
   };
 }
