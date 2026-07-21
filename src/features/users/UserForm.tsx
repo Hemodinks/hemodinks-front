@@ -3,6 +3,8 @@ import { FileText, FileUp, ImagePlus, Plus, Save, Trash2, X } from 'lucide-react
 import type { User, UserFormData } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
+import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
+import { downloadUserArquivo } from '../../services';
 import {
   BRAZIL_UF_OPTIONS,
   formatPhoneInput,
@@ -248,7 +250,11 @@ export function UserForm({
                 {editingUserDetails.arquivos.map((arquivo) => (
                   <li key={arquivo.id}>
                     <FileText size={15} />
-                    <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
+                    <SecureFileDownloadButton
+                      fileName={arquivo.nomeOriginal}
+                      label={arquivo.nomeOriginal}
+                      loadFile={() => downloadUserArquivo(editingUserDetails.id, arquivo.id, sessionToken)}
+                    />
                     <IconButton label="Excluir arquivo" tone="muted" className="mini" onClick={() => void onDeleteUserArquivo(editingUserDetails, arquivo.id)}>
                       <Trash2 size={14} />
                     </IconButton>

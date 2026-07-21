@@ -3,6 +3,8 @@ import { FileText, FileUp, MessageSquareText, Plus, Save, Search, Trash2, X } fr
 import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
+import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
+import { downloadPacienteArquivo } from '../../services';
 import {
   CONVENIOS_DATALIST_ID,
   findConvenioByDescription,
@@ -28,6 +30,7 @@ type PatientFormProps = {
   pacienteFormLoading: boolean;
   pendingPatientFiles: File[];
   patientFileInputKey: number;
+  sessionToken: string;
   hospitais: Hospital[];
   hospitaisError: string;
   medicalUsers: MedicalUserOption[];
@@ -65,6 +68,7 @@ export function PatientForm({
   pacienteFormLoading,
   pendingPatientFiles,
   patientFileInputKey,
+  sessionToken,
   hospitais,
   hospitaisError,
   medicalUsers,
@@ -447,7 +451,11 @@ export function PatientForm({
                 {editingPaciente.arquivos.map((arquivo) => (
                   <li key={arquivo.id}>
                     <FileText size={15} />
-                    <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
+                    <SecureFileDownloadButton
+                      fileName={arquivo.nomeOriginal}
+                      label={arquivo.nomeOriginal}
+                      loadFile={() => downloadPacienteArquivo(editingPaciente.id, arquivo.id, sessionToken)}
+                    />
                     {!formReadOnly && canEditPatients && (
                       <IconButton label="Excluir arquivo" tone="muted" className="mini" onClick={() => void onDeletePacienteArquivo(editingPaciente, arquivo.id)}>
                         <Trash2 size={14} />

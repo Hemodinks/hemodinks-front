@@ -143,6 +143,7 @@ export function PatientsPage({
           pacienteFormLoading={pacienteFormLoading}
           pendingPatientFiles={pendingPatientFiles}
           patientFileInputKey={patientFileInputKey}
+          sessionToken={sessionToken}
           hospitais={hospitais}
           hospitaisError={hospitaisError}
           medicalUsers={medicalUsers}

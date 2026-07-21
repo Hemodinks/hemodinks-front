@@ -1,8 +1,10 @@
-import { Download, FileText, X } from 'lucide-react';
+import { FileText, X } from 'lucide-react';
 import type { Paciente } from '../../types';
 import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
+import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
+import { downloadPacienteArquivo } from '../../services';
 import { getPacienteProcedimentosFromPaciente } from './patientUtils';
 import './patients.css';
 
@@ -107,10 +109,11 @@ type PatientFilesModalProps = {
   paciente: Paciente;
   loading: boolean;
   error: string;
+  sessionToken: string;
   onClose: () => void;
 };
 
-export function PatientFilesModal({ paciente, loading, error, onClose }: PatientFilesModalProps) {
+export function PatientFilesModal({ paciente, loading, error, sessionToken, onClose }: PatientFilesModalProps) {
   return (
     <Modal titleId="patient-files-title" className="info-modal files-modal" onClose={onClose}>
         <div className="panel-title">
@@ -132,10 +135,10 @@ export function PatientFilesModal({ paciente, loading, error, onClose }: Patient
               <li key={arquivo.id}>
                 <FileText size={16} />
                 <span>{arquivo.nomeOriginal}</span>
-                <a className="download-link" href={arquivo.url} target="_blank" rel="noreferrer" download={arquivo.nomeOriginal}>
-                  <Download size={15} />
-                  Baixar
-                </a>
+                <SecureFileDownloadButton
+                  fileName={arquivo.nomeOriginal}
+                  loadFile={() => downloadPacienteArquivo(paciente.id, arquivo.id, sessionToken)}
+                />
               </li>
             ))}
           </ul>

@@ -38,6 +38,10 @@ export function deleteUserArquivo(id: number, arquivoId: number, token: string) 
   return del<void>(`/api/users/${id}/arquivos/${arquivoId}`, token);
 }
 
+export function downloadUserArquivo(id: number, arquivoId: number, token: string) {
+  return getBlob(`/api/users/${id}/arquivos/${arquivoId}/download`, token);
+}
+
 export function changePassword(id: number, payload: ChangePasswordPayload, token: string) {
   return put<{ id: number; precisaTrocarSenha: boolean; message: string }>(`/api/users/${id}/password`, payload, token);
 }

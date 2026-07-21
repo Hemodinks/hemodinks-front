@@ -7,8 +7,10 @@ import {
   createUser,
   deletePaciente,
   deletePacienteArquivo,
+  downloadPacienteArquivo,
   deleteUser,
   deleteUserArquivo,
+  downloadUserArquivo,
   getAllCbhpmGeral,
   getBrazilPublicHolidays,
   getConvenios,
@@ -602,6 +604,30 @@ describe('services api client', () => {
     vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(401));
 
     await expect(authenticate('email@teste.com', 'senha')).rejects.toThrow('Credenciais invalidas ou sessao expirada.');
+  });
+
+  it('baixa documentos privados com token bearer', async () => {
+    const patientBlob = new Blob(['laudo'], { type: 'application/pdf' });
+    const userBlob = new Blob(['crm'], { type: 'application/pdf' });
+    const requestSpy = vi.spyOn(apiClient, 'request')
+      .mockResolvedValueOnce(axiosResponse(patientBlob))
+      .mockResolvedValueOnce(axiosResponse(userBlob));
+
+    await expect(downloadPacienteArquivo(10, 3, 'jwt-token')).resolves.toBe(patientBlob);
+    await expect(downloadUserArquivo(2, 7, 'jwt-token')).resolves.toBe(userBlob);
+
+    expect(requestSpy).toHaveBeenNthCalledWith(1, {
+      url: '/api/pacientes/10/arquivos/3/download',
+      method: 'GET',
+      responseType: 'blob',
+      headers: { Authorization: 'Bearer jwt-token' },
+    });
+    expect(requestSpy).toHaveBeenNthCalledWith(2, {
+      url: '/api/users/2/arquivos/7/download',
+      method: 'GET',
+      responseType: 'blob',
+      headers: { Authorization: 'Bearer jwt-token' },
+    });
   });
 
   it('notifica a aplicacao quando uma chamada autenticada retorna 401', async () => {

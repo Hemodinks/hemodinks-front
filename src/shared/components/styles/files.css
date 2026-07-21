@@ -26,7 +26,8 @@
 }
 
 .file-list span,
-.file-list a {
+.file-list a,
+.file-list button.download-link {
   min-width: 0;
   overflow: hidden;
   color: inherit;
@@ -60,6 +61,16 @@
 
 .file-list a.download-link {
   color: var(--teal);
+}
+
+.file-list button.download-link {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  color: var(--teal);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
 }
 
 .download-link:hover {
