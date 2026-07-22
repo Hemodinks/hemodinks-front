@@ -179,19 +179,6 @@ export function validatePacienteForm(data: PacienteFormData) {
     return 'Informe o nome do paciente.';
   }
 
-  if (!data.hospitalId && !data.hospital.trim()) {
-    return 'Selecione um hospital.';
-  }
-
-  const duplicatedMedicalTeamError = getDuplicatedMedicalTeamError(data);
-  if (duplicatedMedicalTeamError) {
-    return duplicatedMedicalTeamError;
-  }
-
-  if (!getPacienteProcedimentosFromForm(data).length) {
-    return 'Selecione ao menos um procedimento.';
-  }
-
   return '';
 }
 

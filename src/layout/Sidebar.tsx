@@ -145,7 +145,7 @@ export function Sidebar({
               onClick={onOpenBilling}
             >
               <ReceiptText size={18} />
-              <span>Faturamento médico</span>
+              <span>Faturamento e financeiro</span>
               {pendingPaymentsCount > 0 && (
                 <span className="side-nav-count">{pendingPaymentsCount}</span>
               )}

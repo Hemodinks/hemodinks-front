@@ -1,692 +1,232 @@
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import {
-  ArrowLeft,
-  CheckCircle2,
-  ClipboardList,
-  Eye,
-  FileText,
-  Info,
-  ReceiptText,
-  RefreshCw,
-  Search,
-  TriangleAlert,
-  Wallet,
-} from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
-import { AlertMessage, Button, CheckboxField, ComboboxField, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
-import './billing.css';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { ArrowRight, Plus, RefreshCw, RotateCcw, Wallet } from 'lucide-react';
+import { AlertMessage, Button, DataPanel, SelectField, TextField } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
-import type { AuthSession, Convenio, MedicalUserOption } from '../../types';
-import { UserAvatar } from '../users/UserAvatar';
-import {
-  BillingChecklist,
-  BillingMonthField,
-  BillingProcedureList,
-  BillingRankingPanel,
-  BillingSummaryCard,
-  BillingSummaryModal,
-} from './BillingPageComponents';
-import {
-  areBillingFiltersEqual,
-  BILLING_REGIME_FILTER_OPTIONS,
-  BILLING_STATUS_FILTER_OPTIONS,
-  getFilterOptionLabel,
-  getFilterOptionValue,
-  getUniqueSortedOptions,
-  loadBillingPatients,
-  parseBillingDetailId,
-} from './billingPageUtils';
-import {
-  buildBillingRecords,
-  createEmptyBillingFilters,
-  filterBillingRecords,
-  groupBillingByConvenio,
-  groupBillingByDoctor,
-  summarizeBillingRecords,
-  type BillingFilters,
-} from './billingUtils';
+import type { AtendimentoCirurgico, AuthSession, ContaReceber, Convenio, ConvenioProcedimentoPreco, Faturamento, MedicalUserOption, Paciente } from '../../types';
+import { createAtendimento, createFaturamento, estornarRecebimento, gerarContaReceber, getAtendimentos,
+  getContasReceber, getConvenioProcedimentoPrecos, getFaturamentos, getHospitais, getPacientes, registrarRecebimento,
+  registrarRecursoGlosa, registrarRetornoFaturamento, saveConvenioProcedimentoPreco, updateFaturamentoStatus } from '../../services';
+import './billing.css';
 
-type BillingPageProps = {
-  session: AuthSession;
-  medicalUsers: MedicalUserOption[];
-  convenios: Convenio[];
-  isAdmin: boolean;
-  isMedical: boolean;
-};
+type BillingPageProps = { session: AuthSession; medicalUsers: MedicalUserOption[]; convenios: Convenio[]; isAdmin: boolean; isMedical: boolean };
+type Tab = 'atendimentos' | 'faturamento' | 'financeiro' | 'precos';
 
-export function BillingPage({
-  session,
-  medicalUsers,
-  convenios,
-  isAdmin,
-  isMedical,
-}: BillingPageProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const defaultDoctorFilter = isMedical ? session.user.nome : '';
-  const [filters, setFilters] = useState(() => createEmptyBillingFilters(defaultDoctorFilter));
-  const [appliedFilters, setAppliedFilters] = useState(() => createEmptyBillingFilters(defaultDoctorFilter));
-  const [statusFilterInput, setStatusFilterInput] = useState(() => getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, 'all'));
-  const [regimeFilterInput, setRegimeFilterInput] = useState(() => getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, 'all'));
-  const [summaryRecordId, setSummaryRecordId] = useState<number | null>(null);
-  const detailRecordId = parseBillingDetailId(searchParams.get('detalhe'));
+export function BillingPage({ session, medicalUsers, convenios, isMedical }: BillingPageProps) {
+  const [tab, setTab] = useState<Tab>('atendimentos');
+  const [atendimentos, setAtendimentos] = useState<AtendimentoCirurgico[]>([]);
+  const [faturamentos, setFaturamentos] = useState<Faturamento[]>([]);
+  const [contas, setContas] = useState<ContaReceber[]>([]);
+  const [precos, setPrecos] = useState<ConvenioProcedimentoPreco[]>([]);
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [hospitais, setHospitais] = useState<Array<{ id: number; nome: string }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [atendimentoForm, setAtendimentoForm] = useState({ pacienteId: '', dataProcedimento: '', hospitalId: '', convenioId: '', medicoResponsavelId: isMedical ? String(session.user.id) : '', medicoAuxiliar1Id: '', medicoAuxiliar2Id: '', diagnostico: '', tratamentoMedico: '', cbhpmCodigo: '', descricao: '', quantidade: '1', pesoPercentual: '100', numeroAutorizacao: '' });
+  const [faturamentoForm, setFaturamentoForm] = useState({ atendimentoCirurgicoId: '', competencia: new Date().toISOString().slice(0, 7), numeroGuia: '', numeroLote: '' });
+  const [procedimentos, setProcedimentos] = useState<Array<{ cbhpmCodigo: string | null; descricao: string | null; quantidade: number; pesoPercentual: number }>>([]);
+  const [receipt, setReceipt] = useState({ contaId: '', valor: '', forma: 'Pix', referencia: '' });
+  const [price, setPrice] = useState({ convenioId: '', cbhpmCodigo: '', valorNegociado: '', percentualPrincipal: '100', percentualAuxiliar1: '0', percentualAuxiliar2: '0', vigenciaInicio: new Date().toISOString().slice(0, 10), vigenciaFinal: '' });
+  const canManageBilling = !isMedical;
 
-  useEffect(() => {
-    if (!isMedical) {
-      return;
-    }
-
-    setFilters((current) => current.medico === session.user.nome
-      ? current
-      : { ...current, medico: session.user.nome });
-    setAppliedFilters((current) => current.medico === session.user.nome
-      ? current
-      : { ...current, medico: session.user.nome });
-  }, [isMedical, session.user.nome]);
-
-  useEffect(() => {
-    setStatusFilterInput(getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, filters.status));
-  }, [filters.status]);
-
-  useEffect(() => {
-    setRegimeFilterInput(getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, filters.regime));
-  }, [filters.regime]);
-
-  const billingQuery = useQuery({
-    queryKey: [
-      'billingRecords',
-      session.token,
-      appliedFilters.search,
-      appliedFilters.medico,
-      appliedFilters.convenio,
-      appliedFilters.procedimento,
-      appliedFilters.competenciaInicio,
-      appliedFilters.competenciaFinal,
-      isMedical ? session.user.id : 'all',
-    ],
-    queryFn: () => loadBillingPatients(session.token, {
-      search: appliedFilters.search.trim(),
-      medico: appliedFilters.medico.trim(),
-      convenio: appliedFilters.convenio.trim(),
-      procedimento: appliedFilters.procedimento.trim(),
-      competenciaInicio: appliedFilters.competenciaInicio,
-      competenciaFinal: appliedFilters.competenciaFinal,
-    }),
-    staleTime: 30 * 1000,
-  });
-
-  const billingScopeOptions = {
-    restrictToMedicalUser: isMedical,
-    currentMedicalUserId: session.user.id,
-    currentMedicalUserName: session.user.nome,
+  const load = async () => {
+    setLoading(true); setError('');
+    try {
+      const [nextAtendimentos, nextFaturamentos, nextContas, nextPrecos, patientPage, nextHospitais] = await Promise.all([
+        getAtendimentos(session.token), getFaturamentos(session.token), canManageBilling ? getContasReceber(session.token) : Promise.resolve([]),
+        getConvenioProcedimentoPrecos(session.token),
+        getPacientes(session.token, { page: 1, pageSize: 100 }), getHospitais(session.token),
+      ]);
+      setAtendimentos(nextAtendimentos); setFaturamentos(nextFaturamentos); setContas(nextContas);
+      setPrecos(nextPrecos);
+      setPacientes(patientPage.items); setHospitais(nextHospitais);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível carregar o módulo.'); }
+    finally { setLoading(false); }
   };
-  const allBillingRecords = buildBillingRecords(billingQuery.data ?? []);
-  const billingScopeRecords = filterBillingRecords(
-    allBillingRecords,
-    createEmptyBillingFilters('', ''),
-    billingScopeOptions,
-  );
-  const billingRecords = filterBillingRecords(
-    allBillingRecords,
-    appliedFilters,
-    billingScopeOptions,
-  );
-  const doctorFilterOptions = getUniqueSortedOptions([
-    ...medicalUsers.map((user) => user.nome),
-    ...billingScopeRecords.map((record) => record.doctorName),
-  ]);
-  const convenioFilterOptions = getUniqueSortedOptions([
-    ...convenios.map((item) => item.descricaoConvenio),
-    ...billingScopeRecords.map((record) => record.convenioName),
-  ]);
-  const hospitalFilterOptions = getUniqueSortedOptions(
-    billingScopeRecords
-      .map((record) => record.hospitalName)
-      .filter((value) => value !== 'Não informado'),
-  );
-  const procedureFilterOptions = getUniqueSortedOptions(
-    billingScopeRecords.flatMap((record) => record.procedures.map((procedure) => procedure.procedimento)),
-  );
-  const summary = summarizeBillingRecords(billingRecords);
-  const doctorBreakdown = groupBillingByDoctor(billingRecords).slice(0, 5);
-  const convenioBreakdown = groupBillingByConvenio(billingRecords).slice(0, 5);
-  const selectedRecord = detailRecordId == null
-    ? null
-    : billingRecords.find((record) => record.id === detailRecordId) ?? null;
-  const summaryRecord = summaryRecordId == null
-    ? null
-    : billingRecords.find((record) => record.id === summaryRecordId) ?? null;
-  const lastUpdatedLabel = billingQuery.dataUpdatedAt
-    ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(billingQuery.dataUpdatedAt))
-    : '';
+  useEffect(() => { void load(); }, [session.token]);
 
-  useEffect(() => {
-    if (summaryRecordId == null) {
-      return;
-    }
-
-    if (!billingRecords.some((record) => record.id === summaryRecordId)) {
-      setSummaryRecordId(null);
-    }
-  }, [billingRecords, summaryRecordId]);
-
-  const clearFilters = () => {
-    const nextFilters = createEmptyBillingFilters(defaultDoctorFilter);
-    setFilters(nextFilters);
-    setAppliedFilters(nextFilters);
-    setStatusFilterInput(getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, 'all'));
-    setRegimeFilterInput(getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, 'all'));
+  const openBalance = useMemo(() => contas.filter((x) => x.status !== 'Cancelado').reduce((sum, x) => sum + x.saldoAberto, 0), [contas]);
+  const received = useMemo(() => contas.reduce((sum, x) => sum + x.valorRecebido, 0), [contas]);
+  const run = async (action: () => Promise<unknown>, message: string) => {
+    setLoading(true); setError(''); setSuccess('');
+    try { await action(); setSuccess(message); setShowForm(false); await load(); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : 'Operação não concluída.'); setLoading(false); }
   };
 
-  const applyFilters = () => {
-    const nextFilters = {
-      ...filters,
-      search: filters.search.trim(),
-      medico: filters.medico.trim(),
-      convenio: filters.convenio.trim(),
-      hospital: filters.hospital.trim(),
-      procedimento: filters.procedimento.trim(),
-    };
-
-    if (areBillingFiltersEqual(nextFilters, appliedFilters)) {
-      void billingQuery.refetch();
-      return;
-    }
-
-    setAppliedFilters(nextFilters);
+  const submitAtendimento = (event: FormEvent) => {
+    event.preventDefault();
+    const currentProcedure = atendimentoForm.cbhpmCodigo || atendimentoForm.descricao ? [{ cbhpmCodigo: atendimentoForm.cbhpmCodigo || null,
+      descricao: atendimentoForm.descricao || null, quantidade: Number(atendimentoForm.quantidade), pesoPercentual: Number(atendimentoForm.pesoPercentual) }] : [];
+    void run(() => createAtendimento({
+      pacienteId: Number(atendimentoForm.pacienteId), dataProcedimento: atendimentoForm.dataProcedimento,
+      hospitalId: atendimentoForm.hospitalId ? Number(atendimentoForm.hospitalId) : null,
+      convenioId: atendimentoForm.convenioId ? Number(atendimentoForm.convenioId) : null,
+      medicoResponsavelId: Number(atendimentoForm.medicoResponsavelId), medicoAuxiliar1Id: atendimentoForm.medicoAuxiliar1Id ? Number(atendimentoForm.medicoAuxiliar1Id) : null,
+      medicoAuxiliar2Id: atendimentoForm.medicoAuxiliar2Id ? Number(atendimentoForm.medicoAuxiliar2Id) : null,
+      diagnostico: atendimentoForm.diagnostico || null, tratamentoMedico: atendimentoForm.tratamentoMedico || null, numeroAutorizacao: atendimentoForm.numeroAutorizacao || null,
+      status: 'Planejado', procedimentos: [...procedimentos, ...currentProcedure],
+    }, session.token), 'Atendimento criado com snapshot de preço.');
   };
 
-  const updateCompetenciaInicio = (value: string) => {
-    setFilters((current) => ({
-      ...current,
-      competenciaInicio: value,
-      competenciaFinal: value && current.competenciaFinal && current.competenciaFinal < value
-        ? value
-        : current.competenciaFinal,
-    }));
+  const submitFaturamento = (event: FormEvent) => {
+    event.preventDefault();
+    void run(() => createFaturamento({ atendimentoCirurgicoId: Number(faturamentoForm.atendimentoCirurgicoId),
+      numeroGuia: faturamentoForm.numeroGuia || null, numeroLote: faturamentoForm.numeroLote || null,
+      competencia: `${faturamentoForm.competencia}-01`, observacao: null }, session.token), 'Faturamento criado a partir do atendimento.');
   };
 
-  const updateCompetenciaFinal = (value: string) => {
-    setFilters((current) => ({
-      ...current,
-      competenciaInicio: value && current.competenciaInicio && current.competenciaInicio > value
-        ? value
-        : current.competenciaInicio,
-      competenciaFinal: value,
-    }));
+  const createAccount = (item: Faturamento) => void run(() => gerarContaReceber(item.id, {
+    faturamentoId: item.id, numeroDocumento: `FAT-${item.id}-01`, descricao: `Faturamento ${item.numeroGuia || item.id}`,
+    dataEmissao: new Date().toISOString(), dataVencimento: new Date(Date.now() + 30 * 86400000).toISOString(),
+    valorOriginal: null, valorAjustado: null, observacao: null,
+  }, session.token), 'Conta a receber gerada sem duplicidade.');
+  const registerReturn = (item: Faturamento) => {
+    const inputs = item.itens.map((billingItem) => {
+      const rawGlosa = window.prompt(`Valor glosado para ${billingItem.descricao}:`, '0');
+      if (rawGlosa == null) return null;
+      const valorGlosado = Number(rawGlosa.replace(',', '.'));
+      return { faturamentoItemId: billingItem.id, valorGlosado,
+        valorAprovado: billingItem.valorApresentado - valorGlosado, codigoMotivo: null,
+        motivoGlosa: valorGlosado > 0 ? window.prompt('Motivo da glosa:') || 'Não informado' : null };
+    });
+    if (inputs.some((x) => x == null)) return;
+    void run(() => registrarRetornoFaturamento(item.id, { id: item.id, dataRetorno: new Date().toISOString(),
+      itens: inputs, rowVersion: item.rowVersion }, session.token), 'Retorno registrado e títulos reconciliados.');
+  };
+  const appealGlosa = (item: Faturamento, glosaId: number, valorGlosado: number) => {
+    const justificativa = window.prompt('Justificativa do recurso:'); if (!justificativa) return;
+    const recoveredRaw = window.prompt('Valor recuperado (0 enquanto aguarda resposta):', '0'); if (recoveredRaw == null) return;
+    const valorRecuperado = Number(recoveredRaw.replace(',', '.'));
+    void run(() => registrarRecursoGlosa(glosaId, { glosaId, dataEnvio: new Date().toISOString(), justificativa,
+      valorRecorrido: valorGlosado, dataResposta: valorRecuperado > 0 ? new Date().toISOString() : null,
+      valorRecuperado, status: valorRecuperado > 0 ? valorRecuperado === valorGlosado ? 'Aceito' : 'AceitoParcialmente' : 'Enviado',
+      observacao: null }, session.token), 'Recurso de glosa registrado.');
   };
 
-  const openBillingDetail = (recordId: number) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('detalhe', String(recordId));
-    setSearchParams(nextParams);
+  const submitReceipt = (event: FormEvent) => {
+    event.preventDefault(); const account = contas.find((x) => x.id === Number(receipt.contaId)); if (!account) return;
+    void run(() => registrarRecebimento(account.id, { contaReceberId: account.id, dataRecebimento: new Date().toISOString(),
+      valorRecebido: Number(receipt.valor.replace(',', '.')), formaRecebimento: receipt.forma,
+      referenciaBancaria: receipt.referencia || null, documentoComprovante: null, observacao: null,
+      usuarioCadastroId: 0, rowVersion: account.rowVersion }, session.token), 'Recebimento registrado e saldo recalculado.');
+  };
+  const submitPrice = (event: FormEvent) => {
+    event.preventDefault();
+    void run(() => saveConvenioProcedimentoPreco({ id: null, convenioId: Number(price.convenioId), cbhpmCodigo: price.cbhpmCodigo,
+      valorNegociado: Number(price.valorNegociado), percentualPrincipal: Number(price.percentualPrincipal),
+      percentualAuxiliar1: Number(price.percentualAuxiliar1), percentualAuxiliar2: Number(price.percentualAuxiliar2),
+      vigenciaInicio: price.vigenciaInicio, vigenciaFinal: price.vigenciaFinal || null, ativo: true }, session.token), 'Preço negociado salvo com vigência.');
   };
 
-  const closeBillingDetail = () => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete('detalhe');
-    setSearchParams(nextParams);
-  };
+  return <section className="workspace billing-workspace">
+    <DataPanel className="billing-filter-panel">
+      <div className="billing-section-heading">
+        <div><span className="eyebrow">Fluxo oficial</span><h2>Atendimento → Faturamento → Contas a receber</h2></div>
+        <Button onClick={() => void load()} disabled={loading}><RefreshCw size={16} /> Atualizar</Button>
+      </div>
+      <div className="billing-filter-actions">
+        <Button variant={tab === 'atendimentos' ? 'primary' : undefined} onClick={() => { setTab('atendimentos'); setShowForm(false); }}>Atendimentos</Button>
+        <Button variant={tab === 'faturamento' ? 'primary' : undefined} onClick={() => { setTab('faturamento'); setShowForm(false); }}>Faturamento</Button>
+        {canManageBilling && <Button variant={tab === 'financeiro' ? 'primary' : undefined} onClick={() => { setTab('financeiro'); setShowForm(false); }}>Contas a receber</Button>}
+        <Button variant={tab === 'precos' ? 'primary' : undefined} onClick={() => { setTab('precos'); setShowForm(false); }}>Tabela de preços</Button>
+      </div>
+    </DataPanel>
+    {error && <AlertMessage type="error">{error}</AlertMessage>}{success && <AlertMessage type="success">{success}</AlertMessage>}
 
-  if (detailRecordId != null) {
-    return (
-      <section className="workspace billing-workspace">
-        <section className="billing-detail-view">
-          <div className="billing-detail-toolbar">
-            <Button className="billing-back-button" onClick={closeBillingDetail}>
-              <ArrowLeft size={16} />
-              Voltar para pacientes
-            </Button>
-
-            <div className="billing-detail-toolbar-actions">
-              {lastUpdatedLabel && <span className="billing-detail-toolbar-note">Atualizado em {lastUpdatedLabel}</span>}
-              <IconButton
-                label="Atualizar faturamento médico"
-                title="Atualizar faturamento"
-                onClick={() => void billingQuery.refetch()}
-                disabled={billingQuery.isFetching}
-              >
-                <RefreshCw size={18} />
-              </IconButton>
-            </div>
-          </div>
-
-          {isMedical && (
-            <AlertMessage type="warning" icon={<Info size={17} />}>
-              Visualização restrita aos pacientes vinculados ao médico {session.user.nome}.
-            </AlertMessage>
-          )}
-
-          {billingQuery.error && (
-            <AlertMessage type="error">
-              {billingQuery.error instanceof Error ? billingQuery.error.message : 'Não foi possível carregar o faturamento.'}
-            </AlertMessage>
-          )}
-
-          <DataPanel className="billing-detail-page">
-            {billingQuery.isPending ? (
-              <p className="empty-row" role="status">Carregando detalhes do faturamento...</p>
-            ) : selectedRecord ? (
-              <>
-                <div className="billing-detail-header">
-                  <div className="billing-patient-cell">
-                    <UserAvatar
-                      userId={selectedRecord.paciente.userId}
-                      name={selectedRecord.patientName}
-                      photo={selectedRecord.paciente.fotoPerfil}
-                      authToken={session.token}
-                      size="sm"
-                    />
-                    <div>
-                      <span className="eyebrow">Detalhe do faturamento</span>
-                      <h3>{selectedRecord.patientName}</h3>
-                      <p>{selectedRecord.doctorName} | {selectedRecord.hospitalName}</p>
-                    </div>
-                  </div>
-                  <span className={`status-pill ${selectedRecord.status === 'paid' ? 'ok' : selectedRecord.status === 'pending' ? 'warning' : 'inactive'}`}>
-                    {selectedRecord.statusLabel}
-                  </span>
-                </div>
-
-                <div className="billing-detail-kpis">
-                  <div>
-                    <span>Faturado</span>
-                    <strong>{selectedRecord.paymentHasNumericValue ? formatCurrency(selectedRecord.paymentAmount) : selectedRecord.paymentRaw || '-'}</strong>
-                  </div>
-                  <div>
-                    <span>Glosa</span>
-                    <strong>{selectedRecord.glosaHasNumericValue ? formatCurrency(selectedRecord.glosaAmount) : selectedRecord.glosaRaw || '-'}</strong>
-                  </div>
-                  <div>
-                    <span>Líquido</span>
-                    <strong>{selectedRecord.paymentHasNumericValue || selectedRecord.glosaHasNumericValue ? formatCurrency(selectedRecord.netAmount) : '-'}</strong>
-                  </div>
-                </div>
-
-                <section className="billing-detail-section">
-                  <div className="billing-section-heading">
-                    <div>
-                      <span className="eyebrow">Resumo clínico-administrativo</span>
-                      <h4>Dados usados no faturamento</h4>
-                    </div>
-                  </div>
-
-                  <dl className="billing-detail-list">
-                    <div>
-                      <dt>Data da cirurgia</dt>
-                      <dd>{selectedRecord.surgeryDateLabel}</dd>
-                    </div>
-                    <div>
-                      <dt>Cirurgião</dt>
-                      <dd>{selectedRecord.doctorName}</dd>
-                    </div>
-                    <div>
-                      <dt>Auxiliares</dt>
-                      <dd>{selectedRecord.assistantNames.length ? selectedRecord.assistantNames.join(', ') : '-'}</dd>
-                    </div>
-                    <div>
-                      <dt>Convênio / regime</dt>
-                      <dd>{selectedRecord.convenioName} / {selectedRecord.regime === 'convenio' ? 'Convênio' : 'Particular'}</dd>
-                    </div>
-                    <div>
-                      <dt>Autorização</dt>
-                      <dd>{selectedRecord.authorizationCode || '-'}</dd>
-                    </div>
-                    <div>
-                      <dt>Fornecedor OPME</dt>
-                      <dd>{selectedRecord.opmeSupplier}</dd>
-                    </div>
-                    <div>
-                      <dt>Arquivos de suporte</dt>
-                      <dd>{selectedRecord.filesCount}</dd>
-                    </div>
-                    <div>
-                      <dt>Pagamento bruto informado</dt>
-                      <dd>{selectedRecord.paymentRaw || '-'}</dd>
-                    </div>
-                  </dl>
-                </section>
-
-                <section className="billing-detail-section">
-                  <div className="billing-section-heading">
-                    <div>
-                      <span className="eyebrow">Códigos e procedimentos</span>
-                      <h4>Procedimento principal e associados</h4>
-                    </div>
-                  </div>
-
-                {selectedRecord.procedures.length ? (
-                    <BillingProcedureList procedures={selectedRecord.procedures} />
-                  ) : (
-                    <p className="empty-row">Nenhum procedimento vinculado a esta cirurgia.</p>
-                  )}
-                </section>
-
-                <section className="billing-detail-section">
-                  <div className="billing-section-heading">
-                    <div>
-                      <span className="eyebrow">Checklist do faturamento</span>
-                      <h4>Pontos solicitados para auditoria médica</h4>
-                    </div>
-                  </div>
-
-                  <BillingChecklist items={selectedRecord.billingChecklist} />
-                </section>
-              </>
-            ) : (
-              <div className="billing-detail-empty">
-                <TriangleAlert size={18} />
-                <p>Este faturamento não está disponível para a sua visão atual ou não foi encontrado.</p>
-              </div>
-            )}
-          </DataPanel>
-        </section>
-      </section>
-    );
-  }
-
-  return (
-    <section className="workspace billing-workspace">
-      {(summary.nonNumericPaymentCount > 0 || summary.nonNumericGlosaCount > 0) && (
-        <AlertMessage type="warning" icon={<TriangleAlert size={17} />}>
-          {summary.nonNumericPaymentCount > 0 && `${summary.nonNumericPaymentCount} registro(s) possuem pagamento preenchido sem valor monetário estruturado. `}
-          {summary.nonNumericGlosaCount > 0 && `${summary.nonNumericGlosaCount} registro(s) possuem glosa preenchida sem valor monetário estruturado.`}
-        </AlertMessage>
-      )}
-
-      <DataPanel className="billing-filter-panel">
-        <details className="billing-filters-accordion">
-          <summary className="billing-filters-summary">
-            <div>
-              <span className="eyebrow">Consulta de faturamento</span>
-              <h2>{summary.totalRecords} cirurgia(s) encontradas</h2>
-            </div>
-            <span className="billing-filters-toggle">Filtros</span>
-          </summary>
-
-          <div className="billing-filters-content">
-            <div className="table-tools billing-toolbar">
-              <SearchField
-                label="Buscar cirurgia faturada"
-                value={filters.search}
-                onValueChange={(value) => setFilters((current) => ({ ...current, search: value }))}
-                placeholder="Paciente, procedimento, código, hospital..."
-              />
-              <IconButton
-                label="Atualizar faturamento médico"
-                title="Atualizar faturamento"
-                onClick={() => void billingQuery.refetch()}
-                disabled={billingQuery.isFetching}
-              >
-                <RefreshCw size={18} />
-              </IconButton>
-            </div>
-
-            <div className="billing-filter-grid">
-              <ComboboxField
-                className="filter-field"
-                label="Cirurgião"
-                value={filters.medico}
-                options={doctorFilterOptions}
-                onValueChange={(value) => setFilters((current) => ({ ...current, medico: value }))}
-                disabled={isMedical || !doctorFilterOptions.length}
-                placeholder={isMedical ? session.user.nome : medicalUsers.length ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
-                noOptionsLabel="Nenhum cirurgião encontrado."
-              />
-              <ComboboxField
-                className="filter-field"
-                label="Convênio"
-                value={filters.convenio}
-                options={convenioFilterOptions}
-                onValueChange={(value) => setFilters((current) => ({ ...current, convenio: value }))}
-                disabled={!convenios.length && !filters.convenio}
-                placeholder={convenios.length ? 'Todos os convênios' : 'Nenhum convênio cadastrado'}
-                noOptionsLabel="Nenhum convênio encontrado."
-              />
-              <ComboboxField
-                className="filter-field"
-                label="Hospital"
-                value={filters.hospital}
-                options={hospitalFilterOptions}
-                onValueChange={(value) => setFilters((current) => ({ ...current, hospital: value }))}
-                placeholder="Todos os hospitais"
-                noOptionsLabel="Nenhum hospital encontrado."
-              />
-              <ComboboxField
-                className="filter-field"
-                label="Procedimento"
-                value={filters.procedimento}
-                options={procedureFilterOptions}
-                onValueChange={(value) => setFilters((current) => ({ ...current, procedimento: value }))}
-                placeholder="Principal ou associado"
-                noOptionsLabel="Nenhum procedimento encontrado."
-              />
-              <ComboboxField
-                className="filter-field"
-                label="Status"
-                value={statusFilterInput}
-                options={BILLING_STATUS_FILTER_OPTIONS.map((option) => option.label)}
-                onValueChange={(value) => {
-                  setStatusFilterInput(value);
-
-                  const nextStatus = getFilterOptionValue(BILLING_STATUS_FILTER_OPTIONS, value);
-
-                  if (nextStatus) {
-                    setFilters((current) => ({ ...current, status: nextStatus }));
-                  }
-                }}
-                noOptionsLabel="Nenhum status encontrado."
-              />
-              <ComboboxField
-                className="filter-field"
-                label="Regime"
-                value={regimeFilterInput}
-                options={BILLING_REGIME_FILTER_OPTIONS.map((option) => option.label)}
-                onValueChange={(value) => {
-                  setRegimeFilterInput(value);
-
-                  const nextRegime = getFilterOptionValue(BILLING_REGIME_FILTER_OPTIONS, value);
-
-                  if (nextRegime) {
-                    setFilters((current) => ({ ...current, regime: nextRegime }));
-                  }
-                }}
-                noOptionsLabel="Nenhum regime encontrado."
-              />
-              <BillingMonthField
-                id="billing-period-start"
-                label="Competência inicial"
-                value={filters.competenciaInicio}
-                onChange={updateCompetenciaInicio}
-              />
-              <BillingMonthField
-                id="billing-period-end"
-                label="Competência final"
-                value={filters.competenciaFinal}
-                onChange={updateCompetenciaFinal}
-              />
-              <CheckboxField
-                className="billing-checkbox"
-                label="Mostrar apenas cirurgias com pendências de faturamento"
-                checked={filters.onlyPendingItems}
-                onCheckedChange={(checked) => setFilters((current) => ({ ...current, onlyPendingItems: checked }))}
-              />
-              <div className="billing-filter-actions">
-                <Button
-                  className="billing-apply-filters"
-                  variant="primary"
-                  onClick={applyFilters}
-                  disabled={billingQuery.isFetching}
-                >
-                  <Search size={16} />
-                  Consultar
-                </Button>
-                <Button className="billing-clear-filters" onClick={clearFilters}>
-                  Limpar filtros
-                </Button>
-              </div>
-            </div>
-          </div>
-        </details>
+    {tab === 'atendimentos' && <>
+      <DataPanel><div className="billing-section-heading"><div><span className="eyebrow">Origem clínica</span><h3>Atendimentos cirúrgicos</h3></div>
+        <Button variant="primary" onClick={() => setShowForm((x) => !x)}><Plus size={16} /> Novo atendimento</Button></div>
+        {showForm && <form className="billing-filter-grid" onSubmit={submitAtendimento}>
+          <SelectField label="Paciente" value={atendimentoForm.pacienteId} required onChange={(e) => setAtendimentoForm({ ...atendimentoForm, pacienteId: e.target.value })}>
+            <option value="">Selecione</option>{pacientes.map((x) => <option key={x.id} value={x.id}>{x.nomePaciente}</option>)}
+          </SelectField>
+          <TextField label="Data da cirurgia" type="date" value={atendimentoForm.dataProcedimento} required onValueChange={(v) => setAtendimentoForm({ ...atendimentoForm, dataProcedimento: v })} />
+          <SelectField label="Hospital" value={atendimentoForm.hospitalId} onChange={(e) => setAtendimentoForm({ ...atendimentoForm, hospitalId: e.target.value })}>
+            <option value="">Não informado</option>{hospitais.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+          </SelectField>
+          <SelectField label="Convênio" value={atendimentoForm.convenioId} onChange={(e) => setAtendimentoForm({ ...atendimentoForm, convenioId: e.target.value })}>
+            <option value="">Particular</option>{convenios.map((x) => <option key={x.idConvenio} value={x.idConvenio}>{x.descricaoConvenio}</option>)}
+          </SelectField>
+          <SelectField label="Médico responsável" value={atendimentoForm.medicoResponsavelId} required disabled={isMedical} onChange={(e) => setAtendimentoForm({ ...atendimentoForm, medicoResponsavelId: e.target.value })}>
+            <option value="">Selecione</option>{medicalUsers.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+          </SelectField>
+          <SelectField label="Médico auxiliar 1" value={atendimentoForm.medicoAuxiliar1Id} onChange={(e) => setAtendimentoForm({ ...atendimentoForm, medicoAuxiliar1Id: e.target.value })}>
+            <option value="">Não informado</option>{medicalUsers.filter((x) => String(x.id) !== atendimentoForm.medicoResponsavelId).map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+          </SelectField>
+          <SelectField label="Médico auxiliar 2" value={atendimentoForm.medicoAuxiliar2Id} onChange={(e) => setAtendimentoForm({ ...atendimentoForm, medicoAuxiliar2Id: e.target.value })}>
+            <option value="">Não informado</option>{medicalUsers.filter((x) => String(x.id) !== atendimentoForm.medicoResponsavelId && String(x.id) !== atendimentoForm.medicoAuxiliar1Id).map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+          </SelectField>
+          <TextField label="Diagnóstico" value={atendimentoForm.diagnostico} onValueChange={(v) => setAtendimentoForm({ ...atendimentoForm, diagnostico: v })} />
+          <TextField label="Tratamento médico" value={atendimentoForm.tratamentoMedico} onValueChange={(v) => setAtendimentoForm({ ...atendimentoForm, tratamentoMedico: v })} />
+          <TextField label="Código CBHPM" value={atendimentoForm.cbhpmCodigo} onValueChange={(v) => setAtendimentoForm({ ...atendimentoForm, cbhpmCodigo: v })} />
+          <TextField label="Descrição (se código não cadastrado)" value={atendimentoForm.descricao} onValueChange={(v) => setAtendimentoForm({ ...atendimentoForm, descricao: v })} />
+          <TextField label="Quantidade" type="number" min="0.0001" step="0.0001" value={atendimentoForm.quantidade} onValueChange={(v) => setAtendimentoForm({ ...atendimentoForm, quantidade: v })} />
+          <TextField label="Peso percentual" type="number" min="0" step="0.0001" value={atendimentoForm.pesoPercentual} onValueChange={(v) => setAtendimentoForm({ ...atendimentoForm, pesoPercentual: v })} />
+          <Button type="button" onClick={() => {
+            if (!atendimentoForm.cbhpmCodigo && !atendimentoForm.descricao) return;
+            setProcedimentos((items) => [...items, { cbhpmCodigo: atendimentoForm.cbhpmCodigo || null,
+              descricao: atendimentoForm.descricao || null, quantidade: Number(atendimentoForm.quantidade), pesoPercentual: Number(atendimentoForm.pesoPercentual) }]);
+            setAtendimentoForm({ ...atendimentoForm, cbhpmCodigo: '', descricao: '', quantidade: '1', pesoPercentual: '100' });
+          }}>Adicionar outro procedimento</Button>
+          {procedimentos.length > 0 && <span className="file-hint">{procedimentos.length} procedimento(s) adicionados à cirurgia.</span>}
+          <TextField label="Autorização" value={atendimentoForm.numeroAutorizacao} onValueChange={(v) => setAtendimentoForm({ ...atendimentoForm, numeroAutorizacao: v })} />
+          <Button variant="primary" type="submit" disabled={loading}>Salvar atendimento</Button>
+        </form>}
       </DataPanel>
+      <RecordTable headers={['Paciente', 'Data', 'Status', 'Procedimentos']} rows={atendimentos.map((x) => [x.paciente, new Date(x.dataProcedimento).toLocaleDateString('pt-BR'), x.status, x.procedimentos.map((p) => p.cbhpmCodigo || p.descricao).join(', ')])} />
+    </>}
 
-      <section className="billing-summary-grid" aria-label="Resumo financeiro">
-        <BillingSummaryCard
-          title="Faturado informado"
-          value={formatCurrency(summary.totalGrossAmount)}
-          caption={`${summary.totalRecords} cirurgia(s) consideradas`}
-          tone="gross"
-          icon={<Wallet size={18} />}
-        />
-        <BillingSummaryCard
-          title="Líquido estimado"
-          value={formatCurrency(summary.totalNetAmount)}
-          caption="Pagamento menos glosa informada"
-          tone="net"
-          icon={<ReceiptText size={18} />}
-        />
-        <BillingSummaryCard
-          title="Glosas"
-          value={formatCurrency(summary.totalGlosaAmount)}
-          caption={`${summary.glosaCasesCount} cirurgia(s) com glosa`}
-          tone="glosa"
-          icon={<TriangleAlert size={18} />}
-        />
-        <BillingSummaryCard
-          title="Cirurgias"
-          value={String(summary.totalRecords)}
-          caption={`${summary.particularCount} particulares | ${summary.convenioCount} por convênio`}
-          tone="records"
-          icon={<ClipboardList size={18} />}
-        />
-        <BillingSummaryCard
-          title="Pagamentos"
-          value={`${summary.paidCount} pagas`}
-          caption={`${summary.pendingCount} pendentes | ${summary.missingAmountCount} sem valor`}
-          tone="paid"
-          icon={<CheckCircle2 size={18} />}
-        />
-        <BillingSummaryCard
-          title="Pendências"
-          value={String(summary.recordsWithPendingItems)}
-          caption={`${summary.authorizationCount} autorizações | ${summary.attachmentCount} com anexos`}
-          tone="attention"
-          icon={<Info size={18} />}
-        />
-      </section>
-
-      <section className="billing-insights-grid">
-        <BillingRankingPanel
-          title="Cirurgiões com maior valor informado"
-          subtitle="Equipe"
-          items={doctorBreakdown}
-          emptyLabel="Nenhum cirurgião com faturamento no filtro atual."
-        />
-        <BillingRankingPanel
-          title="Convênios e regime com maior concentração"
-          subtitle="Pagadores"
-          items={convenioBreakdown}
-          emptyLabel="Nenhum convênio ou regime encontrado."
-        />
-      </section>
-
-      {billingQuery.error && (
-        <AlertMessage type="error">
-          {billingQuery.error instanceof Error ? billingQuery.error.message : 'Não foi possível carregar o faturamento.'}
-        </AlertMessage>
-      )}
-
-      <DataPanel className="billing-table-panel">
-        <div className="billing-section-heading">
-          <div>
-            <span className="eyebrow">Cirurgias faturadas</span>
-            <h3>Grade de consulta</h3>
-          </div>
-          <span className="billing-inline-note">Totais calculados a partir dos campos de pagamento e glosa do cadastro.</span>
-        </div>
-
-        <div className="table-wrap">
-          <table className="billing-table">
-            <thead>
-              <tr>
-                <th>Paciente</th>
-                <th>Cirurgião</th>
-                <th>Status</th>
-                <th>Resumo</th>
-                <th>Visualizar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {billingQuery.isPending ? (
-                <tr>
-                  <td colSpan={5} className="empty-row">Carregando faturamento médico...</td>
-                </tr>
-              ) : billingRecords.length ? (
-                billingRecords.map((record) => (
-                  <tr key={record.id}>
-                    <td data-label="Paciente">
-                      <div className="billing-patient-cell">
-                        <UserAvatar
-                          userId={record.paciente.userId}
-                          name={record.patientName}
-                          photo={record.paciente.fotoPerfil}
-                          authToken={session.token}
-                          size="sm"
-                        />
-                        <div>
-                          <strong>{record.patientName}</strong>
-                          <span>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendência(s)</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td data-label="Cirurgião">
-                      <strong>{record.doctorName}</strong>
-                      <span>{record.assistantNames.length ? `Auxiliares: ${record.assistantNames.join(', ')}` : 'Sem auxiliares informados'}</span>
-                    </td>
-                    <td data-label="Status">
-                      <span className={`status-pill ${record.status === 'paid' ? 'ok' : record.status === 'pending' ? 'warning' : 'inactive'}`}>
-                        {record.statusLabel}
-                      </span>
-                    </td>
-                    <td data-label="Resumo">
-                      <IconButton
-                        className="billing-row-action"
-                        label={`Informações resumidas de ${record.patientName}`}
-                        title="Informações resumidas"
-                        onClick={() => setSummaryRecordId(record.id)}
-                      >
-                        <FileText size={18} />
-                      </IconButton>
-                    </td>
-                    <td data-label="Visualizar">
-                      <IconButton
-                        className="billing-row-action"
-                        label={`Visualizar faturamento de ${record.patientName}`}
-                        title="Visualizar faturamento"
-                        onClick={() => openBillingDetail(record.id)}
-                      >
-                        <Eye size={18} />
-                      </IconButton>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+    {tab === 'faturamento' && <>
+      <DataPanel><div className="billing-section-heading"><div><span className="eyebrow">Cobrança</span><h3>Faturamentos normalizados</h3></div>
+        {canManageBilling && <Button variant="primary" onClick={() => setShowForm((x) => !x)}><Plus size={16} /> Novo faturamento</Button>}</div>
+        {showForm && canManageBilling && <form className="billing-filter-grid" onSubmit={submitFaturamento}>
+          <SelectField label="Atendimento" value={faturamentoForm.atendimentoCirurgicoId} required onChange={(e) => setFaturamentoForm({ ...faturamentoForm, atendimentoCirurgicoId: e.target.value })}>
+            <option value="">Selecione</option>{atendimentos.map((x) => <option key={x.id} value={x.id}>{x.paciente} — {new Date(x.dataProcedimento).toLocaleDateString('pt-BR')}</option>)}
+          </SelectField>
+          <TextField label="Competência" type="month" value={faturamentoForm.competencia} required onValueChange={(v) => setFaturamentoForm({ ...faturamentoForm, competencia: v })} />
+          <TextField label="Número da guia" value={faturamentoForm.numeroGuia} onValueChange={(v) => setFaturamentoForm({ ...faturamentoForm, numeroGuia: v })} />
+          <TextField label="Número do lote" value={faturamentoForm.numeroLote} onValueChange={(v) => setFaturamentoForm({ ...faturamentoForm, numeroLote: v })} />
+          <Button variant="primary" type="submit" disabled={loading}>Gerar itens do faturamento</Button>
+        </form>}
       </DataPanel>
+      <DataPanel className="billing-table-panel"><div className="table-wrap"><table className="billing-table"><thead><tr><th>Paciente</th><th>Guia</th><th>Apresentado</th><th>Glosa</th><th>Reconhecido</th><th>Status / ação</th></tr></thead><tbody>
+        {faturamentos.map((x) => <tr key={x.id}><td>{x.paciente}</td><td>{x.numeroGuia || '-'}</td><td>{formatCurrency(x.valorApresentado)}</td><td>{formatCurrency(x.valorGlosado)}</td><td>{formatCurrency(x.valorReconhecido)}</td><td><span className="status-pill active">{x.status}</span>{canManageBilling && x.status === 'Rascunho' && <Button onClick={() => void run(() => updateFaturamentoStatus(x.id, { id: x.id, status: 'ProntoParaEnvio', rowVersion: x.rowVersion }, session.token), 'Faturamento pronto para envio.')}>Preparar</Button>}{canManageBilling && !['Rascunho', 'Cancelado'].includes(x.status) && <Button onClick={() => registerReturn(x)}>Registrar retorno</Button>}{canManageBilling && x.status !== 'Rascunho' && x.status !== 'Cancelado' && <Button onClick={() => createAccount(x)}><ArrowRight size={15} /> Gerar título</Button>}{canManageBilling && x.glosas.map((g) => <Button key={g.id} onClick={() => appealGlosa(x, g.id, g.valorGlosado)}>Recorrer glosa {formatCurrency(g.valorGlosado)}</Button>)}</td></tr>)}
+        {!faturamentos.length && <tr><td colSpan={6} className="empty-row">Nenhum faturamento no novo fluxo.</td></tr>}
+      </tbody></table></div></DataPanel>
+    </>}
 
-      {summaryRecord && (
-        <BillingSummaryModal
-          record={summaryRecord}
-          authToken={session.token}
-          onClose={() => setSummaryRecordId(null)}
-        />
-      )}
-    </section>
-  );
+    {tab === 'financeiro' && canManageBilling && <>
+      <section className="billing-summary-grid"><Summary title="Saldo em aberto" value={formatCurrency(openBalance)} /><Summary title="Total recebido" value={formatCurrency(received)} /></section>
+      <DataPanel><div className="billing-section-heading"><div><span className="eyebrow">Financeiro</span><h3>Registrar recebimento</h3></div><Wallet size={20} /></div>
+        <form className="billing-filter-grid" onSubmit={submitReceipt}>
+          <SelectField label="Título" value={receipt.contaId} required onChange={(e) => setReceipt({ ...receipt, contaId: e.target.value })}><option value="">Selecione</option>{contas.filter((x) => x.saldoAberto > 0).map((x) => <option key={x.id} value={x.id}>{x.numeroDocumento} — {x.paciente} — {formatCurrency(x.saldoAberto)}</option>)}</SelectField>
+          <TextField label="Valor recebido" type="number" min="0.01" step="0.01" value={receipt.valor} required onValueChange={(v) => setReceipt({ ...receipt, valor: v })} />
+          <SelectField label="Forma" value={receipt.forma} onChange={(e) => setReceipt({ ...receipt, forma: e.target.value })}>{['Pix', 'Transferencia', 'Boleto', 'Dinheiro', 'Cartao', 'Deposito', 'Outro'].map((x) => <option key={x}>{x}</option>)}</SelectField>
+          <TextField label="Referência bancária" value={receipt.referencia} onValueChange={(v) => setReceipt({ ...receipt, referencia: v })} />
+          <Button variant="primary" type="submit" disabled={loading}>Registrar recebimento</Button>
+        </form>
+      </DataPanel>
+      <DataPanel className="billing-table-panel"><div className="table-wrap"><table className="billing-table"><thead><tr><th>Documento</th><th>Paciente</th><th>Vencimento</th><th>Original</th><th>Recebido</th><th>Saldo</th><th>Status</th></tr></thead><tbody>{contas.map((x) => <tr key={x.id}><td>{x.numeroDocumento}</td><td>{x.paciente}</td><td>{new Date(x.dataVencimento).toLocaleDateString('pt-BR')}</td><td>{formatCurrency(x.valorOriginal)}</td><td>{formatCurrency(x.valorRecebido)}</td><td>{formatCurrency(x.saldoAberto)}</td><td><span className="status-pill active">{x.status}</span>{x.recebimentos.filter((r) => !r.estornado).map((r) => <Button key={r.id} title={`Estornar ${formatCurrency(r.valorRecebido)}`} onClick={() => { const reason = window.prompt('Motivo do estorno:'); if (reason) void run(() => estornarRecebimento(r.id, reason, session.token), 'Recebimento estornado e saldo recalculado.'); }}><RotateCcw size={14} /></Button>)}</td></tr>)}</tbody></table></div></DataPanel>
+    </>}
+    {tab === 'precos' && <>
+      {canManageBilling && <DataPanel><div className="billing-section-heading"><div><span className="eyebrow">Contratos</span><h3>Preço negociado por convênio</h3></div></div>
+        <form className="billing-filter-grid" onSubmit={submitPrice}>
+          <SelectField label="Convênio" value={price.convenioId} required onChange={(e) => setPrice({ ...price, convenioId: e.target.value })}><option value="">Selecione</option>{convenios.map((x) => <option key={x.idConvenio} value={x.idConvenio}>{x.descricaoConvenio}</option>)}</SelectField>
+          <TextField label="Código CBHPM" value={price.cbhpmCodigo} required onValueChange={(v) => setPrice({ ...price, cbhpmCodigo: v })} />
+          <TextField label="Valor negociado" type="number" min="0" step="0.01" value={price.valorNegociado} required onValueChange={(v) => setPrice({ ...price, valorNegociado: v })} />
+          <TextField label="Percentual principal" type="number" min="0" step="0.0001" value={price.percentualPrincipal} onValueChange={(v) => setPrice({ ...price, percentualPrincipal: v })} />
+          <TextField label="Percentual auxiliar 1" type="number" min="0" step="0.0001" value={price.percentualAuxiliar1} onValueChange={(v) => setPrice({ ...price, percentualAuxiliar1: v })} />
+          <TextField label="Percentual auxiliar 2" type="number" min="0" step="0.0001" value={price.percentualAuxiliar2} onValueChange={(v) => setPrice({ ...price, percentualAuxiliar2: v })} />
+          <TextField label="Vigência inicial" type="date" value={price.vigenciaInicio} required onValueChange={(v) => setPrice({ ...price, vigenciaInicio: v })} />
+          <TextField label="Vigência final" type="date" value={price.vigenciaFinal} onValueChange={(v) => setPrice({ ...price, vigenciaFinal: v })} />
+          <Button variant="primary" type="submit" disabled={loading}>Salvar preço</Button>
+        </form>
+      </DataPanel>}
+      <RecordTable headers={['Convênio', 'CBHPM', 'Valor', 'Vigência', 'Status']} rows={precos.map((x) => [convenios.find((c) => c.idConvenio === x.convenioId)?.descricaoConvenio || String(x.convenioId), x.cbhpmCodigo, formatCurrency(x.valorNegociado), `${new Date(x.vigenciaInicio).toLocaleDateString('pt-BR')} — ${x.vigenciaFinal ? new Date(x.vigenciaFinal).toLocaleDateString('pt-BR') : 'sem término'}`, x.ativo ? 'Ativo' : 'Inativo'])} />
+    </>}
+  </section>;
 }
+
+function Summary({ title, value }: { title: string; value: string }) { return <DataPanel><span>{title}</span><h3>{value}</h3></DataPanel>; }
+function RecordTable({ headers, rows }: { headers: string[]; rows: Array<Array<string>> }) { return <DataPanel className="billing-table-panel"><div className="table-wrap"><table className="billing-table"><thead><tr>{headers.map((x) => <th key={x}>{x}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>)}{!rows.length && <tr><td colSpan={headers.length} className="empty-row">Nenhum registro.</td></tr>}</tbody></table></div></DataPanel>; }

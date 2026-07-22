@@ -314,7 +314,7 @@ describe('App', () => {
     const sidebar = screen.getByLabelText('Sessão ativa');
     expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
-    expect(within(sidebar).getByRole('button', { name: /faturamento médico/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /faturamento e financeiro/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /grupos médicos/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /^clínicas$/i })).toBeInTheDocument();
 
@@ -1212,49 +1212,7 @@ describe('App', () => {
     expect(procedimentoFilter).toHaveFocus();
   });
 
-  it('lista e cadastra pacientes', async () => {
-    const auxiliar1: User = {
-      ...baseUser,
-      id: 2,
-      nome: 'Bruno Hemodinks',
-      email: 'bruno@hemodinks.com',
-      cpf: '11144477735',
-    };
-    const auxiliar2: User = {
-      ...baseUser,
-      id: 3,
-      nome: 'Clara Hemodinks',
-      email: 'clara@hemodinks.com',
-      cpf: '93541134780',
-    };
-    vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser, auxiliar1, auxiliar2]));
-    const cbhpmProcedures = [
-      {
-        id: 1,
-        codigo: '1.01.01.01-2',
-        procedimento: 'Consulta',
-        porte: '2B',
-        valorReferencia: 120,
-      },
-      {
-        id: 2,
-        codigo: '1.01.02.01-9',
-        procedimento: 'Visita hospitalar',
-        porte: '2A',
-        valorReferencia: 180,
-      },
-    ];
-    vi.mocked(api.getCbhpmGeral).mockImplementation(async (_token, query) => {
-      const codigo = query?.codigo ?? '';
-      const procedimento = query?.procedimento?.toLocaleLowerCase('pt-BR') ?? '';
-      const items = codigo.includes('1010201')
-        ? [cbhpmProcedures[1]]
-        : codigo.includes('1010101') || procedimento.includes('consulta')
-          ? [cbhpmProcedures[0]]
-          : cbhpmProcedures;
-
-      return paged(items, query?.page ?? 1, query?.pageSize ?? 10);
-    });
+  it('lista e cadastra pacientes apenas com dados cadastrais', async () => {
     vi.mocked(api.createPaciente).mockResolvedValue({
       ...basePaciente,
       id: 11,
@@ -1277,107 +1235,21 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
 
-    await user.type(screen.getByLabelText('Data procedimento'), '04062026');
-    await user.type(screen.getByLabelText('Paciente'), 'Novo Paciente');
-    expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Telefone')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Data de nascimento')).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText('Nome completo'), 'Novo Paciente');
+    expect(screen.getByLabelText('CPF')).toBeInTheDocument();
+    expect(screen.getByLabelText('E-mail de acesso')).toBeInTheDocument();
+    expect(screen.getByLabelText('Telefone')).toBeInTheDocument();
+    expect(screen.getByLabelText('Data de nascimento')).toBeInTheDocument();
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText('Convênio'), 'Convenio Manual');
-    await user.type(screen.getByLabelText('Hospital'), 'Hospital Manual');
-    await user.type(screen.getByLabelText('Fornecedor OPME'), 'Fornecedor Manual');
-    await user.selectOptions(screen.getByLabelText('Cirurgião'), '1');
-    await user.selectOptions(screen.getByLabelText('Médico auxiliar 1'), '2');
-    await user.selectOptions(screen.getByLabelText('Médico auxiliar 2'), '3');
-    await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
-    const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
-    const refreshProceduresButton = within(cbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
-    await waitFor(() => {
-      expect(refreshProceduresButton).toBeEnabled();
-    });
-    fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), { target: { value: 'Consulta' } });
-    await user.click(refreshProceduresButton);
-    await waitFor(() => {
-      expect(api.getCbhpmGeral).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ procedimento: 'Consulta' }));
-    });
-    await waitFor(() => {
-      expect(within(cbhpmDialog).queryByText('Carregando procedimentos...')).not.toBeInTheDocument();
-    });
-    expect(within(cbhpmDialog).getByText('10101012')).toBeInTheDocument();
-    const firstProcedureRow = within(cbhpmDialog).getByText('10101012').closest('tr');
-    expect(firstProcedureRow).not.toBeNull();
-    await user.click(within(firstProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
-    await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
-    const secondCbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
-    const secondCodigoField = within(secondCbhpmDialog).getByLabelText('Código');
-    const refreshSecondProceduresButton = within(secondCbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
-    await waitFor(() => {
-      expect(refreshSecondProceduresButton).toBeEnabled();
-    });
-    fireEvent.change(secondCodigoField, { target: { value: '1010201' } });
-    await user.click(refreshSecondProceduresButton);
-    await waitFor(() => {
-      expect(api.getCbhpmGeral).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ codigo: '1010201' }));
-    });
-    await waitFor(() => {
-      expect(within(secondCbhpmDialog).queryByText('Carregando procedimentos...')).not.toBeInTheDocument();
-    });
-    expect(within(secondCbhpmDialog).getByText('10102019')).toBeInTheDocument();
-    const secondProcedureRow = within(secondCbhpmDialog).getByText('10102019').closest('tr');
-    expect(secondProcedureRow).not.toBeNull();
-    await user.click(within(secondProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
-    await user.type(screen.getByLabelText('Valor recebido/pago'), '200000');
-    await user.type(screen.getByLabelText('Glosa'), '1250');
-    expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 2.000,00');
-    expect(screen.getByLabelText('Glosa')).toHaveValue('R$ 12,50');
+    expect(screen.queryByLabelText('Valor recebido/pago')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Glosa')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /adicionar procedimento/i })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
-    expect(api.createPaciente).toHaveBeenCalledWith({
-      data: '2026-06-04',
+    expect(api.createPaciente).toHaveBeenCalledWith(expect.objectContaining({
       nomePaciente: 'Novo Paciente',
-      diagnostico: '',
-      tratamentoMedico: '',
-      cpf: '',
-      email: '',
-      telefone: '',
-      fotoPerfil: null,
-      dataNascimento: '1900-01-01',
-      hospitalId: null,
-      hospital: 'Hospital Manual',
-      medicoUserId: 1,
-      medico: 'Ana Hemodinks',
-      medicoAuxiliar1UserId: 2,
-      medicoAuxiliar1: 'Bruno Hemodinks',
-      medicoAuxiliar2UserId: 3,
-      medicoAuxiliar2: 'Clara Hemodinks',
-      convenioId: null,
-      convenio: 'Convenio Manual',
-      opmeFornecedorId: null,
-      opmeFornecedor: 'Fornecedor Manual',
-      cbhpmCodigo: '10101012',
-      cbhpmPorte: '2B',
-      procedimento: 'Consulta',
-      procedimentos: [
-        {
-          cbhpmCodigo: '10101012',
-          cbhpmPorte: '2B',
-          procedimento: 'Consulta',
-          valorReferencia: 120,
-        },
-        {
-          cbhpmCodigo: '10102019',
-          cbhpmPorte: '2A',
-          procedimento: 'Visita hospitalar',
-          valorReferencia: 180,
-        },
-      ],
-      autorizacao: '',
-      pagamento: 'R$ 2.000,00',
-      repasseGlosa: 'R$ 12,50',
-      statusPago: false,
-      ativo: true,
-    }, 'jwt-token');
+      pagamento: '',
+    }), 'jwt-token');
     expect(await screen.findByText('Paciente cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
   }, 15000);
 
@@ -1454,9 +1326,8 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
 
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Cirurgião')).toBeInTheDocument();
-    expect(screen.getByLabelText('Médico auxiliar 1')).toBeInTheDocument();
-    expect(screen.getByLabelText('Médico auxiliar 2')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Cirurgião')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('E-mail de acesso')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
   });
 
@@ -1503,10 +1374,8 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
     expect(await screen.findByRole('heading', { name: 'Novo paciente' })).toBeInTheDocument();
-    await user.type(screen.getByLabelText('Convênio'), 'Convênio manual do médico');
-    await user.type(screen.getByLabelText('Hospital'), 'Hospital manual do médico');
-    expect(screen.getByLabelText('Convênio')).toHaveValue('Convênio manual do médico');
-    expect(screen.getByLabelText('Hospital')).toHaveValue('Hospital manual do médico');
+    await user.type(screen.getByLabelText('Nome completo'), 'Paciente cadastral do médico');
+    expect(screen.getByLabelText('Nome completo')).toHaveValue('Paciente cadastral do médico');
     await user.click(screen.getByRole('button', { name: /voltar para lista/i }));
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
@@ -1542,7 +1411,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
   });
 
-  it('trata medico como licenca full para consultar CBHPM e cadastrar procedimento manual', async () => {
+  it('separa consulta CBHPM do cadastro de paciente para medico', async () => {
     const { user } = await renderAuthenticatedApp({
       sessionOverrides: {
         perfilId: 2,
@@ -1558,30 +1427,8 @@ describe('App', () => {
 
     await openPatientsModule(user);
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
-    await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
-
-    const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
-    const consultButton = within(cbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
-
-    expect(within(cbhpmDialog).queryByText(/sua licença não libera a consulta cbhpm/i)).not.toBeInTheDocument();
-    await waitFor(() => {
-      expect(consultButton).toBeEnabled();
-    });
-    fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), {
-      target: { value: 'Consulta' },
-    });
-    await user.click(consultButton);
-
-    await waitFor(() => {
-      expect(api.getCbhpmGeral).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ procedimento: 'Consulta' }));
-    });
-
-    fireEvent.change(within(cbhpmDialog).getByLabelText('Procedimento'), {
-      target: { value: 'Procedimento manual com licença full' },
-    });
-    await user.click(within(cbhpmDialog).getByRole('button', { name: /cadastrar manualmente/i }));
-
-    expect(await screen.findByText('Procedimento manual com licença full')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /adicionar procedimento/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/dados clínicos, procedimentos e valores são registrados no atendimento/i)).toBeInTheDocument();
   });
 
   it('preserva medico fora da lista escopada ao editar e salvar paciente', async () => {
@@ -1622,8 +1469,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
 
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /dr\. fora da lista \(fora da sua lista\)/i })).toBeInTheDocument();
-    expect(screen.getByLabelText('Cirurgião')).toHaveValue('legacy:55');
+    expect(screen.queryByLabelText('Cirurgião')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /salvar paciente/i }));
 

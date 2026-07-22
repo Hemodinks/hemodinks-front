@@ -501,6 +501,43 @@ export type PacienteFormData = {
 
 export type PacientePayload = Omit<PacienteFormData, 'novaObservacao'>;
 
+export type AtendimentoStatus = 'Planejado' | 'Autorizado' | 'Realizado' | 'Cancelado';
+export type AtendimentoProcedimento = {
+  id: number; cbhpmCodigo?: string | null; cbhpmPorte?: string | null; descricao: string;
+  quantidade: number; pesoPercentual: number; valorReferencia?: number | null; valorNegociado?: number | null; ordem: number;
+};
+export type AtendimentoCirurgico = {
+  id: number; pacienteId: number; paciente: string; dataProcedimento: string; hospitalId?: number | null;
+  convenioId?: number | null; medicoResponsavelId: number; medicoAuxiliar1Id?: number | null;
+  medicoAuxiliar2Id?: number | null; diagnostico?: string | null; tratamentoMedico?: string | null;
+  numeroAutorizacao?: string | null; status: AtendimentoStatus; procedimentos: AtendimentoProcedimento[];
+};
+export type FaturamentoStatus = 'Rascunho' | 'ProntoParaEnvio' | 'Enviado' | 'EmAnalise' | 'GlosadoParcial' | 'GlosadoTotal' | 'Aprovado' | 'ParcialmentePago' | 'Pago' | 'Cancelado';
+export type Faturamento = {
+  id: number; atendimentoCirurgicoId: number; pacienteId: number; paciente: string; convenioId?: number | null;
+  numeroGuia?: string | null; numeroLote?: string | null; competencia: string; dataEnvio?: string | null;
+  dataRetorno?: string | null; valorApresentado: number; valorGlosado: number; valorGlosaRecuperada: number;
+  valorReconhecido: number; status: FaturamentoStatus; observacao?: string | null; rowVersion: string;
+  itens: Array<{ id: number; codigo?: string | null; descricao: string; valorApresentado: number; valorAprovado: number; status: string }>;
+  glosas: Array<{ id: number; descricaoMotivo: string; valorGlosado: number; status: string }>;
+};
+export type Recebimento = {
+  id: number; dataRecebimento: string; valorRecebido: number; formaRecebimento: string;
+  referenciaBancaria?: string | null; documentoComprovante?: string | null; estornado: boolean;
+  dataEstorno?: string | null; motivoEstorno?: string | null;
+};
+export type ContaReceber = {
+  id: number; faturamentoId: number; pacienteId: number; paciente: string; convenioId?: number | null;
+  numeroDocumento: string; descricao: string; competencia: string; dataEmissao: string; dataVencimento: string;
+  valorOriginal: number; valorAjustado: number; valorRecebido: number; saldoAberto: number; status: string;
+  observacao?: string | null; rowVersion: string; recebimentos: Recebimento[];
+};
+export type ConvenioProcedimentoPreco = {
+  id: number; convenioId: number; cbhpmCodigo: string; valorNegociado: number;
+  percentualPrincipal: number; percentualAuxiliar1: number; percentualAuxiliar2: number;
+  vigenciaInicio: string; vigenciaFinal?: string | null; ativo: boolean;
+};
+
 export type PacienteObservacao = {
   id: number;
   pacienteId: number;
