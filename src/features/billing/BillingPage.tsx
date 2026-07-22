@@ -1,11 +1,13 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Plus, RefreshCw, RotateCcw, Wallet } from 'lucide-react';
+import { ArrowRight, Plus, RefreshCw, RotateCcw, Wallet, X } from 'lucide-react';
 import { AlertMessage, Button, DataPanel, SelectField, TextField } from '../../shared/components/ui';
+import { Modal } from '../../shared/components/Modal';
 import { formatCurrency } from '../../shared/utils/formatters';
 import type { AtendimentoCirurgico, AuthSession, ContaReceber, Convenio, ConvenioProcedimentoPreco, Faturamento, MedicalUserOption, Paciente } from '../../types';
 import { createAtendimento, createFaturamento, estornarRecebimento, gerarContaReceber, getAtendimentos,
   getContasReceber, getConvenioProcedimentoPrecos, getFaturamentos, getHospitais, getPacientes, registrarRecebimento,
-  registrarRecursoGlosa, registrarRetornoFaturamento, saveConvenioProcedimentoPreco, updateFaturamentoStatus } from '../../services';
+  registrarRecursoGlosa, registrarRetornoFaturamento, saveConvenioProcedimentoPreco, updateFaturamentoStatus,
+  uploadComprovanteRecebimento } from '../../services';
 import './billing.css';
 
 type BillingPageProps = { session: AuthSession; medicalUsers: MedicalUserOption[]; convenios: Convenio[]; isAdmin: boolean; isMedical: boolean };
@@ -26,8 +28,14 @@ export function BillingPage({ session, medicalUsers, convenios, isMedical }: Bil
   const [atendimentoForm, setAtendimentoForm] = useState({ pacienteId: '', dataProcedimento: '', hospitalId: '', convenioId: '', medicoResponsavelId: isMedical ? String(session.user.id) : '', medicoAuxiliar1Id: '', medicoAuxiliar2Id: '', diagnostico: '', tratamentoMedico: '', cbhpmCodigo: '', descricao: '', quantidade: '1', pesoPercentual: '100', numeroAutorizacao: '' });
   const [faturamentoForm, setFaturamentoForm] = useState({ atendimentoCirurgicoId: '', competencia: new Date().toISOString().slice(0, 7), numeroGuia: '', numeroLote: '' });
   const [procedimentos, setProcedimentos] = useState<Array<{ cbhpmCodigo: string | null; descricao: string | null; quantidade: number; pesoPercentual: number }>>([]);
-  const [receipt, setReceipt] = useState({ contaId: '', valor: '', forma: 'Pix', referencia: '' });
+  const [receipt, setReceipt] = useState<{ contaId: string; valor: string; forma: string; referencia: string; comprovante: File | null }>({ contaId: '', valor: '', forma: 'Pix', referencia: '', comprovante: null });
   const [price, setPrice] = useState({ convenioId: '', cbhpmCodigo: '', valorNegociado: '', percentualPrincipal: '100', percentualAuxiliar1: '0', percentualAuxiliar2: '0', vigenciaInicio: new Date().toISOString().slice(0, 10), vigenciaFinal: '' });
+  const [returnTarget, setReturnTarget] = useState<Faturamento | null>(null);
+  const [returnDraft, setReturnDraft] = useState<Array<{ faturamentoItemId: number; descricao: string; valorApresentado: number; valorGlosado: string; motivoGlosa: string }>>([]);
+  const [appealTarget, setAppealTarget] = useState<{ glosaId: number; valorGlosado: number } | null>(null);
+  const [appealDraft, setAppealDraft] = useState({ justificativa: '', valorRecuperado: '0' });
+  const [reversalTarget, setReversalTarget] = useState<{ id: number; valor: number } | null>(null);
+  const [reversalReason, setReversalReason] = useState('');
   const canManageBilling = !isMedical;
 
   const load = async () => {
@@ -81,35 +89,42 @@ export function BillingPage({ session, medicalUsers, convenios, isMedical }: Bil
     dataEmissao: new Date().toISOString(), dataVencimento: new Date(Date.now() + 30 * 86400000).toISOString(),
     valorOriginal: null, valorAjustado: null, observacao: null,
   }, session.token), 'Conta a receber gerada sem duplicidade.');
-  const registerReturn = (item: Faturamento) => {
-    const inputs = item.itens.map((billingItem) => {
-      const rawGlosa = window.prompt(`Valor glosado para ${billingItem.descricao}:`, '0');
-      if (rawGlosa == null) return null;
-      const valorGlosado = Number(rawGlosa.replace(',', '.'));
-      return { faturamentoItemId: billingItem.id, valorGlosado,
-        valorAprovado: billingItem.valorApresentado - valorGlosado, codigoMotivo: null,
-        motivoGlosa: valorGlosado > 0 ? window.prompt('Motivo da glosa:') || 'Não informado' : null };
-    });
-    if (inputs.some((x) => x == null)) return;
-    void run(() => registrarRetornoFaturamento(item.id, { id: item.id, dataRetorno: new Date().toISOString(),
-      itens: inputs, rowVersion: item.rowVersion }, session.token), 'Retorno registrado e títulos reconciliados.');
+  const openReturn = (item: Faturamento) => {
+    setReturnTarget(item);
+    setReturnDraft(item.itens.map((billingItem) => ({ faturamentoItemId: billingItem.id, descricao: billingItem.descricao,
+      valorApresentado: billingItem.valorApresentado, valorGlosado: '0', motivoGlosa: '' })));
   };
-  const appealGlosa = (item: Faturamento, glosaId: number, valorGlosado: number) => {
-    const justificativa = window.prompt('Justificativa do recurso:'); if (!justificativa) return;
-    const recoveredRaw = window.prompt('Valor recuperado (0 enquanto aguarda resposta):', '0'); if (recoveredRaw == null) return;
-    const valorRecuperado = Number(recoveredRaw.replace(',', '.'));
-    void run(() => registrarRecursoGlosa(glosaId, { glosaId, dataEnvio: new Date().toISOString(), justificativa,
-      valorRecorrido: valorGlosado, dataResposta: valorRecuperado > 0 ? new Date().toISOString() : null,
-      valorRecuperado, status: valorRecuperado > 0 ? valorRecuperado === valorGlosado ? 'Aceito' : 'AceitoParcialmente' : 'Enviado',
-      observacao: null }, session.token), 'Recurso de glosa registrado.');
+  const submitReturn = (event: FormEvent) => {
+    event.preventDefault(); if (!returnTarget) return;
+    const inputs = returnDraft.map((input) => { const valorGlosado = Number(input.valorGlosado.replace(',', '.'));
+      return { faturamentoItemId: input.faturamentoItemId, valorGlosado, valorAprovado: input.valorApresentado - valorGlosado,
+        codigoMotivo: null, motivoGlosa: valorGlosado > 0 ? input.motivoGlosa : null }; });
+    void run(() => registrarRetornoFaturamento(returnTarget.id, { id: returnTarget.id, dataRetorno: new Date().toISOString(),
+      itens: inputs, rowVersion: returnTarget.rowVersion }, session.token), 'Retorno registrado e títulos reconciliados.').then(() => setReturnTarget(null));
+  };
+  const submitAppeal = (event: FormEvent) => {
+    event.preventDefault(); if (!appealTarget) return;
+    const valorRecuperado = Number(appealDraft.valorRecuperado.replace(',', '.'));
+    void run(() => registrarRecursoGlosa(appealTarget.glosaId, { glosaId: appealTarget.glosaId, dataEnvio: new Date().toISOString(), justificativa: appealDraft.justificativa,
+      valorRecorrido: appealTarget.valorGlosado, dataResposta: valorRecuperado > 0 ? new Date().toISOString() : null,
+      valorRecuperado, status: valorRecuperado > 0 ? valorRecuperado === appealTarget.valorGlosado ? 'Aceito' : 'AceitoParcialmente' : 'Enviado',
+      observacao: null }, session.token), 'Recurso de glosa registrado.').then(() => setAppealTarget(null));
+  };
+  const submitReversal = (event: FormEvent) => {
+    event.preventDefault(); if (!reversalTarget) return;
+    void run(() => estornarRecebimento(reversalTarget.id, reversalReason, session.token), 'Recebimento estornado e saldo recalculado.')
+      .then(() => { setReversalTarget(null); setReversalReason(''); });
   };
 
-  const submitReceipt = (event: FormEvent) => {
+  const submitReceipt = async (event: FormEvent) => {
     event.preventDefault(); const account = contas.find((x) => x.id === Number(receipt.contaId)); if (!account) return;
-    void run(() => registrarRecebimento(account.id, { contaReceberId: account.id, dataRecebimento: new Date().toISOString(),
-      valorRecebido: Number(receipt.valor.replace(',', '.')), formaRecebimento: receipt.forma,
-      referenciaBancaria: receipt.referencia || null, documentoComprovante: null, observacao: null,
-      usuarioCadastroId: 0, rowVersion: account.rowVersion }, session.token), 'Recebimento registrado e saldo recalculado.');
+    await run(async () => { const updated = await registrarRecebimento(account.id, { contaReceberId: account.id, dataRecebimento: new Date().toISOString(),
+        valorRecebido: Number(receipt.valor.replace(',', '.')), formaRecebimento: receipt.forma,
+        referenciaBancaria: receipt.referencia || null, documentoComprovante: null, observacao: null,
+        usuarioCadastroId: 0, rowVersion: account.rowVersion }, session.token);
+      if (receipt.comprovante) { const created = updated.recebimentos.find((x) => !account.recebimentos.some((old) => old.id === x.id));
+        if (created) await uploadComprovanteRecebimento(created.id, receipt.comprovante, session.token); }
+    }, receipt.comprovante ? 'Recebimento e comprovante registrados.' : 'Recebimento registrado e saldo recalculado.');
   };
   const submitPrice = (event: FormEvent) => {
     event.preventDefault();
@@ -191,7 +206,7 @@ export function BillingPage({ session, medicalUsers, convenios, isMedical }: Bil
         </form>}
       </DataPanel>
       <DataPanel className="billing-table-panel"><div className="table-wrap"><table className="billing-table"><thead><tr><th>Paciente</th><th>Guia</th><th>Apresentado</th><th>Glosa</th><th>Reconhecido</th><th>Status / ação</th></tr></thead><tbody>
-        {faturamentos.map((x) => <tr key={x.id}><td>{x.paciente}</td><td>{x.numeroGuia || '-'}</td><td>{formatCurrency(x.valorApresentado)}</td><td>{formatCurrency(x.valorGlosado)}</td><td>{formatCurrency(x.valorReconhecido)}</td><td><span className="status-pill active">{x.status}</span>{canManageBilling && x.status === 'Rascunho' && <Button onClick={() => void run(() => updateFaturamentoStatus(x.id, { id: x.id, status: 'ProntoParaEnvio', rowVersion: x.rowVersion }, session.token), 'Faturamento pronto para envio.')}>Preparar</Button>}{canManageBilling && !['Rascunho', 'Cancelado'].includes(x.status) && <Button onClick={() => registerReturn(x)}>Registrar retorno</Button>}{canManageBilling && x.status !== 'Rascunho' && x.status !== 'Cancelado' && <Button onClick={() => createAccount(x)}><ArrowRight size={15} /> Gerar título</Button>}{canManageBilling && x.glosas.map((g) => <Button key={g.id} onClick={() => appealGlosa(x, g.id, g.valorGlosado)}>Recorrer glosa {formatCurrency(g.valorGlosado)}</Button>)}</td></tr>)}
+        {faturamentos.map((x) => <tr key={x.id}><td>{x.paciente}</td><td>{x.numeroGuia || '-'}</td><td>{formatCurrency(x.valorApresentado)}</td><td>{formatCurrency(x.valorGlosado)}</td><td>{formatCurrency(x.valorReconhecido)}</td><td><span className="status-pill active">{x.status}</span>{canManageBilling && x.status === 'Rascunho' && <Button onClick={() => void run(() => updateFaturamentoStatus(x.id, { id: x.id, status: 'ProntoParaEnvio', rowVersion: x.rowVersion }, session.token), 'Faturamento pronto para envio.')}>Preparar</Button>}{canManageBilling && !['Rascunho', 'Cancelado'].includes(x.status) && <Button onClick={() => openReturn(x)}>Registrar retorno</Button>}{canManageBilling && x.status !== 'Rascunho' && x.status !== 'Cancelado' && <Button onClick={() => createAccount(x)}><ArrowRight size={15} /> Gerar título</Button>}{canManageBilling && x.glosas.map((g) => <Button key={g.id} onClick={() => { setAppealTarget({ glosaId: g.id, valorGlosado: g.valorGlosado }); setAppealDraft({ justificativa: '', valorRecuperado: '0' }); }}>Recorrer glosa {formatCurrency(g.valorGlosado)}</Button>)}</td></tr>)}
         {!faturamentos.length && <tr><td colSpan={6} className="empty-row">Nenhum faturamento no novo fluxo.</td></tr>}
       </tbody></table></div></DataPanel>
     </>}
@@ -204,10 +219,11 @@ export function BillingPage({ session, medicalUsers, convenios, isMedical }: Bil
           <TextField label="Valor recebido" type="number" min="0.01" step="0.01" value={receipt.valor} required onValueChange={(v) => setReceipt({ ...receipt, valor: v })} />
           <SelectField label="Forma" value={receipt.forma} onChange={(e) => setReceipt({ ...receipt, forma: e.target.value })}>{['Pix', 'Transferencia', 'Boleto', 'Dinheiro', 'Cartao', 'Deposito', 'Outro'].map((x) => <option key={x}>{x}</option>)}</SelectField>
           <TextField label="Referência bancária" value={receipt.referencia} onValueChange={(v) => setReceipt({ ...receipt, referencia: v })} />
+          <label className="filter-field"><span>Comprovante (opcional)</span><input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(event) => setReceipt({ ...receipt, comprovante: event.target.files?.[0] ?? null })} /></label>
           <Button variant="primary" type="submit" disabled={loading}>Registrar recebimento</Button>
         </form>
       </DataPanel>
-      <DataPanel className="billing-table-panel"><div className="table-wrap"><table className="billing-table"><thead><tr><th>Documento</th><th>Paciente</th><th>Vencimento</th><th>Original</th><th>Recebido</th><th>Saldo</th><th>Status</th></tr></thead><tbody>{contas.map((x) => <tr key={x.id}><td>{x.numeroDocumento}</td><td>{x.paciente}</td><td>{new Date(x.dataVencimento).toLocaleDateString('pt-BR')}</td><td>{formatCurrency(x.valorOriginal)}</td><td>{formatCurrency(x.valorRecebido)}</td><td>{formatCurrency(x.saldoAberto)}</td><td><span className="status-pill active">{x.status}</span>{x.recebimentos.filter((r) => !r.estornado).map((r) => <Button key={r.id} title={`Estornar ${formatCurrency(r.valorRecebido)}`} onClick={() => { const reason = window.prompt('Motivo do estorno:'); if (reason) void run(() => estornarRecebimento(r.id, reason, session.token), 'Recebimento estornado e saldo recalculado.'); }}><RotateCcw size={14} /></Button>)}</td></tr>)}</tbody></table></div></DataPanel>
+      <DataPanel className="billing-table-panel"><div className="table-wrap"><table className="billing-table"><thead><tr><th>Documento</th><th>Paciente</th><th>Vencimento</th><th>Original</th><th>Recebido</th><th>Saldo</th><th>Status</th></tr></thead><tbody>{contas.map((x) => <tr key={x.id}><td>{x.numeroDocumento}</td><td>{x.paciente}</td><td>{new Date(x.dataVencimento).toLocaleDateString('pt-BR')}</td><td>{formatCurrency(x.valorOriginal)}</td><td>{formatCurrency(x.valorRecebido)}</td><td>{formatCurrency(x.saldoAberto)}</td><td><span className="status-pill active">{x.status}</span>{x.recebimentos.filter((r) => !r.estornado).map((r) => <Button key={r.id} title={`Estornar ${formatCurrency(r.valorRecebido)}`} onClick={() => setReversalTarget({ id: r.id, valor: r.valorRecebido })}><RotateCcw size={14} /></Button>)}</td></tr>)}</tbody></table></div></DataPanel>
     </>}
     {tab === 'precos' && <>
       {canManageBilling && <DataPanel><div className="billing-section-heading"><div><span className="eyebrow">Contratos</span><h3>Preço negociado por convênio</h3></div></div>
@@ -225,6 +241,9 @@ export function BillingPage({ session, medicalUsers, convenios, isMedical }: Bil
       </DataPanel>}
       <RecordTable headers={['Convênio', 'CBHPM', 'Valor', 'Vigência', 'Status']} rows={precos.map((x) => [convenios.find((c) => c.idConvenio === x.convenioId)?.descricaoConvenio || String(x.convenioId), x.cbhpmCodigo, formatCurrency(x.valorNegociado), `${new Date(x.vigenciaInicio).toLocaleDateString('pt-BR')} — ${x.vigenciaFinal ? new Date(x.vigenciaFinal).toLocaleDateString('pt-BR') : 'sem término'}`, x.ativo ? 'Ativo' : 'Inativo'])} />
     </>}
+    {returnTarget && <Modal titleId="billing-return-title" onClose={() => setReturnTarget(null)}><div className="panel-title"><h2 id="billing-return-title">Registrar retorno do faturamento</h2><Button onClick={() => setReturnTarget(null)}><X size={16} /></Button></div><form className="billing-filter-grid" onSubmit={submitReturn}>{returnDraft.map((item, index) => <div key={item.faturamentoItemId}><strong>{item.descricao}</strong><TextField label={`Glosa (máx. ${formatCurrency(item.valorApresentado)})`} type="number" min="0" max={item.valorApresentado} step="0.01" value={item.valorGlosado} required onValueChange={(value) => setReturnDraft((current) => current.map((draft, position) => position === index ? { ...draft, valorGlosado: value } : draft))} />{Number(item.valorGlosado.replace(',', '.')) > 0 && <TextField label="Motivo da glosa" value={item.motivoGlosa} required onValueChange={(value) => setReturnDraft((current) => current.map((draft, position) => position === index ? { ...draft, motivoGlosa: value } : draft))} />}</div>)}<Button variant="primary" type="submit" disabled={loading}>Confirmar retorno</Button></form></Modal>}
+    {appealTarget && <Modal titleId="billing-appeal-title" onClose={() => setAppealTarget(null)}><div className="panel-title"><h2 id="billing-appeal-title">Recurso de glosa</h2><Button onClick={() => setAppealTarget(null)}><X size={16} /></Button></div><form className="billing-filter-grid" onSubmit={submitAppeal}><TextField label="Justificativa" value={appealDraft.justificativa} required onValueChange={(value) => setAppealDraft({ ...appealDraft, justificativa: value })} /><TextField label="Valor recuperado" type="number" min="0" max={appealTarget.valorGlosado} step="0.01" value={appealDraft.valorRecuperado} required onValueChange={(value) => setAppealDraft({ ...appealDraft, valorRecuperado: value })} /><span className="file-hint">Use zero enquanto o recurso aguarda resposta.</span><Button variant="primary" type="submit" disabled={loading}>Registrar recurso</Button></form></Modal>}
+    {reversalTarget && <Modal titleId="billing-reversal-title" onClose={() => setReversalTarget(null)}><div className="panel-title"><h2 id="billing-reversal-title">Estornar {formatCurrency(reversalTarget.valor)}</h2><Button onClick={() => setReversalTarget(null)}><X size={16} /></Button></div><form className="billing-filter-grid" onSubmit={submitReversal}><TextField label="Motivo do estorno" value={reversalReason} required onValueChange={setReversalReason} /><Button variant="primary" type="submit" disabled={loading}>Confirmar estorno</Button></form></Modal>}
   </section>;
 }
 
