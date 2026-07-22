@@ -706,7 +706,11 @@
 
 .billing-cbhpm-open {
   min-height: 42px;
-  align-self: end;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background: var(--action-success);
   border-color: color-mix(in srgb, var(--action-success) 82%, black);
   color: white;
@@ -726,10 +730,29 @@
 
 .billing-cbhpm-filters {
   display: grid;
-  grid-template-columns: minmax(180px, 0.7fr) minmax(320px, 1.5fr) auto;
+  grid-template-columns: minmax(150px, 0.65fr) minmax(280px, 1.5fr) minmax(
+      90px,
+      0.4fr
+    ) auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 16px;
+}
+
+.billing-cbhpm-manual-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: -6px 0 12px;
+}
+
+.billing-cbhpm-manual {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: white;
+  background: var(--action-warning);
+  border-color: color-mix(in srgb, var(--action-warning) 82%, black);
 }
 
 .billing-cbhpm-filter-actions {
@@ -775,12 +798,148 @@
 
 .billing-cbhpm-select {
   width: 125px;
-  color: var(--action-success);
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: white;
+  background: var(--action-success);
+  border-color: color-mix(in srgb, var(--action-success) 82%, black);
+}
+
+.billing-cbhpm-select:hover {
+  color: white;
+  background: var(--action-success-hover);
 }
 
 .billing-cbhpm-pagination {
   flex: 0 0 auto;
   margin-top: 14px;
+}
+
+.billing-attendance-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "date patient"
+    "diagnosis treatment"
+    "convenio responsible"
+    "hospital assistant-one"
+    ". assistant-two"
+    "procedures procedures"
+    "authorization ."
+    "save save";
+}
+
+.billing-attendance-form > label:nth-child(1) {
+  grid-area: patient;
+}
+
+.billing-attendance-form > label:nth-child(2) {
+  grid-area: date;
+}
+
+.billing-attendance-form > label:nth-child(3) {
+  grid-area: hospital;
+}
+
+.billing-attendance-form > label:nth-child(4) {
+  grid-area: convenio;
+}
+
+.billing-attendance-form > label:nth-child(5) {
+  grid-area: responsible;
+}
+
+.billing-attendance-form > label:nth-child(6) {
+  grid-area: assistant-one;
+}
+
+.billing-attendance-form > label:nth-child(7) {
+  grid-area: assistant-two;
+}
+
+.billing-attendance-form > label:nth-child(8) {
+  grid-area: diagnosis;
+}
+
+.billing-attendance-form > label:nth-child(9) {
+  grid-area: treatment;
+}
+
+.billing-attendance-procedures {
+  grid-area: procedures;
+  display: grid;
+  gap: 8px;
+}
+
+.billing-attendance-field-label {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.billing-selected-procedures {
+  display: grid;
+  gap: 8px;
+}
+
+.billing-selected-procedure {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 34px;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--action-success));
+}
+
+.billing-selected-procedure > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.billing-selected-procedure strong {
+  overflow-wrap: anywhere;
+}
+
+.billing-procedure-code {
+  color: var(--action-success);
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.billing-procedure-porte {
+  min-width: 58px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  color: #065f46;
+  background: #dff7eb;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.billing-procedure-remove {
+  width: 32px;
+  min-height: 32px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: white;
+  background: var(--action-secondary);
+}
+
+.billing-attendance-form > label:nth-last-of-type(1) {
+  grid-area: authorization;
+}
+
+.billing-attendance-form > button[type="submit"] {
+  grid-area: save;
+  width: 100%;
 }
 
 .billing-flag.missing {
@@ -839,6 +998,28 @@
 
   .billing-cbhpm-filters {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-cbhpm-manual,
+  .billing-cbhpm-manual-row {
+    width: 100%;
+  }
+
+  .billing-attendance-form {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "date"
+      "patient"
+      "diagnosis"
+      "treatment"
+      "convenio"
+      "responsible"
+      "hospital"
+      "assistant-one"
+      "assistant-two"
+      "procedures"
+      "authorization"
+      "save";
   }
 
   .billing-cbhpm-filter-actions,

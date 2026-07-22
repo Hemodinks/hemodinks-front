@@ -203,7 +203,22 @@ describe("BillingPage", () => {
     setupMocks();
   });
 
-  it("cadastra atendimento com procedimento, peso, autorização, médico e hospital", async () => {
+  it("cadastra atendimento com procedimento selecionado, autorização, médico e hospital", async () => {
+    vi.mocked(services.getCbhpmGeral).mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          codigo: "123",
+          procedimento: "Cirurgia",
+          porte: "8A",
+          valorReferencia: 1000,
+        },
+      ],
+      page: 1,
+      pageSize: 10,
+      totalItems: 1,
+      totalPages: 1,
+    });
     renderPage();
     await screen.findByText("Paciente Teste");
     fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
@@ -219,12 +234,8 @@ describe("BillingPage", () => {
     fireEvent.change(screen.getByLabelText("Médico responsável"), {
       target: { value: "2" },
     });
-    fireEvent.change(screen.getByLabelText("Código CBHPM"), {
-      target: { value: "123" },
-    });
-    fireEvent.change(screen.getByLabelText("Peso percentual"), {
-      target: { value: "80" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
     fireEvent.change(screen.getByLabelText("Autorização"), {
       target: { value: "AUT-1" },
     });
@@ -237,7 +248,10 @@ describe("BillingPage", () => {
           medicoResponsavelId: 2,
           numeroAutorizacao: "AUT-1",
           procedimentos: [
-            expect.objectContaining({ cbhpmCodigo: "123", pesoPercentual: 80 }),
+            expect.objectContaining({
+              cbhpmCodigo: "123",
+              pesoPercentual: 100,
+            }),
           ],
         }),
         "token",
@@ -430,7 +444,7 @@ describe("BillingPage", () => {
     );
   });
 
-  it("pré-visualiza CBHPM e valor negociado antes de salvar atendimento", async () => {
+  it("exibe o procedimento selecionado sem informações de preço", async () => {
     vi.mocked(services.getCbhpmGeral).mockResolvedValue({
       items: [
         {
@@ -446,48 +460,25 @@ describe("BillingPage", () => {
       totalItems: 1,
       totalPages: 1,
     });
-    vi.mocked(services.getConvenioProcedimentoPrecos).mockImplementation(
-      async (_token, params) =>
-        Object.keys(params ?? {}).length
-          ? [
-              {
-                id: 1,
-                convenioId: 1,
-                cbhpmCodigo: "123",
-                valorNegociado: 850,
-                percentualPrincipal: 100,
-                percentualAuxiliar1: 0,
-                percentualAuxiliar2: 0,
-                vigenciaInicio: "2026-01-01",
-                ativo: true,
-              },
-            ]
-          : [],
-    );
     renderPage();
     await screen.findByText("Paciente Teste");
     fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Consultar procedimentos CBHPM" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
     expect(
       await screen.findByRole("dialog", { name: "Consultar procedimentos" }),
     ).toBeInTheDocument();
-    await screen.findByRole("button", { name: "Selecionar" });
-    fireEvent.click(screen.getByRole("button", { name: "Selecionar" }));
-    expect(screen.getByLabelText("Código CBHPM")).toHaveValue("123");
-    fireEvent.change(screen.getByLabelText("Data da cirurgia"), {
-      target: { value: "2026-07-10" },
-    });
-    fireEvent.change(screen.getByLabelText("Convênio"), {
-      target: { value: "1" },
-    });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Pré-visualizar preço" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
+    expect(screen.getByText("Cirurgia")).toBeInTheDocument();
+    expect(screen.getByText("8A")).toBeInTheDocument();
     expect(
-      await screen.findByText(/Preço que será preservado no atendimento/),
-    ).toHaveTextContent("R$ 850,00");
+      screen.getByRole("button", { name: "Remover Cirurgia" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Pré-visualizar preço" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Preço que será preservado/),
+    ).not.toBeInTheDocument();
   });
 
   it("filtra e pagina os procedimentos CBHPM dentro do popup", async () => {
@@ -513,9 +504,7 @@ describe("BillingPage", () => {
     renderPage();
     await screen.findByText("Paciente Teste");
     fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Consultar procedimentos CBHPM" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
 
     await screen.findByRole("dialog", { name: "Consultar procedimentos" });
     await waitFor(() =>
@@ -557,5 +546,30 @@ describe("BillingPage", () => {
     expect(
       await screen.findByText("Cirurgia complementar"),
     ).toBeInTheDocument();
+  });
+
+  it("adiciona um procedimento manual pelo popup CBHPM", async () => {
+    renderPage();
+    await screen.findByText("Paciente Teste");
+    fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
+    await screen.findByRole("dialog", { name: "Consultar procedimentos" });
+
+    fireEvent.change(screen.getByLabelText("Código"), {
+      target: { value: "9.99.99.99-9" },
+    });
+    fireEvent.change(screen.getByLabelText("Descrição do procedimento"), {
+      target: { value: "Procedimento manual" },
+    });
+    fireEvent.change(screen.getByLabelText("Porte"), {
+      target: { value: "2b" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cadastrar manualmente" }),
+    );
+
+    expect(screen.getByText("99999999")).toBeInTheDocument();
+    expect(screen.getByText("Procedimento manual")).toBeInTheDocument();
+    expect(screen.getByText("2B")).toBeInTheDocument();
   });
 });

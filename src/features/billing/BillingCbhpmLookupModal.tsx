@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Plus,
   Search,
   X,
 } from "lucide-react";
@@ -37,15 +38,21 @@ export function BillingCbhpmLookupModal({
   onSelect,
   onClose,
 }: BillingCbhpmLookupModalProps) {
-  const [filters, setFilters] = useState({ codigo: "", descricao: "" });
+  const [filters, setFilters] = useState({
+    codigo: "",
+    descricao: "",
+    porte: "",
+  });
   const [appliedFilters, setAppliedFilters] = useState({
     codigo: "",
     descricao: "",
+    porte: "",
   });
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<PagedResult<CbhpmGeral>>(emptyResult);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [manualError, setManualError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -59,6 +66,7 @@ export function BillingCbhpmLookupModal({
           pageSize,
           codigo: appliedFilters.codigo || undefined,
           procedimento: appliedFilters.descricao || undefined,
+          porte: appliedFilters.porte || undefined,
           sortBy: "codigo",
           sortDirection: "asc",
         });
@@ -88,14 +96,34 @@ export function BillingCbhpmLookupModal({
     setAppliedFilters({
       codigo: filters.codigo.trim(),
       descricao: filters.descricao.trim(),
+      porte: filters.porte.trim().toUpperCase(),
     });
   };
 
   const clearFilters = () => {
-    const cleared = { codigo: "", descricao: "" };
+    const cleared = { codigo: "", descricao: "", porte: "" };
     setFilters(cleared);
+    setManualError("");
     setPage(1);
     setAppliedFilters(cleared);
+  };
+
+  const addManualProcedure = () => {
+    const description = filters.descricao.trim();
+    if (!description) {
+      setManualError(
+        "Informe a descrição do procedimento para cadastrá-lo manualmente.",
+      );
+      return;
+    }
+
+    onSelect({
+      id: 0,
+      codigo: filters.codigo.replace(/\D/g, ""),
+      procedimento: description,
+      porte: filters.porte.trim().toUpperCase() || null,
+      valorReferencia: null,
+    });
   };
 
   const totalPages = Math.max(1, result.totalPages);
@@ -128,7 +156,10 @@ export function BillingCbhpmLookupModal({
           type="search"
           value={filters.codigo}
           onValueChange={(codigo) =>
-            setFilters((current) => ({ ...current, codigo }))
+            setFilters((current) => ({
+              ...current,
+              codigo: codigo.replace(/\D/g, ""),
+            }))
           }
           placeholder="Ex.: 40701018"
           autoComplete="off"
@@ -143,6 +174,19 @@ export function BillingCbhpmLookupModal({
           placeholder="Ex.: cirurgia vascular"
           autoComplete="off"
         />
+        <TextField
+          label="Porte"
+          type="search"
+          value={filters.porte}
+          onValueChange={(porte) =>
+            setFilters((current) => ({
+              ...current,
+              porte: porte.toUpperCase(),
+            }))
+          }
+          placeholder="Ex.: 2B"
+          autoComplete="off"
+        />
         <div className="billing-cbhpm-filter-actions">
           <Button type="button" onClick={clearFilters} disabled={loading}>
             Limpar filtros
@@ -154,7 +198,19 @@ export function BillingCbhpmLookupModal({
         </div>
       </form>
 
+      <div className="billing-cbhpm-manual-row">
+        <Button
+          type="button"
+          className="billing-cbhpm-manual"
+          onClick={addManualProcedure}
+        >
+          <Plus size={17} />
+          Cadastrar manualmente
+        </Button>
+      </div>
+
       {error && <AlertMessage type="error">{error}</AlertMessage>}
+      {manualError && <AlertMessage type="error">{manualError}</AlertMessage>}
 
       <div className="table-wrap billing-cbhpm-table-wrap">
         <table className="billing-table billing-cbhpm-table">
@@ -191,7 +247,7 @@ export function BillingCbhpmLookupModal({
                       onClick={() => onSelect(item)}
                     >
                       <CheckCircle2 size={17} />
-                      Selecionar
+                      Adicionar
                     </Button>
                   </td>
                 </tr>

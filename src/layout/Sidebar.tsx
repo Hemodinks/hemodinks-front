@@ -124,6 +124,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-dashboard ${activeView === "dashboard" ? "active" : ""}`}
               aria-current={activeView === "dashboard" ? "page" : undefined}
+              title="Visão geral dos indicadores e atividades do sistema."
               onClick={onOpenDashboard}
             >
               <LayoutDashboard size={18} />
@@ -135,6 +136,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-users ${activeView === "users" ? "active" : ""}`}
               aria-current={activeView === "users" ? "page" : undefined}
+              title="Cadastre usuários e gerencie seus acessos."
               onClick={onOpenUsersList}
             >
               <Users size={18} />
@@ -147,6 +149,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-profile ${activeView === "profile" ? "active" : ""}`}
               aria-current={activeView === "profile" ? "page" : undefined}
+              title="Consulte e atualize os dados do seu cadastro."
               onClick={onOpenMyProfile}
             >
               <FileText size={18} />
@@ -158,6 +161,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-patients ${activeView === "patients" ? "active" : ""}`}
               aria-current={activeView === "patients" ? "page" : undefined}
+              title="Consulte e gerencie os cadastros dos pacientes."
               onClick={onOpenPatientsList}
             >
               <ClipboardList size={18} />
@@ -170,6 +174,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-billing ${activeView === "attendances" ? "active" : ""}`}
               aria-current={activeView === "attendances" ? "page" : undefined}
+              title="Registre cirurgias e os procedimentos realizados."
               onClick={onOpenAttendances}
             >
               <Stethoscope size={18} />
@@ -181,6 +186,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-billing ${activeView === "billing" ? "active" : ""}`}
               aria-current={activeView === "billing" ? "page" : undefined}
+              title="Prepare, envie e acompanhe os faturamentos médicos."
               onClick={onOpenBilling}
             >
               <ReceiptText size={18} />
@@ -192,6 +198,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-billing ${activeView === "finance" ? "active" : ""}`}
               aria-current={activeView === "finance" ? "page" : undefined}
+              title="Acompanhe contas a receber, pagamentos e saldos."
               onClick={onOpenFinance}
             >
               <Wallet size={18} />
@@ -206,6 +213,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-billing ${activeView === "prices" ? "active" : ""}`}
               aria-current={activeView === "prices" ? "page" : undefined}
+              title="Gerencie valores CBHPM e preços negociados por convênio."
               onClick={onOpenPrices}
             >
               <Tags size={18} />
@@ -217,6 +225,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-medical-groups ${activeView === "medicalGroups" ? "active" : ""}`}
               aria-current={activeView === "medicalGroups" ? "page" : undefined}
+              title="Organize médicos e permissões em grupos de trabalho."
               onClick={onOpenMedicalGroups}
             >
               <ShieldPlus size={18} />
@@ -229,6 +238,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-agenda ${activeView === "agenda" ? "active" : ""}`}
               aria-current={activeView === "agenda" ? "page" : undefined}
+              title="Consulte compromissos, lembretes e notificações."
               onClick={onOpenAgenda}
             >
               <CalendarDays size={18} />
@@ -245,6 +255,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-clinics ${activeView === "clinics" ? "active" : ""}`}
               aria-current={activeView === "clinics" ? "page" : undefined}
+              title="Cadastre e administre as clínicas disponíveis."
               onClick={onOpenClinics}
             >
               <Building2 size={18} />
@@ -256,6 +267,7 @@ export function Sidebar({
               type="button"
               className={`side-nav-settings ${activeView === "settings" ? "active" : ""}`}
               aria-current={activeView === "settings" ? "page" : undefined}
+              title="Configure preferências e parâmetros gerais do sistema."
               onClick={onOpenSettings}
             >
               <Settings size={18} />

@@ -4,6 +4,7 @@ import {
   Plus,
   RefreshCw,
   RotateCcw,
+  Search,
   Wallet,
   X,
 } from "lucide-react";
@@ -52,7 +53,6 @@ import {
   deactivateConvenioProcedimentoPreco,
   deleteGlosa,
   deleteRecursoGlosa,
-  getCbhpmGeral,
   updateContaReceber,
   updateConvenioProcedimentoPreco,
   updateGlosa,
@@ -117,6 +117,7 @@ export function BillingPage({
     Array<{
       cbhpmCodigo: string | null;
       descricao: string | null;
+      porte?: string | null;
       quantidade: number;
       pesoPercentual: number;
     }>
@@ -201,13 +202,6 @@ export function BillingPage({
   const [selectedAttendance, setSelectedAttendance] =
     useState<AtendimentoCirurgico | null>(null);
   const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
-  const [pricePreview, setPricePreview] = useState<{
-    descricao: string;
-    porte?: string | null;
-    valorReferencia?: number | null;
-    valorNegociado?: number | null;
-    valorAplicado?: number | null;
-  } | null>(null);
   const [cbhpmModalOpen, setCbhpmModalOpen] = useState(false);
   const [glosaDraft, setGlosaDraft] = useState<{
     id: number;
@@ -343,24 +337,10 @@ export function BillingPage({
       setError("O médico responsável e os auxiliares devem ser diferentes.");
       return;
     }
-    if (
-      Number(atendimentoForm.quantidade) <= 0 ||
-      Number(atendimentoForm.pesoPercentual) < 0
-    ) {
-      setError("Quantidade e peso percentual devem conter valores válidos.");
+    if (!procedimentos.length) {
+      setError("Adicione ao menos um procedimento ao atendimento.");
       return;
     }
-    const currentProcedure =
-      atendimentoForm.cbhpmCodigo || atendimentoForm.descricao
-        ? [
-            {
-              cbhpmCodigo: atendimentoForm.cbhpmCodigo || null,
-              descricao: atendimentoForm.descricao || null,
-              quantidade: Number(atendimentoForm.quantidade),
-              pesoPercentual: Number(atendimentoForm.pesoPercentual),
-            },
-          ]
-        : [];
     void run(
       () =>
         createAtendimento(
@@ -384,7 +364,10 @@ export function BillingPage({
             tratamentoMedico: atendimentoForm.tratamentoMedico || null,
             numeroAutorizacao: atendimentoForm.numeroAutorizacao || null,
             status: "Planejado",
-            procedimentos: [...procedimentos, ...currentProcedure],
+            procedimentos: procedimentos.map(({ porte, ...procedure }) => ({
+              ...procedure,
+              cbhpmPorte: porte || null,
+            })),
           },
           session.token,
         ),
@@ -579,74 +562,6 @@ export function BillingPage({
         ? "Preço negociado atualizado."
         : "Preço negociado salvo com vigência.",
     ).then(() => setEditingPriceId(null));
-  };
-  const previewProcedurePrice = async () => {
-    if (!atendimentoForm.cbhpmCodigo) {
-      setError("Informe o código CBHPM para consultar o preço.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    setPricePreview(null);
-    try {
-      const [cbhpm, negotiated] = await Promise.all([
-        getCbhpmGeral(session.token, {
-          page: 1,
-          pageSize: 10,
-          search: atendimentoForm.cbhpmCodigo,
-        }),
-        atendimentoForm.convenioId
-          ? getConvenioProcedimentoPrecos(session.token, {
-              convenioId: Number(atendimentoForm.convenioId),
-              cbhpmCodigo: atendimentoForm.cbhpmCodigo,
-            })
-          : Promise.resolve([]),
-      ]);
-      const reference =
-        cbhpm.items.find(
-          (item) =>
-            item.codigo.toLowerCase() ===
-            atendimentoForm.cbhpmCodigo.trim().toLowerCase(),
-        ) ?? cbhpm.items[0];
-      const procedureDate =
-        atendimentoForm.dataProcedimento ||
-        new Date().toISOString().slice(0, 10);
-      const validPrice = negotiated.find(
-        (item) =>
-          item.ativo &&
-          item.vigenciaInicio.slice(0, 10) <= procedureDate &&
-          (!item.vigenciaFinal ||
-            item.vigenciaFinal.slice(0, 10) >= procedureDate),
-      );
-      if (!reference && !validPrice) {
-        setError(
-          "Nenhum preço CBHPM ou negociado foi encontrado para a data informada.",
-        );
-        return;
-      }
-      setPricePreview({
-        descricao:
-          (reference?.procedimento ?? atendimentoForm.descricao) ||
-          atendimentoForm.cbhpmCodigo,
-        porte: reference?.porte,
-        valorReferencia: reference?.valorReferencia,
-        valorNegociado: validPrice?.valorNegociado,
-        valorAplicado: validPrice?.valorNegociado ?? reference?.valorReferencia,
-      });
-      if (reference?.procedimento && !atendimentoForm.descricao)
-        setAtendimentoForm((current) => ({
-          ...current,
-          descricao: reference.procedimento,
-        }));
-    } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Não foi possível consultar o preço.",
-      );
-    } finally {
-      setLoading(false);
-    }
   };
   const saveGlosa = (event: FormEvent) => {
     event.preventDefault();
@@ -878,7 +793,7 @@ export function BillingPage({
             </div>
             {showForm && (
               <form
-                className="billing-filter-grid"
+                className="billing-filter-grid billing-attendance-form"
                 onSubmit={submitAtendimento}
               >
                 <SelectField
@@ -1026,117 +941,62 @@ export function BillingPage({
                     })
                   }
                 />
-                <Button
-                  type="button"
-                  className="billing-cbhpm-open"
-                  onClick={() => setCbhpmModalOpen(true)}
-                >
-                  Consultar procedimentos CBHPM
-                </Button>
-                <TextField
-                  label="Código CBHPM"
-                  value={atendimentoForm.cbhpmCodigo}
-                  onValueChange={(v) =>
-                    setAtendimentoForm({ ...atendimentoForm, cbhpmCodigo: v })
-                  }
-                />
-                <TextField
-                  label="Descrição (se código não cadastrado)"
-                  value={atendimentoForm.descricao}
-                  onValueChange={(v) =>
-                    setAtendimentoForm({ ...atendimentoForm, descricao: v })
-                  }
-                />
-                <Button
-                  type="button"
-                  onClick={() => void previewProcedurePrice()}
-                  disabled={loading}
-                >
-                  Pré-visualizar preço
-                </Button>
-                {pricePreview && (
-                  <DataPanel>
-                    <strong>{pricePreview.descricao}</strong>
-                    <p>
-                      CBHPM:{" "}
-                      {pricePreview.valorReferencia == null
-                        ? "não informado"
-                        : formatCurrency(pricePreview.valorReferencia)}{" "}
-                      · Negociado:{" "}
-                      {pricePreview.valorNegociado == null
-                        ? "não encontrado"
-                        : formatCurrency(pricePreview.valorNegociado)}
-                    </p>
-                    <p>
-                      <strong>
-                        Preço que será preservado no atendimento:{" "}
-                        {pricePreview.valorAplicado == null
-                          ? "não informado"
-                          : formatCurrency(pricePreview.valorAplicado)}
-                      </strong>
-                      {pricePreview.porte
-                        ? ` · Porte ${pricePreview.porte}`
-                        : ""}
-                    </p>
-                  </DataPanel>
-                )}
-                <TextField
-                  label="Quantidade"
-                  type="number"
-                  min="0.0001"
-                  step="0.0001"
-                  value={atendimentoForm.quantidade}
-                  onValueChange={(v) =>
-                    setAtendimentoForm({ ...atendimentoForm, quantidade: v })
-                  }
-                />
-                <TextField
-                  label="Peso percentual"
-                  type="number"
-                  min="0"
-                  step="0.0001"
-                  value={atendimentoForm.pesoPercentual}
-                  onValueChange={(v) =>
-                    setAtendimentoForm({
-                      ...atendimentoForm,
-                      pesoPercentual: v,
-                    })
-                  }
-                />
-                <Button
-                  type="button"
-                  onClick={() => {
-                    if (
-                      !atendimentoForm.cbhpmCodigo &&
-                      !atendimentoForm.descricao
-                    )
-                      return;
-                    setProcedimentos((items) => [
-                      ...items,
-                      {
-                        cbhpmCodigo: atendimentoForm.cbhpmCodigo || null,
-                        descricao: atendimentoForm.descricao || null,
-                        quantidade: Number(atendimentoForm.quantidade),
-                        pesoPercentual: Number(atendimentoForm.pesoPercentual),
-                      },
-                    ]);
-                    setAtendimentoForm({
-                      ...atendimentoForm,
-                      cbhpmCodigo: "",
-                      descricao: "",
-                      quantidade: "1",
-                      pesoPercentual: "100",
-                    });
-                  }}
-                >
-                  Adicionar outro procedimento
-                </Button>
-                {procedimentos.length > 0 && (
-                  <span className="file-hint">
-                    {procedimentos.length} procedimento(s) adicionados à
-                    cirurgia.
+                <div className="billing-attendance-procedures">
+                  <span className="billing-attendance-field-label">
+                    Procedimento
                   </span>
-                )}
+                  <Button
+                    type="button"
+                    className="billing-cbhpm-open"
+                    onClick={() => setCbhpmModalOpen(true)}
+                  >
+                    <Search size={17} />
+                    Consultar CBHPM
+                  </Button>
+                  {procedimentos.length ? (
+                    <div className="billing-selected-procedures">
+                      {procedimentos.map((item, index) => (
+                        <article
+                          className="billing-selected-procedure"
+                          key={`${item.cbhpmCodigo || "manual"}-${index}`}
+                        >
+                          <div>
+                            {item.cbhpmCodigo && (
+                              <span className="billing-procedure-code">
+                                {item.cbhpmCodigo}
+                              </span>
+                            )}
+                            <strong>{item.descricao}</strong>
+                          </div>
+                          {item.porte && (
+                            <span className="billing-procedure-porte">
+                              {item.porte}
+                            </span>
+                          )}
+                          <Button
+                            type="button"
+                            className="billing-procedure-remove"
+                            aria-label={`Remover ${item.descricao || "procedimento"}`}
+                            title="Remover procedimento"
+                            onClick={() =>
+                              setProcedimentos((current) =>
+                                current.filter(
+                                  (_, itemIndex) => itemIndex !== index,
+                                ),
+                              )
+                            }
+                          >
+                            <X size={15} />
+                          </Button>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="file-hint">
+                      Nenhum procedimento selecionado.
+                    </span>
+                  )}
+                </div>
                 <TextField
                   label="Autorização"
                   value={atendimentoForm.numeroAutorizacao}
@@ -2710,12 +2570,25 @@ export function BillingPage({
           token={session.token}
           onClose={() => setCbhpmModalOpen(false)}
           onSelect={(item) => {
-            setAtendimentoForm((current) => ({
-              ...current,
-              cbhpmCodigo: item.codigo,
-              descricao: item.procedimento,
-            }));
-            setPricePreview(null);
+            setProcedimentos((current) => {
+              const alreadyAdded = current.some(
+                (procedure) =>
+                  procedure.cbhpmCodigo === (item.codigo || null) &&
+                  procedure.descricao === item.procedimento,
+              );
+              if (alreadyAdded) return current;
+
+              return [
+                ...current,
+                {
+                  cbhpmCodigo: item.codigo || null,
+                  descricao: item.procedimento,
+                  porte: item.porte,
+                  quantidade: 1,
+                  pesoPercentual: 100,
+                },
+              ];
+            });
             setCbhpmModalOpen(false);
           }}
         />
