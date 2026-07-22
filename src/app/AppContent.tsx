@@ -1,19 +1,31 @@
-import { type FormEvent, useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { AUTH_EXPIRED_EVENT, authenticate, getCurrentLicenca, listPublicClinics, resetPassword } from '../services';
-import { LoginScreen } from '../features/auth/LoginScreen';
-import { PasswordRequiredScreen } from '../features/auth/PasswordRequiredScreen';
-import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
-import { useAuthSession } from '../features/auth/useAuthSession';
-import { useMedicalGroupsDomain } from '../features/medicalGroups/useMedicalGroupsDomain';
-import { usePatientsDomain } from '../features/patients/usePatientsDomain';
-import { useUsersDomain } from '../features/users/useUsersDomain';
-import { AppShell } from '../layout/AppShell';
-import type { AppView, BreadcrumbItem, ModuleMode } from '../appTypes';
-import { queryClient } from '../queryClient';
-import { useConfirmationDialog } from '../shared/components/ConfirmationDialog';
-import { useRouteView } from '../shared/hooks/useRouteView';
-import { useThemePreference } from '../shared/hooks/useThemePreference';
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  AUTH_EXPIRED_EVENT,
+  authenticate,
+  getCurrentLicenca,
+  listPublicClinics,
+  resetPassword,
+} from "../services";
+import { LoginScreen } from "../features/auth/LoginScreen";
+import { PasswordRequiredScreen } from "../features/auth/PasswordRequiredScreen";
+import { ResetPasswordScreen } from "../features/auth/ResetPasswordScreen";
+import { useAuthSession } from "../features/auth/useAuthSession";
+import { useMedicalGroupsDomain } from "../features/medicalGroups/useMedicalGroupsDomain";
+import { usePatientsDomain } from "../features/patients/usePatientsDomain";
+import { useUsersDomain } from "../features/users/useUsersDomain";
+import { AppShell } from "../layout/AppShell";
+import type { AppView, BreadcrumbItem, ModuleMode } from "../appTypes";
+import { queryClient } from "../queryClient";
+import { useConfirmationDialog } from "../shared/components/ConfirmationDialog";
+import { useRouteView } from "../shared/hooks/useRouteView";
+import { useThemePreference } from "../shared/hooks/useThemePreference";
 import {
   DEFAULT_PASSWORD,
   formatProfileName,
@@ -21,18 +33,27 @@ import {
   isValidEmail,
   API_ASSET_BASE_URL,
   MEDICAL_PROFILE_ID,
-} from '../shared/utils/formatters';
-import type { PublicClinic } from '../types';
-import { getJwtExpirationDelayMs, isJwtExpired } from '../shared/utils/jwt';
-import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from './appAccess';
-import { AppMainContent } from './AppMainContent';
-import { AppModals } from './AppModals';
-import { buildSessionFromLogin, getResetPasswordCompletedMessage, shouldOpenDashboardAfterLogin } from './appSession';
-import { updateSort } from './appSort';
-import { getActiveModuleLabel, getAppTitle, getFormBreadcrumbLabel } from './appViewMeta';
-import { useAppChrome } from './useAppChrome';
+} from "../shared/utils/formatters";
+import type { PublicClinic } from "../types";
+import { getJwtExpirationDelayMs, isJwtExpired } from "../shared/utils/jwt";
+import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from "./appAccess";
+import { AppMainContent } from "./AppMainContent";
+import { AppModals } from "./AppModals";
+import {
+  buildSessionFromLogin,
+  getResetPasswordCompletedMessage,
+  shouldOpenDashboardAfterLogin,
+} from "./appSession";
+import { updateSort } from "./appSort";
+import {
+  getActiveModuleLabel,
+  getAppTitle,
+  getFormBreadcrumbLabel,
+} from "./appViewMeta";
+import { useAppChrome } from "./useAppChrome";
 
-const SESSION_EXPIRED_MESSAGE = 'Sua sessao expirou. Entre novamente para continuar.';
+const SESSION_EXPIRED_MESSAGE =
+  "Sua sessao expirou. Entre novamente para continuar.";
 const SESSION_EXPIRATION_LEEWAY_MS = 30_000;
 
 export function AppContent() {
@@ -41,18 +62,20 @@ export function AppContent() {
   const { session, persistSession, clearSession } = useAuthSession();
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
-  const [moduleMode, setModuleMode] = useState<ModuleMode>('list');
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginClinicValue, setLoginClinicValue] = useState('');
+  const [moduleMode, setModuleMode] = useState<ModuleMode>("list");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginClinicValue, setLoginClinicValue] = useState("");
   const [publicClinics, setPublicClinics] = useState<PublicClinic[]>([]);
   const [publicClinicsLoading, setPublicClinicsLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
-  const [loginInfo, setLoginInfo] = useState('');
+  const [loginError, setLoginError] = useState("");
+  const [loginInfo, setLoginInfo] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [openDashboardAfterLogin, setOpenDashboardAfterLogin] = useState(false);
-  const selectedLoginClinic = publicClinics.find((clinic) => String(clinic.id) === loginClinicValue);
+  const selectedLoginClinic = publicClinics.find(
+    (clinic) => String(clinic.id) === loginClinicValue,
+  );
 
   useEffect(() => {
     if (session) {
@@ -74,7 +97,9 @@ export function AppContent() {
         if (!cancelled) setPublicClinicsLoading(false);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [session]);
 
   const {
@@ -99,13 +124,18 @@ export function AppContent() {
     canUseUsersRoute,
     canUseProfileRoute,
     canUseBillingRoute,
+    canUseAttendancesRoute,
+    canUseFinanceRoute,
+    canUsePricesRoute,
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
     canUseSettingsRoute,
     canAccessClinics,
     canUseClinicsRoute,
   } = getAppAccess(session);
-  const forceDashboardRoute = openDashboardAfterLogin && Boolean(session && !session.user.precisaTrocarSenha);
+  const forceDashboardRoute =
+    openDashboardAfterLogin &&
+    Boolean(session && !session.user.precisaTrocarSenha);
   const { activeView, navigateToView } = useRouteView({
     session,
     canUseDashboardRoute,
@@ -113,6 +143,9 @@ export function AppContent() {
     canUseUsersRoute,
     canUseProfileRoute,
     canUseBillingRoute,
+    canUseAttendancesRoute,
+    canUseFinanceRoute,
+    canUsePricesRoute,
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
     canUseSettingsRoute,
@@ -120,28 +153,31 @@ export function AppContent() {
     forceDashboardRoute,
   });
   const appChrome = useAppChrome({ session });
-  const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
-  const isResetPasswordRoute = normalizedPath === '/reset-password';
+  const normalizedPath = location.pathname.replace(/\/+$/, "") || "/";
+  const isResetPasswordRoute = normalizedPath === "/reset-password";
   const resetToken = isResetPasswordRoute
-    ? new URLSearchParams(location.search).get('token')?.trim() ?? ''
-    : '';
-  const navigateToViewFromInteraction = useCallback((view: AppView, replace = false) => {
-    setOpenDashboardAfterLogin(false);
-    navigateToView(view, replace);
-  }, [navigateToView]);
+    ? (new URLSearchParams(location.search).get("token")?.trim() ?? "")
+    : "";
+  const navigateToViewFromInteraction = useCallback(
+    (view: AppView, replace = false) => {
+      setOpenDashboardAfterLogin(false);
+      navigateToView(view, replace);
+    },
+    [navigateToView],
+  );
 
-  const returnToLogin = (infoMessage = '') => {
-    setLoginError('');
+  const returnToLogin = (infoMessage = "") => {
+    setLoginError("");
     setLoginInfo(infoMessage);
-    setLoginPassword('');
-    navigate('/', { replace: true });
+    setLoginPassword("");
+    navigate("/", { replace: true });
   };
 
   const handleResetPasswordCompleted = (message: string) => {
     returnToLogin(getResetPasswordCompletedMessage(message));
   };
 
-  function endSession(infoMessage = '') {
+  function endSession(infoMessage = "") {
     queryClient.clear();
     clearSession();
     appChrome.resetAppChrome();
@@ -149,15 +185,15 @@ export function AppContent() {
     patientsDomain.resetPatientsState();
     medicalGroupsDomain.resetMedicalGroupsState();
     if (infoMessage) {
-      navigate('/', { replace: true });
+      navigate("/", { replace: true });
     } else {
-      navigateToView('dashboard', true);
+      navigateToView("dashboard", true);
     }
-    setModuleMode('list');
+    setModuleMode("list");
     setOpenDashboardAfterLogin(false);
-    setLoginError('');
+    setLoginError("");
     setLoginInfo(infoMessage);
-    setLoginPassword('');
+    setLoginPassword("");
   }
 
   function logout() {
@@ -207,11 +243,12 @@ export function AppContent() {
     confirmAction,
   });
 
-  const isBusy = loginLoading
-    || resetPasswordLoading
-    || usersDomain.formLoading
-    || patientsDomain.pacienteFormLoading
-    || medicalGroupsDomain.formLoading;
+  const isBusy =
+    loginLoading ||
+    resetPasswordLoading ||
+    usersDomain.formLoading ||
+    patientsDomain.pacienteFormLoading ||
+    medicalGroupsDomain.formLoading;
 
   useEffect(() => {
     if (!session) {
@@ -230,13 +267,19 @@ export function AppContent() {
 
     if (isJwtExpired(session.token, Date.now(), SESSION_EXPIRATION_LEEWAY_MS)) {
       expireSession();
-      return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+      return () =>
+        window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
     }
 
-    const expirationDelayMs = getJwtExpirationDelayMs(session.token, Date.now(), SESSION_EXPIRATION_LEEWAY_MS);
-    const timeoutId = expirationDelayMs === null
-      ? null
-      : window.setTimeout(expireSession, expirationDelayMs);
+    const expirationDelayMs = getJwtExpirationDelayMs(
+      session.token,
+      Date.now(),
+      SESSION_EXPIRATION_LEEWAY_MS,
+    );
+    const timeoutId =
+      expirationDelayMs === null
+        ? null
+        : window.setTimeout(expireSession, expirationDelayMs);
 
     return () => {
       window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
@@ -248,7 +291,11 @@ export function AppContent() {
   }, [session?.token]);
 
   useEffect(() => {
-    if (!session || session.user.perfilId !== MEDICAL_PROFILE_ID || session.user.licenca) {
+    if (
+      !session ||
+      session.user.perfilId !== MEDICAL_PROFILE_ID ||
+      session.user.licenca
+    ) {
       return;
     }
 
@@ -280,7 +327,10 @@ export function AppContent() {
   }, [persistSession, session]);
 
   useLayoutEffect(() => {
-    if (!openDashboardAfterLogin || MEDICAL_ALLOWED_ENTRY_PATHS.has(normalizedPath)) {
+    if (
+      !openDashboardAfterLogin ||
+      MEDICAL_ALLOWED_ENTRY_PATHS.has(normalizedPath)
+    ) {
       return;
     }
 
@@ -289,25 +339,31 @@ export function AppContent() {
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLoginError('');
-    setLoginInfo('');
+    setLoginError("");
+    setLoginInfo("");
 
     if (!isValidEmail(loginEmail)) {
-      setLoginError('Informe um email valido.');
+      setLoginError("Informe um email valido.");
       return;
     }
     if (!selectedLoginClinic) {
-      setLoginError('Selecione uma clinica cadastrada.');
+      setLoginError("Selecione uma clinica cadastrada.");
       return;
     }
 
     setLoginLoading(true);
 
     try {
-      const result = await authenticate(loginEmail.trim(), loginPassword, selectedLoginClinic.slug);
+      const result = await authenticate(
+        loginEmail.trim(),
+        loginPassword,
+        selectedLoginClinic.slug,
+      );
       const nextSession = buildSessionFromLogin(result, loginPassword);
       queryClient.clear();
-      setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin(nextSession.user.perfilId));
+      setOpenDashboardAfterLogin(
+        shouldOpenDashboardAfterLogin(nextSession.user.perfilId),
+      );
       persistSession(nextSession);
     } catch (error) {
       setLoginError(getErrorMessage(error));
@@ -317,11 +373,11 @@ export function AppContent() {
   };
 
   const handleResetPassword = async () => {
-    setLoginError('');
-    setLoginInfo('');
+    setLoginError("");
+    setLoginInfo("");
 
     if (!isValidEmail(loginEmail)) {
-      setLoginError('Informe um email valido para resetar a senha.');
+      setLoginError("Informe um email valido para resetar a senha.");
       return;
     }
 
@@ -329,19 +385,27 @@ export function AppContent() {
 
     try {
       if (!selectedLoginClinic) {
-        setLoginError('Selecione a clinica para redefinir a senha.');
+        setLoginError("Selecione a clinica para redefinir a senha.");
         return;
       }
-      const result = await resetPassword(loginEmail.trim(), selectedLoginClinic.slug);
+      const result = await resetPassword(
+        loginEmail.trim(),
+        selectedLoginClinic.slug,
+      );
 
-      if (result.mode === 'default-password') {
+      if (result.mode === "default-password") {
         setLoginPassword(DEFAULT_PASSWORD);
-        setLoginInfo(`Senha redefinida para ${DEFAULT_PASSWORD}. Use-a para entrar e altere a seguir.`);
+        setLoginInfo(
+          `Senha redefinida para ${DEFAULT_PASSWORD}. Use-a para entrar e altere a seguir.`,
+        );
         return;
       }
 
-      setLoginPassword('');
-      setLoginInfo(result.message || 'Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.');
+      setLoginPassword("");
+      setLoginInfo(
+        result.message ||
+          "Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.",
+      );
     } catch (error) {
       setLoginError(getErrorMessage(error));
     } finally {
@@ -350,7 +414,7 @@ export function AppContent() {
   };
 
   const resetProfileRouteState = () => {
-    if (activeView === 'profile') {
+    if (activeView === "profile") {
       usersDomain.resetUserFormState({ suppressProfileAutoOpen: true });
     }
   };
@@ -359,8 +423,8 @@ export function AppContent() {
     resetProfileRouteState();
 
     if (canAccessDashboard) {
-      navigateToViewFromInteraction('dashboard');
-      setModuleMode('list');
+      navigateToViewFromInteraction("dashboard");
+      setModuleMode("list");
       return;
     }
 
@@ -375,19 +439,19 @@ export function AppContent() {
     }
 
     if (canAccessBilling) {
-      navigateToViewFromInteraction('billing');
-      setModuleMode('list');
+      navigateToViewFromInteraction("billing");
+      setModuleMode("list");
       return;
     }
 
     if (canAccessAgenda) {
-      navigateToViewFromInteraction('agenda');
-      setModuleMode('list');
+      navigateToViewFromInteraction("agenda");
+      setModuleMode("list");
       return;
     }
 
-    navigateToViewFromInteraction('settings');
-    setModuleMode('list');
+    navigateToViewFromInteraction("settings");
+    setModuleMode("list");
   };
 
   const openAgenda = () => {
@@ -398,8 +462,8 @@ export function AppContent() {
       return;
     }
 
-    navigateToViewFromInteraction('agenda');
-    setModuleMode('list');
+    navigateToViewFromInteraction("agenda");
+    setModuleMode("list");
   };
 
   const openPatientsListFromMenu = () => {
@@ -426,8 +490,8 @@ export function AppContent() {
       return;
     }
 
-    navigateToViewFromInteraction('billing');
-    setModuleMode('list');
+    navigateToViewFromInteraction("billing");
+    setModuleMode("list");
   };
 
   const openSettings = () => {
@@ -438,8 +502,35 @@ export function AppContent() {
       return;
     }
 
-    navigateToViewFromInteraction('settings');
-    setModuleMode('list');
+    navigateToViewFromInteraction("settings");
+    setModuleMode("list");
+  };
+
+  const openAttendances = () => {
+    if (!canAccessBilling) {
+      openDashboard();
+      return;
+    }
+    navigateToViewFromInteraction("attendances");
+    setModuleMode("list");
+  };
+
+  const openFinance = () => {
+    if (!canAccessBilling || isMedical) {
+      openDashboard();
+      return;
+    }
+    navigateToViewFromInteraction("finance");
+    setModuleMode("list");
+  };
+
+  const openPrices = () => {
+    if (!canAccessBilling) {
+      openDashboard();
+      return;
+    }
+    navigateToViewFromInteraction("prices");
+    setModuleMode("list");
   };
 
   const openClinics = () => {
@@ -448,11 +539,13 @@ export function AppContent() {
       openDashboard();
       return;
     }
-    navigateToViewFromInteraction('clinics');
-    setModuleMode('list');
+    navigateToViewFromInteraction("clinics");
+    setModuleMode("list");
   };
 
-  const handleClinicSelected = (result: import('../types').SelectClinicResponse) => {
+  const handleClinicSelected = (
+    result: import("../types").SelectClinicResponse,
+  ) => {
     if (!session) return;
     queryClient.clear();
     appChrome.resetAppChrome();
@@ -468,8 +561,8 @@ export function AppContent() {
         modulosLiberados: result.clinica.modulosLiberados,
       },
     });
-    setModuleMode('list');
-    navigateToViewFromInteraction('dashboard', true);
+    setModuleMode("list");
+    navigateToViewFromInteraction("dashboard", true);
   };
 
   const handleUserSortChange = (field: string) => {
@@ -479,7 +572,7 @@ export function AppContent() {
       usersDomain.setCurrentPage,
       usersDomain.setSortBy,
       usersDomain.setSortDirection,
-      field === 'recent' ? 'desc' : 'asc',
+      field === "recent" ? "desc" : "asc",
     );
   };
 
@@ -490,7 +583,7 @@ export function AppContent() {
       patientsDomain.setPacienteCurrentPage,
       patientsDomain.setSortBy,
       patientsDomain.setSortDirection,
-      field === 'recent' ? 'desc' : 'asc',
+      field === "recent" ? "desc" : "asc",
     );
   };
 
@@ -501,7 +594,7 @@ export function AppContent() {
       patientsDomain.setCbhpmCurrentPage,
       patientsDomain.setCbhpmSortBy,
       patientsDomain.setCbhpmSortDirection,
-      'asc',
+      "asc",
     );
   };
 
@@ -512,7 +605,7 @@ export function AppContent() {
       medicalGroupsDomain.setCurrentPage,
       medicalGroupsDomain.setSortBy,
       medicalGroupsDomain.setSortDirection,
-      field === 'recent' ? 'desc' : 'asc',
+      field === "recent" ? "desc" : "asc",
     );
   };
 
@@ -534,7 +627,11 @@ export function AppContent() {
     return (
       <LoginScreen
         companyName={selectedLoginClinic?.nome ?? appChrome.companyName}
-        companyPhoto={selectedLoginClinic?.fotoUrl ? `${API_ASSET_BASE_URL}${selectedLoginClinic.fotoUrl}` : appChrome.systemSettings.fotoEmpresa}
+        companyPhoto={
+          selectedLoginClinic?.fotoUrl
+            ? `${API_ASSET_BASE_URL}${selectedLoginClinic.fotoUrl}`
+            : appChrome.systemSettings.fotoEmpresa
+        }
         isBusy={isBusy}
         theme={theme}
         loginEmail={loginEmail}
@@ -569,22 +666,39 @@ export function AppContent() {
     );
   }
 
-  const currentUserProfile = formatProfileName(session.user.perfilId, session.user.perfilNome);
+  const currentUserProfile = formatProfileName(
+    session.user.perfilId,
+    session.user.perfilNome,
+  );
   const activeUsersCount = appChrome.dashboardSummary?.activeUsersCount ?? 0;
-  const activePatientsCount = appChrome.dashboardSummary?.activePatientsCount ?? patientsDomain.pacientesTotalItems;
-  const pendingPaymentsCount = appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;
+  const activePatientsCount =
+    appChrome.dashboardSummary?.activePatientsCount ??
+    patientsDomain.pacientesTotalItems;
+  const pendingPaymentsCount =
+    appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;
   const patientFilesCount = appChrome.dashboardSummary?.patientFilesCount ?? 0;
-  const upcomingEventsCount = appChrome.dashboardSummary?.upcomingEventsCount ?? 0;
-  const unreadObservationCount = appChrome.dashboardSummary?.unreadObservationCount ?? 0;
-  const unreadAgendaNotificationCount = appChrome.dashboardSummary?.unreadAgendaNotificationCount ?? 0;
-  const notificationCount = appChrome.notificationsOpen && appChrome.notifications.length
-    ? appChrome.notifications.length
-    : pendingPaymentsCount + upcomingEventsCount + unreadObservationCount + unreadAgendaNotificationCount;
-  const usersCount = appChrome.dashboardSummary?.usersCount ?? usersDomain.usersTotalItems;
-  const pacientesCount = appChrome.dashboardSummary?.pacientesCount ?? patientsDomain.pacientesTotalItems;
-  const currentClinicPhoto = appChrome.systemSettings.fotoEmpresa && session.user.clinicaSlug
-    ? `${API_ASSET_BASE_URL}/api/public/clinicas/${session.user.clinicaSlug}/foto`
-    : null;
+  const upcomingEventsCount =
+    appChrome.dashboardSummary?.upcomingEventsCount ?? 0;
+  const unreadObservationCount =
+    appChrome.dashboardSummary?.unreadObservationCount ?? 0;
+  const unreadAgendaNotificationCount =
+    appChrome.dashboardSummary?.unreadAgendaNotificationCount ?? 0;
+  const notificationCount =
+    appChrome.notificationsOpen && appChrome.notifications.length
+      ? appChrome.notifications.length
+      : pendingPaymentsCount +
+        upcomingEventsCount +
+        unreadObservationCount +
+        unreadAgendaNotificationCount;
+  const usersCount =
+    appChrome.dashboardSummary?.usersCount ?? usersDomain.usersTotalItems;
+  const pacientesCount =
+    appChrome.dashboardSummary?.pacientesCount ??
+    patientsDomain.pacientesTotalItems;
+  const currentClinicPhoto =
+    appChrome.systemSettings.fotoEmpresa && session.user.clinicaSlug
+      ? `${API_ASSET_BASE_URL}/api/public/clinicas/${session.user.clinicaSlug}/foto`
+      : null;
   const activeModuleLabel = getActiveModuleLabel(activeView);
   const formBreadcrumbLabel = getFormBreadcrumbLabel({
     activeView,
@@ -593,27 +707,43 @@ export function AppContent() {
     patientReadOnly,
     editingGroupId: medicalGroupsDomain.editingGroupId,
   });
-  const openActiveModuleList = activeView === 'users'
-    ? usersDomain.openUsersList
-    : activeView === 'profile' ? usersDomain.openMyProfile
-      : activeView === 'patients' ? patientsDomain.openPatientsList
-        : activeView === 'billing' ? openBilling
-          : activeView === 'medicalGroups' ? openMedicalGroups
-            : activeView === 'settings' ? openSettings : openAgenda;
-  const resolvedOpenActiveModuleList = activeView === 'clinics' ? openClinics : openActiveModuleList;
-  const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
-    ? [
-      { label: 'Início', onClick: openDashboard },
-      { label: 'Painel inicial' },
-    ]
-    : [
-      { label: 'Início', onClick: openDashboard },
-      {
-        label: activeModuleLabel,
-        onClick: moduleMode === 'form' ? resolvedOpenActiveModuleList : undefined,
-      },
-      ...(moduleMode === 'form' ? [{ label: formBreadcrumbLabel }] : []),
-    ];
+  const openActiveModuleList =
+    activeView === "users"
+      ? usersDomain.openUsersList
+      : activeView === "profile"
+        ? usersDomain.openMyProfile
+        : activeView === "patients"
+          ? patientsDomain.openPatientsList
+          : activeView === "attendances"
+            ? openAttendances
+            : activeView === "billing"
+              ? openBilling
+              : activeView === "finance"
+                ? openFinance
+                : activeView === "prices"
+                  ? openPrices
+                  : activeView === "medicalGroups"
+                    ? openMedicalGroups
+                    : activeView === "settings"
+                      ? openSettings
+                      : openAgenda;
+  const resolvedOpenActiveModuleList =
+    activeView === "clinics" ? openClinics : openActiveModuleList;
+  const breadcrumbItems: BreadcrumbItem[] =
+    activeView === "dashboard"
+      ? [
+          { label: "Início", onClick: openDashboard },
+          { label: "Painel inicial" },
+        ]
+      : [
+          { label: "Início", onClick: openDashboard },
+          {
+            label: activeModuleLabel,
+            onClick:
+              moduleMode === "form" ? resolvedOpenActiveModuleList : undefined,
+          },
+          ...(moduleMode === "form" ? [{ label: formBreadcrumbLabel }] : []),
+        ];
 
   return (
     <AppShell
@@ -651,11 +781,14 @@ export function AppContent() {
       onOpenMyProfile={usersDomain.openMyProfile}
       onOpenPatientsList={openPatientsListFromMenu}
       onOpenBilling={openBilling}
+      onOpenAttendances={openAttendances}
+      onOpenFinance={openFinance}
+      onOpenPrices={openPrices}
       onOpenMedicalGroups={openMedicalGroups}
       onOpenAgenda={openAgenda}
       onOpenSettings={openSettings}
       onOpenClinics={openClinics}
-      modals={(
+      modals={
         <AppModals
           session={session}
           usersDomain={usersDomain}
@@ -675,7 +808,7 @@ export function AppContent() {
           onPasswordChanged={usersDomain.handlePasswordChanged}
           confirmationDialog={confirmationDialog}
         />
-      )}
+      }
     >
       <AppMainContent
         session={session}
@@ -719,6 +852,9 @@ export function AppContent() {
           openMyProfile: usersDomain.openMyProfile,
           openPatientsList: patientsDomain.openPatientsList,
           openBilling,
+          openAttendances,
+          openFinance,
+          openPrices,
           openMedicalGroups,
           openAgenda,
           openSettings,

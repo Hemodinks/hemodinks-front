@@ -74,7 +74,7 @@ export type ListQuery = {
   search?: string;
   profileId?: number;
   sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
+  sortDirection?: "asc" | "desc";
 };
 
 export type PacienteListQuery = ListQuery & {
@@ -93,7 +93,7 @@ export type CbhpmListQuery = {
   procedimento?: string;
   porte?: string;
   sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
+  sortDirection?: "asc" | "desc";
 };
 
 export type CbhpmGeral = {
@@ -233,10 +233,10 @@ export type PublicHoliday = {
 };
 
 export type LicencaFeature =
-  | 'Dashboard.Visualizar'
-  | 'Pacientes.Visualizar'
-  | 'Pacientes.Gerenciar'
-  | 'Cbhpm.Consultar'
+  | "Dashboard.Visualizar"
+  | "Pacientes.Visualizar"
+  | "Pacientes.Gerenciar"
+  | "Cbhpm.Consultar"
   | (string & {});
 
 export type Licenca = {
@@ -279,7 +279,23 @@ export type LoginResponse = {
   licenca?: Licenca | null;
 };
 
-export type SessionUser = Pick<LoginResponse, 'id' | 'clinicaId' | 'clinicaSlug' | 'nome' | 'email' | 'cpf' | 'crm' | 'crmUf' | 'fotoPerfil' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome' | 'modulosLiberados' | 'licenca'>;
+export type SessionUser = Pick<
+  LoginResponse,
+  | "id"
+  | "clinicaId"
+  | "clinicaSlug"
+  | "nome"
+  | "email"
+  | "cpf"
+  | "crm"
+  | "crmUf"
+  | "fotoPerfil"
+  | "precisaTrocarSenha"
+  | "perfilId"
+  | "perfilNome"
+  | "modulosLiberados"
+  | "licenca"
+>;
 
 export type AuthSession = {
   token: string;
@@ -371,7 +387,7 @@ export type UserFormData = {
   perfilId: number;
 };
 
-export type UserPayload = Omit<UserFormData, 'cpf' | 'dataNascimento'> & {
+export type UserPayload = Omit<UserFormData, "cpf" | "dataNascimento"> & {
   cpf?: string | null;
   dataNascimento?: string | null;
 };
@@ -499,55 +515,175 @@ export type PacienteFormData = {
   novaObservacao: string;
 };
 
-export type PacientePayload = Omit<PacienteFormData, 'novaObservacao'>;
+export type PacientePayload = Omit<
+  PacienteFormData,
+  "novaObservacao" | "cpf"
+> & { cpf?: string | null };
 
-export type AtendimentoStatus = 'Planejado' | 'Autorizado' | 'Realizado' | 'Cancelado';
+export type AtendimentoStatus =
+  "Planejado" | "Autorizado" | "Realizado" | "Cancelado";
 export type AtendimentoProcedimento = {
-  id: number; cbhpmCodigo?: string | null; cbhpmPorte?: string | null; descricao: string;
-  quantidade: number; pesoPercentual: number; valorReferencia?: number | null; valorNegociado?: number | null; ordem: number;
+  id: number;
+  cbhpmCodigo?: string | null;
+  cbhpmPorte?: string | null;
+  descricao: string;
+  quantidade: number;
+  pesoPercentual: number;
+  valorReferencia?: number | null;
+  valorNegociado?: number | null;
+  ordem: number;
 };
 export type AtendimentoCirurgico = {
-  id: number; pacienteId: number; paciente: string; dataProcedimento: string; hospitalId?: number | null;
-  convenioId?: number | null; medicoResponsavelId: number; medicoAuxiliar1Id?: number | null;
-  medicoAuxiliar2Id?: number | null; diagnostico?: string | null; tratamentoMedico?: string | null;
-  numeroAutorizacao?: string | null; status: AtendimentoStatus; procedimentos: AtendimentoProcedimento[];
+  id: number;
+  pacienteId: number;
+  paciente: string;
+  dataProcedimento: string;
+  hospitalId?: number | null;
+  convenioId?: number | null;
+  medicoResponsavelId: number;
+  medicoAuxiliar1Id?: number | null;
+  medicoAuxiliar2Id?: number | null;
+  diagnostico?: string | null;
+  tratamentoMedico?: string | null;
+  numeroAutorizacao?: string | null;
+  status: AtendimentoStatus;
+  procedimentos: AtendimentoProcedimento[];
 };
-export type FaturamentoStatus = 'Rascunho' | 'ProntoParaEnvio' | 'Enviado' | 'EmAnalise' | 'GlosadoParcial' | 'GlosadoTotal' | 'Aprovado' | 'ParcialmentePago' | 'Pago' | 'Cancelado';
+export type FaturamentoStatus =
+  | "Rascunho"
+  | "ProntoParaEnvio"
+  | "Enviado"
+  | "EmAnalise"
+  | "GlosadoParcial"
+  | "GlosadoTotal"
+  | "Aprovado"
+  | "ParcialmentePago"
+  | "Pago"
+  | "Cancelado";
 export type Faturamento = {
-  id: number; atendimentoCirurgicoId: number; pacienteId: number; paciente: string; convenioId?: number | null;
-  numeroGuia?: string | null; numeroLote?: string | null; competencia: string; dataEnvio?: string | null;
-  dataRetorno?: string | null; valorApresentado: number; valorGlosado: number; valorGlosaRecuperada: number;
-  valorReconhecido: number; status: FaturamentoStatus; observacao?: string | null; rowVersion: string;
-  itens: Array<{ id: number; atendimentoProcedimentoId?: number | null; codigo?: string | null; descricao: string;
-    quantidade: number; pesoPercentual: number; valorUnitario: number; valorApresentado: number;
-    valorGlosado: number; valorAprovado: number; status: string; ordem: number }>;
-  glosas: Array<{ id: number; faturamentoItemId?: number | null; codigoMotivo?: string | null; descricaoMotivo: string;
-    valorGlosado: number; dataGlosa: string; status: string; observacao?: string | null;
-    recursos: Array<{ id: number; dataEnvio?: string | null; justificativa: string; valorRecorrido: number;
-      dataResposta?: string | null; valorRecuperado: number; status: string; observacao?: string | null }> }>;
+  id: number;
+  atendimentoCirurgicoId: number;
+  pacienteId: number;
+  paciente: string;
+  convenioId?: number | null;
+  numeroGuia?: string | null;
+  numeroLote?: string | null;
+  competencia: string;
+  dataEnvio?: string | null;
+  dataRetorno?: string | null;
+  valorApresentado: number;
+  valorGlosado: number;
+  valorGlosaRecuperada: number;
+  valorReconhecido: number;
+  status: FaturamentoStatus;
+  observacao?: string | null;
+  rowVersion: string;
+  itens: Array<{
+    id: number;
+    atendimentoProcedimentoId?: number | null;
+    codigo?: string | null;
+    descricao: string;
+    quantidade: number;
+    pesoPercentual: number;
+    valorUnitario: number;
+    valorApresentado: number;
+    valorGlosado: number;
+    valorAprovado: number;
+    status: string;
+    ordem: number;
+  }>;
+  glosas: Array<{
+    id: number;
+    faturamentoItemId?: number | null;
+    codigoMotivo?: string | null;
+    descricaoMotivo: string;
+    valorGlosado: number;
+    dataGlosa: string;
+    status: string;
+    observacao?: string | null;
+    recursos: Array<{
+      id: number;
+      dataEnvio?: string | null;
+      justificativa: string;
+      valorRecorrido: number;
+      dataResposta?: string | null;
+      valorRecuperado: number;
+      status: string;
+      observacao?: string | null;
+    }>;
+  }>;
 };
 export type Recebimento = {
-  id: number; dataRecebimento: string; valorRecebido: number; formaRecebimento: string;
-  referenciaBancaria?: string | null; documentoComprovante?: string | null; estornado: boolean;
-  dataEstorno?: string | null; motivoEstorno?: string | null;
+  id: number;
+  dataRecebimento: string;
+  valorRecebido: number;
+  formaRecebimento: string;
+  referenciaBancaria?: string | null;
+  documentoComprovante?: string | null;
+  estornado: boolean;
+  dataEstorno?: string | null;
+  motivoEstorno?: string | null;
 };
 export type ContaReceber = {
-  id: number; faturamentoId: number; pacienteId: number; paciente: string; convenioId?: number | null;
-  numeroDocumento: string; descricao: string; competencia: string; dataEmissao: string; dataVencimento: string;
-  valorOriginal: number; valorAjustado: number; valorRecebido: number; saldoAberto: number; status: string;
-  observacao?: string | null; rowVersion: string; recebimentos: Recebimento[];
+  id: number;
+  faturamentoId: number;
+  pacienteId: number;
+  paciente: string;
+  convenioId?: number | null;
+  numeroDocumento: string;
+  descricao: string;
+  competencia: string;
+  dataEmissao: string;
+  dataVencimento: string;
+  valorOriginal: number;
+  valorAjustado: number;
+  valorRecebido: number;
+  saldoAberto: number;
+  status: string;
+  observacao?: string | null;
+  rowVersion: string;
+  recebimentos: Recebimento[];
 };
 export type ConvenioProcedimentoPreco = {
-  id: number; convenioId: number; cbhpmCodigo: string; valorNegociado: number;
-  percentualPrincipal: number; percentualAuxiliar1: number; percentualAuxiliar2: number;
-  vigenciaInicio: string; vigenciaFinal?: string | null; ativo: boolean;
+  id: number;
+  convenioId: number;
+  cbhpmCodigo: string;
+  valorNegociado: number;
+  percentualPrincipal: number;
+  percentualAuxiliar1: number;
+  percentualAuxiliar2: number;
+  vigenciaInicio: string;
+  vigenciaFinal?: string | null;
+  ativo: boolean;
 };
-export type FinanceiroResumo = { valorApresentado: number; valorGlosado: number; valorRecuperado: number;
-  valorReconhecido: number; valorRecebido: number; saldoAberto: number; valorVencido: number;
-  recebimentosPeriodo: number; titulosVencidos: number;
-  porCompetencia: Array<{ competencia: string; apresentado: number; reconhecido: number; recebido: number; saldoAberto: number }> };
-export type PacienteFinanceiroResumo = { valorApresentado: number; valorGlosado: number; valorReconhecido: number;
-  valorRecebido: number; saldoAberto: number; statusFinanceiro: string; origemDados: 'Normalizado' | 'Legado'; avisos: string[] };
+export type FinanceiroResumo = {
+  valorApresentado: number;
+  valorGlosado: number;
+  valorRecuperado: number;
+  valorReconhecido: number;
+  valorRecebido: number;
+  saldoAberto: number;
+  valorVencido: number;
+  recebimentosPeriodo: number;
+  titulosVencidos: number;
+  porCompetencia: Array<{
+    competencia: string;
+    apresentado: number;
+    reconhecido: number;
+    recebido: number;
+    saldoAberto: number;
+  }>;
+};
+export type PacienteFinanceiroResumo = {
+  valorApresentado: number;
+  valorGlosado: number;
+  valorReconhecido: number;
+  valorRecebido: number;
+  saldoAberto: number;
+  statusFinanceiro: string;
+  origemDados: "Normalizado" | "Legado";
+  avisos: string[];
+};
 
 export type PacienteObservacao = {
   id: number;

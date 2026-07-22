@@ -1,30 +1,34 @@
-import type { AppView } from './appTypes';
+import type { AppView } from "./appTypes";
 
 export const VIEW_PATHS: Record<AppView, string> = {
-  dashboard: '/dashboard',
-  users: '/usuarios',
-  profile: '/meu-cadastro',
-  patients: '/pacientes',
-  billing: '/faturamento-medico',
-  medicalGroups: '/grupos-medicos',
-  agenda: '/agenda',
-  settings: '/configuracoes',
-  clinics: '/clinicas',
+  dashboard: "/dashboard",
+  users: "/usuarios",
+  profile: "/meu-cadastro",
+  patients: "/pacientes",
+  attendances: "/atendimentos-cirurgicos",
+  billing: "/faturamento-medico",
+  finance: "/financeiro",
+  prices: "/tabela-de-precos",
+  medicalGroups: "/grupos-medicos",
+  agenda: "/agenda",
+  settings: "/configuracoes",
+  clinics: "/clinicas",
 };
 
 export function getViewFromPath(pathname: string): AppView | null {
-  const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
 
-  if (normalizedPath === '/') {
-    return 'dashboard';
+  if (normalizedPath === "/") {
+    return "dashboard";
   }
 
-  const match = Object.entries(VIEW_PATHS)
-    .find(([, path]) => path === normalizedPath);
+  const match = Object.entries(VIEW_PATHS).find(
+    ([, path]) => path === normalizedPath,
+  );
 
-  return match ? match[0] as AppView : null;
+  return match ? (match[0] as AppView) : null;
 }
 
 export function isRootPath(pathname: string) {
-  return pathname.replace(/\/+$/, '') === '';
+  return pathname.replace(/\/+$/, "") === "";
 }

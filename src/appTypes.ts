@@ -1,8 +1,20 @@
-export type Theme = 'light' | 'dark';
+export type Theme = "light" | "dark";
 
-export type AppView = 'dashboard' | 'users' | 'profile' | 'patients' | 'billing' | 'medicalGroups' | 'agenda' | 'settings' | 'clinics';
+export type AppView =
+  | "dashboard"
+  | "users"
+  | "profile"
+  | "patients"
+  | "attendances"
+  | "billing"
+  | "finance"
+  | "prices"
+  | "medicalGroups"
+  | "agenda"
+  | "settings"
+  | "clinics";
 
-export type ModuleMode = 'list' | 'form';
+export type ModuleMode = "list" | "form";
 
 export type BreadcrumbItem = {
   label: string;
@@ -21,6 +33,6 @@ export type PacienteFilters = {
   procedimento: string;
 };
 
-export type PacienteExportFormat = 'xlsx' | 'pdf';
+export type PacienteExportFormat = "xlsx" | "pdf";
 
-export type PacienteExportScope = 'all' | 'doctor' | 'visible';
+export type PacienteExportScope = "all" | "doctor" | "visible";

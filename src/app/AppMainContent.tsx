@@ -1,10 +1,10 @@
-import { Suspense } from 'react';
-import type { AppView, ModuleMode, Theme } from '../appTypes';
-import { DashboardPage } from '../features/dashboard/DashboardPage';
-import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
-import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
-import type { UsersDomainState } from '../features/users/useUsersDomain';
-import type { AuthSession, SelectClinicResponse } from '../types';
+import { Suspense } from "react";
+import type { AppView, ModuleMode, Theme } from "../appTypes";
+import { DashboardPage } from "../features/dashboard/DashboardPage";
+import type { MedicalGroupsDomainState } from "../features/medicalGroups/useMedicalGroupsDomain";
+import type { PatientsDomainState } from "../features/patients/usePatientsDomain";
+import type { UsersDomainState } from "../features/users/useUsersDomain";
+import type { AuthSession, SelectClinicResponse } from "../types";
 import {
   AgendaPage,
   BillingPage,
@@ -14,7 +14,7 @@ import {
   PatientsPage,
   SystemSettingsPage,
   UsersPage,
-} from './lazyModules';
+} from "./lazyModules";
 
 type AccessState = {
   canAccessPatients: boolean;
@@ -50,6 +50,9 @@ type NavigationActions = {
   openMyProfile: () => void;
   openPatientsList: () => void;
   openBilling: () => void;
+  openAttendances: () => void;
+  openFinance: () => void;
+  openPrices: () => void;
   openMedicalGroups: () => void;
   openAgenda: () => void;
   openSettings: () => void;
@@ -128,7 +131,7 @@ export function AppMainContent({
 
   return (
     <Suspense fallback={<ModuleFallback />}>
-      {activeView === 'dashboard' ? (
+      {activeView === "dashboard" ? (
         <DashboardPage
           companyName={companyName}
           canAccessPatients={canAccessPatients}
@@ -157,7 +160,7 @@ export function AppMainContent({
           onOpenAgenda={navigation.openAgenda}
           onOpenSettings={navigation.openSettings}
         />
-      ) : activeView === 'users' || activeView === 'profile' ? (
+      ) : activeView === "users" || activeView === "profile" ? (
         <UsersPage
           moduleMode={moduleMode}
           canAccessUsers={canAccessUsers}
@@ -201,7 +204,7 @@ export function AppMainContent({
           setSelectedContactUser={usersDomain.setSelectedContactUser}
           refreshUsers={usersDomain.refreshUsers}
         />
-      ) : activeView === 'patients' ? (
+      ) : activeView === "patients" ? (
         <PatientsPage
           moduleMode={moduleMode}
           canCreatePatients={canCreatePatients}
@@ -251,30 +254,47 @@ export function AppMainContent({
           openNewPacienteForm={patientsDomain.openNewPacienteForm}
           handleSubmitPaciente={patientsDomain.handleSubmitPaciente}
           handleOpenCbhpmModal={patientsDomain.handleOpenCbhpmModal}
-          handleRemovePacienteProcedimento={patientsDomain.handleRemovePacienteProcedimento}
+          handleRemovePacienteProcedimento={
+            patientsDomain.handleRemovePacienteProcedimento
+          }
           handlePacienteFilesChange={patientsDomain.handlePacienteFilesChange}
           removePendingPatientFile={patientsDomain.removePendingPatientFile}
-          handleDeletePacienteArquivo={patientsDomain.handleDeletePacienteArquivo}
+          handleDeletePacienteArquivo={
+            patientsDomain.handleDeletePacienteArquivo
+          }
           handleExportPacientes={patientsDomain.handleExportPacientes}
           handleEditPaciente={patientsDomain.handleEditPaciente}
           handleDeletePaciente={patientsDomain.handleDeletePaciente}
           handleOpenPacienteFiles={patientsDomain.handleOpenPacienteFiles}
-          handleOpenPacienteObservacoes={patientsDomain.handleOpenPacienteObservacoes}
+          handleOpenPacienteObservacoes={
+            patientsDomain.handleOpenPacienteObservacoes
+          }
           setSelectedPatientInfo={patientsDomain.setSelectedPatientInfo}
           clearPacienteFilters={patientsDomain.clearPacienteFilters}
           refreshPacientes={patientsDomain.refreshPacientes}
         />
-      ) : activeView === 'clinics' && canAccessClinics ? (
+      ) : activeView === "clinics" && canAccessClinics ? (
         <ClinicsPage session={session} onClinicSelected={onClinicSelected} />
-      ) : activeView === 'billing' ? (
+      ) : ["attendances", "billing", "finance", "prices"].includes(
+          activeView,
+        ) ? (
         <BillingPage
           session={session}
           medicalUsers={patientsDomain.medicalUsers}
           convenios={patientsDomain.convenios}
           isAdmin={isAdmin}
           isMedical={isMedical}
+          section={
+            activeView === "attendances"
+              ? "atendimentos"
+              : activeView === "finance"
+                ? "financeiro"
+                : activeView === "prices"
+                  ? "precos"
+                  : "faturamento"
+          }
         />
-      ) : activeView === 'medicalGroups' ? (
+      ) : activeView === "medicalGroups" ? (
         <MedicalGroupsPage
           moduleMode={moduleMode}
           groups={medicalGroupsDomain.groups}
@@ -307,7 +327,7 @@ export function AppMainContent({
             void medicalGroupsDomain.loadMedicalGroups(session.token, true);
           }}
         />
-      ) : activeView === 'settings' ? (
+      ) : activeView === "settings" ? (
         <SystemSettingsPage
           session={session}
           theme={theme}
@@ -315,11 +335,7 @@ export function AppMainContent({
           onPasswordChanged={onPasswordChanged}
         />
       ) : (
-        <AgendaPage
-          session={session}
-          isAdmin={isAdmin}
-          isMedical={isMedical}
-        />
+        <AgendaPage session={session} isAdmin={isAdmin} isMedical={isMedical} />
       )}
     </Suspense>
   );

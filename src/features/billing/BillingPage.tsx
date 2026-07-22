@@ -58,6 +58,7 @@ import {
   updateGlosa,
   updateRecursoGlosa,
 } from "../../services";
+import { BillingCbhpmLookupModal } from "./BillingCbhpmLookupModal";
 import "./billing.css";
 
 type BillingPageProps = {
@@ -66,6 +67,7 @@ type BillingPageProps = {
   convenios: Convenio[];
   isAdmin: boolean;
   isMedical: boolean;
+  section?: Tab;
 };
 type Tab = "atendimentos" | "faturamento" | "financeiro" | "precos";
 
@@ -74,8 +76,9 @@ export function BillingPage({
   medicalUsers,
   convenios,
   isMedical,
+  section = "atendimentos",
 }: BillingPageProps) {
-  const [tab, setTab] = useState<Tab>("atendimentos");
+  const tab = section;
   const [atendimentos, setAtendimentos] = useState<AtendimentoCirurgico[]>([]);
   const [faturamentos, setFaturamentos] = useState<Faturamento[]>([]);
   const [contas, setContas] = useState<ContaReceber[]>([]);
@@ -205,6 +208,7 @@ export function BillingPage({
     valorNegociado?: number | null;
     valorAplicado?: number | null;
   } | null>(null);
+  const [cbhpmModalOpen, setCbhpmModalOpen] = useState(false);
   const [glosaDraft, setGlosaDraft] = useState<{
     id: number;
     codigoMotivo: string;
@@ -246,34 +250,34 @@ export function BillingPage({
     setLoading(true);
     setError("");
     try {
-      const [
-        nextAtendimentos,
-        nextFaturamentos,
-        nextContas,
-        nextPrecos,
-        patientPage,
-        nextHospitais,
-        nextResumo,
-      ] = await Promise.all([
-        getAtendimentos(session.token),
-        getFaturamentos(session.token),
-        canManageBilling
-          ? getContasReceber(session.token)
-          : Promise.resolve([]),
-        getConvenioProcedimentoPrecos(session.token),
-        getPacientes(session.token, { page: 1, pageSize: 100 }),
-        getHospitais(session.token),
-        canManageBilling
-          ? getFinanceiroResumo({}, session.token)
-          : Promise.resolve(null),
-      ]);
-      setAtendimentos(nextAtendimentos);
-      setFaturamentos(nextFaturamentos);
-      setContas(nextContas);
-      setPrecos(nextPrecos);
-      setFinanceiroResumo(nextResumo);
-      setPacientes(patientPage.items);
-      setHospitais(nextHospitais);
+      if (tab === "atendimentos") {
+        const [items, patientPage, hospitalItems] = await Promise.all([
+          getAtendimentos(session.token),
+          getPacientes(session.token, { page: 1, pageSize: 100 }),
+          getHospitais(session.token),
+        ]);
+        setAtendimentos(items);
+        setPacientes(patientPage.items);
+        setHospitais(hospitalItems);
+      } else if (tab === "faturamento") {
+        const [attendanceItems, billingItems] = await Promise.all([
+          getAtendimentos(session.token),
+          getFaturamentos(session.token),
+        ]);
+        setAtendimentos(attendanceItems);
+        setFaturamentos(billingItems);
+      } else if (tab === "financeiro" && canManageBilling) {
+        const [accountItems, patientPage, summary] = await Promise.all([
+          getContasReceber(session.token),
+          getPacientes(session.token, { page: 1, pageSize: 100 }),
+          getFinanceiroResumo({}, session.token),
+        ]);
+        setContas(accountItems);
+        setPacientes(patientPage.items);
+        setFinanceiroResumo(summary);
+      } else if (tab === "precos") {
+        setPrecos(await getConvenioProcedimentoPrecos(session.token));
+      }
     } catch (reason) {
       setError(
         reason instanceof Error
@@ -286,7 +290,7 @@ export function BillingPage({
   };
   useEffect(() => {
     void load();
-  }, [session.token]);
+  }, [session.token, tab]);
 
   const openBalance = useMemo(
     () =>
@@ -318,6 +322,34 @@ export function BillingPage({
 
   const submitAtendimento = (event: FormEvent) => {
     event.preventDefault();
+    if (!atendimentoForm.pacienteId) {
+      setError("Selecione o paciente.");
+      return;
+    }
+    if (!atendimentoForm.dataProcedimento) {
+      setError("Informe a data da cirurgia.");
+      return;
+    }
+    if (!atendimentoForm.medicoResponsavelId) {
+      setError("Selecione o médico responsável.");
+      return;
+    }
+    const team = [
+      atendimentoForm.medicoResponsavelId,
+      atendimentoForm.medicoAuxiliar1Id,
+      atendimentoForm.medicoAuxiliar2Id,
+    ].filter(Boolean);
+    if (new Set(team).size !== team.length) {
+      setError("O médico responsável e os auxiliares devem ser diferentes.");
+      return;
+    }
+    if (
+      Number(atendimentoForm.quantidade) <= 0 ||
+      Number(atendimentoForm.pesoPercentual) < 0
+    ) {
+      setError("Quantidade e peso percentual devem conter valores válidos.");
+      return;
+    }
     const currentProcedure =
       atendimentoForm.cbhpmCodigo || atendimentoForm.descricao
         ? [
@@ -813,51 +845,19 @@ export function BillingPage({
       <DataPanel className="billing-filter-panel">
         <div className="billing-section-heading">
           <div>
-            <span className="eyebrow">Fluxo oficial</span>
-            <h2>Atendimento → Faturamento → Contas a receber</h2>
+            <span className="eyebrow">Módulo</span>
+            <h2>
+              {tab === "atendimentos"
+                ? "Atendimentos cirúrgicos"
+                : tab === "faturamento"
+                  ? "Faturamento"
+                  : tab === "financeiro"
+                    ? "Financeiro"
+                    : "Tabela de preços"}
+            </h2>
           </div>
           <Button onClick={() => void load()} disabled={loading}>
             <RefreshCw size={16} /> Atualizar
-          </Button>
-        </div>
-        <div className="billing-filter-actions">
-          <Button
-            variant={tab === "atendimentos" ? "primary" : undefined}
-            onClick={() => {
-              setTab("atendimentos");
-              setShowForm(false);
-            }}
-          >
-            Atendimentos
-          </Button>
-          <Button
-            variant={tab === "faturamento" ? "primary" : undefined}
-            onClick={() => {
-              setTab("faturamento");
-              setShowForm(false);
-            }}
-          >
-            Faturamento
-          </Button>
-          {canManageBilling && (
-            <Button
-              variant={tab === "financeiro" ? "primary" : undefined}
-              onClick={() => {
-                setTab("financeiro");
-                setShowForm(false);
-              }}
-            >
-              Contas a receber
-            </Button>
-          )}
-          <Button
-            variant={tab === "precos" ? "primary" : undefined}
-            onClick={() => {
-              setTab("precos");
-              setShowForm(false);
-            }}
-          >
-            Tabela de preços
           </Button>
         </div>
       </DataPanel>
@@ -1026,6 +1026,13 @@ export function BillingPage({
                     })
                   }
                 />
+                <Button
+                  type="button"
+                  className="billing-cbhpm-open"
+                  onClick={() => setCbhpmModalOpen(true)}
+                >
+                  Consultar procedimentos CBHPM
+                </Button>
                 <TextField
                   label="Código CBHPM"
                   value={atendimentoForm.cbhpmCodigo}
@@ -2368,17 +2375,82 @@ export function BillingPage({
               </strong>
               {canManageBilling && (
                 <div className="billing-filter-actions">
-                  <Button onClick={() => setGlosaDraft({ id: glosa.id, codigoMotivo: glosa.codigoMotivo || "", descricaoMotivo: glosa.descricaoMotivo, valorGlosado: String(glosa.valorGlosado), dataGlosa: glosa.dataGlosa.slice(0, 10), observacao: glosa.observacao || "" })}>Editar glosa</Button>
-                  {!glosa.recursos.length && <Button onClick={() => setConfirmAction({ title: "Excluir glosa", message: "Excluir esta glosa e recalcular os totais do faturamento?", action: () => deleteGlosa(glosa.id, session.token), success: "Glosa excluída.", after: () => setSelectedBilling(null) })}>Excluir glosa</Button>}
+                  <Button
+                    onClick={() =>
+                      setGlosaDraft({
+                        id: glosa.id,
+                        codigoMotivo: glosa.codigoMotivo || "",
+                        descricaoMotivo: glosa.descricaoMotivo,
+                        valorGlosado: String(glosa.valorGlosado),
+                        dataGlosa: glosa.dataGlosa.slice(0, 10),
+                        observacao: glosa.observacao || "",
+                      })
+                    }
+                  >
+                    Editar glosa
+                  </Button>
+                  {!glosa.recursos.length && (
+                    <Button
+                      onClick={() =>
+                        setConfirmAction({
+                          title: "Excluir glosa",
+                          message:
+                            "Excluir esta glosa e recalcular os totais do faturamento?",
+                          action: () => deleteGlosa(glosa.id, session.token),
+                          success: "Glosa excluída.",
+                          after: () => setSelectedBilling(null),
+                        })
+                      }
+                    >
+                      Excluir glosa
+                    </Button>
+                  )}
                 </div>
               )}
               {glosa.recursos.map((recurso) => (
                 <div key={recurso.id}>
-                  <p>{recurso.status}: {recurso.justificativa} — recuperado {formatCurrency(recurso.valorRecuperado)}</p>
-                  {canManageBilling && <div className="billing-filter-actions">
-                    <Button onClick={() => setRecursoDraft({ id: recurso.id, dataEnvio: recurso.dataEnvio?.slice(0, 10) || "", justificativa: recurso.justificativa, valorRecorrido: String(recurso.valorRecorrido), dataResposta: recurso.dataResposta?.slice(0, 10) || "", valorRecuperado: String(recurso.valorRecuperado), status: recurso.status, observacao: recurso.observacao || "" })}>Editar recurso</Button>
-                    {recurso.status === "EmPreparacao" && <Button onClick={() => setConfirmAction({ title: "Excluir recurso", message: "Excluir este recurso ainda em preparação?", action: () => deleteRecursoGlosa(recurso.id, session.token), success: "Recurso excluído.", after: () => setSelectedBilling(null) })}>Excluir recurso</Button>}
-                  </div>}
+                  <p>
+                    {recurso.status}: {recurso.justificativa} — recuperado{" "}
+                    {formatCurrency(recurso.valorRecuperado)}
+                  </p>
+                  {canManageBilling && (
+                    <div className="billing-filter-actions">
+                      <Button
+                        onClick={() =>
+                          setRecursoDraft({
+                            id: recurso.id,
+                            dataEnvio: recurso.dataEnvio?.slice(0, 10) || "",
+                            justificativa: recurso.justificativa,
+                            valorRecorrido: String(recurso.valorRecorrido),
+                            dataResposta:
+                              recurso.dataResposta?.slice(0, 10) || "",
+                            valorRecuperado: String(recurso.valorRecuperado),
+                            status: recurso.status,
+                            observacao: recurso.observacao || "",
+                          })
+                        }
+                      >
+                        Editar recurso
+                      </Button>
+                      {recurso.status === "EmPreparacao" && (
+                        <Button
+                          onClick={() =>
+                            setConfirmAction({
+                              title: "Excluir recurso",
+                              message:
+                                "Excluir este recurso ainda em preparação?",
+                              action: () =>
+                                deleteRecursoGlosa(recurso.id, session.token),
+                              success: "Recurso excluído.",
+                              after: () => setSelectedBilling(null),
+                            })
+                          }
+                        >
+                          Excluir recurso
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </DataPanel>
@@ -2388,9 +2460,182 @@ export function BillingPage({
           )}
         </Modal>
       )}
-      {glosaDraft && <Modal titleId="glosa-edit-title" onClose={() => setGlosaDraft(null)}><div className="panel-title"><h2 id="glosa-edit-title">Editar glosa</h2><Button onClick={() => setGlosaDraft(null)}><X size={16} /></Button></div><form className="billing-filter-grid" onSubmit={saveGlosa}><TextField label="Código do motivo" value={glosaDraft.codigoMotivo} onValueChange={(value) => setGlosaDraft({ ...glosaDraft, codigoMotivo: value })} /><TextField label="Descrição do motivo" value={glosaDraft.descricaoMotivo} required onValueChange={(value) => setGlosaDraft({ ...glosaDraft, descricaoMotivo: value })} /><TextField label="Valor glosado" type="number" min="0" step="0.01" value={glosaDraft.valorGlosado} required onValueChange={(value) => setGlosaDraft({ ...glosaDraft, valorGlosado: value })} /><TextField label="Data da glosa" type="date" value={glosaDraft.dataGlosa} required onValueChange={(value) => setGlosaDraft({ ...glosaDraft, dataGlosa: value })} /><TextField label="Observação" value={glosaDraft.observacao} onValueChange={(value) => setGlosaDraft({ ...glosaDraft, observacao: value })} /><Button variant="primary" type="submit">Salvar glosa</Button></form></Modal>}
-      {recursoDraft && <Modal titleId="recurso-edit-title" onClose={() => setRecursoDraft(null)}><div className="panel-title"><h2 id="recurso-edit-title">Editar recurso de glosa</h2><Button onClick={() => setRecursoDraft(null)}><X size={16} /></Button></div><form className="billing-filter-grid" onSubmit={saveRecurso}><TextField label="Data de envio" type="date" value={recursoDraft.dataEnvio} onValueChange={(value) => setRecursoDraft({ ...recursoDraft, dataEnvio: value })} /><TextField label="Justificativa" value={recursoDraft.justificativa} required onValueChange={(value) => setRecursoDraft({ ...recursoDraft, justificativa: value })} /><TextField label="Valor recorrido" type="number" min="0" step="0.01" value={recursoDraft.valorRecorrido} required onValueChange={(value) => setRecursoDraft({ ...recursoDraft, valorRecorrido: value })} /><TextField label="Data da resposta" type="date" value={recursoDraft.dataResposta} onValueChange={(value) => setRecursoDraft({ ...recursoDraft, dataResposta: value })} /><TextField label="Valor recuperado" type="number" min="0" step="0.01" value={recursoDraft.valorRecuperado} required onValueChange={(value) => setRecursoDraft({ ...recursoDraft, valorRecuperado: value })} /><SelectField label="Status" value={recursoDraft.status} onChange={(event) => setRecursoDraft({ ...recursoDraft, status: event.target.value })}>{["EmPreparacao", "Enviado", "Aceito", "AceitoParcialmente", "Negado", "Cancelado"].map((status) => <option key={status}>{status}</option>)}</SelectField><TextField label="Observação" value={recursoDraft.observacao} onValueChange={(value) => setRecursoDraft({ ...recursoDraft, observacao: value })} /><Button variant="primary" type="submit">Salvar recurso</Button></form></Modal>}
-      {confirmAction && <Modal titleId="confirm-finance-action" onClose={() => setConfirmAction(null)}><div className="panel-title"><h2 id="confirm-finance-action">{confirmAction.title}</h2><Button onClick={() => setConfirmAction(null)}><X size={16} /></Button></div><p>{confirmAction.message}</p><div className="billing-filter-actions"><Button onClick={() => setConfirmAction(null)}>Voltar</Button><Button variant="primary" disabled={loading} onClick={() => { const pending = confirmAction; void run(pending.action, pending.success).then(() => { pending.after?.(); setConfirmAction(null); }); }}>Confirmar</Button></div></Modal>}
+      {glosaDraft && (
+        <Modal titleId="glosa-edit-title" onClose={() => setGlosaDraft(null)}>
+          <div className="panel-title">
+            <h2 id="glosa-edit-title">Editar glosa</h2>
+            <Button onClick={() => setGlosaDraft(null)}>
+              <X size={16} />
+            </Button>
+          </div>
+          <form className="billing-filter-grid" onSubmit={saveGlosa}>
+            <TextField
+              label="Código do motivo"
+              value={glosaDraft.codigoMotivo}
+              onValueChange={(value) =>
+                setGlosaDraft({ ...glosaDraft, codigoMotivo: value })
+              }
+            />
+            <TextField
+              label="Descrição do motivo"
+              value={glosaDraft.descricaoMotivo}
+              required
+              onValueChange={(value) =>
+                setGlosaDraft({ ...glosaDraft, descricaoMotivo: value })
+              }
+            />
+            <TextField
+              label="Valor glosado"
+              type="number"
+              min="0"
+              step="0.01"
+              value={glosaDraft.valorGlosado}
+              required
+              onValueChange={(value) =>
+                setGlosaDraft({ ...glosaDraft, valorGlosado: value })
+              }
+            />
+            <TextField
+              label="Data da glosa"
+              type="date"
+              value={glosaDraft.dataGlosa}
+              required
+              onValueChange={(value) =>
+                setGlosaDraft({ ...glosaDraft, dataGlosa: value })
+              }
+            />
+            <TextField
+              label="Observação"
+              value={glosaDraft.observacao}
+              onValueChange={(value) =>
+                setGlosaDraft({ ...glosaDraft, observacao: value })
+              }
+            />
+            <Button variant="primary" type="submit">
+              Salvar glosa
+            </Button>
+          </form>
+        </Modal>
+      )}
+      {recursoDraft && (
+        <Modal
+          titleId="recurso-edit-title"
+          onClose={() => setRecursoDraft(null)}
+        >
+          <div className="panel-title">
+            <h2 id="recurso-edit-title">Editar recurso de glosa</h2>
+            <Button onClick={() => setRecursoDraft(null)}>
+              <X size={16} />
+            </Button>
+          </div>
+          <form className="billing-filter-grid" onSubmit={saveRecurso}>
+            <TextField
+              label="Data de envio"
+              type="date"
+              value={recursoDraft.dataEnvio}
+              onValueChange={(value) =>
+                setRecursoDraft({ ...recursoDraft, dataEnvio: value })
+              }
+            />
+            <TextField
+              label="Justificativa"
+              value={recursoDraft.justificativa}
+              required
+              onValueChange={(value) =>
+                setRecursoDraft({ ...recursoDraft, justificativa: value })
+              }
+            />
+            <TextField
+              label="Valor recorrido"
+              type="number"
+              min="0"
+              step="0.01"
+              value={recursoDraft.valorRecorrido}
+              required
+              onValueChange={(value) =>
+                setRecursoDraft({ ...recursoDraft, valorRecorrido: value })
+              }
+            />
+            <TextField
+              label="Data da resposta"
+              type="date"
+              value={recursoDraft.dataResposta}
+              onValueChange={(value) =>
+                setRecursoDraft({ ...recursoDraft, dataResposta: value })
+              }
+            />
+            <TextField
+              label="Valor recuperado"
+              type="number"
+              min="0"
+              step="0.01"
+              value={recursoDraft.valorRecuperado}
+              required
+              onValueChange={(value) =>
+                setRecursoDraft({ ...recursoDraft, valorRecuperado: value })
+              }
+            />
+            <SelectField
+              label="Status"
+              value={recursoDraft.status}
+              onChange={(event) =>
+                setRecursoDraft({ ...recursoDraft, status: event.target.value })
+              }
+            >
+              {[
+                "EmPreparacao",
+                "Enviado",
+                "Aceito",
+                "AceitoParcialmente",
+                "Negado",
+                "Cancelado",
+              ].map((status) => (
+                <option key={status}>{status}</option>
+              ))}
+            </SelectField>
+            <TextField
+              label="Observação"
+              value={recursoDraft.observacao}
+              onValueChange={(value) =>
+                setRecursoDraft({ ...recursoDraft, observacao: value })
+              }
+            />
+            <Button variant="primary" type="submit">
+              Salvar recurso
+            </Button>
+          </form>
+        </Modal>
+      )}
+      {confirmAction && (
+        <Modal
+          titleId="confirm-finance-action"
+          onClose={() => setConfirmAction(null)}
+        >
+          <div className="panel-title">
+            <h2 id="confirm-finance-action">{confirmAction.title}</h2>
+            <Button onClick={() => setConfirmAction(null)}>
+              <X size={16} />
+            </Button>
+          </div>
+          <p>{confirmAction.message}</p>
+          <div className="billing-filter-actions">
+            <Button onClick={() => setConfirmAction(null)}>Voltar</Button>
+            <Button
+              variant="primary"
+              disabled={loading}
+              onClick={() => {
+                const pending = confirmAction;
+                void run(pending.action, pending.success).then(() => {
+                  pending.after?.();
+                  setConfirmAction(null);
+                });
+              }}
+            >
+              Confirmar
+            </Button>
+          </div>
+        </Modal>
+      )}
       {selectedAttendance && (
         <Modal
           titleId="attendance-detail-title"
@@ -2459,6 +2704,21 @@ export function BillingPage({
             atendimento.
           </p>
         </Modal>
+      )}
+      {cbhpmModalOpen && (
+        <BillingCbhpmLookupModal
+          token={session.token}
+          onClose={() => setCbhpmModalOpen(false)}
+          onSelect={(item) => {
+            setAtendimentoForm((current) => ({
+              ...current,
+              cbhpmCodigo: item.codigo,
+              descricao: item.procedimento,
+            }));
+            setPricePreview(null);
+            setCbhpmModalOpen(false);
+          }}
+        />
       )}
     </section>
   );

@@ -39,7 +39,8 @@
   border: 1px solid color-mix(in srgb, var(--action-primary) 82%, black);
   background: var(--action-primary);
   color: var(--action-text);
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--action-primary) 28%, transparent);
+  box-shadow: 0 8px 18px
+    color-mix(in srgb, var(--action-primary) 28%, transparent);
   font-size: 0.9rem;
   font-weight: 900;
   line-height: 1;
@@ -122,7 +123,8 @@
 .billing-clear-filters {
   background: var(--action-secondary);
   border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
-  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-secondary) 20%, transparent);
+  box-shadow: 0 7px 16px
+    color-mix(in srgb, var(--action-secondary) 20%, transparent);
 }
 
 .billing-clear-filters:hover {
@@ -168,7 +170,11 @@
   justify-content: center;
   border-radius: 10px;
   color: var(--billing-color, var(--teal));
-  background: color-mix(in srgb, var(--billing-color, var(--teal)) 14%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--billing-color, var(--teal)) 14%,
+    transparent
+  );
 }
 
 .billing-summary-title {
@@ -411,7 +417,10 @@
 
 .billing-summary-overview {
   display: grid;
-  grid-template-columns: minmax(210px, 0.75fr) minmax(360px, 1.45fr) minmax(230px, 0.8fr);
+  grid-template-columns: minmax(210px, 0.75fr) minmax(360px, 1.45fr) minmax(
+      230px,
+      0.8fr
+    );
   gap: 12px;
 }
 
@@ -428,7 +437,11 @@
 
 .billing-summary-convenio-card {
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--action-accent) 8%, transparent), transparent 72%),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--action-accent) 8%, transparent),
+      transparent 72%
+    ),
     var(--input-bg);
 }
 
@@ -691,6 +704,85 @@
   background: rgba(249, 115, 22, 0.16);
 }
 
+.billing-cbhpm-open {
+  min-height: 42px;
+  align-self: end;
+  background: var(--action-success);
+  border-color: color-mix(in srgb, var(--action-success) 82%, black);
+  color: white;
+}
+
+.billing-cbhpm-open:hover {
+  background: var(--action-success-hover);
+}
+
+.modal-panel.billing-cbhpm-modal {
+  width: min(1080px, calc(100vw - 48px));
+  max-height: min(90vh, 850px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.billing-cbhpm-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(320px, 1.5fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+.billing-cbhpm-filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.billing-cbhpm-filter-actions button {
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.billing-cbhpm-table-wrap {
+  flex: 1 1 auto;
+  min-height: 240px;
+  overflow: auto;
+}
+
+.billing-cbhpm-table {
+  min-width: 850px;
+}
+
+.billing-cbhpm-table th:first-child,
+.billing-cbhpm-table td:first-child {
+  width: 150px;
+  white-space: nowrap;
+}
+
+.billing-cbhpm-table th:nth-child(3),
+.billing-cbhpm-table td:nth-child(3) {
+  width: 90px;
+}
+
+.billing-cbhpm-table th:nth-child(4),
+.billing-cbhpm-table td:nth-child(4) {
+  width: 160px;
+}
+
+.billing-cbhpm-table th:last-child,
+.billing-cbhpm-table td:last-child {
+  width: 145px;
+}
+
+.billing-cbhpm-select {
+  width: 125px;
+  color: var(--action-success);
+}
+
+.billing-cbhpm-pagination {
+  flex: 0 0 auto;
+  margin-top: 14px;
+}
+
 .billing-flag.missing {
   color: #991b1b;
   background: rgba(239, 68, 68, 0.14);
@@ -739,6 +831,34 @@
 }
 
 @media (max-width: 760px) {
+  .modal-panel.billing-cbhpm-modal {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 14px;
+  }
+
+  .billing-cbhpm-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-cbhpm-filter-actions,
+  .billing-cbhpm-filter-actions button {
+    width: 100%;
+  }
+
+  .billing-cbhpm-table-wrap {
+    min-height: 180px;
+  }
+
+  .billing-cbhpm-pagination {
+    align-items: stretch;
+  }
+
+  .billing-cbhpm-pagination .pagination-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .billing-filter-grid,
   .billing-summary-grid,
   .billing-summary-overview,

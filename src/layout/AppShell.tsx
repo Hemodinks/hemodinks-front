@@ -1,14 +1,19 @@
-import type { ReactNode } from 'react';
-import type { AppView, BreadcrumbItem } from '../appTypes';
-import type { AuthSession, Convenio, MedicalUserOption, OpmeFornecedor } from '../types';
-import { LoadingOverlay } from '../shared/components/LoadingOverlay';
+import type { ReactNode } from "react";
+import type { AppView, BreadcrumbItem } from "../appTypes";
+import type {
+  AuthSession,
+  Convenio,
+  MedicalUserOption,
+  OpmeFornecedor,
+} from "../types";
+import { LoadingOverlay } from "../shared/components/LoadingOverlay";
 import {
   CONVENIOS_DATALIST_ID,
   MEDICAL_USERS_DATALIST_ID,
   OPME_FORNECEDORES_DATALIST_ID,
-} from '../shared/utils/formatters';
-import { Sidebar } from './Sidebar';
-import { Topbar } from './Topbar';
+} from "../shared/utils/formatters";
+import { Sidebar } from "./Sidebar";
+import { Topbar } from "./Topbar";
 
 type AppShellProps = {
   children: ReactNode;
@@ -47,6 +52,9 @@ type AppShellProps = {
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
   onOpenBilling: () => void;
+  onOpenAttendances: () => void;
+  onOpenFinance: () => void;
+  onOpenPrices: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
@@ -90,6 +98,9 @@ export function AppShell({
   onOpenMyProfile,
   onOpenPatientsList,
   onOpenBilling,
+  onOpenAttendances,
+  onOpenFinance,
+  onOpenPrices,
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
@@ -105,7 +116,10 @@ export function AppShell({
       </datalist>
       <datalist id={CONVENIOS_DATALIST_ID}>
         {convenios.map((convenio) => (
-          <option key={convenio.idConvenio} value={convenio.descricaoConvenio} />
+          <option
+            key={convenio.idConvenio}
+            value={convenio.descricaoConvenio}
+          />
         ))}
       </datalist>
       <datalist id={OPME_FORNECEDORES_DATALIST_ID}>
@@ -151,13 +165,18 @@ export function AppShell({
           onOpenMyProfile={onOpenMyProfile}
           onOpenPatientsList={onOpenPatientsList}
           onOpenBilling={onOpenBilling}
+          onOpenAttendances={onOpenAttendances}
+          onOpenFinance={onOpenFinance}
+          onOpenPrices={onOpenPrices}
           onOpenMedicalGroups={onOpenMedicalGroups}
           onOpenAgenda={onOpenAgenda}
           onOpenSettings={onOpenSettings}
           onOpenClinics={onOpenClinics}
         />
 
-        <div className={`app-content ${activeView === 'dashboard' ? 'dashboard-content' : ''}`}>
+        <div
+          className={`app-content ${activeView === "dashboard" ? "dashboard-content" : ""}`}
+        >
           {children}
         </div>
       </div>
