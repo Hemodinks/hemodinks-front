@@ -730,10 +730,9 @@
 
 .billing-cbhpm-filters {
   display: grid;
-  grid-template-columns: minmax(150px, 0.65fr) minmax(280px, 1.5fr) minmax(
-      90px,
-      0.4fr
-    ) auto;
+  grid-template-columns:
+    minmax(150px, 0.65fr) minmax(280px, 1.5fr) minmax(90px, 0.4fr)
+    auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 16px;
@@ -825,7 +824,7 @@
     "diagnosis treatment"
     "convenio responsible"
     "hospital assistant-one"
-    ". assistant-two"
+    "opme assistant-two"
     "procedures procedures"
     "authorization ."
     "save save";
@@ -844,26 +843,30 @@
 }
 
 .billing-attendance-form > label:nth-child(4) {
-  grid-area: convenio;
+  grid-area: opme;
 }
 
 .billing-attendance-form > label:nth-child(5) {
-  grid-area: responsible;
+  grid-area: convenio;
 }
 
 .billing-attendance-form > label:nth-child(6) {
-  grid-area: assistant-one;
+  grid-area: responsible;
 }
 
 .billing-attendance-form > label:nth-child(7) {
-  grid-area: assistant-two;
+  grid-area: assistant-one;
 }
 
 .billing-attendance-form > label:nth-child(8) {
-  grid-area: diagnosis;
+  grid-area: assistant-two;
 }
 
 .billing-attendance-form > label:nth-child(9) {
+  grid-area: diagnosis;
+}
+
+.billing-attendance-form > label:nth-child(10) {
   grid-area: treatment;
 }
 
@@ -910,6 +913,12 @@
   color: var(--action-success);
   font-size: 0.74rem;
   font-weight: 900;
+}
+
+.billing-procedure-price {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
 }
 
 .billing-procedure-porte {
@@ -1015,6 +1024,7 @@
       "convenio"
       "responsible"
       "hospital"
+      "opme"
       "assistant-one"
       "assistant-two"
       "procedures"

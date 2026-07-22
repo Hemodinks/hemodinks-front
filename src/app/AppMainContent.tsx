@@ -282,6 +282,7 @@ export function AppMainContent({
           session={session}
           medicalUsers={patientsDomain.medicalUsers}
           convenios={patientsDomain.convenios}
+          opmeFornecedores={patientsDomain.opmeFornecedores}
           isAdmin={isAdmin}
           isMedical={isMedical}
           section={

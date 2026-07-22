@@ -540,6 +540,8 @@ export type AtendimentoCirurgico = {
   dataProcedimento: string;
   hospitalId?: number | null;
   convenioId?: number | null;
+  opmeFornecedorId?: number | null;
+  opmeFornecedor?: string | null;
   medicoResponsavelId: number;
   medicoAuxiliar1Id?: number | null;
   medicoAuxiliar2Id?: number | null;

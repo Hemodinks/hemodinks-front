@@ -191,6 +191,7 @@ function renderPage(
       session={session}
       medicalUsers={[{ id: 2, nome: "Dra. Teste", email: "dra@teste.local" }]}
       convenios={[{ idConvenio: 1, descricaoConvenio: "Convênio Teste" }]}
+      opmeFornecedores={[{ idFornecedor: 1, fornecedor: "Promedom" }]}
       isAdmin
       isMedical={false}
     />,
@@ -231,6 +232,9 @@ describe("BillingPage", () => {
     fireEvent.change(screen.getByLabelText("Hospital"), {
       target: { value: "1" },
     });
+    fireEvent.change(screen.getByLabelText("Fornecedor OPME"), {
+      target: { value: "1" },
+    });
     fireEvent.change(screen.getByLabelText("Médico responsável"), {
       target: { value: "2" },
     });
@@ -245,6 +249,7 @@ describe("BillingPage", () => {
         expect.objectContaining({
           pacienteId: 1,
           hospitalId: 1,
+          opmeFornecedorId: 1,
           medicoResponsavelId: 2,
           numeroAutorizacao: "AUT-1",
           procedimentos: [
@@ -470,6 +475,9 @@ describe("BillingPage", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
     expect(screen.getByText("Cirurgia")).toBeInTheDocument();
     expect(screen.getByText("8A")).toBeInTheDocument();
+    expect(
+      screen.getByText("Valor de referência: R$ 1.000,00"),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Remover Cirurgia" }),
     ).toBeInTheDocument();

@@ -26,6 +26,7 @@ import type {
   Faturamento,
   FinanceiroResumo,
   MedicalUserOption,
+  OpmeFornecedor,
   Paciente,
 } from "../../types";
 import {
@@ -65,6 +66,7 @@ type BillingPageProps = {
   session: AuthSession;
   medicalUsers: MedicalUserOption[];
   convenios: Convenio[];
+  opmeFornecedores: OpmeFornecedor[];
   isAdmin: boolean;
   isMedical: boolean;
   section?: Tab;
@@ -75,6 +77,7 @@ export function BillingPage({
   session,
   medicalUsers,
   convenios,
+  opmeFornecedores,
   isMedical,
   section = "atendimentos",
 }: BillingPageProps) {
@@ -96,6 +99,7 @@ export function BillingPage({
     dataProcedimento: "",
     hospitalId: "",
     convenioId: "",
+    opmeFornecedorId: "",
     medicoResponsavelId: isMedical ? String(session.user.id) : "",
     medicoAuxiliar1Id: "",
     medicoAuxiliar2Id: "",
@@ -118,6 +122,7 @@ export function BillingPage({
       cbhpmCodigo: string | null;
       descricao: string | null;
       porte?: string | null;
+      valorReferencia?: number | null;
       quantidade: number;
       pesoPercentual: number;
     }>
@@ -353,6 +358,9 @@ export function BillingPage({
             convenioId: atendimentoForm.convenioId
               ? Number(atendimentoForm.convenioId)
               : null,
+            opmeFornecedorId: atendimentoForm.opmeFornecedorId
+              ? Number(atendimentoForm.opmeFornecedorId)
+              : null,
             medicoResponsavelId: Number(atendimentoForm.medicoResponsavelId),
             medicoAuxiliar1Id: atendimentoForm.medicoAuxiliar1Id
               ? Number(atendimentoForm.medicoAuxiliar1Id)
@@ -364,10 +372,12 @@ export function BillingPage({
             tratamentoMedico: atendimentoForm.tratamentoMedico || null,
             numeroAutorizacao: atendimentoForm.numeroAutorizacao || null,
             status: "Planejado",
-            procedimentos: procedimentos.map(({ porte, ...procedure }) => ({
-              ...procedure,
-              cbhpmPorte: porte || null,
-            })),
+            procedimentos: procedimentos.map(
+              ({ porte, valorReferencia: _, ...procedure }) => ({
+                ...procedure,
+                cbhpmPorte: porte || null,
+              }),
+            ),
           },
           session.token,
         ),
@@ -844,6 +854,23 @@ export function BillingPage({
                   ))}
                 </SelectField>
                 <SelectField
+                  label="Fornecedor OPME"
+                  value={atendimentoForm.opmeFornecedorId}
+                  onChange={(event) =>
+                    setAtendimentoForm({
+                      ...atendimentoForm,
+                      opmeFornecedorId: event.target.value,
+                    })
+                  }
+                >
+                  <option value="">Não informado</option>
+                  {opmeFornecedores.map((item) => (
+                    <option key={item.idFornecedor} value={item.idFornecedor}>
+                      {item.fornecedor}
+                    </option>
+                  ))}
+                </SelectField>
+                <SelectField
                   label="Convênio"
                   value={atendimentoForm.convenioId}
                   onChange={(e) =>
@@ -967,6 +994,12 @@ export function BillingPage({
                               </span>
                             )}
                             <strong>{item.descricao}</strong>
+                            {item.valorReferencia != null && (
+                              <span className="billing-procedure-price">
+                                Valor de referência:{" "}
+                                {formatCurrency(item.valorReferencia)}
+                              </span>
+                            )}
                           </div>
                           {item.porte && (
                             <span className="billing-procedure-porte">
@@ -2584,6 +2617,7 @@ export function BillingPage({
                   cbhpmCodigo: item.codigo || null,
                   descricao: item.procedimento,
                   porte: item.porte,
+                  valorReferencia: item.valorReferencia,
                   quantidade: 1,
                   pesoPercentual: 100,
                 },
