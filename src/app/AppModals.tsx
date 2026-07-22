@@ -93,7 +93,7 @@ export function AppModals({
       )}
 
       {patientsDomain.selectedPatientInfo && (
-        <PatientInfoModal paciente={patientsDomain.selectedPatientInfo} onClose={() => patientsDomain.setSelectedPatientInfo(null)} />
+        <PatientInfoModal paciente={patientsDomain.selectedPatientInfo} sessionToken={session.token} onClose={() => patientsDomain.setSelectedPatientInfo(null)} />
       )}
 
       {patientsDomain.selectedPatientFiles && (

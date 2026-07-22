@@ -1,15 +1,18 @@
+import { useEffect, useState } from 'react';
 import { FileText, X } from 'lucide-react';
-import type { Paciente } from '../../types';
+import type { Paciente, PacienteFinanceiroResumo } from '../../types';
 import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
 import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
-import { downloadPacienteArquivo } from '../../services';
+import { downloadPacienteArquivo, getPacienteFinanceiroResumo } from '../../services';
+import { formatCurrency } from '../../shared/utils/formatters';
 import { getPacienteProcedimentosFromPaciente } from './patientUtils';
 import './patients.css';
 
 type PatientInfoModalProps = {
   paciente: Paciente;
+  sessionToken: string;
   onClose: () => void;
 };
 
@@ -19,8 +22,15 @@ function renderInfoValue(label: string, value?: string | null) {
     : <span className="patient-info-empty">Não informado</span>;
 }
 
-export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
+export function PatientInfoModal({ paciente, sessionToken, onClose }: PatientInfoModalProps) {
   const procedimentos = getPacienteProcedimentosFromPaciente(paciente);
+  const [financeiro, setFinanceiro] = useState<PacienteFinanceiroResumo | null>(null);
+  const [financeiroError, setFinanceiroError] = useState('');
+  useEffect(() => { let active = true; setFinanceiroError('');
+    void getPacienteFinanceiroResumo(paciente.id, sessionToken).then((result) => { if (active) setFinanceiro(result); })
+      .catch((reason) => { if (active) setFinanceiroError(reason instanceof Error ? reason.message : 'Não foi possível carregar o resumo financeiro.'); });
+    return () => { active = false; };
+  }, [paciente.id, sessionToken]);
 
   return (
     <Modal titleId="patient-info-title" className="info-modal patient-info-modal" onClose={onClose}>
@@ -35,6 +45,16 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
         </div>
 
         <div className="patient-info-layout">
+          <section className="patient-info-procedures-card" aria-label="Resumo financeiro somente leitura">
+            <div className="patient-info-section-heading"><span>Resumo financeiro</span><strong>{financeiro?.statusFinanceiro || 'Carregando...'}</strong></div>
+            {financeiro?.origemDados === 'Legado' && <p className="file-hint">Compatibilidade temporária: valores somente leitura provenientes do cadastro legado.</p>}
+            {financeiro?.avisos.map((aviso) => <AlertMessage key={aviso} type="error">{aviso}</AlertMessage>)}
+            {financeiroError ? <AlertMessage type="error">{financeiroError}</AlertMessage> : financeiro && <dl className="billing-checklist">
+              {[['Valor apresentado', financeiro.valorApresentado], ['Valor glosado', financeiro.valorGlosado],
+                ['Valor reconhecido', financeiro.valorReconhecido], ['Valor recebido', financeiro.valorRecebido],
+                ['Saldo em aberto', financeiro.saldoAberto]].map(([label, value]) => <div className="billing-checklist-row" key={String(label)}><dt>{label}</dt><dd><strong>{formatCurrency(Number(value))}</strong></dd></div>)}
+            </dl>}
+          </section>
           <section className="patient-info-summary-grid" aria-label="Resumo do paciente">
             <article className="patient-info-card patient-info-card-highlight">
               <span>Hospital</span>

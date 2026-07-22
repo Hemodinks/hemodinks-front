@@ -66,6 +66,7 @@ vi.mock('./services', () => ({
   getUser: vi.fn(),
   getUserProfilePhoto: vi.fn(),
   getPaciente: vi.fn(),
+  getPacienteFinanceiroResumo: vi.fn(),
   getPacienteObservacoes: vi.fn(),
   getPacientes: vi.fn(),
   createPacienteObservacao: vi.fn(),
@@ -182,6 +183,8 @@ describe('App', () => {
       { idFornecedor: 4, fornecedor: 'Spyner' },
     ]);
     vi.mocked(api.getPaciente).mockResolvedValue(basePaciente);
+    vi.mocked(api.getPacienteFinanceiroResumo).mockResolvedValue({ valorApresentado: 0, valorGlosado: 0,
+      valorReconhecido: 0, valorRecebido: 0, saldoAberto: 0, statusFinanceiro: 'Sem movimentação', origemDados: 'Normalizado', avisos: [] });
     vi.mocked(api.getPacienteObservacoes).mockResolvedValue([]);
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
     vi.mocked(api.createPacienteObservacao).mockResolvedValue({ pacienteId: basePaciente.id, createdCount: 1 });
@@ -688,6 +691,8 @@ describe('App', () => {
 
   it('exibe hospital e destaque visual no popup de informacoes do paciente', async () => {
     vi.mocked(api.getPacientes).mockResolvedValue(paged([basePaciente]));
+    vi.mocked(api.getPacienteFinanceiroResumo).mockResolvedValue({ valorApresentado: 1000, valorGlosado: 100,
+      valorReconhecido: 900, valorRecebido: 400, saldoAberto: 500, statusFinanceiro: 'Parcialmente recebido', origemDados: 'Normalizado', avisos: [] });
 
     const { user } = await renderAuthenticatedApp();
 
@@ -702,6 +707,8 @@ describe('App', () => {
     expect(within(dialog).getByText('Convênio')).toBeInTheDocument();
     expect(within(dialog).getByText('Particular')).toBeInTheDocument();
     expect(within(dialog).getByText('Procedimentos')).toBeInTheDocument();
+    expect(within(dialog).getByText('Resumo financeiro')).toBeInTheDocument();
+    expect(await within(dialog).findByText('Parcialmente recebido')).toBeInTheDocument();
   });
 
   it('permite visualizar e ocultar a senha no login', async () => {

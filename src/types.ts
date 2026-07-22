@@ -518,7 +518,9 @@ export type Faturamento = {
   numeroGuia?: string | null; numeroLote?: string | null; competencia: string; dataEnvio?: string | null;
   dataRetorno?: string | null; valorApresentado: number; valorGlosado: number; valorGlosaRecuperada: number;
   valorReconhecido: number; status: FaturamentoStatus; observacao?: string | null; rowVersion: string;
-  itens: Array<{ id: number; codigo?: string | null; descricao: string; valorApresentado: number; valorAprovado: number; status: string }>;
+  itens: Array<{ id: number; atendimentoProcedimentoId?: number | null; codigo?: string | null; descricao: string;
+    quantidade: number; pesoPercentual: number; valorUnitario: number; valorApresentado: number;
+    valorGlosado: number; valorAprovado: number; status: string; ordem: number }>;
   glosas: Array<{ id: number; faturamentoItemId?: number | null; codigoMotivo?: string | null; descricaoMotivo: string;
     valorGlosado: number; dataGlosa: string; status: string; observacao?: string | null;
     recursos: Array<{ id: number; dataEnvio?: string | null; justificativa: string; valorRecorrido: number;
@@ -541,8 +543,11 @@ export type ConvenioProcedimentoPreco = {
   vigenciaInicio: string; vigenciaFinal?: string | null; ativo: boolean;
 };
 export type FinanceiroResumo = { valorApresentado: number; valorGlosado: number; valorRecuperado: number;
-  valorReconhecido: number; valorRecebido: number; saldoAberto: number; titulosVencidos: number;
+  valorReconhecido: number; valorRecebido: number; saldoAberto: number; valorVencido: number;
+  recebimentosPeriodo: number; titulosVencidos: number;
   porCompetencia: Array<{ competencia: string; apresentado: number; reconhecido: number; recebido: number; saldoAberto: number }> };
+export type PacienteFinanceiroResumo = { valorApresentado: number; valorGlosado: number; valorReconhecido: number;
+  valorRecebido: number; saldoAberto: number; statusFinanceiro: string; origemDados: 'Normalizado' | 'Legado'; avisos: string[] };
 
 export type PacienteObservacao = {
   id: number;
