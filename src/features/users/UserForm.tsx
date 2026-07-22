@@ -14,6 +14,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_PHONE_LENGTH,
   MEDICAL_PROFILE_ID,
+  PATIENT_PROFILE_ID,
   USER_PROFILE_OPTIONS,
 } from '../../shared/utils/formatters';
 import { UserAvatar } from './UserAvatar';
@@ -162,7 +163,7 @@ export function UserForm({
               value={formData.email}
               onValueChange={(value) => setFormData((current) => ({ ...current, email: value.slice(0, MAX_EMAIL_LENGTH) }))}
               maxLength={MAX_EMAIL_LENGTH}
-              disabled={isFormBusy}
+              disabled={isFormBusy || (!canAccessUsers && formData.perfilId === PATIENT_PROFILE_ID)}
               required
             />
 

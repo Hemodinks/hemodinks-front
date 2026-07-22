@@ -39,11 +39,11 @@ export function getAppAccess(session: AuthSession | null) {
     && hasClinicModule(CLINIC_MODULES.patients);
   const canConsultCbhpm = (hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar) || isMedical)
     && hasClinicModule(CLINIC_MODULES.patients);
-  const canAccessAgenda = !isController && hasClinicModule(CLINIC_MODULES.agenda);
+  const canAccessAgenda = hasClinicModule(CLINIC_MODULES.agenda);
   const canAccessUsers = isAdmin && hasClinicModule(CLINIC_MODULES.users);
   const canEditOwnUser = isMedical || isPatient;
   const canAccessBilling = (isAdmin || isMedical || isController) && hasClinicModule(CLINIC_MODULES.billing);
-  const canAccessMedicalGroups = isAdmin && hasClinicModule(CLINIC_MODULES.medicalGroups);
+  const canAccessMedicalGroups = (isAdmin || isController) && hasClinicModule(CLINIC_MODULES.medicalGroups);
   const canAccessSettings = isAdmin;
 
   return {
