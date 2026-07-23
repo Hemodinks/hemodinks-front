@@ -674,6 +674,92 @@
   white-space: nowrap;
 }
 
+.modal-panel.billing-appeal-modal {
+  width: min(680px, calc(100vw - 48px));
+  max-width: none;
+  align-self: start;
+  justify-self: center;
+  margin-top: clamp(24px, 7dvh, 64px);
+  display: grid;
+  gap: 18px;
+  overflow: visible;
+}
+
+.billing-appeal-header {
+  margin-bottom: 0;
+}
+
+.billing-appeal-summary {
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--action-danger) 24%, var(--line));
+  border-left: 5px solid var(--action-danger);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--action-danger) 6%, var(--input-bg));
+}
+
+.billing-appeal-summary span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-appeal-summary strong {
+  color: var(--ink);
+  font-size: 1.35rem;
+}
+
+.billing-appeal-form {
+  display: grid;
+  gap: 16px;
+}
+
+.billing-appeal-form textarea {
+  min-height: 130px;
+  resize: vertical;
+}
+
+.billing-appeal-value-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.65fr) minmax(0, 1.35fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.billing-appeal-help {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--input-bg);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.billing-appeal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.billing-appeal-actions .primary-action,
+.billing-appeal-actions .ghost-button {
+  width: auto;
+  min-width: 170px;
+}
+
 .billing-summary-titlebar {
   flex: 0 0 auto;
   margin-bottom: 0;
@@ -1433,6 +1519,25 @@
     width: min(100%, calc(100vw - 24px));
     margin-top: 8px;
     padding: 16px;
+  }
+
+  .modal-panel.billing-appeal-modal {
+    width: min(100%, calc(100vw - 24px));
+    margin-top: 8px;
+    padding: 16px;
+  }
+
+  .billing-appeal-value-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-appeal-actions {
+    display: grid;
+  }
+
+  .billing-appeal-actions .primary-action,
+  .billing-appeal-actions .ghost-button {
+    width: 100%;
   }
 
   .modal-backdrop.billing-account-detail-backdrop {

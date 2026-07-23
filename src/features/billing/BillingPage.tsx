@@ -19,6 +19,7 @@ import {
   IconButton,
   SelectField,
   TextField,
+  TextareaField,
 } from "../../shared/components/ui";
 import { Modal } from "../../shared/components/Modal";
 import { ConfirmationDialog } from "../../shared/components/ConfirmationDialog";
@@ -705,13 +706,18 @@ export function BillingPage({
       "Retorno registrado e títulos reconciliados.",
     ).then(() => setReturnTarget(null));
   };
-  const submitAppeal = (event: FormEvent) => {
+  const closeAppeal = () => {
+    setAppealTarget(null);
+    setAppealDraft({ justificativa: "", valorRecuperado: "0" });
+  };
+
+  const submitAppeal = async (event: FormEvent) => {
     event.preventDefault();
     if (!appealTarget) return;
     const valorRecuperado = Number(
       appealDraft.valorRecuperado.replace(",", "."),
     );
-    void run(
+    const completed = await run(
       () =>
         registrarRecursoGlosa(
           appealTarget.glosaId,
@@ -731,9 +737,12 @@ export function BillingPage({
             observacao: null,
           },
           session.token,
-        ),
+      ),
       "Recurso de glosa registrado.",
-    ).then(() => setAppealTarget(null));
+    );
+    if (completed) {
+      closeAppeal();
+    }
   };
   const submitReversal = (event: FormEvent) => {
     event.preventDefault();
@@ -2416,41 +2425,70 @@ export function BillingPage({
       {appealTarget && (
         <Modal
           titleId="billing-appeal-title"
-          onClose={() => setAppealTarget(null)}
+          className="billing-appeal-modal"
+          onClose={closeAppeal}
         >
-          <div className="panel-title">
-            <h2 id="billing-appeal-title">Recurso de glosa</h2>
-            <Button onClick={() => setAppealTarget(null)}>
+          <div className="panel-title billing-appeal-header">
+            <div>
+              <span className="eyebrow">Contestação de glosa</span>
+              <h2 id="billing-appeal-title">Registrar recurso</h2>
+              <p className="billing-modal-subtitle">
+                Informe a justificativa que será enviada para análise.
+              </p>
+            </div>
+            <IconButton
+              label="Fechar recurso de glosa"
+              onClick={closeAppeal}
+            >
               <X size={16} />
-            </Button>
+            </IconButton>
           </div>
-          <form className="billing-filter-grid" onSubmit={submitAppeal}>
-            <TextField
+          <div className="billing-appeal-summary">
+            <span>Valor glosado</span>
+            <strong>{formatCurrency(appealTarget.valorGlosado)}</strong>
+          </div>
+          <form className="billing-appeal-form" onSubmit={submitAppeal}>
+            <TextareaField
               label="Justificativa"
               value={appealDraft.justificativa}
               required
+              rows={5}
+              placeholder="Descreva os fundamentos do recurso e os documentos que comprovam a cobrança."
               onValueChange={(value) =>
                 setAppealDraft({ ...appealDraft, justificativa: value })
               }
             />
-            <TextField
-              label="Valor recuperado"
-              type="number"
-              min="0"
-              max={appealTarget.valorGlosado}
-              step="0.01"
-              value={appealDraft.valorRecuperado}
-              required
-              onValueChange={(value) =>
-                setAppealDraft({ ...appealDraft, valorRecuperado: value })
-              }
-            />
-            <span className="file-hint">
-              Use zero enquanto o recurso aguarda resposta.
-            </span>
-            <Button variant="primary" type="submit" disabled={loading}>
-              Registrar recurso
-            </Button>
+            <div className="billing-appeal-value-row">
+              <TextField
+                label="Valor recuperado"
+                type="number"
+                min="0"
+                max={appealTarget.valorGlosado}
+                step="0.01"
+                value={appealDraft.valorRecuperado}
+                required
+                onValueChange={(value) =>
+                  setAppealDraft({ ...appealDraft, valorRecuperado: value })
+                }
+              />
+              <p className="billing-appeal-help">
+                Mantenha o valor em zero enquanto o recurso estiver aguardando
+                resposta. Atualize-o somente após o retorno do convênio.
+              </p>
+            </div>
+            <div className="billing-appeal-actions">
+              <Button
+                variant="danger-ghost"
+                type="button"
+                onClick={closeAppeal}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button variant="primary" type="submit" disabled={loading}>
+                {loading ? "Registrando..." : "Registrar recurso"}
+              </Button>
+            </div>
           </form>
         </Modal>
       )}
