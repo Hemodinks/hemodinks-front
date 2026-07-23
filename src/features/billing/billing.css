@@ -389,6 +389,14 @@
   overflow: hidden;
 }
 
+.modal-panel.billing-attendance-detail-modal {
+  width: min(1140px, calc(100vw - 48px)) !important;
+  max-width: none;
+  align-self: start;
+  justify-self: center;
+  margin-top: 0;
+}
+
 .billing-summary-titlebar {
   flex: 0 0 auto;
   margin-bottom: 0;
@@ -1096,6 +1104,11 @@
     max-height: calc(100dvh - 24px);
     margin-top: 8px;
     padding: 16px;
+  }
+
+  .modal-panel.billing-attendance-detail-modal {
+    width: min(100%, calc(100vw - 24px)) !important;
+    margin-top: 8px;
   }
 
   .billing-summary-main .billing-procedure-list {

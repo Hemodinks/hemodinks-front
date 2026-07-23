@@ -11,6 +11,7 @@ import {
 import {
   AlertMessage,
   Button,
+  ComboboxField,
   DataPanel,
   SelectField,
   TextField,
@@ -73,6 +74,31 @@ type BillingPageProps = {
 };
 type Tab = "atendimentos" | "faturamento" | "financeiro" | "precos";
 
+function createInitialAtendimentoForm(
+  medicoResponsavelId = "",
+) {
+  return {
+    pacienteId: "",
+    dataProcedimento: "",
+    hospitalId: "",
+    hospital: "",
+    convenioId: "",
+    convenio: "",
+    opmeFornecedorId: "",
+    opmeFornecedor: "",
+    medicoResponsavelId,
+    medicoAuxiliar1Id: "",
+    medicoAuxiliar2Id: "",
+    diagnostico: "",
+    tratamentoMedico: "",
+    cbhpmCodigo: "",
+    descricao: "",
+    quantidade: "1",
+    pesoPercentual: "100",
+    numeroAutorizacao: "",
+  };
+}
+
 export function BillingPage({
   session,
   medicalUsers,
@@ -94,23 +120,11 @@ export function BillingPage({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [atendimentoForm, setAtendimentoForm] = useState({
-    pacienteId: "",
-    dataProcedimento: "",
-    hospitalId: "",
-    convenioId: "",
-    opmeFornecedorId: "",
-    medicoResponsavelId: isMedical ? String(session.user.id) : "",
-    medicoAuxiliar1Id: "",
-    medicoAuxiliar2Id: "",
-    diagnostico: "",
-    tratamentoMedico: "",
-    cbhpmCodigo: "",
-    descricao: "",
-    quantidade: "1",
-    pesoPercentual: "100",
-    numeroAutorizacao: "",
-  });
+  const [atendimentoForm, setAtendimentoForm] = useState(() =>
+    createInitialAtendimentoForm(
+      isMedical ? String(session.user.id) : "",
+    ),
+  );
   const [faturamentoForm, setFaturamentoForm] = useState({
     atendimentoCirurgicoId: "",
     competencia: new Date().toISOString().slice(0, 7),
@@ -347,20 +361,24 @@ export function BillingPage({
       return;
     }
     void run(
-      () =>
-        createAtendimento(
+      async () => {
+        const atendimento = await createAtendimento(
           {
             pacienteId: Number(atendimentoForm.pacienteId),
             dataProcedimento: atendimentoForm.dataProcedimento,
             hospitalId: atendimentoForm.hospitalId
               ? Number(atendimentoForm.hospitalId)
               : null,
+            hospital: atendimentoForm.hospital.trim() || null,
             convenioId: atendimentoForm.convenioId
               ? Number(atendimentoForm.convenioId)
               : null,
+            convenio: atendimentoForm.convenio.trim() || null,
             opmeFornecedorId: atendimentoForm.opmeFornecedorId
               ? Number(atendimentoForm.opmeFornecedorId)
               : null,
+            opmeFornecedor:
+              atendimentoForm.opmeFornecedor.trim() || null,
             medicoResponsavelId: Number(atendimentoForm.medicoResponsavelId),
             medicoAuxiliar1Id: atendimentoForm.medicoAuxiliar1Id
               ? Number(atendimentoForm.medicoAuxiliar1Id)
@@ -380,7 +398,15 @@ export function BillingPage({
             ),
           },
           session.token,
-        ),
+        );
+        setAtendimentoForm(
+          createInitialAtendimentoForm(
+            isMedical ? String(session.user.id) : "",
+          ),
+        );
+        setProcedimentos([]);
+        return atendimento;
+      },
       "Atendimento criado com snapshot de preço.",
     );
   };
@@ -836,57 +862,72 @@ export function BillingPage({
                     })
                   }
                 />
-                <SelectField
+                <ComboboxField
                   label="Hospital"
-                  value={atendimentoForm.hospitalId}
-                  onChange={(e) =>
+                  value={atendimentoForm.hospital}
+                  options={hospitais.map((item) => item.nome)}
+                  placeholder="Não informado"
+                  noOptionsLabel="Digite para cadastrar um novo hospital."
+                  onValueChange={(value) => {
+                    const selected = hospitais.find(
+                      (item) =>
+                        item.nome.localeCompare(value.trim(), "pt-BR", {
+                          sensitivity: "base",
+                        }) === 0,
+                    );
                     setAtendimentoForm({
                       ...atendimentoForm,
-                      hospitalId: e.target.value,
-                    })
-                  }
-                >
-                  <option value="">Não informado</option>
-                  {hospitais.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.nome}
-                    </option>
-                  ))}
-                </SelectField>
-                <SelectField
+                      hospitalId: selected ? String(selected.id) : "",
+                      hospital: value,
+                    });
+                  }}
+                />
+                <ComboboxField
                   label="Fornecedor OPME"
-                  value={atendimentoForm.opmeFornecedorId}
-                  onChange={(event) =>
+                  value={atendimentoForm.opmeFornecedor}
+                  options={opmeFornecedores.map((item) => item.fornecedor)}
+                  placeholder="Não informado"
+                  noOptionsLabel="Digite para cadastrar um novo fornecedor OPME."
+                  onValueChange={(value) => {
+                    const selected = opmeFornecedores.find(
+                      (item) =>
+                        item.fornecedor.localeCompare(value.trim(), "pt-BR", {
+                          sensitivity: "base",
+                        }) === 0,
+                    );
                     setAtendimentoForm({
                       ...atendimentoForm,
-                      opmeFornecedorId: event.target.value,
-                    })
-                  }
-                >
-                  <option value="">Não informado</option>
-                  {opmeFornecedores.map((item) => (
-                    <option key={item.idFornecedor} value={item.idFornecedor}>
-                      {item.fornecedor}
-                    </option>
-                  ))}
-                </SelectField>
-                <SelectField
+                      opmeFornecedorId: selected
+                        ? String(selected.idFornecedor)
+                        : "",
+                      opmeFornecedor: value,
+                    });
+                  }}
+                />
+                <ComboboxField
                   label="Convênio"
-                  value={atendimentoForm.convenioId}
-                  onChange={(e) =>
+                  value={atendimentoForm.convenio}
+                  options={convenios.map((item) => item.descricaoConvenio)}
+                  placeholder="Particular"
+                  noOptionsLabel="Digite para cadastrar um novo convênio."
+                  onValueChange={(value) => {
+                    const selected = convenios.find(
+                      (item) =>
+                        item.descricaoConvenio.localeCompare(
+                          value.trim(),
+                          "pt-BR",
+                          { sensitivity: "base" },
+                        ) === 0,
+                    );
                     setAtendimentoForm({
                       ...atendimentoForm,
-                      convenioId: e.target.value,
-                    })
-                  }
-                >
-                  <option value="">Particular</option>
-                  {convenios.map((x) => (
-                    <option key={x.idConvenio} value={x.idConvenio}>
-                      {x.descricaoConvenio}
-                    </option>
-                  ))}
-                </SelectField>
+                      convenioId: selected
+                        ? String(selected.idConvenio)
+                        : "",
+                      convenio: value,
+                    });
+                  }}
+                />
                 <SelectField
                   label="Médico responsável"
                   value={atendimentoForm.medicoResponsavelId}
@@ -2532,6 +2573,7 @@ export function BillingPage({
       {selectedAttendance && (
         <Modal
           titleId="attendance-detail-title"
+          className="billing-attendance-detail-modal"
           onClose={() => setSelectedAttendance(null)}
         >
           <div className="panel-title">

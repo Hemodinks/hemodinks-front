@@ -230,10 +230,10 @@ describe("BillingPage", () => {
       target: { value: "2026-07-10" },
     });
     fireEvent.change(screen.getByLabelText("Hospital"), {
-      target: { value: "1" },
+      target: { value: "Hospital Teste" },
     });
     fireEvent.change(screen.getByLabelText("Fornecedor OPME"), {
-      target: { value: "1" },
+      target: { value: "Promedom" },
     });
     fireEvent.change(screen.getByLabelText("Médico responsável"), {
       target: { value: "2" },
@@ -262,6 +262,108 @@ describe("BillingPage", () => {
         "token",
       ),
     );
+  });
+
+  it("cadastra hospital, convênio e fornecedor OPME informados manualmente", async () => {
+    vi.mocked(services.getCbhpmGeral).mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          codigo: "123",
+          procedimento: "Cirurgia",
+          porte: "8A",
+          valorReferencia: 1000,
+        },
+      ],
+      page: 1,
+      pageSize: 10,
+      totalItems: 1,
+      totalPages: 1,
+    });
+    renderPage();
+    await screen.findByText("Paciente Teste");
+    fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
+    fireEvent.change(screen.getByLabelText("Paciente"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByLabelText("Data da cirurgia"), {
+      target: { value: "2026-07-10" },
+    });
+    fireEvent.change(screen.getByLabelText("Hospital"), {
+      target: { value: "Hospital Novo" },
+    });
+    fireEvent.change(screen.getByLabelText("Convênio"), {
+      target: { value: "Convênio Novo" },
+    });
+    fireEvent.change(screen.getByLabelText("Fornecedor OPME"), {
+      target: { value: "Fornecedor Novo" },
+    });
+    fireEvent.change(screen.getByLabelText("Médico responsável"), {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar atendimento" }));
+
+    await waitFor(() =>
+      expect(services.createAtendimento).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hospitalId: null,
+          hospital: "Hospital Novo",
+          convenioId: null,
+          convenio: "Convênio Novo",
+          opmeFornecedorId: null,
+          opmeFornecedor: "Fornecedor Novo",
+        }),
+        "token",
+      ),
+    );
+  });
+
+  it("limpa os campos depois de cadastrar um atendimento com sucesso", async () => {
+    vi.mocked(services.getCbhpmGeral).mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          codigo: "123",
+          procedimento: "Cirurgia",
+          porte: "8A",
+          valorReferencia: 1000,
+        },
+      ],
+      page: 1,
+      pageSize: 10,
+      totalItems: 1,
+      totalPages: 1,
+    });
+    renderPage();
+    await screen.findByText("Paciente Teste");
+    fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
+    fireEvent.change(screen.getByLabelText("Paciente"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByLabelText("Data da cirurgia"), {
+      target: { value: "2026-07-10" },
+    });
+    fireEvent.change(screen.getByLabelText("Diagnóstico"), {
+      target: { value: "Diagnóstico anterior" },
+    });
+    fireEvent.change(screen.getByLabelText("Médico responsável"), {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar atendimento" }));
+
+    await waitFor(() =>
+      expect(screen.queryByLabelText("Paciente")).not.toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
+
+    expect(screen.getByLabelText("Paciente")).toHaveValue("");
+    expect(screen.getByLabelText("Data da cirurgia")).toHaveValue("");
+    expect(screen.getByLabelText("Diagnóstico")).toHaveValue("");
+    expect(screen.queryByText("Cirurgia")).not.toBeInTheDocument();
   });
 
   it("exibe snapshot e permite editar item somente no rascunho", async () => {
