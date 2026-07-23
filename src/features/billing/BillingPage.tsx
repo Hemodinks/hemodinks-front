@@ -33,6 +33,8 @@ import type {
 import {
   createAtendimento,
   createFaturamento,
+  deleteAtendimento,
+  deleteFaturamento,
   estornarRecebimento,
   gerarContaReceber,
   getAtendimentos,
@@ -46,6 +48,8 @@ import {
   registrarRetornoFaturamento,
   saveConvenioProcedimentoPreco,
   updateFaturamentoStatus,
+  updateAtendimento,
+  updateFaturamento,
   downloadComprovanteRecebimento,
   getFinanceiroResumo,
   searchContasReceber,
@@ -96,7 +100,40 @@ function createInitialAtendimentoForm(
     quantidade: "1",
     pesoPercentual: "100",
     numeroAutorizacao: "",
+    valorGlosa: "",
+    motivoGlosa: "",
+    status: "Planejado",
   };
+}
+
+function createInitialFaturamentoForm() {
+  return {
+    atendimentoCirurgicoId: "",
+    competencia: new Date().toISOString().slice(0, 7),
+    numeroGuia: "",
+    numeroLote: "",
+    observacao: "",
+  };
+}
+
+function formatBillingStatus(status: string) {
+  return status.replace(/([a-zá-ú])([A-ZÁ-Ú])/g, "$1 $2");
+}
+
+type ReceiptFileFormat = "pdf" | "jpg";
+
+function receiptFileMatchesFormat(file: File, format: ReceiptFileFormat) {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  return format === "pdf"
+    ? extension === "pdf" && file.type === "application/pdf"
+    : (extension === "jpg" || extension === "jpeg") &&
+        file.type === "image/jpeg";
+}
+
+function receiptExtensionFromBlob(blob: Blob) {
+  if (blob.type === "application/pdf") return "pdf";
+  if (blob.type === "image/jpeg") return "jpg";
+  throw new Error("O comprovante recebido não possui um formato PDF ou JPG válido.");
 }
 
 export function BillingPage({
@@ -118,19 +155,27 @@ export function BillingPage({
   >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [success, setSuccess] = useState<{
+    section: Tab;
+    message: string;
+  } | null>(null);
+  const [receiptToast, setReceiptToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingAttendanceId, setEditingAttendanceId] = useState<number | null>(
+    null,
+  );
+  const [editingBillingId, setEditingBillingId] = useState<number | null>(null);
   const [atendimentoForm, setAtendimentoForm] = useState(() =>
     createInitialAtendimentoForm(
       isMedical ? String(session.user.id) : "",
     ),
   );
-  const [faturamentoForm, setFaturamentoForm] = useState({
-    atendimentoCirurgicoId: "",
-    competencia: new Date().toISOString().slice(0, 7),
-    numeroGuia: "",
-    numeroLote: "",
-  });
+  const [faturamentoForm, setFaturamentoForm] = useState(
+    createInitialFaturamentoForm,
+  );
   const [procedimentos, setProcedimentos] = useState<
     Array<{
       cbhpmCodigo: string | null;
@@ -146,12 +191,14 @@ export function BillingPage({
     valor: string;
     forma: string;
     referencia: string;
+    comprovanteFormato: ReceiptFileFormat;
     comprovante: File | null;
   }>({
     contaId: "",
     valor: "",
     forma: "Pix",
     referencia: "",
+    comprovanteFormato: "pdf",
     comprovante: null,
   });
   const [price, setPrice] = useState({
@@ -305,6 +352,33 @@ export function BillingPage({
     void load();
   }, [session.token, tab]);
 
+  useEffect(() => {
+    setError("");
+    setSuccess(null);
+    setReceiptToast(null);
+  }, [tab]);
+
+  useEffect(() => {
+    if (!success) return;
+
+    const timeoutId = window.setTimeout(() => setSuccess(null), 10000);
+    return () => window.clearTimeout(timeoutId);
+  }, [success]);
+
+  useEffect(() => {
+    if (!error) return;
+
+    const timeoutId = window.setTimeout(() => setError(""), 10000);
+    return () => window.clearTimeout(timeoutId);
+  }, [error]);
+
+  useEffect(() => {
+    if (!receiptToast) return;
+
+    const timeoutId = window.setTimeout(() => setReceiptToast(null), 10000);
+    return () => window.clearTimeout(timeoutId);
+  }, [receiptToast]);
+
   const openBalance = useMemo(
     () =>
       contas
@@ -316,19 +390,29 @@ export function BillingPage({
     () => contas.reduce((sum, x) => sum + x.valorRecebido, 0),
     [contas],
   );
-  const run = async (action: () => Promise<unknown>, message: string) => {
+  const run = async (
+    action: () => Promise<unknown>,
+    message: string,
+    feedback?: {
+      onSuccess?: (successMessage: string) => void;
+      onError?: (errorMessage: string) => void;
+    },
+  ) => {
+    const actionSection = tab;
     setLoading(true);
     setError("");
-    setSuccess("");
+    setSuccess(null);
     try {
       await action();
-      setSuccess(message);
+      setSuccess({ section: actionSection, message });
+      feedback?.onSuccess?.(message);
       setShowForm(false);
       await load();
     } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Operação não concluída.",
-      );
+      const errorMessage =
+        reason instanceof Error ? reason.message : "Operação não concluída.";
+      setError(errorMessage);
+      feedback?.onError?.(errorMessage);
       setLoading(false);
     }
   };
@@ -360,75 +444,179 @@ export function BillingPage({
       setError("Adicione ao menos um procedimento ao atendimento.");
       return;
     }
+    const valorGlosa = atendimentoForm.valorGlosa
+      ? Number(atendimentoForm.valorGlosa.replace(",", "."))
+      : null;
+    if (valorGlosa != null && valorGlosa < 0) {
+      setError("O valor da glosa não pode ser negativo.");
+      return;
+    }
+    if (valorGlosa && !atendimentoForm.motivoGlosa.trim()) {
+      setError("Informe o motivo da glosa.");
+      return;
+    }
+    const payload = {
+      pacienteId: Number(atendimentoForm.pacienteId),
+      dataProcedimento: atendimentoForm.dataProcedimento,
+      hospitalId: atendimentoForm.hospitalId
+        ? Number(atendimentoForm.hospitalId)
+        : null,
+      hospital: atendimentoForm.hospital.trim() || null,
+      convenioId: atendimentoForm.convenioId
+        ? Number(atendimentoForm.convenioId)
+        : null,
+      convenio: atendimentoForm.convenio.trim() || null,
+      opmeFornecedorId: atendimentoForm.opmeFornecedorId
+        ? Number(atendimentoForm.opmeFornecedorId)
+        : null,
+      opmeFornecedor: atendimentoForm.opmeFornecedor.trim() || null,
+      medicoResponsavelId: Number(atendimentoForm.medicoResponsavelId),
+      medicoAuxiliar1Id: atendimentoForm.medicoAuxiliar1Id
+        ? Number(atendimentoForm.medicoAuxiliar1Id)
+        : null,
+      medicoAuxiliar2Id: atendimentoForm.medicoAuxiliar2Id
+        ? Number(atendimentoForm.medicoAuxiliar2Id)
+        : null,
+      diagnostico: atendimentoForm.diagnostico || null,
+      tratamentoMedico: atendimentoForm.tratamentoMedico || null,
+      numeroAutorizacao: atendimentoForm.numeroAutorizacao || null,
+      valorGlosa,
+      motivoGlosa: valorGlosa
+        ? atendimentoForm.motivoGlosa.trim()
+        : null,
+      status: atendimentoForm.status,
+      procedimentos: procedimentos.map(
+        ({ porte, valorReferencia: _, ...procedure }) => ({
+          ...procedure,
+          cbhpmPorte: porte || null,
+        }),
+      ),
+    };
     void run(
       async () => {
-        const atendimento = await createAtendimento(
-          {
-            pacienteId: Number(atendimentoForm.pacienteId),
-            dataProcedimento: atendimentoForm.dataProcedimento,
-            hospitalId: atendimentoForm.hospitalId
-              ? Number(atendimentoForm.hospitalId)
-              : null,
-            hospital: atendimentoForm.hospital.trim() || null,
-            convenioId: atendimentoForm.convenioId
-              ? Number(atendimentoForm.convenioId)
-              : null,
-            convenio: atendimentoForm.convenio.trim() || null,
-            opmeFornecedorId: atendimentoForm.opmeFornecedorId
-              ? Number(atendimentoForm.opmeFornecedorId)
-              : null,
-            opmeFornecedor:
-              atendimentoForm.opmeFornecedor.trim() || null,
-            medicoResponsavelId: Number(atendimentoForm.medicoResponsavelId),
-            medicoAuxiliar1Id: atendimentoForm.medicoAuxiliar1Id
-              ? Number(atendimentoForm.medicoAuxiliar1Id)
-              : null,
-            medicoAuxiliar2Id: atendimentoForm.medicoAuxiliar2Id
-              ? Number(atendimentoForm.medicoAuxiliar2Id)
-              : null,
-            diagnostico: atendimentoForm.diagnostico || null,
-            tratamentoMedico: atendimentoForm.tratamentoMedico || null,
-            numeroAutorizacao: atendimentoForm.numeroAutorizacao || null,
-            status: "Planejado",
-            procedimentos: procedimentos.map(
-              ({ porte, valorReferencia: _, ...procedure }) => ({
-                ...procedure,
-                cbhpmPorte: porte || null,
-              }),
-            ),
-          },
-          session.token,
-        );
+        const atendimento = editingAttendanceId
+          ? await updateAtendimento(
+              editingAttendanceId,
+              payload,
+              session.token,
+            )
+          : await createAtendimento(payload, session.token);
         setAtendimentoForm(
           createInitialAtendimentoForm(
             isMedical ? String(session.user.id) : "",
           ),
         );
         setProcedimentos([]);
+        setEditingAttendanceId(null);
         return atendimento;
       },
-      "Atendimento criado com snapshot de preço.",
+      editingAttendanceId
+        ? "Atendimento atualizado."
+        : "Atendimento criado com snapshot de preço.",
     );
   };
 
   const submitFaturamento = (event: FormEvent) => {
     event.preventDefault();
-    void run(
-      () =>
-        createFaturamento(
-          {
-            atendimentoCirurgicoId: Number(
-              faturamentoForm.atendimentoCirurgicoId,
-            ),
-            numeroGuia: faturamentoForm.numeroGuia || null,
-            numeroLote: faturamentoForm.numeroLote || null,
-            competencia: `${faturamentoForm.competencia}-01`,
-            observacao: null,
-          },
-          session.token,
-        ),
-      "Faturamento criado a partir do atendimento.",
+    const editingBilling = faturamentos.find(
+      (item) => item.id === editingBillingId,
     );
+    void run(
+      async () => {
+        const payload = {
+          atendimentoCirurgicoId: Number(
+            faturamentoForm.atendimentoCirurgicoId,
+          ),
+          numeroGuia: faturamentoForm.numeroGuia || null,
+          numeroLote: faturamentoForm.numeroLote || null,
+          competencia: `${faturamentoForm.competencia}-01`,
+          observacao: faturamentoForm.observacao || null,
+          rowVersion: editingBilling?.rowVersion,
+        };
+        const faturamento =
+          editingBillingId && editingBilling
+            ? await updateFaturamento(
+                editingBillingId,
+                payload,
+                session.token,
+              )
+            : await createFaturamento(payload, session.token);
+        setFaturamentoForm(createInitialFaturamentoForm());
+        setEditingBillingId(null);
+        return faturamento;
+      },
+      editingBillingId
+        ? "Faturamento atualizado."
+        : "Faturamento criado a partir do atendimento.",
+    );
+  };
+
+  const editAttendance = (item: AtendimentoCirurgico) => {
+    setEditingAttendanceId(item.id);
+    setAtendimentoForm({
+      pacienteId: String(item.pacienteId),
+      dataProcedimento: item.dataProcedimento.slice(0, 10),
+      hospitalId: item.hospitalId ? String(item.hospitalId) : "",
+      hospital:
+        hospitais.find((hospital) => hospital.id === item.hospitalId)?.nome ??
+        "",
+      convenioId: item.convenioId ? String(item.convenioId) : "",
+      convenio:
+        convenios.find((convenio) => convenio.idConvenio === item.convenioId)
+          ?.descricaoConvenio ?? "",
+      opmeFornecedorId: item.opmeFornecedorId
+        ? String(item.opmeFornecedorId)
+        : "",
+      opmeFornecedor:
+        opmeFornecedores.find(
+          (fornecedor) => fornecedor.idFornecedor === item.opmeFornecedorId,
+        )?.fornecedor ??
+        item.opmeFornecedor ??
+        "",
+      medicoResponsavelId: String(item.medicoResponsavelId),
+      medicoAuxiliar1Id: item.medicoAuxiliar1Id
+        ? String(item.medicoAuxiliar1Id)
+        : "",
+      medicoAuxiliar2Id: item.medicoAuxiliar2Id
+        ? String(item.medicoAuxiliar2Id)
+        : "",
+      diagnostico: item.diagnostico ?? "",
+      tratamentoMedico: item.tratamentoMedico ?? "",
+      cbhpmCodigo: "",
+      descricao: "",
+      quantidade: "1",
+      pesoPercentual: "100",
+      numeroAutorizacao: item.numeroAutorizacao ?? "",
+      valorGlosa:
+        item.valorGlosa != null ? String(item.valorGlosa) : "",
+      motivoGlosa: item.motivoGlosa ?? "",
+      status: item.status,
+    });
+    setProcedimentos(
+      item.procedimentos.map((procedure) => ({
+        cbhpmCodigo: procedure.cbhpmCodigo ?? null,
+        descricao: procedure.descricao,
+        porte: procedure.cbhpmPorte ?? null,
+        valorReferencia: procedure.valorReferencia ?? null,
+        quantidade: procedure.quantidade,
+        pesoPercentual: procedure.pesoPercentual,
+      })),
+    );
+    setSelectedAttendance(null);
+    setShowForm(true);
+  };
+
+  const editBilling = (item: Faturamento) => {
+    setEditingBillingId(item.id);
+    setFaturamentoForm({
+      atendimentoCirurgicoId: String(item.atendimentoCirurgicoId),
+      competencia: item.competencia.slice(0, 7),
+      numeroGuia: item.numeroGuia ?? "",
+      numeroLote: item.numeroLote ?? "",
+      observacao: item.observacao ?? "",
+    });
+    setSelectedBilling(null);
+    setShowForm(true);
   };
 
   const createAccount = (item: Faturamento) =>
@@ -535,8 +723,21 @@ export function BillingPage({
 
   const submitReceipt = async (event: FormEvent) => {
     event.preventDefault();
+    setReceiptToast(null);
     const account = contas.find((x) => x.id === Number(receipt.contaId));
     if (!account) return;
+    if (
+      receipt.comprovante &&
+      !receiptFileMatchesFormat(
+        receipt.comprovante,
+        receipt.comprovanteFormato,
+      )
+    ) {
+      const message = `Selecione um comprovante no formato ${receipt.comprovanteFormato.toUpperCase()}.`;
+      setError(message);
+      setReceiptToast({ type: "error", message });
+      return;
+    }
     await run(
       async () => {
         const updated = await registrarRecebimento(
@@ -569,6 +770,11 @@ export function BillingPage({
       receipt.comprovante
         ? "Recebimento e comprovante registrados."
         : "Recebimento registrado e saldo recalculado.",
+      {
+        onSuccess: (message) =>
+          setReceiptToast({ type: "success", message }),
+        onError: (message) => setReceiptToast({ type: "error", message }),
+      },
     );
   };
   const submitPrice = (event: FormEvent) => {
@@ -750,10 +956,11 @@ export function BillingPage({
   const downloadReceipt = async (id: number) => {
     try {
       const blob = await downloadComprovanteRecebimento(id, session.token);
+      const extension = receiptExtensionFromBlob(blob);
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `comprovante-${id}`;
+      anchor.download = `comprovante-${id}.${extension}`;
       anchor.click();
       URL.revokeObjectURL(url);
     } catch (reason) {
@@ -813,7 +1020,9 @@ export function BillingPage({
         </div>
       </DataPanel>
       {error && <AlertMessage type="error">{error}</AlertMessage>}
-      {success && <AlertMessage type="success">{success}</AlertMessage>}
+      {success?.section === tab && (
+        <AlertMessage type="success">{success.message}</AlertMessage>
+      )}
 
       {tab === "atendimentos" && (
         <>
@@ -823,8 +1032,30 @@ export function BillingPage({
                 <span className="eyebrow">Origem clínica</span>
                 <h3>Atendimentos cirúrgicos</h3>
               </div>
-              <Button variant="primary" onClick={() => setShowForm((x) => !x)}>
-                <Plus size={16} /> Novo atendimento
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (editingAttendanceId) {
+                    setEditingAttendanceId(null);
+                    setAtendimentoForm(
+                      createInitialAtendimentoForm(
+                        isMedical ? String(session.user.id) : "",
+                      ),
+                    );
+                    setProcedimentos([]);
+                    setShowForm(false);
+                    return;
+                  }
+                  setShowForm((current) => !current);
+                }}
+              >
+                {editingAttendanceId ? (
+                  "Cancelar edição"
+                ) : (
+                  <>
+                    <Plus size={16} /> Novo atendimento
+                  </>
+                )}
               </Button>
             </div>
             {showForm && (
@@ -1073,6 +1304,7 @@ export function BillingPage({
                 </div>
                 <TextField
                   label="Autorização"
+                  className="billing-attendance-authorization"
                   value={atendimentoForm.numeroAutorizacao}
                   onValueChange={(v) =>
                     setAtendimentoForm({
@@ -1081,8 +1313,53 @@ export function BillingPage({
                     })
                   }
                 />
+                <SelectField
+                  label="Status"
+                  className="billing-attendance-status"
+                  value={atendimentoForm.status}
+                  onChange={(event) =>
+                    setAtendimentoForm({
+                      ...atendimentoForm,
+                      status: event.target.value,
+                    })
+                  }
+                >
+                  {["Planejado", "Autorizado", "Realizado", "Cancelado"].map(
+                    (status) => (
+                      <option key={status}>{status}</option>
+                    ),
+                  )}
+                </SelectField>
+                <div className="billing-attendance-glosa">
+                  <TextField
+                    label="Valor da glosa"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={atendimentoForm.valorGlosa}
+                    onValueChange={(value) =>
+                      setAtendimentoForm({
+                        ...atendimentoForm,
+                        valorGlosa: value,
+                      })
+                    }
+                  />
+                  <TextField
+                    label="Motivo da glosa"
+                    value={atendimentoForm.motivoGlosa}
+                    required={Number(atendimentoForm.valorGlosa) > 0}
+                    onValueChange={(value) =>
+                      setAtendimentoForm({
+                        ...atendimentoForm,
+                        motivoGlosa: value,
+                      })
+                    }
+                  />
+                </div>
                 <Button variant="primary" type="submit" disabled={loading}>
-                  Salvar atendimento
+                  {editingAttendanceId
+                    ? "Atualizar atendimento"
+                    : "Salvar atendimento"}
                 </Button>
               </form>
             )}
@@ -1096,6 +1373,7 @@ export function BillingPage({
                     <th>Data</th>
                     <th>Status</th>
                     <th>Procedimentos</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1120,6 +1398,27 @@ export function BillingPage({
                           )
                           .join(", ")}
                       </td>
+                      <td>
+                        <div className="billing-row-actions">
+                          <Button onClick={() => editAttendance(item)}>
+                            Editar
+                          </Button>
+                          <Button
+                            className="billing-delete-action"
+                            onClick={() =>
+                              setConfirmAction({
+                                title: "Excluir atendimento",
+                                message: `Excluir o atendimento de ${item.paciente}? Esta ação não poderá ser desfeita.`,
+                                action: () =>
+                                  deleteAtendimento(item.id, session.token),
+                                success: "Atendimento excluído.",
+                              })
+                            }
+                          >
+                            Excluir
+                          </Button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1140,9 +1439,23 @@ export function BillingPage({
               {canManageBilling && (
                 <Button
                   variant="primary"
-                  onClick={() => setShowForm((x) => !x)}
+                  onClick={() => {
+                    if (editingBillingId) {
+                      setEditingBillingId(null);
+                      setFaturamentoForm(createInitialFaturamentoForm());
+                      setShowForm(false);
+                      return;
+                    }
+                    setShowForm((current) => !current);
+                  }}
                 >
-                  <Plus size={16} /> Novo faturamento
+                  {editingBillingId ? (
+                    "Cancelar edição"
+                  ) : (
+                    <>
+                      <Plus size={16} /> Novo faturamento
+                    </>
+                  )}
                 </Button>
               )}
             </div>
@@ -1155,6 +1468,7 @@ export function BillingPage({
                   label="Atendimento"
                   value={faturamentoForm.atendimentoCirurgicoId}
                   required
+                  disabled={Boolean(editingBillingId)}
                   onChange={(e) =>
                     setFaturamentoForm({
                       ...faturamentoForm,
@@ -1193,8 +1507,20 @@ export function BillingPage({
                     setFaturamentoForm({ ...faturamentoForm, numeroLote: v })
                   }
                 />
+                <TextField
+                  label="Observação"
+                  value={faturamentoForm.observacao}
+                  onValueChange={(value) =>
+                    setFaturamentoForm({
+                      ...faturamentoForm,
+                      observacao: value,
+                    })
+                  }
+                />
                 <Button variant="primary" type="submit" disabled={loading}>
-                  Gerar itens do faturamento
+                  {editingBillingId
+                    ? "Atualizar faturamento"
+                    : "Gerar itens do faturamento"}
                 </Button>
               </form>
             )}
@@ -1209,7 +1535,8 @@ export function BillingPage({
                     <th>Apresentado</th>
                     <th>Glosa</th>
                     <th>Reconhecido</th>
-                    <th>Status / ação</th>
+                    <th>Status</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1225,71 +1552,96 @@ export function BillingPage({
                       <td>{formatCurrency(x.valorGlosado)}</td>
                       <td>{formatCurrency(x.valorReconhecido)}</td>
                       <td>
-                        <span className="status-pill active">{x.status}</span>
-                        {canManageBilling && x.status === "Rascunho" && (
-                          <Button
-                            onClick={() =>
-                              void run(
-                                () =>
-                                  updateFaturamentoStatus(
-                                    x.id,
-                                    {
-                                      id: x.id,
-                                      status: "ProntoParaEnvio",
-                                      rowVersion: x.rowVersion,
-                                    },
-                                    session.token,
-                                  ),
-                                "Faturamento pronto para envio.",
-                              )
-                            }
-                          >
-                            Preparar
-                          </Button>
-                        )}
-                        {canManageBilling && x.status === "ProntoParaEnvio" && (
-                          <Button
-                            variant="primary"
-                            onClick={() =>
-                              void run(
-                                () =>
-                                  updateFaturamentoStatus(
-                                    x.id,
-                                    {
-                                      id: x.id,
-                                      status: "Enviado",
-                                      rowVersion: x.rowVersion,
-                                    },
-                                    session.token,
-                                  ),
-                                "Faturamento enviado e data de envio registrada.",
-                              )
-                            }
-                          >
-                            Enviar faturamento
-                          </Button>
-                        )}
-                        {canManageBilling &&
-                          [
-                            "Enviado",
-                            "EmAnalise",
-                            "GlosadoParcial",
-                            "GlosadoTotal",
-                            "Aprovado",
-                          ].includes(x.status) && (
-                            <Button onClick={() => openReturn(x)}>
-                              Registrar retorno
-                            </Button>
+                        <span className="status-pill active">
+                          {formatBillingStatus(x.status)}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="billing-row-actions">
+                          {canManageBilling && x.status === "Rascunho" && (
+                            <>
+                              <Button onClick={() => editBilling(x)}>
+                                Editar
+                              </Button>
+                              <Button
+                                className="billing-delete-action"
+                                onClick={() =>
+                                  setConfirmAction({
+                                    title: "Excluir faturamento",
+                                    message: `Excluir o faturamento de ${x.paciente}? Os itens em rascunho também serão removidos.`,
+                                    action: () =>
+                                      deleteFaturamento(x.id, session.token),
+                                    success: "Faturamento excluído.",
+                                  })
+                                }
+                              >
+                                Excluir
+                              </Button>
+                              <Button
+                                onClick={() =>
+                                  void run(
+                                    () =>
+                                      updateFaturamentoStatus(
+                                        x.id,
+                                        {
+                                          id: x.id,
+                                          status: "ProntoParaEnvio",
+                                          rowVersion: x.rowVersion,
+                                        },
+                                        session.token,
+                                      ),
+                                    "Faturamento pronto para envio.",
+                                  )
+                                }
+                              >
+                                Preparar
+                              </Button>
+                            </>
                           )}
-                        {canManageBilling &&
-                          x.status !== "Rascunho" &&
-                          x.status !== "Cancelado" && (
-                            <Button onClick={() => createAccount(x)}>
-                              <ArrowRight size={15} /> Gerar título
-                            </Button>
-                          )}
-                        {canManageBilling &&
-                          x.glosas.map((g) => (
+                          {canManageBilling &&
+                            x.status === "ProntoParaEnvio" && (
+                              <Button
+                                variant="primary"
+                                onClick={() =>
+                                  void run(
+                                    () =>
+                                      updateFaturamentoStatus(
+                                        x.id,
+                                        {
+                                          id: x.id,
+                                          status: "Enviado",
+                                          rowVersion: x.rowVersion,
+                                        },
+                                        session.token,
+                                      ),
+                                    "Faturamento enviado e data de envio registrada.",
+                                  )
+                                }
+                              >
+                                Enviar faturamento
+                              </Button>
+                            )}
+                          {canManageBilling &&
+                            [
+                              "Enviado",
+                              "EmAnalise",
+                              "GlosadoParcial",
+                              "GlosadoTotal",
+                              "Aprovado",
+                            ].includes(x.status) && (
+                              <Button onClick={() => openReturn(x)}>
+                                Registrar retorno
+                              </Button>
+                            )}
+                          {canManageBilling &&
+                            x.status !== "Rascunho" &&
+                            x.status !== "Cancelado" && (
+                              <Button onClick={() => createAccount(x)}>
+                                <ArrowRight size={15} /> Gerar título
+                              </Button>
+                            )}
+                          {canManageBilling &&
+                            x.glosas.map((g) => (
                             <Button
                               key={g.id}
                               onClick={() => {
@@ -1305,13 +1657,14 @@ export function BillingPage({
                             >
                               Recorrer glosa {formatCurrency(g.valorGlosado)}
                             </Button>
-                          ))}
+                            ))}
+                        </div>
                       </td>
                     </tr>
                   ))}
                   {!faturamentos.length && (
                     <tr>
-                      <td colSpan={6} className="empty-row">
+                      <td colSpan={7} className="empty-row">
                         Nenhum faturamento no novo fluxo.
                       </td>
                     </tr>
@@ -1352,26 +1705,30 @@ export function BillingPage({
             />
           </section>
           <DataPanel>
-            <div className="billing-section-heading">
-              <div>
-                <span className="eyebrow">Pesquisa</span>
-                <h3>Filtros financeiros</h3>
-              </div>
-            </div>
-            <form
-              className="billing-filter-grid"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void applyFinanceFilters(1);
-              }}
-            >
-              <TextField
-                label="Documento ou paciente"
-                value={financeFilters.termo}
-                onValueChange={(value) =>
-                  setFinanceFilters({ ...financeFilters, termo: value })
-                }
-              />
+            <details className="billing-filters-accordion">
+              <summary className="billing-filters-summary">
+                <div>
+                  <span className="eyebrow">Pesquisa</span>
+                  <h2>Filtros financeiros</h2>
+                </div>
+                <span className="billing-filters-toggle">Filtros</span>
+              </summary>
+              <div className="billing-filters-content">
+                <form
+                  className="billing-filter-grid"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void applyFinanceFilters(1);
+                  }}
+                >
+                  <TextField
+                    label="Buscar por documento ou paciente"
+                    placeholder="Ex.: FAT-1-01 ou nome do paciente"
+                    value={financeFilters.termo}
+                    onValueChange={(value) =>
+                      setFinanceFilters({ ...financeFilters, termo: value })
+                    }
+                  />
               <TextField
                 label="Competência"
                 type="month"
@@ -1472,12 +1829,14 @@ export function BillingPage({
                   <option key={item}>{item}</option>
                 ))}
               </SelectField>
-              <Button variant="primary" type="submit" disabled={loading}>
-                Aplicar filtros
-              </Button>
-            </form>
+                  <Button variant="primary" type="submit" disabled={loading}>
+                    Aplicar filtros
+                  </Button>
+                </form>
+              </div>
+            </details>
           </DataPanel>
-          <DataPanel>
+          <DataPanel className="billing-finance-receipt-panel">
             <div className="billing-section-heading">
               <div>
                 <span className="eyebrow">Financeiro</span>
@@ -1537,25 +1896,76 @@ export function BillingPage({
                 value={receipt.referencia}
                 onValueChange={(v) => setReceipt({ ...receipt, referencia: v })}
               />
+              <SelectField
+                label="Formato do comprovante"
+                value={receipt.comprovanteFormato}
+                onChange={(event) =>
+                  setReceipt({
+                    ...receipt,
+                    comprovanteFormato: event.target
+                      .value as ReceiptFileFormat,
+                    comprovante: null,
+                  })
+                }
+              >
+                <option value="pdf">PDF</option>
+                <option value="jpg">JPG</option>
+              </SelectField>
               <label className="filter-field">
-                <span>Comprovante (opcional)</span>
+                <span>
+                  Comprovante {receipt.comprovanteFormato.toUpperCase()}{" "}
+                  (opcional)
+                </span>
                 <input
+                  key={receipt.comprovanteFormato}
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(event) =>
-                    setReceipt({
-                      ...receipt,
-                      comprovante: event.target.files?.[0] ?? null,
-                    })
+                  accept={
+                    receipt.comprovanteFormato === "pdf"
+                      ? ".pdf,application/pdf"
+                      : ".jpg,.jpeg,image/jpeg"
                   }
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    if (
+                      file &&
+                      !receiptFileMatchesFormat(
+                        file,
+                        receipt.comprovanteFormato,
+                      )
+                    ) {
+                      const message = `Selecione um comprovante no formato ${receipt.comprovanteFormato.toUpperCase()}.`;
+                      setError(message);
+                      setReceiptToast({ type: "error", message });
+                      event.target.value = "";
+                      setReceipt({ ...receipt, comprovante: null });
+                      return;
+                    }
+                    setError("");
+                    setReceipt({ ...receipt, comprovante: file });
+                  }}
                 />
               </label>
               <Button variant="primary" type="submit" disabled={loading}>
                 Registrar recebimento
               </Button>
+              {receiptToast && (
+                <div
+                  className={`billing-receipt-toast ${receiptToast.type}`}
+                  role={receiptToast.type === "error" ? "alert" : "status"}
+                  aria-live="polite"
+                >
+                  {receiptToast.message}
+                </div>
+              )}
             </form>
           </DataPanel>
-          <DataPanel className="billing-table-panel">
+          <DataPanel className="billing-table-panel billing-finance-titles-panel">
+            <div className="billing-section-heading">
+              <div>
+                <span className="eyebrow">Financeiro</span>
+                <h3>Títulos faturados</h3>
+              </div>
+            </div>
             <div className="table-wrap">
               <table className="billing-table">
                 <thead>
@@ -1588,7 +1998,9 @@ export function BillingPage({
                       <td>{formatCurrency(x.valorRecebido)}</td>
                       <td>{formatCurrency(x.saldoAberto)}</td>
                       <td>
-                        <span className="status-pill active">{x.status}</span>
+                        <span className="status-pill active">
+                          {formatBillingStatus(x.status)}
+                        </span>
                         {x.recebimentos
                           .filter((r) => !r.estornado)
                           .map((r) => (
@@ -1836,57 +2248,86 @@ export function BillingPage({
       {returnTarget && (
         <Modal
           titleId="billing-return-title"
+          className="billing-wide-modal billing-return-modal"
           onClose={() => setReturnTarget(null)}
         >
           <div className="panel-title">
-            <h2 id="billing-return-title">Registrar retorno do faturamento</h2>
+            <div>
+              <span className="eyebrow">Retorno do convênio</span>
+              <h2 id="billing-return-title">Registrar retorno do faturamento</h2>
+              <p className="billing-modal-subtitle">
+                Informe a glosa de cada procedimento apresentado.
+              </p>
+            </div>
             <Button onClick={() => setReturnTarget(null)}>
               <X size={16} />
             </Button>
           </div>
-          <form className="billing-filter-grid" onSubmit={submitReturn}>
-            {returnDraft.map((item, index) => (
-              <div key={item.faturamentoItemId}>
-                <strong>{item.descricao}</strong>
-                <TextField
-                  label={`Glosa (máx. ${formatCurrency(item.valorApresentado)})`}
-                  type="number"
-                  min="0"
-                  max={item.valorApresentado}
-                  step="0.01"
-                  value={item.valorGlosado}
-                  required
-                  onValueChange={(value) =>
-                    setReturnDraft((current) =>
-                      current.map((draft, position) =>
-                        position === index
-                          ? { ...draft, valorGlosado: value }
-                          : draft,
-                      ),
-                    )
-                  }
-                />
-                {Number(item.valorGlosado.replace(",", ".")) > 0 && (
-                  <TextField
-                    label="Motivo da glosa"
-                    value={item.motivoGlosa}
-                    required
-                    onValueChange={(value) =>
-                      setReturnDraft((current) =>
-                        current.map((draft, position) =>
-                          position === index
-                            ? { ...draft, motivoGlosa: value }
-                            : draft,
-                        ),
-                      )
-                    }
-                  />
-                )}
-              </div>
-            ))}
-            <Button variant="primary" type="submit" disabled={loading}>
-              Confirmar retorno
-            </Button>
+          <form className="billing-return-form" onSubmit={submitReturn}>
+            <div className="billing-return-list">
+              {returnDraft.map((item, index) => {
+                const hasGlosa =
+                  Number(item.valorGlosado.replace(",", ".")) > 0;
+                return (
+                  <article
+                    className="billing-return-item"
+                    key={item.faturamentoItemId}
+                  >
+                    <div className="billing-return-description">
+                      <span>Procedimento {index + 1}</span>
+                      <strong>{item.descricao}</strong>
+                      <small>
+                        Apresentado: {formatCurrency(item.valorApresentado)}
+                      </small>
+                    </div>
+                    <TextField
+                      label="Valor da glosa"
+                      type="number"
+                      min="0"
+                      max={item.valorApresentado}
+                      step="0.01"
+                      value={item.valorGlosado}
+                      required
+                      onValueChange={(value) =>
+                        setReturnDraft((current) =>
+                          current.map((draft, position) =>
+                            position === index
+                              ? { ...draft, valorGlosado: value }
+                              : draft,
+                          ),
+                        )
+                      }
+                    />
+                    {hasGlosa ? (
+                      <TextField
+                        label="Motivo da glosa"
+                        value={item.motivoGlosa}
+                        required
+                        onValueChange={(value) =>
+                          setReturnDraft((current) =>
+                            current.map((draft, position) =>
+                              position === index
+                                ? { ...draft, motivoGlosa: value }
+                                : draft,
+                            ),
+                          )
+                        }
+                      />
+                    ) : (
+                      <span className="billing-return-no-glosa">
+                        Sem glosa para este procedimento
+                      </span>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+            <div className="billing-return-actions">
+              <Button onClick={() => setReturnTarget(null)}>Cancelar</Button>
+              <Button variant="primary" type="submit" disabled={loading}>
+                Confirmar retorno
+              </Button>
+            </div>
           </form>
         </Modal>
       )}
@@ -1934,32 +2375,64 @@ export function BillingPage({
       {reversalTarget && (
         <Modal
           titleId="billing-reversal-title"
-          onClose={() => setReversalTarget(null)}
+          className="billing-reversal-modal"
+          onClose={() => {
+            setReversalTarget(null);
+            setReversalReason("");
+          }}
         >
           <div className="panel-title">
-            <h2 id="billing-reversal-title">
-              Estornar {formatCurrency(reversalTarget.valor)}
-            </h2>
-            <Button onClick={() => setReversalTarget(null)}>
+            <div>
+              <span className="eyebrow">Estorno de recebimento</span>
+              <h2 id="billing-reversal-title">Confirmar estorno</h2>
+              <p className="billing-modal-subtitle">
+                Valor selecionado:{" "}
+                <strong>{formatCurrency(reversalTarget.valor)}</strong>
+              </p>
+            </div>
+            <Button
+              aria-label="Fechar estorno"
+              onClick={() => {
+                setReversalTarget(null);
+                setReversalReason("");
+              }}
+            >
               <X size={16} />
             </Button>
           </div>
-          <form className="billing-filter-grid" onSubmit={submitReversal}>
+          <form className="billing-reversal-form" onSubmit={submitReversal}>
+            <p className="billing-reversal-notice">
+              O recebimento será marcado como estornado e o saldo do título
+              será recalculado automaticamente.
+            </p>
             <TextField
               label="Motivo do estorno"
               value={reversalReason}
               required
               onValueChange={setReversalReason}
             />
-            <Button variant="primary" type="submit" disabled={loading}>
-              Confirmar estorno
-            </Button>
+            <div className="billing-reversal-actions">
+              <Button
+                type="button"
+                onClick={() => {
+                  setReversalTarget(null);
+                  setReversalReason("");
+                }}
+              >
+                Voltar
+              </Button>
+              <Button variant="primary" type="submit" disabled={loading}>
+                Confirmar estorno
+              </Button>
+            </div>
           </form>
         </Modal>
       )}
       {selectedAccount && (
         <Modal
           titleId="billing-account-title"
+          className="billing-wide-modal billing-account-detail-modal"
+          backdropClassName="billing-account-detail-backdrop"
           onClose={() => {
             setSelectedAccount(null);
             setAccountDraft(null);
@@ -2155,6 +2628,7 @@ export function BillingPage({
       {selectedBilling && (
         <Modal
           titleId="billing-detail-title"
+          className="billing-wide-modal billing-invoice-detail-modal"
           onClose={() => {
             setSelectedBilling(null);
             setBillingItemDraft(null);
@@ -2168,9 +2642,34 @@ export function BillingPage({
                 {selectedBilling.numeroGuia || `#${selectedBilling.id}`}
               </h2>
             </div>
-            <Button onClick={() => setSelectedBilling(null)}>
-              <X size={16} />
-            </Button>
+            <div className="billing-modal-actions">
+              {canManageBilling && selectedBilling.status === "Rascunho" && (
+                <>
+                  <Button onClick={() => editBilling(selectedBilling)}>
+                    Editar faturamento
+                  </Button>
+                  <Button
+                    className="billing-delete-action"
+                    onClick={() => {
+                      const item = selectedBilling;
+                      setConfirmAction({
+                        title: "Excluir faturamento",
+                        message: `Excluir o faturamento de ${item.paciente}? Os itens em rascunho também serão removidos.`,
+                        action: () =>
+                          deleteFaturamento(item.id, session.token),
+                        success: "Faturamento excluído.",
+                        after: () => setSelectedBilling(null),
+                      });
+                    }}
+                  >
+                    Excluir
+                  </Button>
+                </>
+              )}
+              <Button onClick={() => setSelectedBilling(null)}>
+                <X size={16} />
+              </Button>
+            </div>
           </div>
           <section className="billing-summary-grid">
             <Summary
@@ -2583,9 +3082,29 @@ export function BillingPage({
                 {selectedAttendance.paciente}
               </h2>
             </div>
-            <Button onClick={() => setSelectedAttendance(null)}>
-              <X size={16} />
-            </Button>
+            <div className="billing-modal-actions">
+              <Button onClick={() => editAttendance(selectedAttendance)}>
+                Editar atendimento
+              </Button>
+              <Button
+                className="billing-delete-action"
+                onClick={() => {
+                  const item = selectedAttendance;
+                  setConfirmAction({
+                    title: "Excluir atendimento",
+                    message: `Excluir o atendimento de ${item.paciente}? Esta ação não poderá ser desfeita.`,
+                    action: () => deleteAtendimento(item.id, session.token),
+                    success: "Atendimento excluído.",
+                    after: () => setSelectedAttendance(null),
+                  });
+                }}
+              >
+                Excluir
+              </Button>
+              <Button onClick={() => setSelectedAttendance(null)}>
+                <X size={16} />
+              </Button>
+            </div>
           </div>
           <section className="billing-summary-grid">
             <Summary
@@ -2598,6 +3117,14 @@ export function BillingPage({
             <Summary
               title="Autorização"
               value={selectedAttendance.numeroAutorizacao || "Não informada"}
+            />
+            <Summary
+              title="Glosa"
+              value={
+                selectedAttendance.valorGlosa
+                  ? `${formatCurrency(selectedAttendance.valorGlosa)} — ${selectedAttendance.motivoGlosa}`
+                  : "Não informada"
+              }
             />
           </section>
           <div className="table-wrap">

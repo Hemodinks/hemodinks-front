@@ -401,6 +401,12 @@ describe("App", () => {
     expect(
       within(sidebar).getByRole("button", { name: /pacientes/i }),
     ).toBeInTheDocument();
+    const controladoria = within(sidebar).getByRole("button", {
+      name: /^controladoria$/i,
+    });
+    expect(controladoria).toHaveAttribute("aria-expanded", "false");
+    await user.click(controladoria);
+    expect(controladoria).toHaveAttribute("aria-expanded", "true");
     expect(
       within(sidebar).getByRole("button", { name: /^atendimentos$/i }),
     ).toBeInTheDocument();

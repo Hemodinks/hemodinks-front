@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthSession, ContaReceber, Faturamento } from "../../types";
 import { BillingPage } from "./BillingPage";
@@ -13,7 +20,11 @@ vi.mock("../../services", () => ({
   getHospitais: vi.fn(),
   getFinanceiroResumo: vi.fn(),
   createAtendimento: vi.fn(),
+  updateAtendimento: vi.fn(),
+  deleteAtendimento: vi.fn(),
   createFaturamento: vi.fn(),
+  updateFaturamento: vi.fn(),
+  deleteFaturamento: vi.fn(),
   updateFaturamentoStatus: vi.fn(),
   registrarRetornoFaturamento: vi.fn(),
   registrarRecursoGlosa: vi.fn(),
@@ -172,6 +183,11 @@ function setupMocks() {
     totalPages: 1,
   });
   vi.mocked(services.createAtendimento).mockResolvedValue(atendimento as never);
+  vi.mocked(services.updateAtendimento).mockResolvedValue(atendimento as never);
+  vi.mocked(services.deleteAtendimento).mockResolvedValue(undefined);
+  vi.mocked(services.createFaturamento).mockResolvedValue(draft);
+  vi.mocked(services.updateFaturamento).mockResolvedValue(draft);
+  vi.mocked(services.deleteFaturamento).mockResolvedValue(undefined);
   vi.mocked(services.updateFaturamentoItem).mockResolvedValue(draft);
   vi.mocked(services.registrarRecebimento).mockResolvedValue(conta);
   vi.mocked(services.estornarRecebimento).mockResolvedValue(conta);
@@ -181,11 +197,11 @@ function setupMocks() {
   vi.mocked(services.updateRecursoGlosa).mockResolvedValue(draft);
 }
 
-function renderPage(
+function page(
   section:
     "atendimentos" | "faturamento" | "financeiro" | "precos" = "atendimentos",
 ) {
-  return render(
+  return (
     <BillingPage
       section={section}
       session={session}
@@ -194,8 +210,15 @@ function renderPage(
       opmeFornecedores={[{ idFornecedor: 1, fornecedor: "Promedom" }]}
       isAdmin
       isMedical={false}
-    />,
+    />
   );
+}
+
+function renderPage(
+  section:
+    "atendimentos" | "faturamento" | "financeiro" | "precos" = "atendimentos",
+) {
+  return render(page(section));
 }
 
 describe("BillingPage", () => {
@@ -320,6 +343,84 @@ describe("BillingPage", () => {
     );
   });
 
+  it("registra valor e motivo da glosa no atendimento", async () => {
+    vi.mocked(services.getCbhpmGeral).mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          codigo: "123",
+          procedimento: "Cirurgia",
+          porte: "8A",
+          valorReferencia: 1000,
+        },
+      ],
+      page: 1,
+      pageSize: 10,
+      totalItems: 1,
+      totalPages: 1,
+    });
+    renderPage();
+    await screen.findByText("Paciente Teste");
+    fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
+    fireEvent.change(screen.getByLabelText("Paciente"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByLabelText("Data da cirurgia"), {
+      target: { value: "2026-07-10" },
+    });
+    fireEvent.change(screen.getByLabelText("Médico responsável"), {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
+    fireEvent.change(screen.getByLabelText("Valor da glosa"), {
+      target: { value: "150" },
+    });
+    fireEvent.change(screen.getByLabelText("Motivo da glosa"), {
+      target: { value: "Divergência contratual" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar atendimento" }));
+
+    await waitFor(() =>
+      expect(services.createAtendimento).toHaveBeenCalledWith(
+        expect.objectContaining({
+          valorGlosa: 150,
+          motivoGlosa: "Divergência contratual",
+        }),
+        "token",
+      ),
+    );
+  });
+
+  it("permite editar e excluir um atendimento", async () => {
+    renderPage();
+    await screen.findByText("Paciente Teste");
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    expect(screen.getByLabelText("Paciente")).toHaveValue("1");
+    fireEvent.change(screen.getByLabelText("Autorização"), {
+      target: { value: "AUT-EDITADA" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Atualizar atendimento" }),
+    );
+    await waitFor(() =>
+      expect(services.updateAtendimento).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ numeroAutorizacao: "AUT-EDITADA" }),
+        "token",
+      ),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirmar" }),
+    );
+    await waitFor(() =>
+      expect(services.deleteAtendimento).toHaveBeenCalledWith(1, "token"),
+    );
+  });
+
   it("limpa os campos depois de cadastrar um atendimento com sucesso", async () => {
     vi.mocked(services.getCbhpmGeral).mockResolvedValue({
       items: [
@@ -366,12 +467,163 @@ describe("BillingPage", () => {
     expect(screen.queryByText("Cirurgia")).not.toBeInTheDocument();
   });
 
+  it("remove automaticamente a mensagem de sucesso", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(services.getCbhpmGeral).mockResolvedValue({
+        items: [
+          {
+            id: 1,
+            codigo: "123",
+            procedimento: "Cirurgia",
+            porte: "8A",
+            valorReferencia: 1000,
+          },
+        ],
+        page: 1,
+        pageSize: 10,
+        totalItems: 1,
+        totalPages: 1,
+      });
+      renderPage();
+      await screen.findByText("Paciente Teste");
+      fireEvent.click(
+        screen.getByRole("button", { name: /Novo atendimento/i }),
+      );
+      fireEvent.change(screen.getByLabelText("Paciente"), {
+        target: { value: "1" },
+      });
+      fireEvent.change(screen.getByLabelText("Data da cirurgia"), {
+        target: { value: "2026-07-10" },
+      });
+      fireEvent.change(screen.getByLabelText("Médico responsável"), {
+        target: { value: "2" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
+      fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Salvar atendimento" }),
+      );
+
+      expect(
+        await screen.findByText("Atendimento criado com snapshot de preço."),
+      ).toBeInTheDocument();
+      await act(async () => {
+        await Promise.resolve();
+      });
+      act(() => {
+        vi.advanceTimersByTime(10001);
+      });
+      expect(
+        screen.queryByText("Atendimento criado com snapshot de preço."),
+      ).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("limpa os dados do formulário após gerar o faturamento", async () => {
+    renderPage("faturamento");
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Novo faturamento/i }),
+    );
+    fireEvent.change(screen.getByLabelText("Atendimento"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByLabelText("Número da guia"), {
+      target: { value: "GUIA-123" },
+    });
+    fireEvent.change(screen.getByLabelText("Número do lote"), {
+      target: { value: "LOTE-456" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Gerar itens do faturamento" }),
+    );
+
+    await waitFor(() =>
+      expect(services.createFaturamento).toHaveBeenCalledWith(
+        expect.objectContaining({
+          atendimentoCirurgicoId: 1,
+          numeroGuia: "GUIA-123",
+          numeroLote: "LOTE-456",
+        }),
+        "token",
+      ),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Novo faturamento/i }));
+    expect(screen.getByLabelText("Atendimento")).toHaveValue("");
+    expect(screen.getByLabelText("Número da guia")).toHaveValue("");
+    expect(screen.getByLabelText("Número do lote")).toHaveValue("");
+  });
+
+  it("permite editar e excluir faturamento em rascunho", async () => {
+    renderPage("faturamento");
+    await screen.findByText("Paciente Teste");
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    fireEvent.change(screen.getByLabelText("Número da guia"), {
+      target: { value: "GUIA-EDITADA" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Atualizar faturamento" }),
+    );
+    await waitFor(() =>
+      expect(services.updateFaturamento).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          numeroGuia: "GUIA-EDITADA",
+          rowVersion: draft.rowVersion,
+        }),
+        "token",
+      ),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    await waitFor(() =>
+      expect(services.deleteFaturamento).toHaveBeenCalledWith(1, "token"),
+    );
+  });
+
+  it("não transporta mensagens de sucesso para outro módulo", async () => {
+    const view = renderPage("faturamento");
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Novo faturamento/i }),
+    );
+    fireEvent.change(screen.getByLabelText("Atendimento"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Gerar itens do faturamento" }),
+    );
+
+    expect(
+      await screen.findByText("Faturamento criado a partir do atendimento."),
+    ).toBeInTheDocument();
+
+    view.rerender(page("financeiro"));
+
+    expect(
+      screen.queryByText("Faturamento criado a partir do atendimento."),
+    ).not.toBeInTheDocument();
+  });
+
   it("exibe snapshot e permite editar item somente no rascunho", async () => {
     renderPage("faturamento");
     await screen.findByText("Paciente Teste");
     fireEvent.click(screen.getByRole("button", { name: "Paciente Teste" }));
     expect(screen.getByText("Detalhe do faturamento")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    expect(
+      screen.getByRole("dialog", { name: /Paciente Teste/ }),
+    ).toHaveClass("billing-wide-modal", "billing-invoice-detail-modal");
+    fireEvent.click(
+      within(
+        screen.getByRole("dialog", { name: /Paciente Teste/ }),
+      ).getByRole("button", { name: "Editar" }),
+    );
     fireEvent.change(screen.getByLabelText("Valor unitário"), {
       target: { value: "850" },
     });
@@ -386,11 +638,47 @@ describe("BillingPage", () => {
     );
   });
 
+  it("abre o retorno em modal largo e organiza a glosa por procedimento", async () => {
+    vi.mocked(services.getFaturamentos).mockResolvedValue([
+      { ...draft, status: "Enviado" },
+    ]);
+
+    renderPage("faturamento");
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Registrar retorno" }),
+    );
+
+    const dialog = screen.getByRole("dialog", {
+      name: "Registrar retorno do faturamento",
+    });
+    expect(dialog).toHaveClass("billing-wide-modal", "billing-return-modal");
+    expect(screen.getByText("Procedimento 1")).toBeInTheDocument();
+    expect(screen.getByText("Sem glosa para este procedimento")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Valor da glosa"), {
+      target: { value: "100" },
+    });
+
+    expect(screen.getByLabelText("Motivo da glosa")).toBeInTheDocument();
+  });
+
   it("filtra contas e mostra cards calculados pelo backend", async () => {
     renderPage("financeiro");
     await screen.findAllByText("Paciente Teste");
     expect(screen.getByText("Total previsto")).toBeInTheDocument();
     expect(screen.getByText("Total vencido")).toBeInTheDocument();
+    const filtersAccordion = screen
+      .getByText("Filtros financeiros")
+      .closest("details");
+    expect(filtersAccordion).not.toHaveAttribute("open");
+    fireEvent.click(screen.getByText("Filtros financeiros"));
+    expect(
+      screen.getByLabelText("Buscar por documento ou paciente"),
+    ).toHaveAttribute(
+      "placeholder",
+      "Ex.: FAT-1-01 ou nome do paciente",
+    );
     fireEvent.change(screen.getByLabelText("Status"), {
       target: { value: "Vencido" },
     });
@@ -402,6 +690,14 @@ describe("BillingPage", () => {
       ),
     );
     expect(screen.getByText("Em atraso")).toBeInTheDocument();
+    expect(screen.getByText("Títulos faturados").closest(".data-panel")).toHaveClass(
+      "billing-finance-titles-panel",
+    );
+    expect(
+      screen
+        .getByRole("heading", { name: "Registrar recebimento" })
+        .closest(".data-panel"),
+    ).toHaveClass("billing-finance-receipt-panel");
   });
 
   it("lança pagamento parcial e exige motivo no estorno", async () => {
@@ -424,6 +720,12 @@ describe("BillingPage", () => {
       ),
     );
     fireEvent.click(screen.getByTitle(/Estornar/));
+    expect(
+      screen.getByRole("dialog", { name: "Confirmar estorno" }),
+    ).toHaveClass("billing-reversal-modal");
+    expect(
+      screen.getByText(/saldo do título será recalculado automaticamente/i),
+    ).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Motivo do estorno"), {
       target: { value: "Lançamento duplicado" },
     });
@@ -434,6 +736,136 @@ describe("BillingPage", () => {
         "Lançamento duplicado",
         "token",
       ),
+    );
+  });
+
+  it("exibe o erro do recebimento ao lado do botão por 10 segundos", async () => {
+    vi.mocked(services.registrarRecebimento).mockRejectedValueOnce(
+      new Error("Recebimento inválido ou superior ao saldo aberto."),
+    );
+
+    renderPage("financeiro");
+    await screen.findAllByText("Paciente Teste");
+    fireEvent.change(screen.getByLabelText("Título"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByLabelText("Valor recebido"), {
+      target: { value: "700" },
+    });
+
+    vi.useFakeTimers();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Registrar recebimento" }),
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const receiptPanel = screen
+      .getByRole("heading", { name: "Registrar recebimento" })
+      .closest(".data-panel");
+    expect(receiptPanel).toHaveTextContent(
+      "Recebimento inválido ou superior ao saldo aberto.",
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(9999);
+    });
+    expect(receiptPanel).toHaveTextContent(
+      "Recebimento inválido ou superior ao saldo aberto.",
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(receiptPanel).not.toHaveTextContent(
+      "Recebimento inválido ou superior ao saldo aberto.",
+    );
+    vi.useRealTimers();
+  });
+
+  it("permite escolher PDF ou JPG e valida o formato do comprovante", async () => {
+    renderPage("financeiro");
+    await screen.findAllByText("Paciente Teste");
+
+    const format = screen.getByLabelText("Formato do comprovante");
+    expect(format).toHaveValue("pdf");
+    expect(screen.getByLabelText(/Comprovante PDF/)).toHaveAttribute(
+      "accept",
+      ".pdf,application/pdf",
+    );
+
+    fireEvent.change(format, { target: { value: "jpg" } });
+    const fileInput = screen.getByLabelText(/Comprovante JPG/);
+    expect(fileInput).toHaveAttribute("accept", ".jpg,.jpeg,image/jpeg");
+
+    fireEvent.change(fileInput, {
+      target: {
+        files: [
+          new File(["%PDF"], "comprovante.pdf", {
+            type: "application/pdf",
+          }),
+        ],
+      },
+    });
+
+    expect(
+      screen.getAllByText("Selecione um comprovante no formato JPG."),
+    ).toHaveLength(2);
+  });
+
+  it("baixa o comprovante com a extensão correspondente ao conteúdo", async () => {
+    vi.mocked(services.downloadComprovanteRecebimento).mockResolvedValue(
+      new Blob(["%PDF"], { type: "application/pdf" }),
+    );
+    const createObjectUrl = vi
+      .spyOn(URL, "createObjectURL")
+      .mockReturnValue("blob:comprovante");
+    const revokeObjectUrl = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => undefined);
+    let downloadedName = "";
+    const anchorClick = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        downloadedName = this.download;
+      });
+
+    try {
+      renderPage("financeiro");
+      fireEvent.click(await screen.findByRole("button", { name: "TIT-1" }));
+      fireEvent.click(screen.getByRole("button", { name: "Baixar" }));
+
+      await waitFor(() =>
+        expect(services.downloadComprovanteRecebimento).toHaveBeenCalledWith(
+          1,
+          "token",
+        ),
+      );
+      expect(downloadedName).toBe("comprovante-1.pdf");
+      expect(createObjectUrl).toHaveBeenCalled();
+      expect(revokeObjectUrl).toHaveBeenCalledWith("blob:comprovante");
+    } finally {
+      anchorClick.mockRestore();
+      createObjectUrl.mockRestore();
+      revokeObjectUrl.mockRestore();
+    }
+  });
+
+  it("abre o detalhe da conta no modal largo", async () => {
+    renderPage("financeiro");
+    const accountButton = await screen.findByRole("button", { name: "TIT-1" });
+
+    fireEvent.click(accountButton);
+
+    const dialog = screen.getByRole("dialog", { name: "TIT-1" });
+    expect(dialog).toHaveClass(
+      "billing-wide-modal",
+      "billing-account-detail-modal",
+    );
+    expect(dialog.parentElement).toHaveClass(
+      "modal-backdrop",
+      "billing-account-detail-backdrop",
     );
   });
 

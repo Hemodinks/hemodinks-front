@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import {
   Building2,
   CalendarDays,
+  ChevronDown,
   ClipboardList,
   FileText,
   LayoutDashboard,
@@ -81,6 +83,22 @@ export function Sidebar({
   onOpenSettings,
   onOpenClinics,
 }: SidebarProps) {
+  const controladoriaActive = [
+    "attendances",
+    "billing",
+    "finance",
+    "prices",
+  ].includes(activeView);
+  const [controladoriaOpen, setControladoriaOpen] = useState(
+    controladoriaActive,
+  );
+
+  useEffect(() => {
+    if (controladoriaActive) {
+      setControladoriaOpen(true);
+    }
+  }, [controladoriaActive]);
+
   return (
     <aside className="sidebar-panel" aria-label="Sessão ativa">
       <div className="sidebar-card">
@@ -170,55 +188,87 @@ export function Sidebar({
             </button>
           )}
           {canAccessBilling && (
-            <button
-              type="button"
-              className={`side-nav-billing ${activeView === "attendances" ? "active" : ""}`}
-              aria-current={activeView === "attendances" ? "page" : undefined}
-              title="Registre cirurgias e os procedimentos realizados."
-              onClick={onOpenAttendances}
+            <div
+              className={`side-nav-accordion ${controladoriaActive ? "is-active" : ""}`}
             >
-              <Stethoscope size={18} />
-              <span>Atendimentos</span>
-            </button>
-          )}
-          {canAccessBilling && (
-            <button
-              type="button"
-              className={`side-nav-billing ${activeView === "billing" ? "active" : ""}`}
-              aria-current={activeView === "billing" ? "page" : undefined}
-              title="Prepare, envie e acompanhe os faturamentos médicos."
-              onClick={onOpenBilling}
-            >
-              <ReceiptText size={18} />
-              <span>Faturamento</span>
-            </button>
-          )}
-          {canAccessBilling && session.user.perfilId !== 2 && (
-            <button
-              type="button"
-              className={`side-nav-billing ${activeView === "finance" ? "active" : ""}`}
-              aria-current={activeView === "finance" ? "page" : undefined}
-              title="Acompanhe contas a receber, pagamentos e saldos."
-              onClick={onOpenFinance}
-            >
-              <Wallet size={18} />
-              <span>Financeiro</span>
-              {pendingPaymentsCount > 0 && (
-                <span className="side-nav-count">{pendingPaymentsCount}</span>
+              <button
+                type="button"
+                className="side-nav-controladoria"
+                aria-expanded={controladoriaOpen}
+                aria-controls="controladoria-navigation"
+                onClick={() => setControladoriaOpen((current) => !current)}
+              >
+                <ReceiptText size={18} />
+                <span>Controladoria</span>
+                <ChevronDown
+                  className="side-nav-accordion-chevron"
+                  size={17}
+                  aria-hidden="true"
+                />
+              </button>
+              {controladoriaOpen && (
+                <div
+                  id="controladoria-navigation"
+                  className="side-nav-accordion-content"
+                >
+                  <button
+                    type="button"
+                    className={`side-nav-billing ${activeView === "attendances" ? "active" : ""}`}
+                    aria-current={
+                      activeView === "attendances" ? "page" : undefined
+                    }
+                    title="Registre cirurgias e os procedimentos realizados."
+                    onClick={onOpenAttendances}
+                  >
+                    <Stethoscope size={18} />
+                    <span>Atendimentos</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`side-nav-billing ${activeView === "billing" ? "active" : ""}`}
+                    aria-current={
+                      activeView === "billing" ? "page" : undefined
+                    }
+                    title="Prepare, envie e acompanhe os faturamentos médicos."
+                    onClick={onOpenBilling}
+                  >
+                    <ReceiptText size={18} />
+                    <span>Faturamento</span>
+                  </button>
+                  {session.user.perfilId !== 2 && (
+                    <button
+                      type="button"
+                      className={`side-nav-billing ${activeView === "finance" ? "active" : ""}`}
+                      aria-current={
+                        activeView === "finance" ? "page" : undefined
+                      }
+                      title="Acompanhe contas a receber, pagamentos e saldos."
+                      onClick={onOpenFinance}
+                    >
+                      <Wallet size={18} />
+                      <span>Financeiro</span>
+                      {pendingPaymentsCount > 0 && (
+                        <span className="side-nav-count">
+                          {pendingPaymentsCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className={`side-nav-billing ${activeView === "prices" ? "active" : ""}`}
+                    aria-current={
+                      activeView === "prices" ? "page" : undefined
+                    }
+                    title="Gerencie valores CBHPM e preços negociados por convênio."
+                    onClick={onOpenPrices}
+                  >
+                    <Tags size={18} />
+                    <span>Tabela de preços</span>
+                  </button>
+                </div>
               )}
-            </button>
-          )}
-          {canAccessBilling && (
-            <button
-              type="button"
-              className={`side-nav-billing ${activeView === "prices" ? "active" : ""}`}
-              aria-current={activeView === "prices" ? "page" : undefined}
-              title="Gerencie valores CBHPM e preços negociados por convênio."
-              onClick={onOpenPrices}
-            >
-              <Tags size={18} />
-              <span>Tabela de preços</span>
-            </button>
+            </div>
           )}
           {canAccessMedicalGroups && (
             <button

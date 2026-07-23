@@ -66,6 +66,60 @@
   justify-content: flex-start;
 }
 
+.billing-finance-titles-panel {
+  order: 1;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.billing-finance-titles-panel > .billing-section-heading,
+.billing-finance-titles-panel > .table-wrap,
+.billing-finance-titles-panel > .billing-filter-actions {
+  width: 100%;
+  min-width: 0;
+}
+
+.billing-finance-receipt-panel {
+  order: 2;
+}
+
+.billing-receipt-toast {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 9px 12px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.25;
+  animation: billing-toast-enter 180ms ease-out;
+}
+
+.billing-receipt-toast.error {
+  color: #8a1f13;
+  border-color: #f4b9b1;
+  background: #fff0ed;
+}
+
+.billing-receipt-toast.success {
+  color: #106349;
+  border-color: #a8dfc1;
+  background: #e9f8f0;
+}
+
+@keyframes billing-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .billing-toolbar > .search-box {
   flex: 1 1 320px;
   max-width: none;
@@ -322,6 +376,37 @@
   display: block;
 }
 
+.billing-row-actions,
+.billing-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.billing-row-actions {
+  min-width: 220px;
+}
+
+.billing-row-actions .primary-action,
+.billing-row-actions .ghost-button {
+  width: auto;
+  min-width: 96px;
+  margin: 0;
+}
+
+.billing-delete-action {
+  color: #9f2418;
+  border-color: #efb4ad;
+  background: #fff1ef;
+}
+
+.billing-delete-action:hover {
+  color: white;
+  border-color: var(--action-danger);
+  background: var(--action-danger);
+}
+
 .billing-table td span {
   color: var(--muted);
   font-size: 0.78rem;
@@ -395,6 +480,173 @@
   align-self: start;
   justify-self: center;
   margin-top: 0;
+}
+
+.modal-panel.billing-wide-modal {
+  width: min(1440px, calc(100vw - 48px)) !important;
+  max-width: none;
+  max-height: calc(100dvh - 120px);
+  align-self: start;
+  justify-self: center;
+  margin-top: clamp(36px, 7dvh, 64px);
+}
+
+.billing-wide-modal > .panel-title {
+  margin-bottom: 16px;
+}
+
+.billing-modal-subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.billing-return-modal {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.billing-return-form {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 16px;
+}
+
+.billing-return-list {
+  min-height: 0;
+  display: grid;
+  gap: 12px;
+  padding-right: 4px;
+  overflow-y: auto;
+}
+
+.billing-return-item {
+  display: grid;
+  grid-template-columns:
+    minmax(300px, 1.35fr) minmax(190px, 0.55fr)
+    minmax(300px, 1fr);
+  gap: 16px;
+  align-items: end;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--input-bg);
+}
+
+.billing-return-description {
+  min-width: 0;
+  display: grid;
+  align-self: center;
+  gap: 6px;
+}
+
+.billing-return-description span {
+  color: var(--action-secondary);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-return-description strong {
+  color: var(--ink);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.billing-return-description small,
+.billing-return-no-glosa {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.billing-return-no-glosa {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+}
+
+.billing-return-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.billing-return-actions button {
+  min-width: 180px;
+}
+
+.modal-panel.billing-invoice-detail-modal {
+  width: min(1180px, calc(100vw - 48px)) !important;
+  overflow: auto;
+}
+
+.billing-invoice-detail-modal .billing-summary-grid,
+.billing-account-detail-modal .billing-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.modal-backdrop.billing-account-detail-backdrop {
+  place-items: start center;
+  padding: 0 20px 20px;
+}
+
+.modal-panel.billing-account-detail-modal {
+  width: min(1440px, calc(100vw - 48px)) !important;
+  max-width: none;
+  max-height: calc(100dvh - 24px);
+  margin-top: 0 !important;
+  overflow: auto;
+}
+
+.billing-account-detail-modal .billing-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.modal-panel.billing-reversal-modal {
+  width: min(640px, calc(100vw - 48px));
+  max-width: none;
+  align-self: start;
+  justify-self: center;
+  margin-top: clamp(36px, 7dvh, 64px);
+}
+
+.billing-reversal-form {
+  display: grid;
+  gap: 16px;
+}
+
+.billing-reversal-notice {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 25%, var(--line));
+  border-radius: 8px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-primary) 8%, var(--panel));
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.billing-reversal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.billing-reversal-actions button {
+  min-width: 160px;
+  white-space: nowrap;
 }
 
 .billing-summary-titlebar {
@@ -834,7 +1086,8 @@
     "hospital assistant-one"
     "opme assistant-two"
     "procedures procedures"
-    "authorization ."
+    "authorization status"
+    "glosa glosa"
     "save save";
 }
 
@@ -950,8 +1203,19 @@
   background: var(--action-secondary);
 }
 
-.billing-attendance-form > label:nth-last-of-type(1) {
+.billing-attendance-form > .billing-attendance-authorization {
   grid-area: authorization;
+}
+
+.billing-attendance-status {
+  grid-area: status;
+}
+
+.billing-attendance-glosa {
+  grid-area: glosa;
+  display: grid;
+  grid-template-columns: minmax(180px, 0.45fr) minmax(0, 1.55fr);
+  gap: 12px;
 }
 
 .billing-attendance-form > button[type="submit"] {
@@ -987,6 +1251,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .billing-receipt-toast {
+    width: 100%;
+  }
+
   .billing-detail-panel {
     position: static;
   }
@@ -1003,6 +1271,19 @@
   .billing-checkbox,
   .billing-filter-actions {
     grid-column: 1 / -1;
+  }
+
+  .billing-return-item {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .billing-return-description {
+    grid-column: 1 / -1;
+  }
+
+  .billing-invoice-detail-modal .billing-summary-grid,
+  .billing-account-detail-modal .billing-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1037,7 +1318,13 @@
       "assistant-two"
       "procedures"
       "authorization"
+      "status"
+      "glosa"
       "save";
+  }
+
+  .billing-attendance-glosa {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .billing-cbhpm-filter-actions,
@@ -1109,6 +1396,65 @@
   .modal-panel.billing-attendance-detail-modal {
     width: min(100%, calc(100vw - 24px)) !important;
     margin-top: 8px;
+  }
+
+  .modal-panel.billing-wide-modal {
+    width: min(100%, calc(100vw - 24px)) !important;
+    max-height: calc(100dvh - 24px);
+    margin-top: 8px;
+    padding: 16px;
+  }
+
+  .modal-panel.billing-reversal-modal {
+    width: min(100%, calc(100vw - 24px));
+    margin-top: 8px;
+    padding: 16px;
+  }
+
+  .modal-backdrop.billing-account-detail-backdrop {
+    padding: 8px 10px 10px;
+  }
+
+  .modal-panel.billing-account-detail-modal {
+    width: min(100%, calc(100vw - 24px)) !important;
+    max-height: calc(100dvh - 18px);
+    margin-top: 0 !important;
+  }
+
+  .billing-return-item,
+  .billing-invoice-detail-modal .billing-summary-grid,
+  .billing-account-detail-modal .billing-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-return-description {
+    grid-column: auto;
+  }
+
+  .billing-return-actions {
+    display: grid;
+  }
+
+  .billing-return-actions button {
+    width: 100%;
+  }
+
+  .billing-modal-actions,
+  .billing-row-actions {
+    width: 100%;
+  }
+
+  .billing-modal-actions button,
+  .billing-row-actions button {
+    flex: 1 1 140px;
+  }
+
+  .billing-reversal-actions {
+    display: grid;
+  }
+
+  .billing-reversal-actions button {
+    width: 100%;
   }
 
   .billing-summary-main .billing-procedure-list {

@@ -279,6 +279,7 @@ export function AppMainContent({
           activeView,
         ) ? (
         <BillingPage
+          key={activeView}
           session={session}
           medicalUsers={patientsDomain.medicalUsers}
           convenios={patientsDomain.convenios}

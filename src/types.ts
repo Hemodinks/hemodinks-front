@@ -548,6 +548,8 @@ export type AtendimentoCirurgico = {
   diagnostico?: string | null;
   tratamentoMedico?: string | null;
   numeroAutorizacao?: string | null;
+  valorGlosa?: number | null;
+  motivoGlosa?: string | null;
   status: AtendimentoStatus;
   procedimentos: AtendimentoProcedimento[];
 };
