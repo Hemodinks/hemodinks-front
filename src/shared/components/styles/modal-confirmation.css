@@ -1,11 +1,17 @@
 .confirmation-modal {
-  width: min(430px, 100%);
+  width: min(560px, 100%);
   display: grid;
-  gap: 16px;
-  border: 1px solid rgba(15, 118, 110, 0.24);
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(183, 121, 31, 0.08)),
-    var(--panel);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--action-primary);
+  background: var(--panel);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+}
+
+.confirmation-modal.delete {
+  border-top-color: var(--action-danger);
 }
 
 .confirmation-icon {
@@ -27,6 +33,7 @@
 .confirmation-copy {
   display: grid;
   gap: 8px;
+  padding-top: 2px;
 }
 
 .confirmation-copy h2 {
@@ -43,14 +50,32 @@
 }
 
 .confirmation-actions {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
 }
 
 .confirmation-actions .button,
 .confirmation-actions .ghost-button,
 .confirmation-actions .primary-action {
   min-width: 98px;
+}
+
+@media (max-width: 520px) {
+  .confirmation-modal {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .confirmation-actions {
+    grid-column: auto;
+    display: grid;
+  }
+
+  .confirmation-actions button {
+    width: 100%;
+  }
 }

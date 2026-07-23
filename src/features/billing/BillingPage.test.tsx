@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthSession, ContaReceber, Faturamento } from "../../types";
 import { BillingPage } from "./BillingPage";
 import * as services from "../../services";
+import * as receiptDocument from "./receiptDocument";
 
 vi.mock("../../services", () => ({
   getAtendimentos: vi.fn(),
@@ -45,6 +46,10 @@ vi.mock("../../services", () => ({
   cancelContaReceber: vi.fn(),
   updateConvenioProcedimentoPreco: vi.fn(),
   deactivateConvenioProcedimentoPreco: vi.fn(),
+}));
+
+vi.mock("./receiptDocument", () => ({
+  downloadGeneratedReceipt: vi.fn(),
 }));
 
 const session = {
@@ -622,7 +627,7 @@ describe("BillingPage", () => {
     fireEvent.click(
       within(
         screen.getByRole("dialog", { name: /Paciente Teste/ }),
-      ).getByRole("button", { name: "Editar" }),
+      ).getByRole("button", { name: "Editar item" }),
     );
     fireEvent.change(screen.getByLabelText("Valor unitário"), {
       target: { value: "850" },
@@ -784,34 +789,91 @@ describe("BillingPage", () => {
     vi.useRealTimers();
   });
 
-  it("permite escolher PDF ou JPG e valida o formato do comprovante", async () => {
+  it("permite escolher PDF ou JPG para o comprovante gerado e valida o anexo bancário", async () => {
     renderPage("financeiro");
     await screen.findAllByText("Paciente Teste");
 
-    const format = screen.getByLabelText("Formato do comprovante");
+    const format = screen.getByLabelText("Formato do comprovante gerado");
     expect(format).toHaveValue("pdf");
-    expect(screen.getByLabelText(/Comprovante PDF/)).toHaveAttribute(
+    const fileInput = screen.getByLabelText(/Selecionar arquivo PDF ou JPG/);
+    expect(fileInput).toHaveAttribute(
       "accept",
-      ".pdf,application/pdf",
+      ".pdf,.jpg,.jpeg,application/pdf,image/jpeg",
     );
 
     fireEvent.change(format, { target: { value: "jpg" } });
-    const fileInput = screen.getByLabelText(/Comprovante JPG/);
-    expect(fileInput).toHaveAttribute("accept", ".jpg,.jpeg,image/jpeg");
+    expect(format).toHaveValue("jpg");
 
     fireEvent.change(fileInput, {
       target: {
         files: [
-          new File(["%PDF"], "comprovante.pdf", {
-            type: "application/pdf",
+          new File(["arquivo"], "comprovante.png", {
+            type: "image/png",
           }),
         ],
       },
     });
 
     expect(
-      screen.getAllByText("Selecione um comprovante no formato JPG."),
+      screen.getAllByText(
+        "Selecione um comprovante bancário no formato PDF ou JPG.",
+      ),
     ).toHaveLength(2);
+  });
+
+  it("gera automaticamente o comprovante escolhido após registrar o recebimento", async () => {
+    const updatedAccount = {
+      ...conta,
+      valorRecebido: 500,
+      saldoAberto: 400,
+      recebimentos: [
+        ...conta.recebimentos,
+        {
+          id: 2,
+          dataRecebimento: "2026-07-23T18:30:00Z",
+          valorRecebido: 200,
+          formaRecebimento: "Pix",
+          referenciaBancaria: "PIX-123",
+          estornado: false,
+        },
+      ],
+    } as ContaReceber;
+    vi.mocked(services.registrarRecebimento).mockResolvedValue(updatedAccount);
+
+    renderPage("financeiro");
+    await screen.findAllByText("Paciente Teste");
+    fireEvent.change(screen.getByLabelText("Título"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByLabelText("Valor recebido"), {
+      target: { value: "200" },
+    });
+    fireEvent.change(screen.getByLabelText("Referência bancária"), {
+      target: { value: "PIX-123" },
+    });
+    fireEvent.change(screen.getByLabelText("Formato do comprovante gerado"), {
+      target: { value: "jpg" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Registrar recebimento" }),
+    );
+
+    await waitFor(() =>
+      expect(receiptDocument.downloadGeneratedReceipt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          receiptId: 2,
+          documentNumber: "TIT-1",
+          patient: "Paciente Teste",
+          amount: 200,
+          paymentMethod: "Pix",
+          bankReference: "PIX-123",
+          registeredBy: "Admin",
+        }),
+        "jpg",
+      ),
+    );
+    expect(screen.getByLabelText("Título")).toHaveValue("");
+    expect(screen.getByLabelText("Valor recebido")).toHaveValue(null);
   });
 
   it("baixa o comprovante com a extensão correspondente ao conteúdo", async () => {

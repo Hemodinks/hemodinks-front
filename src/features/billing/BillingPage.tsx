@@ -1,10 +1,13 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
+  FileUp,
+  Pencil,
   Plus,
   RefreshCw,
   RotateCcw,
   Search,
+  Trash2,
   Wallet,
   X,
 } from "lucide-react";
@@ -13,10 +16,12 @@ import {
   Button,
   ComboboxField,
   DataPanel,
+  IconButton,
   SelectField,
   TextField,
 } from "../../shared/components/ui";
 import { Modal } from "../../shared/components/Modal";
+import { ConfirmationDialog } from "../../shared/components/ConfirmationDialog";
 import { formatCurrency } from "../../shared/utils/formatters";
 import type {
   AtendimentoCirurgico,
@@ -65,6 +70,10 @@ import {
   updateRecursoGlosa,
 } from "../../services";
 import { BillingCbhpmLookupModal } from "./BillingCbhpmLookupModal";
+import {
+  downloadGeneratedReceipt,
+  type GeneratedReceiptFormat,
+} from "./receiptDocument";
 import "./billing.css";
 
 type BillingPageProps = {
@@ -120,14 +129,13 @@ function formatBillingStatus(status: string) {
   return status.replace(/([a-zá-ú])([A-ZÁ-Ú])/g, "$1 $2");
 }
 
-type ReceiptFileFormat = "pdf" | "jpg";
-
-function receiptFileMatchesFormat(file: File, format: ReceiptFileFormat) {
+function isSupportedReceiptFile(file: File) {
   const extension = file.name.split(".").pop()?.toLowerCase();
-  return format === "pdf"
-    ? extension === "pdf" && file.type === "application/pdf"
-    : (extension === "jpg" || extension === "jpeg") &&
-        file.type === "image/jpeg";
+  return (
+    (extension === "pdf" && file.type === "application/pdf") ||
+    ((extension === "jpg" || extension === "jpeg") &&
+      file.type === "image/jpeg")
+  );
 }
 
 function receiptExtensionFromBlob(blob: Blob) {
@@ -191,7 +199,7 @@ export function BillingPage({
     valor: string;
     forma: string;
     referencia: string;
-    comprovanteFormato: ReceiptFileFormat;
+    comprovanteFormato: GeneratedReceiptFormat;
     comprovante: File | null;
   }>({
     contaId: "",
@@ -408,13 +416,32 @@ export function BillingPage({
       feedback?.onSuccess?.(message);
       setShowForm(false);
       await load();
+      return true;
     } catch (reason) {
       const errorMessage =
         reason instanceof Error ? reason.message : "Operação não concluída.";
       setError(errorMessage);
       feedback?.onError?.(errorMessage);
       setLoading(false);
+      return false;
     }
+  };
+
+  const cancelAttendanceEditing = () => {
+    setEditingAttendanceId(null);
+    setAtendimentoForm(
+      createInitialAtendimentoForm(
+        isMedical ? String(session.user.id) : "",
+      ),
+    );
+    setProcedimentos([]);
+    setShowForm(false);
+  };
+
+  const cancelBillingEditing = () => {
+    setEditingBillingId(null);
+    setFaturamentoForm(createInitialFaturamentoForm());
+    setShowForm(false);
   };
 
   const submitAtendimento = (event: FormEvent) => {
@@ -726,19 +753,22 @@ export function BillingPage({
     setReceiptToast(null);
     const account = contas.find((x) => x.id === Number(receipt.contaId));
     if (!account) return;
-    if (
-      receipt.comprovante &&
-      !receiptFileMatchesFormat(
-        receipt.comprovante,
-        receipt.comprovanteFormato,
-      )
-    ) {
-      const message = `Selecione um comprovante no formato ${receipt.comprovanteFormato.toUpperCase()}.`;
+    if (receipt.comprovante && !isSupportedReceiptFile(receipt.comprovante)) {
+      const message = "Selecione um comprovante bancário no formato PDF ou JPG.";
       setError(message);
       setReceiptToast({ type: "error", message });
       return;
     }
-    await run(
+    let createdReceipt:
+      | {
+          id: number;
+          dataRecebimento: string;
+          valorRecebido: number;
+          formaRecebimento: string;
+          referenciaBancaria?: string | null;
+        }
+      | undefined;
+    const completed = await run(
       async () => {
         const updated = await registrarRecebimento(
           account.id,
@@ -755,13 +785,13 @@ export function BillingPage({
           },
           session.token,
         );
+        createdReceipt = updated.recebimentos.find(
+          (item) => !account.recebimentos.some((old) => old.id === item.id),
+        );
         if (receipt.comprovante) {
-          const created = updated.recebimentos.find(
-            (x) => !account.recebimentos.some((old) => old.id === x.id),
-          );
-          if (created)
+          if (createdReceipt)
             await uploadComprovanteRecebimento(
-              created.id,
+              createdReceipt.id,
               receipt.comprovante,
               session.token,
             );
@@ -776,6 +806,43 @@ export function BillingPage({
         onError: (message) => setReceiptToast({ type: "error", message }),
       },
     );
+    if (!completed || !createdReceipt) {
+      return;
+    }
+
+    try {
+      await downloadGeneratedReceipt(
+        {
+          receiptId: createdReceipt.id,
+          documentNumber: account.numeroDocumento,
+          patient: account.paciente,
+          paymentDate: createdReceipt.dataRecebimento,
+          amount: createdReceipt.valorRecebido,
+          paymentMethod: createdReceipt.formaRecebimento,
+          bankReference: createdReceipt.referenciaBancaria,
+          registeredBy: session.user.nome,
+        },
+        receipt.comprovanteFormato,
+      );
+      setReceipt({
+        contaId: "",
+        valor: "",
+        forma: "Pix",
+        referencia: "",
+        comprovanteFormato: receipt.comprovanteFormato,
+        comprovante: null,
+      });
+      setReceiptToast({
+        type: "success",
+        message: `Recebimento registrado e comprovante ${receipt.comprovanteFormato.toUpperCase()} gerado.`,
+      });
+    } catch (reason) {
+      const message =
+        reason instanceof Error
+          ? reason.message
+          : "Recebimento registrado, mas não foi possível gerar o comprovante.";
+      setReceiptToast({ type: "error", message });
+    }
   };
   const submitPrice = (event: FormEvent) => {
     event.preventDefault();
@@ -1032,31 +1099,14 @@ export function BillingPage({
                 <span className="eyebrow">Origem clínica</span>
                 <h3>Atendimentos cirúrgicos</h3>
               </div>
-              <Button
+              {!editingAttendanceId && <Button
                 variant="primary"
                 onClick={() => {
-                  if (editingAttendanceId) {
-                    setEditingAttendanceId(null);
-                    setAtendimentoForm(
-                      createInitialAtendimentoForm(
-                        isMedical ? String(session.user.id) : "",
-                      ),
-                    );
-                    setProcedimentos([]);
-                    setShowForm(false);
-                    return;
-                  }
                   setShowForm((current) => !current);
                 }}
               >
-                {editingAttendanceId ? (
-                  "Cancelar edição"
-                ) : (
-                  <>
-                    <Plus size={16} /> Novo atendimento
-                  </>
-                )}
-              </Button>
+                <Plus size={16} /> Novo atendimento
+              </Button>}
             </div>
             {showForm && (
               <form
@@ -1356,11 +1406,22 @@ export function BillingPage({
                     }
                   />
                 </div>
-                <Button variant="primary" type="submit" disabled={loading}>
-                  {editingAttendanceId
-                    ? "Atualizar atendimento"
-                    : "Salvar atendimento"}
-                </Button>
+                <div className="billing-form-actions">
+                  <Button variant="primary" type="submit" disabled={loading}>
+                    {editingAttendanceId
+                      ? "Atualizar atendimento"
+                      : "Salvar atendimento"}
+                  </Button>
+                  {editingAttendanceId && (
+                    <Button
+                      variant="danger-ghost"
+                      type="button"
+                      onClick={cancelAttendanceEditing}
+                    >
+                      <X size={16} /> Cancelar edição
+                    </Button>
+                  )}
+                </div>
               </form>
             )}
           </DataPanel>
@@ -1400,11 +1461,18 @@ export function BillingPage({
                       </td>
                       <td>
                         <div className="billing-row-actions">
-                          <Button onClick={() => editAttendance(item)}>
-                            Editar
-                          </Button>
-                          <Button
-                            className="billing-delete-action"
+                          <IconButton
+                            label="Editar"
+                            title="Editar"
+                            tone="muted"
+                            onClick={() => editAttendance(item)}
+                          >
+                            <Pencil size={17} />
+                          </IconButton>
+                          <IconButton
+                            label="Excluir"
+                            title="Excluir"
+                            tone="danger"
                             onClick={() =>
                               setConfirmAction({
                                 title: "Excluir atendimento",
@@ -1415,8 +1483,8 @@ export function BillingPage({
                               })
                             }
                           >
-                            Excluir
-                          </Button>
+                            <Trash2 size={17} />
+                          </IconButton>
                         </div>
                       </td>
                     </tr>
@@ -1436,26 +1504,14 @@ export function BillingPage({
                 <span className="eyebrow">Cobrança</span>
                 <h3>Faturamentos normalizados</h3>
               </div>
-              {canManageBilling && (
+              {canManageBilling && !editingBillingId && (
                 <Button
                   variant="primary"
                   onClick={() => {
-                    if (editingBillingId) {
-                      setEditingBillingId(null);
-                      setFaturamentoForm(createInitialFaturamentoForm());
-                      setShowForm(false);
-                      return;
-                    }
                     setShowForm((current) => !current);
                   }}
                 >
-                  {editingBillingId ? (
-                    "Cancelar edição"
-                  ) : (
-                    <>
-                      <Plus size={16} /> Novo faturamento
-                    </>
-                  )}
+                  <Plus size={16} /> Novo faturamento
                 </Button>
               )}
             </div>
@@ -1517,11 +1573,22 @@ export function BillingPage({
                     })
                   }
                 />
-                <Button variant="primary" type="submit" disabled={loading}>
-                  {editingBillingId
-                    ? "Atualizar faturamento"
-                    : "Gerar itens do faturamento"}
-                </Button>
+                <div className="billing-form-actions">
+                  <Button variant="primary" type="submit" disabled={loading}>
+                    {editingBillingId
+                      ? "Atualizar faturamento"
+                      : "Gerar itens do faturamento"}
+                  </Button>
+                  {editingBillingId && (
+                    <Button
+                      variant="danger-ghost"
+                      type="button"
+                      onClick={cancelBillingEditing}
+                    >
+                      <X size={16} /> Cancelar edição
+                    </Button>
+                  )}
+                </div>
               </form>
             )}
           </DataPanel>
@@ -1560,11 +1627,18 @@ export function BillingPage({
                         <div className="billing-row-actions">
                           {canManageBilling && x.status === "Rascunho" && (
                             <>
-                              <Button onClick={() => editBilling(x)}>
-                                Editar
-                              </Button>
-                              <Button
-                                className="billing-delete-action"
+                              <IconButton
+                                label="Editar"
+                                title="Editar"
+                                tone="muted"
+                                onClick={() => editBilling(x)}
+                              >
+                                <Pencil size={17} />
+                              </IconButton>
+                              <IconButton
+                                label="Excluir"
+                                title="Excluir"
+                                tone="danger"
                                 onClick={() =>
                                   setConfirmAction({
                                     title: "Excluir faturamento",
@@ -1575,8 +1649,8 @@ export function BillingPage({
                                   })
                                 }
                               >
-                                Excluir
-                              </Button>
+                                <Trash2 size={17} />
+                              </IconButton>
                               <Button
                                 onClick={() =>
                                   void run(
@@ -1897,43 +1971,42 @@ export function BillingPage({
                 onValueChange={(v) => setReceipt({ ...receipt, referencia: v })}
               />
               <SelectField
-                label="Formato do comprovante"
+                label="Formato do comprovante gerado"
                 value={receipt.comprovanteFormato}
                 onChange={(event) =>
                   setReceipt({
                     ...receipt,
                     comprovanteFormato: event.target
-                      .value as ReceiptFileFormat,
-                    comprovante: null,
+                      .value as GeneratedReceiptFormat,
                   })
                 }
               >
                 <option value="pdf">PDF</option>
                 <option value="jpg">JPG</option>
               </SelectField>
-              <label className="filter-field">
-                <span>
-                  Comprovante {receipt.comprovanteFormato.toUpperCase()}{" "}
-                  (opcional)
+              <div className="billing-receipt-upload">
+                <span className="billing-attendance-field-label">
+                  Comprovante bancário (opcional)
                 </span>
+                <label
+                  className="ghost-button file-action full-width"
+                  htmlFor="billing-receipt-file"
+                >
+                  <FileUp size={17} />
+                  {receipt.comprovante
+                    ? receipt.comprovante.name
+                    : "Selecionar arquivo PDF ou JPG"}
+                </label>
                 <input
-                  key={receipt.comprovanteFormato}
+                  id="billing-receipt-file"
+                  className="sr-only"
                   type="file"
-                  accept={
-                    receipt.comprovanteFormato === "pdf"
-                      ? ".pdf,application/pdf"
-                      : ".jpg,.jpeg,image/jpeg"
-                  }
+                  accept=".pdf,.jpg,.jpeg,application/pdf,image/jpeg"
                   onChange={(event) => {
                     const file = event.target.files?.[0] ?? null;
-                    if (
-                      file &&
-                      !receiptFileMatchesFormat(
-                        file,
-                        receipt.comprovanteFormato,
-                      )
-                    ) {
-                      const message = `Selecione um comprovante no formato ${receipt.comprovanteFormato.toUpperCase()}.`;
+                    if (file && !isSupportedReceiptFile(file)) {
+                      const message =
+                        "Selecione um comprovante bancário no formato PDF ou JPG.";
                       setError(message);
                       setReceiptToast({ type: "error", message });
                       event.target.value = "";
@@ -1944,7 +2017,7 @@ export function BillingPage({
                     setReceipt({ ...receipt, comprovante: file });
                   }}
                 />
-              </label>
+              </div>
               <Button variant="primary" type="submit" disabled={loading}>
                 Registrar recebimento
               </Button>
@@ -2134,14 +2207,20 @@ export function BillingPage({
                     setPrice({ ...price, vigenciaFinal: v })
                   }
                 />
-                <Button variant="primary" type="submit" disabled={loading}>
-                  {editingPriceId ? "Atualizar preço" : "Salvar preço"}
-                </Button>
-                {editingPriceId && (
-                  <Button type="button" onClick={() => setEditingPriceId(null)}>
-                    Cancelar edição
+                <div className="billing-form-actions">
+                  <Button variant="primary" type="submit" disabled={loading}>
+                    {editingPriceId ? "Atualizar preço" : "Salvar preço"}
                   </Button>
-                )}
+                  {editingPriceId && (
+                    <Button
+                      variant="danger-ghost"
+                      type="button"
+                      onClick={() => setEditingPriceId(null)}
+                    >
+                      <X size={16} /> Cancelar edição
+                    </Button>
+                  )}
+                </div>
               </form>
             </DataPanel>
           )}
@@ -2183,7 +2262,10 @@ export function BillingPage({
                           {item.ativo ? "Ativo" : "Inativo"}
                         </span>
                         {canManageBilling && (
-                          <Button
+                          <IconButton
+                            label="Editar"
+                            title="Editar"
+                            tone="muted"
                             onClick={() => {
                               setEditingPriceId(item.id);
                               setPrice({
@@ -2208,8 +2290,8 @@ export function BillingPage({
                               });
                             }}
                           >
-                            Editar
-                          </Button>
+                            <Pencil size={17} />
+                          </IconButton>
                         )}
                         {canManageBilling && item.ativo && (
                           <Button
@@ -2467,7 +2549,10 @@ export function BillingPage({
           <div className="billing-filter-actions">
             {selectedAccount.recebimentos.every((item) => item.estornado) &&
               selectedAccount.status !== "Cancelado" && (
-                <Button
+                <IconButton
+                  label="Editar título"
+                  title="Editar título"
+                  tone="muted"
                   onClick={() =>
                     setAccountDraft({
                       numeroDocumento: selectedAccount.numeroDocumento,
@@ -2483,8 +2568,8 @@ export function BillingPage({
                     })
                   }
                 >
-                  Editar título
-                </Button>
+                  <Pencil size={17} />
+                </IconButton>
               )}
             {selectedAccount.status !== "Cancelado" && (
               <Button onClick={() => setCancelReason(" ")}>
@@ -2645,11 +2730,18 @@ export function BillingPage({
             <div className="billing-modal-actions">
               {canManageBilling && selectedBilling.status === "Rascunho" && (
                 <>
-                  <Button onClick={() => editBilling(selectedBilling)}>
-                    Editar faturamento
-                  </Button>
-                  <Button
-                    className="billing-delete-action"
+                  <IconButton
+                    label="Editar faturamento"
+                    title="Editar faturamento"
+                    tone="muted"
+                    onClick={() => editBilling(selectedBilling)}
+                  >
+                    <Pencil size={17} />
+                  </IconButton>
+                  <IconButton
+                    label="Excluir faturamento"
+                    title="Excluir faturamento"
+                    tone="danger"
                     onClick={() => {
                       const item = selectedBilling;
                       setConfirmAction({
@@ -2662,13 +2754,16 @@ export function BillingPage({
                       });
                     }}
                   >
-                    Excluir
-                  </Button>
+                    <Trash2 size={17} />
+                  </IconButton>
                 </>
               )}
-              <Button onClick={() => setSelectedBilling(null)}>
+              <IconButton
+                label="Fechar detalhes do faturamento"
+                onClick={() => setSelectedBilling(null)}
+              >
                 <X size={16} />
-              </Button>
+              </IconButton>
             </div>
           </div>
           <section className="billing-summary-grid">
@@ -2715,7 +2810,10 @@ export function BillingPage({
                     <td>
                       {selectedBilling.status === "Rascunho" &&
                         canManageBilling && (
-                          <Button
+                          <IconButton
+                            label="Editar item"
+                            title="Editar item"
+                            tone="muted"
                             onClick={() =>
                               setBillingItemDraft({
                                 itemId: item.id,
@@ -2727,8 +2825,8 @@ export function BillingPage({
                               })
                             }
                           >
-                            Editar
-                          </Button>
+                            <Pencil size={17} />
+                          </IconButton>
                         )}
                     </td>
                   </tr>
@@ -2808,7 +2906,10 @@ export function BillingPage({
               </strong>
               {canManageBilling && (
                 <div className="billing-filter-actions">
-                  <Button
+                  <IconButton
+                    label="Editar glosa"
+                    title="Editar glosa"
+                    tone="muted"
                     onClick={() =>
                       setGlosaDraft({
                         id: glosa.id,
@@ -2820,10 +2921,13 @@ export function BillingPage({
                       })
                     }
                   >
-                    Editar glosa
-                  </Button>
+                    <Pencil size={17} />
+                  </IconButton>
                   {!glosa.recursos.length && (
-                    <Button
+                    <IconButton
+                      label="Excluir glosa"
+                      title="Excluir glosa"
+                      tone="danger"
                       onClick={() =>
                         setConfirmAction({
                           title: "Excluir glosa",
@@ -2835,8 +2939,8 @@ export function BillingPage({
                         })
                       }
                     >
-                      Excluir glosa
-                    </Button>
+                      <Trash2 size={17} />
+                    </IconButton>
                   )}
                 </div>
               )}
@@ -2848,7 +2952,10 @@ export function BillingPage({
                   </p>
                   {canManageBilling && (
                     <div className="billing-filter-actions">
-                      <Button
+                      <IconButton
+                        label="Editar recurso"
+                        title="Editar recurso"
+                        tone="muted"
                         onClick={() =>
                           setRecursoDraft({
                             id: recurso.id,
@@ -2863,10 +2970,13 @@ export function BillingPage({
                           })
                         }
                       >
-                        Editar recurso
-                      </Button>
+                        <Pencil size={17} />
+                      </IconButton>
                       {recurso.status === "EmPreparacao" && (
-                        <Button
+                        <IconButton
+                          label="Excluir recurso"
+                          title="Excluir recurso"
+                          tone="danger"
                           onClick={() =>
                             setConfirmAction({
                               title: "Excluir recurso",
@@ -2879,8 +2989,8 @@ export function BillingPage({
                             })
                           }
                         >
-                          Excluir recurso
-                        </Button>
+                          <Trash2 size={17} />
+                        </IconButton>
                       )}
                     </div>
                   )}
@@ -3040,34 +3150,23 @@ export function BillingPage({
         </Modal>
       )}
       {confirmAction && (
-        <Modal
-          titleId="confirm-finance-action"
-          onClose={() => setConfirmAction(null)}
-        >
-          <div className="panel-title">
-            <h2 id="confirm-finance-action">{confirmAction.title}</h2>
-            <Button onClick={() => setConfirmAction(null)}>
-              <X size={16} />
-            </Button>
-          </div>
-          <p>{confirmAction.message}</p>
-          <div className="billing-filter-actions">
-            <Button onClick={() => setConfirmAction(null)}>Voltar</Button>
-            <Button
-              variant="primary"
-              disabled={loading}
-              onClick={() => {
-                const pending = confirmAction;
-                void run(pending.action, pending.success).then(() => {
-                  pending.after?.();
-                  setConfirmAction(null);
-                });
-              }}
-            >
-              Confirmar
-            </Button>
-          </div>
-        </Modal>
+        <ConfirmationDialog
+          tone="delete"
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmLabel="Confirmar"
+          cancelLabel="Cancelar"
+          loading={loading}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={async () => {
+            const pending = confirmAction;
+            const completed = await run(pending.action, pending.success);
+            if (completed) {
+              pending.after?.();
+              setConfirmAction(null);
+            }
+          }}
+        />
       )}
       {selectedAttendance && (
         <Modal
@@ -3083,11 +3182,18 @@ export function BillingPage({
               </h2>
             </div>
             <div className="billing-modal-actions">
-              <Button onClick={() => editAttendance(selectedAttendance)}>
-                Editar atendimento
-              </Button>
-              <Button
-                className="billing-delete-action"
+              <IconButton
+                label="Editar atendimento"
+                title="Editar atendimento"
+                tone="muted"
+                onClick={() => editAttendance(selectedAttendance)}
+              >
+                <Pencil size={17} />
+              </IconButton>
+              <IconButton
+                label="Excluir atendimento"
+                title="Excluir atendimento"
+                tone="danger"
                 onClick={() => {
                   const item = selectedAttendance;
                   setConfirmAction({
@@ -3099,11 +3205,14 @@ export function BillingPage({
                   });
                 }}
               >
-                Excluir
-              </Button>
-              <Button onClick={() => setSelectedAttendance(null)}>
+                <Trash2 size={17} />
+              </IconButton>
+              <IconButton
+                label="Fechar detalhes do atendimento"
+                onClick={() => setSelectedAttendance(null)}
+              >
                 <X size={16} />
-              </Button>
+              </IconButton>
             </div>
           </div>
           <section className="billing-summary-grid">

@@ -108,6 +108,18 @@
   background: #e9f8f0;
 }
 
+.billing-receipt-upload {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.billing-receipt-upload .file-action {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @keyframes billing-toast-enter {
   from {
     opacity: 0;
@@ -385,7 +397,7 @@
 }
 
 .billing-row-actions {
-  min-width: 220px;
+  min-width: 104px;
 }
 
 .billing-row-actions .primary-action,
@@ -405,6 +417,19 @@
   color: white;
   border-color: var(--action-danger);
   background: var(--action-danger);
+}
+
+.billing-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.billing-form-actions .primary-action,
+.billing-form-actions .ghost-button {
+  width: auto;
+  min-width: 190px;
 }
 
 .billing-table td span {
@@ -1218,9 +1243,8 @@
   gap: 12px;
 }
 
-.billing-attendance-form > button[type="submit"] {
+.billing-attendance-form > .billing-form-actions {
   grid-area: save;
-  width: 100%;
 }
 
 .billing-flag.missing {
@@ -1436,6 +1460,15 @@
   }
 
   .billing-return-actions button {
+    width: 100%;
+  }
+
+  .billing-form-actions {
+    display: grid;
+  }
+
+  .billing-form-actions .primary-action,
+  .billing-form-actions .ghost-button {
     width: 100%;
   }
 
