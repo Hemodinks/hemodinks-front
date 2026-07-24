@@ -66,15 +66,30 @@
   justify-content: flex-start;
 }
 
-.billing-finance-titles-panel {
+.billing-table-panel.billing-finance-titles-panel {
   order: 1;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   align-items: stretch;
 }
 
-.billing-finance-titles-panel > .billing-section-heading,
-.billing-finance-titles-panel > .table-wrap,
-.billing-finance-titles-panel > .billing-filter-actions {
+.billing-table-panel.billing-finance-titles-panel > .billing-section-heading {
+  flex: 0 0 auto;
+}
+
+.billing-table-panel.billing-finance-titles-panel > .table-wrap {
+  flex: 0 0 auto;
+}
+
+.billing-table-panel.billing-finance-titles-panel > .billing-filter-actions {
+  flex: 0 0 auto;
+  align-self: stretch;
+}
+
+.billing-table-panel.billing-finance-titles-panel > .billing-section-heading,
+.billing-table-panel.billing-finance-titles-panel > .table-wrap,
+.billing-table-panel.billing-finance-titles-panel > .billing-filter-actions {
   width: 100%;
   min-width: 0;
 }
