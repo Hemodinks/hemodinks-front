@@ -14,6 +14,7 @@ import {
 } from "../shared/utils/formatters";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { TutorialPanel } from "./TutorialPanel";
 
 type AppShellProps = {
   children: ReactNode;
@@ -179,6 +180,8 @@ export function AppShell({
         >
           {children}
         </div>
+
+        <TutorialPanel activeView={activeView} />
       </div>
 
       {modals}

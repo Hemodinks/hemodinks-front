@@ -1045,6 +1045,57 @@ describe("BillingPage", () => {
     );
   });
 
+  it("limpa o formulário de preço depois de salvar com sucesso", async () => {
+    vi.mocked(services.saveConvenioProcedimentoPreco).mockResolvedValue({
+      id: 1,
+      convenioId: 1,
+      cbhpmCodigo: "40710108",
+      valorNegociado: 200,
+      percentualPrincipal: 100,
+      percentualAuxiliar1: 0,
+      percentualAuxiliar2: 0,
+      vigenciaInicio: "2026-07-24",
+      vigenciaFinal: "2026-07-30",
+      ativo: true,
+    });
+    renderPage("precos");
+
+    await screen.findByRole("button", { name: "Salvar preço" });
+    fireEvent.change(screen.getByLabelText("Convênio"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByLabelText("Código CBHPM"), {
+      target: { value: "40710108" },
+    });
+    fireEvent.change(screen.getByLabelText("Valor negociado"), {
+      target: { value: "200" },
+    });
+    fireEvent.change(screen.getByLabelText("Vigência inicial"), {
+      target: { value: "2026-07-24" },
+    });
+    fireEvent.change(screen.getByLabelText("Vigência final"), {
+      target: { value: "2026-07-30" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar preço" }));
+
+    await waitFor(() =>
+      expect(services.saveConvenioProcedimentoPreco).toHaveBeenCalledWith(
+        expect.objectContaining({
+          convenioId: 1,
+          cbhpmCodigo: "40710108",
+          valorNegociado: 200,
+        }),
+        "token",
+      ),
+    );
+    await waitFor(() => {
+      expect(screen.getByLabelText("Convênio")).toHaveValue("");
+      expect(screen.getByLabelText("Código CBHPM")).toHaveValue("");
+      expect(screen.getByLabelText("Valor negociado")).toHaveValue(null);
+      expect(screen.getByLabelText("Vigência final")).toHaveValue("");
+    });
+  });
+
   it("exibe o procedimento selecionado sem informações de preço", async () => {
     vi.mocked(services.getCbhpmGeral).mockResolvedValue({
       items: [

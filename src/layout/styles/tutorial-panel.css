@@ -1,0 +1,259 @@
+.tutorial-panel {
+  min-width: 0;
+  align-self: start;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100dvh - 32px);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  background: var(--panel-strong);
+  box-shadow: 0 12px 30px rgba(24, 33, 47, 0.1);
+  overflow: hidden;
+}
+
+.tutorial-panel.is-expanded {
+  width: 310px;
+  padding: 16px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.tutorial-panel.is-collapsed {
+  width: 54px;
+}
+
+.tutorial-panel-heading,
+.tutorial-panel-title,
+.tutorial-panel-collapsed-trigger,
+.tutorial-tip {
+  display: flex;
+  align-items: center;
+}
+
+.tutorial-panel-heading {
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tutorial-panel-title {
+  min-width: 0;
+  gap: 10px;
+}
+
+.tutorial-panel-module-name {
+  margin: 2px 0 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.tutorial-panel-title .eyebrow {
+  color: var(--blood);
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tutorial-panel-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--teal);
+  background: var(--soft);
+}
+
+.tutorial-panel-collapse-button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--input-bg);
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.tutorial-panel-collapse-button:hover {
+  color: var(--teal);
+  border-color: color-mix(in srgb, var(--teal) 45%, var(--line));
+  background: var(--soft);
+}
+
+.tutorial-panel-summary {
+  margin: 13px 0 15px;
+  color: var(--muted);
+  font-size: 0.79rem;
+  line-height: 1.55;
+}
+
+.tutorial-accordion {
+  display: grid;
+  gap: 8px;
+}
+
+.tutorial-section {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--input-bg) 86%, transparent);
+  overflow: hidden;
+}
+
+.tutorial-section.is-open {
+  border-color: color-mix(in srgb, var(--teal) 38%, var(--line));
+}
+
+.tutorial-section h3 {
+  margin: 0;
+}
+
+.tutorial-section-trigger {
+  width: 100%;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.tutorial-section-trigger:hover {
+  background: var(--soft);
+}
+
+.tutorial-section-number {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--teal);
+  background: var(--soft);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.tutorial-section-chevron {
+  color: var(--muted);
+  transition: transform 180ms ease;
+}
+
+.tutorial-section.is-open .tutorial-section-chevron {
+  transform: rotate(180deg);
+}
+
+.tutorial-section-content {
+  padding: 0 12px 13px 45px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.tutorial-section-content p {
+  margin: 0;
+}
+
+.tutorial-section-content ol {
+  margin: 9px 0 0;
+  padding-left: 17px;
+}
+
+.tutorial-section-content li + li {
+  margin-top: 5px;
+}
+
+.tutorial-tip {
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 11px !important;
+  padding: 9px;
+  border-radius: 7px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--amber) 13%, transparent);
+}
+
+.tutorial-tip svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--amber);
+}
+
+.tutorial-panel-collapsed-trigger {
+  width: 100%;
+  min-height: 210px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border: 0;
+  color: var(--teal);
+  background: transparent;
+  font-weight: 850;
+}
+
+.tutorial-panel-collapsed-trigger:hover {
+  background: var(--soft);
+}
+
+.tutorial-panel-collapsed-trigger span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 1360px) {
+  .tutorial-panel,
+  .tutorial-panel.is-expanded,
+  .tutorial-panel.is-collapsed {
+    width: 100%;
+    max-height: none;
+    position: static;
+    grid-column: 1 / -1;
+  }
+
+  .tutorial-panel-collapsed-trigger {
+    min-height: 48px;
+    flex-direction: row;
+    padding: 10px 14px;
+  }
+
+  .tutorial-panel-collapsed-trigger span {
+    writing-mode: initial;
+    transform: none;
+  }
+
+  .tutorial-panel-collapsed-trigger svg:last-child {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .tutorial-panel.is-expanded {
+    padding: 13px;
+  }
+
+  .tutorial-panel-summary {
+    margin-bottom: 12px;
+  }
+
+  .tutorial-section-content {
+    padding-left: 12px;
+  }
+}

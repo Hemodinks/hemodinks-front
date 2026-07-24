@@ -134,6 +134,19 @@ function createInitialFaturamentoForm() {
   };
 }
 
+function createInitialPriceForm() {
+  return {
+    convenioId: "",
+    cbhpmCodigo: "",
+    valorNegociado: "",
+    percentualPrincipal: "100",
+    percentualAuxiliar1: "0",
+    percentualAuxiliar2: "0",
+    vigenciaInicio: new Date().toISOString().slice(0, 10),
+    vigenciaFinal: "",
+  };
+}
+
 function formatBillingStatus(status: string) {
   return status.replace(/([a-zá-ú])([A-ZÁ-Ú])/g, "$1 $2");
 }
@@ -218,16 +231,7 @@ export function BillingPage({
     comprovanteFormato: "pdf",
     comprovante: null,
   });
-  const [price, setPrice] = useState({
-    convenioId: "",
-    cbhpmCodigo: "",
-    valorNegociado: "",
-    percentualPrincipal: "100",
-    percentualAuxiliar1: "0",
-    percentualAuxiliar2: "0",
-    vigenciaInicio: new Date().toISOString().slice(0, 10),
-    vigenciaFinal: "",
-  });
+  const [price, setPrice] = useState(createInitialPriceForm);
   const [returnTarget, setReturnTarget] = useState<Faturamento | null>(null);
   const [returnDraft, setReturnDraft] = useState<
     Array<{
@@ -861,7 +865,7 @@ export function BillingPage({
       setReceiptToast({ type: "error", message });
     }
   };
-  const submitPrice = (event: FormEvent) => {
+  const submitPrice = async (event: FormEvent) => {
     event.preventDefault();
     const payload = {
       id: editingPriceId,
@@ -875,7 +879,7 @@ export function BillingPage({
       vigenciaFinal: price.vigenciaFinal || null,
       ativo: true,
     };
-    void run(
+    const completed = await run(
       () =>
         editingPriceId
           ? updateConvenioProcedimentoPreco(
@@ -887,7 +891,11 @@ export function BillingPage({
       editingPriceId
         ? "Preço negociado atualizado."
         : "Preço negociado salvo com vigência.",
-    ).then(() => setEditingPriceId(null));
+    );
+    if (completed) {
+      setEditingPriceId(null);
+      setPrice(createInitialPriceForm());
+    }
   };
   const saveGlosa = (event: FormEvent) => {
     event.preventDefault();
@@ -2257,7 +2265,10 @@ export function BillingPage({
                     <Button
                       variant="danger-ghost"
                       type="button"
-                      onClick={() => setEditingPriceId(null)}
+                      onClick={() => {
+                        setEditingPriceId(null);
+                        setPrice(createInitialPriceForm());
+                      }}
                     >
                       <X size={16} /> Cancelar edição
                     </Button>
