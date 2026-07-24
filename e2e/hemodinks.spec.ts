@@ -14,6 +14,8 @@ const session = {
     precisaTrocarSenha: false,
     perfilId: 1,
     perfilNome: 'Administrador',
+    clinicaId: 1,
+    clinicaSlug: 'clinica-e2e',
   },
 };
 
@@ -115,6 +117,104 @@ const agendaEvent = {
   isCompleted: false,
 };
 
+const billingAttendance = {
+  id: 40,
+  pacienteId: paciente.id,
+  paciente: paciente.nomePaciente,
+  dataProcedimento: '2026-07-10',
+  convenioId: 7,
+  medicoResponsavelId: user.id,
+  status: 'Realizado',
+  procedimentos: [
+    {
+      id: 401,
+      cbhpmCodigo: '1.01.01.01-2',
+      descricao: 'Consulta',
+      quantidade: 1,
+      pesoPercentual: 100,
+      valorReferencia: 120,
+      valorNegociado: 120,
+      ordem: 1,
+    },
+  ],
+};
+
+const billingRecords = ['Enviado', 'Aprovado', 'ProntoParaEnvio'].map(
+  (status, index) => ({
+    id: 50 + index,
+    atendimentoCirurgicoId: billingAttendance.id,
+    pacienteId: paciente.id,
+    paciente: `Paciente faturamento ${index + 1}`,
+    convenioId: 7,
+    numeroGuia: `GUIA-${index + 1}`,
+    competencia: '2026-07-01',
+    valorApresentado: 120,
+    valorGlosado: 0,
+    valorGlosaRecuperada: 0,
+    valorReconhecido: 120,
+    status,
+    rowVersion: '',
+    itens: [
+      {
+        id: 501 + index,
+        codigo: '1.01.01.01-2',
+        descricao: 'Consulta',
+        quantidade: 1,
+        pesoPercentual: 100,
+        valorUnitario: 120,
+        valorApresentado: 120,
+        valorGlosado: 0,
+        valorAprovado: 120,
+        status: 'Aprovado',
+        ordem: 1,
+      },
+    ],
+    glosas: [],
+  }),
+);
+
+const financeAccount = {
+  id: 60,
+  faturamentoId: billingRecords[0].id,
+  pacienteId: paciente.id,
+  paciente: paciente.nomePaciente,
+  convenioId: 7,
+  numeroDocumento: 'FAT-E2E-01',
+  descricao: 'Honorários médicos',
+  competencia: '2026-07-01',
+  dataEmissao: '2026-07-10',
+  dataVencimento: '2026-07-30',
+  valorOriginal: 400,
+  valorAjustado: 400,
+  valorRecebido: 200,
+  saldoAberto: 200,
+  status: 'ParcialmenteRecebido',
+  rowVersion: '',
+  recebimentos: [
+    {
+      id: 601,
+      dataRecebimento: '2026-07-23',
+      valorRecebido: 200,
+      formaRecebimento: 'Pix',
+      documentoComprovante: 'comprovante.pdf',
+      estornado: false,
+    },
+  ],
+};
+
+const negotiatedPrice = {
+  id: 70,
+  convenioId: 7,
+  cbhpmCodigo: '1.01.01.01-2',
+  valorNegociado: 200,
+  percentualPrincipal: 100,
+  percentualAuxiliar1: 0,
+  percentualAuxiliar2: 0,
+  vigenciaInicio: '2026-07-24',
+  vigenciaFinal: '2026-07-30',
+  ativo: true,
+};
+
 function paged<T>(items: T[]) {
   return {
     items,
@@ -206,6 +306,7 @@ function buildAgendaEventFromPayload(id: number, payload: Payload) {
 
 async function loginViaUi(page: Page, initialRoute = '/', loginSession = session) {
   await page.goto(initialRoute);
+  await page.getByLabel('Clínica').selectOption('1');
   await page.getByLabel('Email').fill(loginSession.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: /entrar/i }).click();
@@ -230,6 +331,12 @@ async function mockApi(page: Page, loginSession = session) {
     const url = new URL(request.url());
     const path = url.pathname;
     const method = request.method();
+
+    if (path === '/api/public/clinicas') {
+      return route.fulfill({
+        json: [{ id: 1, nome: 'Clínica E2E', slug: 'clinica-e2e' }],
+      });
+    }
 
     if (path === '/api/users/authenticate' && method === 'POST') {
       state.loginPayload = request.postDataJSON() as Payload;
@@ -341,6 +448,43 @@ async function mockApi(page: Page, loginSession = session) {
       return route.fulfill({ json: [opmeFornecedor] });
     }
 
+    if (path === '/api/atendimentos-cirurgicos/') {
+      return route.fulfill({ json: [billingAttendance] });
+    }
+
+    if (path === '/api/faturamentos/') {
+      return route.fulfill({ json: billingRecords });
+    }
+
+    if (path === '/api/financeiro/contas-receber/') {
+      return route.fulfill({ json: [financeAccount] });
+    }
+
+    if (path === '/api/financeiro/contas-receber/pesquisa') {
+      return route.fulfill({ json: paged([financeAccount]) });
+    }
+
+    if (path === '/api/financeiro/relatorios/resumo') {
+      return route.fulfill({
+        json: {
+          valorApresentado: 400,
+          valorGlosado: 0,
+          valorRecuperado: 0,
+          valorReconhecido: 400,
+          valorRecebido: 200,
+          saldoAberto: 200,
+          valorVencido: 0,
+          recebimentosPeriodo: 200,
+          titulosVencidos: 0,
+          porCompetencia: [],
+        },
+      });
+    }
+
+    if (path === '/api/convenios-procedimentos-precos/') {
+      return route.fulfill({ json: [negotiatedPrice] });
+    }
+
     if (path === '/api/grupos-medicos/medicos') {
       return route.fulfill({ json: [{ id: user.id, nome: user.nome, email: user.email }] });
     }
@@ -429,6 +573,7 @@ test('faz login pelo formulario e abre o dashboard', async ({ page }) => {
   const apiState = await mockApi(page);
 
   await page.goto('/');
+  await page.getByLabel('Clínica').selectOption('1');
   await page.getByLabel('Email').fill('gmarcone@gmail.com');
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: /entrar/i }).click();
@@ -524,39 +669,26 @@ test('cadastra e edita paciente usando o fluxo real do formulario', async ({ pag
 
   await page.getByRole('button', { name: 'Novo paciente' }).click();
   await expect(page.getByRole('heading', { name: 'Novo paciente' })).toBeVisible();
-  await page.getByLabel('Paciente', { exact: true }).fill('Paciente Novo');
-  await page.getByLabel('Hospital').fill('Santa Clara - Mater Dei');
-  await page.getByLabel('Cirurgião').selectOption('1');
-  await page.locator('input[list="hemodinks-convenios-options"]').fill('Particular');
-
-  await page.getByRole('button', { name: 'Adicionar procedimento' }).click();
-  await expect(page.getByRole('heading', { name: 'Selecionar procedimento' })).toBeVisible();
-  await page.getByRole('button', { name: 'Adicionar', exact: true }).click();
-  await expect(page.getByText('10101012')).toBeVisible();
+  await page.getByLabel('Nome completo').fill('Paciente Novo');
 
   await page.getByRole('button', { name: 'Cadastrar paciente' }).click();
   await expect(page.getByText(/Paciente cadastrado/)).toBeVisible();
   await expect(page.getByText('Paciente Novo')).toBeVisible();
   expect(apiState.createdPacientePayload).toMatchObject({
     nomePaciente: 'Paciente Novo',
-    cpf: '',
+    cpf: null,
     telefone: '',
-    hospitalId: 1,
-    medicoUserId: 1,
-    convenioId: 7,
-    procedimento: 'Consulta',
   });
 
   await page.locator('tr', { hasText: 'Paciente Novo' }).getByTitle('Editar').click();
   await expect(page.getByRole('heading', { name: 'Editar paciente' })).toBeVisible();
-  await page.getByLabel('Paciente', { exact: true }).fill('Paciente Editado');
+  await page.getByLabel('Nome completo').fill('Paciente Editado');
   await page.getByRole('button', { name: 'Salvar paciente' }).click();
   await expect(page.getByText('Paciente atualizado.')).toBeVisible();
   await expectTableRowVisible(page, '.patients-table', 'Paciente Editado', 'Carregando pacientes...');
   expect(apiState.updatedPacientePayload).toMatchObject({
     nomePaciente: 'Paciente Editado',
-    cpf: '',
-    procedimento: 'Consulta',
+    cpf: paciente.cpf,
   });
 });
 
@@ -628,6 +760,71 @@ test('nao apresenta violacoes serias de acessibilidade nas rotas principais', as
 
     expect(blockingViolations, `${route}: ${blockingViolations.map((item) => item.id).join(', ')}`).toEqual([]);
   }
+});
+
+test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip', async ({ page }, testInfo) => {
+  await mockApi(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
+
+  await loginViaUi(page, '/financeiro');
+  await page.getByRole('button', { name: financeAccount.numeroDocumento }).click();
+
+  const accountDialog = page.getByRole('dialog', {
+    name: financeAccount.numeroDocumento,
+  });
+  await expect(accountDialog).toBeVisible();
+
+  const dialogBox = await accountDialog.boundingBox();
+  expect(dialogBox).not.toBeNull();
+  expect(dialogBox!.width).toBeLessThanOrEqual(1042);
+  expect(dialogBox!.x).toBeGreaterThanOrEqual(30);
+  expect(dialogBox!.x + dialogBox!.width).toBeLessThanOrEqual(1250);
+  await page.screenshot({
+    path: testInfo.outputPath('financeiro-popup-largura.png'),
+    fullPage: true,
+  });
+
+  const closeAccount = page.getByRole('button', {
+    name: 'Fechar detalhes da conta',
+  });
+  await closeAccount.hover();
+  await expect(page.getByRole('tooltip')).toHaveText(
+    'Fechar detalhes da conta',
+  );
+  await closeAccount.click();
+
+  await loginViaUi(page, '/tabela-de-precos');
+  const priceActions = page.locator('.billing-status-actions-column').last();
+  await expect(
+    priceActions.getByRole('button', { name: 'Editar preço' }),
+  ).toBeVisible();
+  await expect(
+    priceActions.getByRole('button', {
+      name: `Desativar preço ${negotiatedPrice.cbhpmCodigo}`,
+    }),
+  ).toBeVisible();
+  await expect(priceActions.locator('.ghost-button')).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath('tabela-precos-acoes-compactas.png'),
+    fullPage: true,
+  });
+
+  await loginViaUi(page, '/faturamento-medico');
+  const billingActions = page.locator('tbody .billing-actions-column');
+  await expect(
+    billingActions.first().getByRole('button', { name: 'Registrar retorno' }),
+  ).toBeVisible();
+  await expect(billingActions.locator('.ghost-button')).toHaveCount(0);
+
+  const returnAction = billingActions
+    .first()
+    .getByRole('button', { name: 'Registrar retorno' });
+  await returnAction.hover();
+  await expect(page.getByRole('tooltip')).toHaveText('Registrar retorno');
+  await page.screenshot({
+    path: testInfo.outputPath('faturamento-acoes-compactas.png'),
+    fullPage: true,
+  });
 });
 
 test('gera evidencias visuais desktop e mobile das telas principais', async ({ page }, testInfo) => {

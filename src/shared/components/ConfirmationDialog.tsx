@@ -1,4 +1,4 @@
-import { CheckCircle2, Trash2 } from 'lucide-react';
+import { CheckCircle2, Trash2, X } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { Button } from './ui';
 import { Modal } from './Modal';
@@ -53,6 +53,7 @@ export function ConfirmationDialog({
       </div>
       <div className="confirmation-actions">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={loading}>
+          <X size={17} />
           {cancelLabel}
         </Button>
         <Button
@@ -61,6 +62,7 @@ export function ConfirmationDialog({
           onClick={() => void onConfirm()}
           disabled={loading}
         >
+          {tone === 'delete' ? <Trash2 size={17} /> : <CheckCircle2 size={17} />}
           {loading ? 'Aguarde...' : confirmLabel}
         </Button>
       </div>

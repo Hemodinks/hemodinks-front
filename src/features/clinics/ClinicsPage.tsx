@@ -1,5 +1,5 @@
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useState } from 'react';
-import { Building2, CheckCircle2, ImagePlus, Pencil, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { Building2, CheckCircle2, ImagePlus, Pencil, Plus, RefreshCw, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import {
   createPlatformClinic,
   deactivatePlatformClinic,
@@ -272,7 +272,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
           </div>
           {form.plano === 'Parcial' && <fieldset className="clinic-modules-fieldset"><legend>Módulos contratados</legend><div className="clinic-module-options">{CLINIC_MODULE_OPTIONS.map((module) => <label key={module.value}><input type="checkbox" checked={form.modulosLiberados.includes(module.value)} onChange={(event) => setForm((current) => ({ ...current, modulosLiberados: event.target.checked ? [...current.modulosLiberados, module.value] : current.modulosLiberados.filter((value) => value !== module.value) }))} />{module.label}</label>)}</div></fieldset>}
           {!editing && <fieldset className="clinic-admin-fields"><legend>Administrador inicial</legend><div className="clinic-form-grid"><TextField label="Nome" value={form.administradorNome} onValueChange={(administradorNome) => setForm((current) => ({ ...current, administradorNome }))} required /><TextField label="Email" type="email" value={form.administradorEmail} onValueChange={(administradorEmail) => setForm((current) => ({ ...current, administradorEmail }))} required /><TextField label="Senha inicial" type="password" minLength={8} value={form.administradorSenha} onValueChange={(administradorSenha) => setForm((current) => ({ ...current, administradorSenha }))} required /><TextField label="Telefone" value={form.administradorTelefone} onValueChange={(administradorTelefone) => setForm((current) => ({ ...current, administradorTelefone }))} /></div></fieldset>}
-          <div className="button-row"><Button variant="primary" type="submit" disabled={saving}><Save size={18} />{saving ? 'Salvando...' : editing ? 'Atualizar clínica' : 'Salvar clínica'}</Button><Button variant="danger-ghost" onClick={() => setFormOpen(false)}>Cancelar</Button></div>
+          <div className="button-row"><Button variant="primary" type="submit" disabled={saving}><Save size={18} />{saving ? 'Salvando...' : editing ? 'Atualizar clínica' : 'Salvar clínica'}</Button><Button variant="danger-ghost" onClick={() => setFormOpen(false)}><X size={17} />Cancelar</Button></div>
         </form>
       </DataPanel>}
     </section>

@@ -394,6 +394,73 @@
   min-width: 1140px;
 }
 
+.billing-attendance-table {
+  min-width: 900px;
+}
+
+.billing-flow-table {
+  min-width: 820px;
+  table-layout: fixed;
+}
+
+.billing-flow-table th,
+.billing-flow-table td {
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
+.billing-flow-table th + th {
+  border-left: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+}
+
+.billing-flow-table th:first-child {
+  width: 190px;
+}
+
+.billing-flow-table th:nth-child(2) {
+  width: 72px;
+}
+
+.billing-flow-table th:nth-child(3) {
+  width: 100px;
+}
+
+.billing-flow-table th:nth-child(4) {
+  width: 70px;
+}
+
+.billing-flow-table th:nth-child(5) {
+  width: 105px;
+}
+
+.billing-flow-table th:nth-child(6) {
+  width: 135px;
+}
+
+.billing-flow-table td:first-child .ghost-button {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.billing-price-table {
+  min-width: 760px;
+}
+
+.billing-actions-column {
+  width: 152px;
+}
+
+.billing-status-actions-column {
+  width: 170px;
+}
+
+.billing-status-actions-column > .status-pill {
+  margin: 0 0 8px;
+}
+
 .billing-table tbody tr.is-selected {
   background: color-mix(in srgb, var(--action-primary) 12%, transparent);
 }
@@ -412,7 +479,10 @@
 }
 
 .billing-row-actions {
-  min-width: 104px;
+  width: max-content;
+  min-width: 88px;
+  max-width: 136px;
+  justify-content: flex-start;
 }
 
 .billing-row-actions .primary-action,
@@ -503,7 +573,8 @@
 }
 
 .modal-panel.billing-summary-modal {
-  width: min(1180px, calc(100vw - 48px));
+  width: min(1040px, calc(100dvw - 64px));
+  max-width: calc(100dvw - 64px);
   max-height: min(88dvh, 860px);
   align-self: start;
   justify-self: center;
@@ -515,16 +586,16 @@
 }
 
 .modal-panel.billing-attendance-detail-modal {
-  width: min(1140px, calc(100vw - 48px)) !important;
-  max-width: none;
+  width: min(1040px, calc(100dvw - 64px)) !important;
+  max-width: calc(100dvw - 64px);
   align-self: start;
   justify-self: center;
   margin-top: 0;
 }
 
 .modal-panel.billing-wide-modal {
-  width: min(1440px, calc(100vw - 48px)) !important;
-  max-width: none;
+  width: min(1120px, calc(100dvw - 64px)) !important;
+  max-width: calc(100dvw - 64px);
   max-height: calc(100dvh - 120px);
   align-self: start;
   justify-self: center;
@@ -625,7 +696,8 @@
 }
 
 .modal-panel.billing-invoice-detail-modal {
-  width: min(1180px, calc(100vw - 48px)) !important;
+  width: min(1040px, calc(100dvw - 64px)) !important;
+  max-width: calc(100dvw - 64px);
   overflow: auto;
 }
 
@@ -636,13 +708,13 @@
 
 .modal-backdrop.billing-account-detail-backdrop {
   place-items: start center;
-  padding: 0 20px 20px;
+  padding: 16px 32px;
 }
 
 .modal-panel.billing-account-detail-modal {
-  width: min(1440px, calc(100vw - 48px)) !important;
-  max-width: none;
-  max-height: calc(100dvh - 24px);
+  width: min(1040px, calc(100dvw - 64px)) !important;
+  max-width: calc(100dvw - 64px);
+  max-height: calc(100dvh - 32px);
   margin-top: 0 !important;
   overflow: auto;
 }
@@ -651,9 +723,13 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.billing-account-detail-modal .billing-table {
+  min-width: 720px;
+}
+
 .modal-panel.billing-reversal-modal {
-  width: min(640px, calc(100vw - 48px));
-  max-width: none;
+  width: min(600px, calc(100dvw - 64px));
+  max-width: calc(100dvw - 64px);
   align-self: start;
   justify-self: center;
   margin-top: clamp(36px, 7dvh, 64px);
@@ -690,8 +766,8 @@
 }
 
 .modal-panel.billing-appeal-modal {
-  width: min(680px, calc(100vw - 48px));
-  max-width: none;
+  width: min(640px, calc(100dvw - 64px));
+  max-width: calc(100dvw - 64px);
   align-self: start;
   justify-self: center;
   margin-top: clamp(24px, 7dvh, 64px);
@@ -1107,7 +1183,8 @@
 }
 
 .modal-panel.billing-cbhpm-modal {
-  width: min(1080px, calc(100vw - 48px));
+  width: min(980px, calc(100dvw - 64px));
+  max-width: calc(100dvw - 64px);
   max-height: min(90vh, 850px);
   display: flex;
   flex-direction: column;
@@ -1414,7 +1491,8 @@
 
 @media (max-width: 760px) {
   .modal-panel.billing-cbhpm-modal {
-    width: calc(100vw - 24px);
+    width: calc(100dvw - 24px);
+    max-width: calc(100dvw - 24px);
     max-height: calc(100dvh - 24px);
     padding: 14px;
   }
@@ -1512,32 +1590,37 @@
   }
 
   .modal-panel.billing-summary-modal {
-    width: min(100%, calc(100vw - 24px));
+    width: min(100%, calc(100dvw - 24px));
+    max-width: calc(100dvw - 24px);
     max-height: calc(100dvh - 24px);
     margin-top: 8px;
     padding: 16px;
   }
 
   .modal-panel.billing-attendance-detail-modal {
-    width: min(100%, calc(100vw - 24px)) !important;
+    width: min(100%, calc(100dvw - 24px)) !important;
+    max-width: calc(100dvw - 24px);
     margin-top: 8px;
   }
 
   .modal-panel.billing-wide-modal {
-    width: min(100%, calc(100vw - 24px)) !important;
+    width: min(100%, calc(100dvw - 24px)) !important;
+    max-width: calc(100dvw - 24px);
     max-height: calc(100dvh - 24px);
     margin-top: 8px;
     padding: 16px;
   }
 
   .modal-panel.billing-reversal-modal {
-    width: min(100%, calc(100vw - 24px));
+    width: min(100%, calc(100dvw - 24px));
+    max-width: calc(100dvw - 24px);
     margin-top: 8px;
     padding: 16px;
   }
 
   .modal-panel.billing-appeal-modal {
-    width: min(100%, calc(100vw - 24px));
+    width: min(100%, calc(100dvw - 24px));
+    max-width: calc(100dvw - 24px);
     margin-top: 8px;
     padding: 16px;
   }
@@ -1560,7 +1643,8 @@
   }
 
   .modal-panel.billing-account-detail-modal {
-    width: min(100%, calc(100vw - 24px)) !important;
+    width: min(100%, calc(100dvw - 24px)) !important;
+    max-width: calc(100dvw - 24px);
     max-height: calc(100dvh - 18px);
     margin-top: 0 !important;
   }
@@ -1597,9 +1681,16 @@
     width: 100%;
   }
 
-  .billing-modal-actions button,
-  .billing-row-actions button {
+  .billing-modal-actions button {
     flex: 1 1 140px;
+  }
+
+  .billing-row-actions {
+    width: max-content;
+  }
+
+  .billing-row-actions button {
+    flex: 0 0 38px;
   }
 
   .billing-reversal-actions {

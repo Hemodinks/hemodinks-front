@@ -1,12 +1,20 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
+  Ban,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Download,
   FileUp,
   Pencil,
   Plus,
   RefreshCw,
   RotateCcw,
+  Save,
   Search,
+  Send,
+  SlidersHorizontal,
   Trash2,
   Wallet,
   X,
@@ -1417,6 +1425,7 @@ export function BillingPage({
                 </div>
                 <div className="billing-form-actions">
                   <Button variant="primary" type="submit" disabled={loading}>
+                    <Save size={16} />
                     {editingAttendanceId
                       ? "Atualizar atendimento"
                       : "Salvar atendimento"}
@@ -1436,14 +1445,14 @@ export function BillingPage({
           </DataPanel>
           <DataPanel className="billing-table-panel">
             <div className="table-wrap">
-              <table className="billing-table">
+              <table className="billing-table billing-attendance-table">
                 <thead>
                   <tr>
                     <th>Paciente</th>
                     <th>Data</th>
                     <th>Status</th>
                     <th>Procedimentos</th>
-                    <th>Ações</th>
+                    <th className="billing-actions-column">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1468,7 +1477,7 @@ export function BillingPage({
                           )
                           .join(", ")}
                       </td>
-                      <td>
+                      <td className="billing-actions-column">
                         <div className="billing-row-actions">
                           <IconButton
                             label="Editar"
@@ -1584,6 +1593,7 @@ export function BillingPage({
                 />
                 <div className="billing-form-actions">
                   <Button variant="primary" type="submit" disabled={loading}>
+                    <Save size={16} />
                     {editingBillingId
                       ? "Atualizar faturamento"
                       : "Gerar itens do faturamento"}
@@ -1603,7 +1613,7 @@ export function BillingPage({
           </DataPanel>
           <DataPanel className="billing-table-panel">
             <div className="table-wrap">
-              <table className="billing-table">
+              <table className="billing-table billing-flow-table">
                 <thead>
                   <tr>
                     <th>Paciente</th>
@@ -1612,7 +1622,7 @@ export function BillingPage({
                     <th>Glosa</th>
                     <th>Reconhecido</th>
                     <th>Status</th>
-                    <th>Ações</th>
+                    <th className="billing-actions-column">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1632,7 +1642,7 @@ export function BillingPage({
                           {formatBillingStatus(x.status)}
                         </span>
                       </td>
-                      <td>
+                      <td className="billing-actions-column">
                         <div className="billing-row-actions">
                           {canManageBilling && x.status === "Rascunho" && (
                             <>
@@ -1660,7 +1670,10 @@ export function BillingPage({
                               >
                                 <Trash2 size={17} />
                               </IconButton>
-                              <Button
+                              <IconButton
+                                label="Preparar faturamento"
+                                title="Preparar faturamento para envio"
+                                tone="muted"
                                 onClick={() =>
                                   void run(
                                     () =>
@@ -1677,14 +1690,15 @@ export function BillingPage({
                                   )
                                 }
                               >
-                                Preparar
-                              </Button>
+                                <CheckCircle2 size={17} />
+                              </IconButton>
                             </>
                           )}
                           {canManageBilling &&
                             x.status === "ProntoParaEnvio" && (
-                              <Button
-                                variant="primary"
+                              <IconButton
+                                label="Enviar faturamento"
+                                title="Enviar faturamento"
                                 onClick={() =>
                                   void run(
                                     () =>
@@ -1701,8 +1715,8 @@ export function BillingPage({
                                   )
                                 }
                               >
-                                Enviar faturamento
-                              </Button>
+                                <Send size={17} />
+                              </IconButton>
                             )}
                           {canManageBilling &&
                             [
@@ -1712,21 +1726,33 @@ export function BillingPage({
                               "GlosadoTotal",
                               "Aprovado",
                             ].includes(x.status) && (
-                              <Button onClick={() => openReturn(x)}>
-                                Registrar retorno
-                              </Button>
+                              <IconButton
+                                label="Registrar retorno"
+                                title="Registrar retorno"
+                                tone="muted"
+                                onClick={() => openReturn(x)}
+                              >
+                                <RotateCcw size={17} />
+                              </IconButton>
                             )}
                           {canManageBilling &&
                             x.status !== "Rascunho" &&
                             x.status !== "Cancelado" && (
-                              <Button onClick={() => createAccount(x)}>
-                                <ArrowRight size={15} /> Gerar título
-                              </Button>
+                              <IconButton
+                                label="Gerar título"
+                                title="Gerar título"
+                                onClick={() => createAccount(x)}
+                              >
+                                <Wallet size={17} />
+                              </IconButton>
                             )}
                           {canManageBilling &&
                             x.glosas.map((g) => (
-                            <Button
+                            <IconButton
                               key={g.id}
+                              label={`Recorrer glosa de ${formatCurrency(g.valorGlosado)}`}
+                              title={`Recorrer glosa de ${formatCurrency(g.valorGlosado)}`}
+                              tone="muted"
                               onClick={() => {
                                 setAppealTarget({
                                   glosaId: g.id,
@@ -1738,8 +1764,8 @@ export function BillingPage({
                                 });
                               }}
                             >
-                              Recorrer glosa {formatCurrency(g.valorGlosado)}
-                            </Button>
+                              <RotateCcw size={17} />
+                            </IconButton>
                             ))}
                         </div>
                       </td>
@@ -1913,6 +1939,7 @@ export function BillingPage({
                 ))}
               </SelectField>
                   <Button variant="primary" type="submit" disabled={loading}>
+                    <SlidersHorizontal size={16} />
                     Aplicar filtros
                   </Button>
                 </form>
@@ -2028,6 +2055,7 @@ export function BillingPage({
                 />
               </div>
               <Button variant="primary" type="submit" disabled={loading}>
+                <Wallet size={16} />
                 Registrar recebimento
               </Button>
               {receiptToast && (
@@ -2086,9 +2114,11 @@ export function BillingPage({
                         {x.recebimentos
                           .filter((r) => !r.estornado)
                           .map((r) => (
-                            <Button
+                            <IconButton
                               key={r.id}
+                              label={`Estornar recebimento de ${formatCurrency(r.valorRecebido)}`}
                               title={`Estornar ${formatCurrency(r.valorRecebido)}`}
+                              tone="danger"
                               onClick={() =>
                                 setReversalTarget({
                                   id: r.id,
@@ -2096,8 +2126,8 @@ export function BillingPage({
                                 })
                               }
                             >
-                              <RotateCcw size={14} />
-                            </Button>
+                              <RotateCcw size={16} />
+                            </IconButton>
                           ))}
                       </td>
                     </tr>
@@ -2110,6 +2140,7 @@ export function BillingPage({
                 disabled={financePage.page <= 1}
                 onClick={() => void applyFinanceFilters(financePage.page - 1)}
               >
+                <ChevronLeft size={16} />
                 Anterior
               </Button>
               <span>
@@ -2121,6 +2152,7 @@ export function BillingPage({
                 onClick={() => void applyFinanceFilters(financePage.page + 1)}
               >
                 Próxima
+                <ChevronRight size={16} />
               </Button>
             </div>
           </DataPanel>
@@ -2218,6 +2250,7 @@ export function BillingPage({
                 />
                 <div className="billing-form-actions">
                   <Button variant="primary" type="submit" disabled={loading}>
+                    <Save size={16} />
                     {editingPriceId ? "Atualizar preço" : "Salvar preço"}
                   </Button>
                   {editingPriceId && (
@@ -2235,14 +2268,16 @@ export function BillingPage({
           )}
           <DataPanel className="billing-table-panel">
             <div className="table-wrap">
-              <table className="billing-table">
+              <table className="billing-table billing-price-table">
                 <thead>
                   <tr>
                     <th>Convênio</th>
                     <th>CBHPM</th>
                     <th>Valor</th>
                     <th>Vigência</th>
-                    <th>Status / ações</th>
+                    <th className="billing-status-actions-column">
+                      Status / ações
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2266,60 +2301,65 @@ export function BillingPage({
                             )
                           : "sem término"}
                       </td>
-                      <td>
+                      <td className="billing-status-actions-column">
                         <span className="status-pill active">
                           {item.ativo ? "Ativo" : "Inativo"}
                         </span>
-                        {canManageBilling && (
-                          <IconButton
-                            label="Editar"
-                            title="Editar"
-                            tone="muted"
-                            onClick={() => {
-                              setEditingPriceId(item.id);
-                              setPrice({
-                                convenioId: String(item.convenioId),
-                                cbhpmCodigo: item.cbhpmCodigo,
-                                valorNegociado: String(item.valorNegociado),
-                                percentualPrincipal: String(
-                                  item.percentualPrincipal,
-                                ),
-                                percentualAuxiliar1: String(
-                                  item.percentualAuxiliar1,
-                                ),
-                                percentualAuxiliar2: String(
-                                  item.percentualAuxiliar2,
-                                ),
-                                vigenciaInicio: item.vigenciaInicio.slice(
-                                  0,
-                                  10,
-                                ),
-                                vigenciaFinal:
-                                  item.vigenciaFinal?.slice(0, 10) || "",
-                              });
-                            }}
-                          >
-                            <Pencil size={17} />
-                          </IconButton>
-                        )}
-                        {canManageBilling && item.ativo && (
-                          <Button
-                            onClick={() =>
-                              setConfirmAction({
-                                title: "Desativar preço",
-                                message: `Desativar o preço ${item.cbhpmCodigo}? O histórico será preservado.`,
-                                action: () =>
-                                  deactivateConvenioProcedimentoPreco(
-                                    item.id,
-                                    session.token,
+                        <div className="billing-row-actions">
+                          {canManageBilling && (
+                            <IconButton
+                              label="Editar preço"
+                              title="Editar preço"
+                              tone="muted"
+                              onClick={() => {
+                                setEditingPriceId(item.id);
+                                setPrice({
+                                  convenioId: String(item.convenioId),
+                                  cbhpmCodigo: item.cbhpmCodigo,
+                                  valorNegociado: String(item.valorNegociado),
+                                  percentualPrincipal: String(
+                                    item.percentualPrincipal,
                                   ),
-                                success: "Preço desativado.",
-                              })
-                            }
-                          >
-                            Desativar
-                          </Button>
-                        )}
+                                  percentualAuxiliar1: String(
+                                    item.percentualAuxiliar1,
+                                  ),
+                                  percentualAuxiliar2: String(
+                                    item.percentualAuxiliar2,
+                                  ),
+                                  vigenciaInicio: item.vigenciaInicio.slice(
+                                    0,
+                                    10,
+                                  ),
+                                  vigenciaFinal:
+                                    item.vigenciaFinal?.slice(0, 10) || "",
+                                });
+                              }}
+                            >
+                              <Pencil size={17} />
+                            </IconButton>
+                          )}
+                          {canManageBilling && item.ativo && (
+                            <IconButton
+                              label={`Desativar preço ${item.cbhpmCodigo}`}
+                              title="Desativar preço"
+                              tone="danger"
+                              onClick={() =>
+                                setConfirmAction({
+                                  title: "Desativar preço",
+                                  message: `Desativar o preço ${item.cbhpmCodigo}? O histórico será preservado.`,
+                                  action: () =>
+                                    deactivateConvenioProcedimentoPreco(
+                                      item.id,
+                                      session.token,
+                                    ),
+                                  success: "Preço desativado.",
+                                })
+                              }
+                            >
+                              <Ban size={17} />
+                            </IconButton>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -2350,9 +2390,13 @@ export function BillingPage({
                 Informe a glosa de cada procedimento apresentado.
               </p>
             </div>
-            <Button onClick={() => setReturnTarget(null)}>
+            <IconButton
+              label="Fechar retorno do faturamento"
+              tone="muted"
+              onClick={() => setReturnTarget(null)}
+            >
               <X size={16} />
-            </Button>
+            </IconButton>
           </div>
           <form className="billing-return-form" onSubmit={submitReturn}>
             <div className="billing-return-list">
@@ -2414,8 +2458,12 @@ export function BillingPage({
               })}
             </div>
             <div className="billing-return-actions">
-              <Button onClick={() => setReturnTarget(null)}>Cancelar</Button>
+              <Button onClick={() => setReturnTarget(null)}>
+                <X size={16} />
+                Cancelar
+              </Button>
               <Button variant="primary" type="submit" disabled={loading}>
+                <CheckCircle2 size={16} />
                 Confirmar retorno
               </Button>
             </div>
@@ -2483,9 +2531,11 @@ export function BillingPage({
                 onClick={closeAppeal}
                 disabled={loading}
               >
+                <X size={16} />
                 Cancelar
               </Button>
               <Button variant="primary" type="submit" disabled={loading}>
+                <Send size={16} />
                 {loading ? "Registrando..." : "Registrar recurso"}
               </Button>
             </div>
@@ -2539,9 +2589,11 @@ export function BillingPage({
                   setReversalReason("");
                 }}
               >
+                <ChevronLeft size={16} />
                 Voltar
               </Button>
               <Button variant="primary" type="submit" disabled={loading}>
+                <RotateCcw size={16} />
                 Confirmar estorno
               </Button>
             </div>
@@ -2566,9 +2618,13 @@ export function BillingPage({
                 {selectedAccount.numeroDocumento}
               </h2>
             </div>
-            <Button onClick={() => setSelectedAccount(null)}>
+            <IconButton
+              label="Fechar detalhes da conta"
+              tone="muted"
+              onClick={() => setSelectedAccount(null)}
+            >
               <X size={16} />
-            </Button>
+            </IconButton>
           </div>
           <section className="billing-summary-grid">
             <Summary
@@ -2611,6 +2667,7 @@ export function BillingPage({
               )}
             {selectedAccount.status !== "Cancelado" && (
               <Button onClick={() => setCancelReason(" ")}>
+                <Ban size={16} />
                 Cancelar título
               </Button>
             )}
@@ -2681,6 +2738,7 @@ export function BillingPage({
                 }
               />
               <Button variant="primary" type="submit">
+                <Save size={16} />
                 Salvar título
               </Button>
             </form>
@@ -2694,6 +2752,7 @@ export function BillingPage({
                 onValueChange={setCancelReason}
               />
               <Button variant="primary" type="submit">
+                <Ban size={16} />
                 Confirmar cancelamento
               </Button>
             </form>
@@ -2727,9 +2786,13 @@ export function BillingPage({
                     </td>
                     <td>
                       {item.documentoComprovante ? (
-                        <Button onClick={() => void downloadReceipt(item.id)}>
-                          Baixar
-                        </Button>
+                        <IconButton
+                          label="Baixar"
+                          title="Baixar comprovante"
+                          onClick={() => void downloadReceipt(item.id)}
+                        >
+                          <Download size={17} />
+                        </IconButton>
                       ) : (
                         "Não anexado"
                       )}
@@ -2932,6 +2995,7 @@ export function BillingPage({
                 }
               />
               <Button variant="primary" type="submit">
+                <Save size={16} />
                 Salvar item
               </Button>
             </form>
@@ -3045,9 +3109,13 @@ export function BillingPage({
         <Modal titleId="glosa-edit-title" onClose={() => setGlosaDraft(null)}>
           <div className="panel-title">
             <h2 id="glosa-edit-title">Editar glosa</h2>
-            <Button onClick={() => setGlosaDraft(null)}>
+            <IconButton
+              label="Fechar edição da glosa"
+              tone="muted"
+              onClick={() => setGlosaDraft(null)}
+            >
               <X size={16} />
-            </Button>
+            </IconButton>
           </div>
           <form className="billing-filter-grid" onSubmit={saveGlosa}>
             <TextField
@@ -3093,6 +3161,7 @@ export function BillingPage({
               }
             />
             <Button variant="primary" type="submit">
+              <Save size={16} />
               Salvar glosa
             </Button>
           </form>
@@ -3105,9 +3174,13 @@ export function BillingPage({
         >
           <div className="panel-title">
             <h2 id="recurso-edit-title">Editar recurso de glosa</h2>
-            <Button onClick={() => setRecursoDraft(null)}>
+            <IconButton
+              label="Fechar edição do recurso"
+              tone="muted"
+              onClick={() => setRecursoDraft(null)}
+            >
               <X size={16} />
-            </Button>
+            </IconButton>
           </div>
           <form className="billing-filter-grid" onSubmit={saveRecurso}>
             <TextField
@@ -3182,6 +3255,7 @@ export function BillingPage({
               }
             />
             <Button variant="primary" type="submit">
+              <Save size={16} />
               Salvar recurso
             </Button>
           </form>

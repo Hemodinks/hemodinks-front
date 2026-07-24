@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Eraser,
   Plus,
   Search,
   X,
@@ -189,6 +190,7 @@ export function BillingCbhpmLookupModal({
         />
         <div className="billing-cbhpm-filter-actions">
           <Button type="button" onClick={clearFilters} disabled={loading}>
+            <Eraser size={17} />
             Limpar filtros
           </Button>
           <Button variant="primary" type="submit" disabled={loading}>

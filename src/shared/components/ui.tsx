@@ -6,10 +6,12 @@ import {
   type ReactNode,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
+  isValidElement,
   useId,
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Search } from 'lucide-react';
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -30,17 +32,44 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   fullWidth?: boolean;
 };
 
+function getButtonText(node: ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') {
+    return String(node);
+  }
+
+  if (Array.isArray(node)) {
+    return node.map(getButtonText).join(' ');
+  }
+
+  if (isValidElement<{ children?: ReactNode }>(node)) {
+    return getButtonText(node.props.children);
+  }
+
+  return '';
+}
+
 export function Button({
   variant = 'ghost',
   fullWidth = false,
   className,
   type = 'button',
+  title,
+  children,
+  'aria-label': ariaLabel,
   ...props
 }: ButtonProps) {
+  const tooltip =
+    title ??
+    ariaLabel ??
+    getButtonText(children).replace(/\s+/g, ' ').trim() ??
+    undefined;
+
   return (
     <button
       {...props}
       type={type}
+      aria-label={ariaLabel}
+      title={tooltip || undefined}
       className={cx(
         variant === 'primary' && 'primary-action',
         variant === 'ghost' && 'ghost-button',
@@ -48,7 +77,9 @@ export function Button({
         fullWidth && 'full-width',
         className,
       )}
-    />
+    >
+      {children}
+    </button>
   );
 }
 
@@ -63,21 +94,92 @@ export function IconButton({
   className,
   title,
   type = 'button',
+  onMouseEnter,
+  onMouseLeave,
+  onFocus,
+  onBlur,
+  'aria-describedby': ariaDescribedBy,
   ...props
 }: IconButtonProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const tooltipId = useId();
+  const tooltipText = title ?? label;
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    left: number;
+    top: number;
+    placement: 'above' | 'below';
+  } | null>(null);
+
+  const showTooltip = () => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const placement =
+      rect.bottom + 72 > window.innerHeight ? 'above' : 'below';
+
+    setTooltipPosition({
+      left: Math.min(
+        Math.max(rect.left + rect.width / 2, 132),
+        window.innerWidth - 132,
+      ),
+      top: placement === 'above' ? rect.top - 9 : rect.bottom + 9,
+      placement,
+    });
+  };
+
+  const hideTooltip = () => setTooltipPosition(null);
+
   return (
-    <button
-      {...props}
-      type={type}
-      aria-label={label}
-      title={title ?? label}
-      className={cx(
-        'icon-button',
-        tone === 'muted' && 'muted',
-        tone === 'danger' && 'danger',
-        className,
-      )}
-    />
+    <>
+      <button
+        {...props}
+        ref={buttonRef}
+        type={type}
+        aria-label={label}
+        aria-describedby={
+          tooltipPosition ? tooltipId : ariaDescribedBy
+        }
+        title={tooltipText}
+        onMouseEnter={(event) => {
+          showTooltip();
+          onMouseEnter?.(event);
+        }}
+        onMouseLeave={(event) => {
+          hideTooltip();
+          onMouseLeave?.(event);
+        }}
+        onFocus={(event) => {
+          showTooltip();
+          onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          hideTooltip();
+          onBlur?.(event);
+        }}
+        className={cx(
+          'icon-button',
+          tone === 'muted' && 'muted',
+          tone === 'danger' && 'danger',
+          className,
+        )}
+      />
+      {tooltipPosition &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <span
+            id={tooltipId}
+            role="tooltip"
+            className={`action-tooltip ${tooltipPosition.placement}`}
+            style={{
+              left: tooltipPosition.left,
+              top: tooltipPosition.top,
+            }}
+          >
+            {tooltipText}
+          </span>,
+          document.body,
+        )}
+    </>
   );
 }
 
