@@ -134,7 +134,7 @@
 .tutorial-panel-summary {
   margin: 13px 0 15px;
   color: var(--muted);
-  font-size: 0.79rem;
+  font-size: 0.84rem;
   line-height: 1.55;
 }
 
@@ -179,7 +179,7 @@
   color: var(--ink);
   background: transparent;
   text-align: left;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 800;
 }
 
@@ -215,8 +215,8 @@
 .tutorial-section-content {
   padding: 0 12px 13px 45px;
   color: var(--muted);
-  font-size: 0.74rem;
-  line-height: 1.5;
+  font-size: 0.8rem;
+  line-height: 1.55;
 }
 
 .tutorial-section-content p {
