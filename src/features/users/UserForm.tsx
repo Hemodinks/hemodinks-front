@@ -15,6 +15,7 @@ import {
   MAX_PHONE_LENGTH,
   MEDICAL_PROFILE_ID,
   PATIENT_PROFILE_ID,
+  PROFILE_OPTIONS,
   USER_PROFILE_OPTIONS,
 } from '../../shared/utils/formatters';
 import { UserAvatar } from './UserAvatar';
@@ -22,6 +23,7 @@ import { UserAvatar } from './UserAvatar';
 type UserFormProps = {
   canAccessUsers: boolean;
   canUseUserForm: boolean;
+  canAssignAllProfiles: boolean;
   editingId: number | null;
   editingUserDetails: User | null;
   formData: UserFormData;
@@ -44,6 +46,7 @@ type UserFormProps = {
 export function UserForm({
   canAccessUsers,
   canUseUserForm,
+  canAssignAllProfiles,
   editingId,
   editingUserDetails,
   formData,
@@ -128,7 +131,7 @@ export function UserForm({
               disabled={isFormBusy || !canAccessUsers}
               required
             >
-              {USER_PROFILE_OPTIONS.map((profile) => (
+              {(canAssignAllProfiles ? PROFILE_OPTIONS : USER_PROFILE_OPTIONS).map((profile) => (
                 <option key={profile.id} value={profile.id}>
                   {profile.nome}
                 </option>

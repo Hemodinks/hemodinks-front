@@ -10,7 +10,7 @@ describe("TutorialPanel", () => {
       screen.getByRole("complementary", {
         name: "Tutorial do módulo Faturamento",
       }),
-    ).toBeInTheDocument();
+    ).toHaveAttribute("data-tutorial-view", "billing");
     expect(
       screen.getByRole("button", { name: "Etapa 1 do tutorial" }),
     ).toHaveAttribute("aria-expanded", "true");
@@ -21,7 +21,7 @@ describe("TutorialPanel", () => {
       screen.getByRole("complementary", {
         name: "Tutorial do módulo Financeiro",
       }),
-    ).toBeInTheDocument();
+    ).toHaveAttribute("data-tutorial-view", "finance");
     expect(
       screen.getByRole("button", { name: "Etapa 1 do tutorial" }),
     ).toHaveAttribute("aria-expanded", "true");

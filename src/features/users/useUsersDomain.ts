@@ -23,6 +23,7 @@ import {
   MAX_PATIENT_FILE_BYTES,
   MAX_PROFILE_PHOTO_BYTES,
   MEDICAL_PROFILE_ID,
+  SUPER_ADMIN_PROFILE_ID,
   PAGE_SIZE,
 } from '../../shared/utils/formatters';
 import {
@@ -310,26 +311,10 @@ export function useUsersDomain({
     }
   };
 
-  const handleSubmitUser = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const saveUser = async (payload: UserPayload, ownProfileChanged: boolean) => {
     if (!session) {
       return;
     }
-
-    if (!canUseUserForm && !isAdmin) {
-      setFormError('Sem permissao para editar este cadastro.');
-      return;
-    }
-
-    const validationError = validateUserForm(formData);
-
-    if (validationError) {
-      setFormError(validationError);
-      return;
-    }
-
-    const payload = toUserPayload(formData);
 
     setFormLoading(true);
     setFormError('');
@@ -359,6 +344,11 @@ export function useUsersDomain({
       ));
 
       if (editingId && savedUser.id === session.user.id) {
+        if (ownProfileChanged) {
+          onDeleteCurrentUser();
+          return;
+        }
+
         persistSession({
           ...session,
           user: {
@@ -393,6 +383,46 @@ export function useUsersDomain({
     } finally {
       setFormLoading(false);
     }
+  };
+
+  const handleSubmitUser = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!session) {
+      return;
+    }
+
+    if (!canUseUserForm && !isAdmin) {
+      setFormError('Sem permissao para editar este cadastro.');
+      return;
+    }
+
+    const isSuperAdmin = session.user.perfilId === SUPER_ADMIN_PROFILE_ID;
+    const validationError = validateUserForm(formData, isSuperAdmin);
+
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
+    const payload = toUserPayload(formData);
+    const ownProfileChanged = Boolean(
+      editingId === session.user.id && formData.perfilId !== session.user.perfilId,
+    );
+
+    if (isSuperAdmin && ownProfileChanged) {
+      confirmAction({
+        tone: 'update',
+        title: 'Alterar seu próprio perfil?',
+        message: 'Você poderá perder o acesso à administração da plataforma e depender de outro Super Administrador para recuperar essas permissões. Após salvar, sua sessão será encerrada para aplicar o novo perfil com segurança.',
+        confirmLabel: 'Alterar meu perfil',
+        cancelLabel: 'Manter perfil atual',
+        onConfirm: () => saveUser(payload, true),
+      });
+      return;
+    }
+
+    void saveUser(payload, false);
   };
 
   const deleteSelectedUser = async (user: User) => {

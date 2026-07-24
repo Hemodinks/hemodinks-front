@@ -1466,18 +1466,18 @@ export function BillingPage({
                 <tbody>
                   {atendimentos.map((item) => (
                     <tr key={item.id}>
-                      <td>
+                      <td data-label="Paciente">
                         <Button onClick={() => setSelectedAttendance(item)}>
                           {item.paciente}
                         </Button>
                       </td>
-                      <td>
+                      <td data-label="Data">
                         {new Date(item.dataProcedimento).toLocaleDateString(
                           "pt-BR",
                         )}
                       </td>
-                      <td>{item.status}</td>
-                      <td>
+                      <td data-label="Status">{item.status}</td>
+                      <td data-label="Procedimentos">
                         {item.procedimentos
                           .map(
                             (procedure) =>
@@ -1485,7 +1485,10 @@ export function BillingPage({
                           )
                           .join(", ")}
                       </td>
-                      <td className="billing-actions-column">
+                      <td
+                        className="billing-actions-column"
+                        data-label="Ações"
+                      >
                         <div className="billing-row-actions">
                           <IconButton
                             label="Editar"
@@ -1636,21 +1639,30 @@ export function BillingPage({
                 <tbody>
                   {faturamentos.map((x) => (
                     <tr key={x.id}>
-                      <td>
+                      <td data-label="Paciente">
                         <Button onClick={() => setSelectedBilling(x)}>
                           {x.paciente}
                         </Button>
                       </td>
-                      <td>{x.numeroGuia || "-"}</td>
-                      <td>{formatCurrency(x.valorApresentado)}</td>
-                      <td>{formatCurrency(x.valorGlosado)}</td>
-                      <td>{formatCurrency(x.valorReconhecido)}</td>
-                      <td>
+                      <td data-label="Guia">{x.numeroGuia || "-"}</td>
+                      <td data-label="Apresentado">
+                        {formatCurrency(x.valorApresentado)}
+                      </td>
+                      <td data-label="Glosa">
+                        {formatCurrency(x.valorGlosado)}
+                      </td>
+                      <td data-label="Reconhecido">
+                        {formatCurrency(x.valorReconhecido)}
+                      </td>
+                      <td data-label="Status">
                         <span className="status-pill active">
                           {formatBillingStatus(x.status)}
                         </span>
                       </td>
-                      <td className="billing-actions-column">
+                      <td
+                        className="billing-actions-column"
+                        data-label="Ações"
+                      >
                         <div className="billing-row-actions">
                           {canManageBilling && x.status === "Rascunho" && (
                             <>
@@ -1962,7 +1974,10 @@ export function BillingPage({
               </div>
               <Wallet size={20} />
             </div>
-            <form className="billing-filter-grid" onSubmit={submitReceipt}>
+            <form
+              className="billing-filter-grid billing-receipt-form"
+              onSubmit={submitReceipt}
+            >
               <SelectField
                 label="Título"
                 value={receipt.contaId}
@@ -2014,58 +2029,73 @@ export function BillingPage({
                 value={receipt.referencia}
                 onValueChange={(v) => setReceipt({ ...receipt, referencia: v })}
               />
-              <SelectField
-                label="Formato do comprovante gerado"
-                value={receipt.comprovanteFormato}
-                onChange={(event) =>
-                  setReceipt({
-                    ...receipt,
-                    comprovanteFormato: event.target
-                      .value as GeneratedReceiptFormat,
-                  })
-                }
-              >
-                <option value="pdf">PDF</option>
-                <option value="jpg">JPG</option>
-              </SelectField>
-              <div className="billing-receipt-upload">
-                <span className="billing-attendance-field-label">
-                  Comprovante bancário (opcional)
-                </span>
-                <label
-                  className="ghost-button file-action full-width"
-                  htmlFor="billing-receipt-file"
+              <div className="billing-receipt-actions">
+                <SelectField
+                  className="billing-receipt-format"
+                  label="Formato do comprovante gerado"
+                  value={receipt.comprovanteFormato}
+                  onChange={(event) =>
+                    setReceipt({
+                      ...receipt,
+                      comprovanteFormato: event.target
+                        .value as GeneratedReceiptFormat,
+                    })
+                  }
                 >
-                  <FileUp size={17} />
-                  {receipt.comprovante
-                    ? receipt.comprovante.name
-                    : "Selecionar arquivo PDF ou JPG"}
-                </label>
-                <input
-                  id="billing-receipt-file"
-                  className="sr-only"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,application/pdf,image/jpeg"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0] ?? null;
-                    if (file && !isSupportedReceiptFile(file)) {
-                      const message =
-                        "Selecione um comprovante bancário no formato PDF ou JPG.";
-                      setError(message);
-                      setReceiptToast({ type: "error", message });
-                      event.target.value = "";
-                      setReceipt({ ...receipt, comprovante: null });
-                      return;
+                  <option value="pdf">PDF</option>
+                  <option value="jpg">JPG</option>
+                </SelectField>
+                <div className="billing-receipt-upload">
+                  <span className="billing-attendance-field-label">
+                    Comprovante bancário (opcional)
+                  </span>
+                  <label
+                    className="ghost-button file-action full-width"
+                    htmlFor="billing-receipt-file"
+                    title={
+                      receipt.comprovante
+                        ? receipt.comprovante.name
+                        : "Selecionar arquivo PDF ou JPG"
                     }
-                    setError("");
-                    setReceipt({ ...receipt, comprovante: file });
-                  }}
-                />
+                  >
+                    <FileUp size={17} />
+                    <span className="billing-receipt-file-name">
+                      {receipt.comprovante
+                        ? receipt.comprovante.name
+                        : "Selecionar arquivo PDF ou JPG"}
+                    </span>
+                  </label>
+                  <input
+                    id="billing-receipt-file"
+                    className="sr-only"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,application/pdf,image/jpeg"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      if (file && !isSupportedReceiptFile(file)) {
+                        const message =
+                          "Selecione um comprovante bancário no formato PDF ou JPG.";
+                        setError(message);
+                        setReceiptToast({ type: "error", message });
+                        event.target.value = "";
+                        setReceipt({ ...receipt, comprovante: null });
+                        return;
+                      }
+                      setError("");
+                      setReceipt({ ...receipt, comprovante: file });
+                    }}
+                  />
+                </div>
+                <Button
+                  className="billing-receipt-submit"
+                  variant="primary"
+                  type="submit"
+                  disabled={loading}
+                >
+                  <Wallet size={16} />
+                  Registrar recebimento
+                </Button>
               </div>
-              <Button variant="primary" type="submit" disabled={loading}>
-                <Wallet size={16} />
-                Registrar recebimento
-              </Button>
               {receiptToast && (
                 <div
                   className={`billing-receipt-toast ${receiptToast.type}`}
@@ -2100,22 +2130,28 @@ export function BillingPage({
                 <tbody>
                   {contas.map((x) => (
                     <tr key={x.id}>
-                      <td>
+                      <td data-label="Documento">
                         <Button onClick={() => setSelectedAccount(x)}>
                           {x.numeroDocumento}
                         </Button>
                       </td>
-                      <td>{x.paciente}</td>
-                      <td>
+                      <td data-label="Paciente">{x.paciente}</td>
+                      <td data-label="Vencimento">
                         {new Date(x.dataVencimento).toLocaleDateString("pt-BR")}
                         {x.status === "Vencido" && (
                           <span className="status-pill warning">Em atraso</span>
                         )}
                       </td>
-                      <td>{formatCurrency(x.valorOriginal)}</td>
-                      <td>{formatCurrency(x.valorRecebido)}</td>
-                      <td>{formatCurrency(x.saldoAberto)}</td>
-                      <td>
+                      <td data-label="Original">
+                        {formatCurrency(x.valorOriginal)}
+                      </td>
+                      <td data-label="Recebido">
+                        {formatCurrency(x.valorRecebido)}
+                      </td>
+                      <td data-label="Saldo">
+                        {formatCurrency(x.saldoAberto)}
+                      </td>
+                      <td data-label="Status / ações">
                         <span className="status-pill active">
                           {formatBillingStatus(x.status)}
                         </span>
@@ -2294,14 +2330,16 @@ export function BillingPage({
                 <tbody>
                   {precos.map((item) => (
                     <tr key={item.id}>
-                      <td>
+                      <td data-label="Convênio">
                         {convenios.find(
                           (convenio) => convenio.idConvenio === item.convenioId,
                         )?.descricaoConvenio || item.convenioId}
                       </td>
-                      <td>{item.cbhpmCodigo}</td>
-                      <td>{formatCurrency(item.valorNegociado)}</td>
-                      <td>
+                      <td data-label="CBHPM">{item.cbhpmCodigo}</td>
+                      <td data-label="Valor">
+                        {formatCurrency(item.valorNegociado)}
+                      </td>
+                      <td data-label="Vigência">
                         {new Date(item.vigenciaInicio).toLocaleDateString(
                           "pt-BR",
                         )}{" "}
@@ -2312,7 +2350,10 @@ export function BillingPage({
                             )
                           : "sem término"}
                       </td>
-                      <td className="billing-status-actions-column">
+                      <td
+                        className="billing-status-actions-column"
+                        data-label="Status / ações"
+                      >
                         <span className="status-pill active">
                           {item.ativo ? "Ativo" : "Inativo"}
                         </span>

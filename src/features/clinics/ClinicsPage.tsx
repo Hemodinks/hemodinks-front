@@ -63,10 +63,11 @@ const CLINIC_MODULE_OPTIONS = [
 
 type ClinicsPageProps = {
   session: AuthSession;
+  isSuperAdmin: boolean;
   onClinicSelected: (result: SelectClinicResponse) => void;
 };
 
-export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
+export function ClinicsPage({ session, isSuperAdmin, onClinicSelected }: ClinicsPageProps) {
   const [clinics, setClinics] = useState<PlatformClinic[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -92,6 +93,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
   useEffect(() => { void loadClinics(); }, [loadClinics]);
 
   const openNew = () => {
+    if (!isSuperAdmin) return;
     setEditing(null);
     setForm(EMPTY_FORM);
     setPhotoPreview(null);
@@ -144,14 +146,14 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (form.plano === 'Parcial' && form.modulosLiberados.length === 0) {
+    if (isSuperAdmin && form.plano === 'Parcial' && form.modulosLiberados.length === 0) {
       setError('Selecione ao menos um módulo para o plano Parcial.');
       return;
     }
     setSaving(true);
     setError('');
     setSuccess('');
-    const payload: ClinicPayload = {
+    const payload: ClinicPayload = isSuperAdmin ? {
       nome: form.nome.trim(),
       slug: form.slug.trim().toLowerCase(),
       plano: form.plano.trim(),
@@ -168,6 +170,10 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
         administradorSenha: form.administradorSenha,
         administradorTelefone: form.administradorTelefone.trim() || null,
       } : {}),
+    } : {
+      nome: form.nome.trim(),
+      slug: form.slug.trim().toLowerCase(),
+      fotoClinica: form.fotoClinica,
     };
 
     try {
@@ -214,10 +220,10 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
         <div className="data-header">
           <div>
             <span className="eyebrow">Plataforma multiclinica</span>
-            <h2>{clinics.length} clinicas cadastradas</h2>
+            <h2>{isSuperAdmin ? `${clinics.length} clínicas cadastradas` : 'Dados da clínica'}</h2>
           </div>
           <div className="table-tools">
-            <Button onClick={openNew}><Plus size={17} />Nova clinica</Button>
+            {isSuperAdmin && <Button onClick={openNew}><Plus size={17} />Nova clínica</Button>}
             <IconButton label="Atualizar clinicas" onClick={() => void loadClinics()}><RefreshCw size={18} /></IconButton>
           </div>
         </div>
@@ -237,9 +243,9 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
                   <td data-label="Usuarios">{clinic.usuarios ?? '-'}</td>
                   <td data-label="Status"><span className={`status-pill ${clinic.ativa ? 'ok' : 'warning'}`}>{clinic.ativa ? 'Ativa' : 'Inativa'}</span></td>
                   <td data-label="Acoes"><div className="row-actions">
-                    {clinic.ativa && clinic.id !== session.user.clinicaId && <IconButton label={`Acessar ${clinic.nome}`} onClick={() => void switchClinic(clinic)}><RotateCcw size={17} /></IconButton>}
+                    {isSuperAdmin && clinic.ativa && clinic.id !== session.user.clinicaId && <IconButton label={`Acessar ${clinic.nome}`} onClick={() => void switchClinic(clinic)}><RotateCcw size={17} /></IconButton>}
                     <IconButton label={`Editar ${clinic.nome}`} tone="muted" onClick={() => openEdit(clinic)}><Pencil size={17} /></IconButton>
-                    {clinic.ativa && clinic.id !== session.user.clinicaId && <IconButton label={`Desativar ${clinic.nome}`} tone="danger" onClick={() => void deactivate(clinic)}><Trash2 size={17} /></IconButton>}
+                    {isSuperAdmin && clinic.ativa && clinic.id !== session.user.clinicaId && <IconButton label={`Desativar ${clinic.nome}`} tone="danger" onClick={() => void deactivate(clinic)}><Trash2 size={17} /></IconButton>}
                   </div></td>
                 </tr>
               ))}
@@ -258,6 +264,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
           <div className="clinic-form-grid">
             <TextField label="Nome da clinica" value={form.nome} onValueChange={(nome) => setForm((current) => ({ ...current, nome }))} maxLength={120} required />
             <TextField label="Slug" value={form.slug} onValueChange={(slug) => setForm((current) => ({ ...current, slug }))} maxLength={120} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required />
+            {isSuperAdmin && <>
             <label>Plano<select value={form.plano} onChange={(event) => setForm((current) => ({
               ...current,
               plano: event.target.value,
@@ -269,8 +276,9 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
             {form.plano === 'Trial' && <TextField label="Trial ate" type="date" value={form.trialAte} onValueChange={(trialAte) => setForm((current) => ({ ...current, trialAte }))} />}
             <TextField label="Assinatura valida ate" type="date" value={form.assinaturaValidaAte} onValueChange={(assinaturaValidaAte) => setForm((current) => ({ ...current, assinaturaValidaAte }))} />
             {editing && <label className="toggle-row"><input type="checkbox" checked={form.ativa} onChange={(event) => setForm((current) => ({ ...current, ativa: event.target.checked }))} />Clinica ativa</label>}
+            </>}
           </div>
-          {form.plano === 'Parcial' && <fieldset className="clinic-modules-fieldset"><legend>Módulos contratados</legend><div className="clinic-module-options">{CLINIC_MODULE_OPTIONS.map((module) => <label key={module.value}><input type="checkbox" checked={form.modulosLiberados.includes(module.value)} onChange={(event) => setForm((current) => ({ ...current, modulosLiberados: event.target.checked ? [...current.modulosLiberados, module.value] : current.modulosLiberados.filter((value) => value !== module.value) }))} />{module.label}</label>)}</div></fieldset>}
+          {isSuperAdmin && form.plano === 'Parcial' && <fieldset className="clinic-modules-fieldset"><legend>Módulos contratados</legend><div className="clinic-module-options">{CLINIC_MODULE_OPTIONS.map((module) => <label key={module.value}><input type="checkbox" checked={form.modulosLiberados.includes(module.value)} onChange={(event) => setForm((current) => ({ ...current, modulosLiberados: event.target.checked ? [...current.modulosLiberados, module.value] : current.modulosLiberados.filter((value) => value !== module.value) }))} />{module.label}</label>)}</div></fieldset>}
           {!editing && <fieldset className="clinic-admin-fields"><legend>Administrador inicial</legend><div className="clinic-form-grid"><TextField label="Nome" value={form.administradorNome} onValueChange={(administradorNome) => setForm((current) => ({ ...current, administradorNome }))} required /><TextField label="Email" type="email" value={form.administradorEmail} onValueChange={(administradorEmail) => setForm((current) => ({ ...current, administradorEmail }))} required /><TextField label="Senha inicial" type="password" minLength={8} value={form.administradorSenha} onValueChange={(administradorSenha) => setForm((current) => ({ ...current, administradorSenha }))} required /><TextField label="Telefone" value={form.administradorTelefone} onValueChange={(administradorTelefone) => setForm((current) => ({ ...current, administradorTelefone }))} /></div></fieldset>}
           <div className="button-row"><Button variant="primary" type="submit" disabled={saving}><Save size={18} />{saving ? 'Salvando...' : editing ? 'Atualizar clínica' : 'Salvar clínica'}</Button><Button variant="danger-ghost" onClick={() => setFormOpen(false)}><X size={17} />Cancelar</Button></div>
         </form>

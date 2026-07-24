@@ -98,7 +98,30 @@
   order: 2;
 }
 
+.billing-receipt-form .billing-receipt-actions {
+  grid-column: 1 / -1;
+}
+
+.billing-receipt-actions {
+  width: min(100%, 760px);
+  display: grid;
+  grid-template-columns: minmax(104px, 126px) minmax(210px, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.billing-receipt-format,
+.billing-receipt-upload {
+  min-width: 0;
+}
+
+.billing-receipt-submit {
+  width: auto;
+  min-width: 222px;
+}
+
 .billing-receipt-toast {
+  grid-column: 1 / -1;
   min-height: 38px;
   display: flex;
   align-items: center;
@@ -130,9 +153,24 @@
 }
 
 .billing-receipt-upload .file-action {
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
+  justify-content: flex-start;
+  padding-inline: 10px;
+  overflow: hidden;
+}
+
+.billing-receipt-upload .file-action svg {
+  flex: 0 0 auto;
+}
+
+.billing-receipt-file-name {
+  min-width: 0;
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @keyframes billing-toast-enter {
@@ -399,7 +437,7 @@
 }
 
 .billing-flow-table {
-  min-width: 820px;
+  min-width: 1040px;
   table-layout: fixed;
 }
 
@@ -414,27 +452,35 @@
 }
 
 .billing-flow-table th:first-child {
-  width: 190px;
+  width: 250px;
 }
 
 .billing-flow-table th:nth-child(2) {
-  width: 72px;
+  width: 120px;
 }
 
 .billing-flow-table th:nth-child(3) {
-  width: 100px;
+  width: 112px;
 }
 
 .billing-flow-table th:nth-child(4) {
-  width: 70px;
+  width: 94px;
 }
 
 .billing-flow-table th:nth-child(5) {
-  width: 105px;
+  width: 124px;
 }
 
 .billing-flow-table th:nth-child(6) {
-  width: 135px;
+  width: 160px;
+}
+
+.billing-flow-table th:last-child {
+  width: 180px;
+}
+
+.billing-flow-table td:nth-child(n + 2):nth-child(-n + 5) {
+  white-space: nowrap;
 }
 
 .billing-flow-table td:first-child .ghost-button {
@@ -1490,6 +1536,30 @@
 }
 
 @media (max-width: 760px) {
+  .billing-receipt-actions {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-receipt-format {
+    width: 132px;
+    max-width: 100%;
+  }
+
+  .billing-receipt-submit {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .billing-table,
+  .billing-attendance-table,
+  .billing-flow-table,
+  .billing-price-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: auto;
+  }
+
   .modal-panel.billing-cbhpm-modal {
     width: calc(100dvw - 24px);
     max-width: calc(100dvw - 24px);

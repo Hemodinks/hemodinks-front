@@ -104,6 +104,7 @@ export function AppContent() {
 
   const {
     isAdmin,
+    isSuperAdmin,
     isMedical,
     canAccessDashboard,
     canAccessPatients,
@@ -829,6 +830,7 @@ export function AppContent() {
           canManagePatientObservacoes,
           patientReadOnly,
           isAdmin,
+          isSuperAdmin,
           isMedical,
           canAccessClinics,
         }}
@@ -858,6 +860,7 @@ export function AppContent() {
           openMedicalGroups,
           openAgenda,
           openSettings,
+          openClinics,
         }}
         sortHandlers={{
           handleUserSortChange,

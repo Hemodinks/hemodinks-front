@@ -1,4 +1,5 @@
 .tutorial-panel {
+  --tutorial-module-color: #0f766e;
   min-width: 0;
   align-self: start;
   position: sticky;
@@ -10,6 +11,42 @@
   background: var(--panel-strong);
   box-shadow: 0 12px 30px rgba(24, 33, 47, 0.1);
   overflow: hidden;
+}
+
+.tutorial-panel[data-tutorial-view="dashboard"] {
+  --tutorial-module-color: #9f1239;
+}
+
+.tutorial-panel[data-tutorial-view="users"],
+.tutorial-panel[data-tutorial-view="clinics"] {
+  --tutorial-module-color: #0f766e;
+}
+
+.tutorial-panel[data-tutorial-view="profile"] {
+  --tutorial-module-color: #7c3aed;
+}
+
+.tutorial-panel[data-tutorial-view="patients"] {
+  --tutorial-module-color: #2563eb;
+}
+
+.tutorial-panel[data-tutorial-view="attendances"],
+.tutorial-panel[data-tutorial-view="billing"],
+.tutorial-panel[data-tutorial-view="finance"],
+.tutorial-panel[data-tutorial-view="prices"] {
+  --tutorial-module-color: #b45309;
+}
+
+.tutorial-panel[data-tutorial-view="medicalGroups"] {
+  --tutorial-module-color: #0f4c81;
+}
+
+.tutorial-panel[data-tutorial-view="agenda"] {
+  --tutorial-module-color: #8a5a14;
+}
+
+.tutorial-panel[data-tutorial-view="settings"] {
+  --tutorial-module-color: #475569;
 }
 
 .tutorial-panel.is-expanded {
@@ -63,8 +100,12 @@
   display: grid;
   place-items: center;
   border-radius: 9px;
-  color: var(--teal);
-  background: var(--soft);
+  color: var(--tutorial-module-color);
+  background: color-mix(
+    in srgb,
+    var(--tutorial-module-color) 12%,
+    transparent
+  );
 }
 
 .tutorial-panel-collapse-button {
@@ -110,7 +151,16 @@
 }
 
 .tutorial-section.is-open {
-  border-color: color-mix(in srgb, var(--teal) 38%, var(--line));
+  border-color: color-mix(
+    in srgb,
+    var(--tutorial-module-color) 42%,
+    var(--line)
+  );
+  background: color-mix(
+    in srgb,
+    var(--tutorial-module-color) 20%,
+    var(--panel-strong)
+  );
 }
 
 .tutorial-section h3 {
@@ -143,8 +193,12 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: var(--teal);
-  background: var(--soft);
+  color: var(--tutorial-module-color);
+  background: color-mix(
+    in srgb,
+    var(--tutorial-module-color) 12%,
+    var(--panel-strong)
+  );
   font-size: 0.7rem;
   font-weight: 900;
 }

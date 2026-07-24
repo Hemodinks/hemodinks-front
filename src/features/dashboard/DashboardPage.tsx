@@ -1,6 +1,7 @@
 import { type DragEvent, type ReactNode, useEffect, useState } from 'react';
 import {
   ArrowRight,
+  Building2,
   CalendarDays,
   CheckCircle2,
   CircleCheck,
@@ -23,6 +24,8 @@ type DashboardPageProps = {
   canAccessMedicalGroups: boolean;
   canAccessAgenda: boolean;
   canAccessSettings: boolean;
+  canAccessClinics: boolean;
+  isSuperAdmin: boolean;
   patientReadOnly: boolean;
   usersCount: number;
   pacientesCount: number;
@@ -37,13 +40,14 @@ type DashboardPageProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
-  onOpenBilling: () => void;
+  onOpenController: () => void;
+  onOpenClinics: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
 };
 
-type DashboardModuleId = 'users' | 'profile' | 'patients' | 'billing' | 'medicalGroups' | 'agenda' | 'settings';
+type DashboardModuleId = 'users' | 'profile' | 'patients' | 'controller' | 'clinics' | 'medicalGroups' | 'agenda' | 'settings';
 
 type DashboardModule = {
   id: DashboardModuleId;
@@ -58,7 +62,7 @@ type DashboardModule = {
 };
 
 const DASHBOARD_MODULE_ORDER_KEY = 'hemodinks.dashboard.module-order';
-const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = ['users', 'profile', 'patients', 'billing', 'medicalGroups', 'agenda', 'settings'];
+const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = ['users', 'profile', 'patients', 'controller', 'clinics', 'medicalGroups', 'agenda', 'settings'];
 
 function readStoredDashboardModuleOrder() {
   if (typeof window === 'undefined') {
@@ -119,6 +123,8 @@ export function DashboardPage({
   canAccessMedicalGroups,
   canAccessAgenda,
   canAccessSettings,
+  canAccessClinics,
+  isSuperAdmin,
   patientReadOnly,
   usersCount,
   pacientesCount,
@@ -133,7 +139,8 @@ export function DashboardPage({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
-  onOpenBilling,
+  onOpenController,
+  onOpenClinics,
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
@@ -181,14 +188,26 @@ export function DashboardPage({
       : []),
     ...(canAccessBilling
       ? [{
-          id: 'billing' as const,
-          title: 'Faturamento médico',
-          metric: 'Honorários, glosas e repasses',
+          id: 'controller' as const,
+          title: 'Controladoria',
+          metric: 'Atendimentos, faturamento e financeiro',
           footerLabel: `${pendingPaymentsCount} pendências financeiras`,
-          className: 'module-card-billing',
-          ariaLabel: 'Abrir faturamento médico',
+          className: 'module-card-controller',
+          ariaLabel: 'Abrir Controladoria',
           icon: <FileText size={24} />,
-          onOpen: onOpenBilling,
+          onOpen: onOpenController,
+        }]
+      : []),
+    ...(canAccessClinics
+      ? [{
+          id: 'clinics' as const,
+          title: 'Clínicas',
+          metric: isSuperAdmin ? 'Administrar todas as clínicas' : 'Editar dados da clínica',
+          footerLabel: isSuperAdmin ? 'Gestão da plataforma' : 'Clínica atual',
+          className: 'module-card-clinics',
+          ariaLabel: 'Abrir cadastro de clínicas',
+          icon: <Building2 size={24} />,
+          onOpen: onOpenClinics,
         }]
       : []),
     ...(canAccessMedicalGroups

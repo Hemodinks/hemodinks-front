@@ -27,6 +27,7 @@ export function TutorialPanel({ activeView }: TutorialPanelProps) {
     return (
       <aside
         className="tutorial-panel is-collapsed"
+        data-tutorial-view={activeView}
         aria-label={`Tutorial do módulo ${tutorial.title}`}
       >
         <button
@@ -47,6 +48,7 @@ export function TutorialPanel({ activeView }: TutorialPanelProps) {
   return (
     <aside
       className="tutorial-panel is-expanded"
+      data-tutorial-view={activeView}
       aria-label={`Tutorial do módulo ${tutorial.title}`}
     >
       <div className="tutorial-panel-heading">

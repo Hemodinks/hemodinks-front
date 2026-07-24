@@ -30,6 +30,7 @@ type AccessState = {
   canManagePatientObservacoes: boolean;
   patientReadOnly: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   isMedical: boolean;
   canAccessClinics: boolean;
 };
@@ -56,6 +57,7 @@ type NavigationActions = {
   openMedicalGroups: () => void;
   openAgenda: () => void;
   openSettings: () => void;
+  openClinics: () => void;
 };
 
 type SortHandlers = {
@@ -115,6 +117,7 @@ export function AppMainContent({
     canManagePatientObservacoes,
     patientReadOnly,
     isAdmin,
+    isSuperAdmin,
     isMedical,
     canAccessClinics,
   } = access;
@@ -141,6 +144,8 @@ export function AppMainContent({
           canAccessMedicalGroups={canAccessMedicalGroups}
           canAccessAgenda={canAccessAgenda}
           canAccessSettings={canAccessSettings}
+          canAccessClinics={canAccessClinics}
+          isSuperAdmin={isSuperAdmin}
           patientReadOnly={patientReadOnly}
           usersCount={usersCount}
           pacientesCount={pacientesCount}
@@ -155,7 +160,8 @@ export function AppMainContent({
           onOpenUsersList={navigation.openUsersList}
           onOpenMyProfile={navigation.openMyProfile}
           onOpenPatientsList={navigation.openPatientsList}
-          onOpenBilling={navigation.openBilling}
+          onOpenController={navigation.openAttendances}
+          onOpenClinics={navigation.openClinics}
           onOpenMedicalGroups={navigation.openMedicalGroups}
           onOpenAgenda={navigation.openAgenda}
           onOpenSettings={navigation.openSettings}
@@ -165,6 +171,7 @@ export function AppMainContent({
           moduleMode={moduleMode}
           canAccessUsers={canAccessUsers}
           canUseUserForm={usersDomain.canUseUserForm}
+          canAssignAllProfiles={isSuperAdmin}
           editingId={usersDomain.editingId}
           editingUserDetails={usersDomain.editingUserDetails}
           formData={usersDomain.formData}
@@ -274,7 +281,7 @@ export function AppMainContent({
           refreshPacientes={patientsDomain.refreshPacientes}
         />
       ) : activeView === "clinics" && canAccessClinics ? (
-        <ClinicsPage session={session} onClinicSelected={onClinicSelected} />
+        <ClinicsPage session={session} isSuperAdmin={isSuperAdmin} onClinicSelected={onClinicSelected} />
       ) : ["attendances", "billing", "finance", "prices"].includes(
           activeView,
         ) ? (

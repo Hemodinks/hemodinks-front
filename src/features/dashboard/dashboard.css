@@ -10,9 +10,12 @@
   --dashboard-patients: #2563eb;
   --dashboard-patients-soft: rgba(37, 99, 235, 0.12);
   --dashboard-patients-border: rgba(37, 99, 235, 0.32);
-  --dashboard-billing: #b45309;
-  --dashboard-billing-soft: rgba(180, 83, 9, 0.12);
-  --dashboard-billing-border: rgba(180, 83, 9, 0.3);
+  --dashboard-controller: #b45309;
+  --dashboard-controller-soft: rgba(180, 83, 9, 0.12);
+  --dashboard-controller-border: rgba(180, 83, 9, 0.3);
+  --dashboard-clinics: #0f8173;
+  --dashboard-clinics-soft: rgba(15, 129, 115, 0.12);
+  --dashboard-clinics-border: rgba(15, 129, 115, 0.32);
   --dashboard-profile: #7c3aed;
   --dashboard-profile-soft: rgba(124, 58, 237, 0.1);
   --dashboard-profile-border: rgba(124, 58, 237, 0.28);
@@ -270,10 +273,16 @@
   --module-border: var(--dashboard-patients-border);
 }
 
-.module-card-billing {
-  --module-color: var(--dashboard-billing);
-  --module-soft: var(--dashboard-billing-soft);
-  --module-border: var(--dashboard-billing-border);
+.module-card-controller {
+  --module-color: var(--dashboard-controller);
+  --module-soft: var(--dashboard-controller-soft);
+  --module-border: var(--dashboard-controller-border);
+}
+
+.module-card-clinics {
+  --module-color: var(--dashboard-clinics);
+  --module-soft: var(--dashboard-clinics-soft);
+  --module-border: var(--dashboard-clinics-border);
 }
 
 .module-card-profile {

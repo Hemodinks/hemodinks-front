@@ -52,7 +52,7 @@ export function getAppAccess(session: AuthSession | null) {
     hasClinicModule(CLINIC_MODULES.patients);
   const canAccessAgenda = hasClinicModule(CLINIC_MODULES.agenda);
   const canAccessUsers = isAdmin && hasClinicModule(CLINIC_MODULES.users);
-  const canEditOwnUser = isMedical || isPatient;
+  const canEditOwnUser = isAdmin || isMedical || isPatient;
   const canAccessBilling =
     (isAdmin || isMedical || isController) &&
     hasClinicModule(CLINIC_MODULES.billing);
@@ -93,7 +93,7 @@ export function getAppAccess(session: AuthSession | null) {
     canUseMedicalGroupsRoute: canAccessMedicalGroups,
     canUseAgendaRoute: canAccessAgenda,
     canUseSettingsRoute: canAccessSettings,
-    canAccessClinics: isSuperAdmin,
-    canUseClinicsRoute: isSuperAdmin,
+    canAccessClinics: isAdmin,
+    canUseClinicsRoute: isAdmin,
   };
 }

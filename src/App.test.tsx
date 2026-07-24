@@ -430,9 +430,9 @@ describe("App", () => {
       await screen.findByRole("heading", { name: "Clínicas", level: 1 }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByText("0 clinicas cadastradas"),
+      await screen.findByText("0 clínicas cadastradas"),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /nova clinica/i }));
+    await user.click(screen.getByRole("button", { name: /nova clínica/i }));
     const planSelect = screen.getByLabelText("Plano");
     expect(planSelect).toHaveValue("Trial");
     expect(
@@ -1949,6 +1949,69 @@ describe("App", () => {
     expect(
       screen.queryByRole("option", { name: "Paciente" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("permite ao Super Administrador editar o próprio cadastro com todos os perfis e confirma a troca de perfil", async () => {
+    const superUser: User = {
+      ...baseUser,
+      id: 99,
+      nome: "George Marcone",
+      email: "gmarcone@gmail.com",
+      telefone: "+5581999999999",
+      crm: null,
+      crmUf: null,
+      perfilId: 5,
+      perfilNome: "SuperAdministrador",
+    };
+    vi.mocked(api.getUsers).mockResolvedValue(paged([superUser]));
+    vi.mocked(api.getUser).mockResolvedValue(superUser);
+    vi.mocked(api.updateUser).mockResolvedValue({
+      ...superUser,
+      perfilId: 1,
+      perfilNome: "Administrador",
+    });
+
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: { perfilId: 5, perfilNome: "SuperAdministrador" },
+    });
+
+    await openUsersModule(user);
+    await user.click(await screen.findByLabelText("Editar George Marcone"));
+
+    const profileSelect = await screen.findByLabelText("Perfil");
+    expect(within(profileSelect).getByRole("option", { name: "Administrador" })).toBeInTheDocument();
+    expect(within(profileSelect).getByRole("option", { name: "Médicos" })).toBeInTheDocument();
+    expect(within(profileSelect).getByRole("option", { name: "Paciente" })).toBeInTheDocument();
+    expect(within(profileSelect).getByRole("option", { name: "Controller" })).toBeInTheDocument();
+    expect(within(profileSelect).getByRole("option", { name: "SuperAdministrador" })).toBeInTheDocument();
+
+    await user.selectOptions(profileSelect, "1");
+    await user.click(screen.getByRole("button", { name: /salvar alterações/i }));
+
+    expect(api.updateUser).not.toHaveBeenCalled();
+    const confirmation = screen.getByRole("dialog", { name: "Alterar seu próprio perfil?" });
+    expect(within(confirmation).getByText(/perder o acesso à administração/i)).toBeInTheDocument();
+    await user.click(within(confirmation).getByRole("button", { name: /alterar meu perfil/i }));
+
+    await waitFor(() => {
+      expect(api.updateUser).toHaveBeenCalledWith(
+        99,
+        expect.objectContaining({ perfilId: 1 }),
+        "jwt-token",
+      );
+    });
+    expect(await screen.findByRole("heading", { name: "Acesso ao sistema" })).toBeInTheDocument();
+  });
+
+  it("exibe os cards de Clínicas e Controladoria para Administrador e abre o módulo correto", async () => {
+    const { user } = await renderAuthenticatedApp();
+
+    expect(await screen.findByRole("button", { name: "Abrir cadastro de clínicas" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Abrir Controladoria" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Abrir faturamento médico" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Abrir Controladoria" }));
+    await waitFor(() => expect(window.location.pathname).toBe("/atendimentos-cirurgicos"));
   });
 
   it("permite ao perfil paciente abrir meu cadastro", async () => {

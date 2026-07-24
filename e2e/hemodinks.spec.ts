@@ -559,6 +559,13 @@ async function expectTableRowVisible(page: Page, tableSelector: string, rowText:
 async function captureRouteScreenshot(page: Page, testInfo: TestInfo, route: string, width: number) {
   await page.setViewportSize({ width, height: width < 600 ? 860 : 900 });
   await loginViaUi(page, route);
+  if (route === '/financeiro') {
+    await expect(page.locator('.billing-finance-receipt-panel')).toBeVisible();
+  }
+  if (route === '/faturamento-medico') {
+    await expect(page.locator('.billing-flow-table')).toBeVisible();
+  }
+  await expect(page.getByText('Carregando módulo...')).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath(`${route.replace('/', '') || 'home'}-${width}.png`), fullPage: true });
   await expectNoGlobalHorizontalOverflow(page);
 }
@@ -620,6 +627,20 @@ test('mantem telas criticas sem overflow horizontal no mobile', async ({ page })
     await loginViaUi(page, '/pacientes');
     await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible();
     await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+    await expectNoGlobalHorizontalOverflow(page);
+
+    await loginViaUi(page, '/financeiro');
+    await expect(
+      page.getByRole('heading', { name: 'Financeiro', level: 1 }),
+    ).toBeVisible();
+    await expect(page.locator('.billing-receipt-actions')).toBeVisible();
+    await expectNoGlobalHorizontalOverflow(page);
+
+    await loginViaUi(page, '/faturamento-medico');
+    await expect(
+      page.getByRole('heading', { name: 'Faturamento', level: 1 }),
+    ).toBeVisible();
+    await expect(page.locator('.billing-flow-table')).toBeVisible();
     await expectNoGlobalHorizontalOverflow(page);
   }
 });
@@ -767,6 +788,65 @@ test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip
   await page.setViewportSize({ width: 1280, height: 800 });
 
   await loginViaUi(page, '/financeiro');
+
+  const receiptFileAction = page.locator(
+    '.billing-receipt-upload .file-action',
+  );
+  await expect(receiptFileAction).toBeVisible();
+  const receiptFormatWidth = await page
+    .locator('.billing-receipt-format')
+    .evaluate((element) => element.getBoundingClientRect().width);
+  expect(receiptFormatWidth).toBeLessThanOrEqual(132);
+  const receiptFileLayout = await receiptFileAction.evaluate((element) => {
+    const text = element.querySelector('.billing-receipt-file-name');
+    const buttonBounds = element.getBoundingClientRect();
+    const textBounds = text?.getBoundingClientRect();
+
+    return {
+      buttonLeft: buttonBounds.left,
+      buttonRight: buttonBounds.right,
+      textLeft: textBounds?.left ?? 0,
+      textRight: textBounds?.right ?? 0,
+      textOverflow: text ? getComputedStyle(text).textOverflow : '',
+    };
+  });
+  expect(receiptFileLayout.textLeft).toBeGreaterThanOrEqual(
+    receiptFileLayout.buttonLeft,
+  );
+  expect(receiptFileLayout.textRight).toBeLessThanOrEqual(
+    receiptFileLayout.buttonRight,
+  );
+  expect(receiptFileLayout.textOverflow).toBe('ellipsis');
+
+  const financeTutorial = page.getByRole('complementary', {
+    name: 'Tutorial do módulo Financeiro',
+  });
+  await expect(financeTutorial.locator('.tutorial-section.is-open')).toBeVisible();
+  const moduleColors = await page.evaluate(() => {
+    const tutorial = document.querySelector(
+      '[data-tutorial-view="finance"]',
+    ) as HTMLElement | null;
+    const activeMenu = document.querySelector(
+      '.side-nav-billing.active',
+    ) as HTMLElement | null;
+
+    return {
+      tutorial: tutorial
+        ? getComputedStyle(tutorial)
+            .getPropertyValue('--tutorial-module-color')
+            .trim()
+        : '',
+      menu: activeMenu
+        ? getComputedStyle(activeMenu).getPropertyValue('--side-nav-color').trim()
+        : '',
+    };
+  });
+  expect(moduleColors.tutorial).toBe(moduleColors.menu);
+  await page.screenshot({
+    path: testInfo.outputPath('financeiro-formulario-ajuda.png'),
+    fullPage: true,
+  });
+
   await page.getByRole('button', { name: financeAccount.numeroDocumento }).click();
 
   const accountDialog = page.getByRole('dialog', {
@@ -810,6 +890,16 @@ test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip
   });
 
   await loginViaUi(page, '/faturamento-medico');
+  const billingFlowWrap = page.locator(
+    '.billing-flow-table',
+  ).locator('..');
+  const billingFlowDimensions = await billingFlowWrap.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(billingFlowDimensions.scrollWidth).toBeGreaterThan(
+    billingFlowDimensions.clientWidth,
+  );
   const billingActions = page.locator('tbody .billing-actions-column');
   await expect(
     billingActions.first().getByRole('button', { name: 'Registrar retorno' }),
@@ -835,6 +925,8 @@ test('gera evidencias visuais desktop e mobile das telas principais', async ({ p
     await captureRouteScreenshot(page, testInfo, '/usuarios', width);
     await captureRouteScreenshot(page, testInfo, '/pacientes', width);
     await captureRouteScreenshot(page, testInfo, '/agenda', width);
+    await captureRouteScreenshot(page, testInfo, '/financeiro', width);
+    await captureRouteScreenshot(page, testInfo, '/faturamento-medico', width);
 
     await loginViaUi(page, '/usuarios');
     await page.getByRole('button', { name: 'Novo usuário' }).click();
