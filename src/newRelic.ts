@@ -5,6 +5,7 @@ let newRelicEnabled = false
 type NewRelicConfig = {
   accountID: string
   agentID: string
+  allowedOrigins: string[]
   applicationID: string
   beacon: string
   errorBeacon: string
@@ -15,6 +16,24 @@ type NewRelicConfig = {
 function getTrimmedValue(value?: string) {
   const trimmed = value?.trim()
   return trimmed ? trimmed : null
+}
+
+function getAllowedOrigins() {
+  const apiUrl = getTrimmedValue(import.meta.env.VITE_API_URL)
+
+  if (!apiUrl) {
+    return []
+  }
+
+  try {
+    return [new URL(apiUrl, window.location.origin).origin]
+  } catch {
+    if (import.meta.env.DEV) {
+      console.warn('[newrelic] VITE_API_URL is not a valid URL for distributed tracing')
+    }
+
+    return []
+  }
 }
 
 function getNewRelicConfig(): NewRelicConfig | null {
@@ -61,6 +80,7 @@ function getNewRelicConfig(): NewRelicConfig | null {
   return {
     accountID,
     agentID,
+    allowedOrigins: getAllowedOrigins(),
     applicationID,
     beacon,
     errorBeacon,
@@ -102,6 +122,7 @@ export function initNewRelicBrowser() {
         deny_list: [config.beacon],
       },
       distributed_tracing: {
+        allowed_origins: config.allowedOrigins,
         enabled: true,
       },
       privacy: {

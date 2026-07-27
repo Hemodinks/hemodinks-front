@@ -63,6 +63,29 @@ VITE_OTEL_SERVICE_NAME=hemodinks-front
 VITE_OTEL_TRACES_SAMPLE_RATE=1
 ```
 
+Para o deploy no Azure Static Web Apps, cadastre no GitHub
+`Hemodinks/hemodinks-front`, em **Settings > Secrets and variables > Actions**:
+
+Variaveis:
+
+```text
+VITE_NEW_RELIC_ACCOUNT_ID
+VITE_NEW_RELIC_AGENT_ID
+VITE_NEW_RELIC_APPLICATION_ID
+VITE_NEW_RELIC_TRUST_KEY
+```
+
+Secret:
+
+```text
+VITE_NEW_RELIC_LICENSE_KEY
+```
+
+Os valores devem vir da aplicacao de Browser criada na New Relic. A license key
+do Browser nao deve ser substituida pela ingest license key usada pelo agente
+.NET da API. O workflow injeta esses valores no `npm run build`, pois variaveis
+Vite sao incorporadas aos arquivos estaticos durante a compilacao.
+
 Notas:
 
 - `VITE_NEW_RELIC_BEACON` e `VITE_NEW_RELIC_ERROR_BEACON` sao avancadas e podem ficar vazias.

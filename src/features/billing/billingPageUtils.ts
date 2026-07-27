@@ -92,7 +92,7 @@ export async function loadBillingPatients(
 ) {
   const items: Paciente[] = [];
   let page = 1;
-  let totalPages = 1;
+  let totalPages: number;
 
   do {
     const response = await getFaturamentosMedicos(token, {
