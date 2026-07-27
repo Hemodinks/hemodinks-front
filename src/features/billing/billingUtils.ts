@@ -1,5 +1,5 @@
 import type { Paciente } from '../../types';
-import { getPacienteProcedimentosFromPaciente, normalizeCbhpmCodigo } from '../patients/patientUtils';
+import { getPacienteProcedimentosFromPaciente, normalizeCbhpmCodigo } from '../../shared/domain/cbhpm';
 import {
   formatCurrency,
   normalizeDisplayText,

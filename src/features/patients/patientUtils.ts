@@ -2,7 +2,6 @@ import type {
   Paciente,
   PacienteFormData,
   PacientePayload,
-  PacienteProcedimento,
 } from "../../types";
 import type { PacienteFilters } from "../../appTypes";
 import {
@@ -17,6 +16,17 @@ import {
   parseDisplayDate,
   toDisplayDate,
 } from "../../shared/utils/formatters";
+import {
+  getPacienteProcedimentosFromPaciente,
+  normalizeCbhpmCodigo,
+  normalizePacienteProcedimentos,
+} from "../../shared/domain/cbhpm";
+
+export {
+  getPacienteProcedimentosFromPaciente,
+  normalizeCbhpmCodigo,
+  normalizePacienteProcedimentos,
+} from "../../shared/domain/cbhpm";
 
 export const emptyPacienteForm: PacienteFormData = {
   data: "",
@@ -75,39 +85,9 @@ export function getPacienteFilterQuery(
   };
 }
 
-export function normalizeCbhpmCodigo(value?: string | null) {
-  return value?.replace(/\D/g, "") ?? "";
-}
-
 function toApiDate(value: string) {
   const { day, month, year } = parseDisplayDate(value);
   return `${year}-${month}-${day}`;
-}
-
-export function normalizePacienteProcedimentos(
-  procedimentos: PacienteProcedimento[],
-) {
-  const seen = new Set<string>();
-
-  return procedimentos
-    .map((item) => ({
-      cbhpmCodigo: normalizeCbhpmCodigo(item.cbhpmCodigo) || null,
-      cbhpmPorte: item.cbhpmPorte?.trim() || null,
-      procedimento: item.procedimento.trim(),
-      valorReferencia: item.valorReferencia ?? null,
-    }))
-    .filter((item) => item.procedimento)
-    .filter((item) => {
-      const key = item.cbhpmCodigo
-        ? `codigo:${item.cbhpmCodigo}`
-        : `livre:${item.procedimento}:${item.cbhpmPorte || ""}`;
-      if (seen.has(key)) {
-        return false;
-      }
-
-      seen.add(key);
-      return true;
-    });
 }
 
 export function getPacienteProcedimentosFromForm(data: PacienteFormData) {
@@ -123,20 +103,6 @@ export function getPacienteProcedimentosFromForm(data: PacienteFormData) {
       procedimento: data.procedimento,
     },
   ]);
-}
-
-export function getPacienteProcedimentosFromPaciente(paciente: Paciente) {
-  return normalizePacienteProcedimentos(
-    paciente.procedimentos?.length
-      ? paciente.procedimentos
-      : [
-          {
-            cbhpmCodigo: paciente.cbhpmCodigo,
-            cbhpmPorte: paciente.cbhpmPorte,
-            procedimento: paciente.procedimento || "",
-          },
-        ],
-  );
 }
 
 export function withPrimaryProcedimento(

@@ -12,6 +12,8 @@ export const PatientFilesModal = lazy(() => import('../features/patients/Patient
 export const PatientObservacoesModal = lazy(() => import('../features/patients/PatientObservacoesModal').then((module) => ({ default: module.PatientObservacoesModal })));
 export const PatientsPage = lazy(() => import('../features/patients/PatientsPage').then((module) => ({ default: module.PatientsPage })));
 export const UsersPage = lazy(() => import('../features/users/UsersPage').then((module) => ({ default: module.UsersPage })));
+export const PatientsContainer = lazy(() => import('../features/patients/PatientsContainer').then((module) => ({ default: module.PatientsContainer })));
+export const UsersContainer = lazy(() => import('../features/users/UsersContainer').then((module) => ({ default: module.UsersContainer })));
 export const PasswordModal = lazy(() => import('../shared/components/PasswordModal').then((module) => ({ default: module.PasswordModal })));
 
 export function ModuleFallback() {

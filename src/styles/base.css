@@ -89,7 +89,7 @@ body {
   background-color: var(--background);
   background-image:
     linear-gradient(var(--background-overlay), var(--background-overlay)),
-    url("../../imagem candidata hemodinks.jpg");
+    url("/imagem candidata hemodinks.jpg");
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;

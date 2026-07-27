@@ -3,19 +3,198 @@ import type {
   ContaReceber,
   ConvenioProcedimentoPreco,
   Faturamento,
+  FaturamentoStatus,
   FinanceiroResumo,
   PacienteFinanceiroResumo,
   PagedResult,
 } from "../types";
 import { del, get, getBlob, post, put, upload } from "./api";
 
+type Nullable<T> = T | null;
+
+export type AtendimentoPayload = {
+  pacienteId: number;
+  dataProcedimento: string;
+  hospitalId: Nullable<number>;
+  hospital: Nullable<string>;
+  convenioId: Nullable<number>;
+  convenio: Nullable<string>;
+  opmeFornecedorId: Nullable<number>;
+  opmeFornecedor: Nullable<string>;
+  medicoResponsavelId: number;
+  medicoAuxiliar1Id: Nullable<number>;
+  medicoAuxiliar2Id: Nullable<number>;
+  diagnostico: Nullable<string>;
+  tratamentoMedico: Nullable<string>;
+  numeroAutorizacao: Nullable<string>;
+  valorGlosa: Nullable<number>;
+  motivoGlosa: Nullable<string>;
+  status: string;
+  procedimentos: Array<{
+    cbhpmCodigo: Nullable<string>;
+    descricao: Nullable<string>;
+    quantidade: number;
+    pesoPercentual: number;
+    cbhpmPorte: Nullable<string>;
+  }>;
+};
+
+export type FaturamentoPayload = {
+  atendimentoCirurgicoId: number;
+  numeroGuia: Nullable<string>;
+  numeroLote: Nullable<string>;
+  competencia: string;
+  observacao: Nullable<string>;
+  rowVersion?: string;
+};
+
+export type FaturamentoItemPayload = {
+  faturamentoId: number;
+  itemId: number;
+  codigo: Nullable<string>;
+  descricao: string;
+  quantidade: number;
+  pesoPercentual: number;
+  valorUnitario: number;
+  rowVersion: string;
+};
+
+export type FaturamentoSearchParams = {
+  page?: number;
+  pageSize?: number;
+  termo?: string;
+  status?: string;
+};
+
+export type FaturamentoStatusPayload = {
+  id: number;
+  status: FaturamentoStatus;
+  rowVersion: string;
+};
+
+export type RetornoFaturamentoPayload = {
+  id: number;
+  dataRetorno: string;
+  itens: Array<{
+    faturamentoItemId: number;
+    valorGlosado: number;
+    valorAprovado: number;
+    codigoMotivo: Nullable<string>;
+    motivoGlosa: Nullable<string>;
+  }>;
+  rowVersion: string;
+};
+
+export type RecursoGlosaPayload = {
+  glosaId: number;
+  dataEnvio: string;
+  justificativa: string;
+  valorRecorrido: number;
+  dataResposta: Nullable<string>;
+  valorRecuperado: number;
+  status: string;
+  observacao: Nullable<string>;
+};
+
+export type GlosaUpdatePayload = {
+  id: number;
+  codigoMotivo: Nullable<string>;
+  descricaoMotivo: string;
+  valorGlosado: number;
+  dataGlosa: string;
+  observacao: Nullable<string>;
+};
+
+export type RecursoGlosaUpdatePayload = {
+  id: number;
+  dataEnvio: Nullable<string>;
+  justificativa: string;
+  valorRecorrido: number;
+  dataResposta: Nullable<string>;
+  valorRecuperado: number;
+  status: string;
+  observacao: Nullable<string>;
+};
+
+export type FinanceSearchParams = {
+  page?: number;
+  pageSize?: number;
+  termo?: string;
+  status?: string;
+  vencimentoInicio?: string;
+  vencimentoFim?: string;
+  convenioId?: string;
+  medicoId?: string;
+  pacienteId?: string;
+};
+
+export type FinanceSummaryParams = {
+  inicio?: string;
+  fim?: string;
+  convenioId?: string;
+  medicoId?: string;
+  pacienteId?: string;
+};
+
+export type ContaReceberUpdatePayload = {
+  id: number;
+  numeroDocumento: string;
+  descricao: string;
+  dataEmissao: string;
+  dataVencimento: string;
+  valorOriginal: number;
+  valorAjustado: number;
+  observacao: Nullable<string>;
+  rowVersion: string;
+};
+
+export type ContaReceberCancelPayload = {
+  id: number;
+  motivo: string;
+  rowVersion: string;
+};
+
+export type ContaReceberCreatePayload = {
+  faturamentoId: number;
+  numeroDocumento: string;
+  descricao: string;
+  dataEmissao: string;
+  dataVencimento: string;
+  valorOriginal: Nullable<number>;
+  valorAjustado: Nullable<number>;
+  observacao: Nullable<string>;
+};
+
+export type RecebimentoPayload = {
+  contaReceberId: number;
+  dataRecebimento: string;
+  valorRecebido: number;
+  formaRecebimento: string;
+  referenciaBancaria: Nullable<string>;
+  documentoComprovante: Nullable<string>;
+  observacao: Nullable<string>;
+  usuarioCadastroId: number;
+  rowVersion: string;
+};
+
+export type ProcedurePricePayload = Omit<
+  ConvenioProcedimentoPreco,
+  "id"
+> & { id: Nullable<number> };
+
+export type ProcedurePriceParams = {
+  convenioId?: number;
+  cbhpmCodigo?: string;
+  ativo?: boolean;
+};
+
 export const getAtendimentos = (token: string) =>
   get<AtendimentoCirurgico[]>("/api/atendimentos-cirurgicos/", token);
-export const createAtendimento = (payload: object, token: string) =>
+export const createAtendimento = (payload: AtendimentoPayload, token: string) =>
   post<AtendimentoCirurgico>("/api/atendimentos-cirurgicos/", payload, token);
 export const getAtendimento = (id: number, token: string) =>
   get<AtendimentoCirurgico>(`/api/atendimentos-cirurgicos/${id}`, token);
-export const updateAtendimento = (id: number, payload: object, token: string) =>
+export const updateAtendimento = (id: number, payload: AtendimentoPayload, token: string) =>
   put<AtendimentoCirurgico>(
     `/api/atendimentos-cirurgicos/${id}`,
     payload,
@@ -25,38 +204,38 @@ export const deleteAtendimento = (id: number, token: string) =>
   del<void>(`/api/atendimentos-cirurgicos/${id}`, token);
 export const getFaturamentos = (token: string) =>
   get<Faturamento[]>("/api/faturamentos/", token);
-export const createFaturamento = (payload: object, token: string) =>
+export const createFaturamento = (payload: FaturamentoPayload, token: string) =>
   post<Faturamento>("/api/faturamentos/", payload, token);
 export const getFaturamento = (id: number, token: string) =>
   get<Faturamento>(`/api/faturamentos/${id}`, token);
-export const updateFaturamento = (id: number, payload: object, token: string) =>
+export const updateFaturamento = (id: number, payload: FaturamentoPayload, token: string) =>
   put<Faturamento>(`/api/faturamentos/${id}`, payload, token);
 export const updateFaturamentoItem = (
   id: number,
   itemId: number,
-  payload: object,
+  payload: FaturamentoItemPayload,
   token: string,
 ) =>
   put<Faturamento>(`/api/faturamentos/${id}/itens/${itemId}`, payload, token);
 export const deleteFaturamento = (id: number, token: string) =>
   del<void>(`/api/faturamentos/${id}`, token);
-export const searchFaturamentos = (params: object, token: string) =>
+export const searchFaturamentos = (params: FaturamentoSearchParams, token: string) =>
   get<PagedResult<Faturamento>>("/api/faturamentos/pesquisa", token, {
     params,
   });
 export const updateFaturamentoStatus = (
   id: number,
-  payload: object,
+  payload: FaturamentoStatusPayload,
   token: string,
 ) => put<Faturamento>(`/api/faturamentos/${id}/status`, payload, token);
 export const registrarRetornoFaturamento = (
   id: number,
-  payload: object,
+  payload: RetornoFaturamentoPayload,
   token: string,
 ) => post<Faturamento>(`/api/faturamentos/${id}/retorno`, payload, token);
 export const registrarRecursoGlosa = (
   glosaId: number,
-  payload: object,
+  payload: RecursoGlosaPayload,
   token: string,
 ) =>
   post<Faturamento>(
@@ -64,13 +243,13 @@ export const registrarRecursoGlosa = (
     payload,
     token,
   );
-export const updateGlosa = (id: number, payload: object, token: string) =>
+export const updateGlosa = (id: number, payload: GlosaUpdatePayload, token: string) =>
   put<Faturamento>(`/api/faturamentos/glosas/${id}`, payload, token);
 export const deleteGlosa = (id: number, token: string) =>
   del<Faturamento>(`/api/faturamentos/glosas/${id}`, token);
 export const updateRecursoGlosa = (
   id: number,
-  payload: object,
+  payload: RecursoGlosaUpdatePayload,
   token: string,
 ) => put<Faturamento>(`/api/faturamentos/recursos-glosa/${id}`, payload, token);
 export const deleteRecursoGlosa = (id: number, token: string) =>
@@ -79,7 +258,7 @@ export const getContasReceber = (token: string) =>
   get<ContaReceber[]>("/api/financeiro/contas-receber/", token);
 export const getContaReceber = (id: number, token: string) =>
   get<ContaReceber>(`/api/financeiro/contas-receber/${id}`, token);
-export const searchContasReceber = (params: object, token: string) =>
+export const searchContasReceber = (params: FinanceSearchParams, token: string) =>
   get<PagedResult<ContaReceber>>(
     "/api/financeiro/contas-receber/pesquisa",
     token,
@@ -87,12 +266,12 @@ export const searchContasReceber = (params: object, token: string) =>
   );
 export const updateContaReceber = (
   id: number,
-  payload: object,
+  payload: ContaReceberUpdatePayload,
   token: string,
 ) => put<ContaReceber>(`/api/financeiro/contas-receber/${id}`, payload, token);
 export const cancelContaReceber = (
   id: number,
-  payload: object,
+  payload: ContaReceberCancelPayload,
   token: string,
 ) =>
   post<ContaReceber>(
@@ -102,7 +281,7 @@ export const cancelContaReceber = (
   );
 export const gerarContaReceber = (
   faturamentoId: number,
-  payload: object,
+  payload: ContaReceberCreatePayload,
   token: string,
 ) =>
   post<ContaReceber>(
@@ -112,7 +291,7 @@ export const gerarContaReceber = (
   );
 export const registrarRecebimento = (
   contaId: number,
-  payload: object,
+  payload: RecebimentoPayload,
   token: string,
 ) =>
   post<ContaReceber>(
@@ -159,14 +338,14 @@ export const downloadComprovanteRecebimento = (
   );
 export const getConvenioProcedimentoPrecos = (
   token: string,
-  params: object = {},
+  params: ProcedurePriceParams = {},
 ) =>
   get<ConvenioProcedimentoPreco[]>(
     "/api/convenios-procedimentos-precos/",
     token,
     { params },
   );
-export const saveConvenioProcedimentoPreco = (payload: object, token: string) =>
+export const saveConvenioProcedimentoPreco = (payload: ProcedurePricePayload, token: string) =>
   post<ConvenioProcedimentoPreco>(
     "/api/convenios-procedimentos-precos/",
     payload,
@@ -174,7 +353,7 @@ export const saveConvenioProcedimentoPreco = (payload: object, token: string) =>
   );
 export const updateConvenioProcedimentoPreco = (
   id: number,
-  payload: object,
+  payload: ProcedurePricePayload,
   token: string,
 ) =>
   put<ConvenioProcedimentoPreco>(
@@ -186,7 +365,7 @@ export const deactivateConvenioProcedimentoPreco = (
   id: number,
   token: string,
 ) => del<void>(`/api/convenios-procedimentos-precos/${id}`, token);
-export const getFinanceiroResumo = (params: object, token: string) =>
+export const getFinanceiroResumo = (params: FinanceSummaryParams, token: string) =>
   get<FinanceiroResumo>("/api/financeiro/relatorios/resumo", token, { params });
 export const getPacienteFinanceiroResumo = (
   pacienteId: number,

@@ -11,9 +11,9 @@ import {
   ClinicsPage,
   MedicalGroupsPage,
   ModuleFallback,
-  PatientsPage,
+  PatientsContainer,
   SystemSettingsPage,
-  UsersPage,
+  UsersContainer,
 } from "./lazyModules";
 
 type AccessState = {
@@ -167,118 +167,29 @@ export function AppMainContent({
           onOpenSettings={navigation.openSettings}
         />
       ) : activeView === "users" || activeView === "profile" ? (
-        <UsersPage
+        <UsersContainer
           moduleMode={moduleMode}
+          domain={usersDomain}
           canAccessUsers={canAccessUsers}
-          canUseUserForm={usersDomain.canUseUserForm}
           canAssignAllProfiles={isSuperAdmin}
-          editingId={usersDomain.editingId}
-          editingUserDetails={usersDomain.editingUserDetails}
-          formData={usersDomain.formData}
-          formError={usersDomain.formError}
-          formLoading={usersDomain.formLoading}
-          pendingUserFiles={usersDomain.pendingUserFiles}
-          photoInputKey={usersDomain.photoInputKey}
-          userFileInputKey={usersDomain.userFileInputKey}
-          users={usersDomain.paginatedUsers}
-          usersLoading={usersDomain.usersLoading}
-          usersError={usersDomain.usersError}
-          successMessage={usersDomain.successMessage}
-          usersTotalItems={usersDomain.usersTotalItems}
-          visibleStart={usersDomain.visibleStart}
-          visibleEnd={usersDomain.visibleEnd}
-          currentPage={usersDomain.currentPage}
-          totalPages={usersDomain.totalPages}
-          searchTerm={usersDomain.searchTerm}
-          sortBy={usersDomain.sortBy}
-          sortDirection={usersDomain.sortDirection}
           sessionToken={session.token}
-          setFormData={usersDomain.setFormData}
-          setSearchTerm={usersDomain.setSearchTerm}
-          setCurrentPage={usersDomain.setCurrentPage}
           onSortChange={sortHandlers.handleUserSortChange}
-          closeUserForm={usersDomain.closeUserForm}
-          openNewUserForm={usersDomain.openNewUserForm}
-          handleSubmitUser={usersDomain.handleSubmitUser}
-          handleProfilePhotoChange={usersDomain.handleProfilePhotoChange}
-          handleRemoveProfilePhoto={usersDomain.handleRemoveProfilePhoto}
-          handleUserFilesChange={usersDomain.handleUserFilesChange}
-          removePendingUserFile={usersDomain.removePendingUserFile}
-          handleDeleteUserArquivo={usersDomain.handleDeleteUserArquivo}
-          handleEditUser={usersDomain.handleEditUser}
-          handleDeleteUser={usersDomain.handleDeleteUser}
-          setSelectedInfoUser={usersDomain.setSelectedInfoUser}
-          setSelectedContactUser={usersDomain.setSelectedContactUser}
-          refreshUsers={usersDomain.refreshUsers}
         />
       ) : activeView === "patients" ? (
-        <PatientsPage
+        <PatientsContainer
           moduleMode={moduleMode}
-          canCreatePatients={canCreatePatients}
-          canEditPatients={canEditPatients}
-          canDeletePatients={canDeletePatients}
-          canManageObservacoes={canManagePatientObservacoes}
-          patientReadOnly={patientReadOnly}
-          editingPacienteId={patientsDomain.editingPacienteId}
-          editingPaciente={patientsDomain.editingPaciente}
-          pacienteFormData={patientsDomain.pacienteFormData}
-          pacienteFormError={patientsDomain.pacienteFormError}
-          pacienteFormLoading={patientsDomain.pacienteFormLoading}
-          pendingPatientFiles={patientsDomain.pendingPatientFiles}
-          patientFileInputKey={patientsDomain.patientFileInputKey}
-          pacientes={patientsDomain.paginatedPacientes}
-          pacientesLoading={patientsDomain.pacientesLoading}
-          pacientesError={patientsDomain.pacientesError}
-          pacienteSuccessMessage={patientsDomain.pacienteSuccessMessage}
-          pacientesTotalItems={patientsDomain.pacientesTotalItems}
-          pacienteVisibleStart={patientsDomain.pacienteVisibleStart}
-          pacienteVisibleEnd={patientsDomain.pacienteVisibleEnd}
-          pacienteCurrentPage={patientsDomain.pacienteCurrentPage}
-          pacienteTotalPages={patientsDomain.pacienteTotalPages}
-          pacienteSearchTerm={patientsDomain.pacienteSearchTerm}
-          sortBy={patientsDomain.sortBy}
-          sortDirection={patientsDomain.sortDirection}
-          pacienteFilters={patientsDomain.pacienteFilters}
-          pacienteExportLoading={patientsDomain.pacienteExportLoading}
-          pacienteExportScope={patientsDomain.pacienteExportScope}
-          hospitais={patientsDomain.hospitais}
-          hospitaisError={patientsDomain.hospitaisError}
-          medicalUsers={patientsDomain.medicalUsers}
-          convenios={patientsDomain.convenios}
-          conveniosError={patientsDomain.conveniosError}
-          opmeFornecedores={patientsDomain.opmeFornecedores}
-          opmeFornecedoresError={patientsDomain.opmeFornecedoresError}
-          isAdmin={isAdmin}
-          isMedical={isMedical}
+          domain={patientsDomain}
+          access={{
+            canCreatePatients,
+            canEditPatients,
+            canDeletePatients,
+            canManageObservacoes: canManagePatientObservacoes,
+            patientReadOnly,
+            isAdmin,
+            isMedical,
+          }}
           sessionToken={session.token}
-          setPacienteFormData={patientsDomain.setPacienteFormData}
-          setPacienteSearchTerm={patientsDomain.setPacienteSearchTerm}
-          setPacienteFilters={patientsDomain.setPacienteFilters}
-          setPacienteExportScope={patientsDomain.setPacienteExportScope}
-          setPacienteCurrentPage={patientsDomain.setPacienteCurrentPage}
           onSortChange={sortHandlers.handlePacienteSortChange}
-          closePacienteForm={patientsDomain.closePacienteForm}
-          openNewPacienteForm={patientsDomain.openNewPacienteForm}
-          handleSubmitPaciente={patientsDomain.handleSubmitPaciente}
-          handleOpenCbhpmModal={patientsDomain.handleOpenCbhpmModal}
-          handleRemovePacienteProcedimento={
-            patientsDomain.handleRemovePacienteProcedimento
-          }
-          handlePacienteFilesChange={patientsDomain.handlePacienteFilesChange}
-          removePendingPatientFile={patientsDomain.removePendingPatientFile}
-          handleDeletePacienteArquivo={
-            patientsDomain.handleDeletePacienteArquivo
-          }
-          handleExportPacientes={patientsDomain.handleExportPacientes}
-          handleEditPaciente={patientsDomain.handleEditPaciente}
-          handleDeletePaciente={patientsDomain.handleDeletePaciente}
-          handleOpenPacienteFiles={patientsDomain.handleOpenPacienteFiles}
-          handleOpenPacienteObservacoes={
-            patientsDomain.handleOpenPacienteObservacoes
-          }
-          setSelectedPatientInfo={patientsDomain.setSelectedPatientInfo}
-          clearPacienteFilters={patientsDomain.clearPacienteFilters}
-          refreshPacientes={patientsDomain.refreshPacientes}
         />
       ) : activeView === "clinics" && canAccessClinics ? (
         <ClinicsPage session={session} isSuperAdmin={isSuperAdmin} onClinicSelected={onClinicSelected} />

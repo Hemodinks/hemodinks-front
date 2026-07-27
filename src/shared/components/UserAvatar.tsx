@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getUserProfilePhoto } from '../../services';
-import { getUserInitials, resolveProfilePhotoSource } from '../../shared/utils/formatters';
+import { getUserInitials, resolveProfilePhotoSource } from '../utils/formatters';
 
 type UserAvatarProps = {
   userId?: number;

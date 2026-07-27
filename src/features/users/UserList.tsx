@@ -1,9 +1,15 @@
-import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Info, Mail, Pencil, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { CheckCircle2, CircleCheck, CircleX, Info, Mail, Pencil, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { User } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
 import { formatProfileName } from '../../shared/utils/formatters';
-import { scrollListCarousel } from '../../shared/utils/carousel';
-import { UserAvatar } from './UserAvatar';
+import { UserAvatar } from '../../shared/components/UserAvatar';
+import {
+  HorizontalTableScroller,
+  ListToolbar,
+  Pagination,
+  SortableHeader,
+  TableStateRow,
+} from '../../shared/components/listing';
 
 type UserListProps = {
   users: User[];
@@ -56,13 +62,7 @@ export function UserList({
 }: UserListProps) {
   return (
     <DataPanel>
-      <div className="data-header">
-        <div>
-          <span className="eyebrow">Base de usuários</span>
-          <h2>{usersTotalItems} cadastrados</h2>
-        </div>
-
-        <div className="table-tools">
+      <ListToolbar eyebrow="Base de usuários" title={`${usersTotalItems} cadastrados`}>
           <Button onClick={onOpenNewUserForm}>
             <Plus size={17} />
             Novo usuário
@@ -75,49 +75,32 @@ export function UserList({
           <IconButton label="Atualizar lista de usuários" onClick={onRefresh} title="Atualizar lista">
             <RefreshCw size={18} />
           </IconButton>
-        </div>
-      </div>
+      </ListToolbar>
 
       {successMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</AlertMessage>}
       {usersError && <AlertMessage type="error">{usersError}</AlertMessage>}
 
-      <div className="carousel-shell">
-        <button
-          type="button"
-          className="carousel-nav carousel-nav-left"
-          onClick={(event) => scrollListCarousel(event, 'previous')}
-          aria-label="Voltar no carrossel de usuários"
-          title="Voltar no carrossel"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <div className="table-wrap list-carousel-wrap users-carousel-wrap">
+      <HorizontalTableScroller entityLabel="usuários" className="users-carousel-wrap">
           <table className="users-table">
             <thead>
               <tr>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('nome')} aria-sort={sortBy === 'nome' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Nome
-                    {sortBy === 'nome' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('perfil')} aria-sort={sortBy === 'perfil' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Perfil
-                    {sortBy === 'perfil' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
+                <SortableHeader field="nome" label="Nome" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
+                <SortableHeader field="perfil" label="Perfil" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
                 <th>Info</th>
                 <th>Contato</th>
                 <th aria-label="Ações" />
               </tr>
             </thead>
             <tbody>
-              {usersLoading ? (
-                <tr>
-                  <td colSpan={5} className="empty-row">Carregando usuários...</td>
-                </tr>
-              ) : users.length ? (
+              {usersLoading || !users.length ? (
+                <TableStateRow
+                  colSpan={5}
+                  loading={usersLoading}
+                  empty={!users.length}
+                  loadingLabel="Carregando usuários..."
+                  emptyLabel="Nenhum usuário encontrado."
+                />
+              ) : (
                 users.map((user) => (
                   <tr key={user.id}>
                     <td data-label="Nome">
@@ -163,49 +146,20 @@ export function UserList({
                     </td>
                   </tr>
                 ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="empty-row">Nenhum usuário encontrado.</td>
-                </tr>
               )}
             </tbody>
           </table>
-        </div>
-        <button
-          type="button"
-          className="carousel-nav carousel-nav-right"
-          onClick={(event) => scrollListCarousel(event, 'next')}
-          aria-label="Avançar no carrossel de usuários"
-          title="Avançar no carrossel"
-        >
-          <ChevronRight size={20} />
-        </button>
-      </div>
+      </HorizontalTableScroller>
 
-      <div className="pagination-bar">
-        <span>
-          {visibleStart}-{visibleEnd} de {usersTotalItems}
-        </span>
-        <div className="pagination-actions">
-          <IconButton
-            label="Página anterior de usuários"
-            onClick={() => onPageChange((page) => Math.max(1, page - 1))}
-            disabled={currentPage === 1}
-            title="Página anterior"
-          >
-            <ChevronLeft size={18} />
-          </IconButton>
-          <span className="page-indicator">Página {currentPage} de {totalPages}</span>
-          <IconButton
-            label="Próxima página de usuários"
-            onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
-            disabled={currentPage === totalPages}
-            title="Próxima página"
-          >
-            <ChevronRight size={18} />
-          </IconButton>
-        </div>
-      </div>
+      <Pagination
+        entityLabel="usuários"
+        visibleStart={visibleStart}
+        visibleEnd={visibleEnd}
+        totalItems={usersTotalItems}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+      />
     </DataPanel>
   );
 }

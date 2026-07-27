@@ -18,7 +18,7 @@ import {
   PROFILE_OPTIONS,
   USER_PROFILE_OPTIONS,
 } from '../../shared/utils/formatters';
-import { UserAvatar } from './UserAvatar';
+import { UserAvatar } from '../../shared/components/UserAvatar';
 
 type UserFormProps = {
   canAccessUsers: boolean;

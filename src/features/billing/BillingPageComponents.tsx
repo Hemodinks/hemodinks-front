@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { Modal } from '../../shared/components/Modal';
 import { IconButton } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
-import { UserAvatar } from '../users/UserAvatar';
+import { UserAvatar } from '../../shared/components/UserAvatar';
 import type { BillingBreakdownItem, BillingChecklistItem, BillingRecord } from './billingUtils';
 
 type BillingSummaryCardProps = {

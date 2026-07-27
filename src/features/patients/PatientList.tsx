@@ -21,7 +21,7 @@ import {
   MEDICAL_USERS_DATALIST_ID,
 } from '../../shared/utils/formatters';
 import { scrollListCarousel } from '../../shared/utils/carousel';
-import { UserAvatar } from '../users/UserAvatar';
+import { UserAvatar } from '../../shared/components/UserAvatar';
 
 type PatientListProps = {
   pacientes: Paciente[];

@@ -126,7 +126,7 @@
   padding: 24px;
   background:
     linear-gradient(var(--background-overlay), var(--background-overlay)),
-    url("../../../imagem candidata hemodinks.jpg") center / cover no-repeat;
+    url("/imagem candidata hemodinks.jpg") center / cover no-repeat;
 }
 
 .error-boundary-panel {

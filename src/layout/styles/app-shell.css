@@ -26,7 +26,7 @@
   background-color: var(--background);
   background-image:
     var(--app-overlay),
-    url("../../../imagem candidata hemodinks.jpg");
+    url("/imagem candidata hemodinks.jpg");
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;

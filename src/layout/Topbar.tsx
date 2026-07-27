@@ -1,7 +1,7 @@
 import { Bell, LogOut } from 'lucide-react';
 import type { BreadcrumbItem } from '../appTypes';
 import type { AuthSession } from '../types';
-import { UserAvatar } from '../features/users/UserAvatar';
+import { UserAvatar } from '../shared/components/UserAvatar';
 import { CompanyLogo } from '../shared/components/CompanyLogo';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
 

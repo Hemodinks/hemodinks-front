@@ -1,0 +1,450 @@
+import {
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+} from "react";
+import { Pencil, Plus, Save, Search, Trash2, X } from "lucide-react";
+import {
+  Button,
+  ComboboxField,
+  DataPanel,
+  IconButton,
+  SelectField,
+  TextField,
+} from "../../shared/components/ui";
+import { formatCurrency } from "../../shared/utils/formatters";
+import type {
+  AtendimentoCirurgico,
+  Convenio,
+  MedicalUserOption,
+  OpmeFornecedor,
+  Paciente,
+} from "../../types";
+import type {
+  AtendimentoFormState,
+  AtendimentoProcedureDraft,
+} from "./billingPageTypes";
+
+type AttendanceSectionProps = {
+  editingId: number | null;
+  showForm: boolean;
+  form: AtendimentoFormState;
+  procedimentos: AtendimentoProcedureDraft[];
+  pacientes: Paciente[];
+  hospitais: Array<{ id: number; nome: string }>;
+  convenios: Convenio[];
+  opmeFornecedores: OpmeFornecedor[];
+  medicalUsers: MedicalUserOption[];
+  isMedical: boolean;
+  loading: boolean;
+  atendimentos: AtendimentoCirurgico[];
+  setForm: Dispatch<SetStateAction<AtendimentoFormState>>;
+  setProcedimentos: Dispatch<SetStateAction<AtendimentoProcedureDraft[]>>;
+  onToggleForm: () => void;
+  onOpenCbhpm: () => void;
+  onSubmit: (event: FormEvent) => void;
+  onCancelEditing: () => void;
+  onSelect: (item: AtendimentoCirurgico) => void;
+  onEdit: (item: AtendimentoCirurgico) => void;
+  onDelete: (item: AtendimentoCirurgico) => void;
+};
+
+export function AttendanceSection({
+  editingId,
+  showForm,
+  form,
+  procedimentos,
+  pacientes,
+  hospitais,
+  convenios,
+  opmeFornecedores,
+  medicalUsers,
+  isMedical,
+  loading,
+  atendimentos,
+  setForm,
+  setProcedimentos,
+  onToggleForm,
+  onOpenCbhpm,
+  onSubmit,
+  onCancelEditing,
+  onSelect,
+  onEdit,
+  onDelete,
+}: AttendanceSectionProps) {
+  return (
+    <>
+      <DataPanel>
+        <div className="billing-section-heading">
+          <div>
+            <span className="eyebrow">Origem clínica</span>
+            <h3>Atendimentos cirúrgicos</h3>
+          </div>
+          {!editingId && (
+            <Button variant="primary" onClick={onToggleForm}>
+              <Plus size={16} /> Novo atendimento
+            </Button>
+          )}
+        </div>
+        {showForm && (
+          <form
+            className="billing-filter-grid billing-attendance-form"
+            onSubmit={onSubmit}
+          >
+            <SelectField
+              label="Paciente"
+              value={form.pacienteId}
+              required
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  pacienteId: event.target.value,
+                }))
+              }
+            >
+              <option value="">Selecione</option>
+              {pacientes.map((paciente) => (
+                <option key={paciente.id} value={paciente.id}>
+                  {paciente.nomePaciente}
+                </option>
+              ))}
+            </SelectField>
+            <TextField
+              label="Data da cirurgia"
+              type="date"
+              value={form.dataProcedimento}
+              required
+              onValueChange={(dataProcedimento) =>
+                setForm((current) => ({ ...current, dataProcedimento }))
+              }
+            />
+            <ComboboxField
+              label="Hospital"
+              value={form.hospital}
+              options={hospitais.map((item) => item.nome)}
+              placeholder="Não informado"
+              noOptionsLabel="Digite para cadastrar um novo hospital."
+              onValueChange={(value) => {
+                const selected = hospitais.find(
+                  (item) =>
+                    item.nome.localeCompare(value.trim(), "pt-BR", {
+                      sensitivity: "base",
+                    }) === 0,
+                );
+                setForm((current) => ({
+                  ...current,
+                  hospitalId: selected ? String(selected.id) : "",
+                  hospital: value,
+                }));
+              }}
+            />
+            <ComboboxField
+              label="Fornecedor OPME"
+              value={form.opmeFornecedor}
+              options={opmeFornecedores.map((item) => item.fornecedor)}
+              placeholder="Não informado"
+              noOptionsLabel="Digite para cadastrar um novo fornecedor OPME."
+              onValueChange={(value) => {
+                const selected = opmeFornecedores.find(
+                  (item) =>
+                    item.fornecedor.localeCompare(value.trim(), "pt-BR", {
+                      sensitivity: "base",
+                    }) === 0,
+                );
+                setForm((current) => ({
+                  ...current,
+                  opmeFornecedorId: selected
+                    ? String(selected.idFornecedor)
+                    : "",
+                  opmeFornecedor: value,
+                }));
+              }}
+            />
+            <ComboboxField
+              label="Convênio"
+              value={form.convenio}
+              options={convenios.map((item) => item.descricaoConvenio)}
+              placeholder="Particular"
+              noOptionsLabel="Digite para cadastrar um novo convênio."
+              onValueChange={(value) => {
+                const selected = convenios.find(
+                  (item) =>
+                    item.descricaoConvenio.localeCompare(
+                      value.trim(),
+                      "pt-BR",
+                      { sensitivity: "base" },
+                    ) === 0,
+                );
+                setForm((current) => ({
+                  ...current,
+                  convenioId: selected ? String(selected.idConvenio) : "",
+                  convenio: value,
+                }));
+              }}
+            />
+            <SelectField
+              label="Médico responsável"
+              value={form.medicoResponsavelId}
+              required
+              disabled={isMedical}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  medicoResponsavelId: event.target.value,
+                }))
+              }
+            >
+              <option value="">Selecione</option>
+              {medicalUsers.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.nome}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              label="Médico auxiliar 1"
+              value={form.medicoAuxiliar1Id}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  medicoAuxiliar1Id: event.target.value,
+                }))
+              }
+            >
+              <option value="">Não informado</option>
+              {medicalUsers
+                .filter(
+                  (user) => String(user.id) !== form.medicoResponsavelId,
+                )
+                .map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.nome}
+                  </option>
+                ))}
+            </SelectField>
+            <SelectField
+              label="Médico auxiliar 2"
+              value={form.medicoAuxiliar2Id}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  medicoAuxiliar2Id: event.target.value,
+                }))
+              }
+            >
+              <option value="">Não informado</option>
+              {medicalUsers
+                .filter(
+                  (user) =>
+                    String(user.id) !== form.medicoResponsavelId &&
+                    String(user.id) !== form.medicoAuxiliar1Id,
+                )
+                .map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.nome}
+                  </option>
+                ))}
+            </SelectField>
+            <TextField
+              label="Diagnóstico"
+              value={form.diagnostico}
+              onValueChange={(diagnostico) =>
+                setForm((current) => ({ ...current, diagnostico }))
+              }
+            />
+            <TextField
+              label="Tratamento médico"
+              value={form.tratamentoMedico}
+              onValueChange={(tratamentoMedico) =>
+                setForm((current) => ({ ...current, tratamentoMedico }))
+              }
+            />
+            <div className="billing-attendance-procedures">
+              <span className="billing-attendance-field-label">
+                Procedimento
+              </span>
+              <Button
+                type="button"
+                className="billing-cbhpm-open"
+                onClick={onOpenCbhpm}
+              >
+                <Search size={17} />
+                Consultar CBHPM
+              </Button>
+              {procedimentos.length ? (
+                <div className="billing-selected-procedures">
+                  {procedimentos.map((item, index) => (
+                    <article
+                      className="billing-selected-procedure"
+                      key={`${item.cbhpmCodigo || "manual"}-${index}`}
+                    >
+                      <div>
+                        {item.cbhpmCodigo && (
+                          <span className="billing-procedure-code">
+                            {item.cbhpmCodigo}
+                          </span>
+                        )}
+                        <strong>{item.descricao}</strong>
+                        {item.valorReferencia != null && (
+                          <span className="billing-procedure-price">
+                            Valor de referência:{" "}
+                            {formatCurrency(item.valorReferencia)}
+                          </span>
+                        )}
+                      </div>
+                      {item.porte && (
+                        <span className="billing-procedure-porte">
+                          {item.porte}
+                        </span>
+                      )}
+                      <Button
+                        type="button"
+                        className="billing-procedure-remove"
+                        aria-label={`Remover ${item.descricao || "procedimento"}`}
+                        title="Remover procedimento"
+                        onClick={() =>
+                          setProcedimentos((current) =>
+                            current.filter(
+                              (_, itemIndex) => itemIndex !== index,
+                            ),
+                          )
+                        }
+                      >
+                        <X size={15} />
+                      </Button>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <span className="file-hint">
+                  Nenhum procedimento selecionado.
+                </span>
+              )}
+            </div>
+            <TextField
+              label="Autorização"
+              className="billing-attendance-authorization"
+              value={form.numeroAutorizacao}
+              onValueChange={(numeroAutorizacao) =>
+                setForm((current) => ({ ...current, numeroAutorizacao }))
+              }
+            />
+            <SelectField
+              label="Status"
+              className="billing-attendance-status"
+              value={form.status}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  status: event.target.value,
+                }))
+              }
+            >
+              {["Planejado", "Autorizado", "Realizado", "Cancelado"].map(
+                (status) => (
+                  <option key={status}>{status}</option>
+                ),
+              )}
+            </SelectField>
+            <div className="billing-attendance-glosa">
+              <TextField
+                label="Valor da glosa"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.valorGlosa}
+                onValueChange={(valorGlosa) =>
+                  setForm((current) => ({ ...current, valorGlosa }))
+                }
+              />
+              <TextField
+                label="Motivo da glosa"
+                value={form.motivoGlosa}
+                required={Number(form.valorGlosa) > 0}
+                onValueChange={(motivoGlosa) =>
+                  setForm((current) => ({ ...current, motivoGlosa }))
+                }
+              />
+            </div>
+            <div className="billing-form-actions">
+              <Button variant="primary" type="submit" disabled={loading}>
+                <Save size={16} />
+                {editingId ? "Atualizar atendimento" : "Salvar atendimento"}
+              </Button>
+              {editingId && (
+                <Button
+                  variant="danger-ghost"
+                  type="button"
+                  onClick={onCancelEditing}
+                >
+                  <X size={16} /> Cancelar edição
+                </Button>
+              )}
+            </div>
+          </form>
+        )}
+      </DataPanel>
+      <DataPanel className="billing-table-panel">
+        <div className="table-wrap">
+          <table className="billing-table billing-attendance-table">
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Procedimentos</th>
+                <th className="billing-actions-column">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {atendimentos.map((item) => (
+                <tr key={item.id}>
+                  <td data-label="Paciente">
+                    <Button onClick={() => onSelect(item)}>
+                      {item.paciente}
+                    </Button>
+                  </td>
+                  <td data-label="Data">
+                    {new Date(item.dataProcedimento).toLocaleDateString("pt-BR")}
+                  </td>
+                  <td data-label="Status">{item.status}</td>
+                  <td data-label="Procedimentos">
+                    {item.procedimentos
+                      .map(
+                        (procedure) =>
+                          procedure.cbhpmCodigo || procedure.descricao,
+                      )
+                      .join(", ")}
+                  </td>
+                  <td
+                    className="billing-actions-column"
+                    data-label="Ações"
+                  >
+                    <div className="billing-row-actions">
+                      <IconButton
+                        label="Editar"
+                        title="Editar"
+                        tone="muted"
+                        onClick={() => onEdit(item)}
+                      >
+                        <Pencil size={17} />
+                      </IconButton>
+                      <IconButton
+                        label="Excluir"
+                        title="Excluir"
+                        tone="danger"
+                        onClick={() => onDelete(item)}
+                      >
+                        <Trash2 size={17} />
+                      </IconButton>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DataPanel>
+    </>
+  );
+}

@@ -1,7 +1,13 @@
-import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Pencil, Plus, RefreshCw, ShieldPlus, Trash2 } from 'lucide-react';
+import { CheckCircle2, CircleCheck, CircleX, Pencil, Plus, RefreshCw, ShieldPlus, Trash2 } from 'lucide-react';
 import type { MedicalGroup } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
-import { scrollListCarousel } from '../../shared/utils/carousel';
+import {
+  HorizontalTableScroller,
+  ListToolbar,
+  Pagination,
+  SortableHeader,
+  TableStateRow,
+} from '../../shared/components/listing';
 
 type MedicalGroupListProps = {
   groups: MedicalGroup[];
@@ -48,13 +54,7 @@ export function MedicalGroupList({
 }: MedicalGroupListProps) {
   return (
     <DataPanel>
-      <div className="data-header">
-        <div>
-          <span className="eyebrow">Equipes médicas</span>
-          <h2>{totalItems} grupos cadastrados</h2>
-        </div>
-
-        <div className="table-tools">
+      <ListToolbar eyebrow="Equipes médicas" title={`${totalItems} grupos cadastrados`}>
           <Button onClick={onOpenNewForm}>
             <Plus size={17} />
             Novo grupo médico
@@ -67,54 +67,32 @@ export function MedicalGroupList({
           <IconButton label="Atualizar lista de grupos médicos" onClick={onRefresh} title="Atualizar lista">
             <RefreshCw size={18} />
           </IconButton>
-        </div>
-      </div>
+      </ListToolbar>
 
       {successMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</AlertMessage>}
       {groupsError && <AlertMessage type="error">{groupsError}</AlertMessage>}
 
-      <div className="carousel-shell">
-        <button
-          type="button"
-          className="carousel-nav carousel-nav-left"
-          onClick={(event) => scrollListCarousel(event, 'previous')}
-          aria-label="Voltar no carrossel de grupos médicos"
-          title="Voltar no carrossel"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <div className="table-wrap list-carousel-wrap">
+      <HorizontalTableScroller entityLabel="grupos médicos">
           <table className="users-table medical-groups-table">
             <thead>
               <tr>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('nome')} aria-sort={sortBy === 'nome' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Grupo
-                    {sortBy === 'nome' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('membros')} aria-sort={sortBy === 'membros' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Médicos
-                    {sortBy === 'membros' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('ativo')} aria-sort={sortBy === 'ativo' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Status
-                    {sortBy === 'ativo' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
+                <SortableHeader field="nome" label="Grupo" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
+                <SortableHeader field="membros" label="Médicos" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
+                <SortableHeader field="ativo" label="Status" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
                 <th>Membros</th>
                 <th aria-label="Ações" />
               </tr>
             </thead>
             <tbody>
-              {groupsLoading ? (
-                <tr>
-                  <td colSpan={5} className="empty-row">Carregando grupos médicos...</td>
-                </tr>
-              ) : groups.length ? (
+              {groupsLoading || !groups.length ? (
+                <TableStateRow
+                  colSpan={5}
+                  loading={groupsLoading}
+                  empty={!groups.length}
+                  loadingLabel="Carregando grupos médicos..."
+                  emptyLabel="Nenhum grupo médico encontrado."
+                />
+              ) : (
                 groups.map((group) => (
                   <tr key={group.id}>
                     <td data-label="Grupo">
@@ -149,49 +127,20 @@ export function MedicalGroupList({
                     </td>
                   </tr>
                 ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="empty-row">Nenhum grupo médico encontrado.</td>
-                </tr>
               )}
             </tbody>
           </table>
-        </div>
-        <button
-          type="button"
-          className="carousel-nav carousel-nav-right"
-          onClick={(event) => scrollListCarousel(event, 'next')}
-          aria-label="Avançar no carrossel de grupos médicos"
-          title="Avançar no carrossel"
-        >
-          <ChevronRight size={20} />
-        </button>
-      </div>
+      </HorizontalTableScroller>
 
-      <div className="pagination-bar">
-        <span>
-          {visibleStart}-{visibleEnd} de {totalItems}
-        </span>
-        <div className="pagination-actions">
-          <IconButton
-            label="Página anterior de grupos médicos"
-            onClick={() => onPageChange((page) => Math.max(1, page - 1))}
-            disabled={currentPage === 1}
-            title="Página anterior"
-          >
-            <ChevronLeft size={18} />
-          </IconButton>
-          <span className="page-indicator">Página {currentPage} de {totalPages}</span>
-          <IconButton
-            label="Próxima página de grupos médicos"
-            onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
-            disabled={currentPage === totalPages}
-            title="Próxima página"
-          >
-            <ChevronRight size={18} />
-          </IconButton>
-        </div>
-      </div>
+      <Pagination
+        entityLabel="grupos médicos"
+        visibleStart={visibleStart}
+        visibleEnd={visibleEnd}
+        totalItems={totalItems}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+      />
     </DataPanel>
   );
 }
