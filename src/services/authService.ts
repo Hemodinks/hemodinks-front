@@ -14,6 +14,10 @@ export function authenticate(email: string, senha: string, clinicaSlug?: string)
   });
 }
 
+export function refreshSession(token: string) {
+  return post<{ token: string }>('/api/session/renovar', {}, token);
+}
+
 export function resetPassword(email: string, clinicaSlug?: string) {
   return post<ResetPasswordResponse>('/api/users/password/reset', { email }, undefined, {
     headers: clinicaSlug ? { 'X-Clinica-Slug': clinicaSlug } : undefined,

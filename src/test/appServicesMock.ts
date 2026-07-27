@@ -11,6 +11,7 @@ export function createAppServicesMock() {
       dataAtualizacao: null,
     },
     authenticate: vi.fn(),
+    refreshSession: vi.fn(),
     listPublicClinics: vi.fn(),
     listPlatformClinics: vi.fn(),
     createPlatformClinic: vi.fn(),
