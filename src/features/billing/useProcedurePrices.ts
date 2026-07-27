@@ -1,6 +1,12 @@
 import { useState } from "react";
 import type { ConvenioProcedimentoPreco } from "../../types";
-import { getConvenioProcedimentoPrecos } from "../../services";
+import {
+  deactivateConvenioProcedimentoPreco,
+  getConvenioProcedimentoPrecos,
+  saveConvenioProcedimentoPreco,
+  updateConvenioProcedimentoPreco,
+} from "../../services";
+import type { ProcedurePricePayload } from "../../services/financeiroService";
 import type { PriceFormState } from "./billingPageTypes";
 
 export function createInitialPriceForm(): PriceFormState {
@@ -23,6 +29,16 @@ export function useProcedurePrices() {
   const loadProcedurePrices = async (token: string) => {
     setPrecos(await getConvenioProcedimentoPrecos(token));
   };
+  const saveProcedurePrice = (
+    id: number | null,
+    payload: ProcedurePricePayload,
+    token: string,
+  ) =>
+    id
+      ? updateConvenioProcedimentoPreco(id, payload, token)
+      : saveConvenioProcedimentoPreco(payload, token);
+  const deactivateProcedurePrice = (id: number, token: string) =>
+    deactivateConvenioProcedimentoPreco(id, token);
 
   return {
     precos,
@@ -32,5 +48,7 @@ export function useProcedurePrices() {
     editingPriceId,
     setEditingPriceId,
     loadProcedurePrices,
+    saveProcedurePrice,
+    deactivateProcedurePrice,
   };
 }

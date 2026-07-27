@@ -1,10 +1,24 @@
 import { useMemo, useState } from "react";
 import type { ContaReceber, FinanceiroResumo } from "../../types";
 import {
+  cancelContaReceber,
+  downloadComprovanteRecebimento,
+  estornarRecebimento,
   getContasReceber,
   getFinanceiroResumo,
   getPacientes,
+  registrarRecebimento,
+  searchContasReceber,
+  updateContaReceber,
+  uploadComprovanteRecebimento,
 } from "../../services";
+import type {
+  ContaReceberCancelPayload,
+  ContaReceberUpdatePayload,
+  FinanceSearchParams,
+  FinanceSummaryParams,
+  RecebimentoPayload,
+} from "../../services/financeiroService";
 import type {
   FinanceFiltersState,
   FinancePageState,
@@ -80,6 +94,31 @@ export function useReceivables() {
     setFinanceiroResumo(summary);
     return patientPage.items;
   };
+  const reverseReceipt = (id: number, reason: string, token: string) =>
+    estornarRecebimento(id, reason, token);
+  const registerReceipt = (
+    id: number,
+    payload: RecebimentoPayload,
+    token: string,
+  ) => registrarRecebimento(id, payload, token);
+  const uploadReceipt = (id: number, file: File, token: string) =>
+    uploadComprovanteRecebimento(id, file, token);
+  const searchReceivables = (params: FinanceSearchParams, token: string) =>
+    searchContasReceber(params, token);
+  const loadSummary = (params: FinanceSummaryParams, token: string) =>
+    getFinanceiroResumo(params, token);
+  const saveReceivable = (
+    id: number,
+    payload: ContaReceberUpdatePayload,
+    token: string,
+  ) => updateContaReceber(id, payload, token);
+  const cancelReceivable = (
+    id: number,
+    payload: ContaReceberCancelPayload,
+    token: string,
+  ) => cancelContaReceber(id, payload, token);
+  const downloadReceiptFile = (id: number, token: string) =>
+    downloadComprovanteRecebimento(id, token);
 
   return {
     contas,
@@ -107,5 +146,13 @@ export function useReceivables() {
     openBalance,
     received,
     loadReceivables,
+    reverseReceipt,
+    registerReceipt,
+    uploadReceipt,
+    searchReceivables,
+    loadSummary,
+    saveReceivable,
+    cancelReceivable,
+    downloadReceiptFile,
   };
 }

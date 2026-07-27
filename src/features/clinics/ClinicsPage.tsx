@@ -1,12 +1,5 @@
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useState } from 'react';
 import { Building2, CheckCircle2, ImagePlus, Pencil, Plus, RefreshCw, RotateCcw, Save, Trash2, X } from 'lucide-react';
-import {
-  createPlatformClinic,
-  deactivatePlatformClinic,
-  listPlatformClinics,
-  selectSessionClinic,
-  updatePlatformClinic,
-} from '../../services';
 import type { AuthSession, ClinicPayload, PlatformClinic, SelectClinicResponse } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, TextField } from '../../shared/components/ui';
 import { readProfilePhoto } from '../../shared/utils/files';
@@ -17,6 +10,7 @@ import {
   MAX_PROFILE_PHOTO_BYTES,
 } from '../../shared/utils/formatters';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
+import { useClinicsGateway } from './useClinicsGateway';
 import './clinics.css';
 
 type ClinicForm = {
@@ -68,6 +62,7 @@ type ClinicsPageProps = {
 };
 
 export function ClinicsPage({ session, isSuperAdmin, onClinicSelected }: ClinicsPageProps) {
+  const clinicsGateway = useClinicsGateway(session.token);
   const [clinics, setClinics] = useState<PlatformClinic[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,7 +77,7 @@ export function ClinicsPage({ session, isSuperAdmin, onClinicSelected }: Clinics
     setLoading(true);
     setError('');
     try {
-      setClinics(await listPlatformClinics(session.token));
+      setClinics(await clinicsGateway.list());
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -178,10 +173,10 @@ export function ClinicsPage({ session, isSuperAdmin, onClinicSelected }: Clinics
 
     try {
       if (editing) {
-        await updatePlatformClinic(editing.id, payload, session.token);
+        await clinicsGateway.update(editing.id, payload);
         setSuccess('Clinica atualizada com sucesso.');
       } else {
-        await createPlatformClinic(payload, session.token);
+        await clinicsGateway.create(payload);
         setSuccess('Clinica criada com sucesso.');
       }
       setFormOpen(false);
@@ -197,7 +192,7 @@ export function ClinicsPage({ session, isSuperAdmin, onClinicSelected }: Clinics
     if (!window.confirm(`Desativar a clinica ${clinic.nome}? Os dados serao preservados.`)) return;
     setError('');
     try {
-      await deactivatePlatformClinic(clinic.id, session.token);
+      await clinicsGateway.deactivate(clinic.id);
       setSuccess('Clinica desativada.');
       await loadClinics();
     } catch (requestError) {
@@ -208,7 +203,7 @@ export function ClinicsPage({ session, isSuperAdmin, onClinicSelected }: Clinics
   const switchClinic = async (clinic: PlatformClinic) => {
     setError('');
     try {
-      onClinicSelected(await selectSessionClinic(clinic.id, session.token));
+      onClinicSelected(await clinicsGateway.select(clinic.id));
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     }

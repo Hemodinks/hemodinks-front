@@ -1,6 +1,14 @@
 import { useState } from "react";
 import type { AtendimentoCirurgico, Paciente } from "../../types";
-import { getAtendimentos, getHospitais, getPacientes } from "../../services";
+import {
+  createAtendimento,
+  deleteAtendimento,
+  getAtendimentos,
+  getHospitais,
+  getPacientes,
+  updateAtendimento,
+} from "../../services";
+import type { AtendimentoPayload } from "../../services/financeiroService";
 import type {
   AtendimentoFormState,
   AtendimentoProcedureDraft,
@@ -63,6 +71,16 @@ export function useAttendances(medicoResponsavelId = "") {
     setPacientes(patientPage.items);
     setHospitais(hospitalItems);
   };
+  const saveAttendance = (
+    id: number | null,
+    payload: AtendimentoPayload,
+    token: string,
+  ) =>
+    id
+      ? updateAtendimento(id, payload, token)
+      : createAtendimento(payload, token);
+  const removeAttendance = (id: number, token: string) =>
+    deleteAtendimento(id, token);
 
   return {
     atendimentos,
@@ -84,5 +102,7 @@ export function useAttendances(medicoResponsavelId = "") {
     cbhpmModalOpen,
     setCbhpmModalOpen,
     loadAttendances,
+    saveAttendance,
+    removeAttendance,
   };
 }

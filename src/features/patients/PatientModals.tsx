@@ -5,7 +5,7 @@ import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
 import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
-import { downloadPacienteArquivo, getPacienteFinanceiroResumo } from '../../services';
+import { usePatientDocuments } from './usePatientDocuments';
 import { formatCurrency } from '../../shared/utils/formatters';
 import { getPacienteProcedimentosFromPaciente } from './patientUtils';
 import './patients.css';
@@ -23,11 +23,12 @@ function renderInfoValue(label: string, value?: string | null) {
 }
 
 export function PatientInfoModal({ paciente, sessionToken, onClose }: PatientInfoModalProps) {
+  const patientDocuments = usePatientDocuments(sessionToken);
   const procedimentos = getPacienteProcedimentosFromPaciente(paciente);
   const [financeiro, setFinanceiro] = useState<PacienteFinanceiroResumo | null>(null);
   const [financeiroError, setFinanceiroError] = useState('');
   useEffect(() => { let active = true; setFinanceiroError('');
-    void getPacienteFinanceiroResumo(paciente.id, sessionToken).then((result) => { if (active) setFinanceiro(result); })
+    void patientDocuments.getFinancialSummary(paciente.id).then((result) => { if (active) setFinanceiro(result); })
       .catch((reason) => { if (active) setFinanceiroError(reason instanceof Error ? reason.message : 'Não foi possível carregar o resumo financeiro.'); });
     return () => { active = false; };
   }, [paciente.id, sessionToken]);
@@ -134,6 +135,7 @@ type PatientFilesModalProps = {
 };
 
 export function PatientFilesModal({ paciente, loading, error, sessionToken, onClose }: PatientFilesModalProps) {
+  const patientDocuments = usePatientDocuments(sessionToken);
   return (
     <Modal titleId="patient-files-title" className="info-modal files-modal" onClose={onClose}>
         <div className="panel-title">
@@ -157,7 +159,7 @@ export function PatientFilesModal({ paciente, loading, error, sessionToken, onCl
                 <span>{arquivo.nomeOriginal}</span>
                 <SecureFileDownloadButton
                   fileName={arquivo.nomeOriginal}
-                  loadFile={() => downloadPacienteArquivo(paciente.id, arquivo.id, sessionToken)}
+                  loadFile={() => patientDocuments.download(paciente.id, arquivo.id)}
                 />
               </li>
             ))}

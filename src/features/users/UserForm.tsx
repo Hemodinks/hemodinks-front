@@ -4,7 +4,7 @@ import type { User, UserFormData } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
 import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
-import { downloadUserArquivo } from '../../services';
+import { useUserDocuments } from './useUserDocuments';
 import {
   BRAZIL_UF_OPTIONS,
   formatPhoneInput,
@@ -65,6 +65,7 @@ export function UserForm({
   onRemovePendingUserFile,
   onDeleteUserArquivo,
 }: UserFormProps) {
+  const userDocuments = useUserDocuments(sessionToken);
   const isFormBusy = formLoading;
 
   return (
@@ -257,7 +258,7 @@ export function UserForm({
                     <SecureFileDownloadButton
                       fileName={arquivo.nomeOriginal}
                       label={arquivo.nomeOriginal}
-                      loadFile={() => downloadUserArquivo(editingUserDetails.id, arquivo.id, sessionToken)}
+                      loadFile={() => userDocuments.download(editingUserDetails.id, arquivo.id)}
                     />
                     <IconButton label="Excluir arquivo" tone="muted" className="mini" onClick={() => void onDeleteUserArquivo(editingUserDetails, arquivo.id)}>
                       <Trash2 size={14} />

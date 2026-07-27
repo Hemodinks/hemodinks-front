@@ -1,6 +1,31 @@
 import { useState } from "react";
 import type { Faturamento } from "../../types";
-import { getAtendimentos, getFaturamentos } from "../../services";
+import {
+  createFaturamento,
+  deleteFaturamento,
+  deleteGlosa,
+  deleteRecursoGlosa,
+  gerarContaReceber,
+  getAtendimentos,
+  getFaturamentos,
+  registrarRecursoGlosa,
+  registrarRetornoFaturamento,
+  updateFaturamento,
+  updateFaturamentoItem,
+  updateFaturamentoStatus,
+  updateGlosa,
+  updateRecursoGlosa,
+} from "../../services";
+import type {
+  ContaReceberCreatePayload,
+  FaturamentoItemPayload,
+  FaturamentoPayload,
+  FaturamentoStatusPayload,
+  GlosaUpdatePayload,
+  RecursoGlosaPayload,
+  RecursoGlosaUpdatePayload,
+  RetornoFaturamentoPayload,
+} from "../../services/financeiroService";
 import type {
   AppealDraftState,
   BillingReturnDraft,
@@ -57,6 +82,53 @@ export function useInvoicing() {
     setFaturamentos(items);
     return atendimentos;
   };
+  const saveInvoice = (
+    id: number | null,
+    payload: FaturamentoPayload,
+    token: string,
+  ) =>
+    id ? updateFaturamento(id, payload, token) : createFaturamento(payload, token);
+  const removeInvoice = (id: number, token: string) =>
+    deleteFaturamento(id, token);
+  const changeInvoiceStatus = (
+    id: number,
+    payload: FaturamentoStatusPayload,
+    token: string,
+  ) => updateFaturamentoStatus(id, payload, token);
+  const createReceivable = (
+    id: number,
+    payload: ContaReceberCreatePayload,
+    token: string,
+  ) => gerarContaReceber(id, payload, token);
+  const registerReturn = (
+    id: number,
+    payload: RetornoFaturamentoPayload,
+    token: string,
+  ) => registrarRetornoFaturamento(id, payload, token);
+  const registerAppeal = (
+    id: number,
+    payload: RecursoGlosaPayload,
+    token: string,
+  ) => registrarRecursoGlosa(id, payload, token);
+  const saveGlosaRecord = (
+    id: number,
+    payload: GlosaUpdatePayload,
+    token: string,
+  ) => updateGlosa(id, payload, token);
+  const removeGlosa = (id: number, token: string) => deleteGlosa(id, token);
+  const saveAppealRecord = (
+    id: number,
+    payload: RecursoGlosaUpdatePayload,
+    token: string,
+  ) => updateRecursoGlosa(id, payload, token);
+  const removeAppeal = (id: number, token: string) =>
+    deleteRecursoGlosa(id, token);
+  const saveInvoiceItem = (
+    invoiceId: number,
+    itemId: number,
+    payload: FaturamentoItemPayload,
+    token: string,
+  ) => updateFaturamentoItem(invoiceId, itemId, payload, token);
 
   return {
     faturamentos,
@@ -82,5 +154,16 @@ export function useInvoicing() {
     recursoDraft,
     setRecursoDraft,
     loadInvoicing,
+    saveInvoice,
+    removeInvoice,
+    changeInvoiceStatus,
+    createReceivable,
+    registerReturn,
+    registerAppeal,
+    saveGlosaRecord,
+    removeGlosa,
+    saveAppealRecord,
+    removeAppeal,
+    saveInvoiceItem,
   };
 }

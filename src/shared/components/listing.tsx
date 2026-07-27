@@ -137,6 +137,10 @@ type PaginationProps = {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number | ((current: number) => number)) => void;
+  disabled?: boolean;
+  className?: string;
+  previousLabel?: string;
+  nextLabel?: string;
 };
 
 export function Pagination({
@@ -147,17 +151,21 @@ export function Pagination({
   currentPage,
   totalPages,
   onPageChange,
+  disabled = false,
+  className = "",
+  previousLabel = `Página anterior de ${entityLabel}`,
+  nextLabel = `Próxima página de ${entityLabel}`,
 }: PaginationProps) {
   return (
-    <div className="pagination-bar">
+    <div className={`pagination-bar ${className}`.trim()}>
       <span>
         {visibleStart}-{visibleEnd} de {totalItems}
       </span>
       <div className="pagination-actions">
         <IconButton
-          label={`Página anterior de ${entityLabel}`}
+          label={previousLabel}
           onClick={() => onPageChange((page) => Math.max(1, page - 1))}
-          disabled={currentPage === 1}
+          disabled={disabled || currentPage === 1}
           title="Página anterior"
         >
           <ChevronLeft size={18} />
@@ -166,11 +174,11 @@ export function Pagination({
           Página {currentPage} de {totalPages}
         </span>
         <IconButton
-          label={`Próxima página de ${entityLabel}`}
+          label={nextLabel}
           onClick={() =>
             onPageChange((page) => Math.min(totalPages, page + 1))
           }
-          disabled={currentPage === totalPages}
+          disabled={disabled || currentPage === totalPages}
           title="Próxima página"
         >
           <ChevronRight size={18} />

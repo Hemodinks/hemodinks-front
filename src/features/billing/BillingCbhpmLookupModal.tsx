@@ -1,14 +1,10 @@
 import { type FormEvent, useEffect, useState } from "react";
 import {
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Eraser,
   Plus,
   Search,
   X,
 } from "lucide-react";
-import { getCbhpmGeral } from "../../services";
 import type { CbhpmGeral, PagedResult } from "../../types";
 import { Modal } from "../../shared/components/Modal";
 import {
@@ -17,7 +13,8 @@ import {
   IconButton,
   TextField,
 } from "../../shared/components/ui";
-import { formatCurrency } from "../../shared/utils/formatters";
+import { CbhpmResultsTable } from "../../shared/components/CbhpmResultsTable";
+import { useBillingCbhpmGateway } from "./useBillingCbhpmGateway";
 
 type BillingCbhpmLookupModalProps = {
   token: string;
@@ -39,6 +36,7 @@ export function BillingCbhpmLookupModal({
   onSelect,
   onClose,
 }: BillingCbhpmLookupModalProps) {
+  const cbhpmGateway = useBillingCbhpmGateway(token);
   const [filters, setFilters] = useState({
     codigo: "",
     descricao: "",
@@ -62,7 +60,7 @@ export function BillingCbhpmLookupModal({
       setLoading(true);
       setError("");
       try {
-        const response = await getCbhpmGeral(token, {
+        const response = await cbhpmGateway.search({
           page,
           pageSize,
           codigo: appliedFilters.codigo || undefined,
@@ -214,83 +212,22 @@ export function BillingCbhpmLookupModal({
       {error && <AlertMessage type="error">{error}</AlertMessage>}
       {manualError && <AlertMessage type="error">{manualError}</AlertMessage>}
 
-      <div className="table-wrap billing-cbhpm-table-wrap">
-        <table className="billing-table billing-cbhpm-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Descrição</th>
-              <th>Porte</th>
-              <th>Valor de referência</th>
-              <th aria-label="Selecionar procedimento" />
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="empty-row">
-                  Carregando procedimentos...
-                </td>
-              </tr>
-            ) : result.items.length ? (
-              result.items.map((item) => (
-                <tr key={item.id}>
-                  <td data-label="Código">{item.codigo}</td>
-                  <td data-label="Descrição">{item.procedimento}</td>
-                  <td data-label="Porte">{item.porte || "-"}</td>
-                  <td data-label="Valor de referência">
-                    {item.valorReferencia == null
-                      ? "-"
-                      : formatCurrency(item.valorReferencia)}
-                  </td>
-                  <td data-label="Selecionar">
-                    <Button
-                      className="billing-cbhpm-select"
-                      onClick={() => onSelect(item)}
-                    >
-                      <CheckCircle2 size={17} />
-                      Adicionar
-                    </Button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="empty-row">
-                  Nenhum procedimento encontrado.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <CbhpmResultsTable
+        items={result.items}
+        loading={loading}
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={result.totalItems}
+        visibleStart={visibleStart}
+        visibleEnd={visibleEnd}
+        onPageChange={setPage}
+        onSelect={onSelect}
+        wrapClassName="billing-cbhpm-table-wrap"
+        tableClassName="billing-table billing-cbhpm-table"
+        paginationClassName="billing-cbhpm-pagination"
+        selectClassName="billing-cbhpm-select"
+      />
 
-      <div className="pagination-bar billing-cbhpm-pagination">
-        <span>
-          {visibleStart}-{visibleEnd} de {result.totalItems}
-        </span>
-        <div className="pagination-actions">
-          <IconButton
-            label="Página anterior"
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
-            disabled={loading || page === 1}
-          >
-            <ChevronLeft size={18} />
-          </IconButton>
-          <span className="page-indicator">
-            Página {page} de {totalPages}
-          </span>
-          <IconButton
-            label="Próxima página"
-            onClick={() =>
-              setPage((current) => Math.min(totalPages, current + 1))
-            }
-            disabled={loading || page >= totalPages}
-          >
-            <ChevronRight size={18} />
-          </IconButton>
-        </div>
-      </div>
     </Modal>
   );
 }

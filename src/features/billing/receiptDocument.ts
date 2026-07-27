@@ -1,4 +1,3 @@
-import { jsPDF } from "jspdf";
 import { formatCurrency } from "../../shared/utils/formatters";
 
 export type GeneratedReceiptFormat = "pdf" | "jpg";
@@ -47,7 +46,8 @@ function receiptRows(data: GeneratedReceiptData) {
   ] as const;
 }
 
-function downloadPdf(data: GeneratedReceiptData) {
+async function downloadPdf(data: GeneratedReceiptData) {
+  const { jsPDF } = await import("jspdf");
   const document = new jsPDF({ unit: "mm", format: "a4" });
   document.setFillColor(15, 118, 110);
   document.rect(0, 0, 210, 34, "F");
@@ -142,7 +142,7 @@ export async function downloadGeneratedReceipt(
   format: GeneratedReceiptFormat,
 ) {
   if (format === "pdf") {
-    downloadPdf(data);
+    await downloadPdf(data);
     return;
   }
   await downloadJpg(data);

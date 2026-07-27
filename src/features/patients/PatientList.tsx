@@ -1,7 +1,5 @@
 import {
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Download,
   Eye,
   FileText,
@@ -20,8 +18,14 @@ import {
   CONVENIOS_DATALIST_ID,
   MEDICAL_USERS_DATALIST_ID,
 } from '../../shared/utils/formatters';
-import { scrollListCarousel } from '../../shared/utils/carousel';
 import { UserAvatar } from '../../shared/components/UserAvatar';
+import {
+  HorizontalTableScroller,
+  ListToolbar,
+  Pagination,
+  SortableHeader,
+  TableStateRow,
+} from '../../shared/components/listing';
 
 type PatientListProps = {
   pacientes: Paciente[];
@@ -108,13 +112,10 @@ export function PatientList({
 
   return (
     <DataPanel>
-      <div className="data-header">
-        <div>
-          <span className="eyebrow">Cadastro de pacientes</span>
-          <h2>{pacientesTotalItems} cadastrados</h2>
-        </div>
-
-        <div className="table-tools">
+      <ListToolbar
+        eyebrow="Cadastro de pacientes"
+        title={`${pacientesTotalItems} cadastrados`}
+      >
           {canCreatePatients && (
             <Button onClick={onOpenNewPacienteForm}>
               <Plus size={17} />
@@ -194,61 +195,34 @@ export function PatientList({
               </Button>
             </div>
           )}
-        </div>
-      </div>
+      </ListToolbar>
 
       {pacienteSuccessMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{pacienteSuccessMessage}</AlertMessage>}
       {pacientesError && <AlertMessage type="error">{pacientesError}</AlertMessage>}
 
-      <div className="carousel-shell">
-        <button
-          type="button"
-          className="carousel-nav carousel-nav-left"
-          onClick={(event) => scrollListCarousel(event, 'previous')}
-          aria-label="Voltar no carrossel de pacientes"
-          title="Voltar no carrossel"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <div className="table-wrap list-carousel-wrap patients-carousel-wrap">
+      <HorizontalTableScroller entityLabel="pacientes" className="patients-carousel-wrap">
           <table className="patients-table">
             <thead>
               <tr>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('nome')} aria-sort={sortBy === 'nome' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Paciente
-                    {sortBy === 'nome' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
+                <SortableHeader field="nome" label="Paciente" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
                 <th>Info</th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('medico')} aria-sort={sortBy === 'medico' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Cirurgião
-                    {sortBy === 'medico' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('status')} aria-sort={sortBy === 'status' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Status Pago
-                    {sortBy === 'status' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('arquivos')} aria-sort={sortBy === 'arquivos' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Arquivos
-                    {sortBy === 'arquivos' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
+                <SortableHeader field="medico" label="Cirurgião" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
+                <SortableHeader field="status" label="Status Pago" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
+                <SortableHeader field="arquivos" label="Arquivos" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
                 <th>Obs.</th>
                 <th aria-label="Ações" />
               </tr>
             </thead>
             <tbody>
-              {pacientesLoading ? (
-                <tr>
-                  <td colSpan={7} className="empty-row">Carregando pacientes...</td>
-                </tr>
-              ) : pacientes.length ? (
+              {pacientesLoading || !pacientes.length ? (
+                <TableStateRow
+                  colSpan={7}
+                  loading={pacientesLoading}
+                  empty={!pacientes.length}
+                  loadingLabel="Carregando pacientes..."
+                  emptyLabel="Nenhum paciente encontrado."
+                />
+              ) : (
                 pacientes.map((paciente) => {
                   const unreadObservations = paciente.observacoesNaoLidasCount ?? 0;
                   const hasUnreadObservations = unreadObservations > 0;
@@ -341,49 +315,20 @@ export function PatientList({
                   </tr>
                   );
                 })
-              ) : (
-                <tr>
-                  <td colSpan={7} className="empty-row">Nenhum paciente encontrado.</td>
-                </tr>
               )}
             </tbody>
           </table>
-        </div>
-        <button
-          type="button"
-          className="carousel-nav carousel-nav-right"
-          onClick={(event) => scrollListCarousel(event, 'next')}
-          aria-label="Avançar no carrossel de pacientes"
-          title="Avançar no carrossel"
-        >
-          <ChevronRight size={20} />
-        </button>
-      </div>
+      </HorizontalTableScroller>
 
-      <div className="pagination-bar">
-        <span>
-          {pacienteVisibleStart}-{pacienteVisibleEnd} de {pacientesTotalItems}
-        </span>
-        <div className="pagination-actions">
-          <IconButton
-            label="Página anterior de pacientes"
-            onClick={() => onPageChange((page) => Math.max(1, page - 1))}
-            disabled={pacienteCurrentPage === 1}
-            title="Página anterior"
-          >
-            <ChevronLeft size={18} />
-          </IconButton>
-          <span className="page-indicator">Página {pacienteCurrentPage} de {pacienteTotalPages}</span>
-          <IconButton
-            label="Próxima página de pacientes"
-            onClick={() => onPageChange((page) => Math.min(pacienteTotalPages, page + 1))}
-            disabled={pacienteCurrentPage === pacienteTotalPages}
-            title="Próxima página"
-          >
-            <ChevronRight size={18} />
-          </IconButton>
-        </div>
-      </div>
+      <Pagination
+        entityLabel="pacientes"
+        visibleStart={pacienteVisibleStart}
+        visibleEnd={pacienteVisibleEnd}
+        totalItems={pacientesTotalItems}
+        currentPage={pacienteCurrentPage}
+        totalPages={pacienteTotalPages}
+        onPageChange={onPageChange}
+      />
     </DataPanel>
   );
 }

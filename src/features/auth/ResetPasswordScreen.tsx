@@ -12,7 +12,7 @@ import {
   getPasswordStrength,
   MAX_PASSWORD_LENGTH,
 } from '../../shared/utils/formatters';
-import { confirmPasswordReset } from '../../services';
+import { usePasswordResetConfirmation } from './usePasswordResetConfirmation';
 import './auth.css';
 
 type ResetPasswordScreenProps = {
@@ -34,6 +34,7 @@ export function ResetPasswordScreen({
   onBackToLogin,
   onResetCompleted,
 }: ResetPasswordScreenProps) {
+  const passwordReset = usePasswordResetConfirmation();
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
   const [error, setError] = useState('');
@@ -65,7 +66,7 @@ export function ResetPasswordScreen({
     setLoading(true);
 
     try {
-      const result = await confirmPasswordReset(token, novaSenha);
+      const result = await passwordReset.confirm(token, novaSenha);
       successMessage = result.message || 'Senha redefinida com sucesso. Voce ja pode entrar com a nova senha.';
       setSuccess(successMessage);
       setNovaSenha('');

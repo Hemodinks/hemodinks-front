@@ -6,16 +6,6 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import './events.css';
-import {
-  completeAgendaEvent,
-  createAgendaEvent,
-  deleteAgendaEvent,
-  getAgendaEvents,
-  getAgendaMedicalUsers,
-  getAgendaNotificationRecipientOptions,
-  getBrazilPublicHolidays,
-  updateAgendaEvent,
-} from '../../services';
 import type {
   AgendaEvent,
   AgendaEventPayload,
@@ -24,6 +14,7 @@ import type {
   AuthSession,
   PublicHoliday,
 } from '../../types';
+import { useAgendaGateway } from './useAgendaGateway';
 import { getErrorMessage } from '../../shared/utils/formatters';
 import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
 import { AlertMessage, Button, DataPanel, IconButton } from '../../shared/components/ui';
@@ -52,6 +43,7 @@ type AgendaPageProps = {
 export { buildEmptyForm } from './agendaUtils';
 
 export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
+  const agendaGateway = useAgendaGateway(session.token);
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
   const todayKey = useMemo(() => toDateKey(new Date()), []);
   const [visibleMonth, setVisibleMonth] = useState(() => fromDateKey(todayKey));
@@ -94,8 +86,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     setError('');
 
     try {
-      const result = await getAgendaEvents(
-        session.token,
+      const result = await agendaGateway.list(
         firstGridDate.toISOString(),
         lastGridDate.toISOString(),
       );
@@ -116,14 +107,14 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     setHolidayLoading(true);
     setHolidayError('');
 
-    void Promise.all(years.map((year) => getBrazilPublicHolidays(year)))
+    void Promise.all(years.map((year) => agendaGateway.listHolidays(year)))
       .then((result) => setHolidays(result.flat()))
       .catch((caughtError) => setHolidayError(getErrorMessage(caughtError)))
       .finally(() => setHolidayLoading(false));
   }, [days]);
 
   useEffect(() => {
-    void getAgendaMedicalUsers(session.token)
+    void agendaGateway.listMedicalUsers()
       .then(setMedicalUsers)
       .catch((caughtError) => setError(getErrorMessage(caughtError)));
   }, [session.token]);
@@ -132,7 +123,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     setNotificationRecipientsLoading(true);
     setNotificationRecipientsError('');
 
-    void getAgendaNotificationRecipientOptions(session.token)
+    void agendaGateway.listNotificationRecipients()
       .then((options) => {
         setNotificationRecipientOptions(options);
         setNotificationRecipientsError('');
@@ -277,8 +268,8 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     try {
       const payload = buildPayload();
       const savedEvent = editingEventId
-        ? await updateAgendaEvent(editingEventId, payload, session.token)
-        : await createAgendaEvent(payload, session.token);
+        ? await agendaGateway.update(editingEventId, payload)
+        : await agendaGateway.create(payload);
 
       setEvents((current) => mergeAgendaEvent(current, savedEvent));
       setSuccessMessage(editingEventId ? 'Evento atualizado.' : 'Evento cadastrado.');
@@ -326,7 +317,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     setSuccessMessage('');
 
     try {
-      await completeAgendaEvent(agendaEvent.id, session.token);
+      await agendaGateway.complete(agendaEvent.id);
       setSuccessMessage('Evento concluido.');
       await loadEvents();
     } catch (caughtError) {
@@ -352,7 +343,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
     setSuccessMessage('');
 
     try {
-      await deleteAgendaEvent(eventId, session.token);
+      await agendaGateway.delete(eventId);
       setEvents((current) => current.filter((event) => event.id !== eventId));
       setSuccessMessage('Evento excluido.');
       if (editingEventId === eventId) {

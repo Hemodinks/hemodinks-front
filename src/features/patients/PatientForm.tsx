@@ -32,7 +32,7 @@ import {
   TextareaField,
 } from "../../shared/components/ui";
 import { SecureFileDownloadButton } from "../../shared/components/SecureFileDownloadButton";
-import { downloadPacienteArquivo } from "../../services";
+import { usePatientDocuments } from "./usePatientDocuments";
 import {
   formatPhoneInput,
   MAX_NAME_LENGTH,
@@ -92,6 +92,7 @@ export function PatientForm(props: PatientFormProps) {
     onDeletePacienteArquivo,
     onOpenPacienteObservacoes,
   } = props;
+  const patientDocuments = usePatientDocuments(sessionToken);
   const formReadOnly =
     patientReadOnly || (editingPacienteId ? !canEditPatients : false);
   const canSubmitForm =
@@ -242,10 +243,9 @@ export function PatientForm(props: PatientFormProps) {
                       fileName={arquivo.nomeOriginal}
                       label={arquivo.nomeOriginal}
                       loadFile={() =>
-                        downloadPacienteArquivo(
+                        patientDocuments.download(
                           editingPaciente.id,
                           arquivo.id,
-                          sessionToken,
                         )
                       }
                     />

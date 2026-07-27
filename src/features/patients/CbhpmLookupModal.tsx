@@ -1,10 +1,10 @@
 import { type Dispatch, type SetStateAction, memo, useCallback, useMemo, useState } from 'react';
-import { CheckCircle2, ChevronLeft, ChevronRight, Plus, RefreshCw, X } from 'lucide-react';
+import { Plus, RefreshCw, X } from 'lucide-react';
 import type { CbhpmGeral } from '../../types';
 import type { CbhpmFilters } from '../../appTypes';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, Button, IconButton, TextField } from '../../shared/components/ui';
-import { formatCurrency } from '../../shared/utils/formatters';
+import { CbhpmResultsTable } from '../../shared/components/CbhpmResultsTable';
 import { normalizeCbhpmCodigo } from './patientUtils';
 import './patients.css';
 
@@ -159,88 +159,26 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
         {shouldShowFilterHint && <AlertMessage type="warning">{filterHint}</AlertMessage>}
         {error && <AlertMessage type="error">{error}</AlertMessage>}
 
-        <div className="table-wrap cbhpm-table-wrap">
-          <table className="cbhpm-table">
-            <thead>
-              <tr>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('codigo')} aria-sort={sortBy === 'codigo' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Código
-                    {sortBy === 'codigo' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('procedimento')} aria-sort={sortBy === 'procedimento' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Procedimento
-                    {sortBy === 'procedimento' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('porte')} aria-sort={sortBy === 'porte' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Porte
-                    {sortBy === 'porte' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('valorreferencia')} aria-sort={sortBy === 'valorreferencia' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Valor referência
-                    {sortBy === 'valorreferencia' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th aria-label="Selecionar" />
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="empty-row">Carregando procedimentos...</td>
-                </tr>
-              ) : items.length ? (
-                items.map((item) => (
-                  <tr key={item.id}>
-                    <td data-label="Código">{normalizeCbhpmCodigo(item.codigo) || item.codigo}</td>
-                    <td data-label="Procedimento">{item.procedimento}</td>
-                    <td data-label="Porte">{item.porte || '-'}</td>
-                    <td data-label="Valor referência">{formatCurrency(item.valorReferencia)}</td>
-                    <td data-label="Selecionar">
-                      <Button className="select-procedure-action" onClick={() => onSelect(item)}>
-                        <CheckCircle2 size={17} />
-                        Adicionar
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="empty-row">Nenhum procedimento encontrado.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <CbhpmResultsTable
+          items={items}
+          loading={loading}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          visibleStart={visibleStart}
+          visibleEnd={visibleEnd}
+          onPageChange={onPageChange}
+          onSelect={onSelect}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSortChange={onSortChange}
+          formatCode={normalizeCbhpmCodigo}
+          wrapClassName="cbhpm-table-wrap"
+          tableClassName="cbhpm-table"
+          paginationClassName="cbhpm-pagination"
+          selectClassName="select-procedure-action"
+        />
 
-        <div className="pagination-bar cbhpm-pagination">
-          <span>
-            {visibleStart}-{visibleEnd} de {totalItems}
-          </span>
-          <div className="pagination-actions">
-            <IconButton
-              label="Página anterior"
-              onClick={() => onPageChange((page) => Math.max(1, page - 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft size={18} />
-            </IconButton>
-            <span className="page-indicator">Página {currentPage} de {totalPages}</span>
-            <IconButton
-              label="Próxima página"
-              onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight size={18} />
-            </IconButton>
-          </div>
-        </div>
       </Modal>
   );
 });
