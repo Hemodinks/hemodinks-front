@@ -15,7 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { AppView } from '../appTypes';
-import type { AuthSession } from '../features/auth/authTypes';
+import type { AuthSession } from '../shared/domain/sessionTypes';
 import { UserAvatar } from '../shared/components/UserAvatar';
 
 type SidebarProps = {

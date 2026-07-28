@@ -48,7 +48,6 @@ export function useUsersDomain({
 
   const {
     users,
-    usersLoading,
     usersError,
     successMessage,
     setSuccessMessage,
@@ -81,13 +80,14 @@ export function useUsersDomain({
     resetUserForm,
   } = userForm;
   const canUseUserForm = isAdmin || (canEditOwnUser && editingId === session?.user.id);
-  const refreshUserList = useUsersQuery({
+  const usersQuery = useUsersQuery({
     session,
     activeView,
     moduleMode,
     canAccessUsers,
     userList,
   });
+  const refreshUserList = usersQuery.refresh;
 
   const userCommands = useUserCommands({
     session,
@@ -136,7 +136,7 @@ export function useUsersDomain({
 
   return {
     users,
-    usersLoading,
+    usersLoading: usersQuery.isLoading,
     usersError,
     successMessage,
     setSuccessMessage,

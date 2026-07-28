@@ -21,6 +21,7 @@ import { validatePacienteForm } from './patientUtils';
 import type { usePatientForm } from './usePatientForm';
 import type { usePatientList } from './usePatientList';
 import type { usePatientLookups } from './usePatientLookups';
+import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
 
 type PatientCommandsOptions = {
   session: AuthSession | null;
@@ -76,6 +77,12 @@ export function usePatientCommands({
       token: string;
     }) => createPacienteObservacao(pacienteId, { texto }, token),
   });
+  const editPacienteOperation = useAsyncOperation((_signal, pacienteId: number, token: string) =>
+    getPaciente(pacienteId, token),
+  );
+  const savePacienteOperation = useAsyncOperation((_signal, action: () => Promise<void>) =>
+    action(),
+  );
 
   const handleEditPaciente = async (paciente: Paciente) => {
     if (!session) return;
@@ -84,16 +91,14 @@ export function usePatientCommands({
     patientList.setPacienteSuccessMessage('');
     navigateToView('patients');
     patientForm.setPendingPatientFiles([]);
-    patientForm.setPacienteFormLoading(true);
 
     try {
-      const details = await getPaciente(paciente.id, session.token);
+      const details = await editPacienteOperation.execute(paciente.id, session.token);
       patientForm.applyPacienteToForm(details);
     } catch (error) {
       patientForm.applyPacienteToForm(paciente);
       patientForm.setPacienteFormError(getErrorMessage(error));
     } finally {
-      patientForm.setPacienteFormLoading(false);
       setModuleMode('form');
     }
   };
@@ -152,75 +157,74 @@ export function usePatientCommands({
     }
 
     const observationText = patientForm.pacienteFormData.novaObservacao.trim();
-    patientForm.setPacienteFormLoading(true);
     patientForm.setPacienteFormError('');
     patientList.setPacienteSuccessMessage('');
 
     try {
-      const savedPaciente = await savePacienteMutation.mutateAsync({
-        id: patientForm.editingPacienteId,
-        payload,
-        token: session.token,
-      });
-      let warningMessage = '';
+      await savePacienteOperation.execute(async () => {
+        const savedPaciente = await savePacienteMutation.mutateAsync({
+          id: patientForm.editingPacienteId,
+          payload,
+          token: session.token,
+        });
+        let warningMessage = '';
 
-      for (const file of patientForm.pendingPatientFiles) {
-        await uploadPacienteArquivo(savedPaciente.id, file, session.token);
-      }
-      if (observationText) {
-        try {
-          await createPacienteObservacaoMutation.mutateAsync({
-            pacienteId: savedPaciente.id,
-            texto: observationText,
-            token: session.token,
-          });
-        } catch (error) {
-          warningMessage = getErrorMessage(error);
+        for (const file of patientForm.pendingPatientFiles) {
+          await uploadPacienteArquivo(savedPaciente.id, file, session.token);
         }
-      }
+        if (observationText) {
+          try {
+            await createPacienteObservacaoMutation.mutateAsync({
+              pacienteId: savedPaciente.id,
+              texto: observationText,
+              token: session.token,
+            });
+          } catch (error) {
+            warningMessage = getErrorMessage(error);
+          }
+        }
 
-      patientList.setPacientes((current) =>
-        sortPacientesForListing(
-          patientForm.editingPacienteId
-            ? current.map((paciente) =>
-                paciente.id === savedPaciente.id ? savedPaciente : paciente,
-              )
-            : [savedPaciente, ...current],
-        ),
-      );
-      const baseSuccessMessage = patientForm.editingPacienteId
-        ? 'Paciente atualizado.'
-        : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`;
-      patientList.setPacienteSuccessMessage(
-        warningMessage
-          ? `${baseSuccessMessage} Paciente salvo, mas a observação não foi enviada.`
-          : observationText
-            ? `${baseSuccessMessage} Observação enviada.`
-            : baseSuccessMessage,
-      );
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.dashboardNotifications(session.token),
-        }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.pacienteObservacoesRoot(session.token),
-        }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.convenios(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(session.token) }),
-      ]);
-      patientForm.resetPacienteForm();
-      patientList.setPacienteCurrentPage(1);
-      setModuleMode('list');
-      await loadPacientes(session.token, true);
-      await loadDashboardSummary(session.token, true);
-      if (warningMessage) patientList.setPacientesError(warningMessage);
+        patientList.setPacientes((current) =>
+          sortPacientesForListing(
+            patientForm.editingPacienteId
+              ? current.map((paciente) =>
+                  paciente.id === savedPaciente.id ? savedPaciente : paciente,
+                )
+              : [savedPaciente, ...current],
+          ),
+        );
+        const baseSuccessMessage = patientForm.editingPacienteId
+          ? 'Paciente atualizado.'
+          : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`;
+        patientList.setPacienteSuccessMessage(
+          warningMessage
+            ? `${baseSuccessMessage} Paciente salvo, mas a observação não foi enviada.`
+            : observationText
+              ? `${baseSuccessMessage} Observação enviada.`
+              : baseSuccessMessage,
+        );
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.dashboardNotifications(session.token),
+          }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.pacienteObservacoesRoot(session.token),
+          }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(session.token) }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.convenios(session.token) }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(session.token) }),
+        ]);
+        patientForm.resetPacienteForm();
+        patientList.setPacienteCurrentPage(1);
+        setModuleMode('list');
+        await loadPacientes(session.token, true);
+        await loadDashboardSummary(session.token, true);
+        if (warningMessage) patientList.setPacientesError(warningMessage);
+      });
     } catch (error) {
       patientForm.setPacienteFormError(getErrorMessage(error));
-    } finally {
-      patientForm.setPacienteFormLoading(false);
     }
   };
 
@@ -258,5 +262,10 @@ export function usePatientCommands({
     });
   };
 
-  return { handleEditPaciente, handleSubmitPaciente, handleDeletePaciente };
+  return {
+    formLoading: editPacienteOperation.isLoading || savePacienteOperation.isLoading,
+    handleEditPaciente,
+    handleSubmitPaciente,
+    handleDeletePaciente,
+  };
 }

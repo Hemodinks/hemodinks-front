@@ -8,6 +8,7 @@ import type { AuthSession } from '../../shared/domain/sessionTypes';
 import type { Paciente } from './patientTypes';
 import { getInvalidPatientFileMessage } from './patientDomainHelpers';
 import type { usePatientForm } from './usePatientForm';
+import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
 
 type PatientFormState = ReturnType<typeof usePatientForm>;
 
@@ -32,7 +33,6 @@ export function usePatientFiles({
 }: PatientFilesOptions) {
   const [selectedPatientInfo, setSelectedPatientInfo] = useState<Paciente | null>(null);
   const [selectedPatientFiles, setSelectedPatientFiles] = useState<Paciente | null>(null);
-  const [patientFilesModalLoading, setPatientFilesModalLoading] = useState(false);
   const [patientFilesModalError, setPatientFilesModalError] = useState('');
   const deleteFileMutation = useMutation({
     mutationFn: ({
@@ -45,6 +45,9 @@ export function usePatientFiles({
       token: string;
     }) => deletePacienteArquivo(pacienteId, arquivoId, token),
   });
+  const filesOperation = useAsyncOperation((_signal, pacienteId: number, token: string) =>
+    getPaciente(pacienteId, token),
+  );
 
   const handleFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -106,13 +109,10 @@ export function usePatientFiles({
 
     setSelectedPatientFiles(paciente);
     setPatientFilesModalError('');
-    setPatientFilesModalLoading(true);
     try {
-      setSelectedPatientFiles(await getPaciente(paciente.id, session.token));
+      setSelectedPatientFiles(await filesOperation.execute(paciente.id, session.token));
     } catch (error) {
       setPatientFilesModalError(getErrorMessage(error));
-    } finally {
-      setPatientFilesModalLoading(false);
     }
   };
 
@@ -125,14 +125,14 @@ export function usePatientFiles({
     setSelectedPatientInfo(null);
     setSelectedPatientFiles(null);
     setPatientFilesModalError('');
-    setPatientFilesModalLoading(false);
+    filesOperation.reset();
   };
 
   return {
     selectedPatientInfo,
     setSelectedPatientInfo,
     selectedPatientFiles,
-    patientFilesModalLoading,
+    patientFilesModalLoading: filesOperation.isLoading,
     patientFilesModalError,
     handleFilesChange,
     removePendingFile,

@@ -4,7 +4,7 @@ import type {
   PacienteListQuery,
   PacienteObservacao,
   PacientePayload,
-} from '../features/patients/patientTypes';
+} from '../shared/domain/patientContracts';
 import type { PagedResult } from '../shared/domain/apiTypes';
 import { del, get, getBlob, post, put, upload } from './api';
 import { buildListQueryParams } from './queryParams';

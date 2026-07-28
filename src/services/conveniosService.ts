@@ -1,4 +1,4 @@
-import type { Convenio } from '../features/patients/patientTypes';
+import type { Convenio } from '../shared/domain/patientContracts';
 import { normalizeDisplayText } from '../shared/utils/formatters';
 import { get } from './api';
 

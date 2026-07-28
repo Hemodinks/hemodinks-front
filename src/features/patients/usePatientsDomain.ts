@@ -77,6 +77,8 @@ export function usePatientsDomain({
     cbhpmLookup;
 
   const {
+    pacientesLoading,
+    cbhpmLoading,
     cbhpmFilterHint,
     canSearchCbhpm,
     loadMedicalUsers,
@@ -197,6 +199,8 @@ export function usePatientsDomain({
     patientLookups,
     cbhpmLookup,
     queries: {
+      pacientesLoading,
+      cbhpmLoading,
       cbhpmFilterHint,
       canSearchCbhpm,
       loadMedicalUsers,

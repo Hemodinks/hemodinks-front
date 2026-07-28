@@ -12,6 +12,7 @@ import { queryKeys } from '../../shared/queryKeys';
 import { getErrorMessage } from '../../shared/utils/formatters';
 import type { AuthSession } from '../../shared/domain/sessionTypes';
 import type { Paciente, PacienteObservacao } from './patientTypes';
+import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
 
 type UsePatientObservacoesOptions = {
   session: AuthSession | null;
@@ -40,8 +41,6 @@ export function usePatientObservacoes({
     null,
   );
   const [patientObservacoes, setPatientObservacoes] = useState<PacienteObservacao[]>([]);
-  const [patientObservacoesLoading, setPatientObservacoesLoading] = useState(false);
-  const [patientObservacoesSaving, setPatientObservacoesSaving] = useState(false);
   const [patientObservacoesError, setPatientObservacoesError] = useState('');
   const [patientObservationDraft, setPatientObservationDraft] = useState('');
   const [patientObservationReplyTo, setPatientObservationReplyTo] =
@@ -60,6 +59,12 @@ export function usePatientObservacoes({
       token: string;
     }) => createPacienteObservacao(pacienteId, { texto, observacaoPaiId }, token),
   });
+  const openObservacoesOperation = useAsyncOperation((_signal, action: () => Promise<void>) =>
+    action(),
+  );
+  const saveObservacaoOperation = useAsyncOperation((_signal, action: () => Promise<void>) =>
+    action(),
+  );
 
   const clearObservationIndicators = (pacienteId: number) => {
     setPacientes((current) =>
@@ -104,24 +109,23 @@ export function usePatientObservacoes({
     setPatientObservationDraft('');
     setPatientObservationReplyTo(null);
     setPatientObservacoesError('');
-    setPatientObservacoesLoading(true);
 
     try {
-      const [details, observacoes] = await Promise.all([
-        getPaciente(paciente.id, session.token),
-        getPacienteObservacoes(paciente.id, session.token),
-      ]);
-      setSelectedPatientObservacoes(details);
-      setPatientObservacoes(observacoes);
+      await openObservacoesOperation.execute(async () => {
+        const [details, observacoes] = await Promise.all([
+          getPaciente(paciente.id, session.token),
+          getPacienteObservacoes(paciente.id, session.token),
+        ]);
+        setSelectedPatientObservacoes(details);
+        setPatientObservacoes(observacoes);
 
-      const readResult = await markPacienteObservacoesAsRead(paciente.id, session.token);
-      if (readResult.updatedCount > 0) {
-        await syncObservationViews(session.token, paciente.id, true);
-      }
+        const readResult = await markPacienteObservacoesAsRead(paciente.id, session.token);
+        if (readResult.updatedCount > 0) {
+          await syncObservationViews(session.token, paciente.id, true);
+        }
+      });
     } catch (error) {
       setPatientObservacoesError(getErrorMessage(error));
-    } finally {
-      setPatientObservacoesLoading(false);
     }
   };
 
@@ -163,29 +167,28 @@ export function usePatientObservacoes({
       return;
     }
 
-    setPatientObservacoesSaving(true);
     setPatientObservacoesError('');
 
     try {
-      await createPacienteObservacaoMutation.mutateAsync({
-        pacienteId: selectedPatientObservacoes.id,
-        texto,
-        observacaoPaiId: patientObservationReplyTo?.id ?? null,
-        token: session.token,
-      });
+      await saveObservacaoOperation.execute(async () => {
+        await createPacienteObservacaoMutation.mutateAsync({
+          pacienteId: selectedPatientObservacoes.id,
+          texto,
+          observacaoPaiId: patientObservationReplyTo?.id ?? null,
+          token: session.token,
+        });
 
-      const observacoes = await getPacienteObservacoes(
-        selectedPatientObservacoes.id,
-        session.token,
-      );
-      setPatientObservacoes(observacoes);
-      setPatientObservationDraft('');
-      setPatientObservationReplyTo(null);
-      await syncObservationViews(session.token, selectedPatientObservacoes.id);
+        const observacoes = await getPacienteObservacoes(
+          selectedPatientObservacoes.id,
+          session.token,
+        );
+        setPatientObservacoes(observacoes);
+        setPatientObservationDraft('');
+        setPatientObservationReplyTo(null);
+        await syncObservationViews(session.token, selectedPatientObservacoes.id);
+      });
     } catch (error) {
       setPatientObservacoesError(getErrorMessage(error));
-    } finally {
-      setPatientObservacoesSaving(false);
     }
   };
 
@@ -193,8 +196,8 @@ export function usePatientObservacoes({
     setSelectedPatientObservacoes(null);
     setPatientObservacoes([]);
     setPatientObservacoesError('');
-    setPatientObservacoesLoading(false);
-    setPatientObservacoesSaving(false);
+    openObservacoesOperation.reset();
+    saveObservacaoOperation.reset();
     setPatientObservationDraft('');
     setPatientObservationReplyTo(null);
   };
@@ -206,8 +209,8 @@ export function usePatientObservacoes({
   return {
     selectedPatientObservacoes,
     patientObservacoes,
-    patientObservacoesLoading,
-    patientObservacoesSaving,
+    patientObservacoesLoading: openObservacoesOperation.isLoading,
+    patientObservacoesSaving: saveObservacaoOperation.isLoading,
     patientObservacoesError,
     patientObservationDraft,
     setPatientObservationDraft,

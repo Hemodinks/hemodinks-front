@@ -3,7 +3,7 @@ import type {
   User,
   UserArquivo,
   UserPayload,
-} from '../features/users/userTypes';
+} from '../shared/domain/userContracts';
 import type { ListQuery, PagedResult } from '../shared/domain/apiTypes';
 import { del, get, getBlob, post, put, upload } from './api';
 import { buildListQueryParams } from './queryParams';

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import type { AppView, BreadcrumbItem } from '../appTypes';
-import type { AuthSession } from '../features/auth/authTypes';
-import type { Convenio, OpmeFornecedor } from '../features/patients/patientTypes';
-import type { MedicalUserOption } from '../features/users/userTypes';
+import type { AuthSession } from '../shared/domain/sessionTypes';
+import type { Convenio, OpmeFornecedor } from '../shared/domain/patientContracts';
+import type { MedicalUserOption } from '../shared/domain/userContracts';
 import { LoadingOverlay } from '../shared/components/LoadingOverlay';
 import {
   CONVENIOS_DATALIST_ID,

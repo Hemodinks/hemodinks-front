@@ -1,4 +1,5 @@
-import type { CbhpmGeral, CbhpmListQuery } from '../features/patients/patientTypes';
+import type { CbhpmGeral } from '../shared/domain/patientContracts';
+import type { CbhpmListQuery } from '../shared/domain/apiTypes';
 import type { PagedResult } from '../shared/domain/apiTypes';
 import { get } from './api';
 import { buildListQueryParams } from './queryParams';

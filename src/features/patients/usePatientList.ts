@@ -15,7 +15,6 @@ function arePacienteFiltersEqual(current: PacienteFilters, debounced: PacienteFi
 
 export function usePatientList() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [pacientesLoading, setPacientesLoading] = useState(false);
   const [pacientesError, setPacientesError] = useState('');
   const [pacienteSuccessMessage, setPacienteSuccessMessage] = useState('');
   const [pacienteSearchTerm, setPacienteSearchTerm] = useState('');
@@ -61,8 +60,6 @@ export function usePatientList() {
   return {
     pacientes,
     setPacientes,
-    pacientesLoading,
-    setPacientesLoading,
     pacientesError,
     setPacientesError,
     pacienteSuccessMessage,

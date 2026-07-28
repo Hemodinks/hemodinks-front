@@ -1,4 +1,4 @@
-import type { PublicHoliday } from '../features/events/agendaTypes';
+import type { PublicHoliday } from '../shared/domain/agendaContracts';
 import { getExternal } from './api';
 
 export async function getBrazilPublicHolidays(year: number) {

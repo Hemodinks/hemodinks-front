@@ -4,7 +4,7 @@ import type {
   PublicClinic,
   SelectClinicResponse,
   SessionClinic,
-} from '../features/clinics/clinicTypes';
+} from '../shared/domain/clinicContracts';
 import { del, get, post, put } from './api';
 
 export function listPublicClinics(busca = '') {

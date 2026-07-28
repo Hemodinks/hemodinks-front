@@ -53,6 +53,11 @@ for (const file of files) {
     if (sourcePath[0] === 'shared' && targetPath[0] === 'features') {
       errors.push(`${displayPath(file)}: shared não pode importar ${displayPath(target)}.`);
     }
+    if (['services', 'layout'].includes(sourcePath[0]) && targetPath[0] === 'features') {
+      errors.push(
+        `${displayPath(file)}: ${sourcePath[0]} deve depender de contratos compartilhados, não de ${displayPath(target)}.`,
+      );
+    }
 
     const sourceFeature = featureName(file);
     const targetFeature = featureName(target);

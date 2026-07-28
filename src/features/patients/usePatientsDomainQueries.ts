@@ -48,6 +48,20 @@ type UsePatientsDomainQueriesOptions = {
   cbhpmLookup: ReturnType<typeof useCbhpmLookup>;
 };
 
+async function refreshPatientQuery(
+  token: string | undefined,
+  forceRefresh: boolean,
+  queryKey: readonly unknown[],
+  refetch: () => Promise<unknown>,
+  allowed = true,
+) {
+  if (!token || !allowed) return;
+  if (forceRefresh) {
+    await queryClient.invalidateQueries({ queryKey });
+  }
+  await refetch();
+}
+
 export function usePatientsDomainQueries({
   session,
   activeView,
@@ -62,7 +76,6 @@ export function usePatientsDomainQueries({
 }: UsePatientsDomainQueriesOptions) {
   const {
     setPacientes,
-    setPacientesLoading,
     setPacientesError,
     debouncedPacienteSearchTerm,
     debouncedPacienteFilters,
@@ -91,7 +104,6 @@ export function usePatientsDomainQueries({
     sortDirection: cbhpmSortDirection,
     setCbhpmTotalItems,
     setCbhpmTotalPages,
-    setCbhpmLoading,
     setCbhpmError,
   } = cbhpmLookup;
 
@@ -176,10 +188,6 @@ export function usePatientsDomainQueries({
   });
 
   useEffect(() => {
-    setPacientesLoading(pacientesQuery.isFetching);
-  }, [pacientesQuery.isFetching, setPacientesLoading]);
-
-  useEffect(() => {
     if (!pacientesQuery.data) {
       return;
     }
@@ -256,10 +264,6 @@ export function usePatientsDomainQueries({
   }, [opmeFornecedoresQuery.error, setOpmeFornecedoresError]);
 
   useEffect(() => {
-    setCbhpmLoading(cbhpmQuery.isFetching);
-  }, [cbhpmQuery.isFetching, setCbhpmLoading]);
-
-  useEffect(() => {
     if (!cbhpmModalOpen || appliedCbhpmFilterValidationMessage) {
       return;
     }
@@ -311,78 +315,52 @@ export function usePatientsDomainQueries({
   }, [cbhpmQuery.error, setCbhpmError]);
 
   const loadMedicalUsers = async (token = session?.token, forceRefresh = false) => {
-    if (!token) {
-      return;
-    }
-
-    if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(token) });
-    }
-
-    await medicalUsersQuery.refetch();
+    await refreshPatientQuery(token, forceRefresh, queryKeys.medicalUsers(token ?? ''), () =>
+      medicalUsersQuery.refetch(),
+    );
   };
 
   const loadPacientes = async (token = session?.token, forceRefresh = false) => {
-    if (!token || !canAccessPatients) {
-      return;
-    }
-
-    if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(token) });
-    }
-
-    await pacientesQuery.refetch();
+    await refreshPatientQuery(
+      token,
+      forceRefresh,
+      queryKeys.pacientesRoot(token ?? ''),
+      () => pacientesQuery.refetch(),
+      canAccessPatients,
+    );
   };
 
   const loadCbhpm = async (token = session?.token, forceRefresh = false) => {
-    if (!token || !canConsultCbhpm) {
-      return;
-    }
-
-    if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmRoot(token) });
-    }
-
-    await cbhpmQuery.refetch();
+    await refreshPatientQuery(
+      token,
+      forceRefresh,
+      queryKeys.cbhpmRoot(token ?? ''),
+      () => cbhpmQuery.refetch(),
+      canConsultCbhpm,
+    );
   };
 
   const loadHospitais = async (token = session?.token, forceRefresh = false) => {
-    if (!token) {
-      return;
-    }
-
-    if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(token) });
-    }
-
-    await hospitaisQuery.refetch();
+    await refreshPatientQuery(token, forceRefresh, queryKeys.hospitais(token ?? ''), () =>
+      hospitaisQuery.refetch(),
+    );
   };
 
   const loadConvenios = async (token = session?.token, forceRefresh = false) => {
-    if (!token) {
-      return;
-    }
-
-    if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.convenios(token) });
-    }
-
-    await conveniosQuery.refetch();
+    await refreshPatientQuery(token, forceRefresh, queryKeys.convenios(token ?? ''), () =>
+      conveniosQuery.refetch(),
+    );
   };
 
   const loadOpmeFornecedores = async (token = session?.token, forceRefresh = false) => {
-    if (!token) {
-      return;
-    }
-
-    if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(token) });
-    }
-
-    await opmeFornecedoresQuery.refetch();
+    await refreshPatientQuery(token, forceRefresh, queryKeys.opmeFornecedores(token ?? ''), () =>
+      opmeFornecedoresQuery.refetch(),
+    );
   };
 
   return {
+    pacientesLoading: pacientesQuery.isFetching,
+    cbhpmLoading: cbhpmQuery.isFetching,
     cbhpmFilterHint,
     canSearchCbhpm,
     loadMedicalUsers,

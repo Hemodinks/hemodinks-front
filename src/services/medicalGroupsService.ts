@@ -1,8 +1,5 @@
-import type {
-  MedicalGroup,
-  MedicalGroupFormData,
-} from '../features/medicalGroups/medicalGroupTypes';
-import type { MedicalUserOption } from '../features/users/userTypes';
+import type { MedicalGroup, MedicalGroupFormData } from '../shared/domain/medicalGroupContracts';
+import type { MedicalUserOption } from '../shared/domain/userContracts';
 import type { ListQuery, PagedResult } from '../shared/domain/apiTypes';
 import { del, get, post, put } from './api';
 import { buildListQueryParams } from './queryParams';

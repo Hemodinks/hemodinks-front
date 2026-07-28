@@ -43,7 +43,6 @@ export function useCbhpmLookup() {
   );
   const [cbhpmTotalItems, setCbhpmTotalItems] = useState(0);
   const [cbhpmTotalPages, setCbhpmTotalPages] = useState(1);
-  const [cbhpmLoading, setCbhpmLoading] = useState(false);
   const [cbhpmError, setCbhpmError] = useState('');
 
   const cbhpmTotalPageCount = Math.max(1, cbhpmTotalPages);
@@ -91,8 +90,6 @@ export function useCbhpmLookup() {
     setCbhpmTotalItems,
     cbhpmTotalPageCount,
     setCbhpmTotalPages,
-    cbhpmLoading,
-    setCbhpmLoading,
     cbhpmError,
     setCbhpmError,
     cbhpmVisibleStart,

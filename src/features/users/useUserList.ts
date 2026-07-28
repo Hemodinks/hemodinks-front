@@ -5,7 +5,6 @@ import type { User } from './userTypes';
 
 export function useUserList() {
   const [users, setUsers] = useState<User[]>([]);
-  const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,8 +38,6 @@ export function useUserList() {
   return {
     users,
     setUsers,
-    usersLoading,
-    setUsersLoading,
     usersError,
     setUsersError,
     successMessage,

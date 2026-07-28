@@ -1,4 +1,4 @@
-import type { LoginResponse } from '../features/auth/authTypes';
+import type { LoginSessionResponse as LoginResponse } from '../shared/domain/sessionTypes';
 import { post } from './api';
 
 export type ResetPasswordResponse = {

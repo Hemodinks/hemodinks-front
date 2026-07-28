@@ -6,7 +6,6 @@ export function usePatientForm(pacientes: Paciente[]) {
   const [pacienteFormData, setPacienteFormData] = useState<PacienteFormData>(emptyPacienteForm);
   const [editingPacienteId, setEditingPacienteId] = useState<number | null>(null);
   const [editingPacienteDetails, setEditingPacienteDetails] = useState<Paciente | null>(null);
-  const [pacienteFormLoading, setPacienteFormLoading] = useState(false);
   const [pacienteFormError, setPacienteFormError] = useState('');
   const [patientFileInputKey, setPatientFileInputKey] = useState(0);
   const [pendingPatientFiles, setPendingPatientFiles] = useState<File[]>([]);
@@ -43,8 +42,6 @@ export function usePatientForm(pacientes: Paciente[]) {
     editingPacienteDetails,
     setEditingPacienteDetails,
     editingPaciente,
-    pacienteFormLoading,
-    setPacienteFormLoading,
     pacienteFormError,
     setPacienteFormError,
     patientFileInputKey,

@@ -30,7 +30,6 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
   const [dashboardError, setDashboardError] = useState('');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState('');
 
   const sessionReady = Boolean(session && !session.user.precisaTrocarSenha);
@@ -89,10 +88,6 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
       setDashboardError(getErrorMessage(dashboardSummaryQuery.error));
     }
   }, [dashboardSummaryQuery.error]);
-
-  useEffect(() => {
-    setNotificationsLoading(notificationsQuery.isFetching);
-  }, [notificationsQuery.isFetching]);
 
   useEffect(() => {
     if (notificationsQuery.data) {
@@ -158,7 +153,6 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
     setNotificationsOpen(false);
     setNotifications([]);
     setNotificationsError('');
-    setNotificationsLoading(false);
   };
 
   return {
@@ -167,7 +161,7 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
     notificationsOpen,
     setNotificationsOpen,
     notifications,
-    notificationsLoading,
+    notificationsLoading: notificationsQuery.isFetching,
     notificationsError,
     systemSettings,
     companyName,

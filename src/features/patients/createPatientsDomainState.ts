@@ -40,7 +40,7 @@ export function createPatientsDomainState({
 }: CreatePatientsDomainStateOptions) {
   return {
     pacientes: patientList.pacientes,
-    pacientesLoading: patientList.pacientesLoading,
+    pacientesLoading: queries.pacientesLoading,
     pacientesError: patientList.pacientesError,
     pacienteSuccessMessage: patientList.pacienteSuccessMessage,
     pacienteSearchTerm: patientList.pacienteSearchTerm,
@@ -69,7 +69,7 @@ export function createPatientsDomainState({
     editingPacienteId: patientForm.editingPacienteId,
     editingPaciente: patientForm.editingPaciente,
     pacienteFormError: patientForm.pacienteFormError,
-    pacienteFormLoading: patientForm.pacienteFormLoading,
+    pacienteFormLoading: patientCommands.formLoading,
     pendingPatientFiles: patientForm.pendingPatientFiles,
     patientFileInputKey: patientForm.patientFileInputKey,
     selectedPatientInfo: patientFiles.selectedPatientInfo,
@@ -101,7 +101,7 @@ export function createPatientsDomainState({
     cbhpmFilterHint: queries.cbhpmFilterHint,
     canConsultCbhpm,
     canSearchCbhpm: queries.canSearchCbhpm,
-    cbhpmLoading: cbhpmLookup.cbhpmLoading,
+    cbhpmLoading: queries.cbhpmLoading,
     cbhpmError: cbhpmLookup.cbhpmError,
     cbhpmCurrentPage: cbhpmLookup.cbhpmCurrentPage,
     setCbhpmCurrentPage: cbhpmLookup.setCbhpmCurrentPage,

@@ -56,10 +56,6 @@ export function useUsersQuery({
   });
 
   useEffect(() => {
-    userList.setUsersLoading(query.isFetching);
-  }, [query.isFetching, userList.setUsersLoading]);
-
-  useEffect(() => {
     if (!query.data) {
       return;
     }
@@ -81,15 +77,16 @@ export function useUsersQuery({
     }
   }, [query.error, userList.setUsersError]);
 
-  return async (forceRefresh = false) => {
-    if (!session) {
-      return;
-    }
-    if (forceRefresh) {
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.usersRoot(session.token),
-      });
-    }
-    await query.refetch();
+  return {
+    isLoading: query.isFetching,
+    refresh: async (forceRefresh = false) => {
+      if (!session) return;
+      if (forceRefresh) {
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.usersRoot(session.token),
+        });
+      }
+      await query.refetch();
+    },
   };
 }

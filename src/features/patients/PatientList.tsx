@@ -1,36 +1,15 @@
-import {
-  CheckCircle2,
-  Download,
-  Eye,
-  FileText,
-  Info,
-  MessageSquareText,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { CheckCircle2, Eye, FileText, Info, MessageSquareText, Pencil, Trash2 } from 'lucide-react';
 import type { Paciente } from './patientTypes';
 import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
-import {
-  AlertMessage,
-  Button,
-  DataPanel,
-  IconButton,
-  SearchField,
-  SelectField,
-  TextField,
-} from '../../shared/components/ui';
-import { CONVENIOS_DATALIST_ID, MEDICAL_USERS_DATALIST_ID } from '../../shared/utils/formatters';
+import { AlertMessage, DataPanel, IconButton } from '../../shared/components/ui';
 import { UserAvatar } from '../../shared/components/UserAvatar';
 import {
   HorizontalTableScroller,
-  ListToolbar,
   Pagination,
   SortableHeader,
   TableStateRow,
 } from '../../shared/components/listing';
+import { PatientListToolbar } from './PatientListToolbar';
 
 type PatientListProps = {
   pacientes: Paciente[];
@@ -119,94 +98,24 @@ export function PatientList({
 
   return (
     <DataPanel>
-      <ListToolbar eyebrow="Cadastro de pacientes" title={`${pacientesTotalItems} cadastrados`}>
-        {canCreatePatients && (
-          <Button onClick={onOpenNewPacienteForm}>
-            <Plus size={17} />
-            Novo paciente
-          </Button>
-        )}
-        <SearchField
-          label="Buscar pacientes"
-          value={pacienteSearchTerm}
-          onValueChange={onSearchChange}
-        />
-        <IconButton
-          label="Atualizar lista de pacientes"
-          onClick={onRefresh}
-          title="Atualizar lista"
-        >
-          <RefreshCw size={18} />
-        </IconButton>
-        <div className="patient-export-actions" aria-label="Exportacoes de pacientes">
-          <SelectField
-            className="export-scope-field"
-            label="Exportar"
-            value={pacienteExportScope}
-            onChange={(event) => onExportScopeChange(event.target.value as PacienteExportScope)}
-          >
-            <option value="all">Todos os pacientes</option>
-            {isAdmin && <option value="doctor">Cirurgião selecionado</option>}
-            <option value="visible">Dados da tela</option>
-          </SelectField>
-          <Button
-            onClick={() => void onExportPacientes('xlsx')}
-            disabled={pacienteExportLoading !== null}
-          >
-            <Download size={17} />
-            {pacienteExportLoading === 'xlsx' ? 'Gerando...' : 'Exportar XLSX'}
-          </Button>
-          <Button
-            onClick={() => void onExportPacientes('pdf')}
-            disabled={pacienteExportLoading !== null}
-          >
-            <FileText size={17} />
-            {pacienteExportLoading === 'pdf' ? 'Gerando...' : 'Exportar PDF'}
-          </Button>
-        </div>
-        {isAdmin && (
-          <div className="patient-filter-grid" aria-label="Filtros administrativos de pacientes">
-            <TextField
-              className="filter-field"
-              label="Cirurgião"
-              type="search"
-              list={MEDICAL_USERS_DATALIST_ID}
-              value={pacienteFilters.medico}
-              onValueChange={(value) =>
-                onFiltersChange((current) => ({ ...current, medico: value }))
-              }
-              disabled={!hasMedicalUsers}
-              placeholder={hasMedicalUsers ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
-            />
-            <TextField
-              className="filter-field"
-              label="Convênio"
-              type="search"
-              list={CONVENIOS_DATALIST_ID}
-              value={pacienteFilters.convenio}
-              onValueChange={(value) =>
-                onFiltersChange((current) => ({ ...current, convenio: value }))
-              }
-              disabled={!hasConvenios}
-              placeholder={hasConvenios ? 'Convênio' : 'Nenhum convênio cadastrado'}
-            />
-            <TextField
-              className="filter-field"
-              label="Procedimento"
-              type="search"
-              value={pacienteFilters.procedimento}
-              onValueChange={(value) =>
-                onFiltersChange((current) => ({ ...current, procedimento: value }))
-              }
-              placeholder="Procedimento"
-            />
-            <Button className="patient-clear-filters" onClick={onClearFilters}>
-              <X size={17} />
-              Limpar filtros
-            </Button>
-          </div>
-        )}
-      </ListToolbar>
+      <PatientListToolbar
+        totalItems={pacientesTotalItems}
+        canCreatePatients={canCreatePatients}
+        searchTerm={pacienteSearchTerm}
+        exportLoading={pacienteExportLoading}
+        exportScope={pacienteExportScope}
+        isAdmin={isAdmin}
+        filters={pacienteFilters}
+        hasMedicalUsers={hasMedicalUsers}
+        hasConvenios={hasConvenios}
+        onOpenNew={onOpenNewPacienteForm}
+        onSearchChange={onSearchChange}
+        onRefresh={onRefresh}
+        onExportScopeChange={onExportScopeChange}
+        onExport={onExportPacientes}
+        onFiltersChange={onFiltersChange}
+        onClearFilters={onClearFilters}
+      />
 
       {pacienteSuccessMessage && (
         <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>

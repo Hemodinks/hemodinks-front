@@ -6,7 +6,7 @@ import type {
   FaturamentoStatus,
   FinanceiroResumo,
   PacienteFinanceiroResumo,
-} from '../features/billing/billingDomainTypes';
+} from '../shared/domain/financeContracts';
 import type { PagedResult } from '../shared/domain/apiTypes';
 import { del, get, getBlob, post, put, upload } from './api';
 

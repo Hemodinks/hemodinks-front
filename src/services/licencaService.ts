@@ -1,4 +1,4 @@
-import type { Licenca } from '../features/auth/authTypes';
+import type { SessionLicense as Licenca } from '../shared/domain/sessionTypes';
 import { get } from './api';
 
 export function getCurrentLicenca(token: string) {

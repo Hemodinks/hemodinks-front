@@ -49,7 +49,7 @@ export default [
     },
   },
   {
-    files: ['src/shared/**/*.{ts,tsx}'],
+    files: ['src/shared/**/*.{ts,tsx}', 'src/services/**/*.{ts,tsx}', 'src/layout/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -57,7 +57,7 @@ export default [
           patterns: [
             {
               group: ['**/features/**'],
-              message: 'shared deve ser independente das features.',
+              message: 'shared, services e layout devem ser independentes das features.',
             },
           ],
         },

@@ -1,4 +1,4 @@
-import type { DashboardNotification, DashboardSummary } from '../features/dashboard/dashboardTypes';
+import type { DashboardNotification, DashboardSummary } from '../shared/domain/dashboardContracts';
 import { get } from './api';
 
 export function getDashboardSummary(token: string, background = false) {
