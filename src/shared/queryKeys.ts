@@ -34,4 +34,8 @@ export const queryKeys = {
   cbhpm: (token: string, query?: CbhpmListQuery) => ['cbhpm', token, query] as const,
   cbhpmRoot: (token: string) => ['cbhpm', token] as const,
   cbhpmCache: (token: string) => ['cbhpm', token, 'cache'] as const,
+  billingAttendances: (token: string) => ['billing', 'attendances', token] as const,
+  billingInvoicing: (token: string) => ['billing', 'invoicing', token] as const,
+  billingReceivables: (token: string) => ['billing', 'receivables', token] as const,
+  billingPrices: (token: string) => ['billing', 'prices', token] as const,
 };

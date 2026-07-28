@@ -4,6 +4,8 @@ import type { AuthSession } from '../../shared/domain/sessionTypes';
 import type { ContaReceber, Faturamento } from './billingDomainTypes';
 import { BillingPage } from './BillingPage';
 import * as services from '../../services';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 
 export const session = {
   token: 'token',
@@ -172,5 +174,15 @@ export function billingPage(
 export function renderBillingPage(
   section: 'atendimentos' | 'faturamento' | 'financeiro' | 'precos' = 'atendimentos',
 ) {
-  return render(billingPage(section));
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const view = render(
+    <QueryClientProvider client={queryClient}>{billingPage(section)}</QueryClientProvider>,
+  );
+  return {
+    ...view,
+    rerender: (ui: ReactElement) =>
+      view.rerender(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>),
+  };
 }

@@ -2,7 +2,7 @@ import type { FormEvent } from 'react';
 import type { AuthSession } from '../../shared/domain/sessionTypes';
 import type { ConvenioProcedimentoPreco } from './billingDomainTypes';
 import type { RunBillingAction, SetConfirmAction } from './billingWorkflowTypes';
-import { createInitialPriceForm, type useProcedurePrices } from './useProcedurePrices';
+import { createInitialPriceForm, type useProcedurePrices } from './prices/useProcedurePrices';
 
 type PriceState = ReturnType<typeof useProcedurePrices>;
 

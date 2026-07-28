@@ -1,11 +1,11 @@
 import { Suspense } from 'react';
 import type { AppView, ModuleMode, Theme } from '../appTypes';
-import { DashboardPage } from '../features/dashboard/DashboardPage';
-import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
-import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
-import type { UsersDomainState } from '../features/users/useUsersDomain';
-import type { AuthSession } from '../features/auth/authTypes';
-import type { SelectClinicResponse } from '../features/clinics/clinicTypes';
+import { DashboardPage } from '../features/dashboard';
+import type { MedicalGroupsDomainState } from '../features/medicalGroups';
+import type { PatientsDomainState } from '../features/patients';
+import type { UsersDomainState } from '../features/users';
+import type { AuthSession } from '../shared/domain/sessionTypes';
+import type { SelectClinicResponse } from '../shared/domain/clinicContracts';
 import {
   AgendaPage,
   BillingPage,

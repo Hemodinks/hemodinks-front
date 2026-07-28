@@ -1,9 +1,9 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useAttendanceWorkflow } from './useAttendanceWorkflow';
-import { useInvoicingWorkflow } from './useInvoicingWorkflow';
+import { useInvoicingWorkflow } from './invoicing/useInvoicingWorkflow';
 import { usePriceWorkflow } from './usePriceWorkflow';
-import { useReceivablesWorkflow } from './useReceivablesWorkflow';
+import { useReceivablesWorkflow } from './receivables/useReceivablesWorkflow';
 
 const session = {
   token: 'token',

@@ -1,6 +1,6 @@
-import { useMedicalGroupsDomain } from '../features/medicalGroups/useMedicalGroupsDomain';
-import { usePatientsDomain } from '../features/patients/usePatientsDomain';
-import { useUsersDomain } from '../features/users/useUsersDomain';
+import { useMedicalGroupsDomain } from '../features/medicalGroups';
+import { usePatientsDomain } from '../features/patients';
+import { useUsersDomain } from '../features/users';
 
 type AppDomainsOptions = {
   users: Parameters<typeof useUsersDomain>[0];

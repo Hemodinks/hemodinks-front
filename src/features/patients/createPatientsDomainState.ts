@@ -5,14 +5,13 @@ import type { usePatientExport } from './usePatientExport';
 import type { usePatientFiles } from './usePatientFiles';
 import type { usePatientForm } from './usePatientForm';
 import type { usePatientList } from './usePatientList';
-import type { usePatientLookups } from './usePatientLookups';
 import type { usePatientObservacoes } from './usePatientObservacoes';
 import type { usePatientsDomainQueries } from './usePatientsDomainQueries';
+import { CBHPM_PAGE_SIZE, PAGE_SIZE } from '../../shared/utils/formatters';
 
 type CreatePatientsDomainStateOptions = {
   patientList: ReturnType<typeof usePatientList>;
   patientForm: ReturnType<typeof usePatientForm>;
-  patientLookups: ReturnType<typeof usePatientLookups>;
   cbhpmLookup: ReturnType<typeof useCbhpmLookup>;
   queries: ReturnType<typeof usePatientsDomainQueries>;
   patientExport: ReturnType<typeof usePatientExport>;
@@ -27,7 +26,6 @@ type CreatePatientsDomainStateOptions = {
 export function createPatientsDomainState({
   patientList,
   patientForm,
-  patientLookups,
   cbhpmLookup,
   queries,
   patientExport,
@@ -38,10 +36,15 @@ export function createPatientsDomainState({
   canConsultCbhpm,
   resetPatientsState,
 }: CreatePatientsDomainStateOptions) {
+  const pacienteTotalPages = Math.max(1, queries.pacientesTotalPages);
+  const pacientePageStart = (patientList.pacienteCurrentPage - 1) * PAGE_SIZE;
+  const cbhpmTotalPageCount = Math.max(1, queries.cbhpmTotalPages);
+  const cbhpmPageStart = (cbhpmLookup.cbhpmCurrentPage - 1) * CBHPM_PAGE_SIZE;
+
   return {
-    pacientes: patientList.pacientes,
+    pacientes: queries.pacientes,
     pacientesLoading: queries.pacientesLoading,
-    pacientesError: patientList.pacientesError,
+    pacientesError: patientList.pacientesError || queries.pacientesError,
     pacienteSuccessMessage: patientList.pacienteSuccessMessage,
     pacienteSearchTerm: patientList.pacienteSearchTerm,
     setPacienteSearchTerm: patientList.setPacienteSearchTerm,
@@ -58,12 +61,12 @@ export function createPatientsDomainState({
     setSortBy: patientList.setSortBy,
     sortDirection: patientList.sortDirection,
     setSortDirection: patientList.setSortDirection,
-    pacientesTotalItems: patientList.pacientesTotalItems,
-    pacientesTotalPages: patientList.pacientesTotalPages,
-    pacienteTotalPages: patientList.pacienteTotalPages,
-    paginatedPacientes: patientList.paginatedPacientes,
-    pacienteVisibleStart: patientList.pacienteVisibleStart,
-    pacienteVisibleEnd: patientList.pacienteVisibleEnd,
+    pacientesTotalItems: queries.pacientesTotalItems,
+    pacientesTotalPages: queries.pacientesTotalPages,
+    pacienteTotalPages,
+    paginatedPacientes: queries.pacientes,
+    pacienteVisibleStart: queries.pacientesTotalItems ? pacientePageStart + 1 : 0,
+    pacienteVisibleEnd: Math.min(pacientePageStart + PAGE_SIZE, queries.pacientesTotalItems),
     pacienteFormData: patientForm.pacienteFormData,
     setPacienteFormData: patientForm.setPacienteFormData,
     editingPacienteId: patientForm.editingPacienteId,
@@ -86,33 +89,33 @@ export function createPatientsDomainState({
     setPatientObservationDraft: patientObservacoes.setPatientObservationDraft,
     patientObservationReplyTo: patientObservacoes.patientObservationReplyTo,
     setPatientObservationReplyTo: patientObservacoes.setPatientObservationReplyTo,
-    medicalUsers: patientLookups.medicalUsers,
-    hospitais: patientLookups.hospitais,
-    hospitaisError: patientLookups.hospitaisError,
-    convenios: patientLookups.convenios,
-    conveniosError: patientLookups.conveniosError,
-    opmeFornecedores: patientLookups.opmeFornecedores,
-    opmeFornecedoresError: patientLookups.opmeFornecedoresError,
+    medicalUsers: queries.medicalUsers,
+    hospitais: queries.hospitais,
+    hospitaisError: queries.hospitaisError,
+    convenios: queries.convenios,
+    conveniosError: queries.conveniosError,
+    opmeFornecedores: queries.opmeFornecedores,
+    opmeFornecedoresError: queries.opmeFornecedoresError,
     cbhpmModalOpen: cbhpmLookup.cbhpmModalOpen,
     setCbhpmModalOpen: cbhpmLookup.setCbhpmModalOpen,
-    cbhpmItems: cbhpmLookup.cbhpmItems,
+    cbhpmItems: queries.cbhpmItems,
     cbhpmFilters: cbhpmLookup.cbhpmFilters,
     setCbhpmFilters: cbhpmLookup.setCbhpmFilters,
     cbhpmFilterHint: queries.cbhpmFilterHint,
     canConsultCbhpm,
     canSearchCbhpm: queries.canSearchCbhpm,
     cbhpmLoading: queries.cbhpmLoading,
-    cbhpmError: cbhpmLookup.cbhpmError,
+    cbhpmError: queries.cbhpmError,
     cbhpmCurrentPage: cbhpmLookup.cbhpmCurrentPage,
     setCbhpmCurrentPage: cbhpmLookup.setCbhpmCurrentPage,
     cbhpmSortBy: cbhpmLookup.sortBy,
     setCbhpmSortBy: cbhpmLookup.setSortBy,
     cbhpmSortDirection: cbhpmLookup.sortDirection,
     setCbhpmSortDirection: cbhpmLookup.setSortDirection,
-    cbhpmTotalPageCount: cbhpmLookup.cbhpmTotalPageCount,
-    cbhpmTotalItems: cbhpmLookup.cbhpmTotalItems,
-    cbhpmVisibleStart: cbhpmLookup.cbhpmVisibleStart,
-    cbhpmVisibleEnd: cbhpmLookup.cbhpmVisibleEnd,
+    cbhpmTotalPageCount,
+    cbhpmTotalItems: queries.cbhpmTotalItems,
+    cbhpmVisibleStart: queries.cbhpmTotalItems ? cbhpmPageStart + 1 : 0,
+    cbhpmVisibleEnd: Math.min(cbhpmPageStart + CBHPM_PAGE_SIZE, queries.cbhpmTotalItems),
     loadMedicalUsers: queries.loadMedicalUsers,
     loadPacientes: queries.loadPacientes,
     loadHospitais: queries.loadHospitais,

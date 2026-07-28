@@ -1,9 +1,8 @@
 import { type ReactNode, Suspense } from 'react';
-import { ContactModal, InfoModal } from '../features/users/UserModals';
-import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
-import type { UsersDomainState } from '../features/users/useUsersDomain';
-import type { AuthSession } from '../features/auth/authTypes';
-import type { DashboardNotification } from '../features/dashboard/dashboardTypes';
+import { ContactModal, InfoModal, type UsersDomainState } from '../features/users';
+import type { PatientsDomainState } from '../features/patients';
+import type { AuthSession } from '../shared/domain/sessionTypes';
+import type { DashboardNotification } from '../shared/domain/dashboardContracts';
 import {
   CbhpmLookupModal,
   NotificationsModal,

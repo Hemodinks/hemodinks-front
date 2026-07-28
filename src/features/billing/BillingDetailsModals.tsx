@@ -1,2 +1,2 @@
 export { AccountDetailsModal } from './AccountDetailsModal';
-export { InvoicingDetailsModal } from './InvoicingDetailsModal';
+export { InvoicingDetailsModal } from './invoicing/InvoicingDetailsModal';

@@ -1,10 +1,10 @@
 import type { ChangeEvent, FormEvent } from 'react';
-import type { AuthSession } from '../../shared/domain/sessionTypes';
-import type { RunBillingAction } from './billingWorkflowTypes';
-import { downloadGeneratedReceipt } from './receiptDocument';
+import type { AuthSession } from '../../../shared/domain/sessionTypes';
+import type { RunBillingAction } from '../billingWorkflowTypes';
+import { downloadGeneratedReceipt } from '../receiptDocument';
 import type { useReceivables } from './useReceivables';
-import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
-import { isSupportedReceiptFile, receiptExtensionFromBlob } from './receiptFileValidation';
+import { useAsyncOperation } from '../../../shared/hooks/useAsyncOperation';
+import { isSupportedReceiptFile, receiptExtensionFromBlob } from '../receiptFileValidation';
 
 type ReceivablesState = ReturnType<typeof useReceivables>;
 

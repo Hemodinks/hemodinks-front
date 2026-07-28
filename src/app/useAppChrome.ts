@@ -11,8 +11,8 @@ import { setObservabilityUser } from '../observability';
 import { queryClient } from '../queryClient';
 import { queryKeys } from '../shared/queryKeys';
 import { getErrorMessage } from '../shared/utils/formatters';
-import type { AuthSession } from '../features/auth/authTypes';
-import type { DashboardNotification, DashboardSummary } from '../features/dashboard/dashboardTypes';
+import type { AuthSession } from '../shared/domain/sessionTypes';
+import type { DashboardNotification, DashboardSummary } from '../shared/domain/dashboardContracts';
 
 const DASHBOARD_CACHE_TIME_MS = 30 * 1000;
 const NOTIFICATIONS_CACHE_TIME_MS = 15 * 1000;

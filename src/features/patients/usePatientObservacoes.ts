@@ -20,7 +20,6 @@ type UsePatientObservacoesOptions = {
   moduleMode: ModuleMode;
   pacientes: Paciente[];
   editingPaciente: Paciente | null;
-  setPacientes: Dispatch<SetStateAction<Paciente[]>>;
   setEditingPacienteDetails: Dispatch<SetStateAction<Paciente | null>>;
   loadPacientes: (token?: string, forceRefresh?: boolean) => Promise<void>;
   loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
@@ -32,7 +31,6 @@ export function usePatientObservacoes({
   moduleMode,
   pacientes,
   editingPaciente,
-  setPacientes,
   setEditingPacienteDetails,
   loadPacientes,
   loadDashboardSummary,
@@ -67,11 +65,6 @@ export function usePatientObservacoes({
   );
 
   const clearObservationIndicators = (pacienteId: number) => {
-    setPacientes((current) =>
-      current.map((paciente) =>
-        paciente.id === pacienteId ? { ...paciente, observacoesNaoLidasCount: 0 } : paciente,
-      ),
-    );
     setSelectedPatientObservacoes((current) =>
       current && current.id === pacienteId ? { ...current, observacoesNaoLidasCount: 0 } : current,
     );

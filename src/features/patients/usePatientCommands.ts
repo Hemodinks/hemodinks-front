@@ -13,14 +13,13 @@ import { queryClient } from '../../queryClient';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { queryKeys } from '../../shared/queryKeys';
 import { DEFAULT_PASSWORD, getErrorMessage } from '../../shared/utils/formatters';
-import { sortPacientesForListing } from '../../shared/utils/listing';
 import type { AuthSession } from '../../shared/domain/sessionTypes';
 import type { Paciente, PacientePayload } from './patientTypes';
 import { buildPatientPayloadWithLookups } from './patientDomainHelpers';
 import { validatePacienteForm } from './patientUtils';
 import type { usePatientForm } from './usePatientForm';
 import type { usePatientList } from './usePatientList';
-import type { usePatientLookups } from './usePatientLookups';
+import type { PatientLookups } from './patientLookupTypes';
 import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
 
 type PatientCommandsOptions = {
@@ -30,7 +29,7 @@ type PatientCommandsOptions = {
   canDeletePatients: boolean;
   patientForm: ReturnType<typeof usePatientForm>;
   patientList: ReturnType<typeof usePatientList>;
-  patientLookups: ReturnType<typeof usePatientLookups>;
+  patientLookups: PatientLookups;
   setModuleMode: Dispatch<SetStateAction<ModuleMode>>;
   navigateToView: (view: AppView, replace?: boolean) => void;
   loadPacientes: (token?: string, forceRefresh?: boolean) => Promise<unknown>;
@@ -184,15 +183,6 @@ export function usePatientCommands({
           }
         }
 
-        patientList.setPacientes((current) =>
-          sortPacientesForListing(
-            patientForm.editingPacienteId
-              ? current.map((paciente) =>
-                  paciente.id === savedPaciente.id ? savedPaciente : paciente,
-                )
-              : [savedPaciente, ...current],
-          ),
-        );
         const baseSuccessMessage = patientForm.editingPacienteId
           ? 'Paciente atualizado.'
           : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`;

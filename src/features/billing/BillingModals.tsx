@@ -12,11 +12,11 @@ import { AttendanceDetailsModal } from './AttendanceDetailsModal';
 import { BillingCbhpmLookupModal } from './BillingCbhpmLookupModal';
 import type { ConfirmAction, RunBillingAction } from './billingWorkflowTypes';
 import type { useAttendanceWorkflow } from './useAttendanceWorkflow';
-import type { useAttendances } from './useAttendances';
-import type { useInvoicing } from './useInvoicing';
-import type { useInvoicingWorkflow } from './useInvoicingWorkflow';
-import type { useReceivables } from './useReceivables';
-import type { useReceivablesWorkflow } from './useReceivablesWorkflow';
+import type { useAttendances } from './attendance/useAttendances';
+import type { useInvoicing } from './invoicing/useInvoicing';
+import type { useInvoicingWorkflow } from './invoicing/useInvoicingWorkflow';
+import type { useReceivables } from './receivables/useReceivables';
+import type { useReceivablesWorkflow } from './receivables/useReceivablesWorkflow';
 
 type BillingModalsProps = {
   session: AuthSession;

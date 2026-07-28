@@ -1,4 +1,7 @@
-import type { AuthSession, LoginResponse } from '../features/auth/authTypes';
+import type {
+  AuthSession,
+  LoginSessionResponse as LoginResponse,
+} from '../shared/domain/sessionTypes';
 import {
   CONTROLLER_PROFILE_ID,
   DEFAULT_PASSWORD,

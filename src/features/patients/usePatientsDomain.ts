@@ -8,7 +8,6 @@ import { usePatientsDomainQueries } from './usePatientsDomainQueries';
 import { usePatientExport } from './usePatientExport';
 import { usePatientForm } from './usePatientForm';
 import { usePatientList } from './usePatientList';
-import { usePatientLookups } from './usePatientLookups';
 import { usePatientObservacoes } from './usePatientObservacoes';
 import { usePatientFiles } from './usePatientFiles';
 import { usePatientCommands } from './usePatientCommands';
@@ -53,13 +52,9 @@ export function usePatientsDomain({
   confirmAction,
 }: UsePatientsDomainOptions) {
   const patientList = usePatientList();
-  const patientForm = usePatientForm(patientList.pacientes);
-  const patientLookups = usePatientLookups();
   const cbhpmLookup = useCbhpmLookup();
 
   const {
-    pacientes,
-    setPacientes,
     setPacientesError,
     setPacienteSuccessMessage,
     pacienteFilters,
@@ -67,27 +62,11 @@ export function usePatientsDomain({
     setDebouncedPacienteFilters,
     pacienteCurrentPage,
     setPacienteCurrentPage,
-    pacienteTotalPages,
-    paginatedPacientes,
     resetPatientListState,
   } = patientList;
-  const { setEditingPacienteDetails, editingPaciente, resetPacienteForm } = patientForm;
-  const { resetPatientLookups } = patientLookups;
-  const { cbhpmCurrentPage, setCbhpmCurrentPage, cbhpmTotalPageCount, resetCbhpmLookup } =
-    cbhpmLookup;
+  const { cbhpmCurrentPage, setCbhpmCurrentPage, resetCbhpmLookup } = cbhpmLookup;
 
-  const {
-    pacientesLoading,
-    cbhpmLoading,
-    cbhpmFilterHint,
-    canSearchCbhpm,
-    loadMedicalUsers,
-    loadPacientes,
-    loadCbhpm,
-    loadHospitais,
-    loadConvenios,
-    loadOpmeFornecedores,
-  } = usePatientsDomainQueries({
+  const queries = usePatientsDomainQueries({
     session,
     activeView,
     moduleMode,
@@ -96,13 +75,33 @@ export function usePatientsDomain({
     canConsultCbhpm,
     patientReadOnly,
     patientList,
-    patientLookups,
     cbhpmLookup,
   });
+  const {
+    pacientes,
+    pacientesTotalPages,
+    canSearchCbhpm,
+    cbhpmTotalPages,
+    loadMedicalUsers,
+    loadPacientes,
+    loadHospitais,
+    loadOpmeFornecedores,
+  } = queries;
+  const patientLookups = {
+    medicalUsers: queries.medicalUsers,
+    hospitais: queries.hospitais,
+    hospitaisError: queries.hospitaisError,
+    convenios: queries.convenios,
+    conveniosError: queries.conveniosError,
+    opmeFornecedores: queries.opmeFornecedores,
+    opmeFornecedoresError: queries.opmeFornecedoresError,
+  };
+  const patientForm = usePatientForm(pacientes);
+  const { setEditingPacienteDetails, editingPaciente, resetPacienteForm } = patientForm;
   const patientExport = usePatientExport({
     session,
     companyName,
-    paginatedPacientes,
+    paginatedPacientes: pacientes,
     pacienteFilters,
     setPacientesError,
   });
@@ -113,7 +112,6 @@ export function usePatientsDomain({
     moduleMode,
     pacientes,
     editingPaciente,
-    setPacientes,
     setEditingPacienteDetails,
     loadPacientes,
     loadDashboardSummary,
@@ -165,7 +163,6 @@ export function usePatientsDomain({
 
   const resetPatientsState = () => {
     resetPatientListState();
-    resetPatientLookups();
     patientFiles.reset();
     patientObservacoesState.resetPatientObservacoesState();
     resetCbhpmLookup();
@@ -182,34 +179,24 @@ export function usePatientsDomain({
   }, [isAdmin]);
 
   useEffect(() => {
-    if (pacienteCurrentPage > pacienteTotalPages) {
-      setPacienteCurrentPage(pacienteTotalPages);
+    const totalPages = Math.max(1, pacientesTotalPages);
+    if (pacienteCurrentPage > totalPages) {
+      setPacienteCurrentPage(totalPages);
     }
-  }, [pacienteCurrentPage, pacienteTotalPages]);
+  }, [pacienteCurrentPage, pacientesTotalPages]);
 
   useEffect(() => {
-    if (cbhpmCurrentPage > cbhpmTotalPageCount) {
-      setCbhpmCurrentPage(cbhpmTotalPageCount);
+    const totalPages = Math.max(1, cbhpmTotalPages);
+    if (cbhpmCurrentPage > totalPages) {
+      setCbhpmCurrentPage(totalPages);
     }
-  }, [cbhpmCurrentPage, cbhpmTotalPageCount]);
+  }, [cbhpmCurrentPage, cbhpmTotalPages]);
 
   return createPatientsDomainState({
     patientList,
     patientForm,
-    patientLookups,
     cbhpmLookup,
-    queries: {
-      pacientesLoading,
-      cbhpmLoading,
-      cbhpmFilterHint,
-      canSearchCbhpm,
-      loadMedicalUsers,
-      loadPacientes,
-      loadCbhpm,
-      loadHospitais,
-      loadConvenios,
-      loadOpmeFornecedores,
-    },
+    queries,
     patientExport,
     patientObservacoes: patientObservacoesState,
     patientFiles,

@@ -4,7 +4,7 @@ import { Modal } from '../../shared/components/Modal';
 import { Button, IconButton, TextField } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
 import type { ContaReceber } from './billingDomainTypes';
-import type { useReceivables } from './useReceivables';
+import type { useReceivables } from './receivables/useReceivables';
 import { BillingDetailSummary } from './BillingDetailSummary';
 
 type ReceivablesState = ReturnType<typeof useReceivables>;

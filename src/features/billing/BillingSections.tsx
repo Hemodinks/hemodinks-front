@@ -9,13 +9,13 @@ import { InvoicingSection } from './InvoicingSection';
 import { PricesSection } from './PricesSection';
 import type { BillingTab } from './billingWorkflowTypes';
 import type { useAttendanceWorkflow } from './useAttendanceWorkflow';
-import type { useAttendances } from './useAttendances';
-import type { useInvoicing } from './useInvoicing';
-import type { useInvoicingWorkflow } from './useInvoicingWorkflow';
+import type { useAttendances } from './attendance/useAttendances';
+import type { useInvoicing } from './invoicing/useInvoicing';
+import type { useInvoicingWorkflow } from './invoicing/useInvoicingWorkflow';
 import type { usePriceWorkflow } from './usePriceWorkflow';
-import type { useProcedurePrices } from './useProcedurePrices';
-import type { useReceivables } from './useReceivables';
-import type { useReceivablesWorkflow } from './useReceivablesWorkflow';
+import type { useProcedurePrices } from './prices/useProcedurePrices';
+import type { useReceivables } from './receivables/useReceivables';
+import type { useReceivablesWorkflow } from './receivables/useReceivablesWorkflow';
 
 type BillingSectionsProps = {
   tab: BillingTab;

@@ -11,7 +11,7 @@ import {
 } from './patientUtils';
 import type { useCbhpmLookup } from './useCbhpmLookup';
 import type { usePatientForm } from './usePatientForm';
-import type { usePatientLookups } from './usePatientLookups';
+import type { PatientLookups } from './patientLookupTypes';
 
 type PatientDomainActionsOptions = {
   session: AuthSession | null;
@@ -23,7 +23,7 @@ type PatientDomainActionsOptions = {
   patientReadOnly: boolean;
   canSearchCbhpm: boolean;
   patientForm: ReturnType<typeof usePatientForm>;
-  patientLookups: ReturnType<typeof usePatientLookups>;
+  patientLookups: PatientLookups;
   cbhpmLookup: ReturnType<typeof useCbhpmLookup>;
   setPacienteFilters: ReturnType<
     typeof import('./usePatientList').usePatientList
@@ -63,7 +63,6 @@ export function usePatientDomainActions({
       return;
     }
     cbhpmLookup.setCbhpmModalOpen(true);
-    cbhpmLookup.setCbhpmError('');
   };
 
   const handleSelectCbhpm = (procedimento: CbhpmGeral) => {

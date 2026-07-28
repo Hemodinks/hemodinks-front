@@ -1,10 +1,12 @@
-import { LoginScreen } from '../features/auth/LoginScreen';
-import { PasswordRequiredScreen } from '../features/auth/PasswordRequiredScreen';
-import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
-import type { useLoginFlow } from '../features/auth/useLoginFlow';
+import {
+  LoginScreen,
+  PasswordRequiredScreen,
+  ResetPasswordScreen,
+  type useLoginFlow,
+} from '../features/auth';
 import type { AuthSession } from '../shared/domain/sessionTypes';
 import type { Theme } from '../appTypes';
-import type { UsersDomainState } from '../features/users/useUsersDomain';
+import type { UsersDomainState } from '../features/users';
 import type { AppChromeState } from './useAppChrome';
 import type { useSessionLifecycle } from './useSessionLifecycle';
 

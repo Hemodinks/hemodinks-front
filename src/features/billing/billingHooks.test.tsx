@@ -1,10 +1,12 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as services from '../../services';
-import { createInitialAtendimentoForm, useAttendances } from './useAttendances';
-import { createInitialFaturamentoForm, useInvoicing } from './useInvoicing';
-import { useReceivables } from './useReceivables';
-import { createInitialPriceForm, useProcedurePrices } from './useProcedurePrices';
+import { createInitialAtendimentoForm, useAttendances } from './attendance/useAttendances';
+import { createInitialFaturamentoForm, useInvoicing } from './invoicing/useInvoicing';
+import { useReceivables } from './receivables/useReceivables';
+import { createInitialPriceForm, useProcedurePrices } from './prices/useProcedurePrices';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { PropsWithChildren } from 'react';
 
 vi.mock('../../services', () => ({
   getAtendimentos: vi.fn(),
@@ -55,6 +57,15 @@ const account = {
 const summary = { saldoAberto: 80 };
 const price = { id: 6, cbhpmCodigo: '10101012' };
 
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return function QueryWrapper({ children }: PropsWithChildren) {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  };
+}
+
 describe('billing domain hooks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -67,7 +78,9 @@ describe('billing domain hooks', () => {
     } as never);
     vi.mocked(services.getHospitais).mockResolvedValue([hospital]);
 
-    const { result } = renderHook(() => useAttendances('9'));
+    const { result } = renderHook(() => useAttendances('9', token), {
+      wrapper: createWrapper(),
+    });
 
     expect(result.current.atendimentoForm).toEqual(
       expect.objectContaining({ medicoResponsavelId: '9', quantidade: '1' }),
@@ -75,7 +88,7 @@ describe('billing domain hooks', () => {
 
     await act(() => result.current.loadAttendances(token));
 
-    expect(result.current.atendimentos).toEqual([attendance]);
+    await waitFor(() => expect(result.current.atendimentos).toEqual([attendance]));
     expect(result.current.pacientes).toEqual([patient]);
     expect(result.current.hospitais).toEqual([hospital]);
 
@@ -93,7 +106,7 @@ describe('billing domain hooks', () => {
     vi.mocked(services.getAtendimentos).mockResolvedValue([attendance] as never);
     vi.mocked(services.getFaturamentos).mockResolvedValue([invoice] as never);
 
-    const { result } = renderHook(() => useInvoicing());
+    const { result } = renderHook(() => useInvoicing(token), { wrapper: createWrapper() });
     expect(result.current.faturamentoForm).toEqual(
       expect.objectContaining({ numeroGuia: '', observacao: '' }),
     );
@@ -104,7 +117,7 @@ describe('billing domain hooks', () => {
     });
 
     expect(loadedAttendances).toEqual([attendance]);
-    expect(result.current.faturamentos).toEqual([invoice]);
+    await waitFor(() => expect(result.current.faturamentos).toEqual([invoice]));
 
     const invoicePayload = { atendimentoCirurgicoId: 1 } as never;
     await result.current.saveInvoice(null, invoicePayload, token);
@@ -129,7 +142,7 @@ describe('billing domain hooks', () => {
     } as never);
     vi.mocked(services.getFinanceiroResumo).mockResolvedValue(summary as never);
 
-    const { result } = renderHook(() => useReceivables());
+    const { result } = renderHook(() => useReceivables(token), { wrapper: createWrapper() });
 
     let patients: unknown;
     await act(async () => {
@@ -137,7 +150,7 @@ describe('billing domain hooks', () => {
     });
 
     expect(patients).toEqual([patient]);
-    expect(result.current.openBalance).toBe(80);
+    await waitFor(() => expect(result.current.openBalance).toBe(80));
     expect(result.current.received).toBe(20);
     expect(result.current.financeiroResumo).toEqual(summary);
 
@@ -159,7 +172,9 @@ describe('billing domain hooks', () => {
   it('loads prices and selects create or update from the identifier', async () => {
     vi.mocked(services.getConvenioProcedimentoPrecos).mockResolvedValue([price] as never);
 
-    const { result } = renderHook(() => useProcedurePrices());
+    const { result } = renderHook(() => useProcedurePrices(token), {
+      wrapper: createWrapper(),
+    });
     expect(result.current.price).toEqual(
       expect.objectContaining({
         percentualPrincipal: '100',
@@ -168,7 +183,7 @@ describe('billing domain hooks', () => {
     );
 
     await act(() => result.current.loadProcedurePrices(token));
-    expect(result.current.precos).toEqual([price]);
+    await waitFor(() => expect(result.current.precos).toEqual([price]));
 
     const payload = { cbhpmCodigo: '10101012' } as never;
     await result.current.saveProcedurePrice(null, payload, token);

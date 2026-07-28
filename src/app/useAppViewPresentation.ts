@@ -1,9 +1,9 @@
 import type { AppView, BreadcrumbItem, ModuleMode } from '../appTypes';
-import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
-import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
-import type { UsersDomainState } from '../features/users/useUsersDomain';
+import type { MedicalGroupsDomainState } from '../features/medicalGroups';
+import type { PatientsDomainState } from '../features/patients';
+import type { UsersDomainState } from '../features/users';
 import { API_ASSET_BASE_URL, formatProfileName } from '../shared/utils/formatters';
-import type { AuthSession } from '../features/auth/authTypes';
+import type { AuthSession } from '../shared/domain/sessionTypes';
 import { getActiveModuleLabel, getFormBreadcrumbLabel } from './appViewMeta';
 import type { AppChromeState } from './useAppChrome';
 import type { AppNavigationState } from './useAppNavigation';

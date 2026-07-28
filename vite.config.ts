@@ -51,5 +51,22 @@ export default defineConfig(({ mode }) => ({
     setupFiles: './src/setupTests.ts',
     globals: true,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'html'],
+      reportsDirectory: 'coverage',
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/**/*.spec.{ts,tsx}',
+        'src/setupTests.ts',
+        'src/test/**',
+      ],
+      thresholds: {
+        statements: 60,
+        branches: 55,
+        functions: 55,
+        lines: 60,
+      },
+    },
   },
 }));

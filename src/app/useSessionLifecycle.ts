@@ -4,7 +4,7 @@ import { AUTH_EXPIRED_EVENT, getCurrentLicenca, refreshSession } from '../servic
 import { queryClient } from '../queryClient';
 import { MEDICAL_PROFILE_ID } from '../shared/utils/formatters';
 import { getJwtExpirationDelayMs, isJwtExpired } from '../shared/utils/jwt';
-import type { AuthSession } from '../features/auth/authTypes';
+import type { AuthSession } from '../shared/domain/sessionTypes';
 import {
   isSessionIdle,
   SESSION_IDLE_TIMEOUT_MS,

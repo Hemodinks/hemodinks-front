@@ -127,6 +127,7 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `npm run audit:a11y` | roda Playwright com axe nas rotas criticas |
 | `npm run audit:lighthouse` | roda build e LHCI autenticado |
 | `npm test` | roda testes unitarios e de integracao |
+| `npm run test:coverage` | roda a suite e aplica os limites minimos de cobertura |
 | `npm run test:e2e` | roda testes E2E com Playwright |
 | `npm run preview` | serve o build gerado em `dist` |
 
@@ -185,6 +186,10 @@ src/
   features/
     auth/
     billing/
+      attendance/
+      invoicing/
+      prices/
+      receivables/
     dashboard/
     events/
     medicalGroups/
@@ -206,7 +211,8 @@ Pontos principais:
 - `src/shared/queryKeys.ts` centraliza chaves de cache.
 - `src/features/patients/usePatientsDomain.ts` coordena formulario, listagem, lookups, observacoes e exportacoes.
 - `src/features/users/useUsersDomain.ts` cobre listagem, autoedicao, upload de arquivos e troca de senha.
-- `src/features/billing/BillingPage.tsx` compoe a tela financeira a partir de `GET /api/faturamentos-medicos`.
+- `src/features/billing/BillingPage.tsx` compoe os subdominios de atendimentos, faturamento, recebiveis e precos.
+- cada feature expoe uma API publica em `index.ts`; o carregamento dinamico preserva imports diretos para manter chunks separados.
 - `src/features/settings/SystemSettingsPage.tsx` administra marca, tema e senha.
 - `src/observability.ts`, `src/newRelic.ts` e `src/otel.ts` inicializam a telemetria opcional.
 
@@ -230,10 +236,14 @@ Cache atual:
 - convenios
 - fornecedores OPME
 - CBHPM
+- atendimentos cirurgicos
+- faturamentos
+- contas a receber e resumo financeiro
+- precos de procedimentos
 
 Observacoes:
 
-- a tela de faturamento usa uma query propria (`billingRecords`) e carrega paginas de `GET /api/faturamentos-medicos` ate compor a visao agregada
+- os quatro subdominios financeiros usam chaves proprias do TanStack Query e invalidacao explicita apos mutacoes
 - a tela de notificacoes marca avisos da agenda como lidos via `POST /api/events/notifications/mark-read`
 - a confirmacao de reset envia `Idempotency-Key` em `POST /api/users/password/reset/confirm`
 
@@ -243,6 +253,10 @@ Suite principal:
 
 ```powershell
 npm test
+npm run test:coverage
+npm run lint
+npm run architecture:check
+npm run format:check
 npm run build
 npm run budget
 npm run test:e2e
@@ -258,6 +272,7 @@ Cobertura atual inclui:
 - E2E de usuarios, pacientes, agenda e mobile
 - axe para acessibilidade seria/critica
 - Lighthouse autenticado via LHCI
+- cobertura V8 com limites obrigatorios no GitHub Actions e relatorio HTML como artefato
 - budget de bundle e analise visual do build
 
 ## Deploy

@@ -4,4 +4,4 @@ export * from './profileFormatters';
 export * from './identityFormatters';
 export * from './dateFormatters';
 export * from './currencyFormatters';
-export { getErrorMessage } from './formattersCore';
+export { getErrorMessage } from './errorFormatters';

@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, extname, relative, resolve, sep } from 'node:path';
+import { basename, dirname, extname, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
 
 const projectRoot = process.cwd();
@@ -64,6 +64,17 @@ for (const file of files) {
     if (sourceFeature && targetFeature && sourceFeature !== targetFeature) {
       errors.push(
         `${displayPath(file)}: feature "${sourceFeature}" não pode importar diretamente "${targetFeature}".`,
+      );
+    }
+
+    if (
+      sourcePath[0] === 'app' &&
+      targetPath[0] === 'features' &&
+      basename(target, extname(target)) !== 'index' &&
+      basename(file) !== 'lazyModules.tsx'
+    ) {
+      errors.push(
+        `${displayPath(file)}: app deve consumir a API publica de ${targetPath[1]} em index.ts.`,
       );
     }
 

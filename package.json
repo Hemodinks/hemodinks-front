@@ -19,6 +19,7 @@
     "audit:a11y": "playwright test --grep acessibilidade",
     "audit:lighthouse": "npm run build && node scripts/run-lighthouse.mjs",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "preview": "vite preview --host 0.0.0.0"
   },
@@ -55,6 +56,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^4.1.8",
     "eslint": "^10.8.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^16.5.0",

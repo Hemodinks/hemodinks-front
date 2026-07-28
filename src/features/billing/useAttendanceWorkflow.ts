@@ -3,7 +3,7 @@ import type { AtendimentoCirurgico } from './billingDomainTypes';
 import type { AuthSession } from '../../shared/domain/sessionTypes';
 import type { Convenio, OpmeFornecedor } from '../../shared/domain/clinicalContracts';
 import type { RunBillingAction, SetConfirmAction } from './billingWorkflowTypes';
-import { createInitialAtendimentoForm, type useAttendances } from './useAttendances';
+import { createInitialAtendimentoForm, type useAttendances } from './attendance/useAttendances';
 
 type AttendanceState = ReturnType<typeof useAttendances>;
 

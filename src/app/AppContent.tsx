@@ -1,7 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuthSession } from '../features/auth/useAuthSession';
-import { useLoginFlow } from '../features/auth/useLoginFlow';
+import { useAuthSession, useLoginFlow } from '../features/auth';
 import type { AppView, ModuleMode } from '../appTypes';
 import { useConfirmationDialog } from '../shared/components/ConfirmationDialog';
 import { useRouteView } from '../shared/hooks/useRouteView';

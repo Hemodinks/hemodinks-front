@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AuthSession } from '../features/auth/authTypes';
+import type { AuthSession } from '../shared/domain/sessionTypes';
 import { refreshSession } from '../services';
 import { SESSION_IDLE_TIMEOUT_MS, SESSION_REFRESH_INTERVAL_MS } from './sessionInactivity';
 import { useSessionLifecycle } from './useSessionLifecycle';

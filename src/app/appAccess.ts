@@ -1,4 +1,4 @@
-import type { AuthSession } from '../features/auth/authTypes';
+import type { AuthSession } from '../shared/domain/sessionTypes';
 import { LICENSE_FEATURES, hasSessionFeature } from '../shared/utils/license';
 import {
   CONTROLLER_PROFILE_ID,

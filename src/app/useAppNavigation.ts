@@ -1,11 +1,11 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { AppView, ModuleMode } from '../appTypes';
-import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
-import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
-import type { UsersDomainState } from '../features/users/useUsersDomain';
+import type { MedicalGroupsDomainState } from '../features/medicalGroups';
+import type { PatientsDomainState } from '../features/patients';
+import type { UsersDomainState } from '../features/users';
 import { queryClient } from '../queryClient';
-import type { AuthSession } from '../features/auth/authTypes';
-import type { SelectClinicResponse } from '../features/clinics/clinicTypes';
+import type { AuthSession } from '../shared/domain/sessionTypes';
+import type { SelectClinicResponse } from '../shared/domain/clinicContracts';
 import type { AppChromeState } from './useAppChrome';
 import { updateSort } from './appSort';
 

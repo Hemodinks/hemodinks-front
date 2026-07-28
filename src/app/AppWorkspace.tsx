@@ -7,7 +7,7 @@ import type { useAppDomains } from './useAppDomains';
 import type { useAppNavigation } from './useAppNavigation';
 import type { useAppViewPresentation } from './useAppViewPresentation';
 import type { useSessionLifecycle } from './useSessionLifecycle';
-import type { useAuthSession } from '../features/auth/useAuthSession';
+import type { useAuthSession } from '../features/auth';
 import type { getAppAccess } from './appAccess';
 import { AppMainContent } from './AppMainContent';
 import { AppModals } from './AppModals';

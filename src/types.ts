@@ -1,9 +1,0 @@
-export type * from './shared/domain/apiTypes';
-export type * from './features/users/userTypes';
-export type * from './features/medicalGroups/medicalGroupTypes';
-export type * from './features/patients/patientTypes';
-export type * from './features/dashboard/dashboardTypes';
-export type * from './features/events/agendaTypes';
-export type * from './features/auth/authTypes';
-export type * from './features/clinics/clinicTypes';
-export type * from './features/billing/billingDomainTypes';

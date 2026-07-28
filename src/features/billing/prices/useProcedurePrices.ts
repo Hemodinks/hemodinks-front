@@ -1,13 +1,15 @@
-import { useState } from 'react';
-import type { ConvenioProcedimentoPreco } from './billingDomainTypes';
+import { useState, type SetStateAction } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ConvenioProcedimentoPreco } from '../billingDomainTypes';
 import {
   deactivateConvenioProcedimentoPreco,
   getConvenioProcedimentoPrecos,
   saveConvenioProcedimentoPreco,
   updateConvenioProcedimentoPreco,
-} from '../../services';
-import type { ProcedurePricePayload } from '../../services/financeiroService';
-import type { PriceFormState } from './billingPageTypes';
+} from '../../../services';
+import type { ProcedurePricePayload } from '../../../services/financeiroService';
+import type { PriceFormState } from '../billingPageTypes';
+import { queryKeys } from '../../../shared/queryKeys';
 
 export function createInitialPriceForm(): PriceFormState {
   return {
@@ -22,12 +24,23 @@ export function createInitialPriceForm(): PriceFormState {
   };
 }
 
-export function useProcedurePrices() {
-  const [precos, setPrecos] = useState<ConvenioProcedimentoPreco[]>([]);
+export function useProcedurePrices(token = '') {
+  const queryClient = useQueryClient();
+  const pricesQuery = useQuery({
+    queryKey: queryKeys.billingPrices(token),
+    queryFn: () => getConvenioProcedimentoPrecos(token),
+    enabled: false,
+  });
+  const setPrecos = (value: SetStateAction<ConvenioProcedimentoPreco[]>) => {
+    queryClient.setQueryData<ConvenioProcedimentoPreco[]>(
+      queryKeys.billingPrices(token),
+      (current = []) => (typeof value === 'function' ? value(current) : value),
+    );
+  };
   const [price, setPrice] = useState(createInitialPriceForm);
   const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
-  const loadProcedurePrices = async (token: string) => {
-    setPrecos(await getConvenioProcedimentoPrecos(token));
+  const loadProcedurePrices = async (_token: string) => {
+    await pricesQuery.refetch();
   };
   const saveProcedurePrice = (id: number | null, payload: ProcedurePricePayload, token: string) =>
     id
@@ -37,7 +50,7 @@ export function useProcedurePrices() {
     deactivateConvenioProcedimentoPreco(id, token);
 
   return {
-    precos,
+    precos: pricesQuery.data ?? [],
     setPrecos,
     price,
     setPrice,

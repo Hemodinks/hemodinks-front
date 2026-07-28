@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react';
-import type { AuthSession } from '../../shared/domain/sessionTypes';
-import type { Faturamento } from './billingDomainTypes';
-import type { RunBillingAction, SetConfirmAction } from './billingWorkflowTypes';
+import type { AuthSession } from '../../../shared/domain/sessionTypes';
+import type { Faturamento } from '../billingDomainTypes';
+import type { RunBillingAction, SetConfirmAction } from '../billingWorkflowTypes';
 import { createInitialFaturamentoForm, type useInvoicing } from './useInvoicing';
 
 type InvoicingState = ReturnType<typeof useInvoicing>;

@@ -9,13 +9,13 @@ import type {
 import type { AuthSession } from '../../shared/domain/sessionTypes';
 import { BillingModals } from './BillingModals';
 import { BillingSections } from './BillingSections';
-import { useAttendances } from './useAttendances';
-import { useInvoicing } from './useInvoicing';
-import { useReceivables } from './useReceivables';
-import { useProcedurePrices } from './useProcedurePrices';
+import { useAttendances } from './attendance/useAttendances';
+import { useInvoicing } from './invoicing/useInvoicing';
+import { useReceivables } from './receivables/useReceivables';
+import { useProcedurePrices } from './prices/useProcedurePrices';
 import { useAttendanceWorkflow } from './useAttendanceWorkflow';
-import { useInvoicingWorkflow } from './useInvoicingWorkflow';
-import { useReceivablesWorkflow } from './useReceivablesWorkflow';
+import { useInvoicingWorkflow } from './invoicing/useInvoicingWorkflow';
+import { useReceivablesWorkflow } from './receivables/useReceivablesWorkflow';
 import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
 import { usePriceWorkflow } from './usePriceWorkflow';
 import type { BillingTab, ConfirmAction, RunBillingAction } from './billingWorkflowTypes';
@@ -40,13 +40,13 @@ export function BillingPage({
   section = 'atendimentos',
 }: BillingPageProps) {
   const tab = section;
-  const attendance = useAttendances(isMedical ? String(session.user.id) : '');
+  const attendance = useAttendances(isMedical ? String(session.user.id) : '', session.token);
   const { setAtendimentos, setPacientes, setShowForm, loadAttendances } = attendance;
-  const invoicing = useInvoicing();
+  const invoicing = useInvoicing(session.token);
   const { loadInvoicing } = invoicing;
-  const receivables = useReceivables();
+  const receivables = useReceivables(session.token);
   const { receiptToast, setReceiptToast, loadReceivables } = receivables;
-  const prices = useProcedurePrices();
+  const prices = useProcedurePrices(session.token);
   const { loadProcedurePrices } = prices;
   const [error, setError] = useState('');
   const [success, setSuccess] = useState<{

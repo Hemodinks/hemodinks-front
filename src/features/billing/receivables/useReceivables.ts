@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import type { ContaReceber, FinanceiroResumo } from './billingDomainTypes';
+import { useMemo, useState, type SetStateAction } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ContaReceber, FinanceiroResumo } from '../billingDomainTypes';
 import {
   cancelContaReceber,
   downloadComprovanteRecebimento,
@@ -11,23 +12,69 @@ import {
   searchContasReceber,
   updateContaReceber,
   uploadComprovanteRecebimento,
-} from '../../services';
+} from '../../../services';
 import type {
   ContaReceberCancelPayload,
   ContaReceberUpdatePayload,
   FinanceSearchParams,
   FinanceSummaryParams,
   RecebimentoPayload,
-} from '../../services/financeiroService';
+} from '../../../services/financeiroService';
 import type {
   FinanceFiltersState,
   FinancePageState,
   ReceiptFormState,
   ReceiptToastState,
-} from './billingPageTypes';
+} from '../billingPageTypes';
+import type { Paciente } from '../../../shared/domain/clinicalContracts';
+import { queryKeys } from '../../../shared/queryKeys';
 
-export function useReceivables() {
-  const [contas, setContas] = useState<ContaReceber[]>([]);
+type ReceivablesWorkspaceData = {
+  contas: ContaReceber[];
+  pacientes: Paciente[];
+  resumo: FinanceiroResumo | null;
+};
+
+export function useReceivables(token = '') {
+  const queryClient = useQueryClient();
+  const workspaceQuery = useQuery({
+    queryKey: queryKeys.billingReceivables(token),
+    queryFn: async (): Promise<ReceivablesWorkspaceData> => {
+      const [contas, patientPage, resumo] = await Promise.all([
+        getContasReceber(token),
+        getPacientes(token, { page: 1, pageSize: 100 }),
+        getFinanceiroResumo({}, token),
+      ]);
+      return { contas, pacientes: patientPage.items, resumo };
+    },
+    enabled: false,
+  });
+  const workspace: ReceivablesWorkspaceData = workspaceQuery.data ?? {
+    contas: [],
+    pacientes: [],
+    resumo: null,
+  };
+  const updateWorkspace = <K extends keyof ReceivablesWorkspaceData>(
+    key: K,
+    value: SetStateAction<ReceivablesWorkspaceData[K]>,
+  ) => {
+    queryClient.setQueryData<ReceivablesWorkspaceData>(
+      queryKeys.billingReceivables(token),
+      (current) => {
+        const base = current ?? workspace;
+        const nextValue =
+          typeof value === 'function'
+            ? (value as (previous: ReceivablesWorkspaceData[K]) => ReceivablesWorkspaceData[K])(
+                base[key],
+              )
+            : value;
+        return { ...base, [key]: nextValue };
+      },
+    );
+  };
+  const setContas = (value: SetStateAction<ContaReceber[]>) => updateWorkspace('contas', value);
+  const setFinanceiroResumo = (value: SetStateAction<FinanceiroResumo | null>) =>
+    updateWorkspace('resumo', value);
   const [receiptToast, setReceiptToast] = useState<ReceiptToastState | null>(null);
   const [receipt, setReceipt] = useState<ReceiptFormState>({
     contaId: '',
@@ -42,7 +89,6 @@ export function useReceivables() {
     valor: number;
   } | null>(null);
   const [reversalReason, setReversalReason] = useState('');
-  const [financeiroResumo, setFinanceiroResumo] = useState<FinanceiroResumo | null>(null);
   const [financePage, setFinancePage] = useState<FinancePageState>({
     page: 1,
     totalPages: 1,
@@ -71,24 +117,18 @@ export function useReceivables() {
   const [cancelReason, setCancelReason] = useState('');
   const openBalance = useMemo(
     () =>
-      contas
+      workspace.contas
         .filter((item) => item.status !== 'Cancelado')
         .reduce((sum, item) => sum + item.saldoAberto, 0),
-    [contas],
+    [workspace.contas],
   );
   const received = useMemo(
-    () => contas.reduce((sum, item) => sum + item.valorRecebido, 0),
-    [contas],
+    () => workspace.contas.reduce((sum, item) => sum + item.valorRecebido, 0),
+    [workspace.contas],
   );
-  const loadReceivables = async (token: string) => {
-    const [accountItems, patientPage, summary] = await Promise.all([
-      getContasReceber(token),
-      getPacientes(token, { page: 1, pageSize: 100 }),
-      getFinanceiroResumo({}, token),
-    ]);
-    setContas(accountItems);
-    setFinanceiroResumo(summary);
-    return patientPage.items;
+  const loadReceivables = async (_token: string) => {
+    const result = await workspaceQuery.refetch();
+    return result.data?.pacientes ?? [];
   };
   const reverseReceipt = (id: number, reason: string, token: string) =>
     estornarRecebimento(id, reason, token);
@@ -108,7 +148,7 @@ export function useReceivables() {
     downloadComprovanteRecebimento(id, token);
 
   return {
-    contas,
+    contas: workspace.contas,
     setContas,
     receiptToast,
     setReceiptToast,
@@ -118,7 +158,7 @@ export function useReceivables() {
     setReversalTarget,
     reversalReason,
     setReversalReason,
-    financeiroResumo,
+    financeiroResumo: workspace.resumo,
     setFinanceiroResumo,
     financePage,
     setFinancePage,

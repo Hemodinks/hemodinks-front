@@ -25,6 +25,10 @@ src/
   features/
     auth/
     billing/
+      attendance/
+      invoicing/
+      prices/
+      receivables/
     dashboard/
     events/
     medicalGroups/
@@ -35,6 +39,7 @@ src/
   services/
   shared/
     components/
+    domain/
     hooks/
     utils/
     queryKeys.ts
@@ -55,7 +60,8 @@ Responsabilidades:
 | `src/newRelic.ts` | inicializacao opcional do Browser agent do New Relic |
 | `src/observability.ts` | Sentry opcional e associacao do usuario logado |
 | `src/shared/queryKeys.ts` | chaves padronizadas de cache |
-| `src/shared/components/ui.tsx` | primitives de UI reutilizadas |
+| `src/shared/components/ui.tsx` | API publica das primitives, implementadas em `uiActions`, `uiFields` e `uiFeedback` |
+| `src/shared/utils/formatters.ts` | API publica dos formatadores separados por identidade, data, moeda, perfil e lookup |
 | `src/shared/components/ErrorBoundary.tsx` | fallback visual para erros inesperados |
 | `src/layout` | App shell, sidebar, topbar e navegacao global |
 
@@ -125,6 +131,10 @@ Queries padronizadas em `src/shared/queryKeys.ts`:
 - `convenios`
 - `opmeFornecedores`
 - `cbhpm`
+- `billingAttendances`
+- `billingInvoicing`
+- `billingReceivables`
+- `billingPrices`
 
 Observacoes:
 
@@ -138,7 +148,8 @@ Observacoes:
 
 Arquivos principais:
 
-- `src/features/dashboard/DashboardPage.tsx`
+- `src/features/dashboard/DashboardContainer.tsx`
+- `src/features/dashboard/dashboardModuleOrder.ts`
 - `src/app/useAppChrome.ts`
 
 Responsabilidades:
@@ -174,7 +185,8 @@ Arquivos principais:
 - `src/features/patients/usePatientsDomain.ts`
 - `src/features/patients/usePatientList.ts`
 - `src/features/patients/usePatientForm.ts`
-- `src/features/patients/usePatientLookups.ts`
+- `src/features/patients/usePatientsDomainQueries.ts`
+- `src/features/patients/patientQueryResults.ts`
 - `src/features/patients/useCbhpmLookup.ts`
 - `src/features/patients/PatientObservacoesModal.tsx`
 - `src/features/patients/patientExport.ts`
@@ -194,6 +206,10 @@ Responsabilidades:
 Arquivo principal:
 
 - `src/features/billing/BillingPage.tsx`
+- `src/features/billing/attendance`
+- `src/features/billing/invoicing`
+- `src/features/billing/receivables`
+- `src/features/billing/prices`
 
 Responsabilidades:
 
@@ -219,7 +235,7 @@ Responsabilidades:
 
 Arquivo principal:
 
-- `src/features/events/AgendaPage.tsx`
+- `src/features/events/AgendaContainer.tsx`
 
 Responsabilidades:
 
@@ -367,6 +383,8 @@ Endpoints consumidos:
 ## Convencoes de manutencao
 
 - use `queryKeys` para qualquer cache novo
+- trate o TanStack Query como fonte unica de dados remotos; `useState` fica restrito a formularios, filtros, selecao e modais
+- consuma features por seus `index.ts`; imports profundos ficam reservados ao carregamento dinamico
 - centralize chamadas HTTP em `src/services`
 - preserve imports pesados em `import()` quando o uso for eventual
 - mantenha labels e `aria-label` em controles interativos
@@ -378,6 +396,10 @@ Endpoints consumidos:
 
 ```powershell
 npm test
+npm run test:coverage
+npm run lint
+npm run architecture:check
+npm run format:check
 npm run build
 npm run budget
 npm run test:e2e

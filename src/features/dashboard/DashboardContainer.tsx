@@ -14,6 +14,14 @@ import {
   Users,
 } from 'lucide-react';
 import './dashboard.css';
+import {
+  normalizeDashboardModuleOrder,
+  persistDashboardModuleOrder,
+  readStoredDashboardModuleOrder,
+  reorderDashboardModuleOrder,
+  sameDashboardModuleOrder,
+  type DashboardModuleId,
+} from './dashboardModuleOrder';
 
 type DashboardPageProps = {
   companyName: string;
@@ -47,16 +55,6 @@ type DashboardPageProps = {
   onOpenSettings: () => void;
 };
 
-type DashboardModuleId =
-  | 'users'
-  | 'profile'
-  | 'patients'
-  | 'controller'
-  | 'clinics'
-  | 'medicalGroups'
-  | 'agenda'
-  | 'settings';
-
 type DashboardModule = {
   id: DashboardModuleId;
   title: string;
@@ -68,77 +66,6 @@ type DashboardModule = {
   onOpen: () => void;
   badge?: string;
 };
-
-const DASHBOARD_MODULE_ORDER_KEY = 'hemodinks.dashboard.module-order';
-const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = [
-  'users',
-  'profile',
-  'patients',
-  'controller',
-  'clinics',
-  'medicalGroups',
-  'agenda',
-  'settings',
-];
-
-function readStoredDashboardModuleOrder() {
-  if (typeof window === 'undefined') {
-    return [...DASHBOARD_DEFAULT_MODULE_ORDER];
-  }
-
-  try {
-    const rawValue = localStorage.getItem(DASHBOARD_MODULE_ORDER_KEY);
-
-    if (!rawValue) {
-      return [...DASHBOARD_DEFAULT_MODULE_ORDER];
-    }
-
-    const parsed = JSON.parse(rawValue);
-
-    if (!Array.isArray(parsed)) {
-      return [...DASHBOARD_DEFAULT_MODULE_ORDER];
-    }
-
-    return parsed.filter((value): value is DashboardModuleId =>
-      DASHBOARD_DEFAULT_MODULE_ORDER.includes(value as DashboardModuleId),
-    );
-  } catch {
-    return [...DASHBOARD_DEFAULT_MODULE_ORDER];
-  }
-}
-
-function normalizeDashboardModuleOrder(
-  currentOrder: DashboardModuleId[],
-  visibleModuleIds: DashboardModuleId[],
-) {
-  return [
-    ...currentOrder.filter((moduleId) => visibleModuleIds.includes(moduleId)),
-    ...visibleModuleIds.filter((moduleId) => !currentOrder.includes(moduleId)),
-  ];
-}
-
-function sameDashboardModuleOrder(left: DashboardModuleId[], right: DashboardModuleId[]) {
-  return left.length === right.length && left.every((moduleId, index) => moduleId === right[index]);
-}
-
-function reorderDashboardModuleOrder(
-  currentOrder: DashboardModuleId[],
-  draggedModuleId: DashboardModuleId,
-  targetModuleId: DashboardModuleId,
-) {
-  const nextOrder = [...currentOrder];
-  const draggedIndex = nextOrder.indexOf(draggedModuleId);
-  const targetIndex = nextOrder.indexOf(targetModuleId);
-
-  if (draggedIndex < 0 || targetIndex < 0 || draggedIndex === targetIndex) {
-    return currentOrder;
-  }
-
-  nextOrder.splice(draggedIndex, 1);
-  nextOrder.splice(targetIndex, 0, draggedModuleId);
-
-  return nextOrder;
-}
 
 export function DashboardContainer({
   companyName,
@@ -315,7 +242,7 @@ export function DashboardContainer({
       return;
     }
 
-    localStorage.setItem(DASHBOARD_MODULE_ORDER_KEY, JSON.stringify(normalizedModuleOrder));
+    persistDashboardModuleOrder(normalizedModuleOrder);
   }, [normalizedModuleOrderKey]);
 
   const handleDragStart =

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import type { Faturamento } from './billingDomainTypes';
+import { useState, type SetStateAction } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Faturamento } from '../billingDomainTypes';
 import {
   createFaturamento,
   deleteFaturamento,
@@ -15,7 +16,7 @@ import {
   updateFaturamentoStatus,
   updateGlosa,
   updateRecursoGlosa,
-} from '../../services';
+} from '../../../services';
 import type {
   ContaReceberCreatePayload,
   FaturamentoItemPayload,
@@ -25,14 +26,21 @@ import type {
   RecursoGlosaPayload,
   RecursoGlosaUpdatePayload,
   RetornoFaturamentoPayload,
-} from '../../services/financeiroService';
+} from '../../../services/financeiroService';
 import type {
   AppealDraftState,
   BillingReturnDraft,
   FaturamentoFormState,
   GlosaDraftState,
   RecursoDraftState,
-} from './billingPageTypes';
+} from '../billingPageTypes';
+import { queryKeys } from '../../../shared/queryKeys';
+import type { AtendimentoCirurgico } from '../billingDomainTypes';
+
+type InvoicingWorkspaceData = {
+  faturamentos: Faturamento[];
+  atendimentos: AtendimentoCirurgico[];
+};
 
 export function createInitialFaturamentoForm(): FaturamentoFormState {
   return {
@@ -44,8 +52,30 @@ export function createInitialFaturamentoForm(): FaturamentoFormState {
   };
 }
 
-export function useInvoicing() {
-  const [faturamentos, setFaturamentos] = useState<Faturamento[]>([]);
+export function useInvoicing(token = '') {
+  const queryClient = useQueryClient();
+  const workspaceQuery = useQuery({
+    queryKey: queryKeys.billingInvoicing(token),
+    queryFn: async (): Promise<InvoicingWorkspaceData> => {
+      const [atendimentos, faturamentos] = await Promise.all([
+        getAtendimentos(token),
+        getFaturamentos(token),
+      ]);
+      return { atendimentos, faturamentos };
+    },
+    enabled: false,
+  });
+  const workspace = workspaceQuery.data ?? { faturamentos: [], atendimentos: [] };
+  const setFaturamentos = (value: SetStateAction<Faturamento[]>) => {
+    queryClient.setQueryData<InvoicingWorkspaceData>(
+      queryKeys.billingInvoicing(token),
+      (current) => {
+        const base = current ?? workspace;
+        const faturamentos = typeof value === 'function' ? value(base.faturamentos) : value;
+        return { ...base, faturamentos };
+      },
+    );
+  };
   const [editingBillingId, setEditingBillingId] = useState<number | null>(null);
   const [faturamentoForm, setFaturamentoForm] = useState(createInitialFaturamentoForm);
   const [returnTarget, setReturnTarget] = useState<Faturamento | null>(null);
@@ -69,13 +99,9 @@ export function useInvoicing() {
   } | null>(null);
   const [glosaDraft, setGlosaDraft] = useState<GlosaDraftState | null>(null);
   const [recursoDraft, setRecursoDraft] = useState<RecursoDraftState | null>(null);
-  const loadInvoicing = async (token: string) => {
-    const [atendimentos, items] = await Promise.all([
-      getAtendimentos(token),
-      getFaturamentos(token),
-    ]);
-    setFaturamentos(items);
-    return atendimentos;
+  const loadInvoicing = async (_token: string) => {
+    const result = await workspaceQuery.refetch();
+    return result.data?.atendimentos ?? [];
   };
   const saveInvoice = (id: number | null, payload: FaturamentoPayload, token: string) =>
     id ? updateFaturamento(id, payload, token) : createFaturamento(payload, token);
@@ -102,7 +128,7 @@ export function useInvoicing() {
   ) => updateFaturamentoItem(invoiceId, itemId, payload, token);
 
   return {
-    faturamentos,
+    faturamentos: workspace.faturamentos,
     setFaturamentos,
     editingBillingId,
     setEditingBillingId,
