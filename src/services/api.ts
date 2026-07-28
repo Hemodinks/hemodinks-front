@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 import { resolveClinicaRequestHeaders } from "./clinicaContext";
+import { beginQueryActivity } from "./queryActivity";
 
 const API_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:5000"
@@ -114,6 +115,9 @@ async function executeRequest<T>(
   config: AxiosRequestConfig,
   notifyUnauthorized = false,
 ): Promise<T> {
+  const finishQueryActivity =
+    config.method?.toUpperCase() === "GET" ? beginQueryActivity() : null;
+
   try {
     const response = await client.request<T>(config);
 
@@ -124,6 +128,8 @@ async function executeRequest<T>(
     return response.data;
   } catch (error) {
     throw toApiError(error, notifyUnauthorized);
+  } finally {
+    finishQueryActivity?.();
   }
 }
 

@@ -1,11 +1,15 @@
 import { HeartPulse } from 'lucide-react';
+import { useQueryActivity } from '../hooks/useQueryActivity';
 
 type LoadingOverlayProps = {
   active: boolean;
 };
 
 export function LoadingOverlay({ active }: LoadingOverlayProps) {
-  if (!active) {
+  const queryActive = useQueryActivity();
+  const overlayActive = active || queryActive;
+
+  if (!overlayActive) {
     return null;
   }
 
@@ -22,8 +26,12 @@ export function LoadingOverlay({ active }: LoadingOverlayProps) {
         </div>
 
         <div className="loading-copy">
-          <span className="loading-eyebrow">Processando</span>
-          <strong>Sincronizando dados...</strong>
+          <span className="loading-eyebrow">
+            {active ? 'Processando' : 'Consultando'}
+          </span>
+          <strong>
+            {active ? 'Sincronizando dados...' : 'Buscando informações...'}
+          </strong>
         </div>
       </div>
     </div>

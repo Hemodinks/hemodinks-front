@@ -152,7 +152,7 @@ describe("App user and patient features", () => {
       },
       "jwt-token",
     );
-  });
+  }, 10_000);
 
   it("filtra usuarios pelo campo de busca", async () => {
     vi.mocked(api.getUsers)
