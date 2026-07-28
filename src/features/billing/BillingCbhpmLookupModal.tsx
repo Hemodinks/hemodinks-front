@@ -1,20 +1,12 @@
-import { type FormEvent, useEffect, useState } from "react";
-import {
-  Eraser,
-  Plus,
-  Search,
-  X,
-} from "lucide-react";
-import type { CbhpmGeral, PagedResult } from "../../types";
-import { Modal } from "../../shared/components/Modal";
-import {
-  AlertMessage,
-  Button,
-  IconButton,
-  TextField,
-} from "../../shared/components/ui";
-import { CbhpmResultsTable } from "../../shared/components/CbhpmResultsTable";
-import { useBillingCbhpmGateway } from "./useBillingCbhpmGateway";
+import { type FormEvent, useEffect, useState } from 'react';
+import { Eraser, Plus, Search, X } from 'lucide-react';
+import type { CbhpmGeral } from '../../shared/domain/clinicalContracts';
+import type { PagedResult } from '../../shared/domain/apiTypes';
+import { Modal } from '../../shared/components/Modal';
+import { AlertMessage, Button, IconButton, TextField } from '../../shared/components/ui';
+import { CbhpmResultsTable } from '../../shared/components/CbhpmResultsTable';
+import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
+import { useBillingCbhpmGateway } from './useBillingCbhpmGateway';
 
 type BillingCbhpmLookupModalProps = {
   token: string;
@@ -38,36 +30,38 @@ export function BillingCbhpmLookupModal({
 }: BillingCbhpmLookupModalProps) {
   const cbhpmGateway = useBillingCbhpmGateway(token);
   const [filters, setFilters] = useState({
-    codigo: "",
-    descricao: "",
-    porte: "",
+    codigo: '',
+    descricao: '',
+    porte: '',
   });
   const [appliedFilters, setAppliedFilters] = useState({
-    codigo: "",
-    descricao: "",
-    porte: "",
+    codigo: '',
+    descricao: '',
+    porte: '',
   });
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<PagedResult<CbhpmGeral>>(emptyResult);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [manualError, setManualError] = useState("");
+  const [error, setError] = useState('');
+  const [manualError, setManualError] = useState('');
+  const searchOperation = useAsyncOperation(
+    (_signal, query: Parameters<typeof cbhpmGateway.search>[0]) => cbhpmGateway.search(query),
+  );
+  const loading = searchOperation.isLoading;
 
   useEffect(() => {
     let active = true;
 
     const loadProcedures = async () => {
-      setLoading(true);
-      setError("");
+      setError('');
       try {
-        const response = await cbhpmGateway.search({
+        const response = await searchOperation.execute({
           page,
           pageSize,
           codigo: appliedFilters.codigo || undefined,
           procedimento: appliedFilters.descricao || undefined,
           porte: appliedFilters.porte || undefined,
-          sortBy: "codigo",
-          sortDirection: "asc",
+          sortBy: 'codigo',
+          sortDirection: 'asc',
         });
         if (active) setResult(response);
       } catch (reason) {
@@ -75,17 +69,16 @@ export function BillingCbhpmLookupModal({
           setError(
             reason instanceof Error
               ? reason.message
-              : "Não foi possível consultar os procedimentos CBHPM.",
+              : 'Não foi possível consultar os procedimentos CBHPM.',
           );
         }
-      } finally {
-        if (active) setLoading(false);
       }
     };
 
     void loadProcedures();
     return () => {
       active = false;
+      searchOperation.cancel();
     };
   }, [appliedFilters, page, token]);
 
@@ -100,9 +93,9 @@ export function BillingCbhpmLookupModal({
   };
 
   const clearFilters = () => {
-    const cleared = { codigo: "", descricao: "", porte: "" };
+    const cleared = { codigo: '', descricao: '', porte: '' };
     setFilters(cleared);
-    setManualError("");
+    setManualError('');
     setPage(1);
     setAppliedFilters(cleared);
   };
@@ -110,15 +103,13 @@ export function BillingCbhpmLookupModal({
   const addManualProcedure = () => {
     const description = filters.descricao.trim();
     if (!description) {
-      setManualError(
-        "Informe a descrição do procedimento para cadastrá-lo manualmente.",
-      );
+      setManualError('Informe a descrição do procedimento para cadastrá-lo manualmente.');
       return;
     }
 
     onSelect({
       id: 0,
-      codigo: filters.codigo.replace(/\D/g, ""),
+      codigo: filters.codigo.replace(/\D/g, ''),
       procedimento: description,
       porte: filters.porte.trim().toUpperCase() || null,
       valorReferencia: null,
@@ -130,21 +121,13 @@ export function BillingCbhpmLookupModal({
   const visibleEnd = Math.min(page * pageSize, result.totalItems);
 
   return (
-    <Modal
-      titleId="billing-cbhpm-title"
-      className="billing-cbhpm-modal"
-      onClose={onClose}
-    >
+    <Modal titleId="billing-cbhpm-title" className="billing-cbhpm-modal" onClose={onClose}>
       <div className="panel-title">
         <div>
           <span className="eyebrow">Tabela CBHPM</span>
           <h2 id="billing-cbhpm-title">Consultar procedimentos</h2>
         </div>
-        <IconButton
-          label="Fechar consulta CBHPM"
-          tone="muted"
-          onClick={onClose}
-        >
+        <IconButton label="Fechar consulta CBHPM" tone="muted" onClick={onClose}>
           <X size={18} />
         </IconButton>
       </div>
@@ -157,7 +140,7 @@ export function BillingCbhpmLookupModal({
           onValueChange={(codigo) =>
             setFilters((current) => ({
               ...current,
-              codigo: codigo.replace(/\D/g, ""),
+              codigo: codigo.replace(/\D/g, ''),
             }))
           }
           placeholder="Ex.: 40701018"
@@ -167,9 +150,7 @@ export function BillingCbhpmLookupModal({
           label="Descrição do procedimento"
           type="search"
           value={filters.descricao}
-          onValueChange={(descricao) =>
-            setFilters((current) => ({ ...current, descricao }))
-          }
+          onValueChange={(descricao) => setFilters((current) => ({ ...current, descricao }))}
           placeholder="Ex.: cirurgia vascular"
           autoComplete="off"
         />
@@ -199,11 +180,7 @@ export function BillingCbhpmLookupModal({
       </form>
 
       <div className="billing-cbhpm-manual-row">
-        <Button
-          type="button"
-          className="billing-cbhpm-manual"
-          onClick={addManualProcedure}
-        >
+        <Button type="button" className="billing-cbhpm-manual" onClick={addManualProcedure}>
           <Plus size={17} />
           Cadastrar manualmente
         </Button>
@@ -227,7 +204,6 @@ export function BillingCbhpmLookupModal({
         paginationClassName="billing-cbhpm-pagination"
         selectClassName="billing-cbhpm-select"
       />
-
     </Modal>
   );
 }

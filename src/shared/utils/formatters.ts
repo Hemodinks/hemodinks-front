@@ -1,4 +1,10 @@
-import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, User } from '../../types';
+import type {
+  HealthPlanLookup,
+  HospitalLookup,
+  MedicalUserLookup,
+  NamedMedicalUser,
+  OpmeSupplierLookup,
+} from '../domain/medicalContracts';
 
 export const DEFAULT_PASSWORD = 'Senha@123';
 export const DEFAULT_PATIENT_BIRTH_DATE = '1900-01-01';
@@ -27,7 +33,10 @@ export const PATIENT_PROFILE_ID = 3;
 export const CONTROLLER_PROFILE_ID = 4;
 export const SUPER_ADMIN_PROFILE_ID = 5;
 export const DEFAULT_PROFILE_ID = MEDICAL_PROFILE_ID;
-export const API_ASSET_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+export const API_ASSET_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(
+  /\/$/,
+  '',
+);
 
 export const PROFILE_OPTIONS = [
   { id: 1, nome: 'Administrador' },
@@ -37,12 +46,38 @@ export const PROFILE_OPTIONS = [
   { id: 5, nome: 'SuperAdministrador' },
 ] as const;
 
-export const USER_PROFILE_OPTIONS = PROFILE_OPTIONS.filter((profile) =>
-  profile.id !== PATIENT_PROFILE_ID && profile.id !== SUPER_ADMIN_PROFILE_ID);
+export const USER_PROFILE_OPTIONS = PROFILE_OPTIONS.filter(
+  (profile) => profile.id !== PATIENT_PROFILE_ID && profile.id !== SUPER_ADMIN_PROFILE_ID,
+);
 
 export const BRAZIL_UF_OPTIONS = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
-  'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+  'AC',
+  'AL',
+  'AP',
+  'AM',
+  'BA',
+  'CE',
+  'DF',
+  'ES',
+  'GO',
+  'MA',
+  'MT',
+  'MS',
+  'MG',
+  'PA',
+  'PB',
+  'PR',
+  'PE',
+  'PI',
+  'RJ',
+  'RN',
+  'RS',
+  'RO',
+  'RR',
+  'SC',
+  'SP',
+  'SE',
+  'TO',
 ] as const;
 
 export const ALLOWED_PROFILE_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -62,15 +97,73 @@ export const ALLOWED_PATIENT_FILE_TYPES = new Set([
 ]);
 
 const VALID_BRAZIL_AREA_CODES = new Set([
-  '11', '12', '13', '14', '15', '16', '17', '18', '19',
-  '21', '22', '24', '27', '28',
-  '31', '32', '33', '34', '35', '37', '38',
-  '41', '42', '43', '44', '45', '46', '47', '48', '49',
-  '51', '53', '54', '55',
-  '61', '62', '63', '64', '65', '66', '67', '68', '69',
-  '71', '73', '74', '75', '77', '79',
-  '81', '82', '83', '84', '85', '86', '87', '88', '89',
-  '91', '92', '93', '94', '95', '96', '97', '98', '99',
+  '11',
+  '12',
+  '13',
+  '14',
+  '15',
+  '16',
+  '17',
+  '18',
+  '19',
+  '21',
+  '22',
+  '24',
+  '27',
+  '28',
+  '31',
+  '32',
+  '33',
+  '34',
+  '35',
+  '37',
+  '38',
+  '41',
+  '42',
+  '43',
+  '44',
+  '45',
+  '46',
+  '47',
+  '48',
+  '49',
+  '51',
+  '53',
+  '54',
+  '55',
+  '61',
+  '62',
+  '63',
+  '64',
+  '65',
+  '66',
+  '67',
+  '68',
+  '69',
+  '71',
+  '73',
+  '74',
+  '75',
+  '77',
+  '79',
+  '81',
+  '82',
+  '83',
+  '84',
+  '85',
+  '86',
+  '87',
+  '88',
+  '89',
+  '91',
+  '92',
+  '93',
+  '94',
+  '95',
+  '96',
+  '97',
+  '98',
+  '99',
 ]);
 
 export function getErrorMessage(error: unknown) {
@@ -104,28 +197,36 @@ export function normalizeDisplayText(value?: string | null) {
   return DISPLAY_TEXT_FIXES.get(trimmedValue) ?? trimmedValue;
 }
 
-export function findMedicalUserByName(users: Array<User | MedicalUserOption>, name: string) {
+export function findMedicalUserByName<T extends MedicalUserLookup>(users: T[], name: string) {
   const normalizedName = normalizeLookupText(name);
   return normalizedName
     ? users.find((user) => normalizeLookupText(user.nome) === normalizedName)
     : undefined;
 }
 
-export function findConvenioByDescription(convenios: Convenio[], descricao: string) {
+export function findConvenioByDescription<T extends HealthPlanLookup>(
+  convenios: T[],
+  descricao: string,
+) {
   const normalizedDescricao = normalizeLookupText(descricao);
   return normalizedDescricao
-    ? convenios.find((convenio) => normalizeLookupText(convenio.descricaoConvenio) === normalizedDescricao)
+    ? convenios.find(
+        (convenio) => normalizeLookupText(convenio.descricaoConvenio) === normalizedDescricao,
+      )
     : undefined;
 }
 
-export function findHospitalByName(hospitais: Hospital[], nome: string) {
+export function findHospitalByName<T extends HospitalLookup>(hospitais: T[], nome: string) {
   const normalizedNome = normalizeLookupText(nome);
   return normalizedNome
     ? hospitais.find((hospital) => normalizeLookupText(hospital.nome) === normalizedNome)
     : undefined;
 }
 
-export function findOpmeFornecedorByName(fornecedores: OpmeFornecedor[], fornecedor: string) {
+export function findOpmeFornecedorByName<T extends OpmeSupplierLookup>(
+  fornecedores: T[],
+  fornecedor: string,
+) {
   const normalizedFornecedor = normalizeLookupText(fornecedor);
   return normalizedFornecedor
     ? fornecedores.find((item) => normalizeLookupText(item.fornecedor) === normalizedFornecedor)
@@ -173,7 +274,7 @@ export function formatProfileName(perfilId?: number | null, perfilNome?: string 
   return profileName;
 }
 
-export function isMedicalProfileUser(user: User) {
+export function isMedicalProfileUser(user: NamedMedicalUser) {
   const profileName = (user.perfilNome || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -189,7 +290,11 @@ export function getUserInitials(name: string) {
     return 'US';
   }
 
-  return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
 }
 
 function getBase64ImageContentType(value: string) {
@@ -320,16 +425,17 @@ export function isValidBrazilMobilePhone(value: string) {
   const areaCode = localDigits.slice(0, 2);
   const phone = localDigits.slice(2);
 
-  return localDigits.length === 11
-    && VALID_BRAZIL_AREA_CODES.has(areaCode)
-    && phone.startsWith('9')
-    && !/^(\d)\1{10}$/.test(localDigits);
+  return (
+    localDigits.length === 11 &&
+    VALID_BRAZIL_AREA_CODES.has(areaCode) &&
+    phone.startsWith('9') &&
+    !/^(\d)\1{10}$/.test(localDigits)
+  );
 }
 
 export function isValidEmail(value: string) {
   const email = value.trim();
-  return email.length <= MAX_EMAIL_LENGTH
-    && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email);
+  return email.length <= MAX_EMAIL_LENGTH && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email);
 }
 
 export function formatDateInput(value: string) {
@@ -420,11 +526,13 @@ export function isValidBirthDate(value: string) {
 
   today.setHours(0, 0, 0, 0);
 
-  return year >= 1900
-    && date.getFullYear() === year
-    && date.getMonth() === month - 1
-    && date.getDate() === day
-    && date <= today;
+  return (
+    year >= 1900 &&
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day &&
+    date <= today
+  );
 }
 
 export function getPasswordStrength(password: string) {

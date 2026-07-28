@@ -1,4 +1,4 @@
-import type { AuthSession, LoginResponse } from '../types';
+import type { AuthSession, LoginResponse } from '../features/auth/authTypes';
 import {
   CONTROLLER_PROFILE_ID,
   DEFAULT_PASSWORD,
@@ -36,7 +36,5 @@ export function buildSessionFromLogin(result: LoginResponse, loginPassword: stri
 }
 
 export function getResetPasswordCompletedMessage(message: string) {
-  return /nova senha/i.test(message)
-    ? message
-    : `${message}. Entre com a nova senha.`;
+  return /nova senha/i.test(message) ? message : `${message}. Entre com a nova senha.`;
 }

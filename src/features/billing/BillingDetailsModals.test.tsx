@@ -1,35 +1,33 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import type { AuthSession, ContaReceber, Faturamento } from "../../types";
-import {
-  AccountDetailsModal,
-  InvoicingDetailsModal,
-} from "./BillingDetailsModals";
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { ContaReceber, Faturamento } from './billingDomainTypes';
+import { AccountDetailsModal, InvoicingDetailsModal } from './BillingDetailsModals';
 
 const session = {
-  token: "token",
-  user: { id: 1, nome: "Admin" },
+  token: 'token',
+  user: { id: 1, nome: 'Admin' },
 } as AuthSession;
 
 const account = {
   id: 1,
-  numeroDocumento: "TIT-1",
-  descricao: "Honorários",
-  dataEmissao: "2026-07-01",
-  dataVencimento: "2026-07-10",
+  numeroDocumento: 'TIT-1',
+  descricao: 'Honorários',
+  dataEmissao: '2026-07-01',
+  dataVencimento: '2026-07-10',
   valorOriginal: 100,
   valorAjustado: 100,
   valorRecebido: 0,
   saldoAberto: 100,
-  status: "Pendente",
+  status: 'Pendente',
   recebimentos: [],
 } as unknown as ContaReceber;
 
 const invoice = {
   id: 2,
-  paciente: "Paciente Teste",
-  numeroGuia: "GUIA-2",
-  status: "Rascunho",
+  paciente: 'Paciente Teste',
+  numeroGuia: 'GUIA-2',
+  status: 'Rascunho',
   valorApresentado: 100,
   valorGlosado: 0,
   valorGlosaRecuperada: 0,
@@ -38,8 +36,8 @@ const invoice = {
   glosas: [],
 } as unknown as Faturamento;
 
-describe("BillingDetailsModals", () => {
-  it("renders account totals and opens the cancellation form", () => {
+describe('BillingDetailsModals', () => {
+  it('renders account totals and opens the cancellation form', () => {
     const setCancelReason = vi.fn();
     render(
       <AccountDetailsModal
@@ -55,19 +53,15 @@ describe("BillingDetailsModals", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("heading", { name: "TIT-1" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Saldo atualizado")).toBeInTheDocument();
-    expect(screen.getByText("Nenhum recebimento lançado.")).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'TIT-1' })).toBeInTheDocument();
+    expect(screen.getByText('Saldo atualizado')).toBeInTheDocument();
+    expect(screen.getByText('Nenhum recebimento lançado.')).toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Cancelar título" }),
-    );
-    expect(setCancelReason).toHaveBeenCalledWith(" ");
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar título' }));
+    expect(setCancelReason).toHaveBeenCalledWith(' ');
   });
 
-  it("creates a confirmation action before deleting a draft invoice", () => {
+  it('creates a confirmation action before deleting a draft invoice', () => {
     const setConfirmAction = vi.fn();
     render(
       <InvoicingDetailsModal
@@ -89,18 +83,16 @@ describe("BillingDetailsModals", () => {
     );
 
     expect(
-      screen.getByRole("heading", {
-        name: "Paciente Teste — GUIA-2",
+      screen.getByRole('heading', {
+        name: 'Paciente Teste — GUIA-2',
       }),
     ).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Excluir faturamento" }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir faturamento' }));
 
     expect(setConfirmAction).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "Excluir faturamento",
-        success: "Faturamento excluído.",
+        title: 'Excluir faturamento',
+        success: 'Faturamento excluído.',
       }),
     );
   });

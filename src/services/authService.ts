@@ -1,4 +1,4 @@
-import type { LoginResponse } from '../types';
+import type { LoginResponse } from '../features/auth/authTypes';
 import { post } from './api';
 
 export type ResetPasswordResponse = {
@@ -25,9 +25,10 @@ export function resetPassword(email: string, clinicaSlug?: string) {
 }
 
 export function confirmPasswordReset(token: string, novaSenha: string) {
-  const idempotencyKey = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random()}`;
+  const idempotencyKey =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`;
 
   return post<{ id: number; precisaTrocarSenha: boolean; message: string }>(
     '/api/users/password/reset/confirm',

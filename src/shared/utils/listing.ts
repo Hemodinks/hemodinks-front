@@ -1,4 +1,8 @@
-import type { Convenio, MedicalUserOption, OpmeFornecedor, Paciente, User } from '../../types';
+import type {
+  HealthPlanLookup,
+  MedicalUserLookup,
+  OpmeSupplierLookup,
+} from '../domain/medicalContracts';
 import { PAGE_SIZE } from './formatters';
 
 export function getPagedItems<T>(result: { items: T[] } | T[]) {
@@ -10,7 +14,9 @@ export function getPagedTotal<T>(result: { totalItems: number } | T[]) {
 }
 
 export function getPagedTotalPages<T>(result: { totalPages: number } | T[]) {
-  return Array.isArray(result) ? Math.max(1, Math.ceil(result.length / PAGE_SIZE)) : result.totalPages;
+  return Array.isArray(result)
+    ? Math.max(1, Math.ceil(result.length / PAGE_SIZE))
+    : result.totalPages;
 }
 
 const listingNameCollator = new Intl.Collator('pt-BR', {
@@ -60,22 +66,34 @@ function compareByRecentActivityThenName<T extends Record<string, unknown> & { i
   return second.id - first.id;
 }
 
-export function sortUsersForListing(items: User[]) {
-  return [...items].sort((first, second) => compareByRecentActivityThenName(first, second, (user) => user.nome));
+export function sortUsersForListing<
+  T extends Record<string, unknown> & { id: number; nome: string },
+>(items: T[]) {
+  return [...items].sort((first, second) =>
+    compareByRecentActivityThenName(first, second, (user) => user.nome),
+  );
 }
 
-export function sortPacientesForListing(items: Paciente[]) {
-  return [...items].sort((first, second) => compareByRecentActivityThenName(first, second, (paciente) => paciente.nomePaciente));
+export function sortPacientesForListing<
+  T extends Record<string, unknown> & { id: number; nomePaciente: string },
+>(items: T[]) {
+  return [...items].sort((first, second) =>
+    compareByRecentActivityThenName(first, second, (paciente) => paciente.nomePaciente),
+  );
 }
 
-export function sortUsersByName<T extends Pick<User | MedicalUserOption, 'nome'>>(items: T[]) {
+export function sortUsersByName<T extends MedicalUserLookup>(items: T[]) {
   return [...items].sort((first, second) => listingNameCollator.compare(first.nome, second.nome));
 }
 
-export function sortConveniosByDescription(items: Convenio[]) {
-  return [...items].sort((first, second) => listingNameCollator.compare(first.descricaoConvenio, second.descricaoConvenio));
+export function sortConveniosByDescription<T extends HealthPlanLookup>(items: T[]) {
+  return [...items].sort((first, second) =>
+    listingNameCollator.compare(first.descricaoConvenio, second.descricaoConvenio),
+  );
 }
 
-export function sortOpmeFornecedoresByName(items: OpmeFornecedor[]) {
-  return [...items].sort((first, second) => listingNameCollator.compare(first.fornecedor, second.fornecedor));
+export function sortOpmeFornecedoresByName<T extends OpmeSupplierLookup>(items: T[]) {
+  return [...items].sort((first, second) =>
+    listingNameCollator.compare(first.fornecedor, second.fornecedor),
+  );
 }

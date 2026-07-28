@@ -1,7 +1,7 @@
-import type { ReactNode } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { scrollListCarousel } from "../utils/carousel";
-import { IconButton } from "./ui";
+import type { ReactNode } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { scrollListCarousel } from '../utils/carousel';
+import { IconButton } from './ui';
 
 type ListToolbarProps = {
   eyebrow: string;
@@ -9,11 +9,7 @@ type ListToolbarProps = {
   children: ReactNode;
 };
 
-export function ListToolbar({
-  eyebrow,
-  title,
-  children,
-}: ListToolbarProps) {
+export function ListToolbar({ eyebrow, title, children }: ListToolbarProps) {
   return (
     <div className="data-header">
       <div>
@@ -29,7 +25,7 @@ type SortableHeaderProps = {
   field: string;
   label: string;
   sortBy: string;
-  sortDirection: "asc" | "desc";
+  sortDirection: 'asc' | 'desc';
   onSortChange: (field: string) => void;
 };
 
@@ -47,20 +43,10 @@ export function SortableHeader({
         type="button"
         className="sort-header-button"
         onClick={() => onSortChange(field)}
-        aria-sort={
-          active
-            ? sortDirection === "asc"
-              ? "ascending"
-              : "descending"
-            : "none"
-        }
+        aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
       >
         {label}
-        {active && (
-          <span className="sort-indicator">
-            {sortDirection === "asc" ? "▲" : "▼"}
-          </span>
-        )}
+        {active && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
       </button>
     </th>
   );
@@ -99,7 +85,7 @@ type HorizontalTableScrollerProps = {
 
 export function HorizontalTableScroller({
   entityLabel,
-  className = "",
+  className = '',
   children,
 }: HorizontalTableScrollerProps) {
   return (
@@ -107,19 +93,17 @@ export function HorizontalTableScroller({
       <button
         type="button"
         className="carousel-nav carousel-nav-left"
-        onClick={(event) => scrollListCarousel(event, "previous")}
+        onClick={(event) => scrollListCarousel(event, 'previous')}
         aria-label={`Voltar no carrossel de ${entityLabel}`}
         title="Voltar no carrossel"
       >
         <ChevronLeft size={20} />
       </button>
-      <div className={`table-wrap list-carousel-wrap ${className}`.trim()}>
-        {children}
-      </div>
+      <div className={`table-wrap list-carousel-wrap ${className}`.trim()}>{children}</div>
       <button
         type="button"
         className="carousel-nav carousel-nav-right"
-        onClick={(event) => scrollListCarousel(event, "next")}
+        onClick={(event) => scrollListCarousel(event, 'next')}
         aria-label={`Avançar no carrossel de ${entityLabel}`}
         title="Avançar no carrossel"
       >
@@ -152,7 +136,7 @@ export function Pagination({
   totalPages,
   onPageChange,
   disabled = false,
-  className = "",
+  className = '',
   previousLabel = `Página anterior de ${entityLabel}`,
   nextLabel = `Próxima página de ${entityLabel}`,
 }: PaginationProps) {
@@ -175,9 +159,7 @@ export function Pagination({
         </span>
         <IconButton
           label={nextLabel}
-          onClick={() =>
-            onPageChange((page) => Math.min(totalPages, page + 1))
-          }
+          onClick={() => onPageChange((page) => Math.min(totalPages, page + 1))}
           disabled={disabled || currentPage === totalPages}
           title="Próxima página"
         >

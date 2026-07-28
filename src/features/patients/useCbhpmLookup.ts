@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { CBHPM_PAGE_SIZE } from '../../shared/utils/formatters';
-import type { CbhpmGeral } from '../../types';
+import type { CbhpmGeral } from './patientTypes';
 import type { CbhpmFilters } from '../../appTypes';
 import {
   areCbhpmAutoSearchFiltersEqual,
@@ -33,11 +33,14 @@ export function useCbhpmLookup() {
     setAppliedCbhpmFilters(buildAppliedCbhpmFilters(latestCbhpmFiltersRef.current));
   }, [resetCbhpmPage]);
 
-  const [, setDebouncedCbhpmAutoFilters] = useDebouncedValue(getCbhpmAutoSearchFilters(cbhpmFilters), {
-    delayMs: CBHPM_AUTO_SEARCH_DELAY_MS,
-    isEqual: areCbhpmAutoSearchFiltersEqual,
-    onCommit: commitDebouncedAutoSearch,
-  });
+  const [, setDebouncedCbhpmAutoFilters] = useDebouncedValue(
+    getCbhpmAutoSearchFilters(cbhpmFilters),
+    {
+      delayMs: CBHPM_AUTO_SEARCH_DELAY_MS,
+      isEqual: areCbhpmAutoSearchFiltersEqual,
+      onCommit: commitDebouncedAutoSearch,
+    },
+  );
   const [cbhpmTotalItems, setCbhpmTotalItems] = useState(0);
   const [cbhpmTotalPages, setCbhpmTotalPages] = useState(1);
   const [cbhpmLoading, setCbhpmLoading] = useState(false);

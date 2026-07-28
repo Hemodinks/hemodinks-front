@@ -64,7 +64,7 @@
   .auth-screen {
     min-height: 100vh;
     min-height: 100dvh;
-    grid-template-areas: "auth";
+    grid-template-areas: 'auth';
     align-content: center;
     justify-content: center;
     overflow-y: auto;

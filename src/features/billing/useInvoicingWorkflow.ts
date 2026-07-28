@@ -1,13 +1,8 @@
-import type { FormEvent } from "react";
-import type { AuthSession, Faturamento } from "../../types";
-import type {
-  RunBillingAction,
-  SetConfirmAction,
-} from "./billingWorkflowTypes";
-import {
-  createInitialFaturamentoForm,
-  type useInvoicing,
-} from "./useInvoicing";
+import type { FormEvent } from 'react';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { Faturamento } from './billingDomainTypes';
+import type { RunBillingAction, SetConfirmAction } from './billingWorkflowTypes';
+import { createInitialFaturamentoForm, type useInvoicing } from './useInvoicing';
 
 type InvoicingState = ReturnType<typeof useInvoicing>;
 
@@ -67,15 +62,11 @@ export function useInvoicingWorkflow({
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const editingBilling = faturamentos.find(
-      (item) => item.id === editingBillingId,
-    );
+    const editingBilling = faturamentos.find((item) => item.id === editingBillingId);
     void run(
       async () => {
         const payload = {
-          atendimentoCirurgicoId: Number(
-            faturamentoForm.atendimentoCirurgicoId,
-          ),
+          atendimentoCirurgicoId: Number(faturamentoForm.atendimentoCirurgicoId),
           numeroGuia: faturamentoForm.numeroGuia || null,
           numeroLote: faturamentoForm.numeroLote || null,
           competencia: `${faturamentoForm.competencia}-01`,
@@ -91,9 +82,7 @@ export function useInvoicingWorkflow({
         setEditingBillingId(null);
         return saved;
       },
-      editingBillingId
-        ? "Faturamento atualizado."
-        : "Faturamento criado a partir do atendimento.",
+      editingBillingId ? 'Faturamento atualizado.' : 'Faturamento criado a partir do atendimento.',
     );
   };
 
@@ -102,9 +91,9 @@ export function useInvoicingWorkflow({
     setFaturamentoForm({
       atendimentoCirurgicoId: String(item.atendimentoCirurgicoId),
       competencia: item.competencia.slice(0, 7),
-      numeroGuia: item.numeroGuia ?? "",
-      numeroLote: item.numeroLote ?? "",
-      observacao: item.observacao ?? "",
+      numeroGuia: item.numeroGuia ?? '',
+      numeroLote: item.numeroLote ?? '',
+      observacao: item.observacao ?? '',
     });
     setSelectedBilling(null);
     setShowForm(true);
@@ -112,17 +101,14 @@ export function useInvoicingWorkflow({
 
   const confirmDelete = (item: Faturamento) => {
     setConfirmAction({
-      title: "Excluir faturamento",
+      title: 'Excluir faturamento',
       message: `Excluir o faturamento de ${item.paciente}? Os itens em rascunho também serão removidos.`,
       action: () => removeInvoice(item.id, session.token),
-      success: "Faturamento excluído.",
+      success: 'Faturamento excluído.',
     });
   };
 
-  const changeStatus = (
-    item: Faturamento,
-    status: "ProntoParaEnvio" | "Enviado",
-  ) =>
+  const changeStatus = (item: Faturamento, status: 'ProntoParaEnvio' | 'Enviado') =>
     void run(
       () =>
         changeInvoiceStatus(
@@ -130,9 +116,9 @@ export function useInvoicingWorkflow({
           { id: item.id, status, rowVersion: item.rowVersion },
           session.token,
         ),
-      status === "ProntoParaEnvio"
-        ? "Faturamento pronto para envio."
-        : "Faturamento enviado e data de envio registrada.",
+      status === 'ProntoParaEnvio'
+        ? 'Faturamento pronto para envio.'
+        : 'Faturamento enviado e data de envio registrada.',
     );
 
   const createAccount = (item: Faturamento) =>
@@ -152,7 +138,7 @@ export function useInvoicingWorkflow({
           },
           session.token,
         ),
-      "Conta a receber gerada sem duplicidade.",
+      'Conta a receber gerada sem duplicidade.',
     );
 
   const openReturn = (item: Faturamento) => {
@@ -162,8 +148,8 @@ export function useInvoicingWorkflow({
         faturamentoItemId: billingItem.id,
         descricao: billingItem.descricao,
         valorApresentado: billingItem.valorApresentado,
-        valorGlosado: "0",
-        motivoGlosa: "",
+        valorGlosado: '0',
+        motivoGlosa: '',
       })),
     );
   };
@@ -172,7 +158,7 @@ export function useInvoicingWorkflow({
     event.preventDefault();
     if (!returnTarget) return;
     const inputs = returnDraft.map((input) => {
-      const valorGlosado = Number(input.valorGlosado.replace(",", "."));
+      const valorGlosado = Number(input.valorGlosado.replace(',', '.'));
       return {
         faturamentoItemId: input.faturamentoItemId,
         valorGlosado,
@@ -193,26 +179,24 @@ export function useInvoicingWorkflow({
           },
           session.token,
         ),
-      "Retorno registrado e títulos reconciliados.",
+      'Retorno registrado e títulos reconciliados.',
     ).then(() => setReturnTarget(null));
   };
 
   const closeAppeal = () => {
     setAppealTarget(null);
-    setAppealDraft({ justificativa: "", valorRecuperado: "0" });
+    setAppealDraft({ justificativa: '', valorRecuperado: '0' });
   };
 
   const openAppeal = (glosaId: number, valorGlosado: number) => {
     setAppealTarget({ glosaId, valorGlosado });
-    setAppealDraft({ justificativa: "", valorRecuperado: "0" });
+    setAppealDraft({ justificativa: '', valorRecuperado: '0' });
   };
 
   const submitAppeal = async (event: FormEvent) => {
     event.preventDefault();
     if (!appealTarget) return;
-    const valorRecuperado = Number(
-      appealDraft.valorRecuperado.replace(",", "."),
-    );
+    const valorRecuperado = Number(appealDraft.valorRecuperado.replace(',', '.'));
     const completed = await run(
       () =>
         registerAppeal(
@@ -227,14 +211,14 @@ export function useInvoicingWorkflow({
             status:
               valorRecuperado > 0
                 ? valorRecuperado === appealTarget.valorGlosado
-                  ? "Aceito"
-                  : "AceitoParcialmente"
-                : "Enviado",
+                  ? 'Aceito'
+                  : 'AceitoParcialmente'
+                : 'Enviado',
             observacao: null,
           },
           session.token,
         ),
-      "Recurso de glosa registrado.",
+      'Recurso de glosa registrado.',
     );
     if (completed) closeAppeal();
   };
@@ -256,7 +240,7 @@ export function useInvoicingWorkflow({
           },
           session.token,
         ),
-      "Glosa atualizada e totais recalculados.",
+      'Glosa atualizada e totais recalculados.',
     ).then(() => {
       setGlosaDraft(null);
       setSelectedBilling(null);
@@ -282,7 +266,7 @@ export function useInvoicingWorkflow({
           },
           session.token,
         ),
-      "Recurso atualizado e totais recalculados.",
+      'Recurso atualizado e totais recalculados.',
     ).then(() => {
       setRecursoDraft(null);
       setSelectedBilling(null);
@@ -309,7 +293,7 @@ export function useInvoicingWorkflow({
           },
           session.token,
         ),
-      "Item do rascunho atualizado.",
+      'Item do rascunho atualizado.',
     ).then(() => {
       setSelectedBilling(null);
       setBillingItemDraft(null);

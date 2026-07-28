@@ -1,19 +1,10 @@
-import {
-  type Dispatch,
-  type FormEvent,
-  type SetStateAction,
-} from "react";
-import { Ban, Pencil, Save, X } from "lucide-react";
-import {
-  Button,
-  DataPanel,
-  IconButton,
-  SelectField,
-  TextField,
-} from "../../shared/components/ui";
-import { formatCurrency } from "../../shared/utils/formatters";
-import type { Convenio, ConvenioProcedimentoPreco } from "../../types";
-import type { PriceFormState } from "./billingPageTypes";
+import { type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import { Ban, Pencil, Save, X } from 'lucide-react';
+import { Button, DataPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
+import { formatCurrency } from '../../shared/utils/formatters';
+import type { Convenio } from '../../shared/domain/clinicalContracts';
+import type { ConvenioProcedimentoPreco } from './billingDomainTypes';
+import type { PriceFormState } from './billingPageTypes';
 
 type PricesSectionProps = {
   canManage: boolean;
@@ -66,10 +57,7 @@ export function PricesSection({
             >
               <option value="">Selecione</option>
               {convenios.map((convenio) => (
-                <option
-                  key={convenio.idConvenio}
-                  value={convenio.idConvenio}
-                >
+                <option key={convenio.idConvenio} value={convenio.idConvenio}>
                   {convenio.descricaoConvenio}
                 </option>
               ))}
@@ -78,9 +66,7 @@ export function PricesSection({
               label="Código CBHPM"
               value={form.cbhpmCodigo}
               required
-              onValueChange={(cbhpmCodigo) =>
-                setForm((current) => ({ ...current, cbhpmCodigo }))
-              }
+              onValueChange={(cbhpmCodigo) => setForm((current) => ({ ...current, cbhpmCodigo }))}
             />
             <TextField
               label="Valor negociado"
@@ -143,14 +129,10 @@ export function PricesSection({
             <div className="billing-form-actions">
               <Button variant="primary" type="submit" disabled={loading}>
                 <Save size={16} />
-                {editingId ? "Atualizar preço" : "Salvar preço"}
+                {editingId ? 'Atualizar preço' : 'Salvar preço'}
               </Button>
               {editingId && (
-                <Button
-                  variant="danger-ghost"
-                  type="button"
-                  onClick={onCancelEditing}
-                >
+                <Button variant="danger-ghost" type="button" onClick={onCancelEditing}>
                   <X size={16} /> Cancelar edição
                 </Button>
               )}
@@ -167,36 +149,26 @@ export function PricesSection({
                 <th>CBHPM</th>
                 <th>Valor</th>
                 <th>Vigência</th>
-                <th className="billing-status-actions-column">
-                  Status / ações
-                </th>
+                <th className="billing-status-actions-column">Status / ações</th>
               </tr>
             </thead>
             <tbody>
               {precos.map((item) => (
                 <tr key={item.id}>
                   <td data-label="Convênio">
-                    {convenios.find(
-                      (convenio) => convenio.idConvenio === item.convenioId,
-                    )?.descricaoConvenio || item.convenioId}
+                    {convenios.find((convenio) => convenio.idConvenio === item.convenioId)
+                      ?.descricaoConvenio || item.convenioId}
                   </td>
                   <td data-label="CBHPM">{item.cbhpmCodigo}</td>
-                  <td data-label="Valor">
-                    {formatCurrency(item.valorNegociado)}
-                  </td>
+                  <td data-label="Valor">{formatCurrency(item.valorNegociado)}</td>
                   <td data-label="Vigência">
-                    {new Date(item.vigenciaInicio).toLocaleDateString("pt-BR")} —{" "}
+                    {new Date(item.vigenciaInicio).toLocaleDateString('pt-BR')} —{' '}
                     {item.vigenciaFinal
-                      ? new Date(item.vigenciaFinal).toLocaleDateString("pt-BR")
-                      : "sem término"}
+                      ? new Date(item.vigenciaFinal).toLocaleDateString('pt-BR')
+                      : 'sem término'}
                   </td>
-                  <td
-                    className="billing-status-actions-column"
-                    data-label="Status / ações"
-                  >
-                    <span className="status-pill active">
-                      {item.ativo ? "Ativo" : "Inativo"}
-                    </span>
+                  <td className="billing-status-actions-column" data-label="Status / ações">
+                    <span className="status-pill active">{item.ativo ? 'Ativo' : 'Inativo'}</span>
                     <div className="billing-row-actions">
                       {canManage && (
                         <IconButton

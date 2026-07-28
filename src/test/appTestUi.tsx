@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { expect, vi } from 'vitest';
 import App from '../App';
 import * as api from '../services';
-import type { AuthSession } from '../types';
+import type { AuthSession } from '../features/auth/authTypes';
 import { mockSession, toLoginResponse } from './appTestData';
 
 export function getVisibleFirstColumnValues() {

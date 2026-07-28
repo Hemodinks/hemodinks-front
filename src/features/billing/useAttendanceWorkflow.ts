@@ -1,18 +1,9 @@
-import type { FormEvent } from "react";
-import type {
-  AtendimentoCirurgico,
-  AuthSession,
-  Convenio,
-  OpmeFornecedor,
-} from "../../types";
-import type {
-  RunBillingAction,
-  SetConfirmAction,
-} from "./billingWorkflowTypes";
-import {
-  createInitialAtendimentoForm,
-  type useAttendances,
-} from "./useAttendances";
+import type { FormEvent } from 'react';
+import type { AtendimentoCirurgico } from './billingDomainTypes';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { Convenio, OpmeFornecedor } from '../../shared/domain/clinicalContracts';
+import type { RunBillingAction, SetConfirmAction } from './billingWorkflowTypes';
+import { createInitialAtendimentoForm, type useAttendances } from './useAttendances';
 
 type AttendanceState = ReturnType<typeof useAttendances>;
 
@@ -54,11 +45,7 @@ export function useAttendanceWorkflow({
 
   const resetForm = () => {
     setEditingAttendanceId(null);
-    setAtendimentoForm(
-      createInitialAtendimentoForm(
-        isMedical ? String(session.user.id) : "",
-      ),
-    );
+    setAtendimentoForm(createInitialAtendimentoForm(isMedical ? String(session.user.id) : ''));
     setProcedimentos([]);
     setShowForm(false);
   };
@@ -66,15 +53,15 @@ export function useAttendanceWorkflow({
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!atendimentoForm.pacienteId) {
-      setError("Selecione o paciente.");
+      setError('Selecione o paciente.');
       return;
     }
     if (!atendimentoForm.dataProcedimento) {
-      setError("Informe a data da cirurgia.");
+      setError('Informe a data da cirurgia.');
       return;
     }
     if (!atendimentoForm.medicoResponsavelId) {
-      setError("Selecione o médico responsável.");
+      setError('Selecione o médico responsável.');
       return;
     }
     const team = [
@@ -83,34 +70,30 @@ export function useAttendanceWorkflow({
       atendimentoForm.medicoAuxiliar2Id,
     ].filter(Boolean);
     if (new Set(team).size !== team.length) {
-      setError("O médico responsável e os auxiliares devem ser diferentes.");
+      setError('O médico responsável e os auxiliares devem ser diferentes.');
       return;
     }
     if (!procedimentos.length) {
-      setError("Adicione ao menos um procedimento ao atendimento.");
+      setError('Adicione ao menos um procedimento ao atendimento.');
       return;
     }
     const valorGlosa = atendimentoForm.valorGlosa
-      ? Number(atendimentoForm.valorGlosa.replace(",", "."))
+      ? Number(atendimentoForm.valorGlosa.replace(',', '.'))
       : null;
     if (valorGlosa != null && valorGlosa < 0) {
-      setError("O valor da glosa não pode ser negativo.");
+      setError('O valor da glosa não pode ser negativo.');
       return;
     }
     if (valorGlosa && !atendimentoForm.motivoGlosa.trim()) {
-      setError("Informe o motivo da glosa.");
+      setError('Informe o motivo da glosa.');
       return;
     }
     const payload = {
       pacienteId: Number(atendimentoForm.pacienteId),
       dataProcedimento: atendimentoForm.dataProcedimento,
-      hospitalId: atendimentoForm.hospitalId
-        ? Number(atendimentoForm.hospitalId)
-        : null,
+      hospitalId: atendimentoForm.hospitalId ? Number(atendimentoForm.hospitalId) : null,
       hospital: atendimentoForm.hospital.trim() || null,
-      convenioId: atendimentoForm.convenioId
-        ? Number(atendimentoForm.convenioId)
-        : null,
+      convenioId: atendimentoForm.convenioId ? Number(atendimentoForm.convenioId) : null,
       convenio: atendimentoForm.convenio.trim() || null,
       opmeFornecedorId: atendimentoForm.opmeFornecedorId
         ? Number(atendimentoForm.opmeFornecedorId)
@@ -127,30 +110,20 @@ export function useAttendanceWorkflow({
       tratamentoMedico: atendimentoForm.tratamentoMedico || null,
       numeroAutorizacao: atendimentoForm.numeroAutorizacao || null,
       valorGlosa,
-      motivoGlosa: valorGlosa
-        ? atendimentoForm.motivoGlosa.trim()
-        : null,
+      motivoGlosa: valorGlosa ? atendimentoForm.motivoGlosa.trim() : null,
       status: atendimentoForm.status,
-      procedimentos: procedimentos.map(
-        ({ porte, valorReferencia: _, ...procedure }) => ({
-          ...procedure,
-          cbhpmPorte: porte || null,
-        }),
-      ),
+      procedimentos: procedimentos.map(({ porte, valorReferencia: _, ...procedure }) => ({
+        ...procedure,
+        cbhpmPorte: porte || null,
+      })),
     };
     void run(
       async () => {
-        const saved = await saveAttendance(
-          editingAttendanceId,
-          payload,
-          session.token,
-        );
+        const saved = await saveAttendance(editingAttendanceId, payload, session.token);
         resetForm();
         return saved;
       },
-      editingAttendanceId
-        ? "Atendimento atualizado."
-        : "Atendimento criado com snapshot de preço.",
+      editingAttendanceId ? 'Atendimento atualizado.' : 'Atendimento criado com snapshot de preço.',
     );
   };
 
@@ -159,39 +132,30 @@ export function useAttendanceWorkflow({
     setAtendimentoForm({
       pacienteId: String(item.pacienteId),
       dataProcedimento: item.dataProcedimento.slice(0, 10),
-      hospitalId: item.hospitalId ? String(item.hospitalId) : "",
-      hospital:
-        hospitais.find((hospital) => hospital.id === item.hospitalId)?.nome ??
-        "",
-      convenioId: item.convenioId ? String(item.convenioId) : "",
+      hospitalId: item.hospitalId ? String(item.hospitalId) : '',
+      hospital: hospitais.find((hospital) => hospital.id === item.hospitalId)?.nome ?? '',
+      convenioId: item.convenioId ? String(item.convenioId) : '',
       convenio:
-        convenios.find((convenio) => convenio.idConvenio === item.convenioId)
-          ?.descricaoConvenio ?? "",
-      opmeFornecedorId: item.opmeFornecedorId
-        ? String(item.opmeFornecedorId)
-        : "",
+        convenios.find((convenio) => convenio.idConvenio === item.convenioId)?.descricaoConvenio ??
+        '',
+      opmeFornecedorId: item.opmeFornecedorId ? String(item.opmeFornecedorId) : '',
       opmeFornecedor:
-        opmeFornecedores.find(
-          (supplier) => supplier.idFornecedor === item.opmeFornecedorId,
-        )?.fornecedor ??
+        opmeFornecedores.find((supplier) => supplier.idFornecedor === item.opmeFornecedorId)
+          ?.fornecedor ??
         item.opmeFornecedor ??
-        "",
+        '',
       medicoResponsavelId: String(item.medicoResponsavelId),
-      medicoAuxiliar1Id: item.medicoAuxiliar1Id
-        ? String(item.medicoAuxiliar1Id)
-        : "",
-      medicoAuxiliar2Id: item.medicoAuxiliar2Id
-        ? String(item.medicoAuxiliar2Id)
-        : "",
-      diagnostico: item.diagnostico ?? "",
-      tratamentoMedico: item.tratamentoMedico ?? "",
-      cbhpmCodigo: "",
-      descricao: "",
-      quantidade: "1",
-      pesoPercentual: "100",
-      numeroAutorizacao: item.numeroAutorizacao ?? "",
-      valorGlosa: item.valorGlosa != null ? String(item.valorGlosa) : "",
-      motivoGlosa: item.motivoGlosa ?? "",
+      medicoAuxiliar1Id: item.medicoAuxiliar1Id ? String(item.medicoAuxiliar1Id) : '',
+      medicoAuxiliar2Id: item.medicoAuxiliar2Id ? String(item.medicoAuxiliar2Id) : '',
+      diagnostico: item.diagnostico ?? '',
+      tratamentoMedico: item.tratamentoMedico ?? '',
+      cbhpmCodigo: '',
+      descricao: '',
+      quantidade: '1',
+      pesoPercentual: '100',
+      numeroAutorizacao: item.numeroAutorizacao ?? '',
+      valorGlosa: item.valorGlosa != null ? String(item.valorGlosa) : '',
+      motivoGlosa: item.motivoGlosa ?? '',
       status: item.status,
     });
     setProcedimentos(
@@ -210,10 +174,10 @@ export function useAttendanceWorkflow({
 
   const confirmDelete = (item: AtendimentoCirurgico, closeAfter = false) => {
     setConfirmAction({
-      title: "Excluir atendimento",
+      title: 'Excluir atendimento',
       message: `Excluir o atendimento de ${item.paciente}? Esta ação não poderá ser desfeita.`,
       action: () => removeAttendance(item.id, session.token),
-      success: "Atendimento excluído.",
+      success: 'Atendimento excluído.',
       after: closeAfter ? () => setSelectedAttendance(null) : undefined,
     });
   };

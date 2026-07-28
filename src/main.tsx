@@ -2,14 +2,12 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import { initObservability } from './observability';
+import { initializeOptionalTelemetry } from './telemetryBootstrap';
 import './styles.css';
 
 function initializeTelemetry() {
   initObservability();
-  void Promise.allSettled([
-    import('./newRelic').then(({ initNewRelicBrowser }) => initNewRelicBrowser()),
-    import('./otel').then(({ initOpenTelemetryBrowser }) => initOpenTelemetryBrowser()),
-  ]);
+  void initializeOptionalTelemetry();
 }
 
 createRoot(document.getElementById('root')!).render(

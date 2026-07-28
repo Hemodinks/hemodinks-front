@@ -1,15 +1,10 @@
-import type { Paciente } from "../../types";
-import { getPacienteProcedimentosFromPaciente } from "../../shared/domain/cbhpm";
+import type { Paciente } from '../../shared/domain/clinicalContracts';
+import { getPacienteProcedimentosFromPaciente } from '../../shared/domain/cbhpm';
 
-export type BillingChecklistStatus = "ok" | "warning" | "missing";
-export type BillingStatusFilter =
-  | "all"
-  | "paid"
-  | "pending"
-  | "glosa"
-  | "missing";
-export type BillingRegimeFilter = "all" | "convenio" | "particular";
-export type BillingRecordStatus = "paid" | "pending" | "missing";
+export type BillingChecklistStatus = 'ok' | 'warning' | 'missing';
+export type BillingStatusFilter = 'all' | 'paid' | 'pending' | 'glosa' | 'missing';
+export type BillingRegimeFilter = 'all' | 'convenio' | 'particular';
+export type BillingRecordStatus = 'paid' | 'pending' | 'missing';
 
 export type BillingChecklistItem = {
   label: string;
@@ -40,7 +35,7 @@ export type BillingRecord = {
   assistantNames: string[];
   hospitalName: string;
   convenioName: string;
-  regime: "convenio" | "particular";
+  regime: 'convenio' | 'particular';
   surgeryDate: string | null;
   surgeryDateLabel: string;
   competenciaInicio: string | null;

@@ -1,10 +1,11 @@
-import { Suspense } from "react";
-import type { AppView, ModuleMode, Theme } from "../appTypes";
-import { DashboardPage } from "../features/dashboard/DashboardPage";
-import type { MedicalGroupsDomainState } from "../features/medicalGroups/useMedicalGroupsDomain";
-import type { PatientsDomainState } from "../features/patients/usePatientsDomain";
-import type { UsersDomainState } from "../features/users/useUsersDomain";
-import type { AuthSession, SelectClinicResponse } from "../types";
+import { Suspense } from 'react';
+import type { AppView, ModuleMode, Theme } from '../appTypes';
+import { DashboardPage } from '../features/dashboard/DashboardPage';
+import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
+import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
+import type { UsersDomainState } from '../features/users/useUsersDomain';
+import type { AuthSession } from '../features/auth/authTypes';
+import type { SelectClinicResponse } from '../features/clinics/clinicTypes';
 import {
   AgendaPage,
   BillingPage,
@@ -14,7 +15,7 @@ import {
   PatientsContainer,
   SystemSettingsPage,
   UsersContainer,
-} from "./lazyModules";
+} from './lazyModules';
 
 type AccessState = {
   canAccessPatients: boolean;
@@ -134,7 +135,7 @@ export function AppMainContent({
 
   return (
     <Suspense fallback={<ModuleFallback />}>
-      {activeView === "dashboard" ? (
+      {activeView === 'dashboard' ? (
         <DashboardPage
           companyName={companyName}
           canAccessPatients={canAccessPatients}
@@ -166,7 +167,7 @@ export function AppMainContent({
           onOpenAgenda={navigation.openAgenda}
           onOpenSettings={navigation.openSettings}
         />
-      ) : activeView === "users" || activeView === "profile" ? (
+      ) : activeView === 'users' || activeView === 'profile' ? (
         <UsersContainer
           moduleMode={moduleMode}
           domain={usersDomain}
@@ -175,7 +176,7 @@ export function AppMainContent({
           sessionToken={session.token}
           onSortChange={sortHandlers.handleUserSortChange}
         />
-      ) : activeView === "patients" ? (
+      ) : activeView === 'patients' ? (
         <PatientsContainer
           moduleMode={moduleMode}
           domain={patientsDomain}
@@ -191,11 +192,13 @@ export function AppMainContent({
           sessionToken={session.token}
           onSortChange={sortHandlers.handlePacienteSortChange}
         />
-      ) : activeView === "clinics" && canAccessClinics ? (
-        <ClinicsPage session={session} isSuperAdmin={isSuperAdmin} onClinicSelected={onClinicSelected} />
-      ) : ["attendances", "billing", "finance", "prices"].includes(
-          activeView,
-        ) ? (
+      ) : activeView === 'clinics' && canAccessClinics ? (
+        <ClinicsPage
+          session={session}
+          isSuperAdmin={isSuperAdmin}
+          onClinicSelected={onClinicSelected}
+        />
+      ) : ['attendances', 'billing', 'finance', 'prices'].includes(activeView) ? (
         <BillingPage
           key={activeView}
           session={session}
@@ -205,16 +208,16 @@ export function AppMainContent({
           isAdmin={isAdmin}
           isMedical={isMedical}
           section={
-            activeView === "attendances"
-              ? "atendimentos"
-              : activeView === "finance"
-                ? "financeiro"
-                : activeView === "prices"
-                  ? "precos"
-                  : "faturamento"
+            activeView === 'attendances'
+              ? 'atendimentos'
+              : activeView === 'finance'
+                ? 'financeiro'
+                : activeView === 'prices'
+                  ? 'precos'
+                  : 'faturamento'
           }
         />
-      ) : activeView === "medicalGroups" ? (
+      ) : activeView === 'medicalGroups' ? (
         <MedicalGroupsPage
           moduleMode={moduleMode}
           groups={medicalGroupsDomain.groups}
@@ -247,7 +250,7 @@ export function AppMainContent({
             void medicalGroupsDomain.loadMedicalGroups(session.token, true);
           }}
         />
-      ) : activeView === "settings" ? (
+      ) : activeView === 'settings' ? (
         <SystemSettingsPage
           session={session}
           theme={theme}

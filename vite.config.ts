@@ -29,15 +29,11 @@ export default defineConfig(({ mode }) => ({
             return 'observability';
           }
 
-          if (id.includes('@opentelemetry/')) {
-            return 'otel-observability';
-          }
-
-          if (id.includes('@newrelic/browser-agent')) {
-            return 'newrelic-observability';
-          }
-
-          if (id.includes('react-router-dom') || id.includes('react-dom') || id.includes('/react/')) {
+          if (
+            id.includes('react-router-dom') ||
+            id.includes('react-dom') ||
+            id.includes('/react/')
+          ) {
             return 'react-vendor';
           }
 

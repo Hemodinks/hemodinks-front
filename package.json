@@ -12,6 +12,8 @@
     "analyze": "tsc -b && vite build --mode analyze",
     "budget": "node scripts/check-bundle-budget.mjs",
     "lint": "eslint src e2e",
+    "architecture:check": "node scripts/check-architecture.mjs",
+    "security:audit": "node scripts/check-security-audit.mjs",
     "format": "prettier --write \"{src,e2e,scripts}/**/*.{ts,tsx,js,mjs,css}\" \"*.{ts,js,mjs,json}\"",
     "format:check": "prettier --check \"{src,e2e,scripts}/**/*.{ts,tsx,js,mjs,css}\" \"*.{ts,js,mjs,json}\"",
     "audit:a11y": "playwright test --grep acessibilidade",

@@ -1,7 +1,9 @@
 import { formatCurrency } from '../../shared/utils/formatters';
 import type { BillingChecklistItem, BillingRecord } from './billingModels';
 
-export function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 'pendingChecklistItems'>) {
+export function buildBillingChecklist(
+  record: Omit<BillingRecord, 'billingChecklist' | 'pendingChecklistItems'>,
+) {
   const checklist: BillingChecklistItem[] = [
     record.paymentHasNumericValue
       ? {
@@ -28,26 +30,35 @@ export function buildBillingChecklist(record: Omit<BillingRecord, 'billingCheckl
           status: 'ok',
         }
       : record.assistantNames.length
-      ? {
-          label: 'Honorários de auxiliares cirúrgicos',
-          value: record.assistantNames.join(', '),
-          status: 'warning',
-          hint: 'Equipe auxiliar cadastrada, mas sem valor separado por honorário.',
-        }
-      : {
-          label: 'Honorários de auxiliares cirúrgicos',
-          value: 'Não informado',
-          status: 'missing',
-        },
-    record.anesthesiologistBilledSeparately || record.anesthesiologistFeesAmount != null || record.anesthesiologistName
+        ? {
+            label: 'Honorários de auxiliares cirúrgicos',
+            value: record.assistantNames.join(', '),
+            status: 'warning',
+            hint: 'Equipe auxiliar cadastrada, mas sem valor separado por honorário.',
+          }
+        : {
+            label: 'Honorários de auxiliares cirúrgicos',
+            value: 'Não informado',
+            status: 'missing',
+          },
+    record.anesthesiologistBilledSeparately ||
+    record.anesthesiologistFeesAmount != null ||
+    record.anesthesiologistName
       ? {
           label: 'Anestesista faturado separado',
           value: [
             record.anesthesiologistName,
-            record.anesthesiologistFeesAmount != null ? formatCurrency(record.anesthesiologistFeesAmount) : '',
+            record.anesthesiologistFeesAmount != null
+              ? formatCurrency(record.anesthesiologistFeesAmount)
+              : '',
             record.anesthesiologistBilledSeparately ? 'Faturado separado' : '',
-          ].filter(Boolean).join(' | '),
-          status: record.anesthesiologistFeesAmount != null || record.anesthesiologistBilledSeparately ? 'ok' : 'warning',
+          ]
+            .filter(Boolean)
+            .join(' | '),
+          status:
+            record.anesthesiologistFeesAmount != null || record.anesthesiologistBilledSeparately
+              ? 'ok'
+              : 'warning',
         }
       : {
           label: 'Anestesista faturado separado',
@@ -127,18 +138,18 @@ export function buildBillingChecklist(record: Omit<BillingRecord, 'billingCheckl
             value: record.guiaInternacaoOuSadt,
             status: 'ok',
           }
-      : record.filesCount > 0
-        ? {
-            label: 'Guia de internação ou SADT',
-            value: `${record.filesCount} anexo(s) disponível(is)`,
-            status: 'warning',
-            hint: 'Validar se a guia está entre os arquivos anexados.',
-          }
-        : {
-            label: 'Guia de internação ou SADT',
-            value: 'Sem guia anexada',
-            status: 'missing',
-          },
+        : record.filesCount > 0
+          ? {
+              label: 'Guia de internação ou SADT',
+              value: `${record.filesCount} anexo(s) disponível(is)`,
+              status: 'warning',
+              hint: 'Validar se a guia está entre os arquivos anexados.',
+            }
+          : {
+              label: 'Guia de internação ou SADT',
+              value: 'Sem guia anexada',
+              status: 'missing',
+            },
     record.hasOpme
       ? {
           label: 'OPME/materiais especiais',
@@ -157,17 +168,17 @@ export function buildBillingChecklist(record: Omit<BillingRecord, 'billingCheckl
           status: 'ok',
         }
       : record.filesCount > 0
-      ? {
-          label: 'Envio em padrão TISS/XML',
-          value: `${record.filesCount} anexo(s) de suporte`,
-          status: 'warning',
-          hint: 'O cadastro não marca explicitamente o envio TISS/XML.',
-        }
-      : {
-          label: 'Envio em padrão TISS/XML',
-          value: 'Sem evidência no cadastro',
-          status: 'missing',
-        },
+        ? {
+            label: 'Envio em padrão TISS/XML',
+            value: `${record.filesCount} anexo(s) de suporte`,
+            status: 'warning',
+            hint: 'O cadastro não marca explicitamente o envio TISS/XML.',
+          }
+        : {
+            label: 'Envio em padrão TISS/XML',
+            value: 'Sem evidência no cadastro',
+            status: 'missing',
+          },
     record.glosaStatus || record.recursoGlosa
       ? {
           label: 'Glosas, recursos e conferência',
@@ -175,26 +186,28 @@ export function buildBillingChecklist(record: Omit<BillingRecord, 'billingCheckl
           status: record.glosaHasNumericValue && record.glosaAmount > 0 ? 'warning' : 'ok',
         }
       : record.glosaHasNumericValue && record.glosaAmount > 0
-      ? {
-          label: 'Glosas, recursos e conferência',
-          value: formatCurrency(record.glosaAmount),
-          status: 'warning',
-        }
-      : record.status === 'paid'
         ? {
             label: 'Glosas, recursos e conferência',
-            value: 'Pagamento conferido',
-            status: 'ok',
-          }
-        : {
-            label: 'Glosas, recursos e conferência',
-            value: 'Aguardando conferência',
+            value: formatCurrency(record.glosaAmount),
             status: 'warning',
-          },
+          }
+        : record.status === 'paid'
+          ? {
+              label: 'Glosas, recursos e conferência',
+              value: 'Pagamento conferido',
+              status: 'ok',
+            }
+          : {
+              label: 'Glosas, recursos e conferência',
+              value: 'Aguardando conferência',
+              status: 'warning',
+            },
     record.paymentHasNumericValue && record.hospitalName
       ? {
           label: 'Repasse médico via hospital/clínica',
-          value: [formatCurrency(record.netAmount), record.repasseMedicoObservacao].filter(Boolean).join(' | '),
+          value: [formatCurrency(record.netAmount), record.repasseMedicoObservacao]
+            .filter(Boolean)
+            .join(' | '),
           status: 'warning',
           hint: 'Líquido estimado a partir de pagamento menos glosa.',
         }
@@ -211,16 +224,16 @@ export function buildBillingChecklist(record: Omit<BillingRecord, 'billingCheckl
             status: 'ok',
           }
         : record.filesCount > 0
-        ? {
-            label: 'Faturamento particular com suporte',
-            value: `${record.tipoFaturamentoParticular || 'Particular'} | ${record.filesCount} anexo(s) de suporte`,
-            status: 'ok',
-          }
-        : {
-            label: 'Faturamento particular com suporte',
-            value: 'Sem recibo, nota ou contrato anexado',
-            status: 'warning',
-          }
+          ? {
+              label: 'Faturamento particular com suporte',
+              value: `${record.tipoFaturamentoParticular || 'Particular'} | ${record.filesCount} anexo(s) de suporte`,
+              status: 'ok',
+            }
+          : {
+              label: 'Faturamento particular com suporte',
+              value: 'Sem recibo, nota ou contrato anexado',
+              status: 'warning',
+            }
       : {
           label: 'Faturamento particular com suporte',
           value: 'Realizado via convênio',

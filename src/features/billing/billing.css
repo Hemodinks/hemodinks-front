@@ -39,15 +39,14 @@
   border: 1px solid color-mix(in srgb, var(--action-primary) 82%, black);
   background: var(--action-primary);
   color: var(--action-text);
-  box-shadow: 0 8px 18px
-    color-mix(in srgb, var(--action-primary) 28%, transparent);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--action-primary) 28%, transparent);
   font-size: 0.9rem;
   font-weight: 900;
   line-height: 1;
 }
 
 .billing-filters-toggle::after {
-  content: "▾";
+  content: '▾';
   font-size: 0.84rem;
   transition: transform 180ms ease;
 }
@@ -242,8 +241,7 @@
 .billing-clear-filters {
   background: var(--action-secondary);
   border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
-  box-shadow: 0 7px 16px
-    color-mix(in srgb, var(--action-secondary) 20%, transparent);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-secondary) 20%, transparent);
 }
 
 .billing-clear-filters:hover {
@@ -277,8 +275,7 @@
   border-left-width: 6px;
   border-radius: 8px;
   background:
-    linear-gradient(135deg, var(--billing-soft, transparent), transparent 72%),
-    var(--panel);
+    linear-gradient(135deg, var(--billing-soft, transparent), transparent 72%), var(--panel);
 }
 
 .billing-summary-icon {
@@ -289,11 +286,7 @@
   justify-content: center;
   border-radius: 10px;
   color: var(--billing-color, var(--teal));
-  background: color-mix(
-    in srgb,
-    var(--billing-color, var(--teal)) 14%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--billing-color, var(--teal)) 14%, transparent);
 }
 
 .billing-summary-title {
@@ -925,10 +918,7 @@
 
 .billing-summary-overview {
   display: grid;
-  grid-template-columns: minmax(210px, 0.75fr) minmax(360px, 1.45fr) minmax(
-      230px,
-      0.8fr
-    );
+  grid-template-columns: minmax(210px, 0.75fr) minmax(360px, 1.45fr) minmax(230px, 0.8fr);
   gap: 12px;
 }
 
@@ -990,9 +980,7 @@
 .billing-summary-support-card {
   border-left-width: 5px;
   border-left-color: color-mix(in srgb, var(--action-primary) 44%, transparent);
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.08), transparent 72%),
-    var(--input-bg);
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), transparent 72%), var(--input-bg);
 }
 
 .billing-summary-support-card strong {
@@ -1329,15 +1317,15 @@
 .billing-attendance-form {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-areas:
-    "date patient"
-    "diagnosis treatment"
-    "convenio responsible"
-    "hospital assistant-one"
-    "opme assistant-two"
-    "procedures procedures"
-    "authorization status"
-    "glosa glosa"
-    "save save";
+    'date patient'
+    'diagnosis treatment'
+    'convenio responsible'
+    'hospital assistant-one'
+    'opme assistant-two'
+    'procedures procedures'
+    'authorization status'
+    'glosa glosa'
+    'save save';
 }
 
 .billing-attendance-form > label:nth-child(1) {
@@ -1579,21 +1567,21 @@
   .billing-attendance-form {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "date"
-      "patient"
-      "diagnosis"
-      "treatment"
-      "convenio"
-      "responsible"
-      "hospital"
-      "opme"
-      "assistant-one"
-      "assistant-two"
-      "procedures"
-      "authorization"
-      "status"
-      "glosa"
-      "save";
+      'date'
+      'patient'
+      'diagnosis'
+      'treatment'
+      'convenio'
+      'responsible'
+      'hospital'
+      'opme'
+      'assistant-one'
+      'assistant-two'
+      'procedures'
+      'authorization'
+      'status'
+      'glosa'
+      'save';
   }
 
   .billing-attendance-glosa {

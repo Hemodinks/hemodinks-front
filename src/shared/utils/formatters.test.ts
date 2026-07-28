@@ -6,8 +6,9 @@ describe('normalizeDisplayText', () => {
     expect(normalizeDisplayText('Bradesco Sa\u00c3\u00bade')).toBe('Bradesco Saúde');
     expect(normalizeDisplayText('Cemig Sa\uFFFDde')).toBe('Cemig Saúde');
     expect(normalizeDisplayText('Sul Am\u00c3\u00a9rica')).toBe('Sul América');
-    expect(normalizeDisplayText('Unimed Uberl\uFFFDndia - Plano  Unimed Interc\uFFFDmbio'))
-      .toBe('Unimed Uberlândia - Plano  Unimed Intercâmbio');
+    expect(normalizeDisplayText('Unimed Uberl\uFFFDndia - Plano  Unimed Interc\uFFFDmbio')).toBe(
+      'Unimed Uberlândia - Plano  Unimed Intercâmbio',
+    );
   });
 });
 

@@ -1,26 +1,18 @@
-import {
-  type InputHTMLAttributes,
-  useId,
-  useRef,
-  useState,
-} from "react";
-import { ChevronDown } from "lucide-react";
+import { type InputHTMLAttributes, useId, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
 function normalizeComboboxText(value: string) {
   return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("pt-BR");
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR');
 }
 
-type ComboboxFieldProps = Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "onChange" | "children"
-> & {
+type ComboboxFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'children'> & {
   label: string;
   value: string;
   options: string[];
@@ -36,7 +28,7 @@ export function ComboboxField({
   className,
   disabled = false,
   placeholder,
-  noOptionsLabel = "Nenhuma opcao encontrada.",
+  noOptionsLabel = 'Nenhuma opcao encontrada.',
   ...props
 }: ComboboxFieldProps) {
   const fieldId = useId();
@@ -46,14 +38,11 @@ export function ComboboxField({
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const uniqueOptions = [...new Set(options.map((option) => option.trim()).filter(Boolean))].sort(
-    (left, right) =>
-      left.localeCompare(right, "pt-BR", { sensitivity: "base" }),
+    (left, right) => left.localeCompare(right, 'pt-BR', { sensitivity: 'base' }),
   );
   const normalizedValue = normalizeComboboxText(value.trim());
   const filteredOptions = normalizedValue
-    ? uniqueOptions.filter((option) =>
-        normalizeComboboxText(option).includes(normalizedValue),
-      )
+    ? uniqueOptions.filter((option) => normalizeComboboxText(option).includes(normalizedValue))
     : uniqueOptions;
 
   const selectOption = (option: string) => {
@@ -66,13 +55,10 @@ export function ComboboxField({
   return (
     <label
       ref={fieldRef}
-      className={cx("combobox-field", className)}
+      className={cx('combobox-field', className)}
       onBlur={(event) => {
         const nextTarget = event.relatedTarget;
-        if (
-          nextTarget instanceof Node &&
-          fieldRef.current?.contains(nextTarget)
-        ) {
+        if (nextTarget instanceof Node && fieldRef.current?.contains(nextTarget)) {
           return;
         }
         setIsOpen(false);
@@ -105,7 +91,7 @@ export function ComboboxField({
           }}
           onKeyDown={(event) => {
             if (disabled) return;
-            if (event.key === "ArrowDown") {
+            if (event.key === 'ArrowDown') {
               event.preventDefault();
               setIsOpen(true);
               setActiveIndex((current) =>
@@ -117,7 +103,7 @@ export function ComboboxField({
               );
               return;
             }
-            if (event.key === "ArrowUp") {
+            if (event.key === 'ArrowUp') {
               event.preventDefault();
               setIsOpen(true);
               setActiveIndex((current) =>
@@ -130,7 +116,7 @@ export function ComboboxField({
               return;
             }
             if (
-              event.key === "Enter" &&
+              event.key === 'Enter' &&
               isOpen &&
               activeIndex >= 0 &&
               filteredOptions[activeIndex]
@@ -139,7 +125,7 @@ export function ComboboxField({
               selectOption(filteredOptions[activeIndex]);
               return;
             }
-            if (event.key === "Escape") {
+            if (event.key === 'Escape') {
               setIsOpen(false);
               setActiveIndex(-1);
             }
@@ -168,10 +154,7 @@ export function ComboboxField({
                   type="button"
                   role="option"
                   aria-selected={activeIndex === index}
-                  className={cx(
-                    "combobox-option",
-                    activeIndex === index && "is-active",
-                  )}
+                  className={cx('combobox-option', activeIndex === index && 'is-active')}
                   onMouseDown={(event) => {
                     event.preventDefault();
                     selectOption(option);

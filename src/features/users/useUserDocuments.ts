@@ -1,4 +1,4 @@
-import { downloadUserArquivo } from "../../services";
+import { downloadUserArquivo } from '../../services';
 
 export function useUserDocuments(sessionToken: string) {
   return {

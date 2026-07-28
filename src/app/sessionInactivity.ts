@@ -10,6 +10,5 @@ export function shouldRefreshSession(
   lastRefreshAt: number,
   now = Date.now(),
 ) {
-  return lastActivityAt > lastRefreshAt
-    && now - lastRefreshAt >= SESSION_REFRESH_INTERVAL_MS;
+  return lastActivityAt > lastRefreshAt && now - lastRefreshAt >= SESSION_REFRESH_INTERVAL_MS;
 }

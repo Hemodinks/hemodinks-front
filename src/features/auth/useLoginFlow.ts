@@ -1,19 +1,21 @@
-import { type FormEvent, useEffect, useState } from "react";
-import type { NavigateFunction } from "react-router-dom";
-import { authenticate, listPublicClinics, resetPassword } from "../../services";
-import { queryClient } from "../../queryClient";
+import { type FormEvent, useEffect, useState } from 'react';
+import type { NavigateFunction } from 'react-router-dom';
+import { authenticate, listPublicClinics, resetPassword } from '../../services';
+import { queryClient } from '../../queryClient';
 import {
   API_ASSET_BASE_URL,
   DEFAULT_PASSWORD,
   getErrorMessage,
   isValidEmail,
-} from "../../shared/utils/formatters";
-import type { AuthSession, PublicClinic } from "../../types";
+} from '../../shared/utils/formatters';
+import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
+import type { AuthSession } from './authTypes';
+import type { PublicClinic } from '../../shared/domain/clinicalContracts';
 import {
   buildSessionFromLogin,
   getResetPasswordCompletedMessage,
   shouldOpenDashboardAfterLogin,
-} from "../../app/appSession";
+} from '../../app/appSession';
 
 type LoginFlowOptions = {
   session: AuthSession | null;
@@ -30,48 +32,59 @@ export function useLoginFlow({
   fallbackCompanyName,
   fallbackCompanyPhoto,
 }: LoginFlowOptions) {
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginClinicValue, setLoginClinicValue] = useState("");
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginClinicValue, setLoginClinicValue] = useState('');
   const [publicClinics, setPublicClinics] = useState<PublicClinic[]>([]);
-  const [publicClinicsLoading, setPublicClinicsLoading] = useState(false);
-  const [loginError, setLoginError] = useState("");
-  const [loginInfo, setLoginInfo] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [loginInfo, setLoginInfo] = useState('');
   const [openDashboardAfterLogin, setOpenDashboardAfterLogin] = useState(false);
   const selectedLoginClinic = publicClinics.find(
     (clinic) => String(clinic.id) === loginClinicValue,
+  );
+  const publicClinicsOperation = useAsyncOperation(() => listPublicClinics());
+  const loginOperation = useAsyncOperation(
+    (_signal, email: string, password: string, clinicSlug: string) =>
+      authenticate(email, password, clinicSlug),
+  );
+  const resetPasswordOperation = useAsyncOperation((_signal, email: string, clinicSlug: string) =>
+    resetPassword(email, clinicSlug),
   );
 
   useEffect(() => {
     if (session) return;
 
-    let cancelled = false;
-    setPublicClinicsLoading(true);
-    void listPublicClinics()
+    let active = true;
+    void publicClinicsOperation
+      .execute()
       .then((clinics) => {
-        if (cancelled) return;
+        if (!active) return;
         setPublicClinics(clinics);
-        if (clinics.length === 1) setLoginClinicValue(String(clinics[0].id));
+        if (clinics.length === 1) {
+          setLoginClinicValue(String(clinics[0].id));
+        }
       })
       .catch((error) => {
-        if (!cancelled) setLoginError(getErrorMessage(error));
-      })
-      .finally(() => {
-        if (!cancelled) setPublicClinicsLoading(false);
+        if (active) setLoginError(getErrorMessage(error));
       });
 
     return () => {
-      cancelled = true;
+      active = false;
+      publicClinicsOperation.cancel();
     };
   }, [session]);
 
-  const returnToLogin = (infoMessage = "") => {
-    setLoginError("");
+  useEffect(() => {
+    if (session) {
+      publicClinicsOperation.reset();
+    }
+  }, [session]);
+
+  const returnToLogin = (infoMessage = '') => {
+    setLoginError('');
     setLoginInfo(infoMessage);
-    setLoginPassword("");
-    navigate("/", { replace: true });
+    setLoginPassword('');
+    navigate('/', { replace: true });
   };
 
   const handleResetPasswordCompleted = (message: string) => {
@@ -80,59 +93,53 @@ export function useLoginFlow({
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLoginError("");
-    setLoginInfo("");
+    setLoginError('');
+    setLoginInfo('');
 
     if (!isValidEmail(loginEmail)) {
-      setLoginError("Informe um email valido.");
+      setLoginError('Informe um email valido.');
       return;
     }
     if (!selectedLoginClinic) {
-      setLoginError("Selecione uma clinica cadastrada.");
+      setLoginError('Selecione uma clinica cadastrada.');
       return;
     }
 
-    setLoginLoading(true);
     try {
-      const result = await authenticate(
+      const result = await loginOperation.execute(
         loginEmail.trim(),
         loginPassword,
         selectedLoginClinic.slug,
       );
       const nextSession = buildSessionFromLogin(result, loginPassword);
       queryClient.clear();
-      setOpenDashboardAfterLogin(
-        shouldOpenDashboardAfterLogin(nextSession.user.perfilId),
-      );
+      setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin(nextSession.user.perfilId));
       persistSession(nextSession);
     } catch (error) {
       setLoginError(getErrorMessage(error));
-    } finally {
-      setLoginLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
-    setLoginError("");
-    setLoginInfo("");
+    setLoginError('');
+    setLoginInfo('');
 
     if (!isValidEmail(loginEmail)) {
-      setLoginError("Informe um email valido para resetar a senha.");
+      setLoginError('Informe um email valido para resetar a senha.');
       return;
     }
 
-    setResetPasswordLoading(true);
     try {
       if (!selectedLoginClinic) {
-        setLoginError("Selecione a clinica para redefinir a senha.");
+        setLoginError('Selecione a clinica para redefinir a senha.');
         return;
       }
-      const result = await resetPassword(
+      const result = await resetPasswordOperation.execute(
         loginEmail.trim(),
         selectedLoginClinic.slug,
       );
 
-      if (result.mode === "default-password") {
+      if (result.mode === 'default-password') {
         setLoginPassword(DEFAULT_PASSWORD);
         setLoginInfo(
           `Senha redefinida para ${DEFAULT_PASSWORD}. Use-a para entrar e altere a seguir.`,
@@ -140,15 +147,13 @@ export function useLoginFlow({
         return;
       }
 
-      setLoginPassword("");
+      setLoginPassword('');
       setLoginInfo(
         result.message ||
-          "Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.",
+          'Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.',
       );
     } catch (error) {
       setLoginError(getErrorMessage(error));
-    } finally {
-      setResetPasswordLoading(false);
     }
   };
 
@@ -165,13 +170,13 @@ export function useLoginFlow({
     loginClinicValue,
     setLoginClinicValue,
     publicClinics,
-    publicClinicsLoading,
+    publicClinicsLoading: publicClinicsOperation.isLoading,
     loginError,
     setLoginError,
     loginInfo,
     setLoginInfo,
-    loginLoading,
-    resetPasswordLoading,
+    loginLoading: loginOperation.isLoading,
+    resetPasswordLoading: resetPasswordOperation.isLoading,
     openDashboardAfterLogin,
     setOpenDashboardAfterLogin,
     companyName,

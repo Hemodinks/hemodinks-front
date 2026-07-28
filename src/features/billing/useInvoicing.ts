@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { Faturamento } from "../../types";
+import { useState } from 'react';
+import type { Faturamento } from './billingDomainTypes';
 import {
   createFaturamento,
   deleteFaturamento,
@@ -15,7 +15,7 @@ import {
   updateFaturamentoStatus,
   updateGlosa,
   updateRecursoGlosa,
-} from "../../services";
+} from '../../services';
 import type {
   ContaReceberCreatePayload,
   FaturamentoItemPayload,
@@ -25,31 +25,29 @@ import type {
   RecursoGlosaPayload,
   RecursoGlosaUpdatePayload,
   RetornoFaturamentoPayload,
-} from "../../services/financeiroService";
+} from '../../services/financeiroService';
 import type {
   AppealDraftState,
   BillingReturnDraft,
   FaturamentoFormState,
   GlosaDraftState,
   RecursoDraftState,
-} from "./billingPageTypes";
+} from './billingPageTypes';
 
 export function createInitialFaturamentoForm(): FaturamentoFormState {
   return {
-    atendimentoCirurgicoId: "",
+    atendimentoCirurgicoId: '',
     competencia: new Date().toISOString().slice(0, 7),
-    numeroGuia: "",
-    numeroLote: "",
-    observacao: "",
+    numeroGuia: '',
+    numeroLote: '',
+    observacao: '',
   };
 }
 
 export function useInvoicing() {
   const [faturamentos, setFaturamentos] = useState<Faturamento[]>([]);
   const [editingBillingId, setEditingBillingId] = useState<number | null>(null);
-  const [faturamentoForm, setFaturamentoForm] = useState(
-    createInitialFaturamentoForm,
-  );
+  const [faturamentoForm, setFaturamentoForm] = useState(createInitialFaturamentoForm);
   const [returnTarget, setReturnTarget] = useState<Faturamento | null>(null);
   const [returnDraft, setReturnDraft] = useState<BillingReturnDraft[]>([]);
   const [appealTarget, setAppealTarget] = useState<{
@@ -57,12 +55,10 @@ export function useInvoicing() {
     valorGlosado: number;
   } | null>(null);
   const [appealDraft, setAppealDraft] = useState<AppealDraftState>({
-    justificativa: "",
-    valorRecuperado: "0",
+    justificativa: '',
+    valorRecuperado: '0',
   });
-  const [selectedBilling, setSelectedBilling] = useState<Faturamento | null>(
-    null,
-  );
+  const [selectedBilling, setSelectedBilling] = useState<Faturamento | null>(null);
   const [billingItemDraft, setBillingItemDraft] = useState<{
     itemId: number;
     codigo: string;
@@ -72,8 +68,7 @@ export function useInvoicing() {
     valorUnitario: string;
   } | null>(null);
   const [glosaDraft, setGlosaDraft] = useState<GlosaDraftState | null>(null);
-  const [recursoDraft, setRecursoDraft] =
-    useState<RecursoDraftState | null>(null);
+  const [recursoDraft, setRecursoDraft] = useState<RecursoDraftState | null>(null);
   const loadInvoicing = async (token: string) => {
     const [atendimentos, items] = await Promise.all([
       getAtendimentos(token),
@@ -82,47 +77,23 @@ export function useInvoicing() {
     setFaturamentos(items);
     return atendimentos;
   };
-  const saveInvoice = (
-    id: number | null,
-    payload: FaturamentoPayload,
-    token: string,
-  ) =>
+  const saveInvoice = (id: number | null, payload: FaturamentoPayload, token: string) =>
     id ? updateFaturamento(id, payload, token) : createFaturamento(payload, token);
-  const removeInvoice = (id: number, token: string) =>
-    deleteFaturamento(id, token);
-  const changeInvoiceStatus = (
-    id: number,
-    payload: FaturamentoStatusPayload,
-    token: string,
-  ) => updateFaturamentoStatus(id, payload, token);
-  const createReceivable = (
-    id: number,
-    payload: ContaReceberCreatePayload,
-    token: string,
-  ) => gerarContaReceber(id, payload, token);
-  const registerReturn = (
-    id: number,
-    payload: RetornoFaturamentoPayload,
-    token: string,
-  ) => registrarRetornoFaturamento(id, payload, token);
-  const registerAppeal = (
-    id: number,
-    payload: RecursoGlosaPayload,
-    token: string,
-  ) => registrarRecursoGlosa(id, payload, token);
-  const saveGlosaRecord = (
-    id: number,
-    payload: GlosaUpdatePayload,
-    token: string,
-  ) => updateGlosa(id, payload, token);
+  const removeInvoice = (id: number, token: string) => deleteFaturamento(id, token);
+  const changeInvoiceStatus = (id: number, payload: FaturamentoStatusPayload, token: string) =>
+    updateFaturamentoStatus(id, payload, token);
+  const createReceivable = (id: number, payload: ContaReceberCreatePayload, token: string) =>
+    gerarContaReceber(id, payload, token);
+  const registerReturn = (id: number, payload: RetornoFaturamentoPayload, token: string) =>
+    registrarRetornoFaturamento(id, payload, token);
+  const registerAppeal = (id: number, payload: RecursoGlosaPayload, token: string) =>
+    registrarRecursoGlosa(id, payload, token);
+  const saveGlosaRecord = (id: number, payload: GlosaUpdatePayload, token: string) =>
+    updateGlosa(id, payload, token);
   const removeGlosa = (id: number, token: string) => deleteGlosa(id, token);
-  const saveAppealRecord = (
-    id: number,
-    payload: RecursoGlosaUpdatePayload,
-    token: string,
-  ) => updateRecursoGlosa(id, payload, token);
-  const removeAppeal = (id: number, token: string) =>
-    deleteRecursoGlosa(id, token);
+  const saveAppealRecord = (id: number, payload: RecursoGlosaUpdatePayload, token: string) =>
+    updateRecursoGlosa(id, payload, token);
+  const removeAppeal = (id: number, token: string) => deleteRecursoGlosa(id, token);
   const saveInvoiceItem = (
     invoiceId: number,
     itemId: number,

@@ -1,14 +1,8 @@
-import {
-  act,
-  fireEvent,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ContaReceber, Faturamento } from "../../types";
-import * as services from "../../services";
-import * as receiptDocument from "./receiptDocument";
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ContaReceber, Faturamento } from './billingDomainTypes';
+import * as services from '../../services';
+import * as receiptDocument from './receiptDocument';
 import {
   atendimento,
   billingPage as page,
@@ -17,30 +11,30 @@ import {
   renderBillingPage as renderPage,
   session,
   setupBillingMocks as setupMocks,
-} from "./billingTestSetup";
+} from './billingTestSetup';
 
-vi.mock("../../services", async () => {
-  const { createBillingServicesMock } = await import("./billingServicesMock");
+vi.mock('../../services', async () => {
+  const { createBillingServicesMock } = await import('./billingServicesMock');
   return createBillingServicesMock();
 });
-vi.mock("./receiptDocument", () => ({
+vi.mock('./receiptDocument', () => ({
   downloadGeneratedReceipt: vi.fn(),
 }));
 
-describe("BillingPage", () => {
+describe('BillingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupMocks();
   });
 
-  it("cadastra atendimento com procedimento selecionado, autorização, médico e hospital", async () => {
+  it('cadastra atendimento com procedimento selecionado, autorização, médico e hospital', async () => {
     vi.mocked(services.getCbhpmGeral).mockResolvedValue({
       items: [
         {
           id: 1,
-          codigo: "123",
-          procedimento: "Cirurgia",
-          porte: "8A",
+          codigo: '123',
+          procedimento: 'Cirurgia',
+          porte: '8A',
           valorReferencia: 1000,
         },
       ],
@@ -50,29 +44,29 @@ describe("BillingPage", () => {
       totalPages: 1,
     });
     renderPage();
-    await screen.findByText("Paciente Teste");
-    fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
-    fireEvent.change(screen.getByLabelText("Paciente"), {
-      target: { value: "1" },
+    await screen.findByText('Paciente Teste');
+    fireEvent.click(screen.getByRole('button', { name: /Novo atendimento/i }));
+    fireEvent.change(screen.getByLabelText('Paciente'), {
+      target: { value: '1' },
     });
-    fireEvent.change(screen.getByLabelText("Data da cirurgia"), {
-      target: { value: "2026-07-10" },
+    fireEvent.change(screen.getByLabelText('Data da cirurgia'), {
+      target: { value: '2026-07-10' },
     });
-    fireEvent.change(screen.getByLabelText("Hospital"), {
-      target: { value: "Hospital Teste" },
+    fireEvent.change(screen.getByLabelText('Hospital'), {
+      target: { value: 'Hospital Teste' },
     });
-    fireEvent.change(screen.getByLabelText("Fornecedor OPME"), {
-      target: { value: "Promedom" },
+    fireEvent.change(screen.getByLabelText('Fornecedor OPME'), {
+      target: { value: 'Promedom' },
     });
-    fireEvent.change(screen.getByLabelText("Médico responsável"), {
-      target: { value: "2" },
+    fireEvent.change(screen.getByLabelText('Médico responsável'), {
+      target: { value: '2' },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
-    fireEvent.change(screen.getByLabelText("Autorização"), {
-      target: { value: "AUT-1" },
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar CBHPM' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar' }));
+    fireEvent.change(screen.getByLabelText('Autorização'), {
+      target: { value: 'AUT-1' },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar atendimento" }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar atendimento' }));
     await waitFor(() =>
       expect(services.createAtendimento).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -80,27 +74,27 @@ describe("BillingPage", () => {
           hospitalId: 1,
           opmeFornecedorId: 1,
           medicoResponsavelId: 2,
-          numeroAutorizacao: "AUT-1",
+          numeroAutorizacao: 'AUT-1',
           procedimentos: [
             expect.objectContaining({
-              cbhpmCodigo: "123",
+              cbhpmCodigo: '123',
               pesoPercentual: 100,
             }),
           ],
         }),
-        "token",
+        'token',
       ),
     );
   });
 
-  it("cadastra hospital, convênio e fornecedor OPME informados manualmente", async () => {
+  it('cadastra hospital, convênio e fornecedor OPME informados manualmente', async () => {
     vi.mocked(services.getCbhpmGeral).mockResolvedValue({
       items: [
         {
           id: 1,
-          codigo: "123",
-          procedimento: "Cirurgia",
-          porte: "8A",
+          codigo: '123',
+          procedimento: 'Cirurgia',
+          porte: '8A',
           valorReferencia: 1000,
         },
       ],
@@ -110,53 +104,53 @@ describe("BillingPage", () => {
       totalPages: 1,
     });
     renderPage();
-    await screen.findByText("Paciente Teste");
-    fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
-    fireEvent.change(screen.getByLabelText("Paciente"), {
-      target: { value: "1" },
+    await screen.findByText('Paciente Teste');
+    fireEvent.click(screen.getByRole('button', { name: /Novo atendimento/i }));
+    fireEvent.change(screen.getByLabelText('Paciente'), {
+      target: { value: '1' },
     });
-    fireEvent.change(screen.getByLabelText("Data da cirurgia"), {
-      target: { value: "2026-07-10" },
+    fireEvent.change(screen.getByLabelText('Data da cirurgia'), {
+      target: { value: '2026-07-10' },
     });
-    fireEvent.change(screen.getByLabelText("Hospital"), {
-      target: { value: "Hospital Novo" },
+    fireEvent.change(screen.getByLabelText('Hospital'), {
+      target: { value: 'Hospital Novo' },
     });
-    fireEvent.change(screen.getByLabelText("Convênio"), {
-      target: { value: "Convênio Novo" },
+    fireEvent.change(screen.getByLabelText('Convênio'), {
+      target: { value: 'Convênio Novo' },
     });
-    fireEvent.change(screen.getByLabelText("Fornecedor OPME"), {
-      target: { value: "Fornecedor Novo" },
+    fireEvent.change(screen.getByLabelText('Fornecedor OPME'), {
+      target: { value: 'Fornecedor Novo' },
     });
-    fireEvent.change(screen.getByLabelText("Médico responsável"), {
-      target: { value: "2" },
+    fireEvent.change(screen.getByLabelText('Médico responsável'), {
+      target: { value: '2' },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Salvar atendimento" }));
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar CBHPM' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar atendimento' }));
 
     await waitFor(() =>
       expect(services.createAtendimento).toHaveBeenCalledWith(
         expect.objectContaining({
           hospitalId: null,
-          hospital: "Hospital Novo",
+          hospital: 'Hospital Novo',
           convenioId: null,
-          convenio: "Convênio Novo",
+          convenio: 'Convênio Novo',
           opmeFornecedorId: null,
-          opmeFornecedor: "Fornecedor Novo",
+          opmeFornecedor: 'Fornecedor Novo',
         }),
-        "token",
+        'token',
       ),
     );
   });
 
-  it("registra valor e motivo da glosa no atendimento", async () => {
+  it('registra valor e motivo da glosa no atendimento', async () => {
     vi.mocked(services.getCbhpmGeral).mockResolvedValue({
       items: [
         {
           id: 1,
-          codigo: "123",
-          procedimento: "Cirurgia",
-          porte: "8A",
+          codigo: '123',
+          procedimento: 'Cirurgia',
+          porte: '8A',
           valorReferencia: 1000,
         },
       ],
@@ -166,75 +160,69 @@ describe("BillingPage", () => {
       totalPages: 1,
     });
     renderPage();
-    await screen.findByText("Paciente Teste");
-    fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
-    fireEvent.change(screen.getByLabelText("Paciente"), {
-      target: { value: "1" },
+    await screen.findByText('Paciente Teste');
+    fireEvent.click(screen.getByRole('button', { name: /Novo atendimento/i }));
+    fireEvent.change(screen.getByLabelText('Paciente'), {
+      target: { value: '1' },
     });
-    fireEvent.change(screen.getByLabelText("Data da cirurgia"), {
-      target: { value: "2026-07-10" },
+    fireEvent.change(screen.getByLabelText('Data da cirurgia'), {
+      target: { value: '2026-07-10' },
     });
-    fireEvent.change(screen.getByLabelText("Médico responsável"), {
-      target: { value: "2" },
+    fireEvent.change(screen.getByLabelText('Médico responsável'), {
+      target: { value: '2' },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
-    fireEvent.change(screen.getByLabelText("Valor da glosa"), {
-      target: { value: "150" },
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar CBHPM' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar' }));
+    fireEvent.change(screen.getByLabelText('Valor da glosa'), {
+      target: { value: '150' },
     });
-    fireEvent.change(screen.getByLabelText("Motivo da glosa"), {
-      target: { value: "Divergência contratual" },
+    fireEvent.change(screen.getByLabelText('Motivo da glosa'), {
+      target: { value: 'Divergência contratual' },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar atendimento" }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar atendimento' }));
 
     await waitFor(() =>
       expect(services.createAtendimento).toHaveBeenCalledWith(
         expect.objectContaining({
           valorGlosa: 150,
-          motivoGlosa: "Divergência contratual",
+          motivoGlosa: 'Divergência contratual',
         }),
-        "token",
+        'token',
       ),
     );
   });
 
-  it("permite editar e excluir um atendimento", async () => {
+  it('permite editar e excluir um atendimento', async () => {
     renderPage();
-    await screen.findByText("Paciente Teste");
+    await screen.findByText('Paciente Teste');
 
-    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-    expect(screen.getByLabelText("Paciente")).toHaveValue("1");
-    fireEvent.change(screen.getByLabelText("Autorização"), {
-      target: { value: "AUT-EDITADA" },
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    expect(screen.getByLabelText('Paciente')).toHaveValue('1');
+    fireEvent.change(screen.getByLabelText('Autorização'), {
+      target: { value: 'AUT-EDITADA' },
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Atualizar atendimento" }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar atendimento' }));
     await waitFor(() =>
       expect(services.updateAtendimento).toHaveBeenCalledWith(
         1,
-        expect.objectContaining({ numeroAutorizacao: "AUT-EDITADA" }),
-        "token",
+        expect.objectContaining({ numeroAutorizacao: 'AUT-EDITADA' }),
+        'token',
       ),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Confirmar" }),
-    );
-    await waitFor(() =>
-      expect(services.deleteAtendimento).toHaveBeenCalledWith(1, "token"),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
+    await waitFor(() => expect(services.deleteAtendimento).toHaveBeenCalledWith(1, 'token'));
   });
 
-  it("limpa os campos depois de cadastrar um atendimento com sucesso", async () => {
+  it('limpa os campos depois de cadastrar um atendimento com sucesso', async () => {
     vi.mocked(services.getCbhpmGeral).mockResolvedValue({
       items: [
         {
           id: 1,
-          codigo: "123",
-          procedimento: "Cirurgia",
-          porte: "8A",
+          codigo: '123',
+          procedimento: 'Cirurgia',
+          porte: '8A',
           valorReferencia: 1000,
         },
       ],
@@ -244,45 +232,43 @@ describe("BillingPage", () => {
       totalPages: 1,
     });
     renderPage();
-    await screen.findByText("Paciente Teste");
-    fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
-    fireEvent.change(screen.getByLabelText("Paciente"), {
-      target: { value: "1" },
+    await screen.findByText('Paciente Teste');
+    fireEvent.click(screen.getByRole('button', { name: /Novo atendimento/i }));
+    fireEvent.change(screen.getByLabelText('Paciente'), {
+      target: { value: '1' },
     });
-    fireEvent.change(screen.getByLabelText("Data da cirurgia"), {
-      target: { value: "2026-07-10" },
+    fireEvent.change(screen.getByLabelText('Data da cirurgia'), {
+      target: { value: '2026-07-10' },
     });
-    fireEvent.change(screen.getByLabelText("Diagnóstico"), {
-      target: { value: "Diagnóstico anterior" },
+    fireEvent.change(screen.getByLabelText('Diagnóstico'), {
+      target: { value: 'Diagnóstico anterior' },
     });
-    fireEvent.change(screen.getByLabelText("Médico responsável"), {
-      target: { value: "2" },
+    fireEvent.change(screen.getByLabelText('Médico responsável'), {
+      target: { value: '2' },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Salvar atendimento" }));
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar CBHPM' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar atendimento' }));
 
-    await waitFor(() =>
-      expect(screen.queryByLabelText("Paciente")).not.toBeInTheDocument(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: /Novo atendimento/i }));
+    await waitFor(() => expect(screen.queryByLabelText('Paciente')).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Novo atendimento/i }));
 
-    expect(screen.getByLabelText("Paciente")).toHaveValue("");
-    expect(screen.getByLabelText("Data da cirurgia")).toHaveValue("");
-    expect(screen.getByLabelText("Diagnóstico")).toHaveValue("");
-    expect(screen.queryByText("Cirurgia")).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Paciente')).toHaveValue('');
+    expect(screen.getByLabelText('Data da cirurgia')).toHaveValue('');
+    expect(screen.getByLabelText('Diagnóstico')).toHaveValue('');
+    expect(screen.queryByText('Cirurgia')).not.toBeInTheDocument();
   });
 
-  it("remove automaticamente a mensagem de sucesso", async () => {
+  it('remove automaticamente a mensagem de sucesso', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       vi.mocked(services.getCbhpmGeral).mockResolvedValue({
         items: [
           {
             id: 1,
-            codigo: "123",
-            procedimento: "Cirurgia",
-            porte: "8A",
+            codigo: '123',
+            procedimento: 'Cirurgia',
+            porte: '8A',
             valorReferencia: 1000,
           },
         ],
@@ -292,27 +278,23 @@ describe("BillingPage", () => {
         totalPages: 1,
       });
       renderPage();
-      await screen.findByText("Paciente Teste");
-      fireEvent.click(
-        screen.getByRole("button", { name: /Novo atendimento/i }),
-      );
-      fireEvent.change(screen.getByLabelText("Paciente"), {
-        target: { value: "1" },
+      await screen.findByText('Paciente Teste');
+      fireEvent.click(screen.getByRole('button', { name: /Novo atendimento/i }));
+      fireEvent.change(screen.getByLabelText('Paciente'), {
+        target: { value: '1' },
       });
-      fireEvent.change(screen.getByLabelText("Data da cirurgia"), {
-        target: { value: "2026-07-10" },
+      fireEvent.change(screen.getByLabelText('Data da cirurgia'), {
+        target: { value: '2026-07-10' },
       });
-      fireEvent.change(screen.getByLabelText("Médico responsável"), {
-        target: { value: "2" },
+      fireEvent.change(screen.getByLabelText('Médico responsável'), {
+        target: { value: '2' },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Consultar CBHPM" }));
-      fireEvent.click(await screen.findByRole("button", { name: "Adicionar" }));
-      fireEvent.click(
-        screen.getByRole("button", { name: "Salvar atendimento" }),
-      );
+      fireEvent.click(screen.getByRole('button', { name: 'Consultar CBHPM' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Adicionar' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Salvar atendimento' }));
 
       expect(
-        await screen.findByText("Atendimento criado com snapshot de preço."),
+        await screen.findByText('Atendimento criado com snapshot de preço.'),
       ).toBeInTheDocument();
       await act(async () => {
         await Promise.resolve();
@@ -321,11 +303,10 @@ describe("BillingPage", () => {
         vi.advanceTimersByTime(10001);
       });
       expect(
-        screen.queryByText("Atendimento criado com snapshot de preço."),
+        screen.queryByText('Atendimento criado com snapshot de preço.'),
       ).not.toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }
   });
-
 });

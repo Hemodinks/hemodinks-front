@@ -2,13 +2,15 @@ import { act, render, screen } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoadingOverlay } from '../shared/components/LoadingOverlay';
+import { GlobalActivityProvider } from '../shared/activity/GlobalActivityProvider';
 import { apiClient, get, post } from './api';
 import {
-  beginQueryActivity,
-  getQueryActivitySnapshot,
-  resetQueryActivityForTests,
-  subscribeToQueryActivity,
-} from './queryActivity';
+  beginGlobalActivity,
+  getGlobalActivitySnapshot,
+  resetGlobalActivityForTests,
+  subscribeToGlobalActivity,
+  withGlobalActivity,
+} from './globalActivity';
 
 function axiosResponse<T>(data: T): AxiosResponse<T> {
   return {
@@ -20,29 +22,29 @@ function axiosResponse<T>(data: T): AxiosResponse<T> {
   };
 }
 
-describe('query activity', () => {
+describe('global activity', () => {
   beforeEach(() => {
-    resetQueryActivityForTests();
+    resetGlobalActivityForTests();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     vi.useRealTimers();
-    resetQueryActivityForTests();
+    act(() => resetGlobalActivityForTests());
   });
 
   it('mantém o estado ativo enquanto houver consultas simultâneas', () => {
     const listener = vi.fn();
-    const unsubscribe = subscribeToQueryActivity(listener);
-    const finishFirst = beginQueryActivity();
-    const finishSecond = beginQueryActivity();
+    const unsubscribe = subscribeToGlobalActivity(listener);
+    const finishFirst = beginGlobalActivity({ kind: 'query' });
+    const finishSecond = beginGlobalActivity({ kind: 'query' });
 
-    expect(getQueryActivitySnapshot()).toBe(true);
+    expect(getGlobalActivitySnapshot().foreground).not.toBeNull();
     finishFirst();
-    expect(getQueryActivitySnapshot()).toBe(true);
+    expect(getGlobalActivitySnapshot().foreground).not.toBeNull();
     finishFirst();
     finishSecond();
-    expect(getQueryActivitySnapshot()).toBe(false);
+    expect(getGlobalActivitySnapshot().foreground).toBeNull();
     expect(listener).toHaveBeenCalledTimes(4);
     unsubscribe();
   });
@@ -50,39 +52,72 @@ describe('query activity', () => {
   it('rastreia GET e sempre encerra o loading após sucesso ou erro', async () => {
     let resolveRequest: ((response: AxiosResponse) => void) | undefined;
     vi.spyOn(apiClient, 'request').mockImplementationOnce(
-      () => new Promise((resolve) => {
-        resolveRequest = resolve;
-      }),
+      () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve;
+        }),
     );
 
     const request = get('/api/test');
-    expect(getQueryActivitySnapshot()).toBe(true);
+    expect(getGlobalActivitySnapshot().foreground).not.toBeNull();
     resolveRequest?.(axiosResponse({ ok: true }));
     await expect(request).resolves.toEqual({ ok: true });
-    expect(getQueryActivitySnapshot()).toBe(false);
+    expect(getGlobalActivitySnapshot().foreground).toBeNull();
 
     vi.spyOn(apiClient, 'request').mockRejectedValueOnce(new AxiosError('Falha'));
     const failedRequest = get('/api/test');
-    expect(getQueryActivitySnapshot()).toBe(true);
+    expect(getGlobalActivitySnapshot().foreground).not.toBeNull();
     await expect(failedRequest).rejects.toThrow('Falha');
-    expect(getQueryActivitySnapshot()).toBe(false);
+    expect(getGlobalActivitySnapshot().foreground).toBeNull();
   });
 
-  it('não ativa o indicador global para mutações', async () => {
+  it('identifica mutações como gravações no indicador global', async () => {
     vi.spyOn(apiClient, 'request').mockResolvedValueOnce(axiosResponse({ id: 1 }));
     const request = post('/api/test', { nome: 'Teste' });
 
-    expect(getQueryActivitySnapshot()).toBe(false);
+    expect(getGlobalActivitySnapshot().foreground).toMatchObject({
+      kind: 'save',
+      eyebrow: 'Salvando',
+      message: 'Gravando alterações...',
+    });
     await expect(request).resolves.toEqual({ id: 1 });
+    expect(getGlobalActivitySnapshot().foreground).toBeNull();
+  });
+
+  it('diferencia atualização em segundo plano e encerra operações longas', async () => {
+    const finishBackground = beginGlobalActivity({
+      kind: 'query',
+      presentation: 'background',
+    });
+    expect(getGlobalActivitySnapshot()).toMatchObject({
+      foreground: null,
+      backgroundCount: 1,
+    });
+    finishBackground();
+
+    await expect(
+      withGlobalActivity({ kind: 'export' }, async () => {
+        expect(getGlobalActivitySnapshot().foreground).toMatchObject({
+          eyebrow: 'Exportando',
+          message: 'Preparando arquivo...',
+        });
+        return 'arquivo';
+      }),
+    ).resolves.toBe('arquivo');
+    expect(getGlobalActivitySnapshot().foreground).toBeNull();
   });
 
   it('evita piscar em consultas rápidas e mantém tempo mínimo quando exibido', () => {
     vi.useFakeTimers();
-    render(<LoadingOverlay active={false} />);
+    render(
+      <GlobalActivityProvider>
+        <LoadingOverlay active={false} />
+      </GlobalActivityProvider>,
+    );
 
     let finishQuery: (() => void) | undefined;
     act(() => {
-      finishQuery = beginQueryActivity();
+      finishQuery = beginGlobalActivity({ kind: 'query' });
     });
     act(() => {
       vi.advanceTimersByTime(179);

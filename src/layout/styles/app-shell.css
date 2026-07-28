@@ -24,16 +24,14 @@
   --app-layout-max-width: 1440px;
   --app-layout-gutter: clamp(24px, 5vw, 56px);
   background-color: var(--background);
-  background-image:
-    var(--app-overlay),
-    url("/imagem candidata hemodinks.jpg");
+  background-image: var(--app-overlay), url('/imagem candidata hemodinks.jpg');
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   background-attachment: fixed;
 }
 
-:root[data-theme="dark"] .app-shell {
+:root[data-theme='dark'] .app-shell {
   --ink: #eef6ff;
   --muted: #b8c6d8;
   --line: rgba(104, 151, 205, 0.34);

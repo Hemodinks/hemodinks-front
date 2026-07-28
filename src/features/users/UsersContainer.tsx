@@ -1,6 +1,6 @@
-import type { ModuleMode } from "../../appTypes";
-import { UsersPage } from "./UsersPage";
-import type { UsersDomainState } from "./useUsersDomain";
+import type { ModuleMode } from '../../appTypes';
+import { UsersPage } from './UsersPage';
+import type { UsersDomainState } from './useUsersDomain';
 
 type UsersContainerProps = {
   moduleMode: ModuleMode;

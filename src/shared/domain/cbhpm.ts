@@ -1,12 +1,10 @@
-import type { Paciente, PacienteProcedimento } from "../../types";
+import type { PatientProcedureSource, ProcedureReference } from './medicalContracts';
 
 export function normalizeCbhpmCodigo(value?: string | null) {
-  return value?.replace(/\D/g, "") ?? "";
+  return value?.replace(/\D/g, '') ?? '';
 }
 
-export function normalizePacienteProcedimentos(
-  procedimentos: PacienteProcedimento[],
-) {
+export function normalizePacienteProcedimentos(procedimentos: ProcedureReference[]) {
   const seen = new Set<string>();
 
   return procedimentos
@@ -20,14 +18,14 @@ export function normalizePacienteProcedimentos(
     .filter((item) => {
       const key = item.cbhpmCodigo
         ? `codigo:${item.cbhpmCodigo}`
-        : `livre:${item.procedimento}:${item.cbhpmPorte || ""}`;
+        : `livre:${item.procedimento}:${item.cbhpmPorte || ''}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
 }
 
-export function getPacienteProcedimentosFromPaciente(paciente: Paciente) {
+export function getPacienteProcedimentosFromPaciente(paciente: PatientProcedureSource) {
   return normalizePacienteProcedimentos(
     paciente.procedimentos?.length
       ? paciente.procedimentos
@@ -35,7 +33,7 @@ export function getPacienteProcedimentosFromPaciente(paciente: Paciente) {
           {
             cbhpmCodigo: paciente.cbhpmCodigo,
             cbhpmPorte: paciente.cbhpmPorte,
-            procedimento: paciente.procedimento || "",
+            procedimento: paciente.procedimento || '',
           },
         ],
   );

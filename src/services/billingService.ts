@@ -1,4 +1,5 @@
-import type { Paciente, PacienteListQuery, PagedResult } from '../types';
+import type { Paciente, PacienteListQuery } from '../features/patients/patientTypes';
+import type { PagedResult } from '../shared/domain/apiTypes';
 import { get } from './api';
 import { buildListQueryParams } from './queryParams';
 

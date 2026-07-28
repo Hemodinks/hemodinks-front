@@ -1,13 +1,8 @@
-import type { FormEvent } from "react";
-import type { AuthSession, ConvenioProcedimentoPreco } from "../../types";
-import type {
-  RunBillingAction,
-  SetConfirmAction,
-} from "./billingWorkflowTypes";
-import {
-  createInitialPriceForm,
-  type useProcedurePrices,
-} from "./useProcedurePrices";
+import type { FormEvent } from 'react';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { ConvenioProcedimentoPreco } from './billingDomainTypes';
+import type { RunBillingAction, SetConfirmAction } from './billingWorkflowTypes';
+import { createInitialPriceForm, type useProcedurePrices } from './useProcedurePrices';
 
 type PriceState = ReturnType<typeof useProcedurePrices>;
 
@@ -18,12 +13,7 @@ type PriceWorkflowOptions = {
   setConfirmAction: SetConfirmAction;
 };
 
-export function usePriceWorkflow({
-  session,
-  prices,
-  run,
-  setConfirmAction,
-}: PriceWorkflowOptions) {
+export function usePriceWorkflow({ session, prices, run, setConfirmAction }: PriceWorkflowOptions) {
   const {
     deactivateProcedurePrice,
     editingPriceId,
@@ -54,9 +44,7 @@ export function usePriceWorkflow({
     };
     const completed = await run(
       () => saveProcedurePrice(editingPriceId, payload, session.token),
-      editingPriceId
-        ? "Preço negociado atualizado."
-        : "Preço negociado salvo com vigência.",
+      editingPriceId ? 'Preço negociado atualizado.' : 'Preço negociado salvo com vigência.',
     );
     if (completed) resetForm();
   };
@@ -71,16 +59,16 @@ export function usePriceWorkflow({
       percentualAuxiliar1: String(item.percentualAuxiliar1),
       percentualAuxiliar2: String(item.percentualAuxiliar2),
       vigenciaInicio: item.vigenciaInicio.slice(0, 10),
-      vigenciaFinal: item.vigenciaFinal?.slice(0, 10) || "",
+      vigenciaFinal: item.vigenciaFinal?.slice(0, 10) || '',
     });
   };
 
   const confirmDeactivate = (item: ConvenioProcedimentoPreco) => {
     setConfirmAction({
-      title: "Desativar preço",
+      title: 'Desativar preço',
       message: `Desativar o preço ${item.cbhpmCodigo}? O histórico será preservado.`,
       action: () => deactivateProcedurePrice(item.id, session.token),
-      success: "Preço desativado.",
+      success: 'Preço desativado.',
     });
   };
 

@@ -139,39 +139,37 @@ const billingAttendance = {
   ],
 };
 
-const billingRecords = ['Enviado', 'Aprovado', 'ProntoParaEnvio'].map(
-  (status, index) => ({
-    id: 50 + index,
-    atendimentoCirurgicoId: billingAttendance.id,
-    pacienteId: paciente.id,
-    paciente: `Paciente faturamento ${index + 1}`,
-    convenioId: 7,
-    numeroGuia: `GUIA-${index + 1}`,
-    competencia: '2026-07-01',
-    valorApresentado: 120,
-    valorGlosado: 0,
-    valorGlosaRecuperada: 0,
-    valorReconhecido: 120,
-    status,
-    rowVersion: '',
-    itens: [
-      {
-        id: 501 + index,
-        codigo: '1.01.01.01-2',
-        descricao: 'Consulta',
-        quantidade: 1,
-        pesoPercentual: 100,
-        valorUnitario: 120,
-        valorApresentado: 120,
-        valorGlosado: 0,
-        valorAprovado: 120,
-        status: 'Aprovado',
-        ordem: 1,
-      },
-    ],
-    glosas: [],
-  }),
-);
+const billingRecords = ['Enviado', 'Aprovado', 'ProntoParaEnvio'].map((status, index) => ({
+  id: 50 + index,
+  atendimentoCirurgicoId: billingAttendance.id,
+  pacienteId: paciente.id,
+  paciente: `Paciente faturamento ${index + 1}`,
+  convenioId: 7,
+  numeroGuia: `GUIA-${index + 1}`,
+  competencia: '2026-07-01',
+  valorApresentado: 120,
+  valorGlosado: 0,
+  valorGlosaRecuperada: 0,
+  valorReconhecido: 120,
+  status,
+  rowVersion: '',
+  itens: [
+    {
+      id: 501 + index,
+      codigo: '1.01.01.01-2',
+      descricao: 'Consulta',
+      quantidade: 1,
+      pesoPercentual: 100,
+      valorUnitario: 120,
+      valorApresentado: 120,
+      valorGlosado: 0,
+      valorAprovado: 120,
+      status: 'Aprovado',
+      ordem: 1,
+    },
+  ],
+  glosas: [],
+}));
 
 const financeAccount = {
   id: 60,
@@ -300,7 +298,9 @@ function buildAgendaEventFromPayload(id: number, payload: Payload) {
     end: String(payload.end ?? agendaEvent.end),
     notifyMedicalProfile: Boolean(payload.notifyMedicalProfile),
     notifyUser: Boolean(payload.notifyUser),
-    reminderPeriodMinutes: Number(payload.reminderPeriodMinutes ?? agendaEvent.reminderPeriodMinutes),
+    reminderPeriodMinutes: Number(
+      payload.reminderPeriodMinutes ?? agendaEvent.reminderPeriodMinutes,
+    ),
   };
 }
 
@@ -502,13 +502,15 @@ async function mockApi(page: Page, loginSession = session) {
         json: {
           canNotifyAllAllowedRecipients: true,
           allRecipientsLabel: 'Todos os destinatarios disponiveis',
-          users: [{
-            id: user.id,
-            nome: user.nome,
-            email: user.email,
-            perfilId: user.perfilId,
-            perfilNome: user.perfilNome,
-          }],
+          users: [
+            {
+              id: user.id,
+              nome: user.nome,
+              email: user.email,
+              perfilId: user.perfilId,
+              perfilNome: user.perfilNome,
+            },
+          ],
           groups: [],
         },
       });
@@ -548,15 +550,29 @@ async function mockApi(page: Page, loginSession = session) {
 }
 
 async function expectNoGlobalHorizontalOverflow(page: Page) {
-  await expect(page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).resolves.toBe(true);
+  await expect(
+    page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
+  ).resolves.toBe(true);
 }
 
-async function expectTableRowVisible(page: Page, tableSelector: string, rowText: string, loadingText: string) {
+async function expectTableRowVisible(
+  page: Page,
+  tableSelector: string,
+  rowText: string,
+  loadingText: string,
+) {
   await expect(page.getByText(loadingText)).toHaveCount(0);
-  await expect(page.locator(`${tableSelector} tbody tr`, { hasText: rowText }).first()).toBeVisible();
+  await expect(
+    page.locator(`${tableSelector} tbody tr`, { hasText: rowText }).first(),
+  ).toBeVisible();
 }
 
-async function captureRouteScreenshot(page: Page, testInfo: TestInfo, route: string, width: number) {
+async function captureRouteScreenshot(
+  page: Page,
+  testInfo: TestInfo,
+  route: string,
+  width: number,
+) {
   await page.setViewportSize({ width, height: width < 600 ? 860 : 900 });
   await loginViaUi(page, route);
   if (route === '/financeiro') {
@@ -566,11 +582,19 @@ async function captureRouteScreenshot(page: Page, testInfo: TestInfo, route: str
     await expect(page.locator('.billing-flow-table')).toBeVisible();
   }
   await expect(page.getByText('Carregando módulo...')).toHaveCount(0);
-  await page.screenshot({ path: testInfo.outputPath(`${route.replace('/', '') || 'home'}-${width}.png`), fullPage: true });
+  await page.screenshot({
+    path: testInfo.outputPath(`${route.replace('/', '') || 'home'}-${width}.png`),
+    fullPage: true,
+  });
   await expectNoGlobalHorizontalOverflow(page);
 }
 
-async function captureCurrentScreenshot(page: Page, testInfo: TestInfo, name: string, width: number) {
+async function captureCurrentScreenshot(
+  page: Page,
+  testInfo: TestInfo,
+  name: string,
+  width: number,
+) {
   await page.setViewportSize({ width, height: width < 600 ? 860 : 900 });
   await page.screenshot({ path: testInfo.outputPath(`${name}-${width}.png`), fullPage: true });
   await expectNoGlobalHorizontalOverflow(page);
@@ -604,10 +628,17 @@ test('navega pelos fluxos principais autenticados', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible();
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
 
-  await page.getByLabel('Sessão ativa').getByRole('button', { name: /agenda/i }).click();
+  await page
+    .getByLabel('Sessão ativa')
+    .getByRole('button', { name: /agenda/i })
+    .click();
   await expect(page).toHaveURL(/\/agenda$/);
-  await expect(page.getByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeVisible();
-  const openNewEventButton = page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' });
+  await expect(
+    page.getByRole('heading', { name: 'Agenda e notificações', level: 1 }),
+  ).toBeVisible();
+  const openNewEventButton = page
+    .locator('.agenda-tools')
+    .getByRole('button', { name: 'Novo evento' });
   await expect(openNewEventButton).toBeVisible();
   await openNewEventButton.click();
   await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
@@ -620,7 +651,9 @@ test('mantem telas criticas sem overflow horizontal no mobile', async ({ page })
     await page.setViewportSize({ width, height: 860 });
 
     await loginViaUi(page, '/agenda');
-    await expect(page.getByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Agenda e notificações', level: 1 }),
+    ).toBeVisible();
     await expect(page.locator('.agenda-calendar')).toBeVisible();
     await expectNoGlobalHorizontalOverflow(page);
 
@@ -630,16 +663,12 @@ test('mantem telas criticas sem overflow horizontal no mobile', async ({ page })
     await expectNoGlobalHorizontalOverflow(page);
 
     await loginViaUi(page, '/financeiro');
-    await expect(
-      page.getByRole('heading', { name: 'Financeiro', level: 1 }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Financeiro', level: 1 })).toBeVisible();
     await expect(page.locator('.billing-receipt-actions')).toBeVisible();
     await expectNoGlobalHorizontalOverflow(page);
 
     await loginViaUi(page, '/faturamento-medico');
-    await expect(
-      page.getByRole('heading', { name: 'Faturamento', level: 1 }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Faturamento', level: 1 })).toBeVisible();
     await expect(page.locator('.billing-flow-table')).toBeVisible();
     await expectNoGlobalHorizontalOverflow(page);
   }
@@ -706,7 +735,12 @@ test('cadastra e edita paciente usando o fluxo real do formulario', async ({ pag
   await page.getByLabel('Nome completo').fill('Paciente Editado');
   await page.getByRole('button', { name: 'Salvar paciente' }).click();
   await expect(page.getByText('Paciente atualizado.')).toBeVisible();
-  await expectTableRowVisible(page, '.patients-table', 'Paciente Editado', 'Carregando pacientes...');
+  await expectTableRowVisible(
+    page,
+    '.patients-table',
+    'Paciente Editado',
+    'Carregando pacientes...',
+  );
   expect(apiState.updatedPacientePayload).toMatchObject({
     nomePaciente: 'Paciente Editado',
     cpf: paciente.cpf,
@@ -721,7 +755,9 @@ test('cadastra evento na agenda', async ({ page }) => {
   const end = new Date(start.getTime() + 60 * 60 * 1000);
 
   await loginViaUi(page, '/agenda');
-  await expect(page.getByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Agenda e notificações', level: 1 }),
+  ).toBeVisible();
   await page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' }).click();
   await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
   await page.getByLabel('Título').fill('Evento E2E');
@@ -772,26 +808,27 @@ test('nao apresenta violacoes serias de acessibilidade nas rotas principais', as
     await loginViaUi(page, route);
     await expect(page.locator('main, .app-shell, .login-shell').first()).toBeVisible();
 
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze();
-    const blockingViolations = results.violations.filter((violation) => (
-      violation.impact === 'serious' || violation.impact === 'critical'
-    ));
+    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+    const blockingViolations = results.violations.filter(
+      (violation) => violation.impact === 'serious' || violation.impact === 'critical',
+    );
 
-    expect(blockingViolations, `${route}: ${blockingViolations.map((item) => item.id).join(', ')}`).toEqual([]);
+    expect(
+      blockingViolations,
+      `${route}: ${blockingViolations.map((item) => item.id).join(', ')}`,
+    ).toEqual([]);
   }
 });
 
-test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip', async ({ page }, testInfo) => {
+test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip', async ({
+  page,
+}, testInfo) => {
   await mockApi(page);
   await page.setViewportSize({ width: 1280, height: 800 });
 
   await loginViaUi(page, '/financeiro');
 
-  const receiptFileAction = page.locator(
-    '.billing-receipt-upload .file-action',
-  );
+  const receiptFileAction = page.locator('.billing-receipt-upload .file-action');
   await expect(receiptFileAction).toBeVisible();
   const receiptFormatWidth = await page
     .locator('.billing-receipt-format')
@@ -810,12 +847,8 @@ test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip
       textOverflow: text ? getComputedStyle(text).textOverflow : '',
     };
   });
-  expect(receiptFileLayout.textLeft).toBeGreaterThanOrEqual(
-    receiptFileLayout.buttonLeft,
-  );
-  expect(receiptFileLayout.textRight).toBeLessThanOrEqual(
-    receiptFileLayout.buttonRight,
-  );
+  expect(receiptFileLayout.textLeft).toBeGreaterThanOrEqual(receiptFileLayout.buttonLeft);
+  expect(receiptFileLayout.textRight).toBeLessThanOrEqual(receiptFileLayout.buttonRight);
   expect(receiptFileLayout.textOverflow).toBe('ellipsis');
 
   const financeTutorial = page.getByRole('complementary', {
@@ -823,18 +856,12 @@ test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip
   });
   await expect(financeTutorial.locator('.tutorial-section.is-open')).toBeVisible();
   const moduleColors = await page.evaluate(() => {
-    const tutorial = document.querySelector(
-      '[data-tutorial-view="finance"]',
-    ) as HTMLElement | null;
-    const activeMenu = document.querySelector(
-      '.side-nav-billing.active',
-    ) as HTMLElement | null;
+    const tutorial = document.querySelector('[data-tutorial-view="finance"]') as HTMLElement | null;
+    const activeMenu = document.querySelector('.side-nav-billing.active') as HTMLElement | null;
 
     return {
       tutorial: tutorial
-        ? getComputedStyle(tutorial)
-            .getPropertyValue('--tutorial-module-color')
-            .trim()
+        ? getComputedStyle(tutorial).getPropertyValue('--tutorial-module-color').trim()
         : '',
       menu: activeMenu
         ? getComputedStyle(activeMenu).getPropertyValue('--side-nav-color').trim()
@@ -868,16 +895,12 @@ test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip
     name: 'Fechar detalhes da conta',
   });
   await closeAccount.hover();
-  await expect(page.getByRole('tooltip')).toHaveText(
-    'Fechar detalhes da conta',
-  );
+  await expect(page.getByRole('tooltip')).toHaveText('Fechar detalhes da conta');
   await closeAccount.click();
 
   await loginViaUi(page, '/tabela-de-precos');
   const priceActions = page.locator('.billing-status-actions-column').last();
-  await expect(
-    priceActions.getByRole('button', { name: 'Editar preço' }),
-  ).toBeVisible();
+  await expect(priceActions.getByRole('button', { name: 'Editar preço' })).toBeVisible();
   await expect(
     priceActions.getByRole('button', {
       name: `Desativar preço ${negotiatedPrice.cbhpmCodigo}`,
@@ -890,25 +913,19 @@ test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip
   });
 
   await loginViaUi(page, '/faturamento-medico');
-  const billingFlowWrap = page.locator(
-    '.billing-flow-table',
-  ).locator('..');
+  const billingFlowWrap = page.locator('.billing-flow-table').locator('..');
   const billingFlowDimensions = await billingFlowWrap.evaluate((element) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth,
   }));
-  expect(billingFlowDimensions.scrollWidth).toBeGreaterThan(
-    billingFlowDimensions.clientWidth,
-  );
+  expect(billingFlowDimensions.scrollWidth).toBeGreaterThan(billingFlowDimensions.clientWidth);
   const billingActions = page.locator('tbody .billing-actions-column');
   await expect(
     billingActions.first().getByRole('button', { name: 'Registrar retorno' }),
   ).toBeVisible();
   await expect(billingActions.locator('.ghost-button')).toHaveCount(0);
 
-  const returnAction = billingActions
-    .first()
-    .getByRole('button', { name: 'Registrar retorno' });
+  const returnAction = billingActions.first().getByRole('button', { name: 'Registrar retorno' });
   await returnAction.hover();
   await expect(page.getByRole('tooltip')).toHaveText('Registrar retorno');
   await page.screenshot({
@@ -917,7 +934,9 @@ test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip
   });
 });
 
-test('gera evidencias visuais desktop e mobile das telas principais', async ({ page }, testInfo) => {
+test('gera evidencias visuais desktop e mobile das telas principais', async ({
+  page,
+}, testInfo) => {
   await mockApi(page);
 
   for (const width of [390, 1440]) {

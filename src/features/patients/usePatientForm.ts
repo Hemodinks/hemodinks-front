@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Paciente, PacienteFormData } from '../../types';
+import type { Paciente, PacienteFormData } from './patientTypes';
 import { emptyPacienteForm, getPacienteFormData } from './patientUtils';
 
 export function usePatientForm(pacientes: Paciente[]) {
@@ -12,7 +12,10 @@ export function usePatientForm(pacientes: Paciente[]) {
   const [pendingPatientFiles, setPendingPatientFiles] = useState<File[]>([]);
 
   const editingPaciente = useMemo(
-    () => editingPacienteDetails ?? pacientes.find((paciente) => paciente.id === editingPacienteId) ?? null,
+    () =>
+      editingPacienteDetails ??
+      pacientes.find((paciente) => paciente.id === editingPacienteId) ??
+      null,
     [editingPacienteDetails, editingPacienteId, pacientes],
   );
 

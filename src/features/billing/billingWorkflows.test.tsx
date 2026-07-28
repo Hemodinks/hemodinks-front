@@ -23,16 +23,18 @@ describe('billing workflow hooks', () => {
       setProcedimentos: vi.fn(),
       setShowForm: vi.fn(),
     } as never;
-    const { result } = renderHook(() => useAttendanceWorkflow({
-      session,
-      isMedical: true,
-      convenios: [],
-      opmeFornecedores: [],
-      attendance,
-      run,
-      setError,
-      setConfirmAction: vi.fn(),
-    }));
+    const { result } = renderHook(() =>
+      useAttendanceWorkflow({
+        session,
+        isMedical: true,
+        convenios: [],
+        opmeFornecedores: [],
+        attendance,
+        run,
+        setError,
+        setConfirmAction: vi.fn(),
+      }),
+    );
 
     result.current.submit(event());
 
@@ -60,22 +62,26 @@ describe('billing workflow hooks', () => {
       setSelectedBilling: vi.fn(),
       removeInvoice,
     } as never;
-    const { result } = renderHook(() => useInvoicingWorkflow({
-      session,
-      invoicing,
-      run: vi.fn(),
-      setConfirmAction,
-      setShowForm: vi.fn(),
-    }));
+    const { result } = renderHook(() =>
+      useInvoicingWorkflow({
+        session,
+        invoicing,
+        run: vi.fn(),
+        setConfirmAction,
+        setShowForm: vi.fn(),
+      }),
+    );
 
     result.current.edit(invoice);
     result.current.confirmDelete(invoice);
 
-    expect(setFaturamentoForm).toHaveBeenCalledWith(expect.objectContaining({
-      atendimentoCirurgicoId: '2',
-      competencia: '2026-07',
-      numeroGuia: 'GUIA',
-    }));
+    expect(setFaturamentoForm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        atendimentoCirurgicoId: '2',
+        competencia: '2026-07',
+        numeroGuia: 'GUIA',
+      }),
+    );
     const confirmation = setConfirmAction.mock.calls[0][0];
     confirmation.action();
     expect(removeInvoice).toHaveBeenCalledWith(4, 'token');
@@ -109,21 +115,25 @@ describe('billing workflow hooks', () => {
       setFinancePage,
       setFinanceiroResumo,
     } as never;
-    const { result } = renderHook(() => useReceivablesWorkflow({
-      session,
-      receivables,
-      run: vi.fn(),
-      setLoading: vi.fn(),
-      setError: vi.fn(),
-    }));
+    const { result } = renderHook(() =>
+      useReceivablesWorkflow({
+        session,
+        receivables,
+        run: vi.fn(),
+        setError: vi.fn(),
+      }),
+    );
 
     await act(() => result.current.applyFilters(2));
 
-    expect(searchReceivables).toHaveBeenCalledWith(expect.objectContaining({
-      page: 2,
-      termo: 'Ana',
-      status: 'Aberto',
-    }), 'token');
+    expect(searchReceivables).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page: 2,
+        termo: 'Ana',
+        status: 'Aberto',
+      }),
+      'token',
+    );
     expect(setContas).toHaveBeenCalledWith([{ id: 1 }]);
     expect(setFinancePage).toHaveBeenCalledWith({ page: 2, totalPages: 3, totalItems: 21 });
     expect(setFinanceiroResumo).toHaveBeenCalledWith({ saldoAberto: 50 });
@@ -153,12 +163,14 @@ describe('billing workflow hooks', () => {
       setEditingPriceId,
       setPrice,
     } as never;
-    const { result } = renderHook(() => usePriceWorkflow({
-      session,
-      prices,
-      run,
-      setConfirmAction: vi.fn(),
-    }));
+    const { result } = renderHook(() =>
+      usePriceWorkflow({
+        session,
+        prices,
+        run,
+        setConfirmAction: vi.fn(),
+      }),
+    );
 
     await act(() => result.current.submit(event()));
 

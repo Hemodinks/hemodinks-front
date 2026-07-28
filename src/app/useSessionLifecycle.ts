@@ -4,7 +4,7 @@ import { AUTH_EXPIRED_EVENT, getCurrentLicenca, refreshSession } from '../servic
 import { queryClient } from '../queryClient';
 import { MEDICAL_PROFILE_ID } from '../shared/utils/formatters';
 import { getJwtExpirationDelayMs, isJwtExpired } from '../shared/utils/jwt';
-import type { AuthSession } from '../types';
+import type { AuthSession } from '../features/auth/authTypes';
 import {
   isSessionIdle,
   SESSION_IDLE_TIMEOUT_MS,
@@ -148,12 +148,10 @@ export function useSessionLifecycle({
     const refresh = async () => {
       const now = Date.now();
       if (refreshInFlightRef.current) return;
-      if (now < nextRefreshAttemptAtRef.current
-        || !shouldRefreshSession(
-          lastActivityAtRef.current,
-          lastRefreshAtRef.current,
-          now,
-        )) {
+      if (
+        now < nextRefreshAttemptAtRef.current ||
+        !shouldRefreshSession(lastActivityAtRef.current, lastRefreshAtRef.current, now)
+      ) {
         scheduleRefresh(refresh);
         return;
       }
@@ -208,9 +206,8 @@ export function useSessionLifecycle({
       Date.now(),
       SESSION_EXPIRATION_LEEWAY_MS,
     );
-    const timeoutId = expirationDelayMs === null
-      ? null
-      : window.setTimeout(expireSession, expirationDelayMs);
+    const timeoutId =
+      expirationDelayMs === null ? null : window.setTimeout(expireSession, expirationDelayMs);
 
     return () => {
       window.removeEventListener(AUTH_EXPIRED_EVENT, expireSession);

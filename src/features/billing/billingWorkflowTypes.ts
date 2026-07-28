@@ -1,10 +1,6 @@
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from 'react';
 
-export type BillingTab =
-  | "atendimentos"
-  | "faturamento"
-  | "financeiro"
-  | "precos";
+export type BillingTab = 'atendimentos' | 'faturamento' | 'financeiro' | 'precos';
 
 export type BillingFeedback = {
   onSuccess?: (message: string) => void;

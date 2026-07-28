@@ -1,20 +1,8 @@
 import { type Dispatch, type SetStateAction, useEffect } from 'react';
-import type {
-  AppView,
-  ModuleMode,
-} from '../../appTypes';
-import { queryClient } from '../../queryClient';
-import type {
-  AuthSession,
-  CbhpmGeral,
-} from '../../types';
+import type { AppView, ModuleMode } from '../../appTypes';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
-import { queryKeys } from '../../shared/queryKeys';
-import {
-  emptyPacienteFilters,
-  normalizePacienteProcedimentos,
-  withPrimaryProcedimento,
-} from './patientUtils';
+import { emptyPacienteFilters } from './patientUtils';
 import { useCbhpmLookup } from './useCbhpmLookup';
 import { usePatientsDomainQueries } from './usePatientsDomainQueries';
 import { usePatientExport } from './usePatientExport';
@@ -24,6 +12,8 @@ import { usePatientLookups } from './usePatientLookups';
 import { usePatientObservacoes } from './usePatientObservacoes';
 import { usePatientFiles } from './usePatientFiles';
 import { usePatientCommands } from './usePatientCommands';
+import { usePatientDomainActions } from './usePatientDomainActions';
+import { createPatientsDomainState } from './createPatientsDomainState';
 
 type UsePatientsDomainOptions = {
   session: AuthSession | null;
@@ -70,77 +60,21 @@ export function usePatientsDomain({
   const {
     pacientes,
     setPacientes,
-    pacientesLoading,
-    pacientesError,
     setPacientesError,
-    pacienteSuccessMessage,
     setPacienteSuccessMessage,
-    pacienteSearchTerm,
-    setPacienteSearchTerm,
     pacienteFilters,
     setPacienteFilters,
-    debouncedPacienteSearchTerm,
-    debouncedPacienteFilters,
     setDebouncedPacienteFilters,
     pacienteCurrentPage,
     setPacienteCurrentPage,
-    sortBy,
-    setSortBy,
-    sortDirection,
-    setSortDirection,
-    pacientesTotalItems,
-    pacientesTotalPages,
     pacienteTotalPages,
     paginatedPacientes,
-    pacienteVisibleStart,
-    pacienteVisibleEnd,
     resetPatientListState,
   } = patientList;
-  const {
-    pacienteFormData,
-    setPacienteFormData,
-    editingPacienteId,
-    setEditingPacienteDetails,
-    editingPaciente,
-    pacienteFormLoading,
-    pacienteFormError,
-    setPacienteFormError,
-    patientFileInputKey,
-    pendingPatientFiles,
-    resetPacienteForm,
-  } = patientForm;
-  const {
-    medicalUsers,
-    hospitais,
-    hospitaisError,
-    convenios,
-    conveniosError,
-    opmeFornecedores,
-    opmeFornecedoresError,
-    resetPatientLookups,
-  } = patientLookups;
-  const {
-    cbhpmModalOpen,
-    setCbhpmModalOpen,
-    cbhpmItems,
-    cbhpmFilters,
-    setCbhpmFilters,
-    applyCbhpmFiltersNow,
-    cbhpmCurrentPage,
-    setCbhpmCurrentPage,
-    sortBy: cbhpmSortBy,
-    setSortBy: setCbhpmSortBy,
-    sortDirection: cbhpmSortDirection,
-    setSortDirection: setCbhpmSortDirection,
-    cbhpmTotalItems,
-    cbhpmTotalPageCount,
-    cbhpmLoading,
-    cbhpmError,
-    setCbhpmError,
-    cbhpmVisibleStart,
-    cbhpmVisibleEnd,
-    resetCbhpmLookup,
-  } = cbhpmLookup;
+  const { setEditingPacienteDetails, editingPaciente, resetPacienteForm } = patientForm;
+  const { resetPatientLookups } = patientLookups;
+  const { cbhpmCurrentPage, setCbhpmCurrentPage, cbhpmTotalPageCount, resetCbhpmLookup } =
+    cbhpmLookup;
 
   const {
     cbhpmFilterHint,
@@ -205,6 +139,27 @@ export function usePatientsDomain({
     loadDashboardSummary,
     confirmAction,
   });
+  const patientActions = usePatientDomainActions({
+    session,
+    isMedical,
+    canAccessPatients,
+    canCreatePatients,
+    canEditPatients,
+    canConsultCbhpm,
+    patientReadOnly,
+    canSearchCbhpm,
+    patientForm,
+    patientLookups,
+    cbhpmLookup,
+    setPacienteFilters,
+    setPacienteSuccessMessage,
+    setModuleMode,
+    navigateToView,
+    loadMedicalUsers,
+    loadPacientes,
+    loadHospitais,
+    loadOpmeFornecedores,
+  });
 
   const resetPatientsState = () => {
     resetPatientListState();
@@ -213,107 +168,6 @@ export function usePatientsDomain({
     patientObservacoesState.resetPatientObservacoesState();
     resetCbhpmLookup();
     resetPacienteForm();
-  };
-
-  const handleOpenCbhpmModal = () => {
-    if (patientReadOnly || !canEditPatients) {
-      return;
-    }
-
-    setCbhpmModalOpen(true);
-    setCbhpmError('');
-  };
-
-  const handleSelectCbhpm = (procedimento: CbhpmGeral) => {
-    setPacienteFormData((current) => {
-      const nextProcedimentos = normalizePacienteProcedimentos([
-        ...current.procedimentos,
-        {
-          cbhpmCodigo: procedimento.codigo,
-          cbhpmPorte: procedimento.porte || '',
-          procedimento: procedimento.procedimento,
-          valorReferencia: procedimento.valorReferencia ?? null,
-        },
-      ]);
-
-      return withPrimaryProcedimento({
-        ...current,
-        procedimentos: nextProcedimentos,
-      });
-    });
-    setPacienteFormError('');
-    setCbhpmModalOpen(false);
-  };
-
-  const handleRemovePacienteProcedimento = (indexToRemove: number) => {
-    setPacienteFormData((current) => withPrimaryProcedimento({
-      ...current,
-      procedimentos: current.procedimentos.filter((_, index) => index !== indexToRemove),
-    }));
-  };
-
-  const openPatientsList = () => {
-    if (!canAccessPatients) {
-      return;
-    }
-
-    navigateToView('patients');
-    setModuleMode('list');
-  };
-
-  const openNewPacienteForm = () => {
-    if (!canCreatePatients) {
-      return;
-    }
-
-    resetPacienteForm();
-    if (isMedical && session) {
-      setPacienteFormData((current) => ({
-        ...current,
-        medicoUserId: session.user.id,
-        medico: session.user.nome,
-      }));
-    }
-    setPacienteSuccessMessage('');
-    navigateToView('patients');
-    setModuleMode('form');
-
-    if (session) {
-      void loadMedicalUsers(session.token);
-    }
-
-    if (session && !hospitais.length) {
-      void loadHospitais(session.token);
-    }
-
-    if (session && !opmeFornecedores.length) {
-      void loadOpmeFornecedores(session.token);
-    }
-  };
-
-  const closePacienteForm = () => {
-    resetPacienteForm();
-    setModuleMode('list');
-  };
-
-  const clearPacienteFilters = () => {
-    setPacienteFilters(emptyPacienteFilters);
-  };
-
-  const refreshPacientes = () => {
-    if (session) {
-      void loadPacientes(session.token, true);
-    }
-  };
-
-  const refreshCbhpm = () => {
-    applyCbhpmFiltersNow();
-
-    if (!session || !canSearchCbhpm || !canConsultCbhpm) {
-      return;
-    }
-
-    void queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmRoot(session.token) });
   };
 
   useEffect(() => {
@@ -337,112 +191,29 @@ export function usePatientsDomain({
     }
   }, [cbhpmCurrentPage, cbhpmTotalPageCount]);
 
-  return {
-    pacientes,
-    pacientesLoading,
-    pacientesError,
-    pacienteSuccessMessage,
-    pacienteSearchTerm,
-    setPacienteSearchTerm,
-    pacienteExportLoading: patientExport.pacienteExportLoading,
-    pacienteExportScope: patientExport.pacienteExportScope,
-    setPacienteExportScope: patientExport.setPacienteExportScope,
-    pacienteFilters,
-    setPacienteFilters,
-    debouncedPacienteSearchTerm,
-    debouncedPacienteFilters,
-    pacienteCurrentPage,
-    setPacienteCurrentPage,
-    sortBy,
-    setSortBy,
-    sortDirection,
-    setSortDirection,
-    pacientesTotalItems,
-    pacientesTotalPages,
-    pacienteTotalPages,
-    paginatedPacientes,
-    pacienteVisibleStart,
-    pacienteVisibleEnd,
-    pacienteFormData,
-    setPacienteFormData,
-    editingPacienteId,
-    editingPaciente,
-    pacienteFormError,
-    pacienteFormLoading,
-    pendingPatientFiles,
-    patientFileInputKey,
-    selectedPatientInfo: patientFiles.selectedPatientInfo,
-    setSelectedPatientInfo: patientFiles.setSelectedPatientInfo,
-    selectedPatientFiles: patientFiles.selectedPatientFiles,
-    patientFilesModalLoading: patientFiles.patientFilesModalLoading,
-    patientFilesModalError: patientFiles.patientFilesModalError,
-    selectedPatientObservacoes: patientObservacoesState.selectedPatientObservacoes,
-    patientObservacoes: patientObservacoesState.patientObservacoes,
-    patientObservacoesLoading: patientObservacoesState.patientObservacoesLoading,
-    patientObservacoesSaving: patientObservacoesState.patientObservacoesSaving,
-    patientObservacoesError: patientObservacoesState.patientObservacoesError,
-    patientObservationDraft: patientObservacoesState.patientObservationDraft,
-    setPatientObservationDraft: patientObservacoesState.setPatientObservationDraft,
-    patientObservationReplyTo: patientObservacoesState.patientObservationReplyTo,
-    setPatientObservationReplyTo: patientObservacoesState.setPatientObservationReplyTo,
-    medicalUsers,
-    hospitais,
-    hospitaisError,
-    convenios,
-    conveniosError,
-    opmeFornecedores,
-    opmeFornecedoresError,
-    cbhpmModalOpen,
-    setCbhpmModalOpen,
-    cbhpmItems,
-    cbhpmFilters,
-    setCbhpmFilters,
-    cbhpmFilterHint,
+  return createPatientsDomainState({
+    patientList,
+    patientForm,
+    patientLookups,
+    cbhpmLookup,
+    queries: {
+      cbhpmFilterHint,
+      canSearchCbhpm,
+      loadMedicalUsers,
+      loadPacientes,
+      loadCbhpm,
+      loadHospitais,
+      loadConvenios,
+      loadOpmeFornecedores,
+    },
+    patientExport,
+    patientObservacoes: patientObservacoesState,
+    patientFiles,
+    patientCommands,
+    patientActions,
     canConsultCbhpm,
-    canSearchCbhpm,
-    cbhpmLoading,
-    cbhpmError,
-    cbhpmCurrentPage,
-    setCbhpmCurrentPage,
-    cbhpmSortBy,
-    setCbhpmSortBy,
-    cbhpmSortDirection,
-    setCbhpmSortDirection,
-    cbhpmTotalPageCount,
-    cbhpmTotalItems,
-    cbhpmVisibleStart,
-    cbhpmVisibleEnd,
-    loadMedicalUsers,
-    loadPacientes,
-    loadHospitais,
-    loadConvenios,
-    loadOpmeFornecedores,
-    loadCbhpm,
     resetPatientsState,
-    resetPacienteForm,
-    handleEditPaciente: patientCommands.handleEditPaciente,
-    handlePacienteFilesChange: patientFiles.handleFilesChange,
-    removePendingPatientFile: patientFiles.removePendingFile,
-    handleSubmitPaciente: patientCommands.handleSubmitPaciente,
-    handleDeletePaciente: patientCommands.handleDeletePaciente,
-    handleDeletePacienteArquivo: patientFiles.deleteFile,
-    handleOpenPacienteFiles: patientFiles.openFiles,
-    handleOpenPacienteObservacoes: patientObservacoesState.handleOpenPacienteObservacoes,
-    handleOpenPacienteObservacoesById: patientObservacoesState.handleOpenPacienteObservacoesById,
-    handleSubmitPacienteObservacao: patientObservacoesState.handleSubmitPacienteObservacao,
-    handleOpenCbhpmModal,
-    handleSelectCbhpm,
-    handleRemovePacienteProcedimento,
-    handleExportPacientes: patientExport.handleExportPacientes,
-    openPatientsList,
-    openNewPacienteForm,
-    closePacienteForm,
-    clearPacienteFilters,
-    refreshPacientes,
-    refreshCbhpm,
-    closePatientFilesModal: patientFiles.closeFilesModal,
-    closePatientObservacoesModal: patientObservacoesState.closePatientObservacoesModal,
-  };
+  });
 }
 
 export type PatientsDomainState = ReturnType<typeof usePatientsDomain>;

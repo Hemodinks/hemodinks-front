@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import {
   Building2,
   CalendarDays,
@@ -13,10 +13,10 @@ import {
   Tags,
   Wallet,
   Users,
-} from "lucide-react";
-import type { AppView } from "../appTypes";
-import type { AuthSession } from "../types";
-import { UserAvatar } from "../shared/components/UserAvatar";
+} from 'lucide-react';
+import type { AppView } from '../appTypes';
+import type { AuthSession } from '../features/auth/authTypes';
+import { UserAvatar } from '../shared/components/UserAvatar';
 
 type SidebarProps = {
   session: AuthSession;
@@ -83,15 +83,8 @@ export function Sidebar({
   onOpenSettings,
   onOpenClinics,
 }: SidebarProps) {
-  const controladoriaActive = [
-    "attendances",
-    "billing",
-    "finance",
-    "prices",
-  ].includes(activeView);
-  const [controladoriaOpen, setControladoriaOpen] = useState(
-    controladoriaActive,
-  );
+  const controladoriaActive = ['attendances', 'billing', 'finance', 'prices'].includes(activeView);
+  const [controladoriaOpen, setControladoriaOpen] = useState(controladoriaActive);
 
   useEffect(() => {
     if (controladoriaActive) {
@@ -140,8 +133,8 @@ export function Sidebar({
           {canAccessDashboard && (
             <button
               type="button"
-              className={`side-nav-dashboard ${activeView === "dashboard" ? "active" : ""}`}
-              aria-current={activeView === "dashboard" ? "page" : undefined}
+              className={`side-nav-dashboard ${activeView === 'dashboard' ? 'active' : ''}`}
+              aria-current={activeView === 'dashboard' ? 'page' : undefined}
               title="Visão geral dos indicadores e atividades do sistema."
               onClick={onOpenDashboard}
             >
@@ -152,8 +145,8 @@ export function Sidebar({
           {canAccessUsers && (
             <button
               type="button"
-              className={`side-nav-users ${activeView === "users" ? "active" : ""}`}
-              aria-current={activeView === "users" ? "page" : undefined}
+              className={`side-nav-users ${activeView === 'users' ? 'active' : ''}`}
+              aria-current={activeView === 'users' ? 'page' : undefined}
               title="Cadastre usuários e gerencie seus acessos."
               onClick={onOpenUsersList}
             >
@@ -165,8 +158,8 @@ export function Sidebar({
           {canEditOwnUser && (
             <button
               type="button"
-              className={`side-nav-profile ${activeView === "profile" ? "active" : ""}`}
-              aria-current={activeView === "profile" ? "page" : undefined}
+              className={`side-nav-profile ${activeView === 'profile' ? 'active' : ''}`}
+              aria-current={activeView === 'profile' ? 'page' : undefined}
               title="Consulte e atualize os dados do seu cadastro."
               onClick={onOpenMyProfile}
             >
@@ -177,8 +170,8 @@ export function Sidebar({
           {canAccessPatients && (
             <button
               type="button"
-              className={`side-nav-patients ${activeView === "patients" ? "active" : ""}`}
-              aria-current={activeView === "patients" ? "page" : undefined}
+              className={`side-nav-patients ${activeView === 'patients' ? 'active' : ''}`}
+              aria-current={activeView === 'patients' ? 'page' : undefined}
               title="Consulte e gerencie os cadastros dos pacientes."
               onClick={onOpenPatientsList}
             >
@@ -188,9 +181,7 @@ export function Sidebar({
             </button>
           )}
           {canAccessBilling && (
-            <div
-              className={`side-nav-accordion ${controladoriaActive ? "is-active" : ""}`}
-            >
+            <div className={`side-nav-accordion ${controladoriaActive ? 'is-active' : ''}`}>
               <button
                 type="button"
                 className="side-nav-controladoria"
@@ -200,23 +191,14 @@ export function Sidebar({
               >
                 <ReceiptText size={18} />
                 <span>Controladoria</span>
-                <ChevronDown
-                  className="side-nav-accordion-chevron"
-                  size={17}
-                  aria-hidden="true"
-                />
+                <ChevronDown className="side-nav-accordion-chevron" size={17} aria-hidden="true" />
               </button>
               {controladoriaOpen && (
-                <div
-                  id="controladoria-navigation"
-                  className="side-nav-accordion-content"
-                >
+                <div id="controladoria-navigation" className="side-nav-accordion-content">
                   <button
                     type="button"
-                    className={`side-nav-billing ${activeView === "attendances" ? "active" : ""}`}
-                    aria-current={
-                      activeView === "attendances" ? "page" : undefined
-                    }
+                    className={`side-nav-billing ${activeView === 'attendances' ? 'active' : ''}`}
+                    aria-current={activeView === 'attendances' ? 'page' : undefined}
                     title="Registre cirurgias e os procedimentos realizados."
                     onClick={onOpenAttendances}
                   >
@@ -225,10 +207,8 @@ export function Sidebar({
                   </button>
                   <button
                     type="button"
-                    className={`side-nav-billing ${activeView === "billing" ? "active" : ""}`}
-                    aria-current={
-                      activeView === "billing" ? "page" : undefined
-                    }
+                    className={`side-nav-billing ${activeView === 'billing' ? 'active' : ''}`}
+                    aria-current={activeView === 'billing' ? 'page' : undefined}
                     title="Prepare, envie e acompanhe os faturamentos médicos."
                     onClick={onOpenBilling}
                   >
@@ -238,28 +218,22 @@ export function Sidebar({
                   {session.user.perfilId !== 2 && (
                     <button
                       type="button"
-                      className={`side-nav-billing ${activeView === "finance" ? "active" : ""}`}
-                      aria-current={
-                        activeView === "finance" ? "page" : undefined
-                      }
+                      className={`side-nav-billing ${activeView === 'finance' ? 'active' : ''}`}
+                      aria-current={activeView === 'finance' ? 'page' : undefined}
                       title="Acompanhe contas a receber, pagamentos e saldos."
                       onClick={onOpenFinance}
                     >
                       <Wallet size={18} />
                       <span>Financeiro</span>
                       {pendingPaymentsCount > 0 && (
-                        <span className="side-nav-count">
-                          {pendingPaymentsCount}
-                        </span>
+                        <span className="side-nav-count">{pendingPaymentsCount}</span>
                       )}
                     </button>
                   )}
                   <button
                     type="button"
-                    className={`side-nav-billing ${activeView === "prices" ? "active" : ""}`}
-                    aria-current={
-                      activeView === "prices" ? "page" : undefined
-                    }
+                    className={`side-nav-billing ${activeView === 'prices' ? 'active' : ''}`}
+                    aria-current={activeView === 'prices' ? 'page' : undefined}
                     title="Gerencie valores CBHPM e preços negociados por convênio."
                     onClick={onOpenPrices}
                   >
@@ -273,8 +247,8 @@ export function Sidebar({
           {canAccessMedicalGroups && (
             <button
               type="button"
-              className={`side-nav-medical-groups ${activeView === "medicalGroups" ? "active" : ""}`}
-              aria-current={activeView === "medicalGroups" ? "page" : undefined}
+              className={`side-nav-medical-groups ${activeView === 'medicalGroups' ? 'active' : ''}`}
+              aria-current={activeView === 'medicalGroups' ? 'page' : undefined}
               title="Organize médicos e permissões em grupos de trabalho."
               onClick={onOpenMedicalGroups}
             >
@@ -286,25 +260,23 @@ export function Sidebar({
           {canAccessAgenda && (
             <button
               type="button"
-              className={`side-nav-agenda ${activeView === "agenda" ? "active" : ""}`}
-              aria-current={activeView === "agenda" ? "page" : undefined}
+              className={`side-nav-agenda ${activeView === 'agenda' ? 'active' : ''}`}
+              aria-current={activeView === 'agenda' ? 'page' : undefined}
               title="Consulte compromissos, lembretes e notificações."
               onClick={onOpenAgenda}
             >
               <CalendarDays size={18} />
               <span>Agenda e notificações</span>
               {unreadAgendaNotificationCount > 0 && (
-                <span className="side-nav-count">
-                  {unreadAgendaNotificationCount}
-                </span>
+                <span className="side-nav-count">{unreadAgendaNotificationCount}</span>
               )}
             </button>
           )}
           {canAccessClinics && (
             <button
               type="button"
-              className={`side-nav-clinics ${activeView === "clinics" ? "active" : ""}`}
-              aria-current={activeView === "clinics" ? "page" : undefined}
+              className={`side-nav-clinics ${activeView === 'clinics' ? 'active' : ''}`}
+              aria-current={activeView === 'clinics' ? 'page' : undefined}
               title="Cadastre e administre as clínicas disponíveis."
               onClick={onOpenClinics}
             >
@@ -315,8 +287,8 @@ export function Sidebar({
           {canAccessSettings && (
             <button
               type="button"
-              className={`side-nav-settings ${activeView === "settings" ? "active" : ""}`}
-              aria-current={activeView === "settings" ? "page" : undefined}
+              className={`side-nav-settings ${activeView === 'settings' ? 'active' : ''}`}
+              aria-current={activeView === 'settings' ? 'page' : undefined}
               title="Configure preferências e parâmetros gerais do sistema."
               onClick={onOpenSettings}
             >

@@ -1,5 +1,5 @@
-import { getCbhpmGeral } from "../../services";
-import type { CbhpmListQuery } from "../../types";
+import { getCbhpmGeral } from '../../services';
+import type { CbhpmListQuery } from '../../shared/domain/apiTypes';
 
 export function useBillingCbhpmGateway(token: string) {
   return {

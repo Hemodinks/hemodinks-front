@@ -38,7 +38,10 @@ function getCompetenciaMonthTimestamp(value: string, endOfMonth = false) {
   return Number.isFinite(timestamp) ? timestamp : null;
 }
 
-export function createEmptyBillingFilters(defaultDoctor = '', defaultCompetencia = ''): BillingFilters {
+export function createEmptyBillingFilters(
+  defaultDoctor = '',
+  defaultCompetencia = '',
+): BillingFilters {
   return {
     search: '',
     medico: defaultDoctor,
@@ -58,7 +61,10 @@ function matchesCurrentMedicalUser(record: BillingRecord, options: FilterBilling
     return true;
   }
 
-  if (options.currentMedicalUserId != null && record.doctorUserId === options.currentMedicalUserId) {
+  if (
+    options.currentMedicalUserId != null &&
+    record.doctorUserId === options.currentMedicalUserId
+  ) {
     return true;
   }
 
@@ -71,7 +77,11 @@ function matchesCurrentMedicalUser(record: BillingRecord, options: FilterBilling
   return normalizeLookupText(record.doctorName) === normalizeLookupText(currentMedicalName);
 }
 
-export function filterBillingRecords(records: BillingRecord[], filters: BillingFilters, options: FilterBillingOptions = {}) {
+export function filterBillingRecords(
+  records: BillingRecord[],
+  filters: BillingFilters,
+  options: FilterBillingOptions = {},
+) {
   const competenciaInicio = getCompetenciaMonthTimestamp(filters.competenciaInicio);
   const competenciaFinal = getCompetenciaMonthTimestamp(filters.competenciaFinal, true);
 
@@ -133,11 +143,17 @@ export function filterBillingRecords(records: BillingRecord[], filters: BillingF
       const competenciaRecordStart = getDateTimestamp(record.competenciaInicio);
       const competenciaRecordEnd = getDateTimestamp(record.competenciaFinal);
 
-      if (competenciaInicio != null && (competenciaRecordEnd == null || competenciaRecordEnd < competenciaInicio)) {
+      if (
+        competenciaInicio != null &&
+        (competenciaRecordEnd == null || competenciaRecordEnd < competenciaInicio)
+      ) {
         return false;
       }
 
-      if (competenciaFinal != null && (competenciaRecordStart == null || competenciaRecordStart > competenciaFinal)) {
+      if (
+        competenciaFinal != null &&
+        (competenciaRecordStart == null || competenciaRecordStart > competenciaFinal)
+      ) {
         return false;
       }
 

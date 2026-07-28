@@ -1,12 +1,6 @@
 import { type FormEvent, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import {
-  createUser,
-  deleteUser,
-  getUser,
-  updateUser,
-  uploadUserArquivo,
-} from '../../services';
+import { createUser, deleteUser, getUser, updateUser, uploadUserArquivo } from '../../services';
 import type { AppView, ModuleMode } from '../../appTypes';
 import { queryClient } from '../../queryClient';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
@@ -20,7 +14,9 @@ import {
   SUPER_ADMIN_PROFILE_ID,
 } from '../../shared/utils/formatters';
 import { sortUsersForListing } from '../../shared/utils/listing';
-import type { AuthSession, User, UserPayload } from '../../types';
+import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { User, UserPayload } from './userTypes';
 import { toUserPayload, validateUserForm } from './userUtils';
 import type { useUserForm } from './useUserForm';
 import type { useUserList } from './useUserList';
@@ -58,17 +54,26 @@ export function useUserCommands({
 }: UserCommandsOptions) {
   const userFormRequestRef = useRef(0);
   const saveUserMutation = useMutation({
-    mutationFn: ({ id, payload, token }: { id: number | null; payload: UserPayload; token: string }) => (
-      id ? updateUser(id, payload, token) : createUser(payload, token)
-    ),
+    mutationFn: ({
+      id,
+      payload,
+      token,
+    }: {
+      id: number | null;
+      payload: UserPayload;
+      token: string;
+    }) => (id ? updateUser(id, payload, token) : createUser(payload, token)),
   });
   const deleteUserMutation = useMutation({
     mutationFn: ({ id, token }: { id: number; token: string }) => deleteUser(id, token),
   });
+  const editUserOperation = useAsyncOperation((_signal, id: number, token: string) =>
+    getUser(id, token),
+  );
 
   const cancelUserFormRequest = () => {
     userFormRequestRef.current += 1;
-    userForm.setFormLoading(false);
+    editUserOperation.cancel();
   };
 
   const handleEditUser = async (user: User) => {
@@ -85,23 +90,19 @@ export function useUserCommands({
     setModuleMode('form');
 
     try {
-      userForm.setFormLoading(true);
-      const details = await getUser(user.id, session.token);
+      const details = await editUserOperation.execute(user.id, session.token);
       if (userFormRequestRef.current !== requestId) return;
       userForm.setEditingUserDetails(details);
       userForm.applyUserToForm(details);
     } catch (error) {
       if (userFormRequestRef.current !== requestId) return;
       userForm.setFormError(getErrorMessage(error));
-    } finally {
-      if (userFormRequestRef.current === requestId) userForm.setFormLoading(false);
     }
   };
 
   const saveUser = async (payload: UserPayload, ownProfileChanged: boolean) => {
     if (!session) return;
 
-    userForm.setFormLoading(true);
     userForm.setFormError('');
     userList.setSuccessMessage('');
     try {
@@ -122,11 +123,13 @@ export function useUserCommands({
         }
       }
 
-      userList.setUsers((current) => sortUsersForListing(
-        userForm.editingId
-          ? current.map((user) => (user.id === savedUser.id ? savedUser : user))
-          : [savedUser, ...current],
-      ));
+      userList.setUsers((current) =>
+        sortUsersForListing(
+          userForm.editingId
+            ? current.map((user) => (user.id === savedUser.id ? savedUser : user))
+            : [savedUser, ...current],
+        ),
+      );
 
       if (userForm.editingId && savedUser.id === session.user.id) {
         if (ownProfileChanged) {
@@ -144,7 +147,10 @@ export function useUserCommands({
             crmUf: savedUser.crmUf ?? null,
             fotoPerfil: savedUser.fotoPerfil ?? null,
             perfilId: savedUser.perfilId || DEFAULT_PROFILE_ID,
-            perfilNome: formatProfileName(savedUser.perfilId || DEFAULT_PROFILE_ID, savedUser.perfilNome),
+            perfilNome: formatProfileName(
+              savedUser.perfilId || DEFAULT_PROFILE_ID,
+              savedUser.perfilNome,
+            ),
           },
         });
       }
@@ -162,8 +168,6 @@ export function useUserCommands({
       await loadDashboardSummary(session.token, true);
     } catch (error) {
       userForm.setFormError(getErrorMessage(error));
-    } finally {
-      userForm.setFormLoading(false);
     }
   };
 
@@ -184,14 +188,15 @@ export function useUserCommands({
 
     const payload = toUserPayload(userForm.formData);
     const ownProfileChanged = Boolean(
-      userForm.editingId === session.user.id
-      && userForm.formData.perfilId !== session.user.perfilId,
+      userForm.editingId === session.user.id &&
+      userForm.formData.perfilId !== session.user.perfilId,
     );
     if (isSuperAdmin && ownProfileChanged) {
       confirmAction({
         tone: 'update',
         title: 'Alterar seu próprio perfil?',
-        message: 'Você poderá perder o acesso à administração da plataforma e depender de outro Super Administrador para recuperar essas permissões. Após salvar, sua sessão será encerrada para aplicar o novo perfil com segurança.',
+        message:
+          'Você poderá perder o acesso à administração da plataforma e depender de outro Super Administrador para recuperar essas permissões. Após salvar, sua sessão será encerrada para aplicar o novo perfil com segurança.',
         confirmLabel: 'Alterar meu perfil',
         cancelLabel: 'Manter perfil atual',
         onConfirm: () => saveUser(payload, true),
@@ -236,6 +241,7 @@ export function useUserCommands({
   };
 
   return {
+    formLoading: editUserOperation.isLoading || saveUserMutation.isPending,
     cancelUserFormRequest,
     handleEditUser,
     handleSubmitUser,

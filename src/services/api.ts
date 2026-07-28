@@ -1,15 +1,15 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
-import { resolveClinicaRequestHeaders } from "./clinicaContext";
-import { beginQueryActivity } from "./queryActivity";
+import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import { resolveClinicaRequestHeaders } from './clinicaContext';
+import { beginGlobalActivity, type GlobalActivityOptions } from './globalActivity';
 
-const API_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:5000"
-).replace(/\/$/, "");
-const DEFAULT_ERROR_MESSAGE = "Nao foi possivel concluir a operacao.";
-const UNAUTHORIZED_ERROR_MESSAGE = "Credenciais invalidas ou sessao expirada.";
-export const AUTH_EXPIRED_EVENT = "hemodinks:auth-expired";
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const DEFAULT_ERROR_MESSAGE = 'Nao foi possivel concluir a operacao.';
+const UNAUTHORIZED_ERROR_MESSAGE = 'Credenciais invalidas ou sessao expirada.';
+export const AUTH_EXPIRED_EVENT = 'hemodinks:auth-expired';
 
-type RequestConfig = Omit<AxiosRequestConfig, "data" | "method" | "url">;
+type RequestConfig = Omit<AxiosRequestConfig, 'data' | 'method' | 'url'> & {
+  activity?: GlobalActivityOptions | 'background' | false;
+};
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -17,22 +17,16 @@ export const apiClient = axios.create({
 
 export const publicApiClient = axios.create();
 
-function buildJsonHeaders(
-  token?: string,
-  headers?: AxiosRequestConfig["headers"],
-) {
+function buildJsonHeaders(token?: string, headers?: AxiosRequestConfig['headers']) {
   return {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...resolveClinicaRequestHeaders(token),
     ...(headers ?? {}),
   };
 }
 
-function buildAuthHeaders(
-  token?: string,
-  headers?: AxiosRequestConfig["headers"],
-) {
+function buildAuthHeaders(token?: string, headers?: AxiosRequestConfig['headers']) {
   return {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...resolveClinicaRequestHeaders(token),
@@ -41,7 +35,7 @@ function buildAuthHeaders(
 }
 
 function notifyAuthExpired() {
-  if (typeof window !== "undefined") {
+  if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
   }
 }
@@ -58,36 +52,32 @@ function toApiError(error: unknown, notifyUnauthorized = false) {
 
     const data = error.response?.data;
 
-    if (typeof data === "string" && data.trim()) {
+    if (typeof data === 'string' && data.trim()) {
       const diagnostic =
-        /BadHttpRequestException|JsonException|System\.|stack trace| at Microsoft\./i.test(
-          data,
-        );
+        /BadHttpRequestException|JsonException|System\.|stack trace| at Microsoft\./i.test(data);
       return new Error(
         diagnostic
-          ? "Alguns campos estão ausentes ou possuem formato inválido. Revise os dados destacados e tente novamente."
+          ? 'Alguns campos estão ausentes ou possuem formato inválido. Revise os dados destacados e tente novamente.'
           : data.length > 500
             ? DEFAULT_ERROR_MESSAGE
             : data,
       );
     }
 
-    if (typeof data === "object" && data !== null) {
+    if (typeof data === 'object' && data !== null) {
       const validationMessage =
-        "errors" in data &&
-        typeof data.errors === "object" &&
-        data.errors !== null
+        'errors' in data && typeof data.errors === 'object' && data.errors !== null
           ? Object.values(data.errors)
               .flatMap((value) => (Array.isArray(value) ? value : []))
-              .find((value): value is string => typeof value === "string")
+              .find((value): value is string => typeof value === 'string')
           : null;
       const message =
         validationMessage ??
-        ("message" in data && typeof data.message === "string"
+        ('message' in data && typeof data.message === 'string'
           ? data.message
-          : "error" in data && typeof data.error === "string"
+          : 'error' in data && typeof data.error === 'string'
             ? data.error
-            : "title" in data && typeof data.title === "string"
+            : 'title' in data && typeof data.title === 'string'
               ? data.title
               : null);
 
@@ -98,7 +88,7 @@ function toApiError(error: unknown, notifyUnauthorized = false) {
 
     if (error.response?.status === 400) {
       return new Error(
-        "Alguns campos estão ausentes ou possuem formato inválido. Revise os dados e tente novamente.",
+        'Alguns campos estão ausentes ou possuem formato inválido. Revise os dados e tente novamente.',
       );
     }
   }
@@ -112,14 +102,22 @@ function toApiError(error: unknown, notifyUnauthorized = false) {
 
 async function executeRequest<T>(
   client: AxiosInstance,
-  config: AxiosRequestConfig,
+  config: AxiosRequestConfig & { activity?: RequestConfig['activity'] },
   notifyUnauthorized = false,
 ): Promise<T> {
-  const finishQueryActivity =
-    config.method?.toUpperCase() === "GET" ? beginQueryActivity() : null;
+  const { activity, ...axiosConfig } = config;
+  const isQuery = axiosConfig.method?.toUpperCase() === 'GET';
+  const defaultActivity = isQuery ? { kind: 'query' as const } : { kind: 'save' as const };
+  const activityOptions =
+    activity === false
+      ? null
+      : activity === 'background'
+        ? { kind: 'query' as const, presentation: 'background' as const }
+        : (activity ?? defaultActivity);
+  const finishActivity = activityOptions ? beginGlobalActivity(activityOptions) : null;
 
   try {
-    const response = await client.request<T>(config);
+    const response = await client.request<T>(axiosConfig);
 
     if (response.status === 204) {
       return undefined as T;
@@ -129,20 +127,16 @@ async function executeRequest<T>(
   } catch (error) {
     throw toApiError(error, notifyUnauthorized);
   } finally {
-    finishQueryActivity?.();
+    finishActivity?.();
   }
 }
 
-export function get<T>(
-  path: string,
-  token?: string,
-  config: RequestConfig = {},
-) {
+export function get<T>(path: string, token?: string, config: RequestConfig = {}) {
   return executeRequest<T>(
     apiClient,
     {
       url: path,
-      method: "GET",
+      method: 'GET',
       ...config,
       headers: buildJsonHeaders(token, config.headers),
     },
@@ -150,17 +144,13 @@ export function get<T>(
   );
 }
 
-export function getBlob(
-  path: string,
-  token?: string,
-  config: RequestConfig = {},
-) {
+export function getBlob(path: string, token?: string, config: RequestConfig = {}) {
   return executeRequest<Blob>(
     apiClient,
     {
       url: path,
-      method: "GET",
-      responseType: "blob",
+      method: 'GET',
+      responseType: 'blob',
       ...config,
       headers: buildAuthHeaders(token, config.headers),
     },
@@ -171,23 +161,18 @@ export function getBlob(
 export function getExternal<T>(url: string, config: RequestConfig = {}) {
   return executeRequest<T>(publicApiClient, {
     url,
-    method: "GET",
+    method: 'GET',
     ...config,
     headers: buildJsonHeaders(undefined, config.headers),
   });
 }
 
-export function post<T>(
-  path: string,
-  data?: unknown,
-  token?: string,
-  config: RequestConfig = {},
-) {
+export function post<T>(path: string, data?: unknown, token?: string, config: RequestConfig = {}) {
   return executeRequest<T>(
     apiClient,
     {
       url: path,
-      method: "POST",
+      method: 'POST',
       data,
       ...config,
       headers: buildJsonHeaders(token, config.headers),
@@ -196,17 +181,12 @@ export function post<T>(
   );
 }
 
-export function put<T>(
-  path: string,
-  data?: unknown,
-  token?: string,
-  config: RequestConfig = {},
-) {
+export function put<T>(path: string, data?: unknown, token?: string, config: RequestConfig = {}) {
   return executeRequest<T>(
     apiClient,
     {
       url: path,
-      method: "PUT",
+      method: 'PUT',
       data,
       ...config,
       headers: buildJsonHeaders(token, config.headers),
@@ -215,16 +195,12 @@ export function put<T>(
   );
 }
 
-export function del<T>(
-  path: string,
-  token?: string,
-  config: RequestConfig = {},
-) {
+export function del<T>(path: string, token?: string, config: RequestConfig = {}) {
   return executeRequest<T>(
     apiClient,
     {
       url: path,
-      method: "DELETE",
+      method: 'DELETE',
       ...config,
       headers: buildJsonHeaders(token, config.headers),
     },
@@ -232,18 +208,14 @@ export function del<T>(
   );
 }
 
-export function upload<T>(
-  path: string,
-  body: FormData,
-  token: string,
-  config: RequestConfig = {},
-) {
+export function upload<T>(path: string, body: FormData, token: string, config: RequestConfig = {}) {
   return executeRequest<T>(
     apiClient,
     {
       url: path,
-      method: "POST",
+      method: 'POST',
       data: body,
+      activity: { kind: 'upload' },
       ...config,
       headers: buildAuthHeaders(token, config.headers),
     },

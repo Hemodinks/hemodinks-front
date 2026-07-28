@@ -1,10 +1,18 @@
-import type { DashboardNotification, DashboardSummary } from '../types';
+import type { DashboardNotification, DashboardSummary } from '../features/dashboard/dashboardTypes';
 import { get } from './api';
 
-export function getDashboardSummary(token: string) {
-  return get<DashboardSummary>('/api/dashboard/summary', token);
+export function getDashboardSummary(token: string, background = false) {
+  return get<DashboardSummary>(
+    '/api/dashboard/summary',
+    token,
+    background ? { activity: 'background' } : undefined,
+  );
 }
 
-export function getDashboardNotifications(token: string) {
-  return get<DashboardNotification[]>('/api/dashboard/notifications', token);
+export function getDashboardNotifications(token: string, background = false) {
+  return get<DashboardNotification[]>(
+    '/api/dashboard/notifications',
+    token,
+    background ? { activity: 'background' } : undefined,
+  );
 }

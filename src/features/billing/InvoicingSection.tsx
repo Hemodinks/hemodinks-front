@@ -1,29 +1,9 @@
-import {
-  type Dispatch,
-  type FormEvent,
-  type SetStateAction,
-} from "react";
-import {
-  CheckCircle2,
-  Pencil,
-  Plus,
-  RotateCcw,
-  Save,
-  Send,
-  Trash2,
-  Wallet,
-  X,
-} from "lucide-react";
-import {
-  Button,
-  DataPanel,
-  IconButton,
-  SelectField,
-  TextField,
-} from "../../shared/components/ui";
-import { formatCurrency } from "../../shared/utils/formatters";
-import type { AtendimentoCirurgico, Faturamento } from "../../types";
-import type { FaturamentoFormState } from "./billingPageTypes";
+import { type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import { CheckCircle2, Pencil, Plus, RotateCcw, Save, Send, Trash2, Wallet, X } from 'lucide-react';
+import { Button, DataPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
+import { formatCurrency } from '../../shared/utils/formatters';
+import type { AtendimentoCirurgico, Faturamento } from './billingDomainTypes';
+import type { FaturamentoFormState } from './billingPageTypes';
 
 type InvoicingSectionProps = {
   canManage: boolean;
@@ -48,7 +28,7 @@ type InvoicingSectionProps = {
 };
 
 function formatStatus(status: string) {
-  return status.replace(/([a-zá-ú])([A-ZÁ-Ú])/g, "$1 $2");
+  return status.replace(/([a-zá-ú])([A-ZÁ-Ú])/g, '$1 $2');
 }
 
 export function InvoicingSection({
@@ -103,8 +83,7 @@ export function InvoicingSection({
               <option value="">Selecione</option>
               {atendimentos.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.paciente} —{" "}
-                  {new Date(item.dataProcedimento).toLocaleDateString("pt-BR")}
+                  {item.paciente} — {new Date(item.dataProcedimento).toLocaleDateString('pt-BR')}
                 </option>
               ))}
             </SelectField>
@@ -113,44 +92,30 @@ export function InvoicingSection({
               type="month"
               value={form.competencia}
               required
-              onValueChange={(competencia) =>
-                setForm((current) => ({ ...current, competencia }))
-              }
+              onValueChange={(competencia) => setForm((current) => ({ ...current, competencia }))}
             />
             <TextField
               label="Número da guia"
               value={form.numeroGuia}
-              onValueChange={(numeroGuia) =>
-                setForm((current) => ({ ...current, numeroGuia }))
-              }
+              onValueChange={(numeroGuia) => setForm((current) => ({ ...current, numeroGuia }))}
             />
             <TextField
               label="Número do lote"
               value={form.numeroLote}
-              onValueChange={(numeroLote) =>
-                setForm((current) => ({ ...current, numeroLote }))
-              }
+              onValueChange={(numeroLote) => setForm((current) => ({ ...current, numeroLote }))}
             />
             <TextField
               label="Observação"
               value={form.observacao}
-              onValueChange={(observacao) =>
-                setForm((current) => ({ ...current, observacao }))
-              }
+              onValueChange={(observacao) => setForm((current) => ({ ...current, observacao }))}
             />
             <div className="billing-form-actions">
               <Button variant="primary" type="submit" disabled={loading}>
                 <Save size={16} />
-                {editingId
-                  ? "Atualizar faturamento"
-                  : "Gerar itens do faturamento"}
+                {editingId ? 'Atualizar faturamento' : 'Gerar itens do faturamento'}
               </Button>
               {editingId && (
-                <Button
-                  variant="danger-ghost"
-                  type="button"
-                  onClick={onCancelEditing}
-                >
+                <Button variant="danger-ghost" type="button" onClick={onCancelEditing}>
                   <X size={16} /> Cancelar edição
                 </Button>
               )}
@@ -176,28 +141,18 @@ export function InvoicingSection({
               {faturamentos.map((item) => (
                 <tr key={item.id}>
                   <td data-label="Paciente">
-                    <Button onClick={() => onSelect(item)}>
-                      {item.paciente}
-                    </Button>
+                    <Button onClick={() => onSelect(item)}>{item.paciente}</Button>
                   </td>
-                  <td data-label="Guia">{item.numeroGuia || "-"}</td>
-                  <td data-label="Apresentado">
-                    {formatCurrency(item.valorApresentado)}
-                  </td>
-                  <td data-label="Glosa">
-                    {formatCurrency(item.valorGlosado)}
-                  </td>
-                  <td data-label="Reconhecido">
-                    {formatCurrency(item.valorReconhecido)}
-                  </td>
+                  <td data-label="Guia">{item.numeroGuia || '-'}</td>
+                  <td data-label="Apresentado">{formatCurrency(item.valorApresentado)}</td>
+                  <td data-label="Glosa">{formatCurrency(item.valorGlosado)}</td>
+                  <td data-label="Reconhecido">{formatCurrency(item.valorReconhecido)}</td>
                   <td data-label="Status">
-                    <span className="status-pill active">
-                      {formatStatus(item.status)}
-                    </span>
+                    <span className="status-pill active">{formatStatus(item.status)}</span>
                   </td>
                   <td className="billing-actions-column" data-label="Ações">
                     <div className="billing-row-actions">
-                      {canManage && item.status === "Rascunho" && (
+                      {canManage && item.status === 'Rascunho' && (
                         <>
                           <IconButton
                             label="Editar"
@@ -225,7 +180,7 @@ export function InvoicingSection({
                           </IconButton>
                         </>
                       )}
-                      {canManage && item.status === "ProntoParaEnvio" && (
+                      {canManage && item.status === 'ProntoParaEnvio' && (
                         <IconButton
                           label="Enviar faturamento"
                           title="Enviar faturamento"
@@ -236,11 +191,11 @@ export function InvoicingSection({
                       )}
                       {canManage &&
                         [
-                          "Enviado",
-                          "EmAnalise",
-                          "GlosadoParcial",
-                          "GlosadoTotal",
-                          "Aprovado",
+                          'Enviado',
+                          'EmAnalise',
+                          'GlosadoParcial',
+                          'GlosadoTotal',
+                          'Aprovado',
                         ].includes(item.status) && (
                           <IconButton
                             label="Registrar retorno"
@@ -251,17 +206,15 @@ export function InvoicingSection({
                             <RotateCcw size={17} />
                           </IconButton>
                         )}
-                      {canManage &&
-                        item.status !== "Rascunho" &&
-                        item.status !== "Cancelado" && (
-                          <IconButton
-                            label="Gerar título"
-                            title="Gerar título"
-                            onClick={() => onCreateAccount(item)}
-                          >
-                            <Wallet size={17} />
-                          </IconButton>
-                        )}
+                      {canManage && item.status !== 'Rascunho' && item.status !== 'Cancelado' && (
+                        <IconButton
+                          label="Gerar título"
+                          title="Gerar título"
+                          onClick={() => onCreateAccount(item)}
+                        >
+                          <Wallet size={17} />
+                        </IconButton>
+                      )}
                       {canManage &&
                         item.glosas.map((glosa) => (
                           <IconButton
@@ -269,9 +222,7 @@ export function InvoicingSection({
                             label={`Recorrer glosa de ${formatCurrency(glosa.valorGlosado)}`}
                             title={`Recorrer glosa de ${formatCurrency(glosa.valorGlosado)}`}
                             tone="muted"
-                            onClick={() =>
-                              onOpenAppeal(glosa.id, glosa.valorGlosado)
-                            }
+                            onClick={() => onOpenAppeal(glosa.id, glosa.valorGlosado)}
                           >
                             <RotateCcw size={17} />
                           </IconButton>

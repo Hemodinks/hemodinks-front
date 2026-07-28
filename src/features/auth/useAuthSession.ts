@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { AuthSession } from '../../types';
+import type { AuthSession } from './authTypes';
 
 const SESSION_KEY = 'hemodinks.session';
 

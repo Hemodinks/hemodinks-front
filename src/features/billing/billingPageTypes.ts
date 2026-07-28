@@ -66,7 +66,7 @@ export type ReceiptFormState = {
 };
 
 export type ReceiptToastState = {
-  type: "success" | "error";
+  type: 'success' | 'error';
   message: string;
 };
 
@@ -113,4 +113,4 @@ export type RecursoDraftState = {
   status: string;
   observacao: string;
 };
-import type { GeneratedReceiptFormat } from "./receiptDocument";
+import type { GeneratedReceiptFormat } from './receiptDocument';

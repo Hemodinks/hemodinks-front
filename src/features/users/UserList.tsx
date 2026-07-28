@@ -1,6 +1,23 @@
-import { CheckCircle2, CircleCheck, CircleX, Info, Mail, Pencil, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
-import type { User } from '../../types';
-import { AlertMessage, Button, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
+import {
+  CheckCircle2,
+  CircleCheck,
+  CircleX,
+  Info,
+  Mail,
+  Pencil,
+  Phone,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
+import type { User } from './userTypes';
+import {
+  AlertMessage,
+  Button,
+  DataPanel,
+  IconButton,
+  SearchField,
+} from '../../shared/components/ui';
 import { formatProfileName } from '../../shared/utils/formatters';
 import { UserAvatar } from '../../shared/components/UserAvatar';
 import {
@@ -63,92 +80,120 @@ export function UserList({
   return (
     <DataPanel>
       <ListToolbar eyebrow="Base de usuários" title={`${usersTotalItems} cadastrados`}>
-          <Button onClick={onOpenNewUserForm}>
-            <Plus size={17} />
-            Novo usuário
-          </Button>
-          <SearchField
-            label="Buscar usuários"
-            value={searchTerm}
-            onValueChange={onSearchChange}
-          />
-          <IconButton label="Atualizar lista de usuários" onClick={onRefresh} title="Atualizar lista">
-            <RefreshCw size={18} />
-          </IconButton>
+        <Button onClick={onOpenNewUserForm}>
+          <Plus size={17} />
+          Novo usuário
+        </Button>
+        <SearchField label="Buscar usuários" value={searchTerm} onValueChange={onSearchChange} />
+        <IconButton label="Atualizar lista de usuários" onClick={onRefresh} title="Atualizar lista">
+          <RefreshCw size={18} />
+        </IconButton>
       </ListToolbar>
 
-      {successMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</AlertMessage>}
+      {successMessage && (
+        <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>
+          {successMessage}
+        </AlertMessage>
+      )}
       {usersError && <AlertMessage type="error">{usersError}</AlertMessage>}
 
       <HorizontalTableScroller entityLabel="usuários" className="users-carousel-wrap">
-          <table className="users-table">
-            <thead>
-              <tr>
-                <SortableHeader field="nome" label="Nome" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
-                <SortableHeader field="perfil" label="Perfil" sortBy={sortBy} sortDirection={sortDirection} onSortChange={onSortChange} />
-                <th>Info</th>
-                <th>Contato</th>
-                <th aria-label="Ações" />
-              </tr>
-            </thead>
-            <tbody>
-              {usersLoading || !users.length ? (
-                <TableStateRow
-                  colSpan={5}
-                  loading={usersLoading}
-                  empty={!users.length}
-                  loadingLabel="Carregando usuários..."
-                  emptyLabel="Nenhum usuário encontrado."
-                />
-              ) : (
-                users.map((user) => (
-                  <tr key={user.id}>
-                    <td data-label="Nome">
-                      <div className="name-cell">
-                        <UserAvatar userId={user.id} name={user.nome} photo={user.fotoPerfil} authToken={sessionToken} size="sm" />
-                        <span>{user.nome}</span>
-                      </div>
-                    </td>
-                    <td data-label="Perfil">{formatProfileName(user.perfilId, user.perfilNome)}</td>
-                    <td data-label="Info">
-                      <button
-                        type="button"
-                        className={`status-info-button ${user.ativo ? 'active' : 'inactive'}`}
-                        title={`${user.ativo ? 'Ativo' : 'Inativo'} - clique para ver detalhes`}
-                        aria-label={`Detalhes de ${user.nome}`}
-                        onClick={() => onSelectInfoUser(user)}
+        <table className="users-table">
+          <thead>
+            <tr>
+              <SortableHeader
+                field="nome"
+                label="Nome"
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSortChange={onSortChange}
+              />
+              <SortableHeader
+                field="perfil"
+                label="Perfil"
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSortChange={onSortChange}
+              />
+              <th>Info</th>
+              <th>Contato</th>
+              <th aria-label="Ações" />
+            </tr>
+          </thead>
+          <tbody>
+            {usersLoading || !users.length ? (
+              <TableStateRow
+                colSpan={5}
+                loading={usersLoading}
+                empty={!users.length}
+                loadingLabel="Carregando usuários..."
+                emptyLabel="Nenhum usuário encontrado."
+              />
+            ) : (
+              users.map((user) => (
+                <tr key={user.id}>
+                  <td data-label="Nome">
+                    <div className="name-cell">
+                      <UserAvatar
+                        userId={user.id}
+                        name={user.nome}
+                        photo={user.fotoPerfil}
+                        authToken={sessionToken}
+                        size="sm"
+                      />
+                      <span>{user.nome}</span>
+                    </div>
+                  </td>
+                  <td data-label="Perfil">{formatProfileName(user.perfilId, user.perfilNome)}</td>
+                  <td data-label="Info">
+                    <button
+                      type="button"
+                      className={`status-info-button ${user.ativo ? 'active' : 'inactive'}`}
+                      title={`${user.ativo ? 'Ativo' : 'Inativo'} - clique para ver detalhes`}
+                      aria-label={`Detalhes de ${user.nome}`}
+                      onClick={() => onSelectInfoUser(user)}
+                    >
+                      {user.ativo ? <CircleCheck size={19} /> : <CircleX size={19} />}
+                      <Info size={15} />
+                    </button>
+                  </td>
+                  <td data-label="Contato">
+                    <button
+                      type="button"
+                      className="status-info-button contact"
+                      title="Ver informacoes de contato"
+                      aria-label={`Contato de ${user.nome}`}
+                      onClick={() => onSelectContactUser(user)}
+                    >
+                      <Mail size={18} />
+                      <Phone size={14} />
+                    </button>
+                  </td>
+                  <td data-label="Ações">
+                    <div className="row-actions">
+                      <IconButton
+                        label={`Editar ${user.nome}`}
+                        tone="muted"
+                        onClick={() => void onEditUser(user)}
+                        title="Editar"
                       >
-                        {user.ativo ? <CircleCheck size={19} /> : <CircleX size={19} />}
-                        <Info size={15} />
-                      </button>
-                    </td>
-                    <td data-label="Contato">
-                      <button
-                        type="button"
-                        className="status-info-button contact"
-                        title="Ver informacoes de contato"
-                        aria-label={`Contato de ${user.nome}`}
-                        onClick={() => onSelectContactUser(user)}
+                        <Pencil size={17} />
+                      </IconButton>
+                      <IconButton
+                        label={`Excluir ${user.nome}`}
+                        tone="danger"
+                        onClick={() => void onDeleteUser(user)}
+                        title="Excluir"
                       >
-                        <Mail size={18} />
-                        <Phone size={14} />
-                      </button>
-                    </td>
-                    <td data-label="Ações">
-                      <div className="row-actions">
-                        <IconButton label={`Editar ${user.nome}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
-                          <Pencil size={17} />
-                        </IconButton>
-                        <IconButton label={`Excluir ${user.nome}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
-                          <Trash2 size={17} />
-                        </IconButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                        <Trash2 size={17} />
+                      </IconButton>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </HorizontalTableScroller>
 
       <Pagination

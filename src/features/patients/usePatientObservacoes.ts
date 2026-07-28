@@ -10,7 +10,8 @@ import {
 } from '../../services';
 import { queryKeys } from '../../shared/queryKeys';
 import { getErrorMessage } from '../../shared/utils/formatters';
-import type { AuthSession, Paciente, PacienteObservacao } from '../../types';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { Paciente, PacienteObservacao } from './patientTypes';
 
 type UsePatientObservacoesOptions = {
   session: AuthSession | null;
@@ -35,36 +36,43 @@ export function usePatientObservacoes({
   loadPacientes,
   loadDashboardSummary,
 }: UsePatientObservacoesOptions) {
-  const [selectedPatientObservacoes, setSelectedPatientObservacoes] = useState<Paciente | null>(null);
+  const [selectedPatientObservacoes, setSelectedPatientObservacoes] = useState<Paciente | null>(
+    null,
+  );
   const [patientObservacoes, setPatientObservacoes] = useState<PacienteObservacao[]>([]);
   const [patientObservacoesLoading, setPatientObservacoesLoading] = useState(false);
   const [patientObservacoesSaving, setPatientObservacoesSaving] = useState(false);
   const [patientObservacoesError, setPatientObservacoesError] = useState('');
   const [patientObservationDraft, setPatientObservationDraft] = useState('');
-  const [patientObservationReplyTo, setPatientObservationReplyTo] = useState<PacienteObservacao | null>(null);
+  const [patientObservationReplyTo, setPatientObservationReplyTo] =
+    useState<PacienteObservacao | null>(null);
 
   const createPacienteObservacaoMutation = useMutation({
-    mutationFn: ({ pacienteId, texto, observacaoPaiId, token }: { pacienteId: number; texto: string; observacaoPaiId?: number | null; token: string }) => (
-      createPacienteObservacao(pacienteId, { texto, observacaoPaiId }, token)
-    ),
+    mutationFn: ({
+      pacienteId,
+      texto,
+      observacaoPaiId,
+      token,
+    }: {
+      pacienteId: number;
+      texto: string;
+      observacaoPaiId?: number | null;
+      token: string;
+    }) => createPacienteObservacao(pacienteId, { texto, observacaoPaiId }, token),
   });
 
   const clearObservationIndicators = (pacienteId: number) => {
-    setPacientes((current) => current.map((paciente) => (
-      paciente.id === pacienteId
-        ? { ...paciente, observacoesNaoLidasCount: 0 }
-        : paciente
-    )));
-    setSelectedPatientObservacoes((current) => (
-      current && current.id === pacienteId
-        ? { ...current, observacoesNaoLidasCount: 0 }
-        : current
-    ));
-    setEditingPacienteDetails((current) => (
-      current && current.id === pacienteId
-        ? { ...current, observacoesNaoLidasCount: 0 }
-        : current
-    ));
+    setPacientes((current) =>
+      current.map((paciente) =>
+        paciente.id === pacienteId ? { ...paciente, observacoesNaoLidasCount: 0 } : paciente,
+      ),
+    );
+    setSelectedPatientObservacoes((current) =>
+      current && current.id === pacienteId ? { ...current, observacoesNaoLidasCount: 0 } : current,
+    );
+    setEditingPacienteDetails((current) =>
+      current && current.id === pacienteId ? { ...current, observacoesNaoLidasCount: 0 } : current,
+    );
   };
 
   const syncObservationViews = async (token: string, pacienteId: number, clearUnread = false) => {
@@ -126,9 +134,10 @@ export function usePatientObservacoes({
       return;
     }
 
-    const currentPaciente = pacientes.find((item) => item.id === pacienteId)
-      ?? (editingPaciente?.id === pacienteId ? editingPaciente : null)
-      ?? (selectedPatientObservacoes?.id === pacienteId ? selectedPatientObservacoes : null);
+    const currentPaciente =
+      pacientes.find((item) => item.id === pacienteId) ??
+      (editingPaciente?.id === pacienteId ? editingPaciente : null) ??
+      (selectedPatientObservacoes?.id === pacienteId ? selectedPatientObservacoes : null);
 
     if (currentPaciente) {
       await openPacienteObservacoesModal(currentPaciente);
@@ -165,7 +174,10 @@ export function usePatientObservacoes({
         token: session.token,
       });
 
-      const observacoes = await getPacienteObservacoes(selectedPatientObservacoes.id, session.token);
+      const observacoes = await getPacienteObservacoes(
+        selectedPatientObservacoes.id,
+        session.token,
+      );
       setPatientObservacoes(observacoes);
       setPatientObservationDraft('');
       setPatientObservationReplyTo(null);

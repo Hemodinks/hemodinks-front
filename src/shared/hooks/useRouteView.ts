@@ -1,8 +1,8 @@
-import { useCallback, useLayoutEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import type { AppView } from "../../appTypes";
-import { getViewFromPath, isRootPath, VIEW_PATHS } from "../../routes";
-import type { AuthSession } from "../../types";
+import { useCallback, useLayoutEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import type { AppView } from '../../appTypes';
+import { getViewFromPath, isRootPath, VIEW_PATHS } from '../../routes';
+import type { AuthSession } from '../domain/sessionTypes';
 
 type UseRouteViewOptions = {
   session: AuthSession | null;
@@ -43,51 +43,44 @@ export function useRouteView({
   const isRootRoute = isRootPath(location.pathname);
   const shouldForceDashboardRoute = forceDashboardRoute && canUseDashboardRoute;
   const routeBlocked =
-    (routeView === "dashboard" && !canUseDashboardRoute) ||
-    (routeView === "patients" && !canUsePatientsRoute) ||
-    (routeView === "users" && !canUseUsersRoute) ||
-    (routeView === "profile" && !canUseProfileRoute) ||
-    (routeView === "billing" && !canUseBillingRoute) ||
-    (routeView === "attendances" && !canUseAttendancesRoute) ||
-    (routeView === "finance" && !canUseFinanceRoute) ||
-    (routeView === "prices" && !canUsePricesRoute) ||
-    (routeView === "medicalGroups" && !canUseMedicalGroupsRoute) ||
-    (routeView === "agenda" && !canUseAgendaRoute) ||
-    (routeView === "settings" && !canUseSettingsRoute) ||
-    (routeView === "clinics" && !canUseClinicsRoute);
+    (routeView === 'dashboard' && !canUseDashboardRoute) ||
+    (routeView === 'patients' && !canUsePatientsRoute) ||
+    (routeView === 'users' && !canUseUsersRoute) ||
+    (routeView === 'profile' && !canUseProfileRoute) ||
+    (routeView === 'billing' && !canUseBillingRoute) ||
+    (routeView === 'attendances' && !canUseAttendancesRoute) ||
+    (routeView === 'finance' && !canUseFinanceRoute) ||
+    (routeView === 'prices' && !canUsePricesRoute) ||
+    (routeView === 'medicalGroups' && !canUseMedicalGroupsRoute) ||
+    (routeView === 'agenda' && !canUseAgendaRoute) ||
+    (routeView === 'settings' && !canUseSettingsRoute) ||
+    (routeView === 'clinics' && !canUseClinicsRoute);
   const fallbackView: AppView = canUseDashboardRoute
-    ? "dashboard"
+    ? 'dashboard'
     : canUsePatientsRoute
-      ? "patients"
+      ? 'patients'
       : canUseUsersRoute
-        ? "users"
+        ? 'users'
         : canUseProfileRoute
-          ? "profile"
+          ? 'profile'
           : canUseBillingRoute
-            ? "billing"
+            ? 'billing'
             : canUseMedicalGroupsRoute
-              ? "medicalGroups"
+              ? 'medicalGroups'
               : canUseAgendaRoute
-                ? "agenda"
+                ? 'agenda'
                 : canUseSettingsRoute
-                  ? "settings"
-                  : "clinics";
+                  ? 'settings'
+                  : 'clinics';
   const activeView: AppView =
-    shouldForceDashboardRoute || !routeView || routeBlocked
-      ? fallbackView
-      : routeView;
+    shouldForceDashboardRoute || !routeView || routeBlocked ? fallbackView : routeView;
 
   useLayoutEffect(() => {
     if (!session || session.user.precisaTrocarSenha) {
       return;
     }
 
-    if (
-      shouldForceDashboardRoute ||
-      isRootRoute ||
-      !routeView ||
-      routeBlocked
-    ) {
+    if (shouldForceDashboardRoute || isRootRoute || !routeView || routeBlocked) {
       navigate(VIEW_PATHS[fallbackView], { replace: true });
     }
   }, [

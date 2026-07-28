@@ -1,12 +1,13 @@
-import type { Dispatch, SetStateAction } from "react";
-import type { AppView, ModuleMode } from "../appTypes";
-import type { MedicalGroupsDomainState } from "../features/medicalGroups/useMedicalGroupsDomain";
-import type { PatientsDomainState } from "../features/patients/usePatientsDomain";
-import type { UsersDomainState } from "../features/users/useUsersDomain";
-import { queryClient } from "../queryClient";
-import type { AuthSession, SelectClinicResponse } from "../types";
-import type { AppChromeState } from "./useAppChrome";
-import { updateSort } from "./appSort";
+import type { Dispatch, SetStateAction } from 'react';
+import type { AppView, ModuleMode } from '../appTypes';
+import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
+import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
+import type { UsersDomainState } from '../features/users/useUsersDomain';
+import { queryClient } from '../queryClient';
+import type { AuthSession } from '../features/auth/authTypes';
+import type { SelectClinicResponse } from '../features/clinics/clinicTypes';
+import type { AppChromeState } from './useAppChrome';
+import { updateSort } from './appSort';
 
 type NavigationAccess = {
   canAccessDashboard: boolean;
@@ -46,7 +47,7 @@ export function useAppNavigation({
   navigateToView,
 }: AppNavigationOptions) {
   const resetProfileRouteState = () => {
-    if (activeView === "profile") {
+    if (activeView === 'profile') {
       usersDomain.resetUserFormState({ suppressProfileAutoOpen: true });
     }
   };
@@ -55,8 +56,8 @@ export function useAppNavigation({
     resetProfileRouteState();
 
     if (access.canAccessDashboard) {
-      navigateToView("dashboard");
-      setModuleMode("list");
+      navigateToView('dashboard');
+      setModuleMode('list');
       return;
     }
     if (access.canAccessPatients) {
@@ -68,17 +69,17 @@ export function useAppNavigation({
       return;
     }
     if (access.canAccessBilling) {
-      navigateToView("billing");
-      setModuleMode("list");
+      navigateToView('billing');
+      setModuleMode('list');
       return;
     }
     if (access.canAccessAgenda) {
-      navigateToView("agenda");
-      setModuleMode("list");
+      navigateToView('agenda');
+      setModuleMode('list');
       return;
     }
-    navigateToView("settings");
-    setModuleMode("list");
+    navigateToView('settings');
+    setModuleMode('list');
   }
 
   const openAgenda = () => {
@@ -87,8 +88,8 @@ export function useAppNavigation({
       openDashboard();
       return;
     }
-    navigateToView("agenda");
-    setModuleMode("list");
+    navigateToView('agenda');
+    setModuleMode('list');
   };
 
   const openPatientsListFromMenu = () => {
@@ -111,8 +112,8 @@ export function useAppNavigation({
       openDashboard();
       return;
     }
-    navigateToView("billing");
-    setModuleMode("list");
+    navigateToView('billing');
+    setModuleMode('list');
   };
 
   const openSettings = () => {
@@ -121,8 +122,8 @@ export function useAppNavigation({
       openDashboard();
       return;
     }
-    navigateToView("settings");
-    setModuleMode("list");
+    navigateToView('settings');
+    setModuleMode('list');
   };
 
   const openAttendances = () => {
@@ -130,8 +131,8 @@ export function useAppNavigation({
       openDashboard();
       return;
     }
-    navigateToView("attendances");
-    setModuleMode("list");
+    navigateToView('attendances');
+    setModuleMode('list');
   };
 
   const openFinance = () => {
@@ -139,8 +140,8 @@ export function useAppNavigation({
       openDashboard();
       return;
     }
-    navigateToView("finance");
-    setModuleMode("list");
+    navigateToView('finance');
+    setModuleMode('list');
   };
 
   const openPrices = () => {
@@ -148,8 +149,8 @@ export function useAppNavigation({
       openDashboard();
       return;
     }
-    navigateToView("prices");
-    setModuleMode("list");
+    navigateToView('prices');
+    setModuleMode('list');
   };
 
   const openClinics = () => {
@@ -158,8 +159,8 @@ export function useAppNavigation({
       openDashboard();
       return;
     }
-    navigateToView("clinics");
-    setModuleMode("list");
+    navigateToView('clinics');
+    setModuleMode('list');
   };
 
   const handleClinicSelected = (result: SelectClinicResponse) => {
@@ -178,8 +179,8 @@ export function useAppNavigation({
         modulosLiberados: result.clinica.modulosLiberados,
       },
     });
-    setModuleMode("list");
-    navigateToView("dashboard", true);
+    setModuleMode('list');
+    navigateToView('dashboard', true);
   };
 
   const handleUserSortChange = (field: string) => {
@@ -189,7 +190,7 @@ export function useAppNavigation({
       usersDomain.setCurrentPage,
       usersDomain.setSortBy,
       usersDomain.setSortDirection,
-      field === "recent" ? "desc" : "asc",
+      field === 'recent' ? 'desc' : 'asc',
     );
   };
   const handlePacienteSortChange = (field: string) => {
@@ -199,7 +200,7 @@ export function useAppNavigation({
       patientsDomain.setPacienteCurrentPage,
       patientsDomain.setSortBy,
       patientsDomain.setSortDirection,
-      field === "recent" ? "desc" : "asc",
+      field === 'recent' ? 'desc' : 'asc',
     );
   };
   const handleCbhpmSortChange = (field: string) => {
@@ -209,7 +210,7 @@ export function useAppNavigation({
       patientsDomain.setCbhpmCurrentPage,
       patientsDomain.setCbhpmSortBy,
       patientsDomain.setCbhpmSortDirection,
-      "asc",
+      'asc',
     );
   };
   const handleMedicalGroupSortChange = (field: string) => {
@@ -219,7 +220,7 @@ export function useAppNavigation({
       medicalGroupsDomain.setCurrentPage,
       medicalGroupsDomain.setSortBy,
       medicalGroupsDomain.setSortDirection,
-      field === "recent" ? "desc" : "asc",
+      field === 'recent' ? 'desc' : 'asc',
     );
   };
 

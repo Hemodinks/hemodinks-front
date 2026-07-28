@@ -1,7 +1,7 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { KeyRound, X } from 'lucide-react';
 import { changePassword } from '../../services';
-import type { AuthSession } from '../../types';
+import type { AuthSession } from '../domain/sessionTypes';
 import {
   DEFAULT_PASSWORD,
   getErrorMessage,
@@ -42,7 +42,11 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
     setLoading(true);
 
     try {
-      const result = await changePassword(session.user.id, { senhaAtual, novaSenha }, session.token);
+      const result = await changePassword(
+        session.user.id,
+        { senhaAtual, novaSenha },
+        session.token,
+      );
       onChanged(result.message);
     } catch (submitError) {
       setError(getErrorMessage(submitError));

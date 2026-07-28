@@ -21,7 +21,9 @@ import {
   sortUsersByName,
 } from '../../shared/utils/listing';
 import { queryKeys } from '../../shared/queryKeys';
-import type { AuthSession, CbhpmListQuery, MedicalUserOption } from '../../types';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { CbhpmListQuery } from './patientTypes';
+import type { MedicalUserOption } from '../../shared/domain/clinicalContracts';
 import {
   areCbhpmFiltersSearchable,
   buildCbhpmQueryFilters,
@@ -93,22 +95,33 @@ export function usePatientsDomainQueries({
     setCbhpmError,
   } = cbhpmLookup;
 
-  const pacientesQueryParams = useMemo(() => ({
-    page: pacienteCurrentPage,
-    pageSize: PAGE_SIZE,
-    search: debouncedPacienteSearchTerm,
-    ...getPacienteFilterQuery(debouncedPacienteFilters, isAdmin),
-    sortBy,
-    sortDirection,
-  }), [debouncedPacienteFilters, debouncedPacienteSearchTerm, isAdmin, pacienteCurrentPage, sortBy, sortDirection]);
+  const pacientesQueryParams = useMemo(
+    () => ({
+      page: pacienteCurrentPage,
+      pageSize: PAGE_SIZE,
+      search: debouncedPacienteSearchTerm,
+      ...getPacienteFilterQuery(debouncedPacienteFilters, isAdmin),
+      sortBy,
+      sortDirection,
+    }),
+    [
+      debouncedPacienteFilters,
+      debouncedPacienteSearchTerm,
+      isAdmin,
+      pacienteCurrentPage,
+      sortBy,
+      sortDirection,
+    ],
+  );
   const sessionReady = Boolean(session && !session.user.precisaTrocarSenha);
   const pacientesQuery = useQuery({
     queryKey: queryKeys.pacientes(session?.token ?? '', pacientesQueryParams),
     queryFn: () => getPacientes(session?.token ?? '', pacientesQueryParams),
-    enabled: sessionReady
-      && canAccessPatients
-      && moduleMode === 'list'
-      && (activeView === 'patients' || activeView === 'dashboard'),
+    enabled:
+      sessionReady &&
+      canAccessPatients &&
+      moduleMode === 'list' &&
+      (activeView === 'patients' || activeView === 'dashboard'),
     staleTime: LIST_CACHE_TIME_MS,
   });
   const medicalUsersQuery = useQuery({
@@ -143,21 +156,22 @@ export function usePatientsDomainQueries({
     () => getCbhpmFilterValidationMessage(cbhpmFilters),
     [cbhpmFilters],
   );
-  const canSearchCbhpm = useMemo(
-    () => areCbhpmFiltersSearchable(cbhpmFilters),
-    [cbhpmFilters],
+  const canSearchCbhpm = useMemo(() => areCbhpmFiltersSearchable(cbhpmFilters), [cbhpmFilters]);
+  const cbhpmQueryParams = useMemo<CbhpmListQuery>(
+    () => ({
+      page: cbhpmCurrentPage,
+      pageSize: CBHPM_PAGE_SIZE,
+      ...buildCbhpmQueryFilters(appliedCbhpmFilters),
+      sortBy: cbhpmSortBy,
+      sortDirection: cbhpmSortDirection,
+    }),
+    [appliedCbhpmFilters, cbhpmCurrentPage, cbhpmSortBy, cbhpmSortDirection],
   );
-  const cbhpmQueryParams = useMemo<CbhpmListQuery>(() => ({
-    page: cbhpmCurrentPage,
-    pageSize: CBHPM_PAGE_SIZE,
-    ...buildCbhpmQueryFilters(appliedCbhpmFilters),
-    sortBy: cbhpmSortBy,
-    sortDirection: cbhpmSortDirection,
-  }), [appliedCbhpmFilters, cbhpmCurrentPage, cbhpmSortBy, cbhpmSortDirection]);
   const cbhpmQuery = useQuery({
     queryKey: queryKeys.cbhpm(session?.token ?? '', cbhpmQueryParams),
     queryFn: () => getCbhpmGeral(session?.token ?? '', cbhpmQueryParams),
-    enabled: sessionReady && canConsultCbhpm && cbhpmModalOpen && !appliedCbhpmFilterValidationMessage,
+    enabled:
+      sessionReady && canConsultCbhpm && cbhpmModalOpen && !appliedCbhpmFilterValidationMessage,
     staleTime: LIST_CACHE_TIME_MS,
   });
 
@@ -174,7 +188,13 @@ export function usePatientsDomainQueries({
     setPacientesTotalItems(getPagedTotal(pacientesQuery.data));
     setPacientesTotalPages(getPagedTotalPages(pacientesQuery.data));
     setPacientesError('');
-  }, [pacientesQuery.data, setPacientes, setPacientesError, setPacientesTotalItems, setPacientesTotalPages]);
+  }, [
+    pacientesQuery.data,
+    setPacientes,
+    setPacientesError,
+    setPacientesTotalItems,
+    setPacientesTotalPages,
+  ]);
 
   useEffect(() => {
     if (pacientesQuery.error) {
@@ -184,7 +204,9 @@ export function usePatientsDomainQueries({
 
   useEffect(() => {
     if (medicalUsersQuery.data) {
-      setMedicalUsers(sortUsersByName(getPagedItems(medicalUsersQuery.data as MedicalUserOption[])));
+      setMedicalUsers(
+        sortUsersByName(getPagedItems(medicalUsersQuery.data as MedicalUserOption[])),
+      );
     }
   }, [medicalUsersQuery.data, setMedicalUsers]);
 
@@ -300,10 +322,7 @@ export function usePatientsDomainQueries({
     await medicalUsersQuery.refetch();
   };
 
-  const loadPacientes = async (
-    token = session?.token,
-    forceRefresh = false,
-  ) => {
+  const loadPacientes = async (token = session?.token, forceRefresh = false) => {
     if (!token || !canAccessPatients) {
       return;
     }
@@ -315,10 +334,7 @@ export function usePatientsDomainQueries({
     await pacientesQuery.refetch();
   };
 
-  const loadCbhpm = async (
-    token = session?.token,
-    forceRefresh = false,
-  ) => {
+  const loadCbhpm = async (token = session?.token, forceRefresh = false) => {
     if (!token || !canConsultCbhpm) {
       return;
     }

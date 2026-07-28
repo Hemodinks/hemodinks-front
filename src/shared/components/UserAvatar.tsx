@@ -11,10 +11,21 @@ type UserAvatarProps = {
   decorative?: boolean;
 };
 
-export function UserAvatar({ userId, name, photo, authToken, size = 'sm', decorative = false }: UserAvatarProps) {
+export function UserAvatar({
+  userId,
+  name,
+  photo,
+  authToken,
+  size = 'sm',
+  decorative = false,
+}: UserAvatarProps) {
   const trimmedPhoto = photo?.trim() || '';
-  const canLoadFromApi = Boolean(userId && authToken && trimmedPhoto && !/^(data:image\/|blob:)/i.test(trimmedPhoto));
-  const [photoSource, setPhotoSource] = useState(() => (canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto)));
+  const canLoadFromApi = Boolean(
+    userId && authToken && trimmedPhoto && !/^(data:image\/|blob:)/i.test(trimmedPhoto),
+  );
+  const [photoSource, setPhotoSource] = useState(() =>
+    canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto),
+  );
   const [photoFailed, setPhotoFailed] = useState(false);
 
   useEffect(() => {

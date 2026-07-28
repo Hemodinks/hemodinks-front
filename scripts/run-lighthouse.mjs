@@ -40,7 +40,7 @@ function checkMinimum(result, route, category, minimum, required = false) {
     throw new Error(message);
   }
 
-  console[ value < minimum ? 'warn' : 'log' ](message);
+  console[value < minimum ? 'warn' : 'log'](message);
 }
 
 function checkScriptBudget(result, route) {
@@ -57,9 +57,7 @@ async function stopChrome() {
   try {
     await chrome.kill();
   } catch (error) {
-    const lockedPath = error?.code === 'EPERM' && typeof error.path === 'string'
-      ? error.path
-      : '';
+    const lockedPath = error?.code === 'EPERM' && typeof error.path === 'string' ? error.path : '';
 
     if (!/^lighthouse\.\d+$/.test(basename(lockedPath))) {
       throw error;

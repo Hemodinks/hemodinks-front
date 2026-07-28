@@ -1,4 +1,5 @@
-import type { CbhpmListQuery, ListQuery, PacienteListQuery } from '../types';
+import type { CbhpmListQuery, PacienteListQuery } from '../features/patients/patientTypes';
+import type { ListQuery } from '../shared/domain/apiTypes';
 
 export function buildListQueryParams(query?: ListQuery | PacienteListQuery | CbhpmListQuery) {
   const params = new URLSearchParams();

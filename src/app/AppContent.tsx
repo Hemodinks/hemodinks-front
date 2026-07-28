@@ -1,24 +1,19 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { LoginScreen } from "../features/auth/LoginScreen";
-import { PasswordRequiredScreen } from "../features/auth/PasswordRequiredScreen";
-import { ResetPasswordScreen } from "../features/auth/ResetPasswordScreen";
-import { useAuthSession } from "../features/auth/useAuthSession";
-import { useLoginFlow } from "../features/auth/useLoginFlow";
-import { AppShell } from "../layout/AppShell";
-import type { AppView, ModuleMode } from "../appTypes";
-import { useConfirmationDialog } from "../shared/components/ConfirmationDialog";
-import { useRouteView } from "../shared/hooks/useRouteView";
-import { useThemePreference } from "../shared/hooks/useThemePreference";
-import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from "./appAccess";
-import { AppMainContent } from "./AppMainContent";
-import { AppModals } from "./AppModals";
-import { getAppTitle } from "./appViewMeta";
-import { useAppChrome } from "./useAppChrome";
-import { useAppDomains } from "./useAppDomains";
-import { useAppNavigation } from "./useAppNavigation";
-import { useAppViewPresentation } from "./useAppViewPresentation";
-import { useSessionLifecycle } from "./useSessionLifecycle";
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuthSession } from '../features/auth/useAuthSession';
+import { useLoginFlow } from '../features/auth/useLoginFlow';
+import type { AppView, ModuleMode } from '../appTypes';
+import { useConfirmationDialog } from '../shared/components/ConfirmationDialog';
+import { useRouteView } from '../shared/hooks/useRouteView';
+import { useThemePreference } from '../shared/hooks/useThemePreference';
+import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from './appAccess';
+import { AppWorkspace } from './AppWorkspace';
+import { useAppChrome } from './useAppChrome';
+import { useAppDomains } from './useAppDomains';
+import { useAppNavigation } from './useAppNavigation';
+import { useAppViewPresentation } from './useAppViewPresentation';
+import { useSessionLifecycle } from './useSessionLifecycle';
+import { AppSessionScreens } from './AppSessionScreens';
 
 export function AppContent() {
   const location = useLocation();
@@ -26,12 +21,12 @@ export function AppContent() {
   const { session, persistSession, clearSession } = useAuthSession();
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
-  const [moduleMode, setModuleMode] = useState<ModuleMode>("list");
+  const [moduleMode, setModuleMode] = useState<ModuleMode>('list');
   const logoutRef = useRef<() => void>(() => undefined);
 
+  const access = getAppAccess(session);
   const {
     isAdmin,
-    isSuperAdmin,
     isMedical,
     canAccessDashboard,
     canAccessPatients,
@@ -45,7 +40,6 @@ export function AppContent() {
     canCreatePatients,
     canEditPatients,
     canDeletePatients,
-    canManagePatientObservacoes,
     patientReadOnly,
     canUseDashboardRoute,
     canUsePatientsRoute,
@@ -60,7 +54,7 @@ export function AppContent() {
     canUseSettingsRoute,
     canAccessClinics,
     canUseClinicsRoute,
-  } = getAppAccess(session);
+  } = access;
   const appChrome = useAppChrome({ session });
   const loginFlow = useLoginFlow({
     session,
@@ -70,8 +64,7 @@ export function AppContent() {
     fallbackCompanyPhoto: appChrome.systemSettings.fotoEmpresa,
   });
   const forceDashboardRoute =
-    loginFlow.openDashboardAfterLogin &&
-    Boolean(session && !session.user.precisaTrocarSenha);
+    loginFlow.openDashboardAfterLogin && Boolean(session && !session.user.precisaTrocarSenha);
   const { activeView, navigateToView } = useRouteView({
     session,
     canUseDashboardRoute,
@@ -88,11 +81,11 @@ export function AppContent() {
     canUseClinicsRoute,
     forceDashboardRoute,
   });
-  const normalizedPath = location.pathname.replace(/\/+$/, "") || "/";
-  const isResetPasswordRoute = normalizedPath === "/reset-password";
+  const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
+  const isResetPasswordRoute = normalizedPath === '/reset-password';
   const resetToken = isResetPasswordRoute
-    ? (new URLSearchParams(location.search).get("token")?.trim() ?? "")
-    : "";
+    ? (new URLSearchParams(location.search).get('token')?.trim() ?? '')
+    : '';
   const navigateToViewFromInteraction = useCallback(
     (view: AppView, replace = false) => {
       loginFlow.setOpenDashboardAfterLogin(false);
@@ -149,19 +142,19 @@ export function AppContent() {
     persistSession,
     clearSession,
     navigate,
-    navigateToDashboard: () => navigateToView("dashboard", true),
+    navigateToDashboard: () => navigateToView('dashboard', true),
     resetDomains: () => {
       usersDomain.resetUsersState();
       patientsDomain.resetPatientsState();
       medicalGroupsDomain.resetMedicalGroupsState();
     },
     resetAppChrome: appChrome.resetAppChrome,
-    resetModuleMode: () => setModuleMode("list"),
+    resetModuleMode: () => setModuleMode('list'),
     resetLoginFlow: (infoMessage) => {
       loginFlow.setOpenDashboardAfterLogin(false);
-      loginFlow.setLoginError("");
+      loginFlow.setLoginError('');
       loginFlow.setLoginInfo(infoMessage);
-      loginFlow.setLoginPassword("");
+      loginFlow.setLoginPassword('');
     },
   });
   logoutRef.current = sessionLifecycle.logout;
@@ -207,192 +200,45 @@ export function AppContent() {
     medicalGroupsDomain.formLoading;
 
   useLayoutEffect(() => {
-    if (
-      !loginFlow.openDashboardAfterLogin ||
-      MEDICAL_ALLOWED_ENTRY_PATHS.has(normalizedPath)
-    ) {
+    if (!loginFlow.openDashboardAfterLogin || MEDICAL_ALLOWED_ENTRY_PATHS.has(normalizedPath)) {
       return;
     }
 
     loginFlow.setOpenDashboardAfterLogin(false);
   }, [normalizedPath, loginFlow.openDashboardAfterLogin]);
 
-  if (!session && isResetPasswordRoute) {
+  if (!session || session.user.precisaTrocarSenha) {
     return (
-      <ResetPasswordScreen
-        companyName={appChrome.companyName}
-        companyPhoto={appChrome.systemSettings.fotoEmpresa}
-        theme={theme}
-        token={resetToken}
-        onThemeToggle={toggleTheme}
-        onBackToLogin={() => loginFlow.returnToLogin()}
-        onResetCompleted={loginFlow.handleResetPasswordCompleted}
-      />
-    );
-  }
-
-  if (!session) {
-    return (
-      <LoginScreen
-        companyName={loginFlow.companyName}
-        companyPhoto={loginFlow.companyPhoto}
-        isBusy={isBusy}
-        theme={theme}
-        loginEmail={loginFlow.loginEmail}
-        loginPassword={loginFlow.loginPassword}
-        loginClinicValue={loginFlow.loginClinicValue}
-        clinics={loginFlow.publicClinics}
-        clinicsLoading={loginFlow.publicClinicsLoading}
-        loginError={loginFlow.loginError}
-        loginInfo={loginFlow.loginInfo}
-        loginLoading={loginFlow.loginLoading}
-        resetPasswordLoading={loginFlow.resetPasswordLoading}
-        onThemeToggle={toggleTheme}
-        onLoginEmailChange={loginFlow.setLoginEmail}
-        onLoginPasswordChange={loginFlow.setLoginPassword}
-        onLoginClinicChange={loginFlow.setLoginClinicValue}
-        onSubmit={loginFlow.handleLogin}
-        onResetPassword={() => void loginFlow.handleResetPassword()}
-      />
-    );
-  }
-
-  if (session.user.precisaTrocarSenha) {
-    return (
-      <PasswordRequiredScreen
+      <AppSessionScreens
         session={session}
+        isResetPasswordRoute={isResetPasswordRoute}
+        resetToken={resetToken}
         isBusy={isBusy}
         theme={theme}
-        onThemeToggle={toggleTheme}
-        onPasswordChanged={usersDomain.handlePasswordChanged}
-        onLogout={sessionLifecycle.logout}
+        toggleTheme={toggleTheme}
+        appChrome={appChrome}
+        loginFlow={loginFlow}
+        usersDomain={usersDomain}
+        sessionLifecycle={sessionLifecycle}
       />
     );
   }
 
   return (
-    <AppShell
+    <AppWorkspace
       session={session}
+      moduleMode={moduleMode}
       isBusy={isBusy}
-      appTitle={getAppTitle(activeView)}
-      companyName={appChrome.companyName}
-      companyPhoto={viewPresentation.currentClinicPhoto}
+      theme={theme}
+      setThemePreference={setThemePreference}
+      access={access}
+      appChrome={appChrome}
+      domains={{ usersDomain, patientsDomain, medicalGroupsDomain }}
+      navigation={appNavigation}
+      presentation={viewPresentation}
+      lifecycle={sessionLifecycle}
       activeView={activeView}
-      breadcrumbItems={viewPresentation.breadcrumbItems}
-      notificationsOpen={appChrome.notificationsOpen}
-      notificationCount={viewPresentation.notificationCount}
-      currentUserProfile={viewPresentation.currentUserProfile}
-      canAccessDashboard={canAccessDashboard}
-      canAccessPatients={canAccessPatients}
-      canAccessUsers={canAccessUsers}
-      canEditOwnUser={canEditOwnUser}
-      canAccessBilling={canAccessBilling}
-      canAccessMedicalGroups={canAccessMedicalGroups}
-      canAccessSettings={canAccessSettings}
-      canAccessAgenda={canAccessAgenda}
-      canAccessClinics={canAccessClinics}
-      usersCount={viewPresentation.usersCount}
-      pacientesCount={viewPresentation.pacientesCount}
-      medicalGroupsCount={medicalGroupsDomain.medicalGroupsCount}
-      pendingPaymentsCount={viewPresentation.counts.pendingPaymentsCount}
-      unreadAgendaNotificationCount={
-        viewPresentation.counts.unreadAgendaNotificationCount
-      }
-      medicalUsers={patientsDomain.medicalUsers}
-      convenios={patientsDomain.convenios}
-      opmeFornecedores={patientsDomain.opmeFornecedores}
-      onToggleNotifications={() => void appChrome.handleToggleNotifications()}
-      onLogout={sessionLifecycle.logout}
-      onOpenDashboard={appNavigation.openDashboard}
-      onOpenUsersList={usersDomain.openUsersList}
-      onOpenMyProfile={usersDomain.openMyProfile}
-      onOpenPatientsList={appNavigation.openPatientsListFromMenu}
-      onOpenBilling={appNavigation.openBilling}
-      onOpenAttendances={appNavigation.openAttendances}
-      onOpenFinance={appNavigation.openFinance}
-      onOpenPrices={appNavigation.openPrices}
-      onOpenMedicalGroups={appNavigation.openMedicalGroups}
-      onOpenAgenda={appNavigation.openAgenda}
-      onOpenSettings={appNavigation.openSettings}
-      onOpenClinics={appNavigation.openClinics}
-      modals={
-        <AppModals
-          session={session}
-          usersDomain={usersDomain}
-          patientsDomain={patientsDomain}
-          isAdmin={isAdmin}
-          notificationsOpen={appChrome.notificationsOpen}
-          notifications={appChrome.notifications}
-          notificationsLoading={appChrome.notificationsLoading}
-          notificationsError={appChrome.notificationsError}
-          notificationCount={viewPresentation.notificationCount}
-          onCloseNotifications={() => appChrome.setNotificationsOpen(false)}
-          onOpenObservation={(pacienteId) => {
-            appChrome.setNotificationsOpen(false);
-            void patientsDomain.handleOpenPacienteObservacoesById(pacienteId);
-          }}
-          onCbhpmSortChange={appNavigation.handleCbhpmSortChange}
-          onPasswordChanged={usersDomain.handlePasswordChanged}
-          confirmationDialog={confirmationDialog}
-        />
-      }
-    >
-      <AppMainContent
-        session={session}
-        activeView={activeView}
-        moduleMode={moduleMode}
-        companyName={appChrome.companyName}
-        access={{
-          canAccessPatients,
-          canAccessUsers,
-          canEditOwnUser,
-          canAccessBilling,
-          canAccessMedicalGroups,
-          canAccessAgenda,
-          canAccessSettings,
-          canCreatePatients,
-          canEditPatients,
-          canDeletePatients,
-          canManagePatientObservacoes,
-          patientReadOnly,
-          isAdmin,
-          isSuperAdmin,
-          isMedical,
-          canAccessClinics,
-        }}
-        counts={{
-          usersCount: viewPresentation.usersCount,
-          pacientesCount: viewPresentation.pacientesCount,
-          ...viewPresentation.counts,
-        }}
-        usersDomain={usersDomain}
-        patientsDomain={patientsDomain}
-        medicalGroupsDomain={medicalGroupsDomain}
-        dashboardError={appChrome.dashboardError}
-        theme={theme}
-        navigation={{
-          openUsersList: usersDomain.openUsersList,
-          openMyProfile: usersDomain.openMyProfile,
-          openPatientsList: patientsDomain.openPatientsList,
-          openBilling: appNavigation.openBilling,
-          openAttendances: appNavigation.openAttendances,
-          openFinance: appNavigation.openFinance,
-          openPrices: appNavigation.openPrices,
-          openMedicalGroups: appNavigation.openMedicalGroups,
-          openAgenda: appNavigation.openAgenda,
-          openSettings: appNavigation.openSettings,
-          openClinics: appNavigation.openClinics,
-        }}
-        sortHandlers={{
-          handleUserSortChange: appNavigation.handleUserSortChange,
-          handlePacienteSortChange: appNavigation.handlePacienteSortChange,
-          handleMedicalGroupSortChange:
-            appNavigation.handleMedicalGroupSortChange,
-        }}
-        onThemeChange={setThemePreference}
-        onPasswordChanged={usersDomain.handlePasswordChanged}
-        onClinicSelected={appNavigation.handleClinicSelected}
-      />
-    </AppShell>
+      confirmationDialog={confirmationDialog}
+    />
   );
 }

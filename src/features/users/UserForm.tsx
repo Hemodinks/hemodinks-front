@@ -1,8 +1,16 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { FileText, FileUp, ImagePlus, Plus, Save, Trash2, X } from 'lucide-react';
-import type { User, UserFormData } from '../../types';
+import type { User, UserFormData } from './userTypes';
 import { DateInput } from '../../shared/components/DateInput';
-import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
+import {
+  AlertMessage,
+  Button,
+  CheckboxField,
+  FormPanel,
+  IconButton,
+  SelectField,
+  TextField,
+} from '../../shared/components/ui';
 import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
 import { useUserDocuments } from './useUserDocuments';
 import {
@@ -72,8 +80,12 @@ export function UserForm({
     <FormPanel className="module-form-panel">
       <div className="panel-title">
         <div>
-          <span className="eyebrow">{canAccessUsers ? editingId ? 'Edição' : 'Cadastro' : 'Perfil'}</span>
-          <h2>{canAccessUsers ? editingId ? 'Editar usuário' : 'Novo usuário' : 'Meu cadastro'}</h2>
+          <span className="eyebrow">
+            {canAccessUsers ? (editingId ? 'Edição' : 'Cadastro') : 'Perfil'}
+          </span>
+          <h2>
+            {canAccessUsers ? (editingId ? 'Editar usuário' : 'Novo usuário') : 'Meu cadastro'}
+          </h2>
         </div>
         <div className="panel-title-actions">
           <IconButton label="Voltar para lista" tone="muted" onClick={onClose}>
@@ -88,7 +100,13 @@ export function UserForm({
             Foto do perfil
           </label>
           <div className="photo-uploader">
-            <UserAvatar userId={editingId ?? undefined} name={formData.nome || 'Usuário'} photo={formData.fotoPerfil} authToken={sessionToken} size="lg" />
+            <UserAvatar
+              userId={editingId ?? undefined}
+              name={formData.nome || 'Usuário'}
+              photo={formData.fotoPerfil}
+              authToken={sessionToken}
+              size="lg"
+            />
             <div className="photo-actions">
               <label className="ghost-button file-action" htmlFor="profile-photo-input">
                 <ImagePlus size={17} />
@@ -143,7 +161,9 @@ export function UserForm({
               label="Nome completo"
               type="text"
               value={formData.nome}
-              onValueChange={(value) => setFormData((current) => ({ ...current, nome: value.slice(0, MAX_NAME_LENGTH) }))}
+              onValueChange={(value) =>
+                setFormData((current) => ({ ...current, nome: value.slice(0, MAX_NAME_LENGTH) }))
+              }
               maxLength={MAX_NAME_LENGTH}
               disabled={isFormBusy}
               required
@@ -154,7 +174,9 @@ export function UserForm({
                 id="user-birth-date"
                 label="Data de nascimento"
                 value={formData.dataNascimento}
-                onChange={(value) => setFormData((current) => ({ ...current, dataNascimento: value }))}
+                onChange={(value) =>
+                  setFormData((current) => ({ ...current, dataNascimento: value }))
+                }
                 disabled={isFormBusy}
               />
             </div>
@@ -165,7 +187,9 @@ export function UserForm({
               label="Email"
               type="email"
               value={formData.email}
-              onValueChange={(value) => setFormData((current) => ({ ...current, email: value.slice(0, MAX_EMAIL_LENGTH) }))}
+              onValueChange={(value) =>
+                setFormData((current) => ({ ...current, email: value.slice(0, MAX_EMAIL_LENGTH) }))
+              }
               maxLength={MAX_EMAIL_LENGTH}
               disabled={isFormBusy || (!canAccessUsers && formData.perfilId === PATIENT_PROFILE_ID)}
               required
@@ -175,8 +199,15 @@ export function UserForm({
               label="Telefone"
               type="tel"
               value={formData.telefone}
-              onFocus={() => setFormData((current) => ({ ...current, telefone: formatPhoneInput(current.telefone) }))}
-              onValueChange={(value) => setFormData((current) => ({ ...current, telefone: formatPhoneInput(value) }))}
+              onFocus={() =>
+                setFormData((current) => ({
+                  ...current,
+                  telefone: formatPhoneInput(current.telefone),
+                }))
+              }
+              onValueChange={(value) =>
+                setFormData((current) => ({ ...current, telefone: formatPhoneInput(value) }))
+              }
               inputMode="numeric"
               maxLength={MAX_PHONE_LENGTH}
               placeholder="+55 (81) 99999-9999"
@@ -192,7 +223,9 @@ export function UserForm({
               label="CRM"
               type="text"
               value={formData.crm}
-              onValueChange={(value) => setFormData((current) => ({ ...current, crm: value.slice(0, MAX_CRM_LENGTH) }))}
+              onValueChange={(value) =>
+                setFormData((current) => ({ ...current, crm: value.slice(0, MAX_CRM_LENGTH) }))
+              }
               maxLength={MAX_CRM_LENGTH}
               placeholder="Ex.: 12345"
               disabled={isFormBusy || !canUseUserForm}
@@ -202,14 +235,18 @@ export function UserForm({
             <SelectField
               label="UF do CRM"
               value={formData.crmUf}
-              onChange={(event) => setFormData((current) => ({ ...current, crmUf: event.target.value }))}
+              onChange={(event) =>
+                setFormData((current) => ({ ...current, crmUf: event.target.value }))
+              }
               disabled={isFormBusy || !canUseUserForm}
               required
             >
-                <option value="">Selecione</option>
-                {BRAZIL_UF_OPTIONS.map((uf) => (
-                  <option key={uf} value={uf}>{uf}</option>
-                ))}
+              <option value="">Selecione</option>
+              {BRAZIL_UF_OPTIONS.map((uf) => (
+                <option key={uf} value={uf}>
+                  {uf}
+                </option>
+              ))}
             </SelectField>
           </div>
         )}
@@ -242,7 +279,12 @@ export function UserForm({
                   <li key={`${file.name}-${index}`}>
                     <FileText size={15} />
                     <span>{file.name}</span>
-                    <IconButton label="Remover arquivo" tone="muted" className="mini" onClick={() => onRemovePendingUserFile(index)}>
+                    <IconButton
+                      label="Remover arquivo"
+                      tone="muted"
+                      className="mini"
+                      onClick={() => onRemovePendingUserFile(index)}
+                    >
                       <X size={14} />
                     </IconButton>
                   </li>
@@ -260,7 +302,12 @@ export function UserForm({
                       label={arquivo.nomeOriginal}
                       loadFile={() => userDocuments.download(editingUserDetails.id, arquivo.id)}
                     />
-                    <IconButton label="Excluir arquivo" tone="muted" className="mini" onClick={() => void onDeleteUserArquivo(editingUserDetails, arquivo.id)}>
+                    <IconButton
+                      label="Excluir arquivo"
+                      tone="muted"
+                      className="mini"
+                      onClick={() => void onDeleteUserArquivo(editingUserDetails, arquivo.id)}
+                    >
                       <Trash2 size={14} />
                     </IconButton>
                   </li>

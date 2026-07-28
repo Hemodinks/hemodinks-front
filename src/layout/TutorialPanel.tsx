@@ -1,13 +1,13 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState } from 'react';
 import {
   BookOpenText,
   ChevronDown,
   Lightbulb,
   PanelRightClose,
   PanelRightOpen,
-} from "lucide-react";
-import type { AppView } from "../appTypes";
-import { MODULE_TUTORIALS } from "./tutorialContent";
+} from 'lucide-react';
+import type { AppView } from '../appTypes';
+import { MODULE_TUTORIALS } from './tutorialContent';
 
 type TutorialPanelProps = {
   activeView: AppView;
@@ -83,10 +83,7 @@ export function TutorialPanel({ activeView }: TutorialPanelProps) {
           const titleId = `${idPrefix}-tutorial-title-${index}`;
 
           return (
-            <section
-              className={`tutorial-section ${isOpen ? "is-open" : ""}`}
-              key={section.title}
-            >
+            <section className={`tutorial-section ${isOpen ? 'is-open' : ''}`} key={section.title}>
               <h3>
                 <button
                   type="button"
@@ -103,11 +100,7 @@ export function TutorialPanel({ activeView }: TutorialPanelProps) {
                     {index + 1}
                   </span>
                   <span id={titleId}>{section.title}</span>
-                  <ChevronDown
-                    className="tutorial-section-chevron"
-                    size={18}
-                    aria-hidden="true"
-                  />
+                  <ChevronDown className="tutorial-section-chevron" size={18} aria-hidden="true" />
                 </button>
               </h3>
               <div

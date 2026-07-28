@@ -2,13 +2,15 @@ import { useCallback, useState } from 'react';
 import type { PacienteFilters } from '../../appTypes';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { PAGE_SIZE } from '../../shared/utils/formatters';
-import type { Paciente } from '../../types';
+import type { Paciente } from './patientTypes';
 import { emptyPacienteFilters } from './patientUtils';
 
 function arePacienteFiltersEqual(current: PacienteFilters, debounced: PacienteFilters) {
-  return current.medico === debounced.medico
-    && current.convenio === debounced.convenio
-    && current.procedimento === debounced.procedimento;
+  return (
+    current.medico === debounced.medico &&
+    current.convenio === debounced.convenio &&
+    current.procedimento === debounced.procedimento
+  );
 }
 
 export function usePatientList() {
@@ -22,11 +24,16 @@ export function usePatientList() {
   const [sortBy, setSortBy] = useState('recent');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const resetPacientesPage = useCallback(() => setPacienteCurrentPage(1), []);
-  const [debouncedPacienteSearchTerm] = useDebouncedValue(pacienteSearchTerm, { onCommit: resetPacientesPage });
-  const [debouncedPacienteFilters, setDebouncedPacienteFilters] = useDebouncedValue(pacienteFilters, {
-    isEqual: arePacienteFiltersEqual,
+  const [debouncedPacienteSearchTerm] = useDebouncedValue(pacienteSearchTerm, {
     onCommit: resetPacientesPage,
   });
+  const [debouncedPacienteFilters, setDebouncedPacienteFilters] = useDebouncedValue(
+    pacienteFilters,
+    {
+      isEqual: arePacienteFiltersEqual,
+      onCommit: resetPacientesPage,
+    },
+  );
   const [pacientesTotalItems, setPacientesTotalItems] = useState(0);
   const [pacientesTotalPages, setPacientesTotalPages] = useState(1);
 

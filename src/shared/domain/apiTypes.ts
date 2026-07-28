@@ -12,5 +12,16 @@ export type ListQuery = {
   search?: string;
   profileId?: number;
   sortBy?: string;
-  sortDirection?: "asc" | "desc";
+  sortDirection?: 'asc' | 'desc';
+};
+
+export type CbhpmListQuery = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  codigo?: string;
+  procedimento?: string;
+  porte?: string;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 };

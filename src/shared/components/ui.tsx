@@ -53,10 +53,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const tooltip =
-    title ??
-    ariaLabel ??
-    getButtonText(children).replace(/\s+/g, ' ').trim() ??
-    undefined;
+    title ?? ariaLabel ?? getButtonText(children).replace(/\s+/g, ' ').trim() ?? undefined;
 
   return (
     <button
@@ -108,14 +105,10 @@ export function IconButton({
     const rect = buttonRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    const placement =
-      rect.bottom + 72 > window.innerHeight ? 'above' : 'below';
+    const placement = rect.bottom + 72 > window.innerHeight ? 'above' : 'below';
 
     setTooltipPosition({
-      left: Math.min(
-        Math.max(rect.left + rect.width / 2, 132),
-        window.innerWidth - 132,
-      ),
+      left: Math.min(Math.max(rect.left + rect.width / 2, 132), window.innerWidth - 132),
       top: placement === 'above' ? rect.top - 9 : rect.bottom + 9,
       placement,
     });
@@ -130,9 +123,7 @@ export function IconButton({
         ref={buttonRef}
         type={type}
         aria-label={label}
-        aria-describedby={
-          tooltipPosition ? tooltipId : ariaDescribedBy
-        }
+        aria-describedby={tooltipPosition ? tooltipId : ariaDescribedBy}
         title={tooltipText}
         onMouseEnter={(event) => {
           showTooltip();
@@ -213,13 +204,7 @@ type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> & 
   onValueChange: (value: string, event: ChangeEvent<HTMLInputElement>) => void;
 };
 
-export function TextField({
-  label,
-  value,
-  onValueChange,
-  className,
-  ...props
-}: TextFieldProps) {
+export function TextField({ label, value, onValueChange, className, ...props }: TextFieldProps) {
   return (
     <label className={className}>
       {label}
@@ -257,7 +242,10 @@ export function TextareaField({
   );
 }
 
-type CheckboxFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'value'> & {
+type CheckboxFieldProps = Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'onChange' | 'value'
+> & {
   label: string;
   checked: boolean;
   onCheckedChange: (checked: boolean, event: ChangeEvent<HTMLInputElement>) => void;

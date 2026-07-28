@@ -1,4 +1,4 @@
-import type { OpmeFornecedor } from '../types';
+import type { OpmeFornecedor } from '../features/patients/patientTypes';
 import { get } from './api';
 
 export function getOpmeFornecedores(token: string) {

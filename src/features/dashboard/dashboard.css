@@ -82,8 +82,7 @@
   border-left-width: 5px;
   border-radius: 8px;
   background:
-    linear-gradient(135deg, var(--summary-soft, transparent), transparent 72%),
-    var(--input-bg);
+    linear-gradient(135deg, var(--summary-soft, transparent), transparent 72%), var(--input-bg);
 }
 
 .info-summary-icon {
@@ -157,8 +156,13 @@
   padding: 22px;
   padding-right: 58px;
   color: #fff;
-  background: linear-gradient(135deg, var(--module-color, var(--action-secondary)), color-mix(in srgb, var(--module-color, var(--action-secondary)) 78%, black));
-  box-shadow: 0 12px 24px color-mix(in srgb, var(--module-color, var(--action-secondary)) 18%, transparent);
+  background: linear-gradient(
+    135deg,
+    var(--module-color, var(--action-secondary)),
+    color-mix(in srgb, var(--module-color, var(--action-secondary)) 78%, black)
+  );
+  box-shadow: 0 12px 24px
+    color-mix(in srgb, var(--module-color, var(--action-secondary)) 18%, transparent);
   text-align: left;
   cursor: pointer;
   user-select: none;
@@ -171,7 +175,11 @@
 
 .module-card:hover {
   border-color: color-mix(in srgb, var(--module-color, var(--action-secondary)) 82%, black);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--module-color, var(--action-secondary)) 92%, white), color-mix(in srgb, var(--module-color, var(--action-secondary)) 70%, black));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--module-color, var(--action-secondary)) 92%, white),
+    color-mix(in srgb, var(--module-color, var(--action-secondary)) 70%, black)
+  );
 }
 
 .module-card.is-dragging {
@@ -367,7 +375,11 @@
 
 .notifications-list li.is-unread {
   border-color: color-mix(in srgb, var(--blood) 34%, var(--line));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--blood) 8%, var(--panel-strong)), var(--panel-strong));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--blood) 8%, var(--panel-strong)),
+    var(--panel-strong)
+  );
 }
 
 .notification-item-icon {

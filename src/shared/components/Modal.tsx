@@ -32,11 +32,11 @@ export function Modal({
   }, [onClose]);
 
   useEffect(() => {
-    const previouslyFocused = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
-    const focusTarget = panelRef.current?.querySelector<HTMLElement>(focusableSelector) ?? panelRef.current;
+    const focusTarget =
+      panelRef.current?.querySelector<HTMLElement>(focusableSelector) ?? panelRef.current;
     focusTarget?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {

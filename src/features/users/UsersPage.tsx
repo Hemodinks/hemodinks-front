@@ -1,5 +1,5 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import type { User, UserFormData } from '../../types';
+import type { User, UserFormData } from './userTypes';
 import { UserForm } from './UserForm';
 import { UserList } from './UserList';
 import './users.css';

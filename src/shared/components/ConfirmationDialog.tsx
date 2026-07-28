@@ -47,7 +47,9 @@ export function ConfirmationDialog({
         {getToneIcon(tone)}
       </div>
       <div className="confirmation-copy">
-        <span className="eyebrow">{tone === 'delete' ? 'Confirmar exclusão' : 'Confirmar alteração'}</span>
+        <span className="eyebrow">
+          {tone === 'delete' ? 'Confirmar exclusão' : 'Confirmar alteração'}
+        </span>
         <h2 id={titleId}>{title}</h2>
         <p>{message}</p>
       </div>

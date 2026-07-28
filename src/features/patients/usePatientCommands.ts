@@ -14,7 +14,8 @@ import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { queryKeys } from '../../shared/queryKeys';
 import { DEFAULT_PASSWORD, getErrorMessage } from '../../shared/utils/formatters';
 import { sortPacientesForListing } from '../../shared/utils/listing';
-import type { AuthSession, Paciente, PacientePayload } from '../../types';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { Paciente, PacientePayload } from './patientTypes';
 import { buildPatientPayloadWithLookups } from './patientDomainHelpers';
 import { validatePacienteForm } from './patientUtils';
 import type { usePatientForm } from './usePatientForm';
@@ -51,17 +52,29 @@ export function usePatientCommands({
   confirmAction,
 }: PatientCommandsOptions) {
   const savePacienteMutation = useMutation({
-    mutationFn: ({ id, payload, token }: { id: number | null; payload: PacientePayload; token: string }) => (
-      id ? updatePaciente(id, payload, token) : createPaciente(payload, token)
-    ),
+    mutationFn: ({
+      id,
+      payload,
+      token,
+    }: {
+      id: number | null;
+      payload: PacientePayload;
+      token: string;
+    }) => (id ? updatePaciente(id, payload, token) : createPaciente(payload, token)),
   });
   const deletePacienteMutation = useMutation({
     mutationFn: ({ id, token }: { id: number; token: string }) => deletePaciente(id, token),
   });
   const createPacienteObservacaoMutation = useMutation({
-    mutationFn: ({ pacienteId, texto, token }: { pacienteId: number; texto: string; token: string }) => (
-      createPacienteObservacao(pacienteId, { texto }, token)
-    ),
+    mutationFn: ({
+      pacienteId,
+      texto,
+      token,
+    }: {
+      pacienteId: number;
+      texto: string;
+      token: string;
+    }) => createPacienteObservacao(pacienteId, { texto }, token),
   });
 
   const handleEditPaciente = async (paciente: Paciente) => {
@@ -104,28 +117,36 @@ export function usePatientCommands({
       return;
     }
 
-    const {
-      payload,
-      selectedMedico,
-      selectedMedicoAuxiliar1,
-      selectedMedicoAuxiliar2,
-    } = buildPatientPayloadWithLookups({
-      pacienteFormData: patientForm.pacienteFormData,
-      medicalUsers: patientLookups.medicalUsers,
-      hospitais: patientLookups.hospitais,
-      convenios: patientLookups.convenios,
-      opmeFornecedores: patientLookups.opmeFornecedores,
-    });
+    const { payload, selectedMedico, selectedMedicoAuxiliar1, selectedMedicoAuxiliar2 } =
+      buildPatientPayloadWithLookups({
+        pacienteFormData: patientForm.pacienteFormData,
+        medicalUsers: patientLookups.medicalUsers,
+        hospitais: patientLookups.hospitais,
+        convenios: patientLookups.convenios,
+        opmeFornecedores: patientLookups.opmeFornecedores,
+      });
 
-    if (selectedMedico.trimmedName && !selectedMedico.selectedUser && !selectedMedico.hasScopedSelection) {
+    if (
+      selectedMedico.trimmedName &&
+      !selectedMedico.selectedUser &&
+      !selectedMedico.hasScopedSelection
+    ) {
       patientForm.setPacienteFormError('Selecione um cirurgião cadastrado com perfil Médicos.');
       return;
     }
-    if (selectedMedicoAuxiliar1.trimmedName && !selectedMedicoAuxiliar1.selectedUser && !selectedMedicoAuxiliar1.hasScopedSelection) {
+    if (
+      selectedMedicoAuxiliar1.trimmedName &&
+      !selectedMedicoAuxiliar1.selectedUser &&
+      !selectedMedicoAuxiliar1.hasScopedSelection
+    ) {
       patientForm.setPacienteFormError('Selecione o médico auxiliar 1 no cadastro de médicos.');
       return;
     }
-    if (selectedMedicoAuxiliar2.trimmedName && !selectedMedicoAuxiliar2.selectedUser && !selectedMedicoAuxiliar2.hasScopedSelection) {
+    if (
+      selectedMedicoAuxiliar2.trimmedName &&
+      !selectedMedicoAuxiliar2.selectedUser &&
+      !selectedMedicoAuxiliar2.hasScopedSelection
+    ) {
       patientForm.setPacienteFormError('Selecione o médico auxiliar 2 no cadastro de médicos.');
       return;
     }
@@ -158,11 +179,15 @@ export function usePatientCommands({
         }
       }
 
-      patientList.setPacientes((current) => sortPacientesForListing(
-        patientForm.editingPacienteId
-          ? current.map((paciente) => (paciente.id === savedPaciente.id ? savedPaciente : paciente))
-          : [savedPaciente, ...current],
-      ));
+      patientList.setPacientes((current) =>
+        sortPacientesForListing(
+          patientForm.editingPacienteId
+            ? current.map((paciente) =>
+                paciente.id === savedPaciente.id ? savedPaciente : paciente,
+              )
+            : [savedPaciente, ...current],
+        ),
+      );
       const baseSuccessMessage = patientForm.editingPacienteId
         ? 'Paciente atualizado.'
         : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`;
@@ -175,9 +200,13 @@ export function usePatientCommands({
       );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardNotifications(session.token) }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.dashboardNotifications(session.token),
+        }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.pacienteObservacoesRoot(session.token) }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.pacienteObservacoesRoot(session.token),
+        }),
         queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.convenios(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(session.token) }),

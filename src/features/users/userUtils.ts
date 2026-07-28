@@ -1,4 +1,4 @@
-import type { UserFormData, UserPayload } from '../../types';
+import type { UserFormData, UserPayload } from './userTypes';
 import {
   DEFAULT_PROFILE_ID,
   formatCpfInput,
@@ -84,7 +84,9 @@ export function validateUserForm(data: UserFormData, allowAllProfiles = false) {
     return 'Informe a data de nascimento no formato dd/mm/yyyy.';
   }
 
-  if (!(allowAllProfiles ? isValidProfileId(data.perfilId) : isAssignableUserProfileId(data.perfilId))) {
+  if (
+    !(allowAllProfiles ? isValidProfileId(data.perfilId) : isAssignableUserProfileId(data.perfilId))
+  ) {
     return 'Selecione um perfil valido.';
   }
 

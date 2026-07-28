@@ -4,8 +4,8 @@ import type {
   PacienteListQuery,
   PacienteObservacao,
   PacientePayload,
-  PagedResult,
-} from '../types';
+} from '../features/patients/patientTypes';
+import type { PagedResult } from '../shared/domain/apiTypes';
 import { del, get, getBlob, post, put, upload } from './api';
 import { buildListQueryParams } from './queryParams';
 
@@ -46,7 +46,11 @@ export function createPacienteObservacao(
   payload: { texto: string; observacaoPaiId?: number | null },
   token: string,
 ) {
-  return post<{ pacienteId: number; createdCount: number }>(`/api/pacientes/${id}/observacoes`, payload, token);
+  return post<{ pacienteId: number; createdCount: number }>(
+    `/api/pacientes/${id}/observacoes`,
+    payload,
+    token,
+  );
 }
 
 export function markPacienteObservacoesAsRead(id: number, token: string) {

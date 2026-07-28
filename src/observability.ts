@@ -70,7 +70,9 @@ export function captureException(error: unknown, extra?: Record<string, unknown>
   });
 }
 
-export function setObservabilityUser(user: { id: number; email?: string | null; nome?: string | null } | null) {
+export function setObservabilityUser(
+  user: { id: number; email?: string | null; nome?: string | null } | null,
+) {
   if (!sentryEnabled) {
     return;
   }
@@ -80,10 +82,14 @@ export function setObservabilityUser(user: { id: number; email?: string | null; 
       return;
     }
 
-    Sentry.setUser(user ? {
-      id: String(user.id),
-      email: user.email ?? undefined,
-      username: user.nome ?? undefined,
-    } : null);
+    Sentry.setUser(
+      user
+        ? {
+            id: String(user.id),
+            email: user.email ?? undefined,
+            username: user.nome ?? undefined,
+          }
+        : null,
+    );
   });
 }

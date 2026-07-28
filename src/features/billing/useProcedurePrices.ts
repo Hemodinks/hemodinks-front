@@ -1,24 +1,24 @@
-import { useState } from "react";
-import type { ConvenioProcedimentoPreco } from "../../types";
+import { useState } from 'react';
+import type { ConvenioProcedimentoPreco } from './billingDomainTypes';
 import {
   deactivateConvenioProcedimentoPreco,
   getConvenioProcedimentoPrecos,
   saveConvenioProcedimentoPreco,
   updateConvenioProcedimentoPreco,
-} from "../../services";
-import type { ProcedurePricePayload } from "../../services/financeiroService";
-import type { PriceFormState } from "./billingPageTypes";
+} from '../../services';
+import type { ProcedurePricePayload } from '../../services/financeiroService';
+import type { PriceFormState } from './billingPageTypes';
 
 export function createInitialPriceForm(): PriceFormState {
   return {
-    convenioId: "",
-    cbhpmCodigo: "",
-    valorNegociado: "",
-    percentualPrincipal: "100",
-    percentualAuxiliar1: "0",
-    percentualAuxiliar2: "0",
+    convenioId: '',
+    cbhpmCodigo: '',
+    valorNegociado: '',
+    percentualPrincipal: '100',
+    percentualAuxiliar1: '0',
+    percentualAuxiliar2: '0',
     vigenciaInicio: new Date().toISOString().slice(0, 10),
-    vigenciaFinal: "",
+    vigenciaFinal: '',
   };
 }
 
@@ -29,11 +29,7 @@ export function useProcedurePrices() {
   const loadProcedurePrices = async (token: string) => {
     setPrecos(await getConvenioProcedimentoPrecos(token));
   };
-  const saveProcedurePrice = (
-    id: number | null,
-    payload: ProcedurePricePayload,
-    token: string,
-  ) =>
+  const saveProcedurePrice = (id: number | null, payload: ProcedurePricePayload, token: string) =>
     id
       ? updateConvenioProcedimentoPreco(id, payload, token)
       : saveConvenioProcedimentoPreco(payload, token);

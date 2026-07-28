@@ -13,6 +13,10 @@ Principios atuais:
 - privilegiar comportamento real em mobile
 - validar fluxos criticos com Vitest, Playwright, axe e Lighthouse
 
+Decisoes e excecoes de seguranca de dependencias sao registradas em
+[`SECURITY.md`](./SECURITY.md). O registro inclui escopo, controles compensatorios e
+criterios de remocao da excecao.
+
 ## Estrutura
 
 ```text

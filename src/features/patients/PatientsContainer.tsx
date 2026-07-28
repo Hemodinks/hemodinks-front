@@ -1,6 +1,6 @@
-import type { ModuleMode } from "../../appTypes";
-import { PatientsPage } from "./PatientsPage";
-import type { PatientsDomainState } from "./usePatientsDomain";
+import type { ModuleMode } from '../../appTypes';
+import { PatientsPage } from './PatientsPage';
+import type { PatientsDomainState } from './usePatientsDomain';
 
 type PatientsContainerProps = {
   moduleMode: ModuleMode;

@@ -1,27 +1,14 @@
-import {
-  type ChangeEvent,
-  type Dispatch,
-  type FormEvent,
-  type SetStateAction,
-} from "react";
-import {
-  FileText,
-  FileUp,
-  MessageSquareText,
-  Plus,
-  Save,
-  Trash2,
-  X,
-} from "lucide-react";
+import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import { FileText, FileUp, MessageSquareText, Plus, Save, Trash2, X } from 'lucide-react';
 import type {
   Convenio,
   Hospital,
-  MedicalUserOption,
   OpmeFornecedor,
   Paciente,
   PacienteFormData,
-} from "../../types";
-import { DateInput } from "../../shared/components/DateInput";
+} from './patientTypes';
+import type { MedicalUserOption } from '../../shared/domain/clinicalContracts';
+import { DateInput } from '../../shared/components/DateInput';
 import {
   AlertMessage,
   Button,
@@ -30,14 +17,14 @@ import {
   IconButton,
   TextField,
   TextareaField,
-} from "../../shared/components/ui";
-import { SecureFileDownloadButton } from "../../shared/components/SecureFileDownloadButton";
-import { usePatientDocuments } from "./usePatientDocuments";
+} from '../../shared/components/ui';
+import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
+import { usePatientDocuments } from './usePatientDocuments';
 import {
   formatPhoneInput,
   MAX_NAME_LENGTH,
   MAX_OBSERVATION_LENGTH,
-} from "../../shared/utils/formatters";
+} from '../../shared/utils/formatters';
 
 type PatientFormProps = {
   canEditPatients: boolean;
@@ -65,10 +52,7 @@ type PatientFormProps = {
   onRemovePacienteProcedimento: (index: number) => void;
   onPacienteFilesChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onRemovePendingPatientFile: (index: number) => void;
-  onDeletePacienteArquivo: (
-    paciente: Paciente,
-    arquivoId: number,
-  ) => void | Promise<void>;
+  onDeletePacienteArquivo: (paciente: Paciente, arquivoId: number) => void | Promise<void>;
   onOpenPacienteObservacoes?: () => void;
 };
 
@@ -93,10 +77,8 @@ export function PatientForm(props: PatientFormProps) {
     onOpenPacienteObservacoes,
   } = props;
   const patientDocuments = usePatientDocuments(sessionToken);
-  const formReadOnly =
-    patientReadOnly || (editingPacienteId ? !canEditPatients : false);
-  const canSubmitForm =
-    !formReadOnly && (!editingPacienteId || canEditPatients);
+  const formReadOnly = patientReadOnly || (editingPacienteId ? !canEditPatients : false);
+  const canSubmitForm = !formReadOnly && (!editingPacienteId || canEditPatients);
 
   return (
     <FormPanel className="module-form-panel">
@@ -106,13 +88,13 @@ export function PatientForm(props: PatientFormProps) {
           <h2>
             {editingPacienteId
               ? formReadOnly
-                ? "Visualizar paciente"
-                : "Editar paciente"
-              : "Novo paciente"}
+                ? 'Visualizar paciente'
+                : 'Editar paciente'
+              : 'Novo paciente'}
           </h2>
           <p>
-            Dados clínicos, procedimentos e valores são registrados no
-            atendimento, faturamento e financeiro.
+            Dados clínicos, procedimentos e valores são registrados no atendimento, faturamento e
+            financeiro.
           </p>
         </div>
         <IconButton label="Voltar para lista" tone="muted" onClick={onClose}>
@@ -171,10 +153,7 @@ export function PatientForm(props: PatientFormProps) {
             <div className="patient-observation-header">
               <span className="field-label">Observações cadastrais</span>
               {editingPacienteId && onOpenPacienteObservacoes && (
-                <Button
-                  className="patient-observation-action"
-                  onClick={onOpenPacienteObservacoes}
-                >
+                <Button className="patient-observation-action" onClick={onOpenPacienteObservacoes}>
                   <MessageSquareText size={16} /> Abrir conversa
                 </Button>
               )}
@@ -199,10 +178,7 @@ export function PatientForm(props: PatientFormProps) {
             </label>
             {!formReadOnly && canEditPatients && (
               <>
-                <label
-                  className="ghost-button file-action full-width"
-                  htmlFor="patient-file-input"
-                >
+                <label className="ghost-button file-action full-width" htmlFor="patient-file-input">
                   <FileUp size={17} /> Selecionar arquivos
                 </label>
                 <input
@@ -242,24 +218,14 @@ export function PatientForm(props: PatientFormProps) {
                     <SecureFileDownloadButton
                       fileName={arquivo.nomeOriginal}
                       label={arquivo.nomeOriginal}
-                      loadFile={() =>
-                        patientDocuments.download(
-                          editingPaciente.id,
-                          arquivo.id,
-                        )
-                      }
+                      loadFile={() => patientDocuments.download(editingPaciente.id, arquivo.id)}
                     />
                     {!formReadOnly && canEditPatients && (
                       <IconButton
                         label="Excluir arquivo"
                         tone="muted"
                         className="mini"
-                        onClick={() =>
-                          void onDeletePacienteArquivo(
-                            editingPaciente,
-                            arquivo.id,
-                          )
-                        }
+                        onClick={() => void onDeletePacienteArquivo(editingPaciente, arquivo.id)}
                       >
                         <Trash2 size={14} />
                       </IconButton>
@@ -278,21 +244,15 @@ export function PatientForm(props: PatientFormProps) {
             }
           />
         </fieldset>
-        {pacienteFormError && (
-          <AlertMessage type="error">{pacienteFormError}</AlertMessage>
-        )}
+        {pacienteFormError && <AlertMessage type="error">{pacienteFormError}</AlertMessage>}
         {canSubmitForm && (
-          <Button
-            variant="primary"
-            type="submit"
-            disabled={pacienteFormLoading}
-          >
+          <Button variant="primary" type="submit" disabled={pacienteFormLoading}>
             {editingPacienteId ? <Save size={18} /> : <Plus size={18} />}
             {pacienteFormLoading
-              ? "Salvando..."
+              ? 'Salvando...'
               : editingPacienteId
-                ? "Salvar paciente"
-                : "Cadastrar paciente"}
+                ? 'Salvar paciente'
+                : 'Cadastrar paciente'}
           </Button>
         )}
       </form>

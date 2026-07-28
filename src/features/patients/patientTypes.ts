@@ -1,4 +1,5 @@
 import type { ListQuery } from '../../shared/domain/apiTypes';
+export type { CbhpmListQuery } from '../../shared/domain/apiTypes';
 
 export type PacienteListQuery = ListQuery & {
   medico?: string;
@@ -6,17 +7,6 @@ export type PacienteListQuery = ListQuery & {
   procedimento?: string;
   competenciaInicio?: string;
   competenciaFinal?: string;
-};
-
-export type CbhpmListQuery = {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  codigo?: string;
-  procedimento?: string;
-  porte?: string;
-  sortBy?: string;
-  sortDirection?: "asc" | "desc";
 };
 
 export type CbhpmGeral = {
@@ -173,10 +163,9 @@ export type PacienteFormData = {
   novaObservacao: string;
 };
 
-export type PacientePayload = Omit<
-  PacienteFormData,
-  "novaObservacao" | "cpf"
-> & { cpf?: string | null };
+export type PacientePayload = Omit<PacienteFormData, 'novaObservacao' | 'cpf'> & {
+  cpf?: string | null;
+};
 
 export type PacienteObservacao = {
   id: number;

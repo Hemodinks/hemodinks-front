@@ -9,9 +9,7 @@
   justify-content: space-between;
   gap: 16px;
   border-left: 5px solid var(--action-primary);
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.11), transparent 68%),
-    var(--panel);
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.11), transparent 68%), var(--panel);
 }
 
 .settings-hero-copy {
@@ -80,9 +78,7 @@
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.08), transparent 72%),
-    var(--input-bg);
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), transparent 72%), var(--input-bg);
 }
 
 .company-brand-photo {
@@ -147,9 +143,7 @@
 
 .theme-choice.active {
   color: var(--action-primary);
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.1), transparent 70%),
-    var(--input-bg);
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.1), transparent 70%), var(--input-bg);
 }
 
 @media (max-width: 860px) {

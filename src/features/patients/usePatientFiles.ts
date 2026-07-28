@@ -1,12 +1,13 @@
-import { type ChangeEvent, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { deletePacienteArquivo, getPaciente } from "../../services";
-import { queryClient } from "../../queryClient";
-import { queryKeys } from "../../shared/queryKeys";
-import { getErrorMessage } from "../../shared/utils/formatters";
-import type { AuthSession, Paciente } from "../../types";
-import { getInvalidPatientFileMessage } from "./patientDomainHelpers";
-import type { usePatientForm } from "./usePatientForm";
+import { type ChangeEvent, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { deletePacienteArquivo, getPaciente } from '../../services';
+import { queryClient } from '../../queryClient';
+import { queryKeys } from '../../shared/queryKeys';
+import { getErrorMessage } from '../../shared/utils/formatters';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { Paciente } from './patientTypes';
+import { getInvalidPatientFileMessage } from './patientDomainHelpers';
+import type { usePatientForm } from './usePatientForm';
 
 type PatientFormState = ReturnType<typeof usePatientForm>;
 
@@ -17,10 +18,7 @@ type PatientFilesOptions = {
   patientForm: PatientFormState;
   setPacientesError: (message: string) => void;
   loadPacientes: (token?: string, forceRefresh?: boolean) => Promise<unknown>;
-  loadDashboardSummary: (
-    token?: string,
-    forceRefresh?: boolean,
-  ) => Promise<void>;
+  loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
 };
 
 export function usePatientFiles({
@@ -32,13 +30,10 @@ export function usePatientFiles({
   loadPacientes,
   loadDashboardSummary,
 }: PatientFilesOptions) {
-  const [selectedPatientInfo, setSelectedPatientInfo] =
-    useState<Paciente | null>(null);
-  const [selectedPatientFiles, setSelectedPatientFiles] =
-    useState<Paciente | null>(null);
-  const [patientFilesModalLoading, setPatientFilesModalLoading] =
-    useState(false);
-  const [patientFilesModalError, setPatientFilesModalError] = useState("");
+  const [selectedPatientInfo, setSelectedPatientInfo] = useState<Paciente | null>(null);
+  const [selectedPatientFiles, setSelectedPatientFiles] = useState<Paciente | null>(null);
+  const [patientFilesModalLoading, setPatientFilesModalLoading] = useState(false);
+  const [patientFilesModalError, setPatientFilesModalError] = useState('');
   const deleteFileMutation = useMutation({
     mutationFn: ({
       pacienteId,
@@ -53,7 +48,7 @@ export function usePatientFiles({
 
   const handleFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
-    event.target.value = "";
+    event.target.value = '';
 
     if (patientReadOnly || !files.length) return;
 
@@ -64,7 +59,7 @@ export function usePatientFiles({
     }
 
     patientForm.setPendingPatientFiles((current) => [...current, ...files]);
-    patientForm.setPacienteFormError("");
+    patientForm.setPacienteFormError('');
   };
 
   const removePendingFile = (indexToRemove: number) => {
@@ -76,11 +71,11 @@ export function usePatientFiles({
   const deleteFile = async (paciente: Paciente, arquivoId: number) => {
     if (!session) return;
     if (!canEditPatients) {
-      setPacientesError("Sem permissao para excluir arquivo do paciente.");
+      setPacientesError('Sem permissao para excluir arquivo do paciente.');
       return;
     }
 
-    setPacientesError("");
+    setPacientesError('');
     try {
       await deleteFileMutation.mutateAsync({
         pacienteId: paciente.id,
@@ -110,7 +105,7 @@ export function usePatientFiles({
     if (!filesCount) return;
 
     setSelectedPatientFiles(paciente);
-    setPatientFilesModalError("");
+    setPatientFilesModalError('');
     setPatientFilesModalLoading(true);
     try {
       setSelectedPatientFiles(await getPaciente(paciente.id, session.token));
@@ -123,13 +118,13 @@ export function usePatientFiles({
 
   const closeFilesModal = () => {
     setSelectedPatientFiles(null);
-    setPatientFilesModalError("");
+    setPatientFilesModalError('');
   };
 
   const reset = () => {
     setSelectedPatientInfo(null);
     setSelectedPatientFiles(null);
-    setPatientFilesModalError("");
+    setPatientFilesModalError('');
     setPatientFilesModalLoading(false);
   };
 

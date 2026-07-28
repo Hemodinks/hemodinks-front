@@ -1,7 +1,4 @@
-import {
-  downloadPacienteArquivo,
-  getPacienteFinanceiroResumo,
-} from "../../services";
+import { downloadPacienteArquivo, getPacienteFinanceiroResumo } from '../../services';
 
 export function usePatientDocuments(sessionToken: string) {
   return {

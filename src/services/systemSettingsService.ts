@@ -1,4 +1,4 @@
-import type { SystemSettings, UpdateSystemSettingsPayload } from '../types';
+import type { SystemSettings, UpdateSystemSettingsPayload } from '../features/clinics/clinicTypes';
 import { get, getBlob, put } from './api';
 
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {

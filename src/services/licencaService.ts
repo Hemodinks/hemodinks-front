@@ -1,4 +1,4 @@
-import type { Licenca } from '../types';
+import type { Licenca } from '../features/auth/authTypes';
 import { get } from './api';
 
 export function getCurrentLicenca(token: string) {

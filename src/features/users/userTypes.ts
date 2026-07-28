@@ -51,7 +51,7 @@ export type UserFormData = {
   perfilId: number;
 };
 
-export type UserPayload = Omit<UserFormData, "cpf" | "dataNascimento"> & {
+export type UserPayload = Omit<UserFormData, 'cpf' | 'dataNascimento'> & {
   cpf?: string | null;
   dataNascimento?: string | null;
 };

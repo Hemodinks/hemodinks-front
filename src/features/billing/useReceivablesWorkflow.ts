@@ -1,8 +1,9 @@
-import type { ChangeEvent, FormEvent } from "react";
-import type { AuthSession } from "../../types";
-import type { RunBillingAction } from "./billingWorkflowTypes";
-import { downloadGeneratedReceipt } from "./receiptDocument";
-import type { useReceivables } from "./useReceivables";
+import type { ChangeEvent, FormEvent } from 'react';
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { RunBillingAction } from './billingWorkflowTypes';
+import { downloadGeneratedReceipt } from './receiptDocument';
+import type { useReceivables } from './useReceivables';
+import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
 
 type ReceivablesState = ReturnType<typeof useReceivables>;
 
@@ -10,32 +11,27 @@ type ReceivablesWorkflowOptions = {
   session: AuthSession;
   receivables: ReceivablesState;
   run: RunBillingAction;
-  setLoading: (loading: boolean) => void;
   setError: (message: string) => void;
 };
 
 function isSupportedReceiptFile(file: File) {
-  const extension = file.name.split(".").pop()?.toLowerCase();
+  const extension = file.name.split('.').pop()?.toLowerCase();
   return (
-    (extension === "pdf" && file.type === "application/pdf") ||
-    ((extension === "jpg" || extension === "jpeg") &&
-      file.type === "image/jpeg")
+    (extension === 'pdf' && file.type === 'application/pdf') ||
+    ((extension === 'jpg' || extension === 'jpeg') && file.type === 'image/jpeg')
   );
 }
 
 function receiptExtensionFromBlob(blob: Blob) {
-  if (blob.type === "application/pdf") return "pdf";
-  if (blob.type === "image/jpeg") return "jpg";
-  throw new Error(
-    "O comprovante recebido não possui um formato PDF ou JPG válido.",
-  );
+  if (blob.type === 'application/pdf') return 'pdf';
+  if (blob.type === 'image/jpeg') return 'jpg';
+  throw new Error('O comprovante recebido não possui um formato PDF ou JPG válido.');
 }
 
 export function useReceivablesWorkflow({
   session,
   receivables,
   run,
-  setLoading,
   setError,
 }: ReceivablesWorkflowOptions) {
   const {
@@ -66,16 +62,54 @@ export function useReceivablesWorkflow({
     setSelectedAccount,
     uploadReceipt,
   } = receivables;
+  const filtersOperation = useAsyncOperation(async (_signal, page: number) => {
+    const competenciaInicio = financeFilters.competencia
+      ? `${financeFilters.competencia}-01`
+      : undefined;
+    const competenciaFim = financeFilters.competencia
+      ? new Date(
+          Number(financeFilters.competencia.slice(0, 4)),
+          Number(financeFilters.competencia.slice(5, 7)),
+          0,
+        )
+          .toISOString()
+          .slice(0, 10)
+      : undefined;
+    const common = {
+      inicio: competenciaInicio,
+      fim: competenciaFim,
+      convenioId: financeFilters.convenioId || undefined,
+      medicoId: financeFilters.medicoId || undefined,
+      pacienteId: financeFilters.pacienteId || undefined,
+    };
+    return Promise.all([
+      searchReceivables(
+        {
+          page,
+          pageSize: 10,
+          termo: financeFilters.termo || undefined,
+          status: financeFilters.status || undefined,
+          vencimentoInicio: financeFilters.vencimentoInicio || undefined,
+          vencimentoFim: financeFilters.vencimentoFim || undefined,
+          convenioId: financeFilters.convenioId || undefined,
+          medicoId: financeFilters.medicoId || undefined,
+          pacienteId: financeFilters.pacienteId || undefined,
+        },
+        session.token,
+      ),
+      loadSummary(common, session.token),
+    ]);
+  });
 
   const submitReversal = (event: FormEvent) => {
     event.preventDefault();
     if (!reversalTarget) return;
     void run(
       () => reverseReceipt(reversalTarget.id, reversalReason, session.token),
-      "Recebimento estornado e saldo recalculado.",
+      'Recebimento estornado e saldo recalculado.',
     ).then(() => {
       setReversalTarget(null);
-      setReversalReason("");
+      setReversalReason('');
     });
   };
 
@@ -85,9 +119,9 @@ export function useReceivablesWorkflow({
     const account = contas.find((item) => item.id === Number(receipt.contaId));
     if (!account) return;
     if (receipt.comprovante && !isSupportedReceiptFile(receipt.comprovante)) {
-      const message = "Selecione um comprovante bancário no formato PDF ou JPG.";
+      const message = 'Selecione um comprovante bancário no formato PDF ou JPG.';
       setError(message);
-      setReceiptToast({ type: "error", message });
+      setReceiptToast({ type: 'error', message });
       return;
     }
     let createdReceipt:
@@ -106,7 +140,7 @@ export function useReceivablesWorkflow({
           {
             contaReceberId: account.id,
             dataRecebimento: new Date().toISOString(),
-            valorRecebido: Number(receipt.valor.replace(",", ".")),
+            valorRecebido: Number(receipt.valor.replace(',', '.')),
             formaRecebimento: receipt.forma,
             referenciaBancaria: receipt.referencia || null,
             documentoComprovante: null,
@@ -120,20 +154,15 @@ export function useReceivablesWorkflow({
           (item) => !account.recebimentos.some((old) => old.id === item.id),
         );
         if (receipt.comprovante && createdReceipt) {
-          await uploadReceipt(
-            createdReceipt.id,
-            receipt.comprovante,
-            session.token,
-          );
+          await uploadReceipt(createdReceipt.id, receipt.comprovante, session.token);
         }
       },
       receipt.comprovante
-        ? "Recebimento e comprovante registrados."
-        : "Recebimento registrado e saldo recalculado.",
+        ? 'Recebimento e comprovante registrados.'
+        : 'Recebimento registrado e saldo recalculado.',
       {
-        onSuccess: (message) =>
-          setReceiptToast({ type: "success", message }),
-        onError: (message) => setReceiptToast({ type: "error", message }),
+        onSuccess: (message) => setReceiptToast({ type: 'success', message }),
+        onError: (message) => setReceiptToast({ type: 'error', message }),
       },
     );
     if (!completed || !createdReceipt) return;
@@ -153,80 +182,44 @@ export function useReceivablesWorkflow({
         receipt.comprovanteFormato,
       );
       setReceipt({
-        contaId: "",
-        valor: "",
-        forma: "Pix",
-        referencia: "",
+        contaId: '',
+        valor: '',
+        forma: 'Pix',
+        referencia: '',
         comprovanteFormato: receipt.comprovanteFormato,
         comprovante: null,
       });
       setReceiptToast({
-        type: "success",
+        type: 'success',
         message: `Recebimento registrado e comprovante ${receipt.comprovanteFormato.toUpperCase()} gerado.`,
       });
     } catch (reason) {
       const message =
         reason instanceof Error
           ? reason.message
-          : "Recebimento registrado, mas não foi possível gerar o comprovante.";
-      setReceiptToast({ type: "error", message });
+          : 'Recebimento registrado, mas não foi possível gerar o comprovante.';
+      setReceiptToast({ type: 'error', message });
     }
   };
 
   const handleReceiptFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     if (file && !isSupportedReceiptFile(file)) {
-      const message = "Selecione um comprovante bancário no formato PDF ou JPG.";
+      const message = 'Selecione um comprovante bancário no formato PDF ou JPG.';
       setError(message);
-      setReceiptToast({ type: "error", message });
-      event.target.value = "";
+      setReceiptToast({ type: 'error', message });
+      event.target.value = '';
       setReceipt((current) => ({ ...current, comprovante: null }));
       return;
     }
-    setError("");
+    setError('');
     setReceipt((current) => ({ ...current, comprovante: file }));
   };
 
   const applyFilters = async (page = 1) => {
-    setLoading(true);
-    setError("");
+    setError('');
     try {
-      const competenciaInicio = financeFilters.competencia
-        ? `${financeFilters.competencia}-01`
-        : undefined;
-      const competenciaFim = financeFilters.competencia
-        ? new Date(
-            Number(financeFilters.competencia.slice(0, 4)),
-            Number(financeFilters.competencia.slice(5, 7)),
-            0,
-          )
-            .toISOString()
-            .slice(0, 10)
-        : undefined;
-      const common = {
-        inicio: competenciaInicio,
-        fim: competenciaFim,
-        convenioId: financeFilters.convenioId || undefined,
-        medicoId: financeFilters.medicoId || undefined,
-        pacienteId: financeFilters.pacienteId || undefined,
-      };
-      const [paged, resumo] = await Promise.all([
-        searchReceivables(
-          {
-            page,
-            pageSize: 10,
-            termo: financeFilters.termo || undefined,
-            status: financeFilters.status || undefined,
-            vencimentoInicio: financeFilters.vencimentoInicio || undefined,
-            vencimentoFim: financeFilters.vencimentoFim || undefined,
-            convenioId: financeFilters.convenioId || undefined,
-            medicoId: financeFilters.medicoId || undefined,
-            pacienteId: financeFilters.pacienteId || undefined,
-          },
-          session.token,
-        ),
-        loadSummary(common, session.token),
-      ]);
+      const [paged, resumo] = await filtersOperation.execute(page);
       setContas(paged.items);
       setFinancePage({
         page: paged.page,
@@ -235,13 +228,7 @@ export function useReceivablesWorkflow({
       });
       setFinanceiroResumo(resumo);
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Não foi possível filtrar o financeiro.",
-      );
-    } finally {
-      setLoading(false);
+      setError(reason instanceof Error ? reason.message : 'Não foi possível filtrar o financeiro.');
     }
   };
 
@@ -250,17 +237,13 @@ export function useReceivablesWorkflow({
       const blob = await downloadReceiptFile(id, session.token);
       const extension = receiptExtensionFromBlob(blob);
       const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
+      const anchor = document.createElement('a');
       anchor.href = url;
       anchor.download = `comprovante-${id}.${extension}`;
       anchor.click();
       URL.revokeObjectURL(url);
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Não foi possível baixar o comprovante.",
-      );
+      setError(reason instanceof Error ? reason.message : 'Não foi possível baixar o comprovante.');
     }
   };
 
@@ -281,7 +264,7 @@ export function useReceivablesWorkflow({
           },
           session.token,
         ),
-      "Título atualizado.",
+      'Título atualizado.',
     ).then(() => {
       setAccountDraft(null);
       setSelectedAccount(null);
@@ -302,14 +285,15 @@ export function useReceivablesWorkflow({
           },
           session.token,
         ),
-      "Título cancelado com histórico preservado.",
+      'Título cancelado com histórico preservado.',
     ).then(() => {
       setSelectedAccount(null);
-      setCancelReason("");
+      setCancelReason('');
     });
   };
 
   return {
+    isLoading: filtersOperation.isLoading,
     submitReversal,
     submitReceipt,
     handleReceiptFileChange,

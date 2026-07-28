@@ -1,13 +1,13 @@
-import { vi } from "vitest";
+import { vi } from 'vitest';
 
 export function createAppServicesMock() {
   return {
-    AUTH_EXPIRED_EVENT: "hemodinks:auth-expired",
+    AUTH_EXPIRED_EVENT: 'hemodinks:auth-expired',
     DEFAULT_SYSTEM_SETTINGS: {
       id: 1,
-      nomeEmpresa: "Hemodinks",
+      nomeEmpresa: 'Hemodinks',
       fotoEmpresa: null,
-      dataCadastro: "",
+      dataCadastro: '',
       dataAtualizacao: null,
     },
     authenticate: vi.fn(),

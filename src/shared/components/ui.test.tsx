@@ -31,8 +31,9 @@ describe('ações compartilhadas', () => {
       </Button>,
     );
 
-    expect(
-      screen.getByRole('button', { name: 'Editar cadastro' }),
-    ).toHaveAttribute('title', 'Editar cadastro');
+    expect(screen.getByRole('button', { name: 'Editar cadastro' })).toHaveAttribute(
+      'title',
+      'Editar cadastro',
+    );
   });
 });

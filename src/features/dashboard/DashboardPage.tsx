@@ -47,7 +47,15 @@ type DashboardPageProps = {
   onOpenSettings: () => void;
 };
 
-type DashboardModuleId = 'users' | 'profile' | 'patients' | 'controller' | 'clinics' | 'medicalGroups' | 'agenda' | 'settings';
+type DashboardModuleId =
+  | 'users'
+  | 'profile'
+  | 'patients'
+  | 'controller'
+  | 'clinics'
+  | 'medicalGroups'
+  | 'agenda'
+  | 'settings';
 
 type DashboardModule = {
   id: DashboardModuleId;
@@ -62,7 +70,16 @@ type DashboardModule = {
 };
 
 const DASHBOARD_MODULE_ORDER_KEY = 'hemodinks.dashboard.module-order';
-const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = ['users', 'profile', 'patients', 'controller', 'clinics', 'medicalGroups', 'agenda', 'settings'];
+const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = [
+  'users',
+  'profile',
+  'patients',
+  'controller',
+  'clinics',
+  'medicalGroups',
+  'agenda',
+  'settings',
+];
 
 function readStoredDashboardModuleOrder() {
   if (typeof window === 'undefined') {
@@ -82,13 +99,18 @@ function readStoredDashboardModuleOrder() {
       return [...DASHBOARD_DEFAULT_MODULE_ORDER];
     }
 
-    return parsed.filter((value): value is DashboardModuleId => DASHBOARD_DEFAULT_MODULE_ORDER.includes(value as DashboardModuleId));
+    return parsed.filter((value): value is DashboardModuleId =>
+      DASHBOARD_DEFAULT_MODULE_ORDER.includes(value as DashboardModuleId),
+    );
   } catch {
     return [...DASHBOARD_DEFAULT_MODULE_ORDER];
   }
 }
 
-function normalizeDashboardModuleOrder(currentOrder: DashboardModuleId[], visibleModuleIds: DashboardModuleId[]) {
+function normalizeDashboardModuleOrder(
+  currentOrder: DashboardModuleId[],
+  visibleModuleIds: DashboardModuleId[],
+) {
   return [
     ...currentOrder.filter((moduleId) => visibleModuleIds.includes(moduleId)),
     ...visibleModuleIds.filter((moduleId) => !currentOrder.includes(moduleId)),
@@ -99,7 +121,11 @@ function sameDashboardModuleOrder(left: DashboardModuleId[], right: DashboardMod
   return left.length === right.length && left.every((moduleId, index) => moduleId === right[index]);
 }
 
-function reorderDashboardModuleOrder(currentOrder: DashboardModuleId[], draggedModuleId: DashboardModuleId, targetModuleId: DashboardModuleId) {
+function reorderDashboardModuleOrder(
+  currentOrder: DashboardModuleId[],
+  draggedModuleId: DashboardModuleId,
+  targetModuleId: DashboardModuleId,
+) {
   const nextOrder = [...currentOrder];
   const draggedIndex = nextOrder.indexOf(draggedModuleId);
   const targetIndex = nextOrder.indexOf(targetModuleId);
@@ -145,113 +171,135 @@ export function DashboardPage({
   onOpenAgenda,
   onOpenSettings,
 }: DashboardPageProps) {
-  const [moduleOrder, setModuleOrder] = useState<DashboardModuleId[]>(() => readStoredDashboardModuleOrder());
+  const [moduleOrder, setModuleOrder] = useState<DashboardModuleId[]>(() =>
+    readStoredDashboardModuleOrder(),
+  );
   const [draggedModuleId, setDraggedModuleId] = useState<DashboardModuleId | null>(null);
   const [dropTargetModuleId, setDropTargetModuleId] = useState<DashboardModuleId | null>(null);
 
   const availableModules: DashboardModule[] = [
     ...(canAccessUsers
-      ? [{
-          id: 'users' as const,
-          title: 'Usuários',
-          metric: 'Gerenciar usuários',
-          footerLabel: `${usersCount} cadastrados`,
-          className: 'module-card-users',
-          ariaLabel: 'Abrir usuários',
-          icon: <Users size={24} />,
-          onOpen: onOpenUsersList,
-        }]
+      ? [
+          {
+            id: 'users' as const,
+            title: 'Usuários',
+            metric: 'Gerenciar usuários',
+            footerLabel: `${usersCount} cadastrados`,
+            className: 'module-card-users',
+            ariaLabel: 'Abrir usuários',
+            icon: <Users size={24} />,
+            onOpen: onOpenUsersList,
+          },
+        ]
       : []),
     ...(canEditOwnUser
-      ? [{
-          id: 'profile' as const,
-          title: 'Meu cadastro',
-          metric: 'Dados e documentos',
-          footerLabel: 'Editar registro',
-          className: 'module-card-profile',
-          ariaLabel: 'Abrir meu cadastro',
-          icon: <FileText size={24} />,
-          onOpen: onOpenMyProfile,
-        }]
+      ? [
+          {
+            id: 'profile' as const,
+            title: 'Meu cadastro',
+            metric: 'Dados e documentos',
+            footerLabel: 'Editar registro',
+            className: 'module-card-profile',
+            ariaLabel: 'Abrir meu cadastro',
+            icon: <FileText size={24} />,
+            onOpen: onOpenMyProfile,
+          },
+        ]
       : []),
     ...(canAccessPatients
-      ? [{
-          id: 'patients' as const,
-          title: 'Pacientes',
-          metric: patientReadOnly ? 'Visualizar cadastro' : 'Administrar atendimentos',
-          footerLabel: `${pacientesCount} cadastrados`,
-          className: 'module-card-patients',
-          ariaLabel: 'Abrir pacientes',
-          icon: <ClipboardList size={24} />,
-          onOpen: onOpenPatientsList,
-        }]
+      ? [
+          {
+            id: 'patients' as const,
+            title: 'Pacientes',
+            metric: patientReadOnly ? 'Visualizar cadastro' : 'Administrar atendimentos',
+            footerLabel: `${pacientesCount} cadastrados`,
+            className: 'module-card-patients',
+            ariaLabel: 'Abrir pacientes',
+            icon: <ClipboardList size={24} />,
+            onOpen: onOpenPatientsList,
+          },
+        ]
       : []),
     ...(canAccessBilling
-      ? [{
-          id: 'controller' as const,
-          title: 'Controladoria',
-          metric: 'Atendimentos, faturamento e financeiro',
-          footerLabel: `${pendingPaymentsCount} pendências financeiras`,
-          className: 'module-card-controller',
-          ariaLabel: 'Abrir Controladoria',
-          icon: <FileText size={24} />,
-          onOpen: onOpenController,
-        }]
+      ? [
+          {
+            id: 'controller' as const,
+            title: 'Controladoria',
+            metric: 'Atendimentos, faturamento e financeiro',
+            footerLabel: `${pendingPaymentsCount} pendências financeiras`,
+            className: 'module-card-controller',
+            ariaLabel: 'Abrir Controladoria',
+            icon: <FileText size={24} />,
+            onOpen: onOpenController,
+          },
+        ]
       : []),
     ...(canAccessClinics
-      ? [{
-          id: 'clinics' as const,
-          title: 'Clínicas',
-          metric: isSuperAdmin ? 'Administrar todas as clínicas' : 'Editar dados da clínica',
-          footerLabel: isSuperAdmin ? 'Gestão da plataforma' : 'Clínica atual',
-          className: 'module-card-clinics',
-          ariaLabel: 'Abrir cadastro de clínicas',
-          icon: <Building2 size={24} />,
-          onOpen: onOpenClinics,
-        }]
+      ? [
+          {
+            id: 'clinics' as const,
+            title: 'Clínicas',
+            metric: isSuperAdmin ? 'Administrar todas as clínicas' : 'Editar dados da clínica',
+            footerLabel: isSuperAdmin ? 'Gestão da plataforma' : 'Clínica atual',
+            className: 'module-card-clinics',
+            ariaLabel: 'Abrir cadastro de clínicas',
+            icon: <Building2 size={24} />,
+            onOpen: onOpenClinics,
+          },
+        ]
       : []),
     ...(canAccessMedicalGroups
-      ? [{
-          id: 'medicalGroups' as const,
-          title: 'Grupos médicos',
-          metric: 'Relacionar equipes e escopos',
-          footerLabel: 'Definir compartilhamento',
-          className: 'module-card-medical-groups',
-          ariaLabel: 'Abrir grupos médicos',
-          icon: <ShieldPlus size={24} />,
-          onOpen: onOpenMedicalGroups,
-        }]
+      ? [
+          {
+            id: 'medicalGroups' as const,
+            title: 'Grupos médicos',
+            metric: 'Relacionar equipes e escopos',
+            footerLabel: 'Definir compartilhamento',
+            className: 'module-card-medical-groups',
+            ariaLabel: 'Abrir grupos médicos',
+            icon: <ShieldPlus size={24} />,
+            onOpen: onOpenMedicalGroups,
+          },
+        ]
       : []),
     ...(canAccessAgenda
-      ? [{
-          id: 'agenda' as const,
-          title: 'Agenda e notificações',
-          metric: 'Eventos, lembretes e avisos',
-          footerLabel: `${upcomingEventsCount} próximos`,
-          className: 'module-card-agenda',
-          ariaLabel: 'Abrir agenda e notificações',
-          icon: <CalendarDays size={24} />,
-          onOpen: onOpenAgenda,
-          badge: unreadAgendaNotificationCount > 0 ? `${unreadAgendaNotificationCount} não lidas` : undefined,
-        }]
+      ? [
+          {
+            id: 'agenda' as const,
+            title: 'Agenda e notificações',
+            metric: 'Eventos, lembretes e avisos',
+            footerLabel: `${upcomingEventsCount} próximos`,
+            className: 'module-card-agenda',
+            ariaLabel: 'Abrir agenda e notificações',
+            icon: <CalendarDays size={24} />,
+            onOpen: onOpenAgenda,
+            badge:
+              unreadAgendaNotificationCount > 0
+                ? `${unreadAgendaNotificationCount} não lidas`
+                : undefined,
+          },
+        ]
       : []),
     ...(canAccessSettings
-      ? [{
-          id: 'settings' as const,
-          title: 'Configuração do sistema',
-          metric: 'Senha, tema e marca',
-          footerLabel: 'Ajustar preferências',
-          className: 'module-card-settings',
-          ariaLabel: 'Abrir configuração do sistema',
-          icon: <Settings size={24} />,
-          onOpen: onOpenSettings,
-        }]
+      ? [
+          {
+            id: 'settings' as const,
+            title: 'Configuração do sistema',
+            metric: 'Senha, tema e marca',
+            footerLabel: 'Ajustar preferências',
+            className: 'module-card-settings',
+            ariaLabel: 'Abrir configuração do sistema',
+            icon: <Settings size={24} />,
+            onOpen: onOpenSettings,
+          },
+        ]
       : []),
   ];
   const visibleModuleIds = availableModules.map((module) => module.id);
   const normalizedModuleOrder = normalizeDashboardModuleOrder(moduleOrder, visibleModuleIds);
   const orderedModules = [...availableModules].sort(
-    (left, right) => normalizedModuleOrder.indexOf(left.id) - normalizedModuleOrder.indexOf(right.id),
+    (left, right) =>
+      normalizedModuleOrder.indexOf(left.id) - normalizedModuleOrder.indexOf(right.id),
   );
   const visibleModuleIdsKey = visibleModuleIds.join('|');
   const normalizedModuleOrderKey = normalizedModuleOrder.join('|');
@@ -270,12 +318,13 @@ export function DashboardPage({
     localStorage.setItem(DASHBOARD_MODULE_ORDER_KEY, JSON.stringify(normalizedModuleOrder));
   }, [normalizedModuleOrderKey]);
 
-  const handleDragStart = (moduleId: DashboardModuleId) => (event: DragEvent<HTMLButtonElement>) => {
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', moduleId);
-    setDraggedModuleId(moduleId);
-    setDropTargetModuleId(moduleId);
-  };
+  const handleDragStart =
+    (moduleId: DashboardModuleId) => (event: DragEvent<HTMLButtonElement>) => {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', moduleId);
+      setDraggedModuleId(moduleId);
+      setDropTargetModuleId(moduleId);
+    };
 
   const handleDragOver = (moduleId: DashboardModuleId) => (event: DragEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -285,18 +334,20 @@ export function DashboardPage({
     }
   };
 
-  const handleDragEnter = (moduleId: DashboardModuleId) => (event: DragEvent<HTMLButtonElement>) => {
-    event.preventDefault();
+  const handleDragEnter =
+    (moduleId: DashboardModuleId) => (event: DragEvent<HTMLButtonElement>) => {
+      event.preventDefault();
 
-    if (draggedModuleId && draggedModuleId !== moduleId) {
-      setDropTargetModuleId(moduleId);
-    }
-  };
+      if (draggedModuleId && draggedModuleId !== moduleId) {
+        setDropTargetModuleId(moduleId);
+      }
+    };
 
   const handleDrop = (moduleId: DashboardModuleId) => (event: DragEvent<HTMLButtonElement>) => {
     event.preventDefault();
 
-    const droppedModuleId = (event.dataTransfer.getData('text/plain') || draggedModuleId) as DashboardModuleId | null;
+    const droppedModuleId = (event.dataTransfer.getData('text/plain') ||
+      draggedModuleId) as DashboardModuleId | null;
 
     if (!droppedModuleId || droppedModuleId === moduleId) {
       setDraggedModuleId(null);
@@ -304,11 +355,13 @@ export function DashboardPage({
       return;
     }
 
-    setModuleOrder((current) => reorderDashboardModuleOrder(
-      normalizeDashboardModuleOrder(current, visibleModuleIds),
-      droppedModuleId,
-      moduleId,
-    ));
+    setModuleOrder((current) =>
+      reorderDashboardModuleOrder(
+        normalizeDashboardModuleOrder(current, visibleModuleIds),
+        droppedModuleId,
+        moduleId,
+      ),
+    );
     setDraggedModuleId(null);
     setDropTargetModuleId(null);
   };
@@ -327,7 +380,12 @@ export function DashboardPage({
         </div>
       </div>
 
-      {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
+      {successMessage && (
+        <p className="alert success">
+          <CheckCircle2 size={17} />
+          {successMessage}
+        </p>
+      )}
       {dashboardError && <p className="alert error">{dashboardError}</p>}
 
       <div className="module-grid">
@@ -375,23 +433,31 @@ export function DashboardPage({
         <div className="info-summary-grid">
           {canAccessUsers && (
             <div className="info-summary-item info-summary-users">
-              <span className="info-summary-icon"><Users size={18} /></span>
+              <span className="info-summary-icon">
+                <Users size={18} />
+              </span>
               <span className="info-summary-label">Usuários ativos</span>
               <strong>{activeUsersCount}</strong>
             </div>
           )}
           <div className="info-summary-item info-summary-patients">
-            <span className="info-summary-icon"><CircleCheck size={18} /></span>
+            <span className="info-summary-icon">
+              <CircleCheck size={18} />
+            </span>
             <span className="info-summary-label">Pacientes ativos</span>
             <strong>{activePatientsCount}</strong>
           </div>
           <div className="info-summary-item info-summary-pending">
-            <span className="info-summary-icon amber"><Info size={18} /></span>
+            <span className="info-summary-icon amber">
+              <Info size={18} />
+            </span>
             <span className="info-summary-label">Pendencias</span>
             <strong>{pendingPaymentsCount}</strong>
           </div>
           <div className="info-summary-item info-summary-files">
-            <span className="info-summary-icon"><FileText size={18} /></span>
+            <span className="info-summary-icon">
+              <FileText size={18} />
+            </span>
             <span className="info-summary-label">Arquivos</span>
             <strong>{patientFilesCount}</strong>
           </div>

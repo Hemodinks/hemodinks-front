@@ -20,7 +20,9 @@ export function CompanyLogo({
   const directPhoto = /^(data:image\/|blob:|https?:\/\/)/i.test(trimmedPhoto);
   const canLoadFromApi = Boolean(trimmedPhoto && !directPhoto);
   const [useFallback, setUseFallback] = useState(false);
-  const [photoSource, setPhotoSource] = useState(() => (canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto)));
+  const [photoSource, setPhotoSource] = useState(() =>
+    canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto),
+  );
 
   useEffect(() => {
     setUseFallback(false);

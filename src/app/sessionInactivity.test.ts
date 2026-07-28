@@ -16,20 +16,20 @@ describe('sessionInactivity', () => {
     const lastRefreshAt = 1_000;
     const lastActivityAt = 2_000;
 
-    expect(shouldRefreshSession(
-      lastActivityAt,
-      lastRefreshAt,
-      lastRefreshAt + SESSION_REFRESH_INTERVAL_MS,
-    )).toBe(true);
+    expect(
+      shouldRefreshSession(
+        lastActivityAt,
+        lastRefreshAt,
+        lastRefreshAt + SESSION_REFRESH_INTERVAL_MS,
+      ),
+    ).toBe(true);
   });
 
   it('nao renova uma sessao sem nova atividade', () => {
     const timestamp = 1_000;
 
-    expect(shouldRefreshSession(
-      timestamp,
-      timestamp,
-      timestamp + SESSION_REFRESH_INTERVAL_MS,
-    )).toBe(false);
+    expect(
+      shouldRefreshSession(timestamp, timestamp, timestamp + SESSION_REFRESH_INTERVAL_MS),
+    ).toBe(false);
   });
 });

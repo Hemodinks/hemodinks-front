@@ -1,8 +1,8 @@
-import { Pencil, Trash2, X } from "lucide-react";
-import { Modal } from "../../shared/components/Modal";
-import { DataPanel, IconButton } from "../../shared/components/ui";
-import { formatCurrency } from "../../shared/utils/formatters";
-import type { AtendimentoCirurgico } from "../../types";
+import { Pencil, Trash2, X } from 'lucide-react';
+import { Modal } from '../../shared/components/Modal';
+import { DataPanel, IconButton } from '../../shared/components/ui';
+import { formatCurrency } from '../../shared/utils/formatters';
+import type { AtendimentoCirurgico } from './billingDomainTypes';
 
 function Summary({ title, value }: { title: string; value: string }) {
   return (
@@ -58,21 +58,15 @@ export function AttendanceDetailsModal({
         </div>
       </div>
       <section className="billing-summary-grid">
-        <Summary
-          title="Data"
-          value={new Date(item.dataProcedimento).toLocaleDateString("pt-BR")}
-        />
+        <Summary title="Data" value={new Date(item.dataProcedimento).toLocaleDateString('pt-BR')} />
         <Summary title="Status" value={item.status} />
-        <Summary
-          title="Autorização"
-          value={item.numeroAutorizacao || "Não informada"}
-        />
+        <Summary title="Autorização" value={item.numeroAutorizacao || 'Não informada'} />
         <Summary
           title="Glosa"
           value={
             item.valorGlosa
               ? `${formatCurrency(item.valorGlosa)} — ${item.motivoGlosa}`
-              : "Não informada"
+              : 'Não informada'
           }
         />
       </section>
@@ -91,18 +85,18 @@ export function AttendanceDetailsModal({
           <tbody>
             {item.procedimentos.map((procedure) => (
               <tr key={procedure.id}>
-                <td>{procedure.cbhpmCodigo || "-"}</td>
+                <td>{procedure.cbhpmCodigo || '-'}</td>
                 <td>{procedure.descricao}</td>
                 <td>{procedure.quantidade}</td>
                 <td>{procedure.pesoPercentual}%</td>
                 <td>
                   {procedure.valorReferencia == null
-                    ? "-"
+                    ? '-'
                     : formatCurrency(procedure.valorReferencia)}
                 </td>
                 <td>
                   {procedure.valorNegociado == null
-                    ? "-"
+                    ? '-'
                     : formatCurrency(procedure.valorNegociado)}
                 </td>
               </tr>

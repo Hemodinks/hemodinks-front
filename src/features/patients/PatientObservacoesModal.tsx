@@ -1,8 +1,12 @@
 import { MessageSquareReply, MessageSquareText, RefreshCw, Send, X } from 'lucide-react';
-import type { Paciente, PacienteObservacao } from '../../types';
+import type { Paciente, PacienteObservacao } from './patientTypes';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, Button, IconButton, TextareaField } from '../../shared/components/ui';
-import { formatProfileName, MAX_OBSERVATION_LENGTH, toNotificationDate } from '../../shared/utils/formatters';
+import {
+  formatProfileName,
+  MAX_OBSERVATION_LENGTH,
+  toNotificationDate,
+} from '../../shared/utils/formatters';
 import './patients.css';
 
 type PatientObservacoesModalProps = {
@@ -37,19 +41,30 @@ export function PatientObservacoesModal({
   const unreadObservations = paciente.observacoesNaoLidasCount ?? 0;
 
   return (
-    <Modal titleId="patient-observacoes-title" className="patient-observacoes-modal" onClose={onClose}>
+    <Modal
+      titleId="patient-observacoes-title"
+      className="patient-observacoes-modal"
+      onClose={onClose}
+    >
       <div className="panel-title">
         <div>
           <span className="eyebrow">Comunicação do paciente</span>
           <h2 id="patient-observacoes-title">{paciente.nomePaciente}</h2>
-          <span className={`patient-observation-summary${unreadObservations > 0 ? ' has-unread-observations' : ' is-read'}`}>
+          <span
+            className={`patient-observation-summary${unreadObservations > 0 ? ' has-unread-observations' : ' is-read'}`}
+          >
             {unreadObservations > 0
               ? `${unreadObservations} observações não lidas`
               : 'Todas as observações estão lidas'}
           </span>
         </div>
         <div className="panel-title-actions">
-          <IconButton label="Atualizar observações" title="Atualizar" tone="muted" onClick={onRefresh}>
+          <IconButton
+            label="Atualizar observações"
+            title="Atualizar"
+            tone="muted"
+            onClick={onRefresh}
+          >
             <RefreshCw size={17} />
           </IconButton>
           <IconButton label="Fechar observações" title="Fechar" tone="muted" onClick={onClose}>
@@ -64,7 +79,12 @@ export function PatientObservacoesModal({
             <strong>Respondendo {replyTo.autorNome}</strong>
             <p>{replyTo.texto}</p>
           </div>
-          <IconButton label="Cancelar resposta" title="Cancelar resposta" tone="muted" onClick={() => onReplyToChange(null)}>
+          <IconButton
+            label="Cancelar resposta"
+            title="Cancelar resposta"
+            tone="muted"
+            onClick={() => onReplyToChange(null)}
+          >
             <X size={16} />
           </IconButton>
         </div>
@@ -80,15 +100,26 @@ export function PatientObservacoesModal({
           className="observation-textarea"
         />
         <div className="patient-observation-compose-footer">
-          <span className="file-hint">{draft.length}/{MAX_OBSERVATION_LENGTH} caracteres</span>
-          <Button variant="primary" className="patient-observation-submit" onClick={() => void onSubmit()} disabled={saving}>
+          <span className="file-hint">
+            {draft.length}/{MAX_OBSERVATION_LENGTH} caracteres
+          </span>
+          <Button
+            variant="primary"
+            className="patient-observation-submit"
+            onClick={() => void onSubmit()}
+            disabled={saving}
+          >
             <Send size={16} />
             {saving ? 'Enviando...' : replyTo ? 'Responder' : 'Enviar observação'}
           </Button>
         </div>
       </div>
 
-      {loading && <AlertMessage type="success" icon={<RefreshCw size={16} />}>Carregando observações...</AlertMessage>}
+      {loading && (
+        <AlertMessage type="success" icon={<RefreshCw size={16} />}>
+          Carregando observações...
+        </AlertMessage>
+      )}
       {error && <AlertMessage type="error">{error}</AlertMessage>}
 
       {observacoes.length ? (
@@ -107,11 +138,15 @@ export function PatientObservacoesModal({
                     <MessageSquareText size={15} />
                     {observacao.autorNome}
                   </span>
-                  <span className="patient-observation-destination">Para {observacao.destinatarioNome}</span>
+                  <span className="patient-observation-destination">
+                    Para {observacao.destinatarioNome}
+                  </span>
                 </div>
                 <p>{observacao.texto}</p>
                 <div className="patient-observation-meta-row">
-                  <span>{formatProfileName(observacao.autorPerfilId, observacao.autorPerfilNome)}</span>
+                  <span>
+                    {formatProfileName(observacao.autorPerfilId, observacao.autorPerfilNome)}
+                  </span>
                   <span>{toNotificationDate(observacao.dataCadastro) || 'Agora'}</span>
                   {observacao.foiLida ? (
                     <span className="patient-observation-read-status is-read">Lida</span>
@@ -120,7 +155,10 @@ export function PatientObservacoesModal({
                   )}
                 </div>
                 <div className="patient-observation-actions">
-                  <Button className="patient-observation-reply-action" onClick={() => onReplyToChange(observacao)}>
+                  <Button
+                    className="patient-observation-reply-action"
+                    onClick={() => onReplyToChange(observacao)}
+                  >
                     <MessageSquareReply size={16} />
                     Responder
                   </Button>

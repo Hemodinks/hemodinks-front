@@ -1,11 +1,11 @@
-import { CheckCircle2 } from "lucide-react";
-import type { CbhpmGeral } from "../../types";
-import { formatCurrency } from "../utils/formatters";
-import { Button } from "./ui";
-import { Pagination, SortableHeader, TableStateRow } from "./listing";
+import { CheckCircle2 } from 'lucide-react';
+import type { CbhpmResult } from '../domain/medicalContracts';
+import { formatCurrency } from '../utils/formatters';
+import { Button } from './ui';
+import { Pagination, SortableHeader, TableStateRow } from './listing';
 
 type CbhpmResultsTableProps = {
-  items: CbhpmGeral[];
+  items: CbhpmResult[];
   loading: boolean;
   currentPage: number;
   totalPages: number;
@@ -13,9 +13,9 @@ type CbhpmResultsTableProps = {
   visibleStart: number;
   visibleEnd: number;
   onPageChange: (page: number | ((current: number) => number)) => void;
-  onSelect: (item: CbhpmGeral) => void;
+  onSelect: (item: CbhpmResult) => void;
   sortBy?: string;
-  sortDirection?: "asc" | "desc";
+  sortDirection?: 'asc' | 'desc';
   onSortChange?: (field: string) => void;
   formatCode?: (code: string) => string;
   wrapClassName?: string;
@@ -25,10 +25,10 @@ type CbhpmResultsTableProps = {
 };
 
 const columns = [
-  { field: "codigo", label: "Código" },
-  { field: "procedimento", label: "Procedimento" },
-  { field: "porte", label: "Porte" },
-  { field: "valorreferencia", label: "Valor referência" },
+  { field: 'codigo', label: 'Código' },
+  { field: 'procedimento', label: 'Procedimento' },
+  { field: 'porte', label: 'Porte' },
+  { field: 'valorreferencia', label: 'Valor referência' },
 ] as const;
 
 export function CbhpmResultsTable({
@@ -41,14 +41,14 @@ export function CbhpmResultsTable({
   visibleEnd,
   onPageChange,
   onSelect,
-  sortBy = "",
-  sortDirection = "asc",
+  sortBy = '',
+  sortDirection = 'asc',
   onSortChange,
   formatCode = (code) => code,
-  wrapClassName = "",
-  tableClassName = "",
-  paginationClassName = "",
-  selectClassName = "",
+  wrapClassName = '',
+  tableClassName = '',
+  paginationClassName = '',
+  selectClassName = '',
 }: CbhpmResultsTableProps) {
   return (
     <>
@@ -84,21 +84,14 @@ export function CbhpmResultsTable({
             {!loading &&
               items.map((item) => (
                 <tr key={item.id}>
-                  <td data-label="Código">
-                    {formatCode(item.codigo) || item.codigo}
-                  </td>
+                  <td data-label="Código">{formatCode(item.codigo) || item.codigo}</td>
                   <td data-label="Procedimento">{item.procedimento}</td>
-                  <td data-label="Porte">{item.porte || "-"}</td>
+                  <td data-label="Porte">{item.porte || '-'}</td>
                   <td data-label="Valor referência">
-                    {item.valorReferencia == null
-                      ? "-"
-                      : formatCurrency(item.valorReferencia)}
+                    {item.valorReferencia == null ? '-' : formatCurrency(item.valorReferencia)}
                   </td>
                   <td data-label="Selecionar">
-                    <Button
-                      className={selectClassName}
-                      onClick={() => onSelect(item)}
-                    >
+                    <Button className={selectClassName} onClick={() => onSelect(item)}>
                       <CheckCircle2 size={17} />
                       Adicionar
                     </Button>

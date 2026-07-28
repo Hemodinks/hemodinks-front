@@ -1,8 +1,4 @@
-export type AtendimentoStatus =
-  | "Planejado"
-  | "Autorizado"
-  | "Realizado"
-  | "Cancelado";
+export type AtendimentoStatus = 'Planejado' | 'Autorizado' | 'Realizado' | 'Cancelado';
 
 export type AtendimentoProcedimento = {
   id: number;
@@ -38,16 +34,16 @@ export type AtendimentoCirurgico = {
 };
 
 export type FaturamentoStatus =
-  | "Rascunho"
-  | "ProntoParaEnvio"
-  | "Enviado"
-  | "EmAnalise"
-  | "GlosadoParcial"
-  | "GlosadoTotal"
-  | "Aprovado"
-  | "ParcialmentePago"
-  | "Pago"
-  | "Cancelado";
+  | 'Rascunho'
+  | 'ProntoParaEnvio'
+  | 'Enviado'
+  | 'EmAnalise'
+  | 'GlosadoParcial'
+  | 'GlosadoTotal'
+  | 'Aprovado'
+  | 'ParcialmentePago'
+  | 'Pago'
+  | 'Cancelado';
 
 export type Faturamento = {
   id: number;
@@ -175,6 +171,6 @@ export type PacienteFinanceiroResumo = {
   valorRecebido: number;
   saldoAberto: number;
   statusFinanceiro: string;
-  origemDados: "Normalizado" | "Legado";
+  origemDados: 'Normalizado' | 'Legado';
   avisos: string[];
 };

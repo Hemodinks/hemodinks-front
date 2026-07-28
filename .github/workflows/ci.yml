@@ -1,6 +1,6 @@
 name: CI
 
-"on":
+'on':
   push:
     branches:
       - main
@@ -73,6 +73,15 @@ jobs:
 
       - name: Run lint
         run: npm run lint
+
+      - name: Check architecture boundaries
+        run: npm run architecture:check
+
+      - name: Audit dependencies and documented exceptions
+        run: npm run security:audit
+
+      - name: Check formatting
+        run: npm run format:check
 
       - name: Build
         run: npm run build

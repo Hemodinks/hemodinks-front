@@ -11,7 +11,8 @@ import { setObservabilityUser } from '../observability';
 import { queryClient } from '../queryClient';
 import { queryKeys } from '../shared/queryKeys';
 import { getErrorMessage } from '../shared/utils/formatters';
-import type { AuthSession, DashboardNotification, DashboardSummary } from '../types';
+import type { AuthSession } from '../features/auth/authTypes';
+import type { DashboardNotification, DashboardSummary } from '../features/dashboard/dashboardTypes';
 
 const DASHBOARD_CACHE_TIME_MS = 30 * 1000;
 const NOTIFICATIONS_CACHE_TIME_MS = 15 * 1000;
@@ -55,14 +56,20 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
 
   const systemSettings = systemSettingsQuery.data ?? DEFAULT_SYSTEM_SETTINGS;
   const companyName = systemSettings.nomeEmpresa?.trim() || DEFAULT_SYSTEM_SETTINGS.nomeEmpresa;
-  const systemSettingsError = systemSettingsQuery.error ? getErrorMessage(systemSettingsQuery.error) : '';
+  const systemSettingsError = systemSettingsQuery.error
+    ? getErrorMessage(systemSettingsQuery.error)
+    : '';
 
   useEffect(() => {
-    setObservabilityUser(session ? {
-      id: session.user.id,
-      email: session.user.email,
-      nome: session.user.nome,
-    } : null);
+    setObservabilityUser(
+      session
+        ? {
+            id: session.user.id,
+            email: session.user.email,
+            nome: session.user.nome,
+          }
+        : null,
+    );
   }, [session?.user.email, session?.user.id, session?.user.nome]);
 
   useEffect(() => {
@@ -106,7 +113,15 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(token) });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboardSummary(token),
+        refetchType: 'none',
+      });
+      await queryClient.fetchQuery({
+        queryKey: queryKeys.dashboardSummary(token),
+        queryFn: () => getDashboardSummary(token, true),
+      });
+      return;
     }
 
     await dashboardSummaryQuery.refetch();
@@ -126,7 +141,14 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
 
     await notificationsQuery.refetch();
     await markAgendaNotificationsAsRead(session.token);
-    await notificationsQuery.refetch();
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.dashboardNotifications(session.token),
+      refetchType: 'none',
+    });
+    await queryClient.fetchQuery({
+      queryKey: queryKeys.dashboardNotifications(session.token),
+      queryFn: () => getDashboardNotifications(session.token, true),
+    });
     await loadDashboardSummary(session.token, true);
   };
 
