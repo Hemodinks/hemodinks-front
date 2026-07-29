@@ -2,6 +2,7 @@ import { Bell, LogOut } from 'lucide-react';
 import type { BreadcrumbItem } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
+import { formatPersonName } from '../shared/utils/formatters';
 import { CompanyLogo } from '../shared/components/CompanyLogo';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
 
@@ -45,7 +46,7 @@ export function Topbar({
       <div className="topbar-right">
         <div className="current-user topbar-user" aria-label="Usuário logado">
           <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" />
-          <span className="current-user-name">{session.user.nome}</span>
+          <span className="current-user-name">{formatPersonName(session.user.nome)}</span>
         </div>
 
         <div className="topbar-actions">

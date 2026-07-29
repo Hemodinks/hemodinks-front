@@ -18,6 +18,7 @@ import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from 
 import { AlertMessage, Button, DataPanel, IconButton, SearchField, SelectField, TextField } from '../../shared/components/ui';
 import {
   CONVENIOS_DATALIST_ID,
+  formatPersonName,
   MEDICAL_USERS_DATALIST_ID,
 } from '../../shared/utils/formatters';
 import { scrollListCarousel } from '../../shared/utils/carousel';
@@ -252,13 +253,14 @@ export function PatientList({
                 pacientes.map((paciente) => {
                   const unreadObservations = paciente.observacoesNaoLidasCount ?? 0;
                   const hasUnreadObservations = unreadObservations > 0;
+                  const patientDisplayName = formatPersonName(paciente.nomePaciente);
 
                   return (
                   <tr key={paciente.id}>
                     <td data-label="Paciente">
                       <div className="name-cell">
                         <UserAvatar userId={paciente.userId} name={paciente.nomePaciente} photo={paciente.fotoPerfil} authToken={sessionToken} size="sm" />
-                        <span>{paciente.nomePaciente}</span>
+                        <span>{patientDisplayName}</span>
                       </div>
                     </td>
                     <td data-label="Info">
@@ -266,13 +268,13 @@ export function PatientList({
                         type="button"
                         className="status-info-button"
                         title="Ver informações adicionais"
-                        aria-label={`Informações adicionais de ${paciente.nomePaciente}`}
+                        aria-label={`Informações adicionais de ${patientDisplayName}`}
                         onClick={() => onSelectPatientInfo(paciente)}
                       >
                         <Info size={18} />
                       </button>
                     </td>
-                    <td data-label="Cirurgião">{paciente.medico || '-'}</td>
+                    <td data-label="Cirurgião">{formatPersonName(paciente.medico) || '-'}</td>
                     <td data-label="Status Pago">
                       <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
                         {paciente.statusPago ? 'Pago' : 'Pendente'}
@@ -285,7 +287,7 @@ export function PatientList({
                           className="attachment-count attachment-button"
                           onClick={() => void onOpenPacienteFiles(paciente)}
                           title="Ver arquivos anexos"
-                          aria-label={`Arquivos anexos de ${paciente.nomePaciente}`}
+                          aria-label={`Arquivos anexos de ${patientDisplayName}`}
                         >
                           <FileText size={15} />
                           {paciente.arquivosCount ?? paciente.arquivos.length}
@@ -304,7 +306,7 @@ export function PatientList({
                           className={`patient-observation-button${hasUnreadObservations ? ' has-unread-observations' : ''}`}
                           onClick={() => void onOpenPacienteObservacoes(paciente)}
                           title="Abrir observações"
-                          aria-label={`Observações de ${paciente.nomePaciente}`}
+                          aria-label={`Observações de ${patientDisplayName}`}
                         >
                           <MessageSquareText size={16} />
                           <span className="patient-observation-count">{unreadObservations}</span>
@@ -319,7 +321,7 @@ export function PatientList({
                     <td data-label="Ações">
                       <div className="row-actions">
                         <IconButton
-                          label={`${patientActionLabel} ${paciente.nomePaciente}`}
+                          label={`${patientActionLabel} ${patientDisplayName}`}
                           tone="muted"
                           onClick={() => void onEditPaciente(paciente)}
                           title={patientActionLabel}
@@ -328,7 +330,7 @@ export function PatientList({
                         </IconButton>
                         {canDeletePatients && (
                           <IconButton
-                            label={`Excluir ${paciente.nomePaciente}`}
+                            label={`Excluir ${patientDisplayName}`}
                             tone="danger"
                             onClick={() => void onDeletePaciente(paciente)}
                             title="Excluir"
