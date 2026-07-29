@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   Eye,
   FileText,
@@ -14,9 +16,9 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertMessage, Button, CheckboxField, ComboboxField, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
+import { AlertMessage, Button, CheckboxField, ComboboxField, DataPanel, IconButton, SearchField, SelectField } from '../../shared/components/ui';
 import './billing.css';
-import { formatCurrency } from '../../shared/utils/formatters';
+import { formatCurrency, formatPersonName } from '../../shared/utils/formatters';
 import type { AuthSession, Convenio, MedicalUserOption } from '../../types';
 import { UserAvatar } from '../users/UserAvatar';
 import {
@@ -31,8 +33,6 @@ import {
   areBillingFiltersEqual,
   BILLING_REGIME_FILTER_OPTIONS,
   BILLING_STATUS_FILTER_OPTIONS,
-  getFilterOptionLabel,
-  getFilterOptionValue,
   getUniqueSortedOptions,
   loadBillingPatients,
   parseBillingDetailId,
@@ -55,6 +55,10 @@ type BillingPageProps = {
   isMedical: boolean;
 };
 
+type BillingSortField = 'patient' | 'doctor' | 'status';
+
+const BILLING_PAGE_SIZE = 10;
+
 export function BillingPage({
   session,
   medicalUsers,
@@ -66,8 +70,9 @@ export function BillingPage({
   const defaultDoctorFilter = isMedical ? session.user.nome : '';
   const [filters, setFilters] = useState(() => createEmptyBillingFilters(defaultDoctorFilter));
   const [appliedFilters, setAppliedFilters] = useState(() => createEmptyBillingFilters(defaultDoctorFilter));
-  const [statusFilterInput, setStatusFilterInput] = useState(() => getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, 'all'));
-  const [regimeFilterInput, setRegimeFilterInput] = useState(() => getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, 'all'));
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<BillingSortField>('patient');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [summaryRecordId, setSummaryRecordId] = useState<number | null>(null);
   const detailRecordId = parseBillingDetailId(searchParams.get('detalhe'));
 
@@ -83,14 +88,6 @@ export function BillingPage({
       ? current
       : { ...current, medico: session.user.nome });
   }, [isMedical, session.user.nome]);
-
-  useEffect(() => {
-    setStatusFilterInput(getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, filters.status));
-  }, [filters.status]);
-
-  useEffect(() => {
-    setRegimeFilterInput(getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, filters.regime));
-  }, [filters.regime]);
 
   const billingQuery = useQuery({
     queryKey: [
@@ -131,8 +128,36 @@ export function BillingPage({
     appliedFilters,
     billingScopeOptions,
   );
+  const sortedBillingRecords = [...billingRecords].sort((left, right) => {
+    const leftValue = sortBy === 'patient'
+      ? left.patientName
+      : sortBy === 'doctor'
+        ? left.doctorName
+        : left.statusLabel;
+    const rightValue = sortBy === 'patient'
+      ? right.patientName
+      : sortBy === 'doctor'
+        ? right.doctorName
+        : right.statusLabel;
+    const comparison = leftValue.localeCompare(rightValue, 'pt-BR', {
+      numeric: true,
+      sensitivity: 'base',
+    });
+
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
+  const totalPages = Math.max(1, Math.ceil(sortedBillingRecords.length / BILLING_PAGE_SIZE));
+  const visiblePage = Math.min(currentPage, totalPages);
+  const visibleStart = sortedBillingRecords.length ? ((visiblePage - 1) * BILLING_PAGE_SIZE) + 1 : 0;
+  const visibleEnd = Math.min(visiblePage * BILLING_PAGE_SIZE, sortedBillingRecords.length);
+  const visibleBillingRecords = sortedBillingRecords.slice(visibleStart ? visibleStart - 1 : 0, visibleEnd);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
   const doctorFilterOptions = getUniqueSortedOptions([
-    ...medicalUsers.map((user) => user.nome),
+    ...medicalUsers.map((user) => formatPersonName(user.nome)),
     ...billingScopeRecords.map((record) => record.doctorName),
   ]);
   const convenioFilterOptions = getUniqueSortedOptions([
@@ -174,8 +199,7 @@ export function BillingPage({
     const nextFilters = createEmptyBillingFilters(defaultDoctorFilter);
     setFilters(nextFilters);
     setAppliedFilters(nextFilters);
-    setStatusFilterInput(getFilterOptionLabel(BILLING_STATUS_FILTER_OPTIONS, 'all'));
-    setRegimeFilterInput(getFilterOptionLabel(BILLING_REGIME_FILTER_OPTIONS, 'all'));
+    setCurrentPage(1);
   };
 
   const applyFilters = () => {
@@ -189,11 +213,19 @@ export function BillingPage({
     };
 
     if (areBillingFiltersEqual(nextFilters, appliedFilters)) {
+      setCurrentPage(1);
       void billingQuery.refetch();
       return;
     }
 
+    setCurrentPage(1);
     setAppliedFilters(nextFilters);
+  };
+
+  const changeSort = (field: BillingSortField) => {
+    setCurrentPage(1);
+    setSortDirection((currentDirection) => sortBy === field && currentDirection === 'asc' ? 'desc' : 'asc');
+    setSortBy(field);
   };
 
   const updateCompetenciaInicio = (value: string) => {
@@ -253,7 +285,7 @@ export function BillingPage({
 
           {isMedical && (
             <AlertMessage type="warning" icon={<Info size={17} />}>
-              Visualização restrita aos pacientes vinculados ao médico {session.user.nome}.
+              Visualização restrita aos pacientes vinculados ao médico {formatPersonName(session.user.nome)}.
             </AlertMessage>
           )}
 
@@ -430,7 +462,7 @@ export function BillingPage({
                 options={doctorFilterOptions}
                 onValueChange={(value) => setFilters((current) => ({ ...current, medico: value }))}
                 disabled={isMedical || !doctorFilterOptions.length}
-                placeholder={isMedical ? session.user.nome : medicalUsers.length ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
+                placeholder={isMedical ? formatPersonName(session.user.nome) : medicalUsers.length ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
                 noOptionsLabel="Nenhum cirurgião encontrado."
               />
               <ComboboxField
@@ -461,38 +493,32 @@ export function BillingPage({
                 placeholder="Principal ou associado"
                 noOptionsLabel="Nenhum procedimento encontrado."
               />
-              <ComboboxField
+              <SelectField
                 className="filter-field"
                 label="Status"
-                value={statusFilterInput}
-                options={BILLING_STATUS_FILTER_OPTIONS.map((option) => option.label)}
-                onValueChange={(value) => {
-                  setStatusFilterInput(value);
-
-                  const nextStatus = getFilterOptionValue(BILLING_STATUS_FILTER_OPTIONS, value);
-
-                  if (nextStatus) {
-                    setFilters((current) => ({ ...current, status: nextStatus }));
-                  }
-                }}
-                noOptionsLabel="Nenhum status encontrado."
-              />
-              <ComboboxField
+                value={filters.status}
+                onChange={(event) => setFilters((current) => ({
+                  ...current,
+                  status: event.target.value as BillingFilters['status'],
+                }))}
+              >
+                {BILLING_STATUS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </SelectField>
+              <SelectField
                 className="filter-field"
                 label="Regime"
-                value={regimeFilterInput}
-                options={BILLING_REGIME_FILTER_OPTIONS.map((option) => option.label)}
-                onValueChange={(value) => {
-                  setRegimeFilterInput(value);
-
-                  const nextRegime = getFilterOptionValue(BILLING_REGIME_FILTER_OPTIONS, value);
-
-                  if (nextRegime) {
-                    setFilters((current) => ({ ...current, regime: nextRegime }));
-                  }
-                }}
-                noOptionsLabel="Nenhum regime encontrado."
-              />
+                value={filters.regime}
+                onChange={(event) => setFilters((current) => ({
+                  ...current,
+                  regime: event.target.value as BillingFilters['regime'],
+                }))}
+              >
+                {BILLING_REGIME_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </SelectField>
               <BillingMonthField
                 id="billing-period-start"
                 label="Competência inicial"
@@ -609,9 +635,24 @@ export function BillingPage({
           <table className="billing-table">
             <thead>
               <tr>
-                <th>Paciente</th>
-                <th>Cirurgião</th>
-                <th>Status</th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => changeSort('patient')} aria-sort={sortBy === 'patient' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Paciente
+                    {sortBy === 'patient' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => changeSort('doctor')} aria-sort={sortBy === 'doctor' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Cirurgião
+                    {sortBy === 'doctor' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => changeSort('status')} aria-sort={sortBy === 'status' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Status
+                    {sortBy === 'status' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
                 <th>Resumo</th>
                 <th>Visualizar</th>
               </tr>
@@ -621,8 +662,8 @@ export function BillingPage({
                 <tr>
                   <td colSpan={5} className="empty-row">Carregando faturamento médico...</td>
                 </tr>
-              ) : billingRecords.length ? (
-                billingRecords.map((record) => (
+              ) : visibleBillingRecords.length ? (
+                visibleBillingRecords.map((record) => (
                   <tr key={record.id}>
                     <td data-label="Paciente">
                       <div className="billing-patient-cell">
@@ -677,6 +718,28 @@ export function BillingPage({
               )}
             </tbody>
           </table>
+        </div>
+        <div className="pagination-bar">
+          <span>{visibleStart}-{visibleEnd} de {sortedBillingRecords.length}</span>
+          <div className="pagination-actions">
+            <IconButton
+              label="Página anterior do faturamento"
+              title="Página anterior"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={visiblePage === 1}
+            >
+              <ChevronLeft size={18} />
+            </IconButton>
+            <span className="page-indicator">Página {visiblePage} de {totalPages}</span>
+            <IconButton
+              label="Próxima página do faturamento"
+              title="Próxima página"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={visiblePage === totalPages}
+            >
+              <ChevronRight size={18} />
+            </IconButton>
+          </div>
         </div>
       </DataPanel>
 

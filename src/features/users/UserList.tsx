@@ -1,7 +1,7 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Info, Mail, Pencil, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { User } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
-import { formatProfileName } from '../../shared/utils/formatters';
+import { formatPersonName, formatProfileName } from '../../shared/utils/formatters';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { UserAvatar } from './UserAvatar';
 
@@ -118,12 +118,15 @@ export function UserList({
                   <td colSpan={5} className="empty-row">Carregando usuários...</td>
                 </tr>
               ) : users.length ? (
-                users.map((user) => (
+                users.map((user) => {
+                  const displayName = formatPersonName(user.nome);
+
+                  return (
                   <tr key={user.id}>
                     <td data-label="Nome">
                       <div className="name-cell">
                         <UserAvatar userId={user.id} name={user.nome} photo={user.fotoPerfil} authToken={sessionToken} size="sm" />
-                        <span>{user.nome}</span>
+                        <span>{displayName}</span>
                       </div>
                     </td>
                     <td data-label="Perfil">{formatProfileName(user.perfilId, user.perfilNome)}</td>
@@ -132,7 +135,7 @@ export function UserList({
                         type="button"
                         className={`status-info-button ${user.ativo ? 'active' : 'inactive'}`}
                         title={`${user.ativo ? 'Ativo' : 'Inativo'} - clique para ver detalhes`}
-                        aria-label={`Detalhes de ${user.nome}`}
+                        aria-label={`Detalhes de ${displayName}`}
                         onClick={() => onSelectInfoUser(user)}
                       >
                         {user.ativo ? <CircleCheck size={19} /> : <CircleX size={19} />}
@@ -144,7 +147,7 @@ export function UserList({
                         type="button"
                         className="status-info-button contact"
                         title="Ver informacoes de contato"
-                        aria-label={`Contato de ${user.nome}`}
+                        aria-label={`Contato de ${displayName}`}
                         onClick={() => onSelectContactUser(user)}
                       >
                         <Mail size={18} />
@@ -153,16 +156,17 @@ export function UserList({
                     </td>
                     <td data-label="Ações">
                       <div className="row-actions">
-                        <IconButton label={`Editar ${user.nome}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
+                        <IconButton label={`Editar ${displayName}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
                           <Pencil size={17} />
                         </IconButton>
-                        <IconButton label={`Excluir ${user.nome}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
+                        <IconButton label={`Excluir ${displayName}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
                           <Trash2 size={17} />
                         </IconButton>
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan={5} className="empty-row">Nenhum usuário encontrado.</td>

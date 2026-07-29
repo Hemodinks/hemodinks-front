@@ -1,14 +1,14 @@
 import type { Paciente } from '../../types';
-import { toDisplayDate } from '../../shared/utils/formatters';
+import { formatPersonName, toDisplayDate } from '../../shared/utils/formatters';
 import { normalizeCbhpmCodigo } from './patientUtils';
 
 export const pacienteExportColumns = [
-  { header: 'Paciente', getValue: (paciente: Paciente) => paciente.nomePaciente },
+  { header: 'Paciente', getValue: (paciente: Paciente) => formatPersonName(paciente.nomePaciente) },
   { header: 'Data procedimento', getValue: (paciente: Paciente) => toDisplayDate(paciente.data || '') || '-' },
   { header: 'Hospital', getValue: (paciente: Paciente) => paciente.hospital || '-' },
-  { header: 'Cirurgião', getValue: (paciente: Paciente) => paciente.medico || '-' },
-  { header: 'Médico auxiliar 1', getValue: (paciente: Paciente) => paciente.medicoAuxiliar1 || '-' },
-  { header: 'Médico auxiliar 2', getValue: (paciente: Paciente) => paciente.medicoAuxiliar2 || '-' },
+  { header: 'Cirurgião', getValue: (paciente: Paciente) => formatPersonName(paciente.medico) || '-' },
+  { header: 'Médico auxiliar 1', getValue: (paciente: Paciente) => formatPersonName(paciente.medicoAuxiliar1) || '-' },
+  { header: 'Médico auxiliar 2', getValue: (paciente: Paciente) => formatPersonName(paciente.medicoAuxiliar2) || '-' },
   { header: 'Convênio', getValue: (paciente: Paciente) => paciente.convenio || '-' },
   { header: 'Fornecedor OPME', getValue: (paciente: Paciente) => paciente.opmeFornecedor || '-' },
   { header: 'Código CBHPM', getValue: (paciente: Paciente) => normalizeCbhpmCodigo(paciente.cbhpmCodigo) || '-' },

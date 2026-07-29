@@ -4,6 +4,7 @@ import type { AuthSession, Convenio, MedicalUserOption, OpmeFornecedor } from '.
 import { LoadingOverlay } from '../shared/components/LoadingOverlay';
 import {
   CONVENIOS_DATALIST_ID,
+  formatPersonName,
   MEDICAL_USERS_DATALIST_ID,
   OPME_FORNECEDORES_DATALIST_ID,
 } from '../shared/utils/formatters';
@@ -96,7 +97,7 @@ export function AppShell({
       <LoadingOverlay active={isBusy} />
       <datalist id={MEDICAL_USERS_DATALIST_ID}>
         {medicalUsers.map((user) => (
-          <option key={user.id} value={user.nome} />
+          <option key={user.id} value={formatPersonName(user.nome)} />
         ))}
       </datalist>
       <datalist id={CONVENIOS_DATALIST_ID}>
