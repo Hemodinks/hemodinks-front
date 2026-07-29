@@ -1253,6 +1253,8 @@ describe('App', () => {
     const secondProcedureRow = within(secondCbhpmDialog).getByText('10102019').closest('tr');
     expect(secondProcedureRow).not.toBeNull();
     await user.click(within(secondProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
+    expect(screen.getByLabelText('Valor estimado')).toHaveValue('R$\u00a0300,00');
+    expect(screen.getByLabelText('Valor estimado')).toBeDisabled();
     await user.type(screen.getByLabelText('Valor recebido/pago'), '200000');
     await user.type(screen.getByLabelText('Glosa'), '1250');
     expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 2.000,00');
