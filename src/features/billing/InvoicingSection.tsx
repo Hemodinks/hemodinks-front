@@ -168,8 +168,17 @@ export function InvoicingSection({
                 <tr key={item.id}>
                   <td data-label="Paciente">
                     <Button onClick={() => onSelect(item)}>{item.paciente}</Button>
+                    <span className="billing-record-reference">
+                      Atendimento #{item.atendimentoCirurgicoId}
+                    </span>
                   </td>
-                  <td data-label="Guia">{item.numeroGuia || '-'}</td>
+                  <td
+                    className="billing-guide-cell"
+                    data-label="Guia"
+                    title={item.numeroGuia || undefined}
+                  >
+                    {item.numeroGuia || '-'}
+                  </td>
                   <td data-label="Apresentado">{formatCurrency(item.valorApresentado)}</td>
                   <td data-label="Glosa">{formatCurrency(item.valorGlosado)}</td>
                   <td data-label="Reconhecido">{formatCurrency(item.valorReconhecido)}</td>

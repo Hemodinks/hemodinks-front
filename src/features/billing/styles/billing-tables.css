@@ -80,6 +80,18 @@
   white-space: nowrap;
 }
 
+.billing-flow-table .billing-guide-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.billing-flow-table .billing-record-reference {
+  margin: 5px 4px 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
 .billing-flow-table td:first-child .ghost-button {
   width: 100%;
   min-width: 0;
