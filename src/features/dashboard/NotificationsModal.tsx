@@ -1,5 +1,5 @@
 import { Bell, X } from 'lucide-react';
-import type { DashboardNotification } from './dashboardTypes';
+import type { DashboardNotification } from '../../shared/domain/dashboardContracts';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
 import { toNotificationDate } from '../../shared/utils/formatters';
