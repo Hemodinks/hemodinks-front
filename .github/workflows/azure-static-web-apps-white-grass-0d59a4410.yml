@@ -27,7 +27,10 @@ env:
   NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: 120000
 
 concurrency:
-  group: azure-static-web-apps-${{ github.ref }}
+  # A merged PR emits a push to main and a pull_request.closed event almost
+  # simultaneously. Keep those event types in separate groups so closing the
+  # preview cannot cancel the production deployment.
+  group: azure-static-web-apps-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
