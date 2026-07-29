@@ -2,6 +2,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Pencil, 
 import type { MedicalGroup } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
 import { scrollListCarousel } from '../../shared/utils/carousel';
+import { formatPersonName } from '../../shared/utils/formatters';
 
 type MedicalGroupListProps = {
   groups: MedicalGroup[];
@@ -134,7 +135,7 @@ export function MedicalGroupList({
                     </td>
                     <td data-label="Membros">
                       <span className="medical-group-members-preview">
-                        {group.membros.length ? group.membros.map((member) => member.nome).join(', ') : '-'}
+                        {group.membros.length ? group.membros.map((member) => formatPersonName(member.nome)).join(', ') : '-'}
                       </span>
                     </td>
                     <td data-label="Ações">

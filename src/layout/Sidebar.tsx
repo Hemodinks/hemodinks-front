@@ -2,6 +2,7 @@ import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ReceiptText, Se
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
+import { formatPersonName } from '../shared/utils/formatters';
 
 type SidebarProps = {
   session: AuthSession;
@@ -68,7 +69,7 @@ export function Sidebar({
           <span className="session-label">Usuário</span>
           <div className="session-user-row">
             <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" decorative />
-            <strong>{session.user.nome}</strong>
+            <strong>{formatPersonName(session.user.nome)}</strong>
           </div>
         </div>
 

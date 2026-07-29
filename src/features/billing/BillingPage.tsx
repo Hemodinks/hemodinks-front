@@ -18,7 +18,7 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import { AlertMessage, Button, CheckboxField, ComboboxField, DataPanel, IconButton, SearchField, SelectField } from '../../shared/components/ui';
 import './billing.css';
-import { formatCurrency } from '../../shared/utils/formatters';
+import { formatCurrency, formatPersonName } from '../../shared/utils/formatters';
 import type { AuthSession, Convenio, MedicalUserOption } from '../../types';
 import { UserAvatar } from '../users/UserAvatar';
 import {
@@ -157,7 +157,7 @@ export function BillingPage({
   }, [totalPages]);
 
   const doctorFilterOptions = getUniqueSortedOptions([
-    ...medicalUsers.map((user) => user.nome),
+    ...medicalUsers.map((user) => formatPersonName(user.nome)),
     ...billingScopeRecords.map((record) => record.doctorName),
   ]);
   const convenioFilterOptions = getUniqueSortedOptions([
@@ -285,7 +285,7 @@ export function BillingPage({
 
           {isMedical && (
             <AlertMessage type="warning" icon={<Info size={17} />}>
-              Visualização restrita aos pacientes vinculados ao médico {session.user.nome}.
+              Visualização restrita aos pacientes vinculados ao médico {formatPersonName(session.user.nome)}.
             </AlertMessage>
           )}
 
@@ -462,7 +462,7 @@ export function BillingPage({
                 options={doctorFilterOptions}
                 onValueChange={(value) => setFilters((current) => ({ ...current, medico: value }))}
                 disabled={isMedical || !doctorFilterOptions.length}
-                placeholder={isMedical ? session.user.nome : medicalUsers.length ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
+                placeholder={isMedical ? formatPersonName(session.user.nome) : medicalUsers.length ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
                 noOptionsLabel="Nenhum cirurgião encontrado."
               />
               <ComboboxField
