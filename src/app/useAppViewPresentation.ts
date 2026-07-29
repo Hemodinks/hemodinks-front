@@ -35,6 +35,8 @@ export function useAppViewPresentation({
   const activePatientsCount =
     appChrome.dashboardSummary?.activePatientsCount ?? patientsDomain.pacientesTotalItems;
   const pendingPaymentsCount = appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;
+  const attendancesCount = appChrome.dashboardSummary?.attendancesCount ?? 0;
+  const billingsCount = appChrome.dashboardSummary?.billingsCount ?? 0;
   const patientFilesCount = appChrome.dashboardSummary?.patientFilesCount ?? 0;
   const upcomingEventsCount = appChrome.dashboardSummary?.upcomingEventsCount ?? 0;
   const unreadObservationCount = appChrome.dashboardSummary?.unreadObservationCount ?? 0;
@@ -109,6 +111,8 @@ export function useAppViewPresentation({
       activeUsersCount,
       activePatientsCount,
       pendingPaymentsCount,
+      attendancesCount,
+      billingsCount,
       patientFilesCount,
       upcomingEventsCount,
       unreadAgendaNotificationCount,

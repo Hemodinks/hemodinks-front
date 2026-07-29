@@ -215,6 +215,20 @@ describe('BillingPage', () => {
     await waitFor(() => expect(services.deleteAtendimento).toHaveBeenCalledWith(1, 'token'));
   });
 
+  it('abre os procedimentos pelo ícone informativo', async () => {
+    renderPage();
+    await screen.findByText('Paciente Teste');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Ver procedimentos de Paciente Teste' }),
+    );
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: 'Paciente Teste' })).toBeInTheDocument();
+    expect(within(dialog).getByText('123')).toBeInTheDocument();
+    expect(within(dialog).getByText('Cirurgia')).toBeInTheDocument();
+  });
+
   it('pagina os atendimentos em grupos de dez registros', async () => {
     vi.mocked(services.getAtendimentos).mockResolvedValue(
       Array.from({ length: 11 }, (_, index) => ({
@@ -252,9 +266,10 @@ describe('BillingPage', () => {
 
     fireEvent.click(within(table).getByRole('button', { name: 'Paciente' }));
     expect(within(table).getAllByRole('row')[1]).toHaveTextContent('Paciente Zeta');
-    for (const header of ['Data', 'Status', 'Procedimentos']) {
+    for (const header of ['Data', 'Status']) {
       fireEvent.click(within(table).getByRole('button', { name: header }));
     }
+    expect(within(table).queryByRole('button', { name: 'Procedimentos' })).not.toBeInTheDocument();
     expect(within(table).queryByRole('button', { name: 'Ações' })).not.toBeInTheDocument();
   });
 

@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { Pencil, Search, Trash2, X } from 'lucide-react';
+import { Info, Pencil, Search, Trash2, X } from 'lucide-react';
 import { Button, DataPanel, IconButton } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
 import type { AtendimentoCirurgico } from './billingDomainTypes';
@@ -82,10 +82,6 @@ export function AttendancesTable({
     paciente: (item) => item.paciente,
     data: (item) => item.dataProcedimento,
     status: (item) => item.status,
-    procedimentos: (item) =>
-      item.procedimentos
-        .map((procedure) => procedure.cbhpmCodigo || procedure.descricao)
-        .join(', '),
   }, 'recent', 'desc');
   const pagination = useClientPagination(sorting.sortedItems);
 
@@ -99,7 +95,6 @@ export function AttendancesTable({
                 ['paciente', 'Paciente'],
                 ['data', 'Data'],
                 ['status', 'Status'],
-                ['procedimentos', 'Procedimentos'],
               ].map(([field, label]) => (
                 <SortableHeader
                   key={field}
@@ -110,6 +105,7 @@ export function AttendancesTable({
                   onSortChange={sorting.handleSortChange}
                 />
               ))}
+              <th>Procedimentos</th>
               <th className="billing-actions-column">Ações</th>
             </tr>
           </thead>
@@ -124,9 +120,14 @@ export function AttendancesTable({
                 </td>
                 <td data-label="Status">{item.status}</td>
                 <td data-label="Procedimentos">
-                  {item.procedimentos
-                    .map((procedure) => procedure.cbhpmCodigo || procedure.descricao)
-                    .join(', ')}
+                  <IconButton
+                    label={`Ver procedimentos de ${item.paciente}`}
+                    title="Ver procedimentos"
+                    tone="muted"
+                    onClick={() => onSelect(item)}
+                  >
+                    <Info size={17} />
+                  </IconButton>
                 </td>
                 <td className="billing-actions-column" data-label="Ações">
                   <div className="billing-row-actions">

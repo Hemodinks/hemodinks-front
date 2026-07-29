@@ -4,6 +4,8 @@ export type DashboardSummary = {
   pacientesCount: number;
   activePatientsCount: number;
   pendingPaymentsCount: number;
+  attendancesCount?: number;
+  billingsCount?: number;
   patientFilesCount: number;
   upcomingEventsCount: number;
   unreadObservationCount?: number;

@@ -34,6 +34,8 @@ export type AppShellCounters = {
   users: number;
   patients: number;
   medicalGroups: number;
+  attendances: number;
+  billings: number;
   pendingPayments: number;
   unreadAgendaNotifications: number;
   notifications: number;
@@ -148,6 +150,8 @@ export function AppShell({
           usersCount={counters.users}
           pacientesCount={counters.patients}
           medicalGroupsCount={counters.medicalGroups}
+          attendancesCount={counters.attendances}
+          billingsCount={counters.billings}
           pendingPaymentsCount={counters.pendingPayments}
           unreadAgendaNotificationCount={counters.unreadAgendaNotifications}
           onOpenDashboard={navigation.openDashboard}

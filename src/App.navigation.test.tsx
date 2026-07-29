@@ -50,6 +50,29 @@ describe('App profiles and navigation', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/atendimentos-cirurgicos'));
   });
 
+  it('exibe as quantidades de atendimentos e faturamentos na Controladoria', async () => {
+    vi.mocked(api.getDashboardSummary).mockResolvedValue({
+      usersCount: 6,
+      activeUsersCount: 6,
+      pacientesCount: 82,
+      activePatientsCount: 82,
+      pendingPaymentsCount: 4,
+      attendancesCount: 78,
+      billingsCount: 25,
+      patientFilesCount: 0,
+      upcomingEventsCount: 0,
+    });
+
+    const { user } = await renderAuthenticatedApp();
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+
+    const sidebar = within(screen.getByLabelText('Sessão ativa'));
+    await user.click(sidebar.getByRole('button', { name: 'Controladoria' }));
+
+    expect(sidebar.getByRole('button', { name: 'Atendimentos: 78' })).toBeInTheDocument();
+    expect(sidebar.getByRole('button', { name: 'Faturamento: 25' })).toBeInTheDocument();
+  });
+
   it('permite ao perfil paciente abrir meu cadastro', async () => {
     const { user } = await renderAuthenticatedApp({
       sessionOverrides: {

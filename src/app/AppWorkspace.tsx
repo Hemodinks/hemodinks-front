@@ -76,6 +76,8 @@ export function AppWorkspace({
         users: presentation.usersCount,
         patients: presentation.pacientesCount,
         medicalGroups: medicalGroupsDomain.medicalGroupsCount,
+        attendances: presentation.counts.attendancesCount,
+        billings: presentation.counts.billingsCount,
         pendingPayments: presentation.counts.pendingPaymentsCount,
         unreadAgendaNotifications: presentation.counts.unreadAgendaNotificationCount,
         notifications: presentation.notificationCount,

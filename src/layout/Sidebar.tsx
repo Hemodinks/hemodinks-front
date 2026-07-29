@@ -37,6 +37,8 @@ type SidebarProps = {
   usersCount: number;
   pacientesCount: number;
   medicalGroupsCount: number;
+  attendancesCount: number;
+  billingsCount: number;
   pendingPaymentsCount: number;
   unreadAgendaNotificationCount: number;
   onOpenDashboard: () => void;
@@ -71,6 +73,8 @@ export function Sidebar({
   usersCount,
   pacientesCount,
   medicalGroupsCount,
+  attendancesCount,
+  billingsCount,
   pendingPaymentsCount,
   unreadAgendaNotificationCount,
   onOpenDashboard,
@@ -202,21 +206,25 @@ export function Sidebar({
                     type="button"
                     className={`side-nav-billing ${activeView === 'attendances' ? 'active' : ''}`}
                     aria-current={activeView === 'attendances' ? 'page' : undefined}
+                    aria-label={`Atendimentos: ${attendancesCount}`}
                     title="Registre cirurgias e os procedimentos realizados."
                     onClick={onOpenAttendances}
                   >
                     <Stethoscope size={18} />
                     <span>Atendimentos</span>
+                    <span className="side-nav-count">{attendancesCount}</span>
                   </button>
                   <button
                     type="button"
                     className={`side-nav-billing ${activeView === 'billing' ? 'active' : ''}`}
                     aria-current={activeView === 'billing' ? 'page' : undefined}
+                    aria-label={`Faturamento: ${billingsCount}`}
                     title="Prepare, envie e acompanhe os faturamentos médicos."
                     onClick={onOpenBilling}
                   >
                     <ReceiptText size={18} />
                     <span>Faturamento</span>
+                    <span className="side-nav-count">{billingsCount}</span>
                   </button>
                   {session.user.perfilId !== 2 && (
                     <button
