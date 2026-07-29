@@ -3,6 +3,7 @@ import type { Paciente } from '../../types';
 import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
+import { formatPersonName } from '../../shared/utils/formatters';
 import { getPacienteProcedimentosFromPaciente } from './patientUtils';
 import './patients.css';
 
@@ -25,7 +26,7 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
         <div className="panel-title patient-info-titlebar">
           <div>
             <span className="eyebrow">Informações adicionais</span>
-            <h2 id="patient-info-title">{paciente.nomePaciente}</h2>
+            <h2 id="patient-info-title">{formatPersonName(paciente.nomePaciente)}</h2>
           </div>
           <IconButton label="Fechar informações do paciente" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />
@@ -67,7 +68,7 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
             <article className="patient-info-card">
               <span>Cirurgião</span>
               <div className="patient-info-card-content">
-                {renderInfoValue('cirurgião do paciente', paciente.medico)}
+                {renderInfoValue('cirurgião do paciente', formatPersonName(paciente.medico))}
               </div>
             </article>
 
@@ -116,7 +117,7 @@ export function PatientFilesModal({ paciente, loading, error, onClose }: Patient
         <div className="panel-title">
           <div>
             <span className="eyebrow">Arquivos anexos</span>
-            <h2 id="patient-files-title">{paciente.nomePaciente}</h2>
+            <h2 id="patient-files-title">{formatPersonName(paciente.nomePaciente)}</h2>
           </div>
           <IconButton label="Fechar arquivos do paciente" title="Fechar" tone="muted" onClick={onClose}>
             <X size={18} />

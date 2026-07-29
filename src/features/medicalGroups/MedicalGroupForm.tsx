@@ -2,7 +2,7 @@ import { type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { Plus, Save, ShieldPlus, X } from 'lucide-react';
 import type { MedicalGroupFormData, MedicalUserOption } from '../../types';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, TextField } from '../../shared/components/ui';
-import { MAX_NAME_LENGTH } from '../../shared/utils/formatters';
+import { formatPersonName, MAX_NAME_LENGTH } from '../../shared/utils/formatters';
 
 type MedicalGroupFormProps = {
   editingGroupId: number | null;
@@ -86,7 +86,7 @@ export function MedicalGroupForm({
                       <span className="medical-group-member-icon" aria-hidden="true">
                         <ShieldPlus size={16} />
                       </span>
-                      <span className="medical-group-member-name">{user.nome}</span>
+                      <span className="medical-group-member-name">{formatPersonName(user.nome)}</span>
                       <span className="medical-group-member-email">{user.email}</span>
                     </label>
                   );

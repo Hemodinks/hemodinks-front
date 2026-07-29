@@ -10,6 +10,7 @@ import {
   findOpmeFornecedorByName,
   formatCurrency,
   formatCurrencyInput,
+  formatPersonName,
   HOSPITAIS_DATALIST_ID,
   MAX_DIAGNOSIS_LENGTH,
   MAX_NAME_LENGTH,
@@ -93,7 +94,7 @@ export function PatientForm({
   const getLegacyMedicalOption = (field: MedicalTeamField) => {
     const config = medicalTeamFields[field];
     const userId = pacienteFormData[config.idKey];
-    const legacyName = pacienteFormData[config.nameKey].trim();
+    const legacyName = formatPersonName(pacienteFormData[config.nameKey]);
 
     if (!legacyName) {
       return null;
@@ -152,7 +153,7 @@ export function PatientForm({
         )}
         {medicalUsers.map((user) => (
           <option key={user.id} value={user.id} disabled={isMedicalUserSelectedElsewhere(field, user.id)}>
-            {user.nome}
+            {formatPersonName(user.nome)}
           </option>
         ))}
       </>
