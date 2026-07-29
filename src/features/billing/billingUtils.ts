@@ -2,6 +2,7 @@ import type { Paciente } from '../../types';
 import { getPacienteProcedimentosFromPaciente, normalizeCbhpmCodigo } from '../patients/patientUtils';
 import {
   formatCurrency,
+  formatPersonName,
   normalizeDisplayText,
   normalizeLookupText,
   toDisplayDate,
@@ -457,9 +458,9 @@ export function buildBillingRecords(pacientes: Paciente[]) {
     const glosaInfo = faturamento?.valorGlosa != null
       ? { amount: faturamento.valorGlosa, hasNumericValue: true }
       : parseCurrencyLikeValue(paciente.repasseGlosa);
-    const doctorName = paciente.medico?.trim() || 'Não informado';
+    const doctorName = formatPersonName(paciente.medico) || 'Não informado';
     const assistantNames = [paciente.medicoAuxiliar1, paciente.medicoAuxiliar2]
-      .map((value) => value?.trim() || '')
+      .map((value) => formatPersonName(value))
       .filter(Boolean);
     const procedureCodes = procedures
       .map((item) => normalizeCbhpmCodigo(item.cbhpmCodigo))
@@ -474,7 +475,7 @@ export function buildBillingRecords(pacientes: Paciente[]) {
     const baseRecord: Omit<BillingRecord, 'billingChecklist' | 'pendingChecklistItems'> = {
       id: paciente.id,
       paciente,
-      patientName: paciente.nomePaciente,
+      patientName: formatPersonName(paciente.nomePaciente),
       doctorName,
       doctorUserId: paciente.medicoUserId ?? null,
       assistantNames,
