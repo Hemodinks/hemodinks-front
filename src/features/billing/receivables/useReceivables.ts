@@ -5,7 +5,6 @@ import {
   cancelContaReceber,
   downloadComprovanteRecebimento,
   estornarRecebimento,
-  getContasReceber,
   getFinanceiroResumo,
   getPacientes,
   registrarRecebimento,
@@ -33,6 +32,7 @@ type ReceivablesWorkspaceData = {
   contas: ContaReceber[];
   pacientes: Paciente[];
   resumo: FinanceiroResumo | null;
+  page: FinancePageState;
 };
 
 export function useReceivables(token = '') {
@@ -40,12 +40,21 @@ export function useReceivables(token = '') {
   const workspaceQuery = useQuery({
     queryKey: queryKeys.billingReceivables(token),
     queryFn: async (): Promise<ReceivablesWorkspaceData> => {
-      const [contas, patientPage, resumo] = await Promise.all([
-        getContasReceber(token),
+      const [pagedAccounts, patientPage, resumo] = await Promise.all([
+        searchContasReceber({ page: 1, pageSize: 10 }, token),
         getPacientes(token, { page: 1, pageSize: 100 }),
         getFinanceiroResumo({}, token),
       ]);
-      return { contas, pacientes: patientPage.items, resumo };
+      return {
+        contas: pagedAccounts.items,
+        pacientes: patientPage.items,
+        resumo,
+        page: {
+          page: pagedAccounts.page,
+          totalPages: pagedAccounts.totalPages,
+          totalItems: pagedAccounts.totalItems,
+        },
+      };
     },
     enabled: false,
   });
@@ -53,6 +62,7 @@ export function useReceivables(token = '') {
     contas: [],
     pacientes: [],
     resumo: null,
+    page: { page: 1, totalPages: 1, totalItems: 0 },
   };
   const updateWorkspace = <K extends keyof ReceivablesWorkspaceData>(
     key: K,
@@ -89,11 +99,8 @@ export function useReceivables(token = '') {
     valor: number;
   } | null>(null);
   const [reversalReason, setReversalReason] = useState('');
-  const [financePage, setFinancePage] = useState<FinancePageState>({
-    page: 1,
-    totalPages: 1,
-    totalItems: 0,
-  });
+  const setFinancePage = (value: SetStateAction<FinancePageState>) =>
+    updateWorkspace('page', value);
   const [financeFilters, setFinanceFilters] = useState<FinanceFiltersState>({
     competencia: '',
     vencimentoInicio: '',
@@ -160,7 +167,7 @@ export function useReceivables(token = '') {
     setReversalReason,
     financeiroResumo: workspace.resumo,
     setFinanceiroResumo,
-    financePage,
+    financePage: workspace.page,
     setFinancePage,
     financeFilters,
     setFinanceFilters,

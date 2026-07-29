@@ -3,6 +3,7 @@ import type { CbhpmResult } from '../domain/medicalContracts';
 import { formatCurrency } from '../utils/formatters';
 import { Button } from './ui';
 import { Pagination, SortableHeader, TableStateRow } from './listing';
+import { useSortableData } from '../hooks/useSortableData';
 
 type CbhpmResultsTableProps = {
   items: CbhpmResult[];
@@ -50,26 +51,33 @@ export function CbhpmResultsTable({
   paginationClassName = '',
   selectClassName = '',
 }: CbhpmResultsTableProps) {
+  const localSorting = useSortableData(items, {
+    codigo: (item) => item.codigo,
+    procedimento: (item) => item.procedimento,
+    porte: (item) => item.porte,
+    valorreferencia: (item) => item.valorReferencia,
+  });
+  const effectiveSortBy = onSortChange ? sortBy : localSorting.sortBy;
+  const effectiveSortDirection = onSortChange ? sortDirection : localSorting.sortDirection;
+  const effectiveSortChange = onSortChange ?? localSorting.handleSortChange;
+  const visibleItems = onSortChange ? items : localSorting.sortedItems;
+
   return (
     <>
       <div className={`table-wrap ${wrapClassName}`.trim()}>
         <table className={tableClassName}>
           <thead>
             <tr>
-              {columns.map((column) =>
-                onSortChange ? (
-                  <SortableHeader
-                    key={column.field}
-                    field={column.field}
-                    label={column.label}
-                    sortBy={sortBy}
-                    sortDirection={sortDirection}
-                    onSortChange={onSortChange}
-                  />
-                ) : (
-                  <th key={column.field}>{column.label}</th>
-                ),
-              )}
+              {columns.map((column) => (
+                <SortableHeader
+                  key={column.field}
+                  field={column.field}
+                  label={column.label}
+                  sortBy={effectiveSortBy}
+                  sortDirection={effectiveSortDirection}
+                  onSortChange={effectiveSortChange}
+                />
+              ))}
               <th aria-label="Selecionar procedimento" />
             </tr>
           </thead>
@@ -82,7 +90,7 @@ export function CbhpmResultsTable({
               emptyLabel="Nenhum procedimento encontrado."
             />
             {!loading &&
-              items.map((item) => (
+              visibleItems.map((item) => (
                 <tr key={item.id}>
                   <td data-label="Código">{formatCode(item.codigo) || item.codigo}</td>
                   <td data-label="Procedimento">{item.procedimento}</td>

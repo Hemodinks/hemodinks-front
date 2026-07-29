@@ -6,6 +6,8 @@ import { formatCurrency } from '../../shared/utils/formatters';
 import type { ContaReceber } from './billingDomainTypes';
 import type { useReceivables } from './receivables/useReceivables';
 import { BillingDetailSummary } from './BillingDetailSummary';
+import { SortableHeader } from '../../shared/components/listing';
+import { useSortableData } from '../../shared/hooks/useSortableData';
 
 type ReceivablesState = ReturnType<typeof useReceivables>;
 
@@ -30,6 +32,13 @@ export function AccountDetailsModal({
   cancelAccount: (event: FormEvent) => void;
   downloadReceipt: (id: number) => Promise<void>;
 }) {
+  const sorting = useSortableData(selectedAccount.recebimentos, {
+    data: (item) => item.dataRecebimento,
+    forma: (item) => item.formaRecebimento,
+    valor: (item) => item.valorRecebido,
+    situacao: (item) => item.estornado,
+  });
+
   return (
     <Modal
       titleId="billing-account-title"
@@ -173,15 +182,26 @@ export function AccountDetailsModal({
         <table className="billing-table">
           <thead>
             <tr>
-              <th>Data</th>
-              <th>Forma</th>
-              <th>Valor</th>
-              <th>Situação</th>
+              {[
+                ['data', 'Data'],
+                ['forma', 'Forma'],
+                ['valor', 'Valor'],
+                ['situacao', 'Situação'],
+              ].map(([field, label]) => (
+                <SortableHeader
+                  key={field}
+                  field={field}
+                  label={label}
+                  sortBy={sorting.sortBy}
+                  sortDirection={sorting.sortDirection}
+                  onSortChange={sorting.handleSortChange}
+                />
+              ))}
               <th>Comprovante</th>
             </tr>
           </thead>
           <tbody>
-            {selectedAccount.recebimentos.map((item) => (
+            {sorting.sortedItems.map((item) => (
               <tr key={item.id}>
                 <td>{new Date(item.dataRecebimento).toLocaleDateString('pt-BR')}</td>
                 <td>{item.formaRecebimento}</td>

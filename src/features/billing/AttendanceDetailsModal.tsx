@@ -3,6 +3,8 @@ import { Modal } from '../../shared/components/Modal';
 import { DataPanel, IconButton } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
 import type { AtendimentoCirurgico } from './billingDomainTypes';
+import { SortableHeader } from '../../shared/components/listing';
+import { useSortableData } from '../../shared/hooks/useSortableData';
 
 function Summary({ title, value }: { title: string; value: string }) {
   return (
@@ -24,6 +26,15 @@ export function AttendanceDetailsModal({
   onDelete: () => void;
   onClose: () => void;
 }) {
+  const sorting = useSortableData(item.procedimentos, {
+    cbhpm: (procedure) => procedure.cbhpmCodigo,
+    procedimento: (procedure) => procedure.descricao,
+    quantidade: (procedure) => procedure.quantidade,
+    peso: (procedure) => procedure.pesoPercentual,
+    referencia: (procedure) => procedure.valorReferencia,
+    negociado: (procedure) => procedure.valorNegociado,
+  });
+
   return (
     <Modal
       titleId="attendance-detail-title"
@@ -74,16 +85,27 @@ export function AttendanceDetailsModal({
         <table className="billing-table">
           <thead>
             <tr>
-              <th>CBHPM</th>
-              <th>Procedimento</th>
-              <th>Quantidade</th>
-              <th>Peso</th>
-              <th>Referência</th>
-              <th>Negociado</th>
+              {[
+                ['cbhpm', 'CBHPM'],
+                ['procedimento', 'Procedimento'],
+                ['quantidade', 'Quantidade'],
+                ['peso', 'Peso'],
+                ['referencia', 'Referência'],
+                ['negociado', 'Negociado'],
+              ].map(([field, label]) => (
+                <SortableHeader
+                  key={field}
+                  field={field}
+                  label={label}
+                  sortBy={sorting.sortBy}
+                  sortDirection={sorting.sortDirection}
+                  onSortChange={sorting.handleSortChange}
+                />
+              ))}
             </tr>
           </thead>
           <tbody>
-            {item.procedimentos.map((procedure) => (
+            {sorting.sortedItems.map((procedure) => (
               <tr key={procedure.id}>
                 <td>{procedure.cbhpmCodigo || '-'}</td>
                 <td>{procedure.descricao}</td>

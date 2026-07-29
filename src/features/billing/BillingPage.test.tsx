@@ -215,6 +215,49 @@ describe('BillingPage', () => {
     await waitFor(() => expect(services.deleteAtendimento).toHaveBeenCalledWith(1, 'token'));
   });
 
+  it('pagina os atendimentos em grupos de dez registros', async () => {
+    vi.mocked(services.getAtendimentos).mockResolvedValue(
+      Array.from({ length: 11 }, (_, index) => ({
+        ...atendimento,
+        id: index + 1,
+        paciente: `Paciente paginado ${index + 1}`,
+      })) as never,
+    );
+
+    renderPage();
+
+    expect(await screen.findByRole('button', { name: 'Paciente paginado 1' })).toBeInTheDocument();
+    expect(screen.getByText('1-10 de 11')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paciente paginado 11' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima página de atendimentos' }));
+
+    expect(await screen.findByRole('button', { name: 'Paciente paginado 11' })).toBeInTheDocument();
+    expect(screen.getByText('11-11 de 11')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paciente paginado 1' })).not.toBeInTheDocument();
+  });
+
+  it('ordena a listagem ao clicar no nome do cabeçalho', async () => {
+    vi.mocked(services.getAtendimentos).mockResolvedValue([
+      { ...atendimento, id: 1, paciente: 'Paciente Zeta' },
+      { ...atendimento, id: 2, paciente: 'Paciente Alfa' },
+    ] as never);
+
+    renderPage();
+    await screen.findByRole('button', { name: 'Paciente Zeta' });
+    const table = screen.getByRole('table');
+
+    fireEvent.click(within(table).getByRole('button', { name: 'Paciente' }));
+    expect(within(table).getAllByRole('row')[1]).toHaveTextContent('Paciente Alfa');
+
+    fireEvent.click(within(table).getByRole('button', { name: 'Paciente' }));
+    expect(within(table).getAllByRole('row')[1]).toHaveTextContent('Paciente Zeta');
+    for (const header of ['Data', 'Status', 'Procedimentos']) {
+      fireEvent.click(within(table).getByRole('button', { name: header }));
+    }
+    expect(within(table).queryByRole('button', { name: 'Ações' })).not.toBeInTheDocument();
+  });
+
   it('limpa os campos depois de cadastrar um atendimento com sucesso', async () => {
     vi.mocked(services.getCbhpmGeral).mockResolvedValue({
       items: [

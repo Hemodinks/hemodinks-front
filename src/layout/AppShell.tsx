@@ -44,6 +44,7 @@ export type AppShellAccess = {
   users: boolean;
   ownUser: boolean;
   billing: boolean;
+  prices: boolean;
   medicalGroups: boolean;
   settings: boolean;
   agenda: boolean;
@@ -138,6 +139,7 @@ export function AppShell({
           canAccessUsers={access.users}
           canEditOwnUser={access.ownUser}
           canAccessBilling={access.billing}
+          showPrices={access.prices}
           canAccessMedicalGroups={access.medicalGroups}
           canAccessSettings={access.settings}
           canAccessAgenda={access.agenda}

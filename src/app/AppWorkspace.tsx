@@ -19,6 +19,8 @@ type AppWorkspaceProps = {
   isBusy: boolean;
   theme: ReturnType<typeof useThemePreference>['theme'];
   setThemePreference: ReturnType<typeof useThemePreference>['setThemePreference'];
+  showPrices: boolean;
+  setShowPrices: (visible: boolean) => void;
   access: ReturnType<typeof getAppAccess>;
   appChrome: ReturnType<typeof useAppChrome>;
   domains: ReturnType<typeof useAppDomains>;
@@ -35,6 +37,8 @@ export function AppWorkspace({
   isBusy,
   theme,
   setThemePreference,
+  showPrices,
+  setShowPrices,
   access,
   appChrome,
   domains,
@@ -62,6 +66,7 @@ export function AppWorkspace({
         users: access.canAccessUsers,
         ownUser: access.canEditOwnUser,
         billing: access.canAccessBilling,
+        prices: showPrices,
         medicalGroups: access.canAccessMedicalGroups,
         settings: access.canAccessSettings,
         agenda: access.canAccessAgenda,
@@ -154,6 +159,7 @@ export function AppWorkspace({
         medicalGroupsDomain={medicalGroupsDomain}
         dashboardError={appChrome.dashboardError}
         theme={theme}
+        showPrices={showPrices}
         navigation={{
           openUsersList: usersDomain.openUsersList,
           openMyProfile: usersDomain.openMyProfile,
@@ -173,6 +179,7 @@ export function AppWorkspace({
           handleMedicalGroupSortChange: navigation.handleMedicalGroupSortChange,
         }}
         onThemeChange={setThemePreference}
+        onShowPricesChange={setShowPrices}
         onPasswordChanged={usersDomain.handlePasswordChanged}
         onClinicSelected={navigation.handleClinicSelected}
       />

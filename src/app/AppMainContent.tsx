@@ -79,9 +79,11 @@ type AppMainContentProps = {
   medicalGroupsDomain: MedicalGroupsDomainState;
   dashboardError: string;
   theme: Theme;
+  showPrices: boolean;
   navigation: NavigationActions;
   sortHandlers: SortHandlers;
   onThemeChange: (theme: Theme) => void;
+  onShowPricesChange: (visible: boolean) => void;
   onPasswordChanged: (message: string) => void;
   onClinicSelected: (result: SelectClinicResponse) => void;
 };
@@ -98,9 +100,11 @@ export function AppMainContent({
   medicalGroupsDomain,
   dashboardError,
   theme,
+  showPrices,
   navigation,
   sortHandlers,
   onThemeChange,
+  onShowPricesChange,
   onPasswordChanged,
   onClinicSelected,
 }: AppMainContentProps) {
@@ -254,7 +258,9 @@ export function AppMainContent({
         <SystemSettingsPage
           session={session}
           theme={theme}
+          showPrices={showPrices}
           onThemeChange={onThemeChange}
+          onShowPricesChange={onShowPricesChange}
           onPasswordChanged={onPasswordChanged}
         />
       ) : (

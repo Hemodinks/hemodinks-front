@@ -46,7 +46,11 @@ export function SortableHeader({
         aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
       >
         {label}
-        {active && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+        {active && (
+          <span className="sort-indicator" aria-hidden="true">
+            {sortDirection === 'asc' ? '▲' : '▼'}
+          </span>
+        )}
       </button>
     </th>
   );

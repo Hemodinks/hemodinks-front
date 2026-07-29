@@ -86,7 +86,13 @@ test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip
   await expect(page.getByRole('tooltip')).toHaveText('Fechar detalhes da conta');
   await closeAccount.click();
 
-  await loginViaUi(page, '/tabela-de-precos');
+  await loginViaUi(page, '/configuracoes');
+  await page
+    .getByRole('group', { name: 'Exibição da tabela de preços' })
+    .getByRole('button', { name: 'Exibir' })
+    .click();
+  await page.getByRole('button', { name: 'Controladoria' }).click();
+  await page.getByRole('button', { name: 'Tabela de preços' }).click();
   const priceActions = page.locator('.billing-status-actions-column').last();
   await expect(priceActions.getByRole('button', { name: 'Editar preço' })).toBeVisible();
   await expect(

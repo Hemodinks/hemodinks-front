@@ -84,6 +84,40 @@ describe('BillingPage invoicing', () => {
     await waitFor(() => expect(services.deleteFaturamento).toHaveBeenCalledWith(1, 'token'));
   });
 
+  it('pagina os faturamentos em grupos de dez registros', async () => {
+    vi.mocked(services.getFaturamentos).mockResolvedValue(
+      Array.from({ length: 11 }, (_, index) => ({
+        ...draft,
+        id: index + 1,
+        paciente: `Faturamento paginado ${index + 1}`,
+      })),
+    );
+
+    renderPage('faturamento');
+
+    expect(
+      await screen.findByRole('button', { name: 'Faturamento paginado 1' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('1-10 de 11')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Faturamento paginado 11' }),
+    ).not.toBeInTheDocument();
+    const table = screen.getByRole('table');
+    for (const header of ['Paciente', 'Guia', 'Apresentado', 'Glosa', 'Reconhecido', 'Status']) {
+      fireEvent.click(within(table).getByRole('button', { name: header }));
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima página de faturamentos' }));
+
+    expect(
+      await screen.findByRole('button', { name: 'Faturamento paginado 11' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('11-11 de 11')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Faturamento paginado 1' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('não transporta mensagens de sucesso para outro módulo', async () => {
     const view = renderPage('faturamento');
 

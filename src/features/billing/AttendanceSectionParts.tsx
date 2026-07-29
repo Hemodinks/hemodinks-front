@@ -4,6 +4,9 @@ import { Button, DataPanel, IconButton } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
 import type { AtendimentoCirurgico } from './billingDomainTypes';
 import type { AtendimentoProcedureDraft } from './billingPageTypes';
+import { Pagination, SortableHeader } from '../../shared/components/listing';
+import { useClientPagination } from '../../shared/hooks/useClientPagination';
+import { useSortableData } from '../../shared/hooks/useSortableData';
 
 export function AttendanceProceduresField({
   procedimentos,
@@ -73,21 +76,43 @@ export function AttendancesTable({
   onEdit: (item: AtendimentoCirurgico) => void;
   onDelete: (item: AtendimentoCirurgico) => void;
 }) {
+  const sorting = useSortableData(atendimentos, {
+    paciente: (item) => item.paciente,
+    data: (item) => item.dataProcedimento,
+    status: (item) => item.status,
+    procedimentos: (item) =>
+      item.procedimentos
+        .map((procedure) => procedure.cbhpmCodigo || procedure.descricao)
+        .join(', '),
+  });
+  const pagination = useClientPagination(sorting.sortedItems);
+
   return (
     <DataPanel className="billing-table-panel">
       <div className="table-wrap">
         <table className="billing-table billing-attendance-table">
           <thead>
             <tr>
-              <th>Paciente</th>
-              <th>Data</th>
-              <th>Status</th>
-              <th>Procedimentos</th>
+              {[
+                ['paciente', 'Paciente'],
+                ['data', 'Data'],
+                ['status', 'Status'],
+                ['procedimentos', 'Procedimentos'],
+              ].map(([field, label]) => (
+                <SortableHeader
+                  key={field}
+                  field={field}
+                  label={label}
+                  sortBy={sorting.sortBy}
+                  sortDirection={sorting.sortDirection}
+                  onSortChange={sorting.handleSortChange}
+                />
+              ))}
               <th className="billing-actions-column">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {atendimentos.map((item) => (
+            {pagination.visibleItems.map((item) => (
               <tr key={item.id}>
                 <td data-label="Paciente">
                   <Button onClick={() => onSelect(item)}>{item.paciente}</Button>
@@ -126,6 +151,15 @@ export function AttendancesTable({
           </tbody>
         </table>
       </div>
+      <Pagination
+        entityLabel="atendimentos"
+        visibleStart={pagination.visibleStart}
+        visibleEnd={pagination.visibleEnd}
+        totalItems={pagination.totalItems}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        onPageChange={pagination.setCurrentPage}
+      />
     </DataPanel>
   );
 }

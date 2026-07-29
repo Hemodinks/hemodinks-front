@@ -136,7 +136,13 @@ describe('billing domain hooks', () => {
   });
 
   it('loads receivables, calculates totals and delegates finance operations', async () => {
-    vi.mocked(services.getContasReceber).mockResolvedValue([account] as never);
+    vi.mocked(services.searchContasReceber).mockResolvedValue({
+      items: [account],
+      page: 1,
+      pageSize: 10,
+      totalItems: 1,
+      totalPages: 1,
+    } as never);
     vi.mocked(services.getPacientes).mockResolvedValue({
       items: [patient],
     } as never);

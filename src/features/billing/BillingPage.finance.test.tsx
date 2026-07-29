@@ -58,6 +58,69 @@ describe('BillingPage finance', () => {
     ).toHaveClass('billing-finance-receipt-panel');
   });
 
+  it('consulta e navega pela paginação financeira do backend', async () => {
+    const firstPage = Array.from({ length: 10 }, (_, index) => ({
+      ...conta,
+      id: index + 1,
+      numeroDocumento: `TIT-${index + 1}`,
+      paciente: `Paciente financeiro ${index + 1}`,
+    }));
+    const lastAccount = {
+      ...conta,
+      id: 11,
+      numeroDocumento: 'TIT-11',
+      paciente: 'Paciente financeiro 11',
+    };
+    vi.mocked(services.searchContasReceber).mockImplementation(async (params) =>
+      params.page === 2
+        ? {
+            items: [lastAccount],
+            page: 2,
+            pageSize: 10,
+            totalItems: 11,
+            totalPages: 2,
+          }
+        : {
+            items: firstPage,
+            page: 1,
+            pageSize: 10,
+            totalItems: 11,
+            totalPages: 2,
+          },
+    );
+
+    renderPage('financeiro');
+
+    expect(await screen.findByRole('button', { name: 'TIT-1' })).toBeInTheDocument();
+    expect(services.searchContasReceber).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 1, pageSize: 10 }),
+      'token',
+    );
+    expect(screen.getByText('1-10 de 11')).toBeInTheDocument();
+    const table = screen.getByRole('table');
+    for (const header of [
+      'Documento',
+      'Paciente',
+      'Vencimento',
+      'Original',
+      'Recebido',
+      'Saldo',
+      'Status',
+    ]) {
+      fireEvent.click(within(table).getByRole('button', { name: header }));
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima página de títulos financeiros' }));
+
+    expect(await screen.findByRole('button', { name: 'TIT-11' })).toBeInTheDocument();
+    expect(services.searchContasReceber).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 2, pageSize: 10 }),
+      'token',
+    );
+    expect(screen.getByText('11-11 de 11')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'TIT-1' })).not.toBeInTheDocument();
+  });
+
   it('lança pagamento parcial e exige motivo no estorno', async () => {
     renderPage('financeiro');
     await screen.findAllByText('Paciente Teste');

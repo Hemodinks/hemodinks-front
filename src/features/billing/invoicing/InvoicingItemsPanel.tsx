@@ -4,6 +4,8 @@ import { Button, IconButton, TextField } from '../../../shared/components/ui';
 import { formatCurrency } from '../../../shared/utils/formatters';
 import type { Faturamento } from '../billingDomainTypes';
 import type { useInvoicing } from './useInvoicing';
+import { SortableHeader } from '../../../shared/components/listing';
+import { useSortableData } from '../../../shared/hooks/useSortableData';
 
 type InvoicingState = ReturnType<typeof useInvoicing>;
 
@@ -22,6 +24,15 @@ export function InvoicingItemsPanel({
   saveBillingItem,
   canManageBilling,
 }: InvoicingItemsPanelProps) {
+  const sorting = useSortableData(selectedBilling.itens, {
+    codigo: (item) => item.codigo,
+    descricao: (item) => item.descricao,
+    quantidade: (item) => item.quantidade,
+    peso: (item) => item.pesoPercentual,
+    unitario: (item) => item.valorUnitario,
+    apresentado: (item) => item.valorApresentado,
+  });
+
   return (
     <>
       <h3>Itens</h3>
@@ -29,17 +40,28 @@ export function InvoicingItemsPanel({
         <table className="billing-table">
           <thead>
             <tr>
-              <th>Código</th>
-              <th>Descrição</th>
-              <th>Quantidade</th>
-              <th>Peso</th>
-              <th>Unitário</th>
-              <th>Apresentado</th>
-              <th></th>
+              {[
+                ['codigo', 'Código'],
+                ['descricao', 'Descrição'],
+                ['quantidade', 'Quantidade'],
+                ['peso', 'Peso'],
+                ['unitario', 'Unitário'],
+                ['apresentado', 'Apresentado'],
+              ].map(([field, label]) => (
+                <SortableHeader
+                  key={field}
+                  field={field}
+                  label={label}
+                  sortBy={sorting.sortBy}
+                  sortDirection={sorting.sortDirection}
+                  onSortChange={sorting.handleSortChange}
+                />
+              ))}
+              <th aria-label="Ações" />
             </tr>
           </thead>
           <tbody>
-            {selectedBilling.itens.map((item) => (
+            {sorting.sortedItems.map((item) => (
               <tr key={item.id}>
                 <td>{item.codigo || '-'}</td>
                 <td>{item.descricao}</td>

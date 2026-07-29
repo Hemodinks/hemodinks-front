@@ -23,6 +23,8 @@ import {
   SortableHeader,
   TableStateRow,
 } from '../../shared/components/listing';
+import { useState } from 'react';
+import { useSortableData } from '../../shared/hooks/useSortableData';
 
 type MedicalGroupListProps = {
   groups: MedicalGroup[];
@@ -67,6 +69,23 @@ export function MedicalGroupList({
   onDeleteGroup,
   onRefresh,
 }: MedicalGroupListProps) {
+  const membersSorting = useSortableData(groups, {
+    membrosNomes: (group) => group.membros.map((member) => member.nome).join(', '),
+  });
+  const [sortingMembers, setSortingMembers] = useState(false);
+  const effectiveSortBy = sortingMembers ? membersSorting.sortBy : sortBy;
+  const effectiveSortDirection = sortingMembers ? membersSorting.sortDirection : sortDirection;
+  const visibleGroups = sortingMembers ? membersSorting.sortedItems : groups;
+  const handleSortChange = (field: string) => {
+    if (field === 'membrosNomes') {
+      setSortingMembers(true);
+      membersSorting.handleSortChange(field);
+      return;
+    }
+    setSortingMembers(false);
+    onSortChange(field);
+  };
+
   return (
     <DataPanel>
       <ListToolbar eyebrow="Equipes médicas" title={`${totalItems} grupos cadastrados`}>
@@ -104,23 +123,29 @@ export function MedicalGroupList({
                 label="Grupo"
                 sortBy={sortBy}
                 sortDirection={sortDirection}
-                onSortChange={onSortChange}
+                onSortChange={handleSortChange}
               />
               <SortableHeader
                 field="membros"
                 label="Médicos"
                 sortBy={sortBy}
                 sortDirection={sortDirection}
-                onSortChange={onSortChange}
+                onSortChange={handleSortChange}
               />
               <SortableHeader
                 field="ativo"
                 label="Status"
                 sortBy={sortBy}
                 sortDirection={sortDirection}
-                onSortChange={onSortChange}
+                onSortChange={handleSortChange}
               />
-              <th>Membros</th>
+              <SortableHeader
+                field="membrosNomes"
+                label="Membros"
+                sortBy={effectiveSortBy}
+                sortDirection={effectiveSortDirection}
+                onSortChange={handleSortChange}
+              />
               <th aria-label="Ações" />
             </tr>
           </thead>
@@ -134,7 +159,7 @@ export function MedicalGroupList({
                 emptyLabel="Nenhum grupo médico encontrado."
               />
             ) : (
-              groups.map((group) => (
+              visibleGroups.map((group) => (
                 <tr key={group.id}>
                   <td data-label="Grupo">
                     <div className="name-cell">

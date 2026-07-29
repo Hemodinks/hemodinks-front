@@ -5,6 +5,7 @@ import type { AppView, ModuleMode } from '../appTypes';
 import { useConfirmationDialog } from '../shared/components/ConfirmationDialog';
 import { useRouteView } from '../shared/hooks/useRouteView';
 import { useThemePreference } from '../shared/hooks/useThemePreference';
+import { useBillingPreferences } from '../shared/hooks/useBillingPreferences';
 import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from './appAccess';
 import { AppWorkspace } from './AppWorkspace';
 import { useAppChrome } from './useAppChrome';
@@ -19,6 +20,7 @@ export function AppContent() {
   const navigate = useNavigate();
   const { session, persistSession, clearSession } = useAuthSession();
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
+  const { showPrices, setShowPrices } = useBillingPreferences();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
   const [moduleMode, setModuleMode] = useState<ModuleMode>('list');
   const logoutRef = useRef<() => void>(() => undefined);
@@ -73,7 +75,7 @@ export function AppContent() {
     canUseBillingRoute,
     canUseAttendancesRoute,
     canUseFinanceRoute,
-    canUsePricesRoute,
+    canUsePricesRoute: canUsePricesRoute && showPrices,
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
     canUseSettingsRoute,
@@ -168,6 +170,7 @@ export function AppContent() {
       canAccessMedicalGroups,
       canAccessSettings,
       canAccessClinics,
+      canAccessPrices: showPrices,
       isMedical,
     },
     activeView,
@@ -230,6 +233,8 @@ export function AppContent() {
       isBusy={isBusy}
       theme={theme}
       setThemePreference={setThemePreference}
+      showPrices={showPrices}
+      setShowPrices={setShowPrices}
       access={access}
       appChrome={appChrome}
       domains={{ usersDomain, patientsDomain, medicalGroupsDomain }}

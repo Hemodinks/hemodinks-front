@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, KeyRound, Moon, Palette, Sun } from 'lucide-react';
+import { CheckCircle2, Eye, EyeOff, KeyRound, Moon, Palette, Tags, Sun } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import type { AuthSession } from '../../shared/domain/sessionTypes';
 import { PasswordForm } from '../../shared/components/PasswordForm';
@@ -9,14 +9,18 @@ import './settings.css';
 type SystemSettingsPageProps = {
   session: AuthSession;
   theme: Theme;
+  showPrices: boolean;
   onThemeChange: (theme: Theme) => void;
+  onShowPricesChange: (visible: boolean) => void;
   onPasswordChanged: (message: string) => void;
 };
 
 export function SystemSettingsPage({
   session,
   theme,
+  showPrices,
   onThemeChange,
+  onShowPricesChange,
   onPasswordChanged,
 }: SystemSettingsPageProps) {
   const [passwordSuccess, setPasswordSuccess] = useState('');
@@ -60,6 +64,41 @@ export function SystemSettingsPage({
             >
               <Moon size={21} />
               <strong>Escuro</strong>
+            </button>
+          </div>
+        </DataPanel>
+
+        <DataPanel className="system-settings-panel">
+          <div className="settings-section-heading">
+            <span className="settings-section-icon">
+              <Tags size={19} />
+            </span>
+            <div>
+              <span className="eyebrow">Controladoria</span>
+              <h3>Tabela de preços</h3>
+            </div>
+          </div>
+          <p className="settings-preference-description">
+            Controle a exibição da Tabela de preços no menu da Controladoria.
+          </p>
+          <div className="theme-choice-grid" role="group" aria-label="Exibição da tabela de preços">
+            <button
+              type="button"
+              className={`theme-choice ${!showPrices ? 'active' : ''}`}
+              onClick={() => onShowPricesChange(false)}
+              aria-pressed={!showPrices}
+            >
+              <EyeOff size={21} />
+              <strong>Ocultar</strong>
+            </button>
+            <button
+              type="button"
+              className={`theme-choice ${showPrices ? 'active' : ''}`}
+              onClick={() => onShowPricesChange(true)}
+              aria-pressed={showPrices}
+            >
+              <Eye size={21} />
+              <strong>Exibir</strong>
             </button>
           </div>
         </DataPanel>

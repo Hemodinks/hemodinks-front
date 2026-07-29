@@ -18,6 +18,7 @@ type NavigationAccess = {
   canAccessMedicalGroups: boolean;
   canAccessSettings: boolean;
   canAccessClinics: boolean;
+  canAccessPrices: boolean;
   isMedical: boolean;
 };
 
@@ -145,7 +146,7 @@ export function useAppNavigation({
   };
 
   const openPrices = () => {
-    if (!access.canAccessBilling) {
+    if (!access.canAccessBilling || !access.canAccessPrices) {
       openDashboard();
       return;
     }

@@ -4,6 +4,8 @@ import { CompanyLogo } from '../../shared/components/CompanyLogo';
 import { IconButton } from '../../shared/components/ui';
 import { API_ASSET_BASE_URL } from '../../shared/utils/formatters';
 import type { useClinicsController } from './useClinicsController';
+import { SortableHeader } from '../../shared/components/listing';
+import { useSortableData } from '../../shared/hooks/useSortableData';
 
 type ClinicsController = ReturnType<typeof useClinicsController>;
 
@@ -14,16 +16,35 @@ type ClinicsTableProps = {
 };
 
 export function ClinicsTable({ controller, session, isSuperAdmin }: ClinicsTableProps) {
+  const sorting = useSortableData(controller.clinics, {
+    clinica: (clinic) => clinic.nome,
+    plano: (clinic) => clinic.plano,
+    assinatura: (clinic) => clinic.assinaturaStatus,
+    usuarios: (clinic) => clinic.usuarios,
+    status: (clinic) => clinic.ativa,
+  });
+
   return (
     <div className="table-wrap">
       <table className="users-table clinics-table">
         <thead>
           <tr>
-            <th>Clinica</th>
-            <th>Plano</th>
-            <th>Assinatura</th>
-            <th>Usuarios</th>
-            <th>Status</th>
+            {[
+              ['clinica', 'Clinica'],
+              ['plano', 'Plano'],
+              ['assinatura', 'Assinatura'],
+              ['usuarios', 'Usuarios'],
+              ['status', 'Status'],
+            ].map(([field, label]) => (
+              <SortableHeader
+                key={field}
+                field={field}
+                label={label}
+                sortBy={sorting.sortBy}
+                sortDirection={sorting.sortDirection}
+                onSortChange={sorting.handleSortChange}
+              />
+            ))}
             <th aria-label="Acoes" />
           </tr>
         </thead>
@@ -35,7 +56,7 @@ export function ClinicsTable({ controller, session, isSuperAdmin }: ClinicsTable
               </td>
             </tr>
           ) : (
-            controller.clinics.map((clinic) => (
+            sorting.sortedItems.map((clinic) => (
               <tr key={clinic.id}>
                 <td data-label="Clinica">
                   <div className="clinic-name-cell">

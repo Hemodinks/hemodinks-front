@@ -164,6 +164,29 @@ describe('App agenda and settings', () => {
     expect(localStorage.getItem('hemodinks.theme')).toBe('light');
   });
 
+  it('oculta a tabela de preços por padrão e persiste a opção de exibição', async () => {
+    const { user } = await renderAuthenticatedApp();
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    const sidebar = within(screen.getByLabelText('Sessão ativa'));
+    await user.click(sidebar.getByRole('button', { name: 'Controladoria' }));
+    expect(sidebar.queryByRole('button', { name: 'Tabela de preços' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /abrir configuração do sistema/i }));
+    const priceVisibility = screen.getByRole('group', {
+      name: 'Exibição da tabela de preços',
+    });
+    expect(within(priceVisibility).getByRole('button', { name: 'Ocultar' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    await user.click(within(priceVisibility).getByRole('button', { name: 'Exibir' }));
+
+    await waitFor(() => expect(localStorage.getItem('hemodinks.billing.show-prices')).toBe('true'));
+    expect(sidebar.getByRole('button', { name: 'Tabela de preços' })).toBeInTheDocument();
+  });
+
   it('remove a edicao da marca das configuracoes do sistema', async () => {
     const { user } = await renderAuthenticatedApp();
 

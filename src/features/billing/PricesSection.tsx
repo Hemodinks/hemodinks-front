@@ -5,6 +5,8 @@ import { formatCurrency } from '../../shared/utils/formatters';
 import type { Convenio } from '../../shared/domain/clinicalContracts';
 import type { ConvenioProcedimentoPreco } from './billingDomainTypes';
 import type { PriceFormState } from './billingPageTypes';
+import { SortableHeader } from '../../shared/components/listing';
+import { useSortableData } from '../../shared/hooks/useSortableData';
 
 type PricesSectionProps = {
   canManage: boolean;
@@ -33,6 +35,15 @@ export function PricesSection({
   onEdit,
   onDeactivate,
 }: PricesSectionProps) {
+  const sorting = useSortableData(precos, {
+    convenio: (item) =>
+      convenios.find((convenio) => convenio.idConvenio === item.convenioId)?.descricaoConvenio ||
+      item.convenioId,
+    cbhpm: (item) => item.cbhpmCodigo,
+    valor: (item) => item.valorNegociado,
+    vigencia: (item) => item.vigenciaInicio,
+  });
+
   return (
     <>
       {canManage && (
@@ -145,15 +156,26 @@ export function PricesSection({
           <table className="billing-table billing-price-table">
             <thead>
               <tr>
-                <th>Convênio</th>
-                <th>CBHPM</th>
-                <th>Valor</th>
-                <th>Vigência</th>
+                {[
+                  ['convenio', 'Convênio'],
+                  ['cbhpm', 'CBHPM'],
+                  ['valor', 'Valor'],
+                  ['vigencia', 'Vigência'],
+                ].map(([field, label]) => (
+                  <SortableHeader
+                    key={field}
+                    field={field}
+                    label={label}
+                    sortBy={sorting.sortBy}
+                    sortDirection={sorting.sortDirection}
+                    onSortChange={sorting.handleSortChange}
+                  />
+                ))}
                 <th className="billing-status-actions-column">Status / ações</th>
               </tr>
             </thead>
             <tbody>
-              {precos.map((item) => (
+              {sorting.sortedItems.map((item) => (
                 <tr key={item.id}>
                   <td data-label="Convênio">
                     {convenios.find((convenio) => convenio.idConvenio === item.convenioId)

@@ -4,6 +4,9 @@ import { Button, DataPanel, IconButton, SelectField, TextField } from '../../sha
 import { formatCurrency } from '../../shared/utils/formatters';
 import type { AtendimentoCirurgico, Faturamento } from './billingDomainTypes';
 import type { FaturamentoFormState } from './billingPageTypes';
+import { Pagination, SortableHeader } from '../../shared/components/listing';
+import { useClientPagination } from '../../shared/hooks/useClientPagination';
+import { useSortableData } from '../../shared/hooks/useSortableData';
 
 type InvoicingSectionProps = {
   canManage: boolean;
@@ -52,6 +55,16 @@ export function InvoicingSection({
   onCreateAccount,
   onOpenAppeal,
 }: InvoicingSectionProps) {
+  const sorting = useSortableData(faturamentos, {
+    paciente: (item) => item.paciente,
+    guia: (item) => item.numeroGuia,
+    apresentado: (item) => item.valorApresentado,
+    glosa: (item) => item.valorGlosado,
+    reconhecido: (item) => item.valorReconhecido,
+    status: (item) => item.status,
+  });
+  const pagination = useClientPagination(sorting.sortedItems);
+
   return (
     <>
       <DataPanel>
@@ -128,17 +141,28 @@ export function InvoicingSection({
           <table className="billing-table billing-flow-table">
             <thead>
               <tr>
-                <th>Paciente</th>
-                <th>Guia</th>
-                <th>Apresentado</th>
-                <th>Glosa</th>
-                <th>Reconhecido</th>
-                <th>Status</th>
+                {[
+                  ['paciente', 'Paciente'],
+                  ['guia', 'Guia'],
+                  ['apresentado', 'Apresentado'],
+                  ['glosa', 'Glosa'],
+                  ['reconhecido', 'Reconhecido'],
+                  ['status', 'Status'],
+                ].map(([field, label]) => (
+                  <SortableHeader
+                    key={field}
+                    field={field}
+                    label={label}
+                    sortBy={sorting.sortBy}
+                    sortDirection={sorting.sortDirection}
+                    onSortChange={sorting.handleSortChange}
+                  />
+                ))}
                 <th className="billing-actions-column">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {faturamentos.map((item) => (
+              {pagination.visibleItems.map((item) => (
                 <tr key={item.id}>
                   <td data-label="Paciente">
                     <Button onClick={() => onSelect(item)}>{item.paciente}</Button>
@@ -241,6 +265,15 @@ export function InvoicingSection({
             </tbody>
           </table>
         </div>
+        <Pagination
+          entityLabel="faturamentos"
+          visibleStart={pagination.visibleStart}
+          visibleEnd={pagination.visibleEnd}
+          totalItems={pagination.totalItems}
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          onPageChange={pagination.setCurrentPage}
+        />
       </DataPanel>
     </>
   );

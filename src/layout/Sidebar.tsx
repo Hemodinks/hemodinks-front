@@ -28,6 +28,7 @@ type SidebarProps = {
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
+  showPrices: boolean;
   canAccessMedicalGroups: boolean;
   canAccessSettings: boolean;
   canAccessAgenda: boolean;
@@ -61,6 +62,7 @@ export function Sidebar({
   canAccessUsers,
   canEditOwnUser,
   canAccessBilling,
+  showPrices,
   canAccessMedicalGroups,
   canAccessSettings,
   canAccessAgenda,
@@ -230,16 +232,18 @@ export function Sidebar({
                       )}
                     </button>
                   )}
-                  <button
-                    type="button"
-                    className={`side-nav-billing ${activeView === 'prices' ? 'active' : ''}`}
-                    aria-current={activeView === 'prices' ? 'page' : undefined}
-                    title="Gerencie valores CBHPM e preços negociados por convênio."
-                    onClick={onOpenPrices}
-                  >
-                    <Tags size={18} />
-                    <span>Tabela de preços</span>
-                  </button>
+                  {showPrices && (
+                    <button
+                      type="button"
+                      className={`side-nav-billing ${activeView === 'prices' ? 'active' : ''}`}
+                      aria-current={activeView === 'prices' ? 'page' : undefined}
+                      title="Gerencie valores CBHPM e preços negociados por convênio."
+                      onClick={onOpenPrices}
+                    >
+                      <Tags size={18} />
+                      <span>Tabela de preços</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

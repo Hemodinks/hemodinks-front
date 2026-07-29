@@ -1,5 +1,7 @@
-import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { Button, DataPanel, IconButton } from '../../shared/components/ui';
+import { Pagination, SortableHeader } from '../../shared/components/listing';
+import { useSortableData } from '../../shared/hooks/useSortableData';
 import { formatCurrency } from '../../shared/utils/formatters';
 import type { ContaReceber, FinanceiroResumo } from './billingDomainTypes';
 import type { FinancePageState } from './billingPageTypes';
@@ -53,6 +55,16 @@ export function FinanceAccountsTable({
   onSelectAccount: (account: ContaReceber) => void;
   onOpenReversal: (id: number, valor: number) => void;
 }) {
+  const sorting = useSortableData(contas, {
+    documento: (item) => item.numeroDocumento,
+    paciente: (item) => item.paciente,
+    vencimento: (item) => item.dataVencimento,
+    original: (item) => item.valorOriginal,
+    recebido: (item) => item.valorRecebido,
+    saldo: (item) => item.saldoAberto,
+    status: (item) => item.status,
+  });
+
   return (
     <DataPanel className="billing-table-panel billing-finance-titles-panel">
       <div className="billing-section-heading">
@@ -65,17 +77,28 @@ export function FinanceAccountsTable({
         <table className="billing-table">
           <thead>
             <tr>
-              <th>Documento</th>
-              <th>Paciente</th>
-              <th>Vencimento</th>
-              <th>Original</th>
-              <th>Recebido</th>
-              <th>Saldo</th>
-              <th>Status</th>
+              {[
+                ['documento', 'Documento'],
+                ['paciente', 'Paciente'],
+                ['vencimento', 'Vencimento'],
+                ['original', 'Original'],
+                ['recebido', 'Recebido'],
+                ['saldo', 'Saldo'],
+                ['status', 'Status'],
+              ].map(([field, label]) => (
+                <SortableHeader
+                  key={field}
+                  field={field}
+                  label={label}
+                  sortBy={sorting.sortBy}
+                  sortDirection={sorting.sortDirection}
+                  onSortChange={sorting.handleSortChange}
+                />
+              ))}
             </tr>
           </thead>
           <tbody>
-            {contas.map((account) => (
+            {sorting.sortedItems.map((account) => (
               <tr key={account.id}>
                 <td data-label="Documento">
                   <Button onClick={() => onSelectAccount(account)}>
@@ -113,20 +136,17 @@ export function FinanceAccountsTable({
           </tbody>
         </table>
       </div>
-      <div className="billing-filter-actions">
-        <Button disabled={page.page <= 1} onClick={() => onApplyFilters(page.page - 1)}>
-          <ChevronLeft size={16} /> Anterior
-        </Button>
-        <span>
-          {page.totalItems} título(s) — página {page.page} de {page.totalPages}
-        </span>
-        <Button
-          disabled={page.page >= page.totalPages}
-          onClick={() => onApplyFilters(page.page + 1)}
-        >
-          Próxima <ChevronRight size={16} />
-        </Button>
-      </div>
+      <Pagination
+        entityLabel="títulos financeiros"
+        visibleStart={page.totalItems ? (page.page - 1) * 10 + 1 : 0}
+        visibleEnd={Math.min(page.page * 10, page.totalItems)}
+        totalItems={page.totalItems}
+        currentPage={page.page}
+        totalPages={Math.max(1, page.totalPages)}
+        onPageChange={(nextPage) =>
+          onApplyFilters(typeof nextPage === 'function' ? nextPage(page.page) : nextPage)
+        }
+      />
     </DataPanel>
   );
 }

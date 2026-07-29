@@ -78,6 +78,42 @@ describe('BillingPage prices and CBHPM', () => {
     });
   });
 
+  it('ordena todas as colunas textuais da tabela de preços', async () => {
+    vi.mocked(services.getConvenioProcedimentoPrecos).mockResolvedValue([
+      {
+        id: 1,
+        convenioId: 1,
+        cbhpmCodigo: '20',
+        valorNegociado: 200,
+        percentualPrincipal: 100,
+        percentualAuxiliar1: 0,
+        percentualAuxiliar2: 0,
+        vigenciaInicio: '2026-08-01',
+        ativo: true,
+      },
+      {
+        id: 2,
+        convenioId: 1,
+        cbhpmCodigo: '10',
+        valorNegociado: 100,
+        percentualPrincipal: 100,
+        percentualAuxiliar1: 0,
+        percentualAuxiliar2: 0,
+        vigenciaInicio: '2026-07-01',
+        ativo: true,
+      },
+    ]);
+
+    renderPage('precos');
+    const table = await screen.findByRole('table');
+
+    for (const header of ['Convênio', 'CBHPM', 'Valor', 'Vigência']) {
+      fireEvent.click(within(table).getByRole('button', { name: header }));
+    }
+
+    expect(within(table).queryByRole('button', { name: 'Status / ações' })).not.toBeInTheDocument();
+  });
+
   it('exibe o procedimento selecionado sem informações de preço', async () => {
     vi.mocked(services.getCbhpmGeral).mockResolvedValue({
       items: [
