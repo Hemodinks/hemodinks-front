@@ -10,6 +10,7 @@ import {
   findOpmeFornecedorByName,
   formatCurrency,
   formatCurrencyInput,
+  formatPersonName,
   HOSPITAIS_DATALIST_ID,
   MAX_DIAGNOSIS_LENGTH,
   MAX_NAME_LENGTH,
@@ -85,11 +86,15 @@ export function PatientForm({
 }: PatientFormProps) {
   const formReadOnly = patientReadOnly || (editingPacienteId ? !canEditPatients : false);
   const canSubmitForm = !formReadOnly && (!editingPacienteId || canEditPatients);
+  const estimatedValue = pacienteFormData.procedimentos.reduce(
+    (total, procedimento) => total + (procedimento.valorReferencia ?? 0),
+    0,
+  );
 
   const getLegacyMedicalOption = (field: MedicalTeamField) => {
     const config = medicalTeamFields[field];
     const userId = pacienteFormData[config.idKey];
-    const legacyName = pacienteFormData[config.nameKey].trim();
+    const legacyName = formatPersonName(pacienteFormData[config.nameKey]);
 
     if (!legacyName) {
       return null;
@@ -148,7 +153,7 @@ export function PatientForm({
         )}
         {medicalUsers.map((user) => (
           <option key={user.id} value={user.id} disabled={isMedicalUserSelectedElsewhere(field, user.id)}>
-            {user.nome}
+            {formatPersonName(user.nome)}
           </option>
         ))}
       </>
@@ -354,23 +359,13 @@ export function PatientForm({
             </div>
           </div>
 
-          <TextField
-            label="Autorização"
-            type="text"
-            value={pacienteFormData.autorizacao}
-            onValueChange={(value) => setPacienteFormData((current) => ({ ...current, autorizacao: value.slice(0, MAX_NAME_LENGTH) }))}
-            maxLength={MAX_NAME_LENGTH}
-          />
-
           <div className="two-column-fields">
             <TextField
-              label="Valor recebido/pago"
+              label="Autorização"
               type="text"
-              value={pacienteFormData.pagamento}
-              onValueChange={(value) => setPacienteFormData((current) => ({ ...current, pagamento: formatCurrencyInput(value) }))}
-              inputMode="numeric"
-              maxLength={24}
-              placeholder="R$ 0,00"
+              value={pacienteFormData.autorizacao}
+              onValueChange={(value) => setPacienteFormData((current) => ({ ...current, autorizacao: value.slice(0, MAX_NAME_LENGTH) }))}
+              maxLength={MAX_NAME_LENGTH}
             />
 
             <TextField
@@ -378,6 +373,27 @@ export function PatientForm({
               type="text"
               value={pacienteFormData.repasseGlosa}
               onValueChange={(value) => setPacienteFormData((current) => ({ ...current, repasseGlosa: formatCurrencyInput(value) }))}
+              inputMode="numeric"
+              maxLength={24}
+              placeholder="R$ 0,00"
+            />
+          </div>
+
+          <div className="two-column-fields">
+            <TextField
+              label="Valor estimado"
+              type="text"
+              value={formatCurrency(estimatedValue)}
+              onValueChange={() => undefined}
+              disabled
+              aria-readonly="true"
+            />
+
+            <TextField
+              label="Valor recebido/pago"
+              type="text"
+              value={pacienteFormData.pagamento}
+              onValueChange={(value) => setPacienteFormData((current) => ({ ...current, pagamento: formatCurrencyInput(value) }))}
               inputMode="numeric"
               maxLength={24}
               placeholder="R$ 0,00"

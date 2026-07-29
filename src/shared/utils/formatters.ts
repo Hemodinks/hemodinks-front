@@ -101,6 +101,26 @@ export function normalizeDisplayText(value?: string | null) {
   return DISPLAY_TEXT_FIXES.get(trimmedValue) ?? trimmedValue;
 }
 
+const LOWERCASE_PERSON_NAME_PARTICLES = new Set(['da', 'das', 'de', 'do', 'dos', 'e']);
+
+export function formatPersonName(value?: string | null) {
+  const titleCasedName = normalizeDisplayText(value)
+    .toLocaleLowerCase('pt-BR')
+    .replace(/\s+/g, ' ')
+    .replace(/(^|[\s'-])(\p{L})/gu, (_, separator: string, letter: string) => (
+      `${separator}${letter.toLocaleUpperCase('pt-BR')}`
+    ));
+
+  return titleCasedName
+    .split(' ')
+    .map((part, index) => (
+      index > 0 && LOWERCASE_PERSON_NAME_PARTICLES.has(part.toLocaleLowerCase('pt-BR'))
+        ? part.toLocaleLowerCase('pt-BR')
+        : part
+    ))
+    .join(' ');
+}
+
 export function findMedicalUserByName(users: Array<User | MedicalUserOption>, name: string) {
   const normalizedName = normalizeLookupText(name);
   return normalizedName
