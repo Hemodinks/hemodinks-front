@@ -18,7 +18,7 @@ import {
   IconButton,
   SearchField,
 } from '../../shared/components/ui';
-import { formatProfileName } from '../../shared/utils/formatters';
+import { formatPersonName, formatProfileName } from '../../shared/utils/formatters';
 import { UserAvatar } from '../../shared/components/UserAvatar';
 import {
   HorizontalTableScroller,
@@ -130,7 +130,10 @@ export function UserList({
                 emptyLabel="Nenhum usuário encontrado."
               />
             ) : (
-              users.map((user) => (
+              users.map((user) => {
+                const displayName = formatPersonName(user.nome);
+
+                return (
                 <tr key={user.id}>
                   <td data-label="Nome">
                     <div className="name-cell">
@@ -141,7 +144,7 @@ export function UserList({
                         authToken={sessionToken}
                         size="sm"
                       />
-                      <span>{user.nome}</span>
+                      <span>{displayName}</span>
                     </div>
                   </td>
                   <td data-label="Perfil">{formatProfileName(user.perfilId, user.perfilNome)}</td>
@@ -150,7 +153,7 @@ export function UserList({
                       type="button"
                       className={`status-info-button ${user.ativo ? 'active' : 'inactive'}`}
                       title={`${user.ativo ? 'Ativo' : 'Inativo'} - clique para ver detalhes`}
-                      aria-label={`Detalhes de ${user.nome}`}
+                      aria-label={`Detalhes de ${displayName}`}
                       onClick={() => onSelectInfoUser(user)}
                     >
                       {user.ativo ? <CircleCheck size={19} /> : <CircleX size={19} />}
@@ -162,7 +165,7 @@ export function UserList({
                       type="button"
                       className="status-info-button contact"
                       title="Ver informacoes de contato"
-                      aria-label={`Contato de ${user.nome}`}
+                      aria-label={`Contato de ${displayName}`}
                       onClick={() => onSelectContactUser(user)}
                     >
                       <Mail size={18} />
@@ -172,7 +175,7 @@ export function UserList({
                   <td data-label="Ações">
                     <div className="row-actions">
                       <IconButton
-                        label={`Editar ${user.nome}`}
+                        label={`Editar ${displayName}`}
                         tone="muted"
                         onClick={() => void onEditUser(user)}
                         title="Editar"
@@ -180,7 +183,7 @@ export function UserList({
                         <Pencil size={17} />
                       </IconButton>
                       <IconButton
-                        label={`Excluir ${user.nome}`}
+                        label={`Excluir ${displayName}`}
                         tone="danger"
                         onClick={() => void onDeleteUser(user)}
                         title="Excluir"
@@ -190,7 +193,8 @@ export function UserList({
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

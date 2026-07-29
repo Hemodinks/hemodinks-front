@@ -4,6 +4,7 @@ import type { AuthSession } from '../shared/domain/sessionTypes';
 import { UserAvatar } from '../shared/components/UserAvatar';
 import { CompanyLogo } from '../shared/components/CompanyLogo';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
+import { formatPersonName } from '../shared/utils/formatters';
 
 type TopbarProps = {
   appTitle: string;
@@ -56,7 +57,7 @@ export function Topbar({
             authToken={session.token}
             size="sm"
           />
-          <span className="current-user-name">{session.user.nome}</span>
+          <span className="current-user-name">{formatPersonName(session.user.nome)}</span>
         </div>
 
         <div className="topbar-actions">

@@ -8,6 +8,7 @@ import { queryKeys } from '../../shared/queryKeys';
 import {
   DEFAULT_PASSWORD,
   DEFAULT_PROFILE_ID,
+  formatPersonName,
   formatProfileName,
   getErrorMessage,
   MEDICAL_PROFILE_ID,
@@ -233,7 +234,7 @@ export function useUserCommands({
     confirmAction({
       tone: 'delete',
       title: 'Excluir usuário?',
-      message: `Deseja excluir "${user.nome}"? Esta ação não poderá ser desfeita.`,
+      message: `Deseja excluir "${formatPersonName(user.nome)}"? Esta ação não poderá ser desfeita.`,
       confirmLabel: 'Sim',
       cancelLabel: 'Não',
       onConfirm: () => deleteSelectedUser(user),

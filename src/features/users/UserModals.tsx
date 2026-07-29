@@ -5,6 +5,7 @@ import { Modal } from '../../shared/components/Modal';
 import { IconButton } from '../../shared/components/ui';
 import {
   formatProfileName,
+  formatPersonName,
   formatCpfInput,
   formatPhoneInput,
   isMedicalProfileUser,
@@ -25,7 +26,7 @@ export function InfoModal({ user, onClose }: InfoModalProps) {
       <div className="panel-title">
         <div>
           <span className="eyebrow">Informações</span>
-          <h2 id="info-title">{user.nome}</h2>
+          <h2 id="info-title">{formatPersonName(user.nome)}</h2>
         </div>
         <IconButton
           label="Fechar informações do usuário"
@@ -95,7 +96,7 @@ export function ContactModal({ user, onClose }: ContactModalProps) {
       <div className="panel-title">
         <div>
           <span className="eyebrow">Contato</span>
-          <h2 id="contact-title">{user.nome}</h2>
+          <h2 id="contact-title">{formatPersonName(user.nome)}</h2>
         </div>
         <IconButton label="Fechar contato do usuário" title="Fechar" tone="muted" onClick={onClose}>
           <X size={18} />

@@ -9,6 +9,7 @@ import type {
 } from '../../shared/domain/clinicalContracts';
 import type { AtendimentoFormState, AtendimentoProcedureDraft } from './billingPageTypes';
 import { AttendanceProceduresField } from './AttendanceSectionParts';
+import { formatPersonName } from '../../shared/utils/formatters';
 
 type AttendanceFormProps = {
   editingId: number | null;
@@ -56,7 +57,7 @@ export function AttendanceForm({
         <option value="">Selecione</option>
         {pacientes.map((paciente) => (
           <option key={paciente.id} value={paciente.id}>
-            {paciente.nomePaciente}
+            {formatPersonName(paciente.nomePaciente)}
           </option>
         ))}
       </SelectField>
@@ -141,7 +142,7 @@ export function AttendanceForm({
         <option value="">Selecione</option>
         {medicalUsers.map((user) => (
           <option key={user.id} value={user.id}>
-            {user.nome}
+            {formatPersonName(user.nome)}
           </option>
         ))}
       </SelectField>
@@ -157,7 +158,7 @@ export function AttendanceForm({
           .filter((user) => String(user.id) !== form.medicoResponsavelId)
           .map((user) => (
             <option key={user.id} value={user.id}>
-              {user.nome}
+              {formatPersonName(user.nome)}
             </option>
           ))}
       </SelectField>
@@ -177,7 +178,7 @@ export function AttendanceForm({
           )
           .map((user) => (
             <option key={user.id} value={user.id}>
-              {user.nome}
+              {formatPersonName(user.nome)}
             </option>
           ))}
       </SelectField>

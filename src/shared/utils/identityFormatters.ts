@@ -6,6 +6,26 @@ const VALID_BRAZIL_AREA_CODES = new Set(
   ),
 );
 
+const LOWERCASE_PERSON_NAME_PARTICLES = new Set(['da', 'das', 'de', 'do', 'dos', 'e']);
+
+export function formatPersonName(value?: string | null) {
+  const titleCasedName = (value?.trim() ?? '')
+    .toLocaleLowerCase('pt-BR')
+    .replace(/\s+/g, ' ')
+    .replace(/(^|[\s'-])(\p{L})/gu, (_, separator: string, letter: string) => (
+      `${separator}${letter.toLocaleUpperCase('pt-BR')}`
+    ));
+
+  return titleCasedName
+    .split(' ')
+    .map((part, index) => (
+      index > 0 && LOWERCASE_PERSON_NAME_PARTICLES.has(part.toLocaleLowerCase('pt-BR'))
+        ? part.toLocaleLowerCase('pt-BR')
+        : part
+    ))
+    .join(' ');
+}
+
 export function onlyDigits(value: string) {
   return value.replace(/\D/g, '');
 }

@@ -40,9 +40,10 @@ function getDateFieldTime(item: Record<string, unknown>, fields: readonly string
   }, 0);
 }
 
-function getRecordActivityTime(item: Record<string, unknown> & { id: number }) {
-  const updatedTime = getDateFieldTime(item, updateDateFields);
-  const createdTime = getDateFieldTime(item, creationDateFields);
+export function getRecordActivityTime<T extends object & { id: number }>(item: T) {
+  const record = item as Record<string, unknown>;
+  const updatedTime = getDateFieldTime(record, updateDateFields);
+  const createdTime = getDateFieldTime(record, creationDateFields);
   return Math.max(updatedTime, createdTime) || item.id;
 }
 

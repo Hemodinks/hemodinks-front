@@ -7,6 +7,7 @@ import type { AtendimentoProcedureDraft } from './billingPageTypes';
 import { Pagination, SortableHeader } from '../../shared/components/listing';
 import { useClientPagination } from '../../shared/hooks/useClientPagination';
 import { useSortableData } from '../../shared/hooks/useSortableData';
+import { getRecordActivityTime } from '../../shared/utils/listing';
 
 export function AttendanceProceduresField({
   procedimentos,
@@ -77,6 +78,7 @@ export function AttendancesTable({
   onDelete: (item: AtendimentoCirurgico) => void;
 }) {
   const sorting = useSortableData(atendimentos, {
+    recent: getRecordActivityTime,
     paciente: (item) => item.paciente,
     data: (item) => item.dataProcedimento,
     status: (item) => item.status,
@@ -84,7 +86,7 @@ export function AttendancesTable({
       item.procedimentos
         .map((procedure) => procedure.cbhpmCodigo || procedure.descricao)
         .join(', '),
-  });
+  }, 'recent', 'desc');
   const pagination = useClientPagination(sorting.sortedItems);
 
   return (

@@ -2,7 +2,7 @@ import { Bell, X } from 'lucide-react';
 import type { DashboardNotification } from '../../shared/domain/dashboardContracts';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
-import { toNotificationDate } from '../../shared/utils/formatters';
+import { formatPersonName, toNotificationDate } from '../../shared/utils/formatters';
 import './dashboard.css';
 
 type NotificationsModalProps = {
@@ -63,9 +63,15 @@ export function NotificationsModal({
                   <strong>{notification.titulo}</strong>
                   <p>{notification.mensagem}</p>
                   <div className="notification-meta-row">
-                    {notification.nomePaciente && <span>{notification.nomePaciente}</span>}
-                    {notification.autor && <span>De: {notification.autor}</span>}
-                    {notification.medico && <span>Médico: {notification.medico}</span>}
+                    {notification.nomePaciente && (
+                      <span>{formatPersonName(notification.nomePaciente)}</span>
+                    )}
+                    {notification.autor && (
+                      <span>De: {formatPersonName(notification.autor)}</span>
+                    )}
+                    {notification.medico && (
+                      <span>Médico: {formatPersonName(notification.medico)}</span>
+                    )}
                     {notification.procedimento && (
                       <span>Procedimento: {notification.procedimento}</span>
                     )}

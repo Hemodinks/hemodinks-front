@@ -3,6 +3,7 @@ import type { Paciente, PacienteObservacao } from './patientTypes';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, Button, IconButton, TextareaField } from '../../shared/components/ui';
 import {
+  formatPersonName,
   formatProfileName,
   MAX_OBSERVATION_LENGTH,
   toNotificationDate,
@@ -49,7 +50,7 @@ export function PatientObservacoesModal({
       <div className="panel-title">
         <div>
           <span className="eyebrow">Comunicação do paciente</span>
-          <h2 id="patient-observacoes-title">{paciente.nomePaciente}</h2>
+          <h2 id="patient-observacoes-title">{formatPersonName(paciente.nomePaciente)}</h2>
           <span
             className={`patient-observation-summary${unreadObservations > 0 ? ' has-unread-observations' : ' is-read'}`}
           >
@@ -76,7 +77,7 @@ export function PatientObservacoesModal({
       {replyTo && (
         <div className="patient-observation-reply-banner">
           <div>
-            <strong>Respondendo {replyTo.autorNome}</strong>
+            <strong>Respondendo {formatPersonName(replyTo.autorNome)}</strong>
             <p>{replyTo.texto}</p>
           </div>
           <IconButton
@@ -136,10 +137,10 @@ export function PatientObservacoesModal({
                 <div className="patient-observation-card-header">
                   <span className="patient-observation-author">
                     <MessageSquareText size={15} />
-                    {observacao.autorNome}
+                    {formatPersonName(observacao.autorNome)}
                   </span>
                   <span className="patient-observation-destination">
-                    Para {observacao.destinatarioNome}
+                    Para {formatPersonName(observacao.destinatarioNome)}
                   </span>
                 </div>
                 <p>{observacao.texto}</p>

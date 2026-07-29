@@ -25,6 +25,7 @@ import {
 } from '../../shared/components/listing';
 import { useState } from 'react';
 import { useSortableData } from '../../shared/hooks/useSortableData';
+import { formatPersonName } from '../../shared/utils/formatters';
 
 type MedicalGroupListProps = {
   groups: MedicalGroup[];
@@ -70,7 +71,8 @@ export function MedicalGroupList({
   onRefresh,
 }: MedicalGroupListProps) {
   const membersSorting = useSortableData(groups, {
-    membrosNomes: (group) => group.membros.map((member) => member.nome).join(', '),
+    membrosNomes: (group) =>
+      group.membros.map((member) => formatPersonName(member.nome)).join(', '),
   });
   const [sortingMembers, setSortingMembers] = useState(false);
   const effectiveSortBy = sortingMembers ? membersSorting.sortBy : sortBy;
@@ -179,7 +181,7 @@ export function MedicalGroupList({
                   <td data-label="Membros">
                     <span className="medical-group-members-preview">
                       {group.membros.length
-                        ? group.membros.map((member) => member.nome).join(', ')
+                        ? group.membros.map((member) => formatPersonName(member.nome)).join(', ')
                         : '-'}
                     </span>
                   </td>

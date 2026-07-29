@@ -96,11 +96,11 @@ describe('BillingPage invoicing', () => {
     renderPage('faturamento');
 
     expect(
-      await screen.findByRole('button', { name: 'Faturamento paginado 1' }),
+      await screen.findByRole('button', { name: 'Faturamento paginado 11' }),
     ).toBeInTheDocument();
     expect(screen.getByText('1-10 de 11')).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Faturamento paginado 11' }),
+      screen.queryByRole('button', { name: 'Faturamento paginado 1' }),
     ).not.toBeInTheDocument();
     const table = screen.getByRole('table');
     for (const header of ['Paciente', 'Guia', 'Apresentado', 'Glosa', 'Reconhecido', 'Status']) {

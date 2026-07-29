@@ -1,7 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import { ChevronLeft, Plus, Save, X } from 'lucide-react';
 import type { AgendaMedicalUser, AgendaNotificationRecipientOptions } from './agendaTypes';
-import { formatProfileName } from '../../shared/utils/formatters';
+import { formatPersonName, formatProfileName } from '../../shared/utils/formatters';
 import {
   Button,
   CheckboxField,
@@ -144,7 +144,7 @@ export function AgendaEventForm({
               <option value="">Perfil médico</option>
               {medicalUsers.map((user) => (
                 <option key={user.id} value={user.id}>
-                  {user.nome}
+                  {formatPersonName(user.nome)}
                 </option>
               ))}
             </SelectField>
@@ -207,7 +207,7 @@ export function AgendaEventForm({
                     {notificationRecipientOptions.users.map((user) => (
                       <CheckboxField
                         key={user.id}
-                        label={`${user.nome} (${formatProfileName(user.perfilId, user.perfilNome)})`}
+                        label={`${formatPersonName(user.nome)} (${formatProfileName(user.perfilId, user.perfilNome)})`}
                         checked={formData.notificationUserIds.includes(user.id)}
                         onCheckedChange={() => onToggleNotificationUser(user.id)}
                       />

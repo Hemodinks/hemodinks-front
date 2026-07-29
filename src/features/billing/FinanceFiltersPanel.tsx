@@ -3,6 +3,7 @@ import { SlidersHorizontal } from 'lucide-react';
 import { Button, DataPanel, SelectField, TextField } from '../../shared/components/ui';
 import type { Convenio, MedicalUserOption, Paciente } from '../../shared/domain/clinicalContracts';
 import type { FinanceFiltersState } from './billingPageTypes';
+import { formatPersonName } from '../../shared/utils/formatters';
 
 type FinanceFiltersPanelProps = {
   filters: FinanceFiltersState;
@@ -94,7 +95,7 @@ export function FinanceFiltersPanel({
               <option value="">Todos</option>
               {medicalUsers.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.nome}
+                  {formatPersonName(item.nome)}
                 </option>
               ))}
             </SelectField>
@@ -108,7 +109,7 @@ export function FinanceFiltersPanel({
               <option value="">Todos</option>
               {pacientes.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.nomePaciente}
+                  {formatPersonName(item.nomePaciente)}
                 </option>
               ))}
             </SelectField>

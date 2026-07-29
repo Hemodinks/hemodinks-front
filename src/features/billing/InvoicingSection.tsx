@@ -7,6 +7,7 @@ import type { FaturamentoFormState } from './billingPageTypes';
 import { Pagination, SortableHeader } from '../../shared/components/listing';
 import { useClientPagination } from '../../shared/hooks/useClientPagination';
 import { useSortableData } from '../../shared/hooks/useSortableData';
+import { getRecordActivityTime } from '../../shared/utils/listing';
 
 type InvoicingSectionProps = {
   canManage: boolean;
@@ -56,13 +57,14 @@ export function InvoicingSection({
   onOpenAppeal,
 }: InvoicingSectionProps) {
   const sorting = useSortableData(faturamentos, {
+    recent: getRecordActivityTime,
     paciente: (item) => item.paciente,
     guia: (item) => item.numeroGuia,
     apresentado: (item) => item.valorApresentado,
     glosa: (item) => item.valorGlosado,
     reconhecido: (item) => item.valorReconhecido,
     status: (item) => item.status,
-  });
+  }, 'recent', 'desc');
   const pagination = useClientPagination(sorting.sortedItems);
 
   return (

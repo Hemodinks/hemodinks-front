@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getUserProfilePhoto } from '../../services';
-import { getUserInitials, resolveProfilePhotoSource } from '../utils/formatters';
+import { formatPersonName, getUserInitials, resolveProfilePhotoSource } from '../utils/formatters';
 
 type UserAvatarProps = {
   userId?: number;
@@ -19,6 +19,7 @@ export function UserAvatar({
   size = 'sm',
   decorative = false,
 }: UserAvatarProps) {
+  const displayName = formatPersonName(name);
   const trimmedPhoto = photo?.trim() || '';
   const canLoadFromApi = Boolean(
     userId && authToken && trimmedPhoto && !/^(data:image\/|blob:)/i.test(trimmedPhoto),
@@ -81,7 +82,7 @@ export function UserAvatar({
       <img
         className={`user-avatar ${size}`}
         src={photoSource}
-        alt={decorative ? '' : `Foto de ${name}`}
+        alt={decorative ? '' : `Foto de ${displayName}`}
         aria-hidden={decorative ? true : undefined}
         onError={() => setPhotoFailed(true)}
       />
@@ -92,10 +93,10 @@ export function UserAvatar({
     <span
       className={`user-avatar fallback ${size}`}
       aria-hidden={decorative ? true : undefined}
-      aria-label={decorative ? undefined : `Sem foto de ${name}`}
-      title={name}
+      aria-label={decorative ? undefined : `Sem foto de ${displayName}`}
+      title={displayName}
     >
-      {getUserInitials(name)}
+      {getUserInitials(displayName)}
     </span>
   );
 }

@@ -226,15 +226,15 @@ describe('BillingPage', () => {
 
     renderPage();
 
-    expect(await screen.findByRole('button', { name: 'Paciente paginado 1' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Paciente paginado 11' })).toBeInTheDocument();
     expect(screen.getByText('1-10 de 11')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Paciente paginado 11' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paciente paginado 1' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Próxima página de atendimentos' }));
 
-    expect(await screen.findByRole('button', { name: 'Paciente paginado 11' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Paciente paginado 1' })).toBeInTheDocument();
     expect(screen.getByText('11-11 de 11')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Paciente paginado 1' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paciente paginado 11' })).not.toBeInTheDocument();
   });
 
   it('ordena a listagem ao clicar no nome do cabeçalho', async () => {

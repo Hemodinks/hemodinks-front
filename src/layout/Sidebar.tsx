@@ -17,6 +17,7 @@ import {
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../shared/domain/sessionTypes';
 import { UserAvatar } from '../shared/components/UserAvatar';
+import { formatPersonName } from '../shared/utils/formatters';
 
 type SidebarProps = {
   session: AuthSession;
@@ -113,7 +114,7 @@ export function Sidebar({
               size="sm"
               decorative
             />
-            <strong>{session.user.nome}</strong>
+            <strong>{formatPersonName(session.user.nome)}</strong>
           </div>
         </div>
 

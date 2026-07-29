@@ -30,6 +30,8 @@ export type AtendimentoCirurgico = {
   valorGlosa?: number | null;
   motivoGlosa?: string | null;
   status: AtendimentoStatus;
+  dataCadastro?: string | null;
+  dataAtualizacao?: string | null;
   procedimentos: AtendimentoProcedimento[];
 };
 
@@ -62,6 +64,8 @@ export type Faturamento = {
   valorReconhecido: number;
   status: FaturamentoStatus;
   observacao?: string | null;
+  dataCadastro?: string | null;
+  dataAtualizacao?: string | null;
   rowVersion: string;
   itens: Array<{
     id: number;
@@ -128,6 +132,8 @@ export type ContaReceber = {
   saldoAberto: number;
   status: string;
   observacao?: string | null;
+  dataCadastro?: string | null;
+  dataAtualizacao?: string | null;
   rowVersion: string;
   recebimentos: Recebimento[];
 };

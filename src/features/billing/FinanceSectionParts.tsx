@@ -2,6 +2,7 @@ import { RotateCcw } from 'lucide-react';
 import { Button, DataPanel, IconButton } from '../../shared/components/ui';
 import { Pagination, SortableHeader } from '../../shared/components/listing';
 import { useSortableData } from '../../shared/hooks/useSortableData';
+import { getRecordActivityTime } from '../../shared/utils/listing';
 import { formatCurrency } from '../../shared/utils/formatters';
 import type { ContaReceber, FinanceiroResumo } from './billingDomainTypes';
 import type { FinancePageState } from './billingPageTypes';
@@ -56,6 +57,7 @@ export function FinanceAccountsTable({
   onOpenReversal: (id: number, valor: number) => void;
 }) {
   const sorting = useSortableData(contas, {
+    recent: getRecordActivityTime,
     documento: (item) => item.numeroDocumento,
     paciente: (item) => item.paciente,
     vencimento: (item) => item.dataVencimento,
@@ -63,7 +65,7 @@ export function FinanceAccountsTable({
     recebido: (item) => item.valorRecebido,
     saldo: (item) => item.saldoAberto,
     status: (item) => item.status,
-  });
+  }, 'recent', 'desc');
 
   return (
     <DataPanel className="billing-table-panel billing-finance-titles-panel">

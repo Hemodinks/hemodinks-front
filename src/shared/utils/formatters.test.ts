@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatProfileName, normalizeDisplayText } from './formatters';
+import { formatPersonName, formatProfileName, normalizeDisplayText } from './formatters';
 
 describe('normalizeDisplayText', () => {
   it('corrige nomes de convenios recebidos com encoding quebrado', () => {
@@ -21,5 +21,17 @@ describe('formatProfileName', () => {
   it('corrige variantes quebradas do nome do perfil medico quando o id nao vem na API', () => {
     expect(formatProfileName(null, 'M\uFFFDdicos')).toBe('Médicos');
     expect(formatProfileName(null, 'M\u00C3\u00A9dicos')).toBe('Médicos');
+  });
+});
+
+describe('formatPersonName', () => {
+  it('padroniza nomes em caixa alta ou com capitalizacao inconsistente', () => {
+    expect(formatPersonName('GEORGE MARCONE MORAIS DOS SANTOS'))
+      .toBe('George Marcone Morais dos Santos');
+    expect(formatPersonName('joÃO pedro dE souZA')).toBe('João Pedro de Souza');
+  });
+
+  it('preserva a capitalizacao de nomes compostos', () => {
+    expect(formatPersonName("ANA-MARIA D'ÁVILA")).toBe("Ana-Maria D'Ávila");
   });
 });

@@ -11,7 +11,6 @@ import {
   isValidEmail,
   MAX_CRM_LENGTH,
   MAX_NAME_LENGTH,
-  normalizeCpfForPayload,
   normalizePhoneForPayload,
   parseDisplayDate,
   toDisplayDate,
@@ -108,14 +107,13 @@ export function validateUserForm(data: UserFormData, allowAllProfiles = false) {
 }
 
 export function toUserPayload(data: UserFormData): UserPayload {
-  const cpf = normalizeCpfForPayload(data.cpf);
   const birthDate = data.dataNascimento.trim();
 
   return {
     nome: data.nome.trim(),
     email: data.email.trim(),
     telefone: normalizePhoneForPayload(data.telefone),
-    cpf: cpf || null,
+    cpf: null,
     crm: isMedicalProfileId(data.perfilId) ? data.crm.trim() : '',
     crmUf: isMedicalProfileId(data.perfilId) ? data.crmUf.trim().toUpperCase() : '',
     fotoPerfil: data.fotoPerfil || null,
