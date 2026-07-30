@@ -8,6 +8,8 @@
     'opme assistant-two'
     'procedures procedures'
     'authorization status'
+    'observation observation'
+    'files files'
     'glosa glosa'
     'save save';
 }
@@ -137,6 +139,16 @@
   display: grid;
   grid-template-columns: minmax(180px, 0.45fr) minmax(0, 1.55fr);
   gap: 12px;
+}
+
+.billing-attendance-observation {
+  grid-area: observation;
+}
+
+.billing-attendance-files {
+  grid-area: files;
+  display: grid;
+  gap: 8px;
 }
 
 .billing-attendance-form > .billing-form-actions {

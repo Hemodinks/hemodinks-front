@@ -1,5 +1,14 @@
 export type AtendimentoStatus = 'Planejado' | 'Autorizado' | 'Realizado' | 'Cancelado';
 
+export type AtendimentoArquivo = {
+  id: number;
+  nomeOriginal: string;
+  contentType: string;
+  tamanhoBytes: number;
+  url: string;
+  dataUpload: string;
+};
+
 export type AtendimentoProcedimento = {
   id: number;
   cbhpmCodigo?: string | null;
@@ -29,10 +38,12 @@ export type AtendimentoCirurgico = {
   numeroAutorizacao?: string | null;
   valorGlosa?: number | null;
   motivoGlosa?: string | null;
+  observacao?: string | null;
   status: AtendimentoStatus;
   dataCadastro?: string | null;
   dataAtualizacao?: string | null;
   procedimentos: AtendimentoProcedimento[];
+  arquivos?: AtendimentoArquivo[];
 };
 
 export type FaturamentoStatus =

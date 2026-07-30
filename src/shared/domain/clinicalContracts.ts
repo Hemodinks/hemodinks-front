@@ -113,8 +113,8 @@ export type Paciente = {
   repasseGlosa?: string | null;
   statusPago: boolean;
   cpf?: string | null;
-  email: string;
-  telefone: string;
+  email: string | null;
+  telefone: string | null;
   fotoPerfil?: string | null;
   dataNascimento?: string | null;
   ativo: boolean;

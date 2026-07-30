@@ -80,6 +80,8 @@ export function AttendanceDetailsModal({
               : 'Não informada'
           }
         />
+        <Summary title="Observações" value={item.observacao || 'Não informadas'} />
+        <Summary title="Arquivos" value={`${item.arquivos?.length ?? 0} anexo(s)`} />
       </section>
       <div className="table-wrap">
         <table className="billing-table">

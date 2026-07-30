@@ -42,6 +42,7 @@ export function createInitialAtendimentoForm(medicoResponsavelId = ''): Atendime
     numeroAutorizacao: '',
     valorGlosa: '',
     motivoGlosa: '',
+    observacao: '',
     status: 'Planejado',
   };
 }
@@ -96,6 +97,8 @@ export function useAttendances(medicoResponsavelId = '', token = '') {
   const [procedimentos, setProcedimentos] = useState<AtendimentoProcedureDraft[]>([]);
   const [selectedAttendance, setSelectedAttendance] = useState<AtendimentoCirurgico | null>(null);
   const [cbhpmModalOpen, setCbhpmModalOpen] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const loadAttendances = async (_token: string) => {
     await workspaceQuery.refetch();
   };
@@ -122,6 +125,10 @@ export function useAttendances(medicoResponsavelId = '', token = '') {
     setSelectedAttendance,
     cbhpmModalOpen,
     setCbhpmModalOpen,
+    pendingFiles,
+    setPendingFiles,
+    fileInputKey,
+    setFileInputKey,
     loadAttendances,
     saveAttendance,
     removeAttendance,

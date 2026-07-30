@@ -1,4 +1,4 @@
-import { type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import { useMemo, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { CheckCircle2, Pencil, Plus, RotateCcw, Save, Send, Trash2, Wallet, X } from 'lucide-react';
 import { Button, DataPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
@@ -56,7 +56,22 @@ export function InvoicingSection({
   onCreateAccount,
   onOpenAppeal,
 }: InvoicingSectionProps) {
-  const sorting = useSortableData(faturamentos, {
+  const [patientFilter, setPatientFilter] = useState('');
+  const [guideFilter, setGuideFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const filteredInvoices = useMemo(() => {
+    const normalizedPatient = patientFilter.trim().toLocaleLowerCase('pt-BR');
+    const normalizedGuide = guideFilter.trim().toLocaleLowerCase('pt-BR');
+    return faturamentos.filter(
+      (item) =>
+        (!normalizedPatient ||
+          item.paciente.toLocaleLowerCase('pt-BR').includes(normalizedPatient)) &&
+        (!normalizedGuide ||
+          (item.numeroGuia ?? '').toLocaleLowerCase('pt-BR').includes(normalizedGuide)) &&
+        (!statusFilter || item.status === statusFilter),
+    );
+  }, [faturamentos, guideFilter, patientFilter, statusFilter]);
+  const sorting = useSortableData(filteredInvoices, {
     recent: getRecordActivityTime,
     paciente: (item) => item.paciente,
     guia: (item) => item.numeroGuia,
@@ -139,6 +154,47 @@ export function InvoicingSection({
         )}
       </DataPanel>
       <DataPanel className="billing-table-panel">
+        <div className="billing-list-filters" aria-label="Filtros de faturamento">
+          <TextField
+            label="Nome do paciente"
+            value={patientFilter}
+            onValueChange={setPatientFilter}
+          />
+          <TextField label="Guia" value={guideFilter} onValueChange={setGuideFilter} />
+          <SelectField
+            label="Status do faturamento"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <option value="">Todos</option>
+            {[
+              'Rascunho',
+              'ProntoParaEnvio',
+              'Enviado',
+              'EmAnalise',
+              'GlosadoParcial',
+              'GlosadoTotal',
+              'Aprovado',
+              'ParcialmentePago',
+              'Pago',
+              'Cancelado',
+            ].map((status) => (
+              <option key={status} value={status}>
+                {formatStatus(status)}
+              </option>
+            ))}
+          </SelectField>
+          <Button
+            type="button"
+            onClick={() => {
+              setPatientFilter('');
+              setGuideFilter('');
+              setStatusFilter('');
+            }}
+          >
+            Limpar filtros
+          </Button>
+        </div>
         <div className="table-wrap">
           <table className="billing-table billing-flow-table">
             <thead>
@@ -266,7 +322,7 @@ export function InvoicingSection({
                   </td>
                 </tr>
               ))}
-              {!faturamentos.length && (
+              {!filteredInvoices.length && (
                 <tr>
                   <td colSpan={7} className="empty-row">
                     Nenhum faturamento no novo fluxo.

@@ -68,6 +68,8 @@ export function BillingSections({
           isMedical={isMedical}
           loading={loading}
           atendimentos={attendance.atendimentos}
+          pendingFiles={attendance.pendingFiles}
+          fileInputKey={attendance.fileInputKey}
           setForm={attendance.setAtendimentoForm}
           setProcedimentos={attendance.setProcedimentos}
           onToggleForm={() => attendance.setShowForm((current) => !current)}
@@ -77,6 +79,15 @@ export function BillingSections({
           onSelect={attendance.setSelectedAttendance}
           onEdit={attendanceWorkflow.edit}
           onDelete={attendanceWorkflow.confirmDelete}
+          onFilesChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            attendance.setPendingFiles((current) => [...current, ...files]);
+          }}
+          onRemoveFile={(index) =>
+            attendance.setPendingFiles((current) =>
+              current.filter((_, currentIndex) => currentIndex !== index),
+            )
+          }
         />
       )}
 

@@ -1,5 +1,5 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import { FileText, FileUp, MessageSquareText, Plus, Save, Trash2, X } from 'lucide-react';
+import { Plus, Save, X } from 'lucide-react';
 import type {
   Convenio,
   Hospital,
@@ -16,15 +16,8 @@ import {
   FormPanel,
   IconButton,
   TextField,
-  TextareaField,
 } from '../../shared/components/ui';
-import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
-import { usePatientDocuments } from './usePatientDocuments';
-import {
-  formatPhoneInput,
-  MAX_NAME_LENGTH,
-  MAX_OBSERVATION_LENGTH,
-} from '../../shared/utils/formatters';
+import { formatPhoneInput, MAX_NAME_LENGTH } from '../../shared/utils/formatters';
 
 type PatientFormProps = {
   canEditPatients: boolean;
@@ -60,23 +53,14 @@ export function PatientForm(props: PatientFormProps) {
   const {
     canEditPatients,
     editingPacienteId,
-    editingPaciente,
     patientReadOnly,
     pacienteFormData,
     pacienteFormError,
     pacienteFormLoading,
-    pendingPatientFiles,
-    patientFileInputKey,
-    sessionToken,
     setPacienteFormData,
     onClose,
     onSubmit,
-    onPacienteFilesChange,
-    onRemovePendingPatientFile,
-    onDeletePacienteArquivo,
-    onOpenPacienteObservacoes,
   } = props;
-  const patientDocuments = usePatientDocuments(sessionToken);
   const formReadOnly = patientReadOnly || (editingPacienteId ? !canEditPatients : false);
   const canSubmitForm = !formReadOnly && (!editingPacienteId || canEditPatients);
 
@@ -147,93 +131,6 @@ export function PatientForm(props: PatientFormProps) {
               }
               inputMode="tel"
             />
-          </div>
-
-          <div className="patient-observation-field">
-            <div className="patient-observation-header">
-              <span className="field-label">Observações cadastrais</span>
-              {editingPacienteId && onOpenPacienteObservacoes && (
-                <Button className="patient-observation-action" onClick={onOpenPacienteObservacoes}>
-                  <MessageSquareText size={16} /> Abrir conversa
-                </Button>
-              )}
-            </div>
-            <TextareaField
-              label="Nova observação"
-              value={pacienteFormData.novaObservacao}
-              onValueChange={(value) =>
-                setPacienteFormData((current) => ({
-                  ...current,
-                  novaObservacao: value.slice(0, MAX_OBSERVATION_LENGTH),
-                }))
-              }
-              maxLength={MAX_OBSERVATION_LENGTH}
-              className="observation-textarea"
-            />
-          </div>
-
-          <div className="profile-photo-field">
-            <label className="field-label" htmlFor="patient-file-input">
-              Arquivos
-            </label>
-            {!formReadOnly && canEditPatients && (
-              <>
-                <label className="ghost-button file-action full-width" htmlFor="patient-file-input">
-                  <FileUp size={17} /> Selecionar arquivos
-                </label>
-                <input
-                  key={patientFileInputKey}
-                  id="patient-file-input"
-                  className="sr-only"
-                  type="file"
-                  multiple
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt,.csv,.ppt,.pptx"
-                  onChange={onPacienteFilesChange}
-                />
-                {pendingPatientFiles.length > 0 && (
-                  <ul className="file-list">
-                    {pendingPatientFiles.map((file, index) => (
-                      <li key={`${file.name}-${index}`}>
-                        <FileText size={15} />
-                        <span>{file.name}</span>
-                        <IconButton
-                          label="Remover arquivo"
-                          tone="muted"
-                          className="mini"
-                          onClick={() => onRemovePendingPatientFile(index)}
-                        >
-                          <X size={14} />
-                        </IconButton>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            )}
-            {editingPaciente?.arquivos.length ? (
-              <ul className="file-list">
-                {editingPaciente.arquivos.map((arquivo) => (
-                  <li key={arquivo.id}>
-                    <FileText size={15} />
-                    <SecureFileDownloadButton
-                      fileName={arquivo.nomeOriginal}
-                      label={arquivo.nomeOriginal}
-                      loadFile={() => patientDocuments.download(editingPaciente.id, arquivo.id)}
-                    />
-                    {!formReadOnly && canEditPatients && (
-                      <IconButton
-                        label="Excluir arquivo"
-                        tone="muted"
-                        className="mini"
-                        onClick={() => void onDeletePacienteArquivo(editingPaciente, arquivo.id)}
-                      >
-                        <Trash2 size={14} />
-                      </IconButton>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
           </div>
 
           <CheckboxField

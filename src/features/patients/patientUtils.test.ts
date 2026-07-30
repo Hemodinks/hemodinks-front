@@ -88,6 +88,21 @@ describe('patientUtils', () => {
     expect(payload.procedimentos.map((item) => item.cbhpmCodigo)).toEqual(['10101012', '20101201']);
   });
 
+  it('envia email, celular e data de nascimento vazios como nulos', () => {
+    const payload = toPacientePayload({
+      ...emptyPacienteForm,
+      nomePaciente: 'Paciente sem contatos',
+    });
+
+    expect(payload).toEqual(
+      expect.objectContaining({
+        email: null,
+        telefone: null,
+        dataNascimento: null,
+      }),
+    );
+  });
+
   it('bloqueia selecao repetida entre cirurgiao e medicos auxiliares', () => {
     expect(
       getDuplicatedMedicalTeamError({

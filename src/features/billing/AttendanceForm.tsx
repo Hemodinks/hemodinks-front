@@ -1,6 +1,13 @@
-import type { Dispatch, FormEvent, SetStateAction } from 'react';
-import { Save, X } from 'lucide-react';
-import { Button, ComboboxField, SelectField, TextField } from '../../shared/components/ui';
+import type { ChangeEvent, Dispatch, FormEvent, SetStateAction } from 'react';
+import { FileText, FileUp, Save, X } from 'lucide-react';
+import {
+  Button,
+  ComboboxField,
+  IconButton,
+  SelectField,
+  TextareaField,
+  TextField,
+} from '../../shared/components/ui';
 import type {
   Convenio,
   MedicalUserOption,
@@ -22,11 +29,15 @@ type AttendanceFormProps = {
   medicalUsers: MedicalUserOption[];
   isMedical: boolean;
   loading: boolean;
+  pendingFiles: File[];
+  fileInputKey: number;
   setForm: Dispatch<SetStateAction<AtendimentoFormState>>;
   setProcedimentos: Dispatch<SetStateAction<AtendimentoProcedureDraft[]>>;
   onOpenCbhpm: () => void;
   onSubmit: (event: FormEvent) => void;
   onCancelEditing: () => void;
+  onFilesChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onRemoveFile: (index: number) => void;
 };
 
 export function AttendanceForm({
@@ -40,11 +51,15 @@ export function AttendanceForm({
   medicalUsers,
   isMedical,
   loading,
+  pendingFiles,
+  fileInputKey,
   setForm,
   setProcedimentos,
   onOpenCbhpm,
   onSubmit,
   onCancelEditing,
+  onFilesChange,
+  onRemoveFile,
 }: AttendanceFormProps) {
   return (
     <form className="billing-filter-grid billing-attendance-form" onSubmit={onSubmit}>
@@ -217,6 +232,45 @@ export function AttendanceForm({
           <option key={status}>{status}</option>
         ))}
       </SelectField>
+      <TextareaField
+        label="Observações"
+        className="billing-attendance-observation"
+        value={form.observacao}
+        onValueChange={(observacao) => setForm((current) => ({ ...current, observacao }))}
+      />
+      <div className="billing-attendance-files">
+        <span className="billing-attendance-field-label">Arquivos</span>
+        <label className="ghost-button file-action full-width" htmlFor="attendance-file-input">
+          <FileUp size={17} /> Selecionar arquivos
+        </label>
+        <input
+          key={fileInputKey}
+          id="attendance-file-input"
+          className="sr-only"
+          type="file"
+          multiple
+          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt,.csv,.ppt,.pptx"
+          onChange={onFilesChange}
+        />
+        {pendingFiles.length > 0 && (
+          <ul className="file-list">
+            {pendingFiles.map((file, index) => (
+              <li key={`${file.name}-${index}`}>
+                <FileText size={15} />
+                <span>{file.name}</span>
+                <IconButton
+                  label={`Remover ${file.name}`}
+                  tone="muted"
+                  className="mini"
+                  onClick={() => onRemoveFile(index)}
+                >
+                  <X size={14} />
+                </IconButton>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       <div className="billing-attendance-glosa">
         <TextField
           label="Valor da glosa"

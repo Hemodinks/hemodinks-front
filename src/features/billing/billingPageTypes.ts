@@ -19,6 +19,7 @@ export type AtendimentoFormState = {
   numeroAutorizacao: string;
   valorGlosa: string;
   motivoGlosa: string;
+  observacao: string;
   status: string;
 };
 

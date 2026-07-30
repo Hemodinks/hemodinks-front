@@ -1,7 +1,6 @@
 import type { Paciente, PacienteFormData, PacientePayload } from './patientTypes';
 import type { PacienteFilters } from '../../appTypes';
 import {
-  DEFAULT_PATIENT_BIRTH_DATE,
   formatCpfInput,
   formatCurrencyInput,
   formatPhoneInput,
@@ -116,10 +115,10 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
     diagnostico: paciente.diagnostico || '',
     tratamentoMedico: paciente.tratamentoMedico || '',
     cpf: formatCpfInput(paciente.cpf || ''),
-    email: paciente.email,
-    telefone: formatPhoneInput(paciente.telefone),
+    email: paciente.email || '',
+    telefone: formatPhoneInput(paciente.telefone || ''),
     fotoPerfil: paciente.fotoPerfil ?? null,
-    dataNascimento: toDisplayDate(paciente.dataNascimento),
+    dataNascimento: toDisplayDate(paciente.dataNascimento || ''),
     hospitalId: paciente.hospitalId ?? null,
     hospital: paciente.hospital || '',
     medicoUserId: paciente.medicoUserId ?? null,
@@ -201,12 +200,10 @@ export function toPacientePayload(data: PacienteFormData): PacientePayload {
     diagnostico: data.diagnostico.trim(),
     tratamentoMedico: data.tratamentoMedico.trim(),
     cpf,
-    email: data.email.trim(),
-    telefone,
+    email: data.email.trim() || null,
+    telefone: telefone || null,
     fotoPerfil: data.fotoPerfil || null,
-    dataNascimento: isValidBirthDate(data.dataNascimento)
-      ? toApiDate(data.dataNascimento)
-      : DEFAULT_PATIENT_BIRTH_DATE,
+    dataNascimento: isValidBirthDate(data.dataNascimento) ? toApiDate(data.dataNascimento) : null,
     hospitalId: data.hospitalId,
     hospital: data.hospital.trim(),
     medicoUserId: data.medicoUserId,

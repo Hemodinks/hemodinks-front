@@ -29,6 +29,7 @@ export type AtendimentoPayload = {
   numeroAutorizacao: Nullable<string>;
   valorGlosa: Nullable<number>;
   motivoGlosa: Nullable<string>;
+  observacao: Nullable<string>;
   status: string;
   procedimentos: Array<{
     cbhpmCodigo: Nullable<string>;
@@ -197,6 +198,15 @@ export const updateAtendimento = (id: number, payload: AtendimentoPayload, token
   put<AtendimentoCirurgico>(`/api/atendimentos-cirurgicos/${id}`, payload, token);
 export const deleteAtendimento = (id: number, token: string) =>
   del<void>(`/api/atendimentos-cirurgicos/${id}`, token);
+export const uploadAtendimentoArquivo = (id: number, file: File, token: string) => {
+  const body = new FormData();
+  body.append('arquivo', file);
+  return upload(`/api/atendimentos-cirurgicos/${id}/arquivos`, body, token);
+};
+export const downloadAtendimentoArquivo = (id: number, arquivoId: number, token: string) =>
+  getBlob(`/api/atendimentos-cirurgicos/${id}/arquivos/${arquivoId}/download`, token);
+export const deleteAtendimentoArquivo = (id: number, arquivoId: number, token: string) =>
+  del<void>(`/api/atendimentos-cirurgicos/${id}/arquivos/${arquivoId}`, token);
 export const getFaturamentos = (token: string) => get<Faturamento[]>('/api/faturamentos/', token);
 export const createFaturamento = (payload: FaturamentoPayload, token: string) =>
   post<Faturamento>('/api/faturamentos/', payload, token);

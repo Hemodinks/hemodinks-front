@@ -180,8 +180,12 @@ describe('App session and access', () => {
     expect(controladoria).toHaveAttribute('aria-expanded', 'false');
     await user.click(controladoria);
     expect(controladoria).toHaveAttribute('aria-expanded', 'true');
-    expect(within(sidebar).getByRole('button', { name: /^atendimentos$/i })).toBeInTheDocument();
-    expect(within(sidebar).getByRole('button', { name: /^faturamento$/i })).toBeInTheDocument();
+    expect(
+      within(sidebar).getByRole('button', { name: /^atendimentos(?:: \d+)?$/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(sidebar).getByRole('button', { name: /^faturamento(?:: \d+)?$/i }),
+    ).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /^financeiro$/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /grupos médicos/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /^clínicas$/i })).toBeInTheDocument();

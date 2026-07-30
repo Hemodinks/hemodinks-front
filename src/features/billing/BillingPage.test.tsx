@@ -179,6 +179,9 @@ describe('BillingPage', () => {
     fireEvent.change(screen.getByLabelText('Motivo da glosa'), {
       target: { value: 'Divergência contratual' },
     });
+    fireEvent.change(screen.getByLabelText('Observações'), {
+      target: { value: 'Conferir documentação antes do faturamento.' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar atendimento' }));
 
     await waitFor(() =>
@@ -186,6 +189,7 @@ describe('BillingPage', () => {
         expect.objectContaining({
           valorGlosa: 150,
           motivoGlosa: 'Divergência contratual',
+          observacao: 'Conferir documentação antes do faturamento.',
         }),
         'token',
       ),

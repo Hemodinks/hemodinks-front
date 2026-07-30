@@ -264,7 +264,7 @@ describe('App profiles and navigation', () => {
     await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
-    expect(screen.getByText('Selecionar arquivos')).toBeInTheDocument();
+    expect(screen.queryByText('Selecionar arquivos')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
   });
 

@@ -118,8 +118,8 @@ export type Paciente = {
   repasseGlosa?: string | null;
   statusPago: boolean;
   cpf?: string | null;
-  email: string;
-  telefone: string;
+  email: string | null;
+  telefone: string | null;
   fotoPerfil?: string | null;
   dataNascimento?: string | null;
   ativo: boolean;
@@ -163,8 +163,14 @@ export type PacienteFormData = {
   novaObservacao: string;
 };
 
-export type PacientePayload = Omit<PacienteFormData, 'novaObservacao' | 'cpf'> & {
+export type PacientePayload = Omit<
+  PacienteFormData,
+  'novaObservacao' | 'cpf' | 'email' | 'telefone' | 'dataNascimento'
+> & {
   cpf?: string | null;
+  email?: string | null;
+  telefone?: string | null;
+  dataNascimento?: string | null;
 };
 
 export type PacienteObservacao = {

@@ -196,6 +196,37 @@
   align-items: end;
 }
 
+.billing-record-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.billing-record-tabs button {
+  border-radius: 8px 8px 0 0;
+  box-shadow: none;
+}
+
+.billing-record-tabs button.is-active {
+  color: var(--action-text);
+  background: var(--action-primary);
+}
+
+.billing-list-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 760px) {
+  .billing-list-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
 .billing-checkbox {
   grid-column: span 2;
   max-width: 360px;

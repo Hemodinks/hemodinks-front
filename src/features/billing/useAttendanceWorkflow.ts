@@ -4,6 +4,7 @@ import type { AuthSession } from '../../shared/domain/sessionTypes';
 import type { Convenio, OpmeFornecedor } from '../../shared/domain/clinicalContracts';
 import type { RunBillingAction, SetConfirmAction } from './billingWorkflowTypes';
 import { createInitialAtendimentoForm, type useAttendances } from './attendance/useAttendances';
+import { uploadAtendimentoArquivo } from '../../services';
 
 type AttendanceState = ReturnType<typeof useAttendances>;
 
@@ -35,10 +36,13 @@ export function useAttendanceWorkflow({
     procedimentos,
     removeAttendance,
     saveAttendance,
+    pendingFiles,
     setAtendimentoForm,
     setCbhpmModalOpen,
     setEditingAttendanceId,
     setProcedimentos,
+    setPendingFiles,
+    setFileInputKey,
     setSelectedAttendance,
     setShowForm,
   } = attendance;
@@ -47,6 +51,8 @@ export function useAttendanceWorkflow({
     setEditingAttendanceId(null);
     setAtendimentoForm(createInitialAtendimentoForm(isMedical ? String(session.user.id) : ''));
     setProcedimentos([]);
+    setPendingFiles([]);
+    setFileInputKey((key) => key + 1);
     setShowForm(false);
   };
 
@@ -111,6 +117,7 @@ export function useAttendanceWorkflow({
       numeroAutorizacao: atendimentoForm.numeroAutorizacao || null,
       valorGlosa,
       motivoGlosa: valorGlosa ? atendimentoForm.motivoGlosa.trim() : null,
+      observacao: atendimentoForm.observacao.trim() || null,
       status: atendimentoForm.status,
       procedimentos: procedimentos.map(({ porte, valorReferencia: _, ...procedure }) => ({
         ...procedure,
@@ -120,6 +127,9 @@ export function useAttendanceWorkflow({
     void run(
       async () => {
         const saved = await saveAttendance(editingAttendanceId, payload, session.token);
+        await Promise.all(
+          pendingFiles.map((file) => uploadAtendimentoArquivo(saved.id, file, session.token)),
+        );
         resetForm();
         return saved;
       },
@@ -156,6 +166,7 @@ export function useAttendanceWorkflow({
       numeroAutorizacao: item.numeroAutorizacao ?? '',
       valorGlosa: item.valorGlosa != null ? String(item.valorGlosa) : '',
       motivoGlosa: item.motivoGlosa ?? '',
+      observacao: item.observacao ?? '',
       status: item.status,
     });
     setProcedimentos(
