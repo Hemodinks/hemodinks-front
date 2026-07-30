@@ -100,7 +100,10 @@ export function useAttendances(medicoResponsavelId = '', token = '') {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [fileInputKey, setFileInputKey] = useState(0);
   const loadAttendances = async (_token: string) => {
-    await workspaceQuery.refetch();
+    const result = await workspaceQuery.refetch();
+    if (result.error) {
+      throw result.error;
+    }
   };
   const saveAttendance = (id: number | null, payload: AtendimentoPayload, token: string) =>
     id ? updateAtendimento(id, payload, token) : createAtendimento(payload, token);

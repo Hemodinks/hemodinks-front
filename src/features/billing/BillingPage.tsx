@@ -97,13 +97,6 @@ export function BillingPage({
   }, [success]);
 
   useEffect(() => {
-    if (!error) return;
-
-    const timeoutId = window.setTimeout(() => setError(''), 10000);
-    return () => window.clearTimeout(timeoutId);
-  }, [error]);
-
-  useEffect(() => {
     if (!receiptToast) return;
 
     const timeoutId = window.setTimeout(() => setReceiptToast(null), 10000);

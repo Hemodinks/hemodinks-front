@@ -101,6 +101,9 @@ export function useInvoicing(token = '') {
   const [recursoDraft, setRecursoDraft] = useState<RecursoDraftState | null>(null);
   const loadInvoicing = async (_token: string) => {
     const result = await workspaceQuery.refetch();
+    if (result.error) {
+      throw result.error;
+    }
     return result.data?.atendimentos ?? [];
   };
   const saveInvoice = (id: number | null, payload: FaturamentoPayload, token: string) =>

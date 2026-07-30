@@ -102,6 +102,24 @@ describe('billing domain hooks', () => {
     expect(services.deleteAtendimento).toHaveBeenCalledWith(1, token);
   });
 
+  it('propagates attendance loading failures instead of treating them as an empty list', async () => {
+    vi.mocked(services.getAtendimentos).mockRejectedValue(
+      new Error('Falha ao carregar atendimentos'),
+    );
+    vi.mocked(services.getPacientes).mockResolvedValue({ items: [] } as never);
+    vi.mocked(services.getHospitais).mockResolvedValue([]);
+
+    const { result } = renderHook(() => useAttendances('', token), {
+      wrapper: createWrapper(),
+    });
+
+    await expect(
+      act(async () => {
+        await result.current.loadAttendances(token);
+      }),
+    ).rejects.toThrow('Falha ao carregar atendimentos');
+  });
+
   it('loads invoicing and delegates its mutation boundary', async () => {
     vi.mocked(services.getAtendimentos).mockResolvedValue([attendance] as never);
     vi.mocked(services.getFaturamentos).mockResolvedValue([invoice] as never);
@@ -133,6 +151,21 @@ describe('billing domain hooks', () => {
     expect(services.deleteFaturamento).toHaveBeenCalledWith(4, token);
     expect(services.deleteGlosa).toHaveBeenCalledWith(7, token);
     expect(services.deleteRecursoGlosa).toHaveBeenCalledWith(8, token);
+  });
+
+  it('propagates invoicing loading failures instead of treating them as an empty list', async () => {
+    vi.mocked(services.getAtendimentos).mockResolvedValue([]);
+    vi.mocked(services.getFaturamentos).mockRejectedValue(
+      new Error('Falha ao carregar faturamentos'),
+    );
+
+    const { result } = renderHook(() => useInvoicing(token), { wrapper: createWrapper() });
+
+    await expect(
+      act(async () => {
+        await result.current.loadInvoicing(token);
+      }),
+    ).rejects.toThrow('Falha ao carregar faturamentos');
   });
 
   it('loads receivables, calculates totals and delegates finance operations', async () => {
