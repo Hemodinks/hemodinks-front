@@ -181,7 +181,7 @@ VITE_OTEL_SERVICE_NAME
 VITE_OTEL_TRACES_SAMPLE_RATE
 ```
 
-O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate principal para PRs e pushes, pois ele roda testes, build, budget e E2E. Lighthouse fica separado em `.github/workflows/lighthouse.yml` e deve ser iniciado manualmente quando necessario.
+O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate principal para PRs e pushes, pois ele roda testes, build, budget e E2E. Lighthouse fica separado em `.github/workflows/lighthouse.yml`, roda toda segunda-feira às 10:00 UTC e também pode ser iniciado manualmente. O audit falha se alguma rota ultrapassar LCP de 2.500 ms, CLS de 0,1 ou ficar abaixo de 95% em acessibilidade.
 
 ## Render producao
 

@@ -26,8 +26,9 @@ describe('formatProfileName', () => {
 
 describe('formatPersonName', () => {
   it('padroniza nomes em caixa alta ou com capitalizacao inconsistente', () => {
-    expect(formatPersonName('GEORGE MARCONE MORAIS DOS SANTOS'))
-      .toBe('George Marcone Morais dos Santos');
+    expect(formatPersonName('GEORGE MARCONE MORAIS DOS SANTOS')).toBe(
+      'George Marcone Morais dos Santos',
+    );
     expect(formatPersonName('joÃO pedro dE souZA')).toBe('João Pedro de Souza');
   });
 

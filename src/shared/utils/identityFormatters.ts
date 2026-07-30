@@ -12,17 +12,18 @@ export function formatPersonName(value?: string | null) {
   const titleCasedName = (value?.trim() ?? '')
     .toLocaleLowerCase('pt-BR')
     .replace(/\s+/g, ' ')
-    .replace(/(^|[\s'-])(\p{L})/gu, (_, separator: string, letter: string) => (
-      `${separator}${letter.toLocaleUpperCase('pt-BR')}`
-    ));
+    .replace(
+      /(^|[\s'-])(\p{L})/gu,
+      (_, separator: string, letter: string) => `${separator}${letter.toLocaleUpperCase('pt-BR')}`,
+    );
 
   return titleCasedName
     .split(' ')
-    .map((part, index) => (
+    .map((part, index) =>
       index > 0 && LOWERCASE_PERSON_NAME_PARTICLES.has(part.toLocaleLowerCase('pt-BR'))
         ? part.toLocaleLowerCase('pt-BR')
-        : part
-    ))
+        : part,
+    )
     .join(' ');
 }
 

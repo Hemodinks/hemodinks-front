@@ -230,9 +230,7 @@ describe('BillingPage', () => {
     renderPage();
     await screen.findByText('Paciente Teste');
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Ver procedimentos de Paciente Teste' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Ver procedimentos de Paciente Teste' }));
 
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByRole('heading', { name: 'Paciente Teste' })).toBeInTheDocument();
@@ -295,10 +293,9 @@ describe('BillingPage', () => {
     expect(screen.queryByRole('button', { name: 'Paciente Beta' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
-    fireEvent.change(
-      screen.getByRole('combobox', { name: /^Status do atendimento$/ }),
-      { target: { value: 'Autorizado' } },
-    );
+    fireEvent.change(screen.getByRole('combobox', { name: /^Status do atendimento$/ }), {
+      target: { value: 'Autorizado' },
+    });
     expect(screen.getByRole('button', { name: 'Paciente Beta' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Paciente Alfa' })).not.toBeInTheDocument();
   });

@@ -13,7 +13,10 @@ test('cadastra e edita usuario usando o formulario real', async ({ page }) => {
   await page.getByLabel('Telefone').fill('81999999999');
   await page.locator('#user-birth-date').fill('10/05/1990');
   await page.locator('.module-form-grid select').first().selectOption('1');
-  await page.getByRole('button', { name: 'Cadastrar usuário' }).click();
+  await page
+    .locator('.module-form-grid')
+    .getByRole('button', { name: 'Cadastrar usuário' })
+    .click();
 
   await expect(page.getByText(/Usuário cadastrado/)).toBeVisible();
   await expect(page.getByText('Usuario E2E')).toBeVisible();
@@ -48,13 +51,16 @@ test('cadastra e edita paciente usando o fluxo real do formulario', async ({ pag
   await expect(page.getByRole('heading', { name: 'Novo paciente' })).toBeVisible();
   await page.getByLabel('Nome completo').fill('Paciente Novo');
 
-  await page.getByRole('button', { name: 'Cadastrar paciente' }).click();
+  await page
+    .locator('.module-form-grid')
+    .getByRole('button', { name: 'Cadastrar paciente' })
+    .click();
   await expect(page.getByText(/Paciente cadastrado/)).toBeVisible();
   await expect(page.getByText('Paciente Novo')).toBeVisible();
   expect(apiState.createdPacientePayload).toMatchObject({
     nomePaciente: 'Paciente Novo',
     cpf: null,
-    telefone: '',
+    telefone: null,
   });
 
   await page.locator('tr', { hasText: 'Paciente Novo' }).getByTitle('Editar').click();

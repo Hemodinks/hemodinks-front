@@ -114,12 +114,13 @@ test('mantem popups financeiros dentro da viewport e acoes compactas com tooltip
   }));
   expect(billingFlowDimensions.scrollWidth).toBeGreaterThan(billingFlowDimensions.clientWidth);
   const billingActions = page.locator('tbody .billing-actions-column');
-  await expect(
-    billingActions.first().getByRole('button', { name: 'Registrar retorno' }),
-  ).toBeVisible();
+  const sentBillingActions = page
+    .locator('tbody tr', { hasText: 'Enviado' })
+    .locator('.billing-actions-column');
+  await expect(sentBillingActions.getByRole('button', { name: 'Registrar retorno' })).toBeVisible();
   await expect(billingActions.locator('.ghost-button')).toHaveCount(0);
 
-  const returnAction = billingActions.first().getByRole('button', { name: 'Registrar retorno' });
+  const returnAction = sentBillingActions.getByRole('button', { name: 'Registrar retorno' });
   await returnAction.hover();
   await expect(page.getByRole('tooltip')).toHaveText('Registrar retorno');
   await page.screenshot({

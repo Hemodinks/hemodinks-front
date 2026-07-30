@@ -40,7 +40,10 @@ describe('listing components', () => {
     );
 
     const button = screen.getByRole('button', { name: /Nome/ });
-    expect(button).toHaveAttribute('aria-sort', 'descending');
+    expect(screen.getByRole('columnheader', { name: /Nome/ })).toHaveAttribute(
+      'aria-sort',
+      'descending',
+    );
     fireEvent.click(button);
     expect(onSortChange).toHaveBeenCalledWith('nome');
   });

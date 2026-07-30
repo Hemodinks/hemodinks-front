@@ -149,10 +149,9 @@ describe('BillingPage invoicing', () => {
     expect(screen.queryByRole('button', { name: 'Paciente Beta' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
-    fireEvent.change(
-      screen.getByRole('combobox', { name: /^Status do faturamento$/ }),
-      { target: { value: 'ParcialmentePago' } },
-    );
+    fireEvent.change(screen.getByRole('combobox', { name: /^Status do faturamento$/ }), {
+      target: { value: 'ParcialmentePago' },
+    });
     expect(screen.getByRole('button', { name: 'Paciente Beta' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Paciente Alfa' })).not.toBeInTheDocument();
   });

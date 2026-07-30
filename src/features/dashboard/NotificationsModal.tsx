@@ -66,9 +66,7 @@ export function NotificationsModal({
                     {notification.nomePaciente && (
                       <span>{formatPersonName(notification.nomePaciente)}</span>
                     )}
-                    {notification.autor && (
-                      <span>De: {formatPersonName(notification.autor)}</span>
-                    )}
+                    {notification.autor && <span>De: {formatPersonName(notification.autor)}</span>}
                     {notification.medico && (
                       <span>Médico: {formatPersonName(notification.medico)}</span>
                     )}

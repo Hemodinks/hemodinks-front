@@ -11,10 +11,9 @@ describe('TutorialPanel', () => {
         name: 'Tutorial do módulo Faturamento',
       }),
     ).toHaveAttribute('data-tutorial-view', 'billing');
-    expect(screen.getByRole('button', { name: 'Etapa 1 do tutorial' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Criar faturamento — etapa 1 do tutorial' }),
+    ).toHaveAttribute('aria-expanded', 'true');
 
     rerender(<TutorialPanel activeView="finance" />);
 
@@ -23,10 +22,9 @@ describe('TutorialPanel', () => {
         name: 'Tutorial do módulo Financeiro',
       }),
     ).toHaveAttribute('data-tutorial-view', 'finance');
-    expect(screen.getByRole('button', { name: 'Etapa 1 do tutorial' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Consultar títulos — etapa 1 do tutorial' }),
+    ).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText('Consultar títulos')).toBeInTheDocument();
   });
 
@@ -34,7 +32,7 @@ describe('TutorialPanel', () => {
     render(<TutorialPanel activeView="patients" />);
 
     const filesSection = screen.getByRole('button', {
-      name: 'Etapa 3 do tutorial',
+      name: 'Arquivos e observações — etapa 3 do tutorial',
     });
     fireEvent.click(filesSection);
 

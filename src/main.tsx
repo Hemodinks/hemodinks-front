@@ -1,12 +1,13 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { initObservability } from './observability';
+import { initCspViolationMonitoring, initObservability } from './observability';
 import { initializeOptionalTelemetry } from './telemetryBootstrap';
 import './styles.css';
 
 function initializeTelemetry() {
   initObservability();
+  initCspViolationMonitoring();
   void initializeOptionalTelemetry();
 }
 

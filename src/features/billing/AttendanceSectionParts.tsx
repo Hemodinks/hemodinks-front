@@ -90,12 +90,17 @@ export function AttendancesTable({
         (!statusFilter || item.status === statusFilter),
     );
   }, [atendimentos, dateFilter, patientFilter, statusFilter]);
-  const sorting = useSortableData(filteredAttendances, {
-    recent: getRecordActivityTime,
-    paciente: (item) => item.paciente,
-    data: (item) => item.dataProcedimento,
-    status: (item) => item.status,
-  }, 'recent', 'desc');
+  const sorting = useSortableData(
+    filteredAttendances,
+    {
+      recent: getRecordActivityTime,
+      paciente: (item) => item.paciente,
+      data: (item) => item.dataProcedimento,
+      status: (item) => item.status,
+    },
+    'recent',
+    'desc',
+  );
   const pagination = useClientPagination(sorting.sortedItems);
 
   return (

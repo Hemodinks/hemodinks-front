@@ -1,6 +1,7 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import lighthouse from 'lighthouse';
+import desktopConfig from 'lighthouse/core/config/desktop-config.js';
 import { launch } from 'chrome-launcher';
 import { chromium } from 'playwright';
 import { preview } from 'vite';
@@ -10,6 +11,11 @@ const port = 4173;
 const origin = `http://${host}:${port}`;
 const reportDirectory = join(process.cwd(), 'reports', 'lighthouse');
 const routes = ['/dashboard', '/usuarios', '/pacientes', '/agenda'];
+const thresholds = {
+  accessibility: 0.95,
+  cumulativeLayoutShift: 0.1,
+  largestContentfulPaintMs: 2_500,
+};
 const session = {
   token: 'lighthouse-token',
   user: {
@@ -53,6 +59,17 @@ function checkScriptBudget(result, route) {
   console[size > maximum ? 'warn' : 'log'](message);
 }
 
+function checkMaximumAudit(result, route, auditId, label, maximum, unit = '') {
+  const value = Number(result.lhr.audits[auditId]?.numericValue ?? Number.POSITIVE_INFINITY);
+  const message = `${route} ${label}: ${value.toFixed(unit === 'ms' ? 0 : 3)}${unit} (máximo ${maximum}${unit})`;
+
+  if (value > maximum) {
+    throw new Error(message);
+  }
+
+  console.log(message);
+}
+
 async function stopChrome() {
   try {
     await chrome.kill();
@@ -86,20 +103,21 @@ try {
   });
   browser = await chromium.connectOverCDP(`http://${host}:${chrome.port}`);
   const context = browser.contexts()[0];
-  const page = await context.newPage();
-  await page.goto(origin, { waitUntil: 'domcontentloaded' });
-  await page.evaluate((storedSession) => {
-    localStorage.setItem('hemodinks.session', JSON.stringify(storedSession));
+  await context.addInitScript((auditSession) => {
+    window.__HEMODINKS_AUDIT_SESSION__ = auditSession;
   }, session);
-  await page.close();
 
   for (const route of routes) {
-    const result = await lighthouse(`${origin}${route}`, {
-      port: chrome.port,
-      output: ['html', 'json'],
-      logLevel: 'error',
-      disableStorageReset: true,
-    });
+    const result = await lighthouse(
+      `${origin}${route}`,
+      {
+        port: chrome.port,
+        output: ['html', 'json'],
+        logLevel: 'error',
+        disableStorageReset: true,
+      },
+      desktopConfig,
+    );
 
     if (!result) {
       throw new Error(`Lighthouse não retornou resultado para ${route}.`);
@@ -112,9 +130,24 @@ try {
     ]);
 
     checkMinimum(result, route, 'performance', 0.75);
-    checkMinimum(result, route, 'accessibility', 0.9, true);
+    checkMinimum(result, route, 'accessibility', thresholds.accessibility, true);
     checkMinimum(result, route, 'best-practices', 0.9);
     checkMinimum(result, route, 'seo', 0.8);
+    checkMaximumAudit(
+      result,
+      route,
+      'largest-contentful-paint',
+      'LCP',
+      thresholds.largestContentfulPaintMs,
+      'ms',
+    );
+    checkMaximumAudit(
+      result,
+      route,
+      'cumulative-layout-shift',
+      'CLS',
+      thresholds.cumulativeLayoutShift,
+    );
     checkScriptBudget(result, route);
   }
 } finally {

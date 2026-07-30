@@ -1,22 +1,26 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useMemo, useState } from 'react';
 import type { AuthSession } from '../../shared/domain/sessionTypes';
 import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
 import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
 import { getErrorMessage } from '../../shared/utils/formatters';
 import type { AgendaEvent, AgendaEventPayload } from './agendaTypes';
+import {
+  buildAgendaEditForm,
+  buildAgendaPayload,
+  getAgendaFormError,
+  toggleAgendaSelection,
+} from './agendaControllerUtils';
 import { useAgendaGateway } from './useAgendaGateway';
+import { useAgendaResources } from './useAgendaResources';
 import {
   type AgendaFormData,
   type AgendaSection,
   buildEmptyForm,
-  composeDateTime,
-  defaultReminderMinutes,
   eventTouchesDate,
   fromDateKey,
   mergeAgendaEvent,
   monthGrid,
   toDateKey,
-  toTimeInput,
 } from './agendaUtils';
 
 type AgendaControllerOptions = {
@@ -31,32 +35,11 @@ export function useAgendaController({ session, isMedical }: AgendaControllerOpti
   const [visibleMonth, setVisibleMonth] = useState(() => fromDateKey(todayKey));
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [activeSection, setActiveSection] = useState<AgendaSection>('calendario');
-  const [events, setEvents] = useState<AgendaEvent[]>([]);
-  const [medicalUsers, setMedicalUsers] = useState<
-    Awaited<ReturnType<typeof agendaGateway.listMedicalUsers>>
-  >([]);
-  const [notificationRecipientOptions, setNotificationRecipientOptions] = useState<Awaited<
-    ReturnType<typeof agendaGateway.listNotificationRecipients>
-  > | null>(null);
-  const [notificationRecipientsError, setNotificationRecipientsError] = useState('');
-  const [holidays, setHolidays] = useState<Awaited<ReturnType<typeof agendaGateway.listHolidays>>>(
-    [],
-  );
-  const [error, setError] = useState('');
-  const [holidayError, setHolidayError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [formData, setFormData] = useState<AgendaFormData>(() =>
     buildEmptyForm(todayKey, isMedical, session.user.id),
   );
-  const eventsOperation = useAsyncOperation((_signal, start: string, end: string) =>
-    agendaGateway.list(start, end),
-  );
-  const holidaysOperation = useAsyncOperation((_signal, years: number[]) =>
-    Promise.all(years.map((year) => agendaGateway.listHolidays(year))),
-  );
-  const medicalUsersOperation = useAsyncOperation(() => agendaGateway.listMedicalUsers());
-  const recipientsOperation = useAsyncOperation(() => agendaGateway.listNotificationRecipients());
   const saveOperation = useAsyncOperation(
     (_signal, id: number | null, payload: AgendaEventPayload) =>
       id ? agendaGateway.update(id, payload) : agendaGateway.create(payload),
@@ -67,6 +50,28 @@ export function useAgendaController({ session, isMedical }: AgendaControllerOpti
   const days = useMemo(() => monthGrid(visibleMonth), [visibleMonth]);
   const firstGridDate = days[0];
   const lastGridDate = days[days.length - 1];
+  const resources = useAgendaResources({
+    agendaGateway,
+    days,
+    firstGridDate,
+    lastGridDate,
+    sessionToken: session.token,
+  });
+  const {
+    error,
+    events,
+    holidayError,
+    holidays,
+    holidayLoading,
+    loadEvents,
+    loading,
+    medicalUsers,
+    notificationRecipientOptions,
+    notificationRecipientsError,
+    notificationRecipientsLoading,
+    setError,
+    setEvents,
+  } = resources;
   const holidayByDate = useMemo(
     () =>
       new Map(
@@ -86,53 +91,6 @@ export function useAgendaController({ session, isMedical }: AgendaControllerOpti
         ),
     [events, selectedDate],
   );
-
-  const loadEvents = async () => {
-    setError('');
-    try {
-      setEvents(
-        await eventsOperation.execute(firstGridDate.toISOString(), lastGridDate.toISOString()),
-      );
-    } catch (caughtError) {
-      setError(getErrorMessage(caughtError));
-    }
-  };
-
-  useEffect(() => {
-    void loadEvents();
-  }, [session.token, firstGridDate.toISOString(), lastGridDate.toISOString()]);
-
-  useEffect(() => {
-    const years = Array.from(new Set(days.map((date) => date.getFullYear())));
-    setHolidayError('');
-    void holidaysOperation
-      .execute(years)
-      .then((result) => setHolidays(result.flat()))
-      .catch((caughtError) => setHolidayError(getErrorMessage(caughtError)));
-  }, [days]);
-
-  useEffect(() => {
-    void medicalUsersOperation
-      .execute()
-      .then(setMedicalUsers)
-      .catch((caughtError) => setError(getErrorMessage(caughtError)));
-  }, [session.token]);
-
-  useEffect(() => {
-    setNotificationRecipientsError('');
-    void recipientsOperation
-      .execute()
-      .then((options) => {
-        setNotificationRecipientOptions(options);
-        setNotificationRecipientsError('');
-      })
-      .catch((caughtError) => {
-        const message = getErrorMessage(caughtError);
-        setNotificationRecipientOptions(null);
-        setNotificationRecipientsError(message);
-        setError(message);
-      });
-  }, [session.token]);
 
   const resetForm = (dateKey = selectedDate) => {
     setEditingEventId(null);
@@ -155,60 +113,17 @@ export function useAgendaController({ session, isMedical }: AgendaControllerOpti
     resetForm(todayKey);
   };
 
-  const buildPayload = (): AgendaEventPayload => {
-    const reminderPeriod =
-      formData.notifyUser || formData.notifyMedicalProfile
-        ? Number(formData.reminderPeriodMinutes || defaultReminderMinutes)
-        : null;
-    return {
-      medicalUserId:
-        formData.notifyMedicalProfile && formData.medicalUserId
-          ? Number(formData.medicalUserId)
-          : null,
-      title: formData.title.trim(),
-      description: formData.description.trim() || null,
-      start: composeDateTime(formData.startDate, formData.startTime).toISOString(),
-      end: composeDateTime(formData.endDate, formData.endTime).toISOString(),
-      notifyMedicalProfile: formData.notifyMedicalProfile,
-      notifyUser: formData.notifyUser,
-      reminderPeriodMinutes: reminderPeriod,
-      notificationMessage: formData.notificationMessage.trim() || null,
-      notifyAllAllowedRecipients: formData.notifyAllAllowedRecipients,
-      notificationUserIds: formData.notificationUserIds,
-      notificationGroupIds: formData.notificationGroupIds,
-    };
-  };
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
     setSuccessMessage('');
-    if (!formData.title.trim()) {
-      setError('Informe o titulo do evento.');
-      return;
-    }
-    if (
-      composeDateTime(formData.endDate, formData.endTime) <=
-      composeDateTime(formData.startDate, formData.startTime)
-    ) {
-      setError('A data final deve ser maior que a inicial.');
-      return;
-    }
-    const hasNotificationMessage = formData.notificationMessage.trim().length > 0;
-    const hasNotificationRecipients =
-      formData.notifyAllAllowedRecipients ||
-      formData.notificationUserIds.length > 0 ||
-      formData.notificationGroupIds.length > 0;
-    if (hasNotificationRecipients && !hasNotificationMessage) {
-      setError('Informe a mensagem da notificação.');
-      return;
-    }
-    if (hasNotificationMessage && !hasNotificationRecipients) {
-      setError('Selecione ao menos um destinatário para enviar a notificação.');
+    const formError = getAgendaFormError(formData);
+    if (formError) {
+      setError(formError);
       return;
     }
     try {
-      const savedEvent = await saveOperation.execute(editingEventId, buildPayload());
+      const savedEvent = await saveOperation.execute(editingEventId, buildAgendaPayload(formData));
       setEvents((current) => mergeAgendaEvent(current, savedEvent));
       setSuccessMessage(editingEventId ? 'Evento atualizado.' : 'Evento cadastrado.');
       const savedDate = new Date(savedEvent.start);
@@ -225,28 +140,12 @@ export function useAgendaController({ session, isMedical }: AgendaControllerOpti
 
   const handleEdit = (agendaEvent: AgendaEvent) => {
     const start = new Date(agendaEvent.start);
-    const end = new Date(agendaEvent.end);
     const startDate = toDateKey(start);
     setActiveSection('cadastro');
     setSelectedDate(startDate);
     setVisibleMonth(new Date(start.getFullYear(), start.getMonth(), 1));
     setEditingEventId(agendaEvent.id);
-    setFormData({
-      title: agendaEvent.title,
-      description: agendaEvent.description ?? '',
-      startDate,
-      startTime: toTimeInput(start),
-      endDate: toDateKey(end),
-      endTime: toTimeInput(end),
-      notifyMedicalProfile: agendaEvent.notifyMedicalProfile,
-      medicalUserId: agendaEvent.medicalUserId ? String(agendaEvent.medicalUserId) : '',
-      notifyUser: agendaEvent.notifyUser,
-      reminderPeriodMinutes: String(agendaEvent.reminderPeriodMinutes ?? defaultReminderMinutes),
-      notificationMessage: '',
-      notifyAllAllowedRecipients: false,
-      notificationUserIds: [],
-      notificationGroupIds: [],
-    });
+    setFormData(buildAgendaEditForm(agendaEvent));
   };
 
   const completeSelectedEvent = async (agendaEvent: AgendaEvent) => {
@@ -300,17 +199,13 @@ export function useAgendaController({ session, isMedical }: AgendaControllerOpti
   const toggleNotificationUser = (userId: number) =>
     setFormData((current) => ({
       ...current,
-      notificationUserIds: current.notificationUserIds.includes(userId)
-        ? current.notificationUserIds.filter((id) => id !== userId)
-        : [...current.notificationUserIds, userId],
+      notificationUserIds: toggleAgendaSelection(current.notificationUserIds, userId),
     }));
 
   const toggleNotificationGroup = (groupId: number) =>
     setFormData((current) => ({
       ...current,
-      notificationGroupIds: current.notificationGroupIds.includes(groupId)
-        ? current.notificationGroupIds.filter((id) => id !== groupId)
-        : [...current.notificationGroupIds, groupId],
+      notificationGroupIds: toggleAgendaSelection(current.notificationGroupIds, groupId),
     }));
 
   const openDraftForSelectedDate = () => {
@@ -340,9 +235,9 @@ export function useAgendaController({ session, isMedical }: AgendaControllerOpti
     formData,
     setFormData,
     pendingEventsCount: events.filter((event) => !event.isCompleted).length,
-    loading: eventsOperation.isLoading,
-    holidayLoading: holidaysOperation.isLoading,
-    notificationRecipientsLoading: recipientsOperation.isLoading,
+    loading,
+    holidayLoading,
+    notificationRecipientsLoading,
     formLoading: saveOperation.isLoading,
     confirmationDialog,
     loadEvents,

@@ -218,7 +218,11 @@ describe('App patient features', () => {
     expect(
       screen.queryByRole('button', { name: /adicionar procedimento/i }),
     ).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
+    await user.click(
+      within(document.querySelector('.module-form-grid')!).getByRole('button', {
+        name: /cadastrar paciente/i,
+      }),
+    );
 
     expect(api.createPaciente).toHaveBeenCalledWith(
       expect.objectContaining({

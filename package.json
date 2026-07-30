@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "scripts": {
     "predev": "node scripts/write-otel-runtime-config.mjs",
     "dev": "vite --host 0.0.0.0",
@@ -14,12 +17,13 @@
     "lint": "eslint src e2e",
     "architecture:check": "node scripts/check-architecture.mjs",
     "security:audit": "node scripts/check-security-audit.mjs",
+    "security:headers": "node scripts/check-deployment-headers.mjs",
     "format": "prettier --write \"{src,e2e,scripts}/**/*.{ts,tsx,js,mjs,css}\" \"*.{ts,js,mjs,json}\"",
     "format:check": "prettier --check \"{src,e2e,scripts}/**/*.{ts,tsx,js,mjs,css}\" \"*.{ts,js,mjs,json}\"",
     "audit:a11y": "playwright test --grep acessibilidade",
     "audit:lighthouse": "npm run build && node scripts/run-lighthouse.mjs",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage --maxWorkers=2",
     "test:e2e": "playwright test",
     "preview": "vite preview --host 0.0.0.0"
   },
@@ -45,7 +49,7 @@
     "lucide-react": "^0.555.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "react-router-dom": "^7.17.0"
+    "react-router-dom": "7.18.2"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",

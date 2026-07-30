@@ -89,8 +89,7 @@ export function TutorialPanel({ activeView }: TutorialPanelProps) {
                   type="button"
                   id={triggerId}
                   className="tutorial-section-trigger"
-                  aria-label={`Etapa ${index + 1} do tutorial`}
-                  aria-describedby={titleId}
+                  aria-label={`${section.title} — etapa ${index + 1} do tutorial`}
                   aria-expanded={isOpen}
                   aria-controls={panelId}
                   onClick={() => setOpenSection(isOpen ? null : index)}

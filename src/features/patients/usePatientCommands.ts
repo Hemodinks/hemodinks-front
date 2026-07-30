@@ -12,11 +12,7 @@ import type { AppView, ModuleMode } from '../../appTypes';
 import { queryClient } from '../../queryClient';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { queryKeys } from '../../shared/queryKeys';
-import {
-  DEFAULT_PASSWORD,
-  formatPersonName,
-  getErrorMessage,
-} from '../../shared/utils/formatters';
+import { DEFAULT_PASSWORD, formatPersonName, getErrorMessage } from '../../shared/utils/formatters';
 import type { AuthSession } from '../../shared/domain/sessionTypes';
 import type { Paciente, PacientePayload } from './patientTypes';
 import { buildPatientPayloadWithLookups } from './patientDomainHelpers';

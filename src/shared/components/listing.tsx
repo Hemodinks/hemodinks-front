@@ -38,13 +38,8 @@ export function SortableHeader({
 }: SortableHeaderProps) {
   const active = sortBy === field;
   return (
-    <th>
-      <button
-        type="button"
-        className="sort-header-button"
-        onClick={() => onSortChange(field)}
-        aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-      >
+    <th aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button type="button" className="sort-header-button" onClick={() => onSortChange(field)}>
         {label}
         {active && (
           <span className="sort-indicator" aria-hidden="true">

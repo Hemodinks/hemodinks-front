@@ -56,16 +56,21 @@ export function FinanceAccountsTable({
   onSelectAccount: (account: ContaReceber) => void;
   onOpenReversal: (id: number, valor: number) => void;
 }) {
-  const sorting = useSortableData(contas, {
-    recent: getRecordActivityTime,
-    documento: (item) => item.numeroDocumento,
-    paciente: (item) => item.paciente,
-    vencimento: (item) => item.dataVencimento,
-    original: (item) => item.valorOriginal,
-    recebido: (item) => item.valorRecebido,
-    saldo: (item) => item.saldoAberto,
-    status: (item) => item.status,
-  }, 'recent', 'desc');
+  const sorting = useSortableData(
+    contas,
+    {
+      recent: getRecordActivityTime,
+      documento: (item) => item.numeroDocumento,
+      paciente: (item) => item.paciente,
+      vencimento: (item) => item.dataVencimento,
+      original: (item) => item.valorOriginal,
+      recebido: (item) => item.valorRecebido,
+      saldo: (item) => item.saldoAberto,
+      status: (item) => item.status,
+    },
+    'recent',
+    'desc',
+  );
 
   return (
     <DataPanel className="billing-table-panel billing-finance-titles-panel">

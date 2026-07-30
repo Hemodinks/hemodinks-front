@@ -4,15 +4,16 @@
 
 ### GHSA-qwww-vcr4-c8h2 — React Router RSC Mode CSRF
 
-| Campo                                 | Registro                                                  |
-| ------------------------------------- | --------------------------------------------------------- |
-| Situação                              | Aceita temporariamente em 2026-07-28                      |
-| Severidade publicada                  | Alta, CWE-352                                             |
-| Dependências instaladas               | `react-router-dom@7.18.1` e `react-router@7.18.1`         |
-| Faixa indicada pelo advisory          | `react-router >=7.12.0 <8.3.0`                            |
-| Correção sugerida atualmente pelo npm | downgrade para `react-router-dom@7.11.0`                  |
-| Escopo afetado                        | execução de actions no modo React Server Components (RSC) |
-| Próxima revisão obrigatória           | 2026-08-28                                                |
+| Campo                         | Registro                                                  |
+| ----------------------------- | --------------------------------------------------------- |
+| Situação                      | Reavaliada e aceita temporariamente em 2026-07-30         |
+| Severidade publicada          | Alta, CWE-352                                             |
+| Dependências instaladas       | `react-router-dom@7.18.2` e `react-router@7.18.2`         |
+| Faixa indicada pelo advisory  | `react-router >=7.12.0 <8.3.0`                            |
+| Versão corrigida indicada     | `8.3.0`, ainda não publicada no npm em 2026-07-30         |
+| Alternativa sugerida pelo npm | downgrade para `react-router-dom@7.11.0`                  |
+| Escopo afetado                | execução de actions no modo React Server Components (RSC) |
+| Próxima revisão obrigatória   | 2026-08-28                                                |
 
 O risco foi aceito temporariamente porque este projeto é uma SPA Vite executada no
 browser. A aplicação usa `BrowserRouter` declarativo e não possui build React Server
@@ -30,7 +31,10 @@ Controles compensatórios:
   permitidos e também após o prazo de revisão;
 - manter a verificação mensal do Dependabot configurada em `.github/dependabot.yml`;
 - não aplicar `npm audit fix --force`, pois a correção sugerida hoje é um downgrade e
-  pode introduzir incompatibilidades sem reduzir risco efetivo nesta arquitetura.
+  reintroduz advisories de XSS, open redirect e negação de serviço corrigidos nas
+  versões mais recentes;
+- manter `react-router-dom@7.18.2` fixado, sem intervalo de versão, até que uma versão
+  corrigida e publicada possa ser validada.
 
 A exceção deve ser removida assim que uma versão compatível fora da faixa vulnerável
 estiver disponível. Ela também deve ser reavaliada imediatamente se o projeto adotar

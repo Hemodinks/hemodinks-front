@@ -64,7 +64,11 @@ describe('App user features', () => {
     expect(screen.getByLabelText('Perfil')).toHaveValue('2');
     await user.type(screen.getByLabelText('CRM'), '12345');
     await user.selectOptions(screen.getByLabelText('UF do CRM'), 'PE');
-    await user.click(screen.getByRole('button', { name: /cadastrar usuário/i }));
+    await user.click(
+      within(document.querySelector('.module-form-grid')!).getByRole('button', {
+        name: /cadastrar usuário/i,
+      }),
+    );
 
     expect(api.createUser).toHaveBeenCalledWith(
       {
@@ -119,7 +123,11 @@ describe('App user features', () => {
 
     expect(await screen.findByAltText('Foto de Clara Hemodinks')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /cadastrar usuário/i }));
+    await user.click(
+      within(document.querySelector('.module-form-grid')!).getByRole('button', {
+        name: /cadastrar usuário/i,
+      }),
+    );
 
     expect(api.createUser).toHaveBeenCalledWith(
       {

@@ -1,6 +1,58 @@
 let sentryEnabled = false;
 let sentryModule: typeof import('@sentry/react') | null = null;
 let sentryModulePromise: Promise<typeof import('@sentry/react') | null> | null = null;
+let cspMonitoringEnabled = false;
+const reportedCspViolations = new Set<string>();
+const MAX_REPORTED_CSP_VIOLATIONS = 20;
+
+type CspViolationDetails = Pick<
+  SecurityPolicyViolationEvent,
+  | 'blockedURI'
+  | 'columnNumber'
+  | 'disposition'
+  | 'documentURI'
+  | 'effectiveDirective'
+  | 'lineNumber'
+  | 'sourceFile'
+  | 'statusCode'
+  | 'violatedDirective'
+>;
+
+function getSafeCspLocation(value: string) {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return 'unknown';
+  }
+
+  if (['inline', 'eval', 'wasm-eval'].includes(normalized)) {
+    return normalized;
+  }
+
+  if (/^(?:blob|data):/i.test(normalized)) {
+    return normalized.slice(0, normalized.indexOf(':') + 1).toLowerCase();
+  }
+
+  try {
+    return new URL(normalized, window.location.origin).origin;
+  } catch {
+    return 'redacted';
+  }
+}
+
+export function getCspViolationDetails(event: CspViolationDetails) {
+  return {
+    blockedOrigin: getSafeCspLocation(event.blockedURI),
+    columnNumber: event.columnNumber,
+    disposition: event.disposition,
+    documentOrigin: getSafeCspLocation(event.documentURI),
+    effectiveDirective: event.effectiveDirective,
+    lineNumber: event.lineNumber,
+    sourceOrigin: getSafeCspLocation(event.sourceFile),
+    statusCode: event.statusCode,
+    violatedDirective: event.violatedDirective,
+  };
+}
 
 function getTraceSampleRate() {
   const value = Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE ?? 0);
@@ -58,15 +110,47 @@ export function initObservability() {
 }
 
 export function captureException(error: unknown, extra?: Record<string, unknown>) {
-  void loadSentryModule().then((Sentry) => {
-    if (sentryEnabled && Sentry) {
-      Sentry.captureException(error, { extra });
-      return;
-    }
-
+  if (!sentryEnabled) {
     if (import.meta.env.DEV) {
       console.error('[observability]', error, extra);
     }
+    return;
+  }
+
+  void loadSentryModule().then((Sentry) => {
+    if (Sentry) {
+      Sentry.captureException(error, { extra });
+    }
+  });
+}
+
+export function initCspViolationMonitoring() {
+  if (cspMonitoringEnabled || typeof window === 'undefined') {
+    return;
+  }
+
+  cspMonitoringEnabled = true;
+  window.addEventListener('securitypolicyviolation', (event) => {
+    const details = getCspViolationDetails(event);
+    const fingerprint = [
+      details.disposition,
+      details.effectiveDirective,
+      details.blockedOrigin,
+      details.sourceOrigin,
+    ].join('|');
+
+    if (
+      reportedCspViolations.has(fingerprint) ||
+      reportedCspViolations.size >= MAX_REPORTED_CSP_VIOLATIONS
+    ) {
+      return;
+    }
+
+    reportedCspViolations.add(fingerprint);
+    captureException(
+      new Error(`CSP violation: ${details.effectiveDirective || 'unknown-directive'}`),
+      details,
+    );
   });
 }
 

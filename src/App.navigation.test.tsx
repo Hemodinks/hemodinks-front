@@ -255,7 +255,11 @@ describe('App profiles and navigation', () => {
 
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
     expect(await screen.findByRole('heading', { name: 'Novo paciente' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /cadastrar paciente/i })).toBeInTheDocument();
+    expect(
+      within(document.querySelector('.module-form-grid')!).getByRole('button', {
+        name: /cadastrar paciente/i,
+      }),
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /voltar para lista/i }));
