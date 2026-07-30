@@ -118,6 +118,45 @@ describe('BillingPage invoicing', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('filtra faturamentos por paciente, guia e status', async () => {
+    vi.mocked(services.getFaturamentos).mockResolvedValue([
+      {
+        ...draft,
+        id: 1,
+        paciente: 'Paciente Alfa',
+        numeroGuia: 'GUIA-ALFA',
+        status: 'Rascunho',
+      },
+      {
+        ...draft,
+        id: 2,
+        paciente: 'Paciente Beta',
+        numeroGuia: 'GUIA-BETA',
+        status: 'ParcialmentePago',
+      },
+    ]);
+
+    renderPage('faturamento');
+    await screen.findByRole('button', { name: 'Paciente Alfa' });
+
+    fireEvent.change(screen.getByLabelText('Nome do paciente'), { target: { value: 'Beta' } });
+    expect(screen.getByRole('button', { name: 'Paciente Beta' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paciente Alfa' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
+    fireEvent.change(screen.getByLabelText('Guia'), { target: { value: 'GUIA-ALFA' } });
+    expect(screen.getByRole('button', { name: 'Paciente Alfa' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paciente Beta' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
+    fireEvent.change(
+      screen.getByRole('combobox', { name: /^Status do faturamento$/ }),
+      { target: { value: 'ParcialmentePago' } },
+    );
+    expect(screen.getByRole('button', { name: 'Paciente Beta' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paciente Alfa' })).not.toBeInTheDocument();
+  });
+
   it('não transporta mensagens de sucesso para outro módulo', async () => {
     const view = renderPage('faturamento');
 

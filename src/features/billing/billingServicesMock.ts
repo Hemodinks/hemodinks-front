@@ -12,6 +12,7 @@ export function createBillingServicesMock() {
     createAtendimento: vi.fn(),
     updateAtendimento: vi.fn(),
     deleteAtendimento: vi.fn(),
+    uploadAtendimentoArquivo: vi.fn(),
     createFaturamento: vi.fn(),
     updateFaturamento: vi.fn(),
     deleteFaturamento: vi.fn(),

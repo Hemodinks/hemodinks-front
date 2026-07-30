@@ -46,6 +46,10 @@ describe('BillingPage', () => {
     renderPage();
     await screen.findByText('Paciente Teste');
     fireEvent.click(screen.getByRole('button', { name: /Novo atendimento/i }));
+    const attachment = new File(['laudo'], 'laudo.pdf', { type: 'application/pdf' });
+    fireEvent.change(screen.getByLabelText('Selecionar arquivos'), {
+      target: { files: [attachment] },
+    });
     fireEvent.change(screen.getByLabelText('Paciente'), {
       target: { value: '1' },
     });
@@ -84,6 +88,9 @@ describe('BillingPage', () => {
         }),
         'token',
       ),
+    );
+    await waitFor(() =>
+      expect(services.uploadAtendimentoArquivo).toHaveBeenCalledWith(1, attachment, 'token'),
     );
   });
 
@@ -253,6 +260,47 @@ describe('BillingPage', () => {
     expect(await screen.findByRole('button', { name: 'Paciente paginado 1' })).toBeInTheDocument();
     expect(screen.getByText('11-11 de 11')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Paciente paginado 11' })).not.toBeInTheDocument();
+  });
+
+  it('filtra atendimentos por paciente, data e status', async () => {
+    vi.mocked(services.getAtendimentos).mockResolvedValue([
+      {
+        ...atendimento,
+        id: 1,
+        paciente: 'Paciente Alfa',
+        dataProcedimento: '2026-07-10',
+        status: 'Realizado',
+      },
+      {
+        ...atendimento,
+        id: 2,
+        paciente: 'Paciente Beta',
+        dataProcedimento: '2026-07-11',
+        status: 'Autorizado',
+      },
+    ] as never);
+
+    renderPage();
+    await screen.findByRole('button', { name: 'Paciente Alfa' });
+
+    fireEvent.change(screen.getByLabelText('Nome do paciente'), { target: { value: 'Beta' } });
+    expect(screen.getByRole('button', { name: 'Paciente Beta' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paciente Alfa' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
+    fireEvent.change(screen.getByLabelText('Data do atendimento'), {
+      target: { value: '2026-07-10' },
+    });
+    expect(screen.getByRole('button', { name: 'Paciente Alfa' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paciente Beta' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
+    fireEvent.change(
+      screen.getByRole('combobox', { name: /^Status do atendimento$/ }),
+      { target: { value: 'Autorizado' } },
+    );
+    expect(screen.getByRole('button', { name: 'Paciente Beta' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paciente Alfa' })).not.toBeInTheDocument();
   });
 
   it('ordena a listagem ao clicar no nome do cabeçalho', async () => {
