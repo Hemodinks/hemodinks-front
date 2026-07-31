@@ -48,6 +48,10 @@ export default defineConfig(({ mode }) => ({
   },
   test: {
     environment: 'jsdom',
+    // Keep local and CI runs within the same worker envelope. The full suite is
+    // UI-heavy and could starve Testing Library's async queries when Vitest
+    // created one worker per available CPU, while the same tests passed alone.
+    maxWorkers: 2,
     setupFiles: './src/setupTests.ts',
     globals: true,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
@@ -62,10 +66,10 @@ export default defineConfig(({ mode }) => ({
         'src/test/**',
       ],
       thresholds: {
-        statements: 70,
-        branches: 60,
-        functions: 60,
-        lines: 70,
+        statements: 74,
+        branches: 65,
+        functions: 68,
+        lines: 75,
       },
     },
   },

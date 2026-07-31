@@ -1,10 +1,12 @@
 import { type ReactNode, Suspense } from 'react';
-import { ContactModal, InfoModal, type UsersDomainState } from '../features/users';
+import type { UsersDomainState } from '../features/users';
 import type { PatientsDomainState } from '../features/patients';
 import type { AuthSession } from '../shared/domain/sessionTypes';
 import type { DashboardNotification } from '../shared/domain/dashboardContracts';
 import {
   CbhpmLookupModal,
+  ContactModal,
+  InfoModal,
   NotificationsModal,
   PasswordModal,
   PatientFilesModal,

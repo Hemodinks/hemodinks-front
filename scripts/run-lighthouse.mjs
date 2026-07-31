@@ -13,8 +13,10 @@ const reportDirectory = join(process.cwd(), 'reports', 'lighthouse');
 const routes = ['/dashboard', '/usuarios', '/pacientes', '/agenda'];
 const thresholds = {
   accessibility: 0.95,
+  bestPractices: 0.95,
   cumulativeLayoutShift: 0.1,
   largestContentfulPaintMs: 2_500,
+  seo: 0.95,
 };
 const session = {
   token: 'lighthouse-token',
@@ -36,6 +38,56 @@ function routeName(route) {
 
 function score(result, category) {
   return result.lhr.categories[category]?.score ?? 0;
+}
+
+function auditApiResponse(url) {
+  const path = new URL(url).pathname;
+
+  if (path === '/api/configuracoes-sistema/current') {
+    return {
+      id: 1,
+      nomeEmpresa: 'Hemodinks',
+      fotoEmpresa: null,
+      dataCadastro: '2026-01-01T00:00:00Z',
+      dataAtualizacao: null,
+    };
+  }
+  if (path === '/api/dashboard/summary') {
+    return {
+      usersCount: 0,
+      activeUsersCount: 0,
+      pacientesCount: 0,
+      activePatientsCount: 0,
+      pendingPaymentsCount: 0,
+      patientFilesCount: 0,
+      upcomingEventsCount: 0,
+    };
+  }
+  if (path === '/api/events/notification-recipients') {
+    return {
+      canNotifyAllAllowedRecipients: true,
+      allRecipientsLabel: 'Todos os usuários permitidos',
+      users: [],
+      groups: [],
+    };
+  }
+  if (path === '/api/licencas/current') {
+    return { features: [], status: 'Ativa' };
+  }
+  if (path.includes('/medical-users') || path.includes('/medicos')) {
+    return [];
+  }
+  if (path.startsWith('/api/events')) {
+    return [];
+  }
+  if (
+    path.startsWith('/api/users') ||
+    path.startsWith('/api/pacientes') ||
+    path.startsWith('/api/grupos-medicos')
+  ) {
+    return { items: [], page: 1, pageSize: 10, totalItems: 0, totalPages: 0 };
+  }
+  return [];
 }
 
 function checkMinimum(result, route, category, minimum, required = false) {
@@ -103,6 +155,26 @@ try {
   });
   browser = await chromium.connectOverCDP(`http://${host}:${chrome.port}`);
   const context = browser.contexts()[0];
+  await context.route('**/api/**', async (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({
+        status: 204,
+        headers: {
+          'access-control-allow-origin': '*',
+          'access-control-allow-headers': '*',
+          'access-control-allow-methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+        },
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify(auditApiResponse(route.request().url())),
+    });
+  });
   await context.addInitScript((auditSession) => {
     window.__HEMODINKS_AUDIT_SESSION__ = auditSession;
   }, session);
@@ -131,8 +203,8 @@ try {
 
     checkMinimum(result, route, 'performance', 0.75);
     checkMinimum(result, route, 'accessibility', thresholds.accessibility, true);
-    checkMinimum(result, route, 'best-practices', 0.9);
-    checkMinimum(result, route, 'seo', 0.8);
+    checkMinimum(result, route, 'best-practices', thresholds.bestPractices, true);
+    checkMinimum(result, route, 'seo', thresholds.seo, true);
     checkMaximumAudit(
       result,
       route,

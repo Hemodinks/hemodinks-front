@@ -70,7 +70,7 @@ describe('App session and access', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/dashboard');
     expect(screen.getByText('Administrador | gmarcone@gmail.com')).toBeInTheDocument();
-    expect(screen.getByText('Painel informativo')).toBeInTheDocument();
+    expect(await screen.findByText('Painel informativo')).toBeInTheDocument();
     expect(screen.getByText('Resumo geral')).toBeInTheDocument();
     expect(screen.getByText('Usuários ativos')).toBeInTheDocument();
     expect(screen.getByText('Pacientes ativos')).toBeInTheDocument();
@@ -107,7 +107,7 @@ describe('App session and access', () => {
 
     await user.click(within(userRow).getByLabelText('Contato de Ana Hemodinks'));
 
-    const contactDialog = screen.getByRole('dialog', { name: 'Ana Hemodinks' });
+    const contactDialog = await screen.findByRole('dialog', { name: 'Ana Hemodinks' });
     expect(within(contactDialog).getByText('ana@hemodinks.com')).toBeInTheDocument();
     expect(within(contactDialog).getByText('+55 (81) 99999-9999')).toBeInTheDocument();
     await user.keyboard('{Escape}');

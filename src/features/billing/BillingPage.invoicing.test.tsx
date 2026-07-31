@@ -174,6 +174,7 @@ describe('BillingPage invoicing', () => {
     expect(
       screen.queryByText('Faturamento criado a partir do atendimento.'),
     ).not.toBeInTheDocument();
+    expect(await screen.findByText('TIT-1')).toBeInTheDocument();
   });
 
   it('exibe snapshot e permite editar item somente no rascunho', async () => {

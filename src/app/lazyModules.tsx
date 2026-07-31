@@ -5,6 +5,11 @@ export const NotificationsModal = lazy(() =>
     default: module.NotificationsModal,
   })),
 );
+export const DashboardPage = lazy(() =>
+  import('../features/dashboard/DashboardPage').then((module) => ({
+    default: module.DashboardPage,
+  })),
+);
 export const AgendaPage = lazy(() =>
   import('../features/events/AgendaPage').then((module) => ({ default: module.AgendaPage })),
 );
@@ -57,6 +62,16 @@ export const PatientsContainer = lazy(() =>
 );
 export const UsersContainer = lazy(() =>
   import('../features/users/UsersContainer').then((module) => ({ default: module.UsersContainer })),
+);
+export const ContactModal = lazy(() =>
+  import('../features/users/UserModals').then((module) => ({
+    default: module.ContactModal,
+  })),
+);
+export const InfoModal = lazy(() =>
+  import('../features/users/UserModals').then((module) => ({
+    default: module.InfoModal,
+  })),
 );
 export const PasswordModal = lazy(() =>
   import('../shared/components/PasswordModal').then((module) => ({

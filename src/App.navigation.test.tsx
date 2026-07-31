@@ -325,7 +325,7 @@ describe('App profiles and navigation', () => {
 
     await user.click(within(tableRow).getByLabelText('Detalhes de Ana Hemodinks'));
 
-    const infoDialog = screen.getByRole('dialog', { name: 'Ana Hemodinks' });
+    const infoDialog = await screen.findByRole('dialog', { name: 'Ana Hemodinks' });
     expect(infoDialog).toBeInTheDocument();
     expect(within(infoDialog).getByText('Data de nascimento')).toBeInTheDocument();
     expect(within(infoDialog).getByText('Perfil')).toBeInTheDocument();
@@ -343,7 +343,7 @@ describe('App profiles and navigation', () => {
 
     await user.click(within(tableRow).getByLabelText('Contato de Ana Hemodinks'));
 
-    const contactDialog = screen.getByRole('dialog', { name: 'Ana Hemodinks' });
+    const contactDialog = await screen.findByRole('dialog', { name: 'Ana Hemodinks' });
     expect(within(contactDialog).getByText('Email')).toBeInTheDocument();
     expect(within(contactDialog).getByText('Telefone')).toBeInTheDocument();
     expect(within(contactDialog).getByText('ana@hemodinks.com')).toBeInTheDocument();

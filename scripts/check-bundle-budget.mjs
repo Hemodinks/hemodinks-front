@@ -71,6 +71,6 @@ if (largestChunk) {
 
 if (cssMatch) {
   const cssPath = toFilePath(cssMatch[1]);
-  const cssBudgetKb = readBudget('PERF_BUDGET_CSS_KB', 70);
+  const cssBudgetKb = readBudget('PERF_BUDGET_CSS_KB', 60);
   checkBudget('entry css raw', cssPath, cssBudgetKb);
 }

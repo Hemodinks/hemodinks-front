@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import type { AppView, ModuleMode, Theme } from '../appTypes';
-import { DashboardPage } from '../features/dashboard';
 import type { MedicalGroupsDomainState } from '../features/medicalGroups';
 import type { PatientsDomainState } from '../features/patients';
 import type { UsersDomainState } from '../features/users';
@@ -10,6 +9,7 @@ import {
   AgendaPage,
   BillingPage,
   ClinicsPage,
+  DashboardPage,
   MedicalGroupsPage,
   ModuleFallback,
   PatientsContainer,

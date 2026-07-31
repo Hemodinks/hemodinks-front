@@ -1,6 +1,6 @@
 name: Deploy Azure Static Web Apps
 
-"on":
+'on':
   push:
     branches:
       - main
@@ -89,37 +89,8 @@ jobs:
             exit 1
           fi
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .node-version
-          cache: npm
-
-      - name: Install dependencies
-        shell: bash
-        run: |
-          for attempt in 1 2 3; do
-            if npm ci; then
-              exit 0
-            fi
-
-            if [ "$attempt" -eq 3 ]; then
-              echo "::error::npm ci failed after ${attempt} attempts."
-              exit 1
-            fi
-
-            echo "::warning::npm ci failed on attempt ${attempt}. Retrying in 15 seconds..."
-            sleep 15
-          done
-
-      - name: Run unit tests
-        run: npm test
-
-      - name: Build
-        run: npm run build
-
-      - name: Check bundle budget
-        run: npm run budget
+      - name: Run complete frontend quality gate
+        uses: ./.github/actions/frontend-quality
 
       - name: Deploy to Azure Static Web Apps
         if: github.event_name != 'pull_request'
@@ -129,7 +100,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: dist
-          api_location: ""
+          api_location: ''
           skip_app_build: true
 
   close_pull_request:
