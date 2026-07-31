@@ -18,6 +18,7 @@
     "architecture:check": "node scripts/check-architecture.mjs",
     "security:audit": "node scripts/check-security-audit.mjs",
     "security:headers": "node scripts/check-deployment-headers.mjs",
+    "observability:check": "node scripts/check-production-observability.mjs",
     "format": "prettier --write \"{src,e2e,scripts}/**/*.{ts,tsx,js,mjs,css}\" \"*.{ts,js,mjs,json}\"",
     "format:check": "prettier --check \"{src,e2e,scripts}/**/*.{ts,tsx,js,mjs,css}\" \"*.{ts,js,mjs,json}\"",
     "audit:a11y": "playwright test --grep acessibilidade",

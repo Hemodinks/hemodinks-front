@@ -92,6 +92,10 @@ jobs:
       - name: Run complete frontend quality gate
         uses: ./.github/actions/frontend-quality
 
+      - name: Validate production observability
+        if: github.event_name != 'pull_request'
+        run: npm run observability:check
+
       - name: Deploy to Azure Static Web Apps
         if: github.event_name != 'pull_request'
         uses: Azure/static-web-apps-deploy@v1

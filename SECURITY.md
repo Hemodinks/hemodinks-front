@@ -24,6 +24,8 @@ autorizadas pela API.
 Controles compensatórios:
 
 - não habilitar RSC ou actions/loaders do React Router enquanto esta exceção estiver ativa;
+- manter `npm run architecture:check` bloqueando imports de `react-router`,
+  `react-router/*` e `@react-router/*`; somente `react-router-dom` é permitido no frontend;
 - revisar qualquer mudança na estratégia de roteamento antes do merge;
 - manter autenticação e autorização de todas as mutações no backend;
 - executar `npm audit` em atualizações de dependências e na revisão periódica desta exceção;

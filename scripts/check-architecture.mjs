@@ -40,10 +40,24 @@ const files = collectSourceFiles(sourceRoot);
 const graph = new Map(files.map((file) => [file, []]));
 const errors = [];
 
+function isForbiddenReactRouterServerImport(specifier) {
+  return (
+    specifier === 'react-router' ||
+    specifier.startsWith('react-router/') ||
+    specifier.startsWith('@react-router/')
+  );
+}
+
 for (const file of files) {
   const source = readFileSync(file, 'utf8');
   for (const match of source.matchAll(importPattern)) {
     const specifier = match[1] ?? match[2];
+    if (isForbiddenReactRouterServerImport(specifier)) {
+      errors.push(
+        `${displayPath(file)}: importe apenas react-router-dom; módulos RSC/servidor do React Router estão bloqueados pela mitigação GHSA-qwww-vcr4-c8h2.`,
+      );
+      continue;
+    }
     const target = resolveImport(file, specifier);
     if (!target || !target.startsWith(sourceRoot)) continue;
     graph.get(file).push(target);

@@ -61,6 +61,84 @@ describe('BillingDetailsModals', () => {
     expect(setCancelReason).toHaveBeenCalledWith(' ');
   });
 
+  it('edita título estornado e baixa o comprovante do recebimento', () => {
+    const setAccountDraft = vi.fn();
+    const downloadReceipt = vi.fn().mockResolvedValue(undefined);
+    const accountWithReceipt = {
+      ...account,
+      recebimentos: [
+        {
+          id: 8,
+          dataRecebimento: '2026-07-08T12:00:00Z',
+          formaRecebimento: 'PIX',
+          valorRecebido: 100,
+          estornado: true,
+          motivoEstorno: 'Duplicado',
+          documentoComprovante: 'receipt.pdf',
+        },
+      ],
+    } as unknown as ContaReceber;
+
+    render(
+      <AccountDetailsModal
+        selectedAccount={accountWithReceipt}
+        accountDraft={null}
+        setAccountDraft={setAccountDraft}
+        cancelReason=""
+        setCancelReason={vi.fn()}
+        setSelectedAccount={vi.fn()}
+        saveAccount={vi.fn()}
+        cancelAccount={vi.fn()}
+        downloadReceipt={downloadReceipt}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editar título' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar' }));
+
+    expect(setAccountDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ numeroDocumento: 'TIT-1', valorOriginal: '100' }),
+    );
+    expect(screen.getByText('Estornado — Duplicado')).toBeInTheDocument();
+    expect(downloadReceipt).toHaveBeenCalledWith(8);
+  });
+
+  it('permite salvar a edição e confirmar o cancelamento', () => {
+    const saveAccount = vi.fn((event) => event.preventDefault());
+    const cancelAccount = vi.fn((event) => event.preventDefault());
+    const accountDraft = {
+      numeroDocumento: 'TIT-1',
+      descricao: 'Honorários',
+      dataEmissao: '2026-07-01',
+      dataVencimento: '2026-07-10',
+      valorOriginal: '100',
+      valorAjustado: '100',
+      observacao: '',
+    };
+
+    render(
+      <AccountDetailsModal
+        selectedAccount={account}
+        accountDraft={accountDraft}
+        setAccountDraft={vi.fn()}
+        cancelReason="A pedido do paciente"
+        setCancelReason={vi.fn()}
+        setSelectedAccount={vi.fn()}
+        saveAccount={saveAccount}
+        cancelAccount={cancelAccount}
+        downloadReceipt={vi.fn()}
+      />,
+    );
+
+    fireEvent.submit(screen.getByRole('button', { name: 'Salvar título' }).closest('form')!);
+    fireEvent.submit(
+      screen.getByRole('button', { name: 'Confirmar cancelamento' }).closest('form')!,
+    );
+
+    expect(saveAccount).toHaveBeenCalledOnce();
+    expect(cancelAccount).toHaveBeenCalledOnce();
+  });
+
   it('creates a confirmation action before deleting a draft invoice', () => {
     const setConfirmAction = vi.fn();
     render(

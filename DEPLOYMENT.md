@@ -41,10 +41,11 @@ Minimo para qualquer build publicado:
 VITE_API_URL=https://<api-publica>
 VITE_APP_ENV=production
 VITE_APP_VERSION=<versao-ou-sha>
+VITE_SENTRY_DSN=https://<dsn-publico-do-projeto>@<host>/<project-id>
 VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
 ```
 
-Observabilidade opcional no browser:
+Provedores adicionais de observabilidade, opcionais no browser:
 
 ```text
 VITE_NEW_RELIC_ACCOUNT_ID=<opcional>
@@ -54,7 +55,6 @@ VITE_NEW_RELIC_BEACON=<opcional>
 VITE_NEW_RELIC_ERROR_BEACON=<opcional>
 VITE_NEW_RELIC_LICENSE_KEY=<opcional>
 VITE_NEW_RELIC_TRUST_KEY=<opcional>
-VITE_SENTRY_DSN=<opcional>
 VITE_OTEL_EXPORTER_OTLP_ENDPOINT=<opcional>
 VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=<opcional>
 VITE_OTEL_EXPORTER_OTLP_HEADERS=<opcional>
@@ -212,7 +212,7 @@ VITE_NEW_RELIC_AGENT_ID=<opcional>
 VITE_NEW_RELIC_APPLICATION_ID=<opcional>
 VITE_NEW_RELIC_LICENSE_KEY=<opcional>
 VITE_NEW_RELIC_TRUST_KEY=<opcional>
-VITE_SENTRY_DSN=<opcional>
+VITE_SENTRY_DSN=https://<dsn-publico-do-projeto>@<host>/<project-id>
 ```
 
 ## Render homologacao: confirmation

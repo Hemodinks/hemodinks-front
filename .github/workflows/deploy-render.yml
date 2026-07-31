@@ -37,6 +37,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Validate production observability
+        run: npm run observability:check
+
       - name: Run complete frontend quality gate
         uses: ./.github/actions/frontend-quality
 
