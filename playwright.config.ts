@@ -19,8 +19,23 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: /.*\.mobile\.spec\.ts/,
+      testIgnore: [/.*\.mobile\.spec\.ts/, /.*\.cross-browser\.spec\.ts/],
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'cross-browser-chromium',
+      testMatch: /.*\.cross-browser\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'cross-browser-firefox',
+      testMatch: /.*\.cross-browser\.spec\.ts/,
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'cross-browser-webkit',
+      testMatch: /.*\.cross-browser\.spec\.ts/,
+      use: { ...devices['Desktop Safari'] },
     },
     {
       name: 'mobile-chromium',

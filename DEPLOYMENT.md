@@ -41,7 +41,7 @@ Minimo para qualquer build publicado:
 VITE_API_URL=https://<api-publica>
 VITE_APP_ENV=production
 VITE_APP_VERSION=<versao-ou-sha>
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
+VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
 ```
 
 Observabilidade opcional no browser:
@@ -199,7 +199,7 @@ Variaveis do blueprint:
 ```text
 NODE_VERSION=22.12.0
 VITE_APP_ENV=production
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
+VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
 ```
 
 Variaveis que precisam ser preenchidas manualmente:
@@ -232,7 +232,7 @@ NODE_VERSION=22.12.0
 VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
 VITE_APP_ENV=confirmation
 VITE_APP_VERSION=<versao-ou-sha>
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
+VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
 ```
 
 Use `.env.confirmation.example` para reproduzir esse build localmente.

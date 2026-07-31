@@ -1,5 +1,26 @@
-import { describe, expect, it, vi } from 'vitest';
-import { getCspViolationDetails, initCspViolationMonitoring } from './observability';
+import { waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  getCspViolationDetails,
+  initCspViolationMonitoring,
+  initObservability,
+} from './observability';
+
+const sentryMocks = vi.hoisted(() => ({
+  browserTracingIntegration: vi.fn(() => ({ name: 'BrowserTracing' })),
+  init: vi.fn(),
+}));
+
+vi.mock('@sentry/react', () => ({
+  browserTracingIntegration: sentryMocks.browserTracingIntegration,
+  captureException: vi.fn(),
+  init: sentryMocks.init,
+  setUser: vi.fn(),
+}));
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('monitoramento de CSP', () => {
   it('remove caminhos e parâmetros dos endereços reportados', () => {
@@ -37,5 +58,24 @@ describe('monitoramento de CSP', () => {
     expect(
       addEventListener.mock.calls.filter(([event]) => event === 'securitypolicyviolation'),
     ).toHaveLength(1);
+  });
+});
+
+describe('observabilidade de desempenho', () => {
+  it('ativa BrowserTracing para coletar Web Vitals quando há amostragem', async () => {
+    vi.stubEnv('VITE_SENTRY_DSN', 'https://public@example.ingest.sentry.io/1');
+    vi.stubEnv('VITE_SENTRY_TRACES_SAMPLE_RATE', '0.25');
+
+    initObservability();
+
+    await waitFor(() => expect(sentryMocks.init).toHaveBeenCalledOnce());
+    expect(sentryMocks.browserTracingIntegration).toHaveBeenCalledOnce();
+    expect(sentryMocks.init).toHaveBeenCalledWith(
+      expect.objectContaining({
+        integrations: [{ name: 'BrowserTracing' }],
+        sendDefaultPii: false,
+        tracesSampleRate: 0.25,
+      }),
+    );
   });
 });

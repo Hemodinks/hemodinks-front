@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import defaultCompanyLogo from '../../../imagem hemodinks github.jpg';
+import defaultCompanyLogo from '../../../imagem-hemodinks-github.webp';
 import { getSystemSettingsCompanyPhoto } from '../../services';
 import { resolveProfilePhotoSource } from '../utils/formatters';
 

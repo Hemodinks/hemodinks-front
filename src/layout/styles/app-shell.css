@@ -24,7 +24,7 @@
   --app-layout-max-width: 1440px;
   --app-layout-gutter: clamp(24px, 5vw, 56px);
   background-color: var(--background);
-  background-image: var(--app-overlay), url('/imagem candidata hemodinks.jpg');
+  background-image: var(--app-overlay), url('/imagem-candidata-hemodinks.webp');
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;

@@ -29,7 +29,7 @@ runs:
 
     - name: Install Playwright browsers
       shell: bash
-      run: npx playwright install --with-deps chromium
+      run: npx playwright install --with-deps chromium firefox webkit
 
     - name: Run unit tests with coverage
       shell: bash

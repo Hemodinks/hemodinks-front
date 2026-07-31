@@ -33,7 +33,7 @@ services:
       - key: VITE_SENTRY_DSN
         sync: false
       - key: VITE_SENTRY_TRACES_SAMPLE_RATE
-        value: "0"
+        value: "0.1"
     routes:
       - type: rewrite
         source: /*

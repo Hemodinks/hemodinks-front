@@ -65,7 +65,7 @@ jobs:
 
       - name: Install Vercel CLI
         if: steps.vercel_secrets.outputs.ready == 'true'
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@58.4.4
 
       - name: Pull Vercel environment
         if: steps.vercel_secrets.outputs.ready == 'true'

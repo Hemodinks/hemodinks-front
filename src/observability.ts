@@ -99,11 +99,15 @@ export function initObservability() {
       return;
     }
 
+    const tracesSampleRate = getTraceSampleRate();
+
     Sentry.init({
       dsn,
       environment: import.meta.env.VITE_APP_ENV || import.meta.env.MODE,
       release: import.meta.env.VITE_APP_VERSION,
-      tracesSampleRate: getTraceSampleRate(),
+      // BrowserTracing envia LCP, CLS e INP junto com as transações amostradas.
+      integrations: tracesSampleRate > 0 ? [Sentry.browserTracingIntegration()] : [],
+      tracesSampleRate,
       sendDefaultPii: false,
     });
   });

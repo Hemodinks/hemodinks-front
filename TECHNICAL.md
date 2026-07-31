@@ -300,7 +300,7 @@ VITE_SENTRY_TRACES_SAMPLE_RATE
 Comportamento:
 
 - `src/main.tsx` tenta subir New Relic antes do bootstrap do React
-- `src/observability.ts` associa usuario ao contexto do Sentry
+- `src/observability.ts` associa usuario ao contexto do Sentry e coleta LCP, CLS e INP via BrowserTracing quando a amostragem esta ativa
 - `src/otel.ts` le `public/otel-runtime-config.json` e so inicializa se existir endpoint valido
 - sem as envs completas, as integracoes ficam desativadas sem bloquear o app
 
