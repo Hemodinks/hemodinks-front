@@ -55,7 +55,7 @@ const requiredCspRules = [
 
 const requiredConnectSources = [
   'https://hemodinks-api-prod.politepond-d3524c51.brazilsouth.azurecontainerapps.io',
-  'https://hemodinks-api-confirmation.onrender.com',
+  'https://hemodinks-api-1-90nb.onrender.com',
   'https://*.ingest.sentry.io',
   'https://*.ingest.us.sentry.io',
   'https://*.nr-data.net',
