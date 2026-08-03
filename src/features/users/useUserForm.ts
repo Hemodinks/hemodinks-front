@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import type { User, UserFormData } from '../../types';
+import type { User, UserFormData } from './userTypes';
 import { emptyUserForm, getUserFormData } from './userUtils';
 
 export function useUserForm() {
   const [formData, setFormData] = useState<UserFormData>(emptyUserForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingUserDetails, setEditingUserDetails] = useState<User | null>(null);
-  const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
   const [photoInputKey, setPhotoInputKey] = useState(0);
   const [userFileInputKey, setUserFileInputKey] = useState(0);
@@ -36,8 +35,6 @@ export function useUserForm() {
     setEditingId,
     editingUserDetails,
     setEditingUserDetails,
-    formLoading,
-    setFormLoading,
     formError,
     setFormError,
     photoInputKey,

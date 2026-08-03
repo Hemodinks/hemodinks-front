@@ -1,0 +1,400 @@
+.modal-panel.billing-invoice-detail-modal {
+  width: min(1040px, calc(100dvw - 64px)) !important;
+  max-width: calc(100dvw - 64px);
+  overflow: auto;
+}
+
+.billing-invoice-detail-modal .billing-summary-grid,
+.billing-account-detail-modal .billing-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.modal-backdrop.billing-account-detail-backdrop {
+  place-items: start center;
+  padding: 16px 32px;
+}
+
+.modal-panel.billing-account-detail-modal {
+  width: min(1040px, calc(100dvw - 64px)) !important;
+  max-width: calc(100dvw - 64px);
+  max-height: calc(100dvh - 32px);
+  margin-top: 0 !important;
+  overflow: auto;
+}
+
+.billing-account-detail-modal .billing-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.billing-account-detail-modal .billing-table {
+  min-width: 720px;
+}
+
+.modal-panel.billing-reversal-modal {
+  width: min(600px, calc(100dvw - 64px));
+  max-width: calc(100dvw - 64px);
+  align-self: start;
+  justify-self: center;
+  margin-top: clamp(36px, 7dvh, 64px);
+}
+
+.billing-reversal-form {
+  display: grid;
+  gap: 16px;
+}
+
+.billing-reversal-notice {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 25%, var(--line));
+  border-radius: 8px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-primary) 8%, var(--panel));
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.billing-reversal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.billing-reversal-actions button {
+  min-width: 160px;
+  white-space: nowrap;
+}
+
+.modal-panel.billing-appeal-modal {
+  width: min(640px, calc(100dvw - 64px));
+  max-width: calc(100dvw - 64px);
+  align-self: start;
+  justify-self: center;
+  margin-top: clamp(24px, 7dvh, 64px);
+  display: grid;
+  gap: 18px;
+  overflow: visible;
+}
+
+.billing-appeal-header {
+  margin-bottom: 0;
+}
+
+.billing-appeal-summary {
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--action-danger) 24%, var(--line));
+  border-left: 5px solid var(--action-danger);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--action-danger) 6%, var(--input-bg));
+}
+
+.billing-appeal-summary span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-appeal-summary strong {
+  color: var(--ink);
+  font-size: 1.35rem;
+}
+
+.billing-appeal-form {
+  display: grid;
+  gap: 16px;
+}
+
+.billing-appeal-form textarea {
+  min-height: 130px;
+  resize: vertical;
+}
+
+.billing-appeal-value-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.65fr) minmax(0, 1.35fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.billing-appeal-help {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--input-bg);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.billing-appeal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.billing-appeal-actions .primary-action,
+.billing-appeal-actions .ghost-button {
+  width: auto;
+  min-width: 170px;
+}
+
+.billing-summary-titlebar {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.billing-summary-patient {
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.billing-summary-modal-subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.billing-summary-layout {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding-right: 4px;
+  overflow-y: auto;
+}
+
+.billing-summary-overview {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.75fr) minmax(360px, 1.45fr) minmax(230px, 0.8fr);
+  gap: 12px;
+}
+
+.billing-summary-info-card,
+.billing-summary-metric-card {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--input-bg);
+}
+
+.billing-summary-convenio-card {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--action-accent) 8%, transparent),
+      transparent 72%
+    ),
+    var(--input-bg);
+}
+
+.billing-summary-info-card span,
+.billing-summary-metric-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-summary-info-card strong,
+.billing-summary-metric-card strong {
+  color: var(--ink);
+  font-size: 1.15rem;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+
+.billing-summary-info-card p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.billing-summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.billing-summary-metric-card {
+  align-content: center;
+  min-height: 92px;
+}
+
+.billing-summary-support-card {
+  border-left-width: 5px;
+  border-left-color: color-mix(in srgb, var(--action-primary) 44%, transparent);
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), transparent 72%), var(--input-bg);
+}
+
+.billing-summary-support-card strong {
+  color: var(--action-primary);
+}
+
+.billing-summary-main .billing-procedure-list {
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.billing-summary-main .billing-procedure-list li {
+  align-items: flex-start;
+}
+
+.billing-detail-panel {
+  position: sticky;
+  top: 18px;
+}
+
+.billing-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.billing-detail-header h3 {
+  margin: 4px 0;
+  font-size: 1.2rem;
+}
+
+.billing-detail-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.billing-detail-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.billing-detail-kpis > div {
+  min-height: 92px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.billing-detail-kpis span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-detail-kpis strong {
+  color: var(--ink);
+  font-size: 1.15rem;
+}
+
+.billing-detail-section {
+  display: grid;
+  gap: 12px;
+}
+
+.billing-detail-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.billing-detail-list > div {
+  min-height: 74px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.billing-detail-list dt {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-detail-list dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.billing-procedure-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.billing-procedure-list li {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.billing-procedure-content {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.billing-procedure-list strong {
+  display: block;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.billing-procedure-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.billing-procedure-chip {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--action-accent) 8%, transparent);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}

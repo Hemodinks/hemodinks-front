@@ -1,10 +1,11 @@
-import type { UserFormData, UserPayload } from '../../types';
+import type { UserFormData, UserPayload } from './userTypes';
 import {
   DEFAULT_PROFILE_ID,
   formatCpfInput,
   formatPhoneInput,
   isAssignableUserProfileId,
   isMedicalProfileId,
+  isValidProfileId,
   isValidBirthDate,
   isValidBrazilMobilePhone,
   isValidEmail,
@@ -59,7 +60,7 @@ export function getUserFormData(data: {
   };
 }
 
-export function validateUserForm(data: UserFormData) {
+export function validateUserForm(data: UserFormData, allowAllProfiles = false) {
   const birthDate = data.dataNascimento.trim();
 
   if (!data.nome.trim()) {
@@ -82,7 +83,9 @@ export function validateUserForm(data: UserFormData) {
     return 'Informe a data de nascimento no formato dd/mm/yyyy.';
   }
 
-  if (!isAssignableUserProfileId(data.perfilId)) {
+  if (
+    !(allowAllProfiles ? isValidProfileId(data.perfilId) : isAssignableUserProfileId(data.perfilId))
+  ) {
     return 'Selecione um perfil valido.';
   }
 

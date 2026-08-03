@@ -1,4 +1,4 @@
-import type { SystemSettings, UpdateSystemSettingsPayload } from '../types';
+import type { SystemSettings, UpdateSystemSettingsPayload } from '../shared/domain/clinicContracts';
 import { get, getBlob, put } from './api';
 
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
@@ -9,12 +9,12 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   dataAtualizacao: null,
 };
 
-export function getSystemSettings() {
-  return get<SystemSettings>('/api/configuracoes-sistema/current');
+export function getSystemSettings(token?: string) {
+  return get<SystemSettings>('/api/configuracoes-sistema/current', token);
 }
 
-export function getSystemSettingsCompanyPhoto() {
-  return getBlob('/api/configuracoes-sistema/current/foto-empresa');
+export function getSystemSettingsCompanyPhoto(token?: string) {
+  return getBlob('/api/configuracoes-sistema/current/foto-empresa', token);
 }
 
 export function updateSystemSettings(payload: UpdateSystemSettingsPayload, token: string) {

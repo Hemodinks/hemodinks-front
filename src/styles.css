@@ -2,3 +2,24 @@
 @import './shared/components/components.css';
 @import './layout/layout.css';
 @import './shared/components/modals.css';
+.global-background-activity {
+  position: fixed;
+  z-index: 1100;
+  top: 0;
+  left: 0;
+  width: 35%;
+  height: 3px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--action-primary), transparent);
+  animation: global-background-activity-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes global-background-activity-slide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(385%);
+  }
+}

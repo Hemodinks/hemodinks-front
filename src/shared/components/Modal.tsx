@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useRef } from 'react';
 type ModalProps = {
   titleId: string;
   className?: string;
+  backdropClassName?: string;
   onClose: () => void;
   children: ReactNode;
 };
@@ -16,7 +17,13 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-export function Modal({ titleId, className = '', onClose, children }: ModalProps) {
+export function Modal({
+  titleId,
+  className = '',
+  backdropClassName = '',
+  onClose,
+  children,
+}: ModalProps) {
   const panelRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
 
@@ -25,11 +32,11 @@ export function Modal({ titleId, className = '', onClose, children }: ModalProps
   }, [onClose]);
 
   useEffect(() => {
-    const previouslyFocused = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
-    const focusTarget = panelRef.current?.querySelector<HTMLElement>(focusableSelector) ?? panelRef.current;
+    const focusTarget =
+      panelRef.current?.querySelector<HTMLElement>(focusableSelector) ?? panelRef.current;
     focusTarget?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -49,7 +56,7 @@ export function Modal({ titleId, className = '', onClose, children }: ModalProps
 
   return (
     <div
-      className="modal-backdrop"
+      className={`modal-backdrop ${backdropClassName}`.trim()}
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
