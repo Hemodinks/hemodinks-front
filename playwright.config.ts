@@ -2,7 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 30_000,
+  timeout: 45_000,
+  workers: 4,
   expect: {
     timeout: 8_000,
   },
@@ -19,7 +20,28 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: [/.*\.mobile\.spec\.ts/, /.*\.cross-browser\.spec\.ts/],
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'cross-browser-chromium',
+      testMatch: /.*\.cross-browser\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'cross-browser-firefox',
+      testMatch: /.*\.cross-browser\.spec\.ts/,
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'cross-browser-webkit',
+      testMatch: /.*\.cross-browser\.spec\.ts/,
+      use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'mobile-chromium',
+      testMatch: /.*\.mobile\.spec\.ts/,
+      use: { ...devices['Pixel 5'] },
     },
   ],
 });

@@ -1,4 +1,6 @@
-import type { AuthSession, Licenca, Paciente, User } from '../types';
+import type { AuthSession, Licenca } from '../features/auth/authTypes';
+import type { Paciente } from '../features/patients/patientTypes';
+import type { User } from '../features/users/userTypes';
 
 export const SESSION_KEY = 'hemodinks.session';
 
@@ -68,11 +70,9 @@ export function paged<T>(items: T[], page = 1, pageSize = 10, totalItems = items
   };
 }
 
-export function buildMedicalLicense(featuresEfetivas: string[] = [
-  'Dashboard.Visualizar',
-  'Pacientes.Visualizar',
-  'Cbhpm.Consultar',
-]): Licenca {
+export function buildMedicalLicense(
+  featuresEfetivas: string[] = ['Dashboard.Visualizar', 'Pacientes.Visualizar', 'Cbhpm.Consultar'],
+): Licenca {
   return {
     id: 1,
     userId: 99,
@@ -134,6 +134,7 @@ export function toLoginResponse(session: AuthSession) {
     precisaTrocarSenha: session.user.precisaTrocarSenha,
     perfilId: session.user.perfilId,
     perfilNome: session.user.perfilNome,
+    modulosLiberados: session.user.modulosLiberados,
     licenca: session.user.licenca ?? null,
   };
 }

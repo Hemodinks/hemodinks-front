@@ -1,4 +1,10 @@
-import type { ChangePasswordPayload, ListQuery, PagedResult, User, UserArquivo, UserPayload } from '../types';
+import type {
+  ChangePasswordPayload,
+  User,
+  UserArquivo,
+  UserPayload,
+} from '../shared/domain/userContracts';
+import type { ListQuery, PagedResult } from '../shared/domain/apiTypes';
 import { del, get, getBlob, post, put, upload } from './api';
 import { buildListQueryParams } from './queryParams';
 
@@ -38,6 +44,14 @@ export function deleteUserArquivo(id: number, arquivoId: number, token: string) 
   return del<void>(`/api/users/${id}/arquivos/${arquivoId}`, token);
 }
 
+export function downloadUserArquivo(id: number, arquivoId: number, token: string) {
+  return getBlob(`/api/users/${id}/arquivos/${arquivoId}/download`, token);
+}
+
 export function changePassword(id: number, payload: ChangePasswordPayload, token: string) {
-  return put<{ id: number; precisaTrocarSenha: boolean; message: string }>(`/api/users/${id}/password`, payload, token);
+  return put<{ id: number; precisaTrocarSenha: boolean; message: string }>(
+    `/api/users/${id}/password`,
+    payload,
+    token,
+  );
 }

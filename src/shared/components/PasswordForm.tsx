@@ -1,13 +1,8 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { KeyRound, X } from 'lucide-react';
 import { changePassword } from '../../services';
-import type { AuthSession } from '../../types';
-import {
-  DEFAULT_PASSWORD,
-  getErrorMessage,
-  getPasswordStrength,
-  MAX_PASSWORD_LENGTH,
-} from '../utils/formatters';
+import type { AuthSession } from '../domain/sessionTypes';
+import { getErrorMessage, getPasswordStrength, MAX_PASSWORD_LENGTH } from '../utils/formatters';
 import { PasswordInput } from './PasswordInput';
 
 type PasswordFormProps = {
@@ -34,15 +29,14 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
       return;
     }
 
-    if (novaSenha === DEFAULT_PASSWORD) {
-      setError('Escolha uma senha diferente da senha inicial.');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const result = await changePassword(session.user.id, { senhaAtual, novaSenha }, session.token);
+      const result = await changePassword(
+        session.user.id,
+        { senhaAtual, novaSenha },
+        session.token,
+      );
       onChanged(result.message);
     } catch (submitError) {
       setError(getErrorMessage(submitError));
@@ -55,7 +49,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
     <form className="stack" onSubmit={handleSubmit}>
       {forced && (
         <p className="alert warning">
-          A senha inicial {DEFAULT_PASSWORD} precisa ser alterada para liberar o acesso.
+          Sua senha temporária precisa ser alterada para liberar o acesso.
         </p>
       )}
 

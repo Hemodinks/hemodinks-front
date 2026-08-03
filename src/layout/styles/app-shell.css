@@ -24,16 +24,14 @@
   --app-layout-max-width: 1440px;
   --app-layout-gutter: clamp(24px, 5vw, 56px);
   background-color: var(--background);
-  background-image:
-    var(--app-overlay),
-    url("../../../imagem candidata hemodinks.jpg");
+  background-image: var(--app-overlay), url('/imagem-candidata-hemodinks.webp');
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   background-attachment: fixed;
 }
 
-:root[data-theme="dark"] .app-shell {
+:root[data-theme='dark'] .app-shell {
   --ink: #eef6ff;
   --muted: #b8c6d8;
   --line: rgba(104, 151, 205, 0.34);
@@ -78,7 +76,7 @@
   margin: 8px auto 0;
   padding: 20px;
   display: grid;
-  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) auto;
   gap: 20px;
   align-items: stretch;
   border: 1px solid var(--line);
@@ -109,6 +107,12 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   align-items: start;
+}
+
+@media (max-width: 1360px) {
+  .app-layout {
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 1180px) {

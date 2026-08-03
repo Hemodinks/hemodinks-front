@@ -42,7 +42,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <div>
             <span className="eyebrow">Erro inesperado</span>
             <h1>Não foi possível continuar</h1>
-            <p>Atualize a página para tentar novamente. O erro foi registrado para análise técnica.</p>
+            <p>
+              Atualize a página para tentar novamente. O erro foi registrado para análise técnica.
+            </p>
           </div>
           <button type="button" className="primary-action" onClick={this.handleReload}>
             <RotateCw size={18} />

@@ -1,0 +1,68 @@
+name: Frontend quality gate
+description: Runs the complete, shared frontend quality gate before CI or deployment.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: .node-version
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        for attempt in 1 2 3; do
+          if npm ci; then
+            exit 0
+          fi
+
+          if [ "$attempt" -eq 3 ]; then
+            echo "::error::npm ci failed after ${attempt} attempts."
+            exit 1
+          fi
+
+          echo "::warning::npm ci failed on attempt ${attempt}. Retrying in 15 seconds..."
+          sleep 15
+        done
+
+    - name: Install Playwright browsers
+      shell: bash
+      run: npx playwright install --with-deps chromium firefox webkit
+
+    - name: Run unit tests with coverage
+      shell: bash
+      run: npm run test:coverage
+
+    - name: Run lint
+      shell: bash
+      run: npm run lint
+
+    - name: Check architecture boundaries
+      shell: bash
+      run: npm run architecture:check
+
+    - name: Audit dependencies and documented exceptions
+      shell: bash
+      run: npm run security:audit
+
+    - name: Validate deployment headers and cache
+      shell: bash
+      run: npm run security:headers
+
+    - name: Check formatting
+      shell: bash
+      run: npm run format:check
+
+    - name: Build
+      shell: bash
+      run: npm run build
+
+    - name: Check bundle budget
+      shell: bash
+      run: npm run budget
+
+    - name: Run E2E tests
+      shell: bash
+      run: npm run test:e2e

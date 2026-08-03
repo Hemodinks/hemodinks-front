@@ -1,6 +1,6 @@
 import { KeyRound } from 'lucide-react';
 import type { Theme } from '../../appTypes';
-import type { AuthSession } from '../../types';
+import type { AuthSession } from './authTypes';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordForm } from '../../shared/components/PasswordForm';
 import { TechCredit } from '../../shared/components/TechCredit';
@@ -38,12 +38,7 @@ export function PasswordRequiredScreen({
           </div>
         </div>
 
-        <PasswordForm
-          session={session}
-          forced
-          onChanged={onPasswordChanged}
-          onCancel={onLogout}
-        />
+        <PasswordForm session={session} forced onChanged={onPasswordChanged} onCancel={onLogout} />
       </section>
     </main>
   );

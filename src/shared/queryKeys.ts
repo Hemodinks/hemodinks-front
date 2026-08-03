@@ -1,29 +1,41 @@
 import type { PacienteFilters } from '../appTypes';
-import type { CbhpmListQuery } from '../types';
+import type { CbhpmListQuery } from './domain/apiTypes';
 
 export const queryKeys = {
-  systemSettings: () => ['systemSettings'] as const,
+  systemSettings: (token = '') => ['systemSettings', token] as const,
   dashboardSummary: (token: string) => ['dashboardSummary', token] as const,
   dashboardNotifications: (token: string) => ['dashboardNotifications', token] as const,
-  users: (token: string, query?: { page: number; pageSize: number; search: string }) => ['users', token, query] as const,
+  users: (token: string, query?: { page: number; pageSize: number; search: string }) =>
+    ['users', token, query] as const,
   usersRoot: (token: string) => ['users', token] as const,
   medicalUsers: (token: string) => ['medicalUsers', token] as const,
-  medicalGroups: (token: string, query?: { page: number; pageSize: number; search: string; sortBy: string; sortDirection: 'asc' | 'desc' }) => ['medicalGroups', token, query] as const,
+  medicalGroups: (
+    token: string,
+    query?: {
+      page: number;
+      pageSize: number;
+      search: string;
+      sortBy: string;
+      sortDirection: 'asc' | 'desc';
+    },
+  ) => ['medicalGroups', token, query] as const,
   medicalGroupsRoot: (token: string) => ['medicalGroups', token] as const,
   pacientes: (
     token: string,
     query?: { page: number; pageSize: number; search: string } & Partial<PacienteFilters>,
   ) => ['pacientes', token, query] as const,
   pacientesRoot: (token: string) => ['pacientes', token] as const,
-  pacienteObservacoes: (token: string, pacienteId: number) => ['pacienteObservacoes', token, pacienteId] as const,
+  pacienteObservacoes: (token: string, pacienteId: number) =>
+    ['pacienteObservacoes', token, pacienteId] as const,
   pacienteObservacoesRoot: (token: string) => ['pacienteObservacoes', token] as const,
   hospitais: (token: string) => ['hospitais', token] as const,
   convenios: (token: string) => ['convenios', token] as const,
   opmeFornecedores: (token: string) => ['opmeFornecedores', token] as const,
-  cbhpm: (
-    token: string,
-    query?: CbhpmListQuery,
-  ) => ['cbhpm', token, query] as const,
+  cbhpm: (token: string, query?: CbhpmListQuery) => ['cbhpm', token, query] as const,
   cbhpmRoot: (token: string) => ['cbhpm', token] as const,
   cbhpmCache: (token: string) => ['cbhpm', token, 'cache'] as const,
+  billingAttendances: (token: string) => ['billing', 'attendances', token] as const,
+  billingInvoicing: (token: string) => ['billing', 'invoicing', token] as const,
+  billingReceivables: (token: string) => ['billing', 'receivables', token] as const,
+  billingPrices: (token: string) => ['billing', 'prices', token] as const,
 };
