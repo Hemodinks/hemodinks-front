@@ -26,6 +26,7 @@ import {
   renderAuthenticatedApp,
 } from './test/appTestUi';
 import { createJwtToken, setupAppTest } from './test/appTestSetup';
+import { TEST_TEMPORARY_PASSWORD } from './test/passwordFixtures';
 
 vi.mock('./services', async () => {
   const { createAppServicesMock } = await import('./test/appServicesMock');
@@ -35,7 +36,7 @@ vi.mock('./services', async () => {
 describe('App user features', () => {
   beforeEach(setupAppTest);
 
-  it('cadastra usuario com senha inicial padrao e recarrega a lista', async () => {
+  it('cadastra usuario com senha temporaria unica e recarrega a lista', async () => {
     vi.mocked(api.createUser).mockResolvedValue({
       ...baseUser,
       id: 2,
@@ -48,6 +49,7 @@ describe('App user features', () => {
       precisaTrocarSenha: true,
       perfilId: 2,
       perfilNome: 'Médicos',
+      senhaTemporaria: TEST_TEMPORARY_PASSWORD,
     });
 
     const { user } = await renderAuthenticatedApp();
@@ -86,7 +88,7 @@ describe('App user features', () => {
       'jwt-token',
     );
     expect(
-      await screen.findByText('Usuário cadastrado com senha inicial Senha@123.'),
+      await screen.findByText(`Usuário cadastrado. Senha temporária: ${TEST_TEMPORARY_PASSWORD}`),
     ).toBeInTheDocument();
     expect(api.getUsers).toHaveBeenCalledTimes(2);
   }, 10_000);

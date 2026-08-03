@@ -4,7 +4,6 @@ import { authenticate, listPublicClinics, resetPassword } from '../../services';
 import { queryClient } from '../../queryClient';
 import {
   API_ASSET_BASE_URL,
-  DEFAULT_PASSWORD,
   getErrorMessage,
   isValidEmail,
 } from '../../shared/utils/formatters';
@@ -111,7 +110,7 @@ export function useLoginFlow({
         loginPassword,
         selectedLoginClinic.slug,
       );
-      const nextSession = buildSessionFromLogin(result, loginPassword);
+      const nextSession = buildSessionFromLogin(result);
       queryClient.clear();
       setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin(nextSession.user.perfilId));
       persistSession(nextSession);
@@ -138,14 +137,6 @@ export function useLoginFlow({
         loginEmail.trim(),
         selectedLoginClinic.slug,
       );
-
-      if (result.mode === 'default-password') {
-        setLoginPassword(DEFAULT_PASSWORD);
-        setLoginInfo(
-          `Senha redefinida para ${DEFAULT_PASSWORD}. Use-a para entrar e altere a seguir.`,
-        );
-        return;
-      }
 
       setLoginPassword('');
       setLoginInfo(

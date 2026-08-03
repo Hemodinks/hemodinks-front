@@ -7,7 +7,6 @@ import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import {
-  DEFAULT_PASSWORD,
   getErrorMessage,
   getPasswordStrength,
   MAX_PASSWORD_LENGTH,
@@ -58,11 +57,6 @@ export function ResetPasswordScreen({
 
     if (novaSenha !== confirmacao) {
       setError('A confirmacao precisa ser igual a nova senha.');
-      return;
-    }
-
-    if (novaSenha === DEFAULT_PASSWORD) {
-      setError('Escolha uma senha diferente da senha inicial.');
       return;
     }
 

@@ -12,7 +12,7 @@ import type { AppView, ModuleMode } from '../../appTypes';
 import { queryClient } from '../../queryClient';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { queryKeys } from '../../shared/queryKeys';
-import { DEFAULT_PASSWORD, formatPersonName, getErrorMessage } from '../../shared/utils/formatters';
+import { formatPersonName, getErrorMessage } from '../../shared/utils/formatters';
 import type { AuthSession } from '../../shared/domain/sessionTypes';
 import type { Paciente, PacientePayload } from './patientTypes';
 import { buildPatientPayloadWithLookups } from './patientDomainHelpers';
@@ -185,7 +185,9 @@ export function usePatientCommands({
 
         const baseSuccessMessage = patientForm.editingPacienteId
           ? 'Paciente atualizado.'
-          : `Paciente cadastrado com senha inicial ${DEFAULT_PASSWORD}.`;
+          : savedPaciente.senhaTemporaria
+            ? `Paciente cadastrado. Senha temporária: ${savedPaciente.senhaTemporaria}`
+            : 'Paciente cadastrado. Oriente-o a usar “Esqueci minha senha” no primeiro acesso.';
         patientList.setPacienteSuccessMessage(
           warningMessage
             ? `${baseSuccessMessage} Paciente salvo, mas a observação não foi enviada.`

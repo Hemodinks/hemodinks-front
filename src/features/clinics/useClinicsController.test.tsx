@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readProfilePhoto } from '../../shared/utils/files';
 import { mockSession } from '../../test/appTestData';
+import { TEST_CURRENT_PASSWORD } from '../../test/passwordFixtures';
 import type { ClinicPayload, PlatformClinic } from './clinicTypes';
 import { useClinicsGateway } from './useClinicsGateway';
 import { EMPTY_CLINIC_FORM, useClinicsController } from './useClinicsController';
@@ -127,7 +128,7 @@ describe('useClinicsController', () => {
         trialAte: '2026-09-01',
         administradorNome: ' Admin ',
         administradorEmail: ' admin@example.com ',
-        administradorSenha: 'Senha@123',
+        administradorSenha: TEST_CURRENT_PASSWORD,
         administradorTelefone: ' 81999999999 ',
       }),
     );

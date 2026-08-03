@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { mockSession } from '../../test/appTestData';
+import { TEST_CURRENT_PASSWORD } from '../../test/passwordFixtures';
 import type { PlatformClinic } from './clinicTypes';
 import { ClinicFormPanel } from './ClinicFormPanel';
 import { ClinicsTable } from './ClinicsTable';
@@ -98,7 +99,7 @@ describe('componentes de clínicas', () => {
         fotoClinica: '',
         administradorNome: 'Administrador',
         administradorEmail: 'admin@clinica.com',
-        administradorSenha: 'Senha@123',
+        administradorSenha: TEST_CURRENT_PASSWORD,
         administradorTelefone: '',
       });
       const controller = buildController({

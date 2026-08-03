@@ -6,7 +6,6 @@ import { queryClient } from '../../queryClient';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { queryKeys } from '../../shared/queryKeys';
 import {
-  DEFAULT_PASSWORD,
   DEFAULT_PROFILE_ID,
   formatPersonName,
   formatProfileName,
@@ -115,7 +114,9 @@ export function useUserCommands({
       userList.setSuccessMessage(
         userForm.editingId
           ? 'Usuário atualizado.'
-          : `Usuário cadastrado com senha inicial ${DEFAULT_PASSWORD}.`,
+          : savedUser.senhaTemporaria
+            ? `Usuário cadastrado. Senha temporária: ${savedUser.senhaTemporaria}`
+            : 'Usuário cadastrado. Oriente-o a usar “Esqueci minha senha” no primeiro acesso.',
       );
 
       if (savedUser.perfilId === MEDICAL_PROFILE_ID) {

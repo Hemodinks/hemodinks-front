@@ -26,6 +26,7 @@ import {
   renderAuthenticatedApp,
 } from './test/appTestUi';
 import { createJwtToken, setupAppTest } from './test/appTestSetup';
+import { TEST_TEMPORARY_PASSWORD } from './test/passwordFixtures';
 
 vi.mock('./services', async () => {
   const { createAppServicesMock } = await import('./test/appServicesMock');
@@ -189,6 +190,7 @@ describe('App patient features', () => {
       telefone: '',
       cpf: null,
       statusPago: false,
+      senhaTemporaria: TEST_TEMPORARY_PASSWORD,
     });
 
     const { user } = await renderAuthenticatedApp();
@@ -233,7 +235,9 @@ describe('App patient features', () => {
       'jwt-token',
     );
     expect(
-      await screen.findByText('Paciente cadastrado com senha inicial Senha@123.'),
+      await screen.findByText(
+        `Paciente cadastrado. Senha temporária: ${TEST_TEMPORARY_PASSWORD}`,
+      ),
     ).toBeInTheDocument();
   }, 15000);
 

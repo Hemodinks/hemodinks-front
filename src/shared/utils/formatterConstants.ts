@@ -1,4 +1,3 @@
-export const DEFAULT_PASSWORD = 'Senha@123';
 export const DEFAULT_PATIENT_BIRTH_DATE = '1900-01-01';
 export const PAGE_SIZE = 10;
 export const PATIENT_EXPORT_PAGE_SIZE = 100;

@@ -3,7 +3,6 @@ import { KeyRound, X } from 'lucide-react';
 import { changePassword } from '../../services';
 import type { AuthSession } from '../domain/sessionTypes';
 import {
-  DEFAULT_PASSWORD,
   getErrorMessage,
   getPasswordStrength,
   MAX_PASSWORD_LENGTH,
@@ -34,11 +33,6 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
       return;
     }
 
-    if (novaSenha === DEFAULT_PASSWORD) {
-      setError('Escolha uma senha diferente da senha inicial.');
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -59,7 +53,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
     <form className="stack" onSubmit={handleSubmit}>
       {forced && (
         <p className="alert warning">
-          A senha inicial {DEFAULT_PASSWORD} precisa ser alterada para liberar o acesso.
+          Sua senha temporária precisa ser alterada para liberar o acesso.
         </p>
       )}
 

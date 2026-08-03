@@ -1,5 +1,6 @@
 import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_CURRENT_PASSWORD, TEST_NEW_PASSWORD } from '../test/passwordFixtures';
 import {
   authenticate,
   changePassword,
@@ -109,7 +110,11 @@ describe('services api client', () => {
 
     await createUser(payload, 'jwt-token');
     await updateUser(1, payload, 'jwt-token');
-    await changePassword(1, { senhaAtual: 'Senha@123', novaSenha: 'NovaSenha@123' }, 'jwt-token');
+    await changePassword(
+      1,
+      { senhaAtual: TEST_CURRENT_PASSWORD, novaSenha: TEST_NEW_PASSWORD },
+      'jwt-token',
+    );
     await resetPassword('ana@hemodinks.com');
     await expect(deleteUser(1, 'jwt-token')).resolves.toBeUndefined();
 
@@ -134,7 +139,7 @@ describe('services api client', () => {
     expect(requestSpy).toHaveBeenNthCalledWith(3, {
       url: '/api/users/1/password',
       method: 'PUT',
-      data: { senhaAtual: 'Senha@123', novaSenha: 'NovaSenha@123' },
+      data: { senhaAtual: TEST_CURRENT_PASSWORD, novaSenha: TEST_NEW_PASSWORD },
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',

@@ -1,5 +1,6 @@
 import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_CURRENT_PASSWORD } from '../test/passwordFixtures';
 import {
   authenticate,
   configureAuthSessionRecovery,
@@ -87,13 +88,13 @@ describe('services api client', () => {
       }),
     );
 
-    const result = await authenticate('gmarcone@gmail.com', 'Senha@123');
+    const result = await authenticate('gmarcone@gmail.com', TEST_CURRENT_PASSWORD);
 
     expect(result.token).toBe('jwt-token');
     expect(requestSpy).toHaveBeenCalledWith({
       url: '/api/users/authenticate',
       method: 'POST',
-      data: { email: 'gmarcone@gmail.com', senha: 'Senha@123' },
+      data: { email: 'gmarcone@gmail.com', senha: TEST_CURRENT_PASSWORD },
       headers: { 'Content-Type': 'application/json' },
     });
   });
@@ -112,12 +113,12 @@ describe('services api client', () => {
       }),
     );
 
-    await authenticate('gmarcone@gmail.com', 'Senha@123');
+    await authenticate('gmarcone@gmail.com', TEST_CURRENT_PASSWORD);
 
     expect(requestSpy).toHaveBeenCalledWith({
       url: '/api/users/authenticate',
       method: 'POST',
-      data: { email: 'gmarcone@gmail.com', senha: 'Senha@123' },
+      data: { email: 'gmarcone@gmail.com', senha: TEST_CURRENT_PASSWORD },
       headers: {
         'Content-Type': 'application/json',
         'X-Clinica-Slug': 'clinica-alfa',

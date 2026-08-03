@@ -26,6 +26,10 @@ import {
   renderAuthenticatedApp,
 } from './test/appTestUi';
 import { createJwtToken, setupAppTest } from './test/appTestSetup';
+import {
+  TEST_CURRENT_PASSWORD,
+  TEST_NEW_PASSWORD,
+} from './test/passwordFixtures';
 
 vi.mock('./services', async () => {
   const { createAppServicesMock } = await import('./test/appServicesMock');
@@ -221,7 +225,7 @@ describe('App access and authentication', () => {
     const passwordInput = screen.getByLabelText('Senha');
     expect(passwordInput).toHaveAttribute('type', 'password');
 
-    await user.type(passwordInput, 'Senha@123');
+    await user.type(passwordInput, TEST_CURRENT_PASSWORD);
     await user.click(screen.getByRole('button', { name: /mostrar senha/i }));
 
     expect(passwordInput).toHaveAttribute('type', 'text');
@@ -275,25 +279,13 @@ describe('App access and authentication', () => {
     });
   });
 
-  it('reseta para a senha padrao e exige troca ao entrar', async () => {
+  it('mantem a senha vazia e orienta o reset por email', async () => {
     const user = userEvent.setup();
     vi.mocked(api.resetPassword).mockResolvedValue({
       id: 99,
       precisaTrocarSenha: true,
-      message:
-        'Nao foi possivel enviar o email de redefinicao agora. A senha padrao foi aplicada para voce entrar e trocar a seguir.',
-      mode: 'default-password',
-    });
-    vi.mocked(api.authenticate).mockResolvedValue({
-      id: 99,
-      nome: 'George Marcone',
-      email: 'gmarcone@gmail.com',
-      token: 'jwt-token',
-      cpf: '00000000191',
-      fotoPerfil: null,
-      precisaTrocarSenha: false,
-      perfilId: 1,
-      perfilNome: 'Administrador',
+      message: 'Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.',
+      mode: 'email-token',
     });
 
     render(<App />);
@@ -305,13 +297,13 @@ describe('App access and authentication', () => {
       expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com', 'hemodinks');
     });
 
-    expect(screen.getByLabelText('Senha')).toHaveValue('Senha@123');
-
-    await user.click(screen.getByRole('button', { name: /entrar/i }));
-
-    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123', 'hemodinks');
-    expect(await screen.findByRole('heading', { name: 'Troque sua senha' })).toBeInTheDocument();
-    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Senha')).toHaveValue('');
+    expect(api.authenticate).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText(
+        'Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('mostra a instrucao de email quando o backend confirma o envio', async () => {
@@ -354,11 +346,11 @@ describe('App access and authentication', () => {
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Nova senha'), 'NovaSenha@123');
-    await user.type(screen.getByLabelText('Confirmar nova senha'), 'NovaSenha@123');
+    await user.type(screen.getByLabelText('Nova senha'), TEST_NEW_PASSWORD);
+    await user.type(screen.getByLabelText('Confirmar nova senha'), TEST_NEW_PASSWORD);
     await user.click(screen.getByRole('button', { name: /redefinir senha/i }));
 
-    expect(api.confirmPasswordReset).toHaveBeenCalledWith('token-123', 'NovaSenha@123');
+    expect(api.confirmPasswordReset).toHaveBeenCalledWith('token-123', TEST_NEW_PASSWORD);
     expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
     expect(
       screen.getByText('Senha redefinida com sucesso. Entre com a nova senha.'),
@@ -402,20 +394,20 @@ describe('App access and authentication', () => {
     render(<App />);
 
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
-    await user.type(screen.getByLabelText('Senha'), 'Senha@123');
+    await user.type(screen.getByLabelText('Senha'), TEST_CURRENT_PASSWORD);
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(await screen.findByRole('heading', { name: 'Troque sua senha' })).toBeInTheDocument();
     expect(api.getUsers).not.toHaveBeenCalled();
 
-    await user.type(screen.getByLabelText('Senha atual'), 'Senha@123');
-    await user.type(screen.getByLabelText('Nova senha'), 'NovaSenha@123');
-    await user.type(screen.getByLabelText('Confirmar nova senha'), 'NovaSenha@123');
+    await user.type(screen.getByLabelText('Senha atual'), TEST_CURRENT_PASSWORD);
+    await user.type(screen.getByLabelText('Nova senha'), TEST_NEW_PASSWORD);
+    await user.type(screen.getByLabelText('Confirmar nova senha'), TEST_NEW_PASSWORD);
     await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
     expect(api.changePassword).toHaveBeenCalledWith(
       99,
-      { senhaAtual: 'Senha@123', novaSenha: 'NovaSenha@123' },
+      { senhaAtual: TEST_CURRENT_PASSWORD, novaSenha: TEST_NEW_PASSWORD },
       'jwt-token',
     );
     expect(await screen.findByText('Senha alterada com sucesso')).toBeInTheDocument();

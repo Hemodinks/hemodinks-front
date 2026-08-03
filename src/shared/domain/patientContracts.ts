@@ -123,6 +123,7 @@ export type Paciente = {
   fotoPerfil?: string | null;
   dataNascimento?: string | null;
   ativo: boolean;
+  senhaTemporaria?: string | null;
   arquivosCount: number;
   observacoesNaoLidasCount?: number;
   faturamento?: PacienteFaturamento | null;

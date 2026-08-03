@@ -26,6 +26,7 @@ import {
   renderAuthenticatedApp,
 } from './test/appTestUi';
 import { createJwtToken, setupAppTest } from './test/appTestSetup';
+import { TEST_CURRENT_PASSWORD } from './test/passwordFixtures';
 
 vi.mock('./services', async () => {
   const { createAppServicesMock } = await import('./test/appServicesMock');
@@ -155,12 +156,12 @@ describe('App session and access', () => {
     expect(clinicInput).toHaveValue('2');
     expect(screen.queryByText('clinica-beta')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
-    await user.type(screen.getByLabelText('Senha'), 'Senha@123');
+    await user.type(screen.getByLabelText('Senha'), TEST_CURRENT_PASSWORD);
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(api.authenticate).toHaveBeenCalledWith(
       'gmarcone@gmail.com',
-      'Senha@123',
+      TEST_CURRENT_PASSWORD,
       'clinica-beta',
     );
   });
