@@ -1,6 +1,6 @@
 name: CI
 
-"on":
+'on':
   push:
     branches:
       - main
@@ -32,6 +32,7 @@ jobs:
   test-and-build:
     name: Test and build
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     env:
       VITE_APP_ENV: ci
       VITE_APP_VERSION: ${{ github.sha }}
@@ -42,43 +43,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        shell: bash
-        run: |
-          for attempt in 1 2 3; do
-            if npm ci; then
-              exit 0
-            fi
-
-            if [ "$attempt" -eq 3 ]; then
-              echo "::error::npm ci failed after ${attempt} attempts."
-              exit 1
-            fi
-
-            echo "::warning::npm ci failed on attempt ${attempt}. Retrying in 15 seconds..."
-            sleep 15
-          done
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run unit tests
-        run: npm test
-
-      - name: Build
-        run: npm run build
-
-      - name: Check bundle budget
-        run: npm run budget
-
-      - name: Run E2E tests
-        run: npm run test:e2e
+      - name: Run complete frontend quality gate
+        uses: ./.github/actions/frontend-quality
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
@@ -95,4 +61,12 @@ jobs:
           path: |
             playwright-report
             test-results
+          if-no-files-found: ignore
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage
           if-no-files-found: ignore

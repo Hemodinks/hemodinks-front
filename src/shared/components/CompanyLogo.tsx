@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import defaultCompanyLogo from '../../../imagem hemodinks github.jpg';
+import defaultCompanyLogo from '../../../imagem-hemodinks-github.webp';
 import { getSystemSettingsCompanyPhoto } from '../../services';
 import { resolveProfilePhotoSource } from '../utils/formatters';
 
@@ -17,9 +17,12 @@ export function CompanyLogo({
   decorative = false,
 }: CompanyLogoProps) {
   const trimmedPhoto = photo?.trim() || '';
-  const canLoadFromApi = Boolean(trimmedPhoto && !/^(data:image\/|blob:)/i.test(trimmedPhoto));
+  const directPhoto = /^(data:image\/|blob:|https?:\/\/)/i.test(trimmedPhoto);
+  const canLoadFromApi = Boolean(trimmedPhoto && !directPhoto);
   const [useFallback, setUseFallback] = useState(false);
-  const [photoSource, setPhotoSource] = useState(() => (canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto)));
+  const [photoSource, setPhotoSource] = useState(() =>
+    canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto),
+  );
 
   useEffect(() => {
     setUseFallback(false);

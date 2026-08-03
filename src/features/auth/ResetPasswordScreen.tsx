@@ -7,12 +7,12 @@ import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import {
-  DEFAULT_PASSWORD,
   getErrorMessage,
   getPasswordStrength,
   MAX_PASSWORD_LENGTH,
 } from '../../shared/utils/formatters';
-import { confirmPasswordReset } from '../../services';
+import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
+import { usePasswordResetConfirmation } from './usePasswordResetConfirmation';
 import './auth.css';
 
 type ResetPasswordScreenProps = {
@@ -34,11 +34,14 @@ export function ResetPasswordScreen({
   onBackToLogin,
   onResetCompleted,
 }: ResetPasswordScreenProps) {
+  const passwordReset = usePasswordResetConfirmation();
+  const resetOperation = useAsyncOperation((_signal, resetToken: string, password: string) =>
+    passwordReset.confirm(resetToken, password),
+  );
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
   const passwordStrength = useMemo(() => getPasswordStrength(novaSenha), [novaSenha]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -57,23 +60,16 @@ export function ResetPasswordScreen({
       return;
     }
 
-    if (novaSenha === DEFAULT_PASSWORD) {
-      setError('Escolha uma senha diferente da senha inicial.');
-      return;
-    }
-
-    setLoading(true);
-
     try {
-      const result = await confirmPasswordReset(token, novaSenha);
-      successMessage = result.message || 'Senha redefinida com sucesso. Voce ja pode entrar com a nova senha.';
+      const result = await resetOperation.execute(token, novaSenha);
+      successMessage =
+        result.message || 'Senha redefinida com sucesso. Voce ja pode entrar com a nova senha.';
       setSuccess(successMessage);
       setNovaSenha('');
       setConfirmacao('');
     } catch (submitError) {
       setError(getErrorMessage(submitError));
     } finally {
-      setLoading(false);
       if (successMessage) {
         onResetCompleted(successMessage);
       }
@@ -82,7 +78,7 @@ export function ResetPasswordScreen({
 
   return (
     <main className="auth-screen compact">
-      <LoadingOverlay active={loading} />
+      <LoadingOverlay active={resetOperation.isLoading} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel password-required">
@@ -110,7 +106,10 @@ export function ResetPasswordScreen({
             required
           />
 
-          <div className={`password-strength strength-${passwordStrength.score}`} aria-live="polite">
+          <div
+            className={`password-strength strength-${passwordStrength.score}`}
+            aria-live="polite"
+          >
             <div className="strength-track">
               <span style={{ width: `${Math.max(1, passwordStrength.score) * 20}%` }} />
             </div>
@@ -135,9 +134,13 @@ export function ResetPasswordScreen({
             <button type="button" className="ghost-button" onClick={onBackToLogin}>
               Voltar ao login
             </button>
-            <button className="primary-action" type="submit" disabled={loading || Boolean(success)}>
+            <button
+              className="primary-action"
+              type="submit"
+              disabled={resetOperation.isLoading || Boolean(success)}
+            >
               <KeyRound size={18} />
-              {loading ? 'Redefinindo...' : 'Redefinir senha'}
+              {resetOperation.isLoading ? 'Redefinindo...' : 'Redefinir senha'}
             </button>
           </div>
         </form>
