@@ -229,7 +229,7 @@ Variaveis principais:
 
 ```text
 NODE_VERSION=22.12.0
-VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
+VITE_API_URL=https://hemodinks-api-1-90nb.onrender.com
 VITE_APP_ENV=confirmation
 VITE_APP_VERSION=<versao-ou-sha>
 VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
