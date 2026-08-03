@@ -251,7 +251,7 @@ describe('App session and access', () => {
     expect(screen.queryByRole('heading', { name: 'Painel inicial' })).not.toBeInTheDocument();
   });
 
-  it('nao mantem uma sessao criada com token JWT expirado', async () => {
+  it('encerra uma sessao com JWT expirado quando o refresh cookie e recusado', async () => {
     const user = userEvent.setup();
     const expiredToken = createJwtToken({
       exp: Math.floor(Date.now() / 1000) - 60,
@@ -267,6 +267,7 @@ describe('App session and access', () => {
       perfilId: 1,
       perfilNome: 'Administrador',
     });
+    vi.mocked(api.refreshSession).mockRejectedValueOnce(new Error('Sessao expirada'));
 
     render(<App />);
 

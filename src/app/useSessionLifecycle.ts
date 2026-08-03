@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
-import { AUTH_EXPIRED_EVENT, getCurrentLicenca, refreshSession } from '../services';
+import {
+  AUTH_EXPIRED_EVENT,
+  configureAuthSessionRecovery,
+  getCurrentLicenca,
+  logoutSession,
+  recordSessionActivity,
+  refreshSession,
+} from '../services';
 import { queryClient } from '../queryClient';
 import { MEDICAL_PROFILE_ID } from '../shared/utils/formatters';
-import { getJwtExpirationDelayMs, isJwtExpired } from '../shared/utils/jwt';
+import { getJwtExpirationDelayMs } from '../shared/utils/jwt';
 import type { AuthSession } from '../shared/domain/sessionTypes';
 import {
   isSessionIdle,
@@ -16,6 +23,7 @@ const SESSION_EXPIRED_MESSAGE = 'Sua sessao expirou. Entre novamente para contin
 const SESSION_EXPIRATION_LEEWAY_MS = 0;
 const SESSION_REFRESH_RETRY_MS = 60_000;
 const ACTIVITY_THROTTLE_MS = 1_000;
+const ACTIVITY_SYNC_INTERVAL_MS = 60_000;
 const ACTIVITY_EVENTS: Array<keyof WindowEventMap> = [
   'keydown',
   'mousedown',
@@ -72,6 +80,7 @@ export function useSessionLifecycle({
   const lastRefreshAtRef = useRef(0);
   const nextRefreshAttemptAtRef = useRef(0);
   const lastHandledActivityAtRef = useRef(0);
+  const lastActivitySyncAtRef = useRef(0);
   const refreshInFlightRef = useRef(false);
   sessionRef.current = session;
   persistSessionRef.current = persistSession;
@@ -91,7 +100,20 @@ export function useSessionLifecycle({
     actions.resetLoginFlow(infoMessage);
   }, []);
 
-  const logout = useCallback(() => endSession(), [endSession]);
+  const logout = useCallback(() => {
+    void logoutSession().catch(() => undefined);
+    endSession();
+  }, [endSession]);
+
+  useEffect(() => {
+    if (!session) return;
+
+    return configureAuthSessionRecovery((token) => {
+      const currentSession = sessionRef.current;
+      if (!currentSession || currentSession.token === token) return;
+      persistSessionRef.current({ ...currentSession, token });
+    });
+  }, [session]);
 
   useEffect(() => {
     if (!session) {
@@ -99,6 +121,7 @@ export function useSessionLifecycle({
       lastActivityAtRef.current = 0;
       lastRefreshAtRef.current = 0;
       nextRefreshAttemptAtRef.current = 0;
+      lastActivitySyncAtRef.current = 0;
       refreshInFlightRef.current = false;
       return;
     }
@@ -114,11 +137,6 @@ export function useSessionLifecycle({
 
     const expireSession = () => endSession(SESSION_EXPIRED_MESSAGE);
     window.addEventListener(AUTH_EXPIRED_EVENT, expireSession);
-
-    if (isJwtExpired(session.token, Date.now(), SESSION_EXPIRATION_LEEWAY_MS)) {
-      expireSession();
-      return () => window.removeEventListener(AUTH_EXPIRED_EVENT, expireSession);
-    }
 
     let idleTimeoutId: number | null = null;
     let refreshTimeoutId: number | null = null;
@@ -162,7 +180,7 @@ export function useSessionLifecycle({
       refreshInFlightRef.current = true;
 
       try {
-        const response = await refreshSession(requestedToken);
+        const response = await refreshSession();
         const latestSession = sessionRef.current;
         if (!latestSession || latestSession.token !== requestedToken) return;
         const refreshedAt = Date.now();
@@ -186,6 +204,13 @@ export function useSessionLifecycle({
       if (now - lastHandledActivityAtRef.current < ACTIVITY_THROTTLE_MS) return;
       lastHandledActivityAtRef.current = now;
       lastActivityAtRef.current = now;
+      if (now - lastActivitySyncAtRef.current >= ACTIVITY_SYNC_INTERVAL_MS) {
+        lastActivitySyncAtRef.current = now;
+        const currentToken = sessionRef.current?.token;
+        if (currentToken) {
+          void recordSessionActivity(currentToken).catch(() => undefined);
+        }
+      }
       scheduleIdleExpiration();
       scheduleRefresh(refresh);
     };
@@ -201,13 +226,40 @@ export function useSessionLifecycle({
     window.addEventListener('focus', recordActivity);
     scheduleIdleExpiration();
 
+    const recoverExpiredToken = async () => {
+      if (refreshInFlightRef.current) {
+        refreshTimeoutId = window.setTimeout(() => void recoverExpiredToken(), 1_000);
+        return;
+      }
+
+      const currentSession = sessionRef.current;
+      if (!currentSession) return;
+      const requestedToken = currentSession.token;
+      refreshInFlightRef.current = true;
+      try {
+        const response = await refreshSession();
+        const latestSession = sessionRef.current;
+        if (!latestSession || latestSession.token !== requestedToken) return;
+        const refreshedAt = Date.now();
+        lastRefreshAtRef.current = refreshedAt;
+        nextRefreshAttemptAtRef.current = refreshedAt;
+        persistSessionRef.current({ ...latestSession, token: response.token });
+      } catch {
+        expireSession();
+      } finally {
+        refreshInFlightRef.current = false;
+      }
+    };
+
     const expirationDelayMs = getJwtExpirationDelayMs(
       session.token,
       Date.now(),
       SESSION_EXPIRATION_LEEWAY_MS,
     );
     const timeoutId =
-      expirationDelayMs === null ? null : window.setTimeout(expireSession, expirationDelayMs);
+      expirationDelayMs === null
+        ? null
+        : window.setTimeout(() => void recoverExpiredToken(), expirationDelayMs);
 
     return () => {
       window.removeEventListener(AUTH_EXPIRED_EVENT, expireSession);

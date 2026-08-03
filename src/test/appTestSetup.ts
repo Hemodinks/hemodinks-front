@@ -16,6 +16,13 @@ export function setupAppTest() {
   document.documentElement.removeAttribute('data-theme');
   document.documentElement.style.colorScheme = '';
   vi.clearAllMocks();
+  vi.mocked(api.configureAuthSessionRecovery).mockImplementation(() => () => undefined);
+  vi.mocked(api.refreshSession).mockResolvedValue({
+    token: 'refreshed-token',
+    sessionIdleExpiresAt: '2026-08-03T12:30:00Z',
+  });
+  vi.mocked(api.recordSessionActivity).mockResolvedValue(undefined);
+  vi.mocked(api.logoutSession).mockResolvedValue(undefined);
   vi.mocked(api.listPublicClinics).mockResolvedValue([
     { id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null },
   ]);

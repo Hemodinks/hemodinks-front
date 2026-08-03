@@ -2,6 +2,7 @@ import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   authenticate,
+  configureAuthSessionRecovery,
   changePassword,
   createPaciente,
   createUser,
@@ -26,6 +27,7 @@ import {
   getPacientes,
   getUsers,
   resetPassword,
+  refreshSession,
   updatePaciente,
   updateSystemSettings,
   updateUser,
@@ -236,6 +238,58 @@ describe('services api client', () => {
     await expect(authenticate('email@teste.com', 'senha')).rejects.toThrow(
       'Credenciais invalidas ou sessao expirada.',
     );
+  });
+
+  it('renova por cookie e repete uma chamada autenticada que recebeu 401', async () => {
+    const onTokenRefreshed = vi.fn();
+    const removeRecovery = configureAuthSessionRecovery(onTokenRefreshed);
+    const requestSpy = vi
+      .spyOn(apiClient, 'request')
+      .mockRejectedValueOnce(apiError(401))
+      .mockResolvedValueOnce(
+        axiosResponse({
+          token: 'new-token',
+          sessionIdleExpiresAt: '2026-08-03T12:30:00Z',
+        }),
+      )
+      .mockResolvedValueOnce(axiosResponse([]));
+
+    await expect(getUsers('old-token')).resolves.toEqual([]);
+
+    expect(onTokenRefreshed).toHaveBeenCalledWith('new-token');
+    expect(requestSpy).toHaveBeenNthCalledWith(2, {
+      url: '/api/session/renovar',
+      method: 'POST',
+      data: {},
+      headers: { 'Content-Type': 'application/json' },
+    });
+    expect(requestSpy).toHaveBeenNthCalledWith(3, {
+      url: '/api/users/',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer new-token',
+      },
+    });
+
+    removeRecovery();
+  });
+
+  it('renova a sessao usando somente o refresh cookie', async () => {
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(
+      axiosResponse({
+        token: 'new-token',
+        sessionIdleExpiresAt: '2026-08-03T12:30:00Z',
+      }),
+    );
+
+    await expect(refreshSession()).resolves.toMatchObject({ token: 'new-token' });
+    expect(requestSpy).toHaveBeenCalledWith({
+      url: '/api/session/renovar',
+      method: 'POST',
+      data: {},
+      headers: { 'Content-Type': 'application/json' },
+    });
   });
 
   it('não exibe stack trace de desserialização para o usuário', async () => {

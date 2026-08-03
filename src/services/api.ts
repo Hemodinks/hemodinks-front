@@ -13,9 +13,58 @@ type RequestConfig = Omit<AxiosRequestConfig, 'data' | 'method' | 'url'> & {
 
 export const apiClient = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
 });
 
 export const publicApiClient = axios.create();
+
+type AuthSessionRecoveryHandler = (token: string) => void;
+export type SessionRefreshResponse = { token: string; sessionIdleExpiresAt: string };
+
+let authSessionRecoveryHandler: AuthSessionRecoveryHandler | null = null;
+let refreshInFlight: Promise<SessionRefreshResponse> | null = null;
+
+export function configureAuthSessionRecovery(handler: AuthSessionRecoveryHandler | null) {
+  authSessionRecoveryHandler = handler;
+  return () => {
+    if (authSessionRecoveryHandler === handler) {
+      authSessionRecoveryHandler = null;
+    }
+  };
+}
+
+export function refreshAuthSessionWithCookie() {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = apiClient
+    .request<SessionRefreshResponse>({
+      url: '/api/session/renovar',
+      method: 'POST',
+      data: {},
+      headers: { 'Content-Type': 'application/json' },
+    })
+    .then((response) => {
+      if (!response.data.token) {
+        throw new Error('A API nao retornou um novo token de acesso.');
+      }
+      authSessionRecoveryHandler?.(response.data.token);
+      return response.data;
+    })
+    .finally(() => {
+      refreshInFlight = null;
+    });
+
+  return refreshInFlight;
+}
+
+async function recoverAuthSession() {
+  if (!authSessionRecoveryHandler) return null;
+  try {
+    return (await refreshAuthSessionWithCookie()).token;
+  } catch {
+    return null;
+  }
+}
 
 function buildJsonHeaders(token?: string, headers?: AxiosRequestConfig['headers']) {
   return {
@@ -125,6 +174,33 @@ async function executeRequest<T>(
 
     return response.data;
   } catch (error) {
+    if (notifyUnauthorized && axios.isAxiosError(error) && error.response?.status === 401) {
+      const refreshedToken = await recoverAuthSession();
+      if (refreshedToken) {
+        try {
+          const retryResponse = await client.request<T>({
+            ...axiosConfig,
+            headers: {
+              ...axiosConfig.headers,
+              Authorization: `Bearer ${refreshedToken}`,
+              ...resolveClinicaRequestHeaders(refreshedToken),
+            },
+          });
+
+          if (retryResponse.status === 204) {
+            return undefined as T;
+          }
+
+          return retryResponse.data;
+        } catch (retryError) {
+          throw toApiError(retryError, true);
+        }
+      }
+
+      notifyAuthExpired();
+      throw toApiError(error, false);
+    }
+
     throw toApiError(error, notifyUnauthorized);
   } finally {
     finishActivity?.();

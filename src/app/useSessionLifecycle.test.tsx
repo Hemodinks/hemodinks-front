@@ -1,13 +1,21 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthSession } from '../shared/domain/sessionTypes';
-import { refreshSession } from '../services';
+import {
+  configureAuthSessionRecovery,
+  logoutSession,
+  recordSessionActivity,
+  refreshSession,
+} from '../services';
 import { SESSION_IDLE_TIMEOUT_MS, SESSION_REFRESH_INTERVAL_MS } from './sessionInactivity';
 import { useSessionLifecycle } from './useSessionLifecycle';
 
 vi.mock('../services', () => ({
   AUTH_EXPIRED_EVENT: 'hemodinks:auth-expired',
+  configureAuthSessionRecovery: vi.fn(() => () => undefined),
   getCurrentLicenca: vi.fn(),
+  logoutSession: vi.fn(),
+  recordSessionActivity: vi.fn(),
   refreshSession: vi.fn(),
 }));
 
@@ -47,7 +55,13 @@ describe('useSessionLifecycle', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-07-27T12:00:00Z'));
-    vi.mocked(refreshSession).mockResolvedValue({ token: 'refreshed-token' });
+    vi.mocked(configureAuthSessionRecovery).mockReturnValue(() => undefined);
+    vi.mocked(refreshSession).mockResolvedValue({
+      token: 'refreshed-token',
+      sessionIdleExpiresAt: '2026-07-27T12:30:00Z',
+    });
+    vi.mocked(recordSessionActivity).mockResolvedValue(undefined);
+    vi.mocked(logoutSession).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -63,7 +77,8 @@ describe('useSessionLifecycle', () => {
     act(() => window.dispatchEvent(new MouseEvent('mousedown')));
     await act(() => vi.advanceTimersByTimeAsync(SESSION_REFRESH_INTERVAL_MS));
 
-    expect(refreshSession).toHaveBeenCalledWith(options.session.token);
+    expect(refreshSession).toHaveBeenCalledWith();
+    expect(recordSessionActivity).toHaveBeenCalledWith(options.session.token);
     expect(options.persistSession).toHaveBeenCalledWith({
       ...options.session,
       token: 'refreshed-token',

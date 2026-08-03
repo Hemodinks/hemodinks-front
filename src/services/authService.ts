@@ -1,5 +1,5 @@
 import type { LoginSessionResponse as LoginResponse } from '../shared/domain/sessionTypes';
-import { post } from './api';
+import { post, refreshAuthSessionWithCookie } from './api';
 
 export type ResetPasswordResponse = {
   id?: number;
@@ -14,8 +14,16 @@ export function authenticate(email: string, senha: string, clinicaSlug?: string)
   });
 }
 
-export function refreshSession(token: string) {
-  return post<{ token: string }>('/api/session/renovar', {}, token);
+export function refreshSession() {
+  return refreshAuthSessionWithCookie();
+}
+
+export function recordSessionActivity(token: string) {
+  return post<void>('/api/session/atividade', {}, token, { activity: false });
+}
+
+export function logoutSession() {
+  return post<void>('/api/session/sair', {}, undefined, { activity: false });
 }
 
 export function resetPassword(email: string, clinicaSlug?: string) {
