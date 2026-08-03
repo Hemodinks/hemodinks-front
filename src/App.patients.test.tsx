@@ -26,7 +26,6 @@ import {
   renderAuthenticatedApp,
 } from './test/appTestUi';
 import { createJwtToken, setupAppTest } from './test/appTestSetup';
-import { TEST_TEMPORARY_PASSWORD } from './test/passwordFixtures';
 
 vi.mock('./services', async () => {
   const { createAppServicesMock } = await import('./test/appServicesMock');
@@ -190,7 +189,7 @@ describe('App patient features', () => {
       telefone: '',
       cpf: null,
       statusPago: false,
-      senhaTemporaria: TEST_TEMPORARY_PASSWORD,
+      convitePrimeiroAcessoEnviado: true,
     });
 
     const { user } = await renderAuthenticatedApp();
@@ -236,7 +235,7 @@ describe('App patient features', () => {
     );
     expect(
       await screen.findByText(
-        `Paciente cadastrado. Senha temporária: ${TEST_TEMPORARY_PASSWORD}`,
+        'Paciente cadastrado. Enviamos por email o link para criar a senha de primeiro acesso.',
       ),
     ).toBeInTheDocument();
   }, 15000);

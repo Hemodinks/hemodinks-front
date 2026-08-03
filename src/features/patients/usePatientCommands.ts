@@ -185,9 +185,9 @@ export function usePatientCommands({
 
         const baseSuccessMessage = patientForm.editingPacienteId
           ? 'Paciente atualizado.'
-          : savedPaciente.senhaTemporaria
-            ? `Paciente cadastrado. Senha temporária: ${savedPaciente.senhaTemporaria}`
-            : 'Paciente cadastrado. Oriente-o a usar “Esqueci minha senha” no primeiro acesso.';
+          : savedPaciente.convitePrimeiroAcessoEnviado
+            ? 'Paciente cadastrado. Enviamos por email o link para criar a senha de primeiro acesso.'
+            : 'Paciente cadastrado sem convite. Cadastre um email válido antes de liberar o acesso.';
         patientList.setPacienteSuccessMessage(
           warningMessage
             ? `${baseSuccessMessage} Paciente salvo, mas a observação não foi enviada.`

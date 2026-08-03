@@ -19,7 +19,7 @@ export type User = {
   precisaTrocarSenha: boolean;
   perfilId: number;
   perfilNome: string;
-  senhaTemporaria?: string | null;
+  convitePrimeiroAcessoEnviado?: boolean;
   arquivosCount?: number;
   arquivos?: UserArquivo[];
 };

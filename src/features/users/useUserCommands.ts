@@ -114,9 +114,9 @@ export function useUserCommands({
       userList.setSuccessMessage(
         userForm.editingId
           ? 'Usuário atualizado.'
-          : savedUser.senhaTemporaria
-            ? `Usuário cadastrado. Senha temporária: ${savedUser.senhaTemporaria}`
-            : 'Usuário cadastrado. Oriente-o a usar “Esqueci minha senha” no primeiro acesso.',
+          : savedUser.convitePrimeiroAcessoEnviado
+            ? 'Usuário cadastrado. Enviamos por email o link para criar a senha de primeiro acesso.'
+            : 'Usuário cadastrado, mas não foi possível enviar o convite. Oriente-o a usar “Esqueci minha senha”.',
       );
 
       if (savedUser.perfilId === MEDICAL_PROFILE_ID) {
