@@ -6,20 +6,17 @@ import {
   findOpmeFornecedorByName,
   MAX_PATIENT_FILE_BYTES,
 } from '../../shared/utils/formatters';
-import type {
-  Convenio,
-  Hospital,
-  MedicalUserOption,
-  OpmeFornecedor,
-  PacienteFormData,
-} from '../../types';
+import type { Convenio, Hospital, OpmeFornecedor, PacienteFormData } from './patientTypes';
+import type { MedicalUserOption } from '../../shared/domain/clinicalContracts';
 import { toPacientePayload } from './patientUtils';
 
 export const LIST_CACHE_TIME_MS = 20 * 1000;
 export const LOOKUP_CACHE_TIME_MS = 30 * 60 * 1000;
 
 export function getInvalidPatientFileMessage(files: File[]) {
-  const invalidFile = files.find((file) => !ALLOWED_PATIENT_FILE_TYPES.has(file.type) || file.size > MAX_PATIENT_FILE_BYTES);
+  const invalidFile = files.find(
+    (file) => !ALLOWED_PATIENT_FILE_TYPES.has(file.type) || file.size > MAX_PATIENT_FILE_BYTES,
+  );
 
   return invalidFile
     ? 'Use PDF, DOC, DOCX, JPG, JPEG, PNG, XLS, XLSX, TXT, CSV, PPT ou PPTX de ate 10 MB.'
@@ -32,9 +29,10 @@ export function resolveMedicalSelection(
   nome: string,
 ) {
   const trimmedName = nome.trim();
-  const selectedUser = userId != null
-    ? medicalUsers.find((user) => user.id === userId)
-    : findMedicalUserByName(medicalUsers, trimmedName);
+  const selectedUser =
+    userId != null
+      ? medicalUsers.find((user) => user.id === userId)
+      : findMedicalUserByName(medicalUsers, trimmedName);
 
   return {
     selectedUser,
@@ -73,15 +71,20 @@ export function buildPatientPayloadWithLookups({
     pacienteFormData.medicoAuxiliar2UserId,
     pacienteFormData.medicoAuxiliar2,
   );
-  const selectedHospital = pacienteFormData.hospitalId != null
-    ? hospitais.find((hospital) => hospital.id === pacienteFormData.hospitalId)
-    : findHospitalByName(hospitais, pacienteFormData.hospital);
-  const selectedConvenio = pacienteFormData.convenioId != null
-    ? convenios.find((convenio) => convenio.idConvenio === pacienteFormData.convenioId)
-    : findConvenioByDescription(convenios, pacienteFormData.convenio);
-  const selectedOpmeFornecedor = pacienteFormData.opmeFornecedorId != null
-    ? opmeFornecedores.find((fornecedor) => fornecedor.idFornecedor === pacienteFormData.opmeFornecedorId)
-    : findOpmeFornecedorByName(opmeFornecedores, pacienteFormData.opmeFornecedor);
+  const selectedHospital =
+    pacienteFormData.hospitalId != null
+      ? hospitais.find((hospital) => hospital.id === pacienteFormData.hospitalId)
+      : findHospitalByName(hospitais, pacienteFormData.hospital);
+  const selectedConvenio =
+    pacienteFormData.convenioId != null
+      ? convenios.find((convenio) => convenio.idConvenio === pacienteFormData.convenioId)
+      : findConvenioByDescription(convenios, pacienteFormData.convenio);
+  const selectedOpmeFornecedor =
+    pacienteFormData.opmeFornecedorId != null
+      ? opmeFornecedores.find(
+          (fornecedor) => fornecedor.idFornecedor === pacienteFormData.opmeFornecedorId,
+        )
+      : findOpmeFornecedorByName(opmeFornecedores, pacienteFormData.opmeFornecedor);
 
   return {
     selectedMedico,
@@ -91,10 +94,14 @@ export function buildPatientPayloadWithLookups({
       ...pacienteFormData,
       medicoUserId: selectedMedico.selectedUser?.id ?? pacienteFormData.medicoUserId,
       medico: selectedMedico.selectedUser?.nome ?? selectedMedico.trimmedName,
-      medicoAuxiliar1UserId: selectedMedicoAuxiliar1.selectedUser?.id ?? pacienteFormData.medicoAuxiliar1UserId,
-      medicoAuxiliar1: selectedMedicoAuxiliar1.selectedUser?.nome ?? selectedMedicoAuxiliar1.trimmedName,
-      medicoAuxiliar2UserId: selectedMedicoAuxiliar2.selectedUser?.id ?? pacienteFormData.medicoAuxiliar2UserId,
-      medicoAuxiliar2: selectedMedicoAuxiliar2.selectedUser?.nome ?? selectedMedicoAuxiliar2.trimmedName,
+      medicoAuxiliar1UserId:
+        selectedMedicoAuxiliar1.selectedUser?.id ?? pacienteFormData.medicoAuxiliar1UserId,
+      medicoAuxiliar1:
+        selectedMedicoAuxiliar1.selectedUser?.nome ?? selectedMedicoAuxiliar1.trimmedName,
+      medicoAuxiliar2UserId:
+        selectedMedicoAuxiliar2.selectedUser?.id ?? pacienteFormData.medicoAuxiliar2UserId,
+      medicoAuxiliar2:
+        selectedMedicoAuxiliar2.selectedUser?.nome ?? selectedMedicoAuxiliar2.trimmedName,
       hospitalId: selectedHospital?.id ?? null,
       hospital: selectedHospital?.nome ?? pacienteFormData.hospital,
       convenioId: selectedConvenio?.idConvenio ?? null,

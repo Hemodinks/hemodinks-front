@@ -9,7 +9,10 @@
     linear-gradient(135deg, rgba(4, 12, 25, 0.86), rgba(4, 35, 45, 0.82)),
     linear-gradient(90deg, rgba(93, 248, 234, 0.06) 1px, transparent 1px),
     linear-gradient(0deg, rgba(93, 248, 234, 0.05) 1px, transparent 1px);
-  background-size: auto, 26px 26px, 26px 26px;
+  background-size:
+    auto,
+    26px 26px,
+    26px 26px;
   backdrop-filter: blur(8px);
 }
 
@@ -46,13 +49,18 @@
 
 .loader-ring {
   inset: 0;
-  background:
-    conic-gradient(from 90deg, rgba(93, 248, 234, 0), #5df8ea, rgba(255, 90, 31, 0.95), rgba(93, 248, 234, 0));
+  background: conic-gradient(
+    from 90deg,
+    rgba(93, 248, 234, 0),
+    #5df8ea,
+    rgba(255, 90, 31, 0.95),
+    rgba(93, 248, 234, 0)
+  );
   animation: spin 1.2s linear infinite;
 }
 
 .loader-ring::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 6px;
   border-radius: 50%;
@@ -126,7 +134,7 @@
   padding: 24px;
   background:
     linear-gradient(var(--background-overlay), var(--background-overlay)),
-    url("../../../imagem candidata hemodinks.jpg") center / cover no-repeat;
+    url('/imagem-candidata-hemodinks.webp') center / cover no-repeat;
 }
 
 .error-boundary-panel {
@@ -172,7 +180,22 @@
 
 .vital-line span:nth-child(2) {
   height: 14px;
-  clip-path: polygon(0 50%, 18% 50%, 33% 0, 50% 100%, 68% 32%, 82% 50%, 100% 50%, 100% 62%, 78% 62%, 65% 46%, 50% 100%, 32% 28%, 22% 62%, 0 62%);
+  clip-path: polygon(
+    0 50%,
+    18% 50%,
+    33% 0,
+    50% 100%,
+    68% 32%,
+    82% 50%,
+    100% 50%,
+    100% 62%,
+    78% 62%,
+    65% 46%,
+    50% 100%,
+    32% 28%,
+    22% 62%,
+    0 62%
+  );
   animation-delay: 0.18s;
 }
 

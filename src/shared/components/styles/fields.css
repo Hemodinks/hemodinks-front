@@ -117,7 +117,7 @@ textarea::placeholder {
   font-weight: 700;
 }
 
-.date-input-control > input[type="text"] {
+.date-input-control > input[type='text'] {
   padding-right: 48px;
 }
 
@@ -171,7 +171,7 @@ textarea::placeholder {
   background: var(--action-accent-hover);
 }
 
-.date-picker-button input[type="date"] {
+.date-picker-button input[type='date'] {
   position: absolute;
   inset: 0;
   width: 100%;

@@ -1,13 +1,16 @@
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
-import {
-  ChevronLeft,
-  Plus,
-  Save,
-  X,
-} from 'lucide-react';
-import type { AgendaMedicalUser, AgendaNotificationRecipientOptions } from '../../types';
+import { ChevronLeft, Plus, Save, X } from 'lucide-react';
+import type { AgendaMedicalUser, AgendaNotificationRecipientOptions } from './agendaTypes';
 import { formatPersonName, formatProfileName } from '../../shared/utils/formatters';
-import { Button, CheckboxField, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
+import {
+  Button,
+  CheckboxField,
+  FormPanel,
+  IconButton,
+  SelectField,
+  TextField,
+  TextareaField,
+} from '../../shared/components/ui';
 import type { AgendaFormData } from './agendaUtils';
 
 type AgendaEventFormProps = {
@@ -67,7 +70,9 @@ export function AgendaEventForm({
             label="Título"
             type="text"
             value={formData.title}
-            onValueChange={(value) => setFormData((current) => ({ ...current, title: value.slice(0, 255) }))}
+            onValueChange={(value) =>
+              setFormData((current) => ({ ...current, title: value.slice(0, 255) }))
+            }
             maxLength={255}
             required
           />
@@ -76,7 +81,9 @@ export function AgendaEventForm({
             label="Descrição"
             type="text"
             value={formData.description}
-            onValueChange={(value) => setFormData((current) => ({ ...current, description: value.slice(0, 2000) }))}
+            onValueChange={(value) =>
+              setFormData((current) => ({ ...current, description: value.slice(0, 2000) }))
+            }
             maxLength={2000}
           />
 
@@ -85,14 +92,18 @@ export function AgendaEventForm({
               label="Início"
               type="date"
               value={formData.startDate}
-              onValueChange={(value) => setFormData((current) => ({ ...current, startDate: value }))}
+              onValueChange={(value) =>
+                setFormData((current) => ({ ...current, startDate: value }))
+              }
               required
             />
             <TextField
               label="Hora"
               type="time"
               value={formData.startTime}
-              onValueChange={(value) => setFormData((current) => ({ ...current, startTime: value }))}
+              onValueChange={(value) =>
+                setFormData((current) => ({ ...current, startTime: value }))
+              }
               required
             />
           </div>
@@ -117,18 +128,24 @@ export function AgendaEventForm({
           <CheckboxField
             label="Notificar perfil médico"
             checked={formData.notifyMedicalProfile}
-            onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyMedicalProfile: checked }))}
+            onCheckedChange={(checked) =>
+              setFormData((current) => ({ ...current, notifyMedicalProfile: checked }))
+            }
           />
 
           {formData.notifyMedicalProfile && (
             <SelectField
               label="Médico"
               value={formData.medicalUserId}
-              onChange={(event) => setFormData((current) => ({ ...current, medicalUserId: event.target.value }))}
+              onChange={(event) =>
+                setFormData((current) => ({ ...current, medicalUserId: event.target.value }))
+              }
             >
               <option value="">Perfil médico</option>
               {medicalUsers.map((user) => (
-                <option key={user.id} value={user.id}>{formatPersonName(user.nome)}</option>
+                <option key={user.id} value={user.id}>
+                  {formatPersonName(user.nome)}
+                </option>
               ))}
             </SelectField>
           )}
@@ -136,14 +153,21 @@ export function AgendaEventForm({
           <CheckboxField
             label="Receber lembretes"
             checked={formData.notifyUser}
-            onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyUser: checked }))}
+            onCheckedChange={(checked) =>
+              setFormData((current) => ({ ...current, notifyUser: checked }))
+            }
           />
 
           {(formData.notifyUser || formData.notifyMedicalProfile) && (
             <SelectField
               label="Intervalo de lembretes"
               value={formData.reminderPeriodMinutes}
-              onChange={(event) => setFormData((current) => ({ ...current, reminderPeriodMinutes: event.target.value }))}
+              onChange={(event) =>
+                setFormData((current) => ({
+                  ...current,
+                  reminderPeriodMinutes: event.target.value,
+                }))
+              }
             >
               <option value="60">A cada 1 hora</option>
               <option value="360">A cada 6 horas</option>
@@ -158,7 +182,9 @@ export function AgendaEventForm({
           <TextareaField
             label="Mensagem da notificação"
             value={formData.notificationMessage}
-            onValueChange={(value) => setFormData((current) => ({ ...current, notificationMessage: value.slice(0, 500) }))}
+            onValueChange={(value) =>
+              setFormData((current) => ({ ...current, notificationMessage: value.slice(0, 500) }))
+            }
             maxLength={500}
             placeholder="Explique a reunião, evento, auditoria ou videoconferência."
             className="agenda-notification-message"
@@ -169,7 +195,9 @@ export function AgendaEventForm({
               <CheckboxField
                 label={notificationRecipientOptions.allRecipientsLabel}
                 checked={formData.notifyAllAllowedRecipients}
-                onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyAllAllowedRecipients: checked }))}
+                onCheckedChange={(checked) =>
+                  setFormData((current) => ({ ...current, notifyAllAllowedRecipients: checked }))
+                }
               />
 
               {notificationRecipientOptions.users.length > 0 && (

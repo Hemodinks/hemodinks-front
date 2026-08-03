@@ -1,5 +1,5 @@
 import { gzipSync } from 'node:zlib';
-import { readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const distDir = join(process.cwd(), 'dist');
@@ -45,8 +45,32 @@ const entryGzipBudgetKb = readBudget('PERF_BUDGET_ENTRY_GZIP_KB', 120);
 checkBudget('entry js raw', entryPath, entryRawBudgetKb);
 checkBudget('entry js gzip', entryPath, entryGzipBudgetKb, true);
 
+const assetsDir = join(distDir, 'assets');
+const jsChunks = readdirSync(assetsDir)
+  .filter((name) => name.endsWith('.js'))
+  .map((name) => {
+    const filePath = join(assetsDir, name);
+    return {
+      filePath,
+      name,
+      gzipSize: gzipSync(readFileSync(filePath)).length,
+    };
+  })
+  .sort((left, right) => right.gzipSize - left.gzipSize);
+const largestChunk = jsChunks[0];
+
+if (largestChunk) {
+  const asyncChunkGzipBudgetKb = readBudget('PERF_BUDGET_CHUNK_GZIP_KB', 180);
+  checkBudget(
+    `largest js chunk gzip (${largestChunk.name})`,
+    largestChunk.filePath,
+    asyncChunkGzipBudgetKb,
+    true,
+  );
+}
+
 if (cssMatch) {
   const cssPath = toFilePath(cssMatch[1]);
-  const cssBudgetKb = readBudget('PERF_BUDGET_CSS_KB', 70);
+  const cssBudgetKb = readBudget('PERF_BUDGET_CSS_KB', 60);
   checkBudget('entry css raw', cssPath, cssBudgetKb);
 }
