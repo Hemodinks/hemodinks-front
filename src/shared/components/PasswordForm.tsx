@@ -2,11 +2,7 @@ import { type FormEvent, useMemo, useState } from 'react';
 import { KeyRound, X } from 'lucide-react';
 import { changePassword } from '../../services';
 import type { AuthSession } from '../domain/sessionTypes';
-import {
-  getErrorMessage,
-  getPasswordStrength,
-  MAX_PASSWORD_LENGTH,
-} from '../utils/formatters';
+import { getErrorMessage, getPasswordStrength, MAX_PASSWORD_LENGTH } from '../utils/formatters';
 import { PasswordInput } from './PasswordInput';
 
 type PasswordFormProps = {

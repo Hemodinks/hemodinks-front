@@ -2,11 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import { authenticate, listPublicClinics, resetPassword } from '../../services';
 import { queryClient } from '../../queryClient';
-import {
-  API_ASSET_BASE_URL,
-  getErrorMessage,
-  isValidEmail,
-} from '../../shared/utils/formatters';
+import { API_ASSET_BASE_URL, getErrorMessage, isValidEmail } from '../../shared/utils/formatters';
 import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
 import type { AuthSession } from './authTypes';
 import type { PublicClinic } from '../../shared/domain/clinicalContracts';

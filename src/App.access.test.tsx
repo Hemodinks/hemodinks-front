@@ -26,10 +26,7 @@ import {
   renderAuthenticatedApp,
 } from './test/appTestUi';
 import { createJwtToken, setupAppTest } from './test/appTestSetup';
-import {
-  TEST_CURRENT_PASSWORD,
-  TEST_NEW_PASSWORD,
-} from './test/passwordFixtures';
+import { TEST_CURRENT_PASSWORD, TEST_NEW_PASSWORD } from './test/passwordFixtures';
 
 vi.mock('./services', async () => {
   const { createAppServicesMock } = await import('./test/appServicesMock');
