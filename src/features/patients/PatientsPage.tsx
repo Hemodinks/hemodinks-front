@@ -1,6 +1,18 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
-import type { ModuleMode, PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
+import type {
+  Convenio,
+  Hospital,
+  OpmeFornecedor,
+  Paciente,
+  PacienteFormData,
+} from './patientTypes';
+import type { MedicalUserOption } from '../../shared/domain/clinicalContracts';
+import type {
+  ModuleMode,
+  PacienteExportFormat,
+  PacienteExportScope,
+  PacienteFilters,
+} from '../../appTypes';
 import { PatientForm } from './PatientForm';
 import { PatientList } from './PatientList';
 import './patients.css';
@@ -143,6 +155,7 @@ export function PatientsPage({
           pacienteFormLoading={pacienteFormLoading}
           pendingPatientFiles={pendingPatientFiles}
           patientFileInputKey={patientFileInputKey}
+          sessionToken={sessionToken}
           hospitais={hospitais}
           hospitaisError={hospitaisError}
           medicalUsers={medicalUsers}
@@ -159,7 +172,9 @@ export function PatientsPage({
           onPacienteFilesChange={handlePacienteFilesChange}
           onRemovePendingPatientFile={removePendingPatientFile}
           onDeletePacienteArquivo={handleDeletePacienteArquivo}
-          onOpenPacienteObservacoes={editingPaciente ? () => void handleOpenPacienteObservacoes(editingPaciente) : undefined}
+          onOpenPacienteObservacoes={
+            editingPaciente ? () => void handleOpenPacienteObservacoes(editingPaciente) : undefined
+          }
         />
       ) : (
         <PatientList

@@ -32,15 +32,17 @@
 
 .patient-info-card-highlight {
   border-left: 5px solid color-mix(in srgb, var(--action-primary) 46%, transparent);
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.12), transparent 72%),
-    var(--input-bg);
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.12), transparent 72%), var(--input-bg);
 }
 
 .patient-info-card-accent {
   border-left-color: color-mix(in srgb, var(--action-accent) 50%, transparent);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--action-accent) 12%, transparent), transparent 72%),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--action-accent) 12%, transparent),
+      transparent 72%
+    ),
     var(--input-bg);
 }
 

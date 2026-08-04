@@ -29,7 +29,11 @@ export default defineConfig(({ mode }) => ({
             return 'observability';
           }
 
-          if (id.includes('react-router-dom') || id.includes('react-dom') || id.includes('/react/')) {
+          if (
+            id.includes('react-router-dom') ||
+            id.includes('react-dom') ||
+            id.includes('/react/')
+          ) {
             return 'react-vendor';
           }
 
@@ -44,8 +48,29 @@ export default defineConfig(({ mode }) => ({
   },
   test: {
     environment: 'jsdom',
+    // Keep local and CI runs within the same worker envelope. The full suite is
+    // UI-heavy and could starve Testing Library's async queries when Vitest
+    // created one worker per available CPU, while the same tests passed alone.
+    maxWorkers: 2,
     setupFiles: './src/setupTests.ts',
     globals: true,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'html'],
+      reportsDirectory: 'coverage',
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/**/*.spec.{ts,tsx}',
+        'src/setupTests.ts',
+        'src/test/**',
+      ],
+      thresholds: {
+        statements: 79,
+        branches: 71,
+        functions: 74,
+        lines: 80,
+      },
+    },
   },
 }));

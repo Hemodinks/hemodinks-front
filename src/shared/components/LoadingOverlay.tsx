@@ -2,9 +2,15 @@ import { HeartPulse } from 'lucide-react';
 
 type LoadingOverlayProps = {
   active: boolean;
+  eyebrow?: string;
+  message?: string;
 };
 
-export function LoadingOverlay({ active }: LoadingOverlayProps) {
+export function LoadingOverlay({
+  active,
+  eyebrow = 'Processando',
+  message = 'Sincronizando dados...',
+}: LoadingOverlayProps) {
   if (!active) {
     return null;
   }
@@ -22,8 +28,8 @@ export function LoadingOverlay({ active }: LoadingOverlayProps) {
         </div>
 
         <div className="loading-copy">
-          <span className="loading-eyebrow">Processando</span>
-          <strong>Sincronizando dados...</strong>
+          <span className="loading-eyebrow">{eyebrow}</span>
+          <strong>{message}</strong>
         </div>
       </div>
     </div>

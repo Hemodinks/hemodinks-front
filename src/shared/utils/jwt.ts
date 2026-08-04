@@ -23,11 +23,7 @@ export function getJwtExpirationMs(token?: string) {
 
   const payload = decodeJwtPayload(token);
   const exp = payload?.exp;
-  const expSeconds = typeof exp === 'number'
-    ? exp
-    : typeof exp === 'string'
-      ? Number(exp)
-      : null;
+  const expSeconds = typeof exp === 'number' ? exp : typeof exp === 'string' ? Number(exp) : null;
 
   if (expSeconds === null || !Number.isFinite(expSeconds) || expSeconds <= 0) {
     return null;
@@ -43,7 +39,5 @@ export function isJwtExpired(token?: string, nowMs = Date.now(), leewayMs = 0) {
 
 export function getJwtExpirationDelayMs(token?: string, nowMs = Date.now(), leewayMs = 0) {
   const expirationMs = getJwtExpirationMs(token);
-  return expirationMs === null
-    ? null
-    : Math.max(0, expirationMs - nowMs - leewayMs);
+  return expirationMs === null ? null : Math.max(0, expirationMs - nowMs - leewayMs);
 }

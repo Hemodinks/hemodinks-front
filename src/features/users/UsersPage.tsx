@@ -1,5 +1,5 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import type { User, UserFormData } from '../../types';
+import type { User, UserFormData } from './userTypes';
 import { UserForm } from './UserForm';
 import { UserList } from './UserList';
 import './users.css';
@@ -8,6 +8,7 @@ type UsersPageProps = {
   moduleMode: 'list' | 'form';
   canAccessUsers: boolean;
   canUseUserForm: boolean;
+  canAssignAllProfiles: boolean;
   editingId: number | null;
   editingUserDetails: User | null;
   formData: UserFormData;
@@ -52,6 +53,7 @@ export function UsersPage({
   moduleMode,
   canAccessUsers,
   canUseUserForm,
+  canAssignAllProfiles,
   editingId,
   editingUserDetails,
   formData,
@@ -99,6 +101,7 @@ export function UsersPage({
         <UserForm
           canAccessUsers={canAccessUsers}
           canUseUserForm={canUseUserForm}
+          canAssignAllProfiles={canAssignAllProfiles}
           editingId={editingId}
           editingUserDetails={editingUserDetails}
           formData={formData}
