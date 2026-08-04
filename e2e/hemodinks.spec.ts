@@ -3,6 +3,13 @@ import AxeBuilder from '@axe-core/playwright';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
+const publicClinic = {
+  id: 1,
+  nome: 'Clínica Hemodinks',
+  slug: 'hemodinks',
+  fotoUrl: null,
+};
+
 const session = {
   token: 'jwt-token',
   user: {
@@ -206,6 +213,7 @@ function buildAgendaEventFromPayload(id: number, payload: Payload) {
 
 async function loginViaUi(page: Page, initialRoute = '/', loginSession = session) {
   await page.goto(initialRoute);
+  await page.getByLabel('Clínica').selectOption(String(publicClinic.id));
   await page.getByLabel('Email').fill(loginSession.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: /entrar/i }).click();
@@ -230,6 +238,10 @@ async function mockApi(page: Page, loginSession = session) {
     const url = new URL(request.url());
     const path = url.pathname;
     const method = request.method();
+
+    if (path === '/api/public/clinicas' && method === 'GET') {
+      return route.fulfill({ json: [publicClinic] });
+    }
 
     if (path === '/api/users/authenticate' && method === 'POST') {
       state.loginPayload = request.postDataJSON() as Payload;
@@ -428,10 +440,7 @@ async function captureCurrentScreenshot(page: Page, testInfo: TestInfo, name: st
 test('faz login pelo formulario e abre o dashboard', async ({ page }) => {
   const apiState = await mockApi(page);
 
-  await page.goto('/');
-  await page.getByLabel('Email').fill('gmarcone@gmail.com');
-  await page.locator('#login-password').fill(LOGIN_PASSWORD);
-  await page.getByRole('button', { name: /entrar/i }).click();
+  await loginViaUi(page);
 
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
