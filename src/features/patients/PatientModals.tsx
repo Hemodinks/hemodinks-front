@@ -1,107 +1,191 @@
+import { useEffect, useState } from 'react';
 import { FileText, X } from 'lucide-react';
-import type { Paciente } from '../../types';
+import type { Paciente } from './patientTypes';
+import type { PacienteFinanceiroResumo } from '../../shared/domain/clinicalContracts';
 import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
 import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
-import { downloadPacienteArquivo } from '../../services';
+import { usePatientDocuments } from './usePatientDocuments';
+import { formatCurrency, formatPersonName } from '../../shared/utils/formatters';
 import { getPacienteProcedimentosFromPaciente } from './patientUtils';
 import './patients.css';
 
 type PatientInfoModalProps = {
   paciente: Paciente;
+  sessionToken: string;
   onClose: () => void;
 };
 
 function renderInfoValue(label: string, value?: string | null) {
-  return value?.trim()
-    ? <CopyValue label={label} value={value} />
-    : <span className="patient-info-empty">Não informado</span>;
+  return value?.trim() ? (
+    <CopyValue label={label} value={value} />
+  ) : (
+    <span className="patient-info-empty">Não informado</span>
+  );
 }
 
-export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
+export function PatientInfoModal({ paciente, sessionToken, onClose }: PatientInfoModalProps) {
+  const patientDocuments = usePatientDocuments(sessionToken);
   const procedimentos = getPacienteProcedimentosFromPaciente(paciente);
+  const [financeiro, setFinanceiro] = useState<PacienteFinanceiroResumo | null>(null);
+  const [financeiroError, setFinanceiroError] = useState('');
+  useEffect(() => {
+    let active = true;
+    setFinanceiroError('');
+    void patientDocuments
+      .getFinancialSummary(paciente.id)
+      .then((result) => {
+        if (active) setFinanceiro(result);
+      })
+      .catch((reason) => {
+        if (active)
+          setFinanceiroError(
+            reason instanceof Error
+              ? reason.message
+              : 'Não foi possível carregar o resumo financeiro.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [paciente.id, sessionToken]);
 
   return (
     <Modal titleId="patient-info-title" className="info-modal patient-info-modal" onClose={onClose}>
-        <div className="panel-title patient-info-titlebar">
-          <div>
-            <span className="eyebrow">Informações adicionais</span>
-            <h2 id="patient-info-title">{paciente.nomePaciente}</h2>
+      <div className="panel-title patient-info-titlebar">
+        <div>
+          <span className="eyebrow">Informações adicionais</span>
+          <h2 id="patient-info-title">{formatPersonName(paciente.nomePaciente)}</h2>
+        </div>
+        <IconButton
+          label="Fechar informações do paciente"
+          title="Fechar"
+          tone="muted"
+          onClick={onClose}
+        >
+          <X size={18} />
+        </IconButton>
+      </div>
+
+      <div className="patient-info-layout">
+        <section
+          className="patient-info-procedures-card"
+          aria-label="Resumo financeiro somente leitura"
+        >
+          <div className="patient-info-section-heading">
+            <span>Resumo financeiro</span>
+            <strong>{financeiro?.statusFinanceiro || 'Carregando...'}</strong>
           </div>
-          <IconButton label="Fechar informações do paciente" title="Fechar" tone="muted" onClick={onClose}>
-            <X size={18} />
-          </IconButton>
-        </div>
-
-        <div className="patient-info-layout">
-          <section className="patient-info-summary-grid" aria-label="Resumo do paciente">
-            <article className="patient-info-card patient-info-card-highlight">
-              <span>Hospital</span>
-              <div className="patient-info-card-content">
-                {renderInfoValue('hospital do paciente', paciente.hospital)}
-              </div>
-            </article>
-
-            <article className="patient-info-card patient-info-card-highlight patient-info-card-accent">
-              <span>Convênio</span>
-              <div className="patient-info-card-content">
-                {renderInfoValue('convênio do paciente', paciente.convenio)}
-              </div>
-            </article>
-          </section>
-
-          <section className="patient-info-detail-grid" aria-label="Informações clínicas do paciente">
-            <article className="patient-info-card">
-              <span>Diagnóstico</span>
-              <div className="patient-info-card-content">
-                {renderInfoValue('diagnóstico do paciente', paciente.diagnostico)}
-              </div>
-            </article>
-
-            <article className="patient-info-card">
-              <span>Tratamento médico</span>
-              <div className="patient-info-card-content">
-                {renderInfoValue('tratamento médico do paciente', paciente.tratamentoMedico)}
-              </div>
-            </article>
-
-            <article className="patient-info-card">
-              <span>Cirurgião</span>
-              <div className="patient-info-card-content">
-                {renderInfoValue('cirurgião do paciente', paciente.medico)}
-              </div>
-            </article>
-
-            <article className="patient-info-card">
-              <span>Fornecedor OPME</span>
-              <div className="patient-info-card-content">
-                {renderInfoValue('fornecedor OPME', paciente.opmeFornecedor)}
-              </div>
-            </article>
-          </section>
-
-          <section className="patient-info-procedures-card" aria-label="Procedimentos do paciente">
-            <div className="patient-info-section-heading">
-              <span>Procedimentos</span>
-              <strong>{procedimentos.length ? `${procedimentos.length} cadastrado(s)` : 'Nenhum procedimento cadastrado'}</strong>
-            </div>
-
-            {procedimentos.length ? (
-              <ol className="info-procedure-list patient-info-procedure-list">
-                {procedimentos.map((procedimento, index) => (
-                  <li key={`${procedimento.cbhpmCodigo || procedimento.procedimento}-${index}`}>
-                    <CopyValue label="procedimento médico" value={`${procedimento.cbhpmCodigo || 'Sem código'} - ${procedimento.procedimento}`} />
-                    {procedimento.cbhpmPorte && <span className="status-pill active">{procedimento.cbhpmPorte}</span>}
-                  </li>
+          {financeiro?.origemDados === 'Legado' && (
+            <p className="file-hint">
+              Compatibilidade temporária: valores somente leitura provenientes do cadastro legado.
+            </p>
+          )}
+          {financeiro?.avisos.map((aviso) => (
+            <AlertMessage key={aviso} type="error">
+              {aviso}
+            </AlertMessage>
+          ))}
+          {financeiroError ? (
+            <AlertMessage type="error">{financeiroError}</AlertMessage>
+          ) : (
+            financeiro && (
+              <dl className="billing-checklist">
+                {[
+                  ['Valor apresentado', financeiro.valorApresentado],
+                  ['Valor glosado', financeiro.valorGlosado],
+                  ['Valor reconhecido', financeiro.valorReconhecido],
+                  ['Valor recebido', financeiro.valorRecebido],
+                  ['Saldo em aberto', financeiro.saldoAberto],
+                ].map(([label, value]) => (
+                  <div className="billing-checklist-row" key={String(label)}>
+                    <dt>{label}</dt>
+                    <dd>
+                      <strong>{formatCurrency(Number(value))}</strong>
+                    </dd>
+                  </div>
                 ))}
-              </ol>
-            ) : (
-              <p className="patient-info-empty">Nenhum procedimento informado.</p>
-            )}
-          </section>
-        </div>
-      </Modal>
+              </dl>
+            )
+          )}
+        </section>
+        <section className="patient-info-summary-grid" aria-label="Resumo do paciente">
+          <article className="patient-info-card patient-info-card-highlight">
+            <span>Hospital</span>
+            <div className="patient-info-card-content">
+              {renderInfoValue('hospital do paciente', paciente.hospital)}
+            </div>
+          </article>
+
+          <article className="patient-info-card patient-info-card-highlight patient-info-card-accent">
+            <span>Convênio</span>
+            <div className="patient-info-card-content">
+              {renderInfoValue('convênio do paciente', paciente.convenio)}
+            </div>
+          </article>
+        </section>
+
+        <section className="patient-info-detail-grid" aria-label="Informações clínicas do paciente">
+          <article className="patient-info-card">
+            <span>Diagnóstico</span>
+            <div className="patient-info-card-content">
+              {renderInfoValue('diagnóstico do paciente', paciente.diagnostico)}
+            </div>
+          </article>
+
+          <article className="patient-info-card">
+            <span>Tratamento médico</span>
+            <div className="patient-info-card-content">
+              {renderInfoValue('tratamento médico do paciente', paciente.tratamentoMedico)}
+            </div>
+          </article>
+
+          <article className="patient-info-card">
+            <span>Cirurgião</span>
+            <div className="patient-info-card-content">
+              {renderInfoValue('cirurgião do paciente', formatPersonName(paciente.medico))}
+            </div>
+          </article>
+
+          <article className="patient-info-card">
+            <span>Fornecedor OPME</span>
+            <div className="patient-info-card-content">
+              {renderInfoValue('fornecedor OPME', paciente.opmeFornecedor)}
+            </div>
+          </article>
+        </section>
+
+        <section className="patient-info-procedures-card" aria-label="Procedimentos do paciente">
+          <div className="patient-info-section-heading">
+            <span>Procedimentos</span>
+            <strong>
+              {procedimentos.length
+                ? `${procedimentos.length} cadastrado(s)`
+                : 'Nenhum procedimento cadastrado'}
+            </strong>
+          </div>
+
+          {procedimentos.length ? (
+            <ol className="info-procedure-list patient-info-procedure-list">
+              {procedimentos.map((procedimento, index) => (
+                <li key={`${procedimento.cbhpmCodigo || procedimento.procedimento}-${index}`}>
+                  <CopyValue
+                    label="procedimento médico"
+                    value={`${procedimento.cbhpmCodigo || 'Sem código'} - ${procedimento.procedimento}`}
+                  />
+                  {procedimento.cbhpmPorte && (
+                    <span className="status-pill active">{procedimento.cbhpmPorte}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="patient-info-empty">Nenhum procedimento informado.</p>
+          )}
+        </section>
+      </div>
+    </Modal>
   );
 }
 
@@ -113,38 +197,54 @@ type PatientFilesModalProps = {
   onClose: () => void;
 };
 
-export function PatientFilesModal({ paciente, loading, error, sessionToken, onClose }: PatientFilesModalProps) {
+export function PatientFilesModal({
+  paciente,
+  loading,
+  error,
+  sessionToken,
+  onClose,
+}: PatientFilesModalProps) {
+  const patientDocuments = usePatientDocuments(sessionToken);
   return (
     <Modal titleId="patient-files-title" className="info-modal files-modal" onClose={onClose}>
-        <div className="panel-title">
-          <div>
-            <span className="eyebrow">Arquivos anexos</span>
-            <h2 id="patient-files-title">{paciente.nomePaciente}</h2>
-          </div>
-          <IconButton label="Fechar arquivos do paciente" title="Fechar" tone="muted" onClick={onClose}>
-            <X size={18} />
-          </IconButton>
+      <div className="panel-title">
+        <div>
+          <span className="eyebrow">Arquivos anexos</span>
+          <h2 id="patient-files-title">{formatPersonName(paciente.nomePaciente)}</h2>
         </div>
+        <IconButton
+          label="Fechar arquivos do paciente"
+          title="Fechar"
+          tone="muted"
+          onClick={onClose}
+        >
+          <X size={18} />
+        </IconButton>
+      </div>
 
-        {loading && <AlertMessage type="success" icon={<FileText size={17} />}>Carregando arquivos...</AlertMessage>}
-        {error && <AlertMessage type="error">{error}</AlertMessage>}
+      {loading && (
+        <AlertMessage type="success" icon={<FileText size={17} />}>
+          Carregando arquivos...
+        </AlertMessage>
+      )}
+      {error && <AlertMessage type="error">{error}</AlertMessage>}
 
-        {paciente.arquivos?.length ? (
-          <ul className="file-list modal-file-list">
-            {paciente.arquivos.map((arquivo) => (
-              <li key={arquivo.id}>
-                <FileText size={16} />
-                <span>{arquivo.nomeOriginal}</span>
-                <SecureFileDownloadButton
-                  fileName={arquivo.nomeOriginal}
-                  loadFile={() => downloadPacienteArquivo(paciente.id, arquivo.id, sessionToken)}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : !loading && !error ? (
-          <p className="empty-row">Nenhum arquivo anexado.</p>
-        ) : null}
-      </Modal>
+      {paciente.arquivos?.length ? (
+        <ul className="file-list modal-file-list">
+          {paciente.arquivos.map((arquivo) => (
+            <li key={arquivo.id}>
+              <FileText size={16} />
+              <span>{arquivo.nomeOriginal}</span>
+              <SecureFileDownloadButton
+                fileName={arquivo.nomeOriginal}
+                loadFile={() => patientDocuments.download(paciente.id, arquivo.id)}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : !loading && !error ? (
+        <p className="empty-row">Nenhum arquivo anexado.</p>
+      ) : null}
+    </Modal>
   );
 }

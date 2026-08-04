@@ -1,30 +1,11 @@
-import { type Dispatch, type FormEvent, type SetStateAction, useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  createMedicalGroup,
-  deleteMedicalGroup,
-  getMedicalGroup,
-  getMedicalGroups,
-  getScopedMedicalUsers,
-  updateMedicalGroup,
-} from '../../services';
+import { type Dispatch, type FormEvent, type SetStateAction, useState } from 'react';
 import type { AppView, ModuleMode } from '../../appTypes';
-import { queryClient } from '../../queryClient';
-import { queryKeys } from '../../shared/queryKeys';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { getErrorMessage, PAGE_SIZE } from '../../shared/utils/formatters';
-import { getPagedItems, getPagedTotal, getPagedTotalPages, sortUsersByName } from '../../shared/utils/listing';
-import type { AuthSession, MedicalGroup, MedicalGroupFormData, MedicalUserOption } from '../../types';
-
-const LIST_CACHE_TIME_MS = 20 * 1000;
-const LOOKUP_CACHE_TIME_MS = 30 * 60 * 1000;
-const GROUPS_COUNT_QUERY = {
-  page: 1,
-  pageSize: 1,
-  search: '',
-  sortBy: 'recent',
-  sortDirection: 'desc' as const,
-};
+import type { AuthSession } from '../../shared/domain/sessionTypes';
+import type { MedicalGroup, MedicalGroupFormData } from './medicalGroupTypes';
+import type { MedicalUserOption } from '../../shared/domain/clinicalContracts';
+import { useMedicalGroupsResources } from './useMedicalGroupsResources';
 
 const emptyMedicalGroupForm: MedicalGroupFormData = {
   nome: '',
@@ -52,7 +33,6 @@ export function useMedicalGroupsDomain({
   confirmAction,
 }: UseMedicalGroupsDomainOptions) {
   const [groups, setGroups] = useState<MedicalGroup[]>([]);
-  const [groupsLoading, setGroupsLoading] = useState(false);
   const [groupsError, setGroupsError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,83 +44,28 @@ export function useMedicalGroupsDomain({
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
   const [formData, setFormData] = useState<MedicalGroupFormData>(emptyMedicalGroupForm);
   const [formError, setFormError] = useState('');
-  const [formLoading, setFormLoading] = useState(false);
   const [availableMedicalUsers, setAvailableMedicalUsers] = useState<MedicalUserOption[]>([]);
 
-  const sessionReady = Boolean(session && !session.user.precisaTrocarSenha && canAccessMedicalGroups);
-  const groupsQueryParams = useMemo(() => ({
-    page: currentPage,
-    pageSize: PAGE_SIZE,
-    search: searchTerm,
+  const resources = useMedicalGroupsResources({
+    session,
+    activeView,
+    moduleMode,
+    canAccessMedicalGroups,
+    currentPage,
+    searchTerm,
     sortBy,
     sortDirection,
-  }), [currentPage, searchTerm, sortBy, sortDirection]);
-  const groupsQuery = useQuery({
-    queryKey: queryKeys.medicalGroups(session?.token ?? '', groupsQueryParams),
-    queryFn: () => getMedicalGroups(session?.token ?? '', groupsQueryParams),
-    enabled: sessionReady && activeView === 'medicalGroups' && moduleMode === 'list',
-    staleTime: LIST_CACHE_TIME_MS,
+    totalItems,
+    setGroups,
+    setGroupsError,
+    setTotalItems,
+    setTotalPages,
+    setAvailableMedicalUsers,
   });
-  const groupsCountQuery = useQuery({
-    queryKey: queryKeys.medicalGroups(session?.token ?? '', GROUPS_COUNT_QUERY),
-    queryFn: () => getMedicalGroups(session?.token ?? '', GROUPS_COUNT_QUERY),
-    enabled: sessionReady,
-    staleTime: LIST_CACHE_TIME_MS,
-  });
-  const availableMedicalUsersQuery = useQuery({
-    queryKey: queryKeys.medicalUsers(session?.token ?? ''),
-    queryFn: () => getScopedMedicalUsers(session?.token ?? ''),
-    enabled: sessionReady,
-    staleTime: LOOKUP_CACHE_TIME_MS,
-  });
-  const saveMedicalGroupMutation = useMutation({
-    mutationFn: ({ id, payload, token }: { id: number | null; payload: MedicalGroupFormData; token: string }) => (
-      id ? updateMedicalGroup(id, payload, token) : createMedicalGroup(payload, token)
-    ),
-  });
-  const deleteMedicalGroupMutation = useMutation({
-    mutationFn: ({ id, token }: { id: number; token: string }) => deleteMedicalGroup(id, token),
-  });
-
-  useEffect(() => {
-    setGroupsLoading(groupsQuery.isFetching);
-  }, [groupsQuery.isFetching]);
-
-  useEffect(() => {
-    if (!groupsQuery.data) {
-      return;
-    }
-
-    setGroups(getPagedItems(groupsQuery.data));
-    setTotalItems(getPagedTotal(groupsQuery.data));
-    setTotalPages(getPagedTotalPages(groupsQuery.data));
-    setGroupsError('');
-  }, [groupsQuery.data]);
-
-  useEffect(() => {
-    if (groupsQuery.error) {
-      setGroupsError(getErrorMessage(groupsQuery.error));
-    }
-  }, [groupsQuery.error]);
-
-  useEffect(() => {
-    if (!availableMedicalUsersQuery.data) {
-      return;
-    }
-
-    setAvailableMedicalUsers(sortUsersByName(availableMedicalUsersQuery.data));
-  }, [availableMedicalUsersQuery.data]);
-
-  useEffect(() => {
-    if (availableMedicalUsersQuery.error) {
-      setGroupsError(getErrorMessage(availableMedicalUsersQuery.error));
-    }
-  }, [availableMedicalUsersQuery.error]);
+  const { groupsLoading, formLoading, medicalGroupsCount } = resources;
 
   const visibleStart = totalItems ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
   const visibleEnd = totalItems ? Math.min(totalItems, visibleStart + groups.length - 1) : 0;
-  const medicalGroupsCount = groupsCountQuery.data ? getPagedTotal(groupsCountQuery.data) : totalItems;
-
   const resetForm = () => {
     setEditingGroupId(null);
     setFormData(emptyMedicalGroupForm);
@@ -149,7 +74,6 @@ export function useMedicalGroupsDomain({
 
   const resetMedicalGroupsState = () => {
     setGroups([]);
-    setGroupsLoading(false);
     setGroupsError('');
     setSuccessMessage('');
     setSearchTerm('');
@@ -162,29 +86,7 @@ export function useMedicalGroupsDomain({
     resetForm();
   };
 
-  const loadMedicalGroups = async (token = session?.token, forceRefresh = false) => {
-    if (!token) {
-      return;
-    }
-
-    if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.medicalGroupsRoot(token) });
-    }
-
-    await groupsQuery.refetch();
-  };
-
-  const loadAvailableMedicalUsers = async (token = session?.token, forceRefresh = false) => {
-    if (!token) {
-      return;
-    }
-
-    if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(token) });
-    }
-
-    await availableMedicalUsersQuery.refetch();
-  };
+  const { loadMedicalGroups, loadAvailableMedicalUsers } = resources;
 
   const openMedicalGroupsList = () => {
     navigateToView('medicalGroups');
@@ -211,10 +113,8 @@ export function useMedicalGroupsDomain({
     setFormError('');
     navigateToView('medicalGroups');
     setModuleMode('form');
-    setFormLoading(true);
-
     try {
-      const details = await getMedicalGroup(group.id, session.token);
+      const details = await resources.editOperation.execute(group.id, session.token);
       setEditingGroupId(details.id);
       setFormData({
         nome: details.nome,
@@ -224,8 +124,6 @@ export function useMedicalGroupsDomain({
       await loadAvailableMedicalUsers(session.token);
     } catch (error) {
       setFormError(getErrorMessage(error));
-    } finally {
-      setFormLoading(false);
     }
   };
 
@@ -238,7 +136,7 @@ export function useMedicalGroupsDomain({
     setSuccessMessage('');
 
     try {
-      await deleteMedicalGroupMutation.mutateAsync({ id: group.id, token: session.token });
+      await resources.deleteMutation.mutateAsync({ id: group.id, token: session.token });
       setSuccessMessage('Grupo médico excluído.');
       await loadMedicalGroups(session.token, true);
     } catch (error) {
@@ -274,13 +172,12 @@ export function useMedicalGroupsDomain({
       return;
     }
 
-    setFormLoading(true);
     setFormError('');
     setGroupsError('');
     setSuccessMessage('');
 
     try {
-      await saveMedicalGroupMutation.mutateAsync({
+      await resources.saveMutation.mutateAsync({
         id: editingGroupId,
         payload: {
           nome: formData.nome.trim(),
@@ -294,8 +191,6 @@ export function useMedicalGroupsDomain({
       await loadMedicalGroups(session.token, true);
     } catch (error) {
       setFormError(getErrorMessage(error));
-    } finally {
-      setFormLoading(false);
     }
   };
 

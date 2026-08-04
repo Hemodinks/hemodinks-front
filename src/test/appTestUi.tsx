@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { expect, vi } from 'vitest';
 import App from '../App';
 import * as api from '../services';
-import type { AuthSession } from '../types';
+import type { AuthSession } from '../features/auth/authTypes';
 import { mockSession, toLoginResponse } from './appTestData';
 
 export function getVisibleFirstColumnValues() {
@@ -31,6 +31,9 @@ export async function renderAuthenticatedApp(options?: {
   await user.type(screen.getByLabelText('Email'), session.user.email);
   await user.type(screen.getByLabelText('Senha'), options?.password ?? 'SenhaAlterada@123');
   await user.click(screen.getByRole('button', { name: /entrar/i }));
+  if (!options?.initialPath) {
+    await screen.findByText('Painel informativo');
+  }
 
   return { user, session };
 }

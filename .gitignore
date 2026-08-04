@@ -7,5 +7,7 @@ npm-debug.log*
 test-results
 playwright-report
 reports
+coverage
 .lighthouseci
 public/otel-runtime-config.json
+vercel.json.example

@@ -1,6 +1,18 @@
 export type Theme = 'light' | 'dark';
 
-export type AppView = 'dashboard' | 'users' | 'profile' | 'patients' | 'billing' | 'medicalGroups' | 'agenda' | 'settings' | 'clinics';
+export type AppView =
+  | 'dashboard'
+  | 'users'
+  | 'profile'
+  | 'patients'
+  | 'attendances'
+  | 'billing'
+  | 'finance'
+  | 'prices'
+  | 'medicalGroups'
+  | 'agenda'
+  | 'settings'
+  | 'clinics';
 
 export type ModuleMode = 'list' | 'form';
 

@@ -41,10 +41,11 @@ Minimo para qualquer build publicado:
 VITE_API_URL=https://<api-publica>
 VITE_APP_ENV=production
 VITE_APP_VERSION=<versao-ou-sha>
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
+VITE_SENTRY_DSN=https://<dsn-publico-do-projeto>@<host>/<project-id>
+VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
 ```
 
-Observabilidade opcional no browser:
+Provedores adicionais de observabilidade, opcionais no browser:
 
 ```text
 VITE_NEW_RELIC_ACCOUNT_ID=<opcional>
@@ -54,7 +55,6 @@ VITE_NEW_RELIC_BEACON=<opcional>
 VITE_NEW_RELIC_ERROR_BEACON=<opcional>
 VITE_NEW_RELIC_LICENSE_KEY=<opcional>
 VITE_NEW_RELIC_TRUST_KEY=<opcional>
-VITE_SENTRY_DSN=<opcional>
 VITE_OTEL_EXPORTER_OTLP_ENDPOINT=<opcional>
 VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=<opcional>
 VITE_OTEL_EXPORTER_OTLP_HEADERS=<opcional>
@@ -62,6 +62,29 @@ VITE_OTEL_EXPORTER_OTLP_TRACES_HEADERS=<opcional>
 VITE_OTEL_SERVICE_NAME=hemodinks-front
 VITE_OTEL_TRACES_SAMPLE_RATE=1
 ```
+
+Para o deploy no Azure Static Web Apps, cadastre no GitHub
+`Hemodinks/hemodinks-front`, em **Settings > Secrets and variables > Actions**:
+
+Variaveis:
+
+```text
+VITE_NEW_RELIC_ACCOUNT_ID
+VITE_NEW_RELIC_AGENT_ID
+VITE_NEW_RELIC_APPLICATION_ID
+VITE_NEW_RELIC_TRUST_KEY
+```
+
+Secret:
+
+```text
+VITE_NEW_RELIC_LICENSE_KEY
+```
+
+Os valores devem vir da aplicacao de Browser criada na New Relic. A license key
+do Browser nao deve ser substituida pela ingest license key usada pelo agente
+.NET da API. O workflow injeta esses valores no `npm run build`, pois variaveis
+Vite sao incorporadas aos arquivos estaticos durante a compilacao.
 
 Notas:
 
@@ -158,7 +181,7 @@ VITE_OTEL_SERVICE_NAME
 VITE_OTEL_TRACES_SAMPLE_RATE
 ```
 
-O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate principal para PRs e pushes, pois ele roda testes, build, budget e E2E. Lighthouse fica separado em `.github/workflows/lighthouse.yml` e deve ser iniciado manualmente quando necessario.
+O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate principal para PRs e pushes, pois ele roda testes, build, budget e E2E. Lighthouse fica separado em `.github/workflows/lighthouse.yml`, roda toda segunda-feira às 10:00 UTC e também pode ser iniciado manualmente. O audit falha se alguma rota ultrapassar LCP de 2.500 ms, CLS de 0,1 ou ficar abaixo de 95% em acessibilidade.
 
 ## Render producao
 
@@ -176,7 +199,7 @@ Variaveis do blueprint:
 ```text
 NODE_VERSION=22.12.0
 VITE_APP_ENV=production
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
+VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
 ```
 
 Variaveis que precisam ser preenchidas manualmente:
@@ -189,7 +212,7 @@ VITE_NEW_RELIC_AGENT_ID=<opcional>
 VITE_NEW_RELIC_APPLICATION_ID=<opcional>
 VITE_NEW_RELIC_LICENSE_KEY=<opcional>
 VITE_NEW_RELIC_TRUST_KEY=<opcional>
-VITE_SENTRY_DSN=<opcional>
+VITE_SENTRY_DSN=https://<dsn-publico-do-projeto>@<host>/<project-id>
 ```
 
 ## Render homologacao: confirmation
@@ -206,10 +229,10 @@ Variaveis principais:
 
 ```text
 NODE_VERSION=22.12.0
-VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
+VITE_API_URL=https://hemodinks-api-1-90nb.onrender.com
 VITE_APP_ENV=confirmation
 VITE_APP_VERSION=<versao-ou-sha>
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
+VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
 ```
 
 Use `.env.confirmation.example` para reproduzir esse build localmente.

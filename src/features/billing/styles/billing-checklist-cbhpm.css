@@ -1,0 +1,178 @@
+.billing-procedure-value {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.billing-checklist {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.billing-checklist-row {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.billing-checklist-row dt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.billing-checklist-row dd {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.billing-checklist-row dd strong {
+  color: var(--ink);
+}
+
+.billing-flag {
+  min-width: 74px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-flag.ok {
+  color: #166534;
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.billing-flag.warning {
+  color: #9a3412;
+  background: rgba(249, 115, 22, 0.16);
+}
+
+.billing-cbhpm-open {
+  min-height: 42px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--action-success);
+  border-color: color-mix(in srgb, var(--action-success) 82%, black);
+  color: white;
+}
+
+.billing-cbhpm-open:hover {
+  background: var(--action-success-hover);
+}
+
+.modal-panel.billing-cbhpm-modal {
+  width: min(980px, calc(100dvw - 64px));
+  max-width: calc(100dvw - 64px);
+  max-height: min(90vh, 850px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.billing-cbhpm-filters {
+  display: grid;
+  grid-template-columns:
+    minmax(150px, 0.65fr) minmax(280px, 1.5fr) minmax(90px, 0.4fr)
+    auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+.billing-cbhpm-manual-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: -6px 0 12px;
+}
+
+.billing-cbhpm-manual {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: white;
+  background: var(--action-warning);
+  border-color: color-mix(in srgb, var(--action-warning) 82%, black);
+}
+
+.billing-cbhpm-filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.billing-cbhpm-filter-actions button {
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.billing-cbhpm-table-wrap {
+  flex: 1 1 auto;
+  min-height: 240px;
+  overflow: auto;
+}
+
+.billing-cbhpm-table {
+  min-width: 850px;
+}
+
+.billing-cbhpm-table th:first-child,
+.billing-cbhpm-table td:first-child {
+  width: 150px;
+  white-space: nowrap;
+}
+
+.billing-cbhpm-table th:nth-child(3),
+.billing-cbhpm-table td:nth-child(3) {
+  width: 90px;
+}
+
+.billing-cbhpm-table th:nth-child(4),
+.billing-cbhpm-table td:nth-child(4) {
+  width: 160px;
+}
+
+.billing-cbhpm-table th:last-child,
+.billing-cbhpm-table td:last-child {
+  width: 145px;
+}
+
+.billing-cbhpm-select {
+  width: 125px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: white;
+  background: var(--action-success);
+  border-color: color-mix(in srgb, var(--action-success) 82%, black);
+}
+
+.billing-cbhpm-select:hover {
+  color: white;
+  background: var(--action-success-hover);
+}
+
+.billing-cbhpm-pagination {
+  flex: 0 0 auto;
+  margin-top: 14px;
+}

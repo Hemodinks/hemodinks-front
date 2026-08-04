@@ -1,7 +1,9 @@
-import type { AuthSession, LoginResponse } from '../types';
+import type {
+  AuthSession,
+  LoginSessionResponse as LoginResponse,
+} from '../shared/domain/sessionTypes';
 import {
   CONTROLLER_PROFILE_ID,
-  DEFAULT_PASSWORD,
   DEFAULT_PROFILE_ID,
   formatProfileName,
   MEDICAL_PROFILE_ID,
@@ -11,7 +13,7 @@ export function shouldOpenDashboardAfterLogin(perfilId: number) {
   return perfilId === MEDICAL_PROFILE_ID || perfilId === CONTROLLER_PROFILE_ID;
 }
 
-export function buildSessionFromLogin(result: LoginResponse, loginPassword: string): AuthSession {
+export function buildSessionFromLogin(result: LoginResponse): AuthSession {
   const resultPerfilId = result.perfilId || DEFAULT_PROFILE_ID;
 
   return {
@@ -26,7 +28,7 @@ export function buildSessionFromLogin(result: LoginResponse, loginPassword: stri
       crm: result.crm ?? null,
       crmUf: result.crmUf ?? null,
       fotoPerfil: result.fotoPerfil ?? null,
-      precisaTrocarSenha: result.precisaTrocarSenha || loginPassword === DEFAULT_PASSWORD,
+      precisaTrocarSenha: result.precisaTrocarSenha,
       perfilId: resultPerfilId,
       perfilNome: formatProfileName(resultPerfilId, result.perfilNome),
       modulosLiberados: result.modulosLiberados,
@@ -36,7 +38,5 @@ export function buildSessionFromLogin(result: LoginResponse, loginPassword: stri
 }
 
 export function getResetPasswordCompletedMessage(message: string) {
-  return /nova senha/i.test(message)
-    ? message
-    : `${message}. Entre com a nova senha.`;
+  return /nova senha/i.test(message) ? message : `${message}. Entre com a nova senha.`;
 }

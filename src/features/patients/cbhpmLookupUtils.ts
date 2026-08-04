@@ -24,8 +24,10 @@ export function areCbhpmAutoSearchFiltersEqual(
   current: CbhpmAutoSearchFilters,
   debounced: CbhpmAutoSearchFilters,
 ) {
-  return normalizeCbhpmCodigo(current.codigo) === normalizeCbhpmCodigo(debounced.codigo)
-    && current.procedimento.trim() === debounced.procedimento.trim();
+  return (
+    normalizeCbhpmCodigo(current.codigo) === normalizeCbhpmCodigo(debounced.codigo) &&
+    current.procedimento.trim() === debounced.procedimento.trim()
+  );
 }
 
 export function buildAppliedCbhpmFilters(
@@ -43,7 +45,8 @@ export function getCbhpmFilterValidationMessage(filters: CbhpmFilters) {
   const codigo = normalizeCbhpmCodigo(filters.codigo);
   const procedimento = normalizeCbhpmSearchText(filters.procedimento);
   const hasInvalidCodigo = codigo.length > 0 && codigo.length < CBHPM_SEARCH_MIN_LENGTH;
-  const hasInvalidProcedimento = procedimento.length > 0 && procedimento.length < CBHPM_SEARCH_MIN_LENGTH;
+  const hasInvalidProcedimento =
+    procedimento.length > 0 && procedimento.length < CBHPM_SEARCH_MIN_LENGTH;
 
   if (hasInvalidCodigo && hasInvalidProcedimento) {
     return 'Informe pelo menos 3 dígitos no código e 3 caracteres na descrição para consultar.';

@@ -1,40 +1,65 @@
-import type { Paciente } from '../../types';
-import { toDisplayDate } from '../../shared/utils/formatters';
+import type { Paciente } from './patientTypes';
+import { formatPersonName, toDisplayDate } from '../../shared/utils/formatters';
 import { normalizeCbhpmCodigo } from './patientUtils';
 
 export const pacienteExportColumns = [
-  { header: 'Paciente', getValue: (paciente: Paciente) => paciente.nomePaciente },
-  { header: 'Data procedimento', getValue: (paciente: Paciente) => toDisplayDate(paciente.data || '') || '-' },
+  { header: 'Paciente', getValue: (paciente: Paciente) => formatPersonName(paciente.nomePaciente) },
+  {
+    header: 'Data procedimento',
+    getValue: (paciente: Paciente) => toDisplayDate(paciente.data || '') || '-',
+  },
   { header: 'Hospital', getValue: (paciente: Paciente) => paciente.hospital || '-' },
-  { header: 'Cirurgião', getValue: (paciente: Paciente) => paciente.medico || '-' },
-  { header: 'Médico auxiliar 1', getValue: (paciente: Paciente) => paciente.medicoAuxiliar1 || '-' },
-  { header: 'Médico auxiliar 2', getValue: (paciente: Paciente) => paciente.medicoAuxiliar2 || '-' },
+  {
+    header: 'Cirurgião',
+    getValue: (paciente: Paciente) => formatPersonName(paciente.medico) || '-',
+  },
+  {
+    header: 'Médico auxiliar 1',
+    getValue: (paciente: Paciente) => formatPersonName(paciente.medicoAuxiliar1) || '-',
+  },
+  {
+    header: 'Médico auxiliar 2',
+    getValue: (paciente: Paciente) => formatPersonName(paciente.medicoAuxiliar2) || '-',
+  },
   { header: 'Convênio', getValue: (paciente: Paciente) => paciente.convenio || '-' },
   { header: 'Fornecedor OPME', getValue: (paciente: Paciente) => paciente.opmeFornecedor || '-' },
-  { header: 'Código CBHPM', getValue: (paciente: Paciente) => normalizeCbhpmCodigo(paciente.cbhpmCodigo) || '-' },
+  {
+    header: 'Código CBHPM',
+    getValue: (paciente: Paciente) => normalizeCbhpmCodigo(paciente.cbhpmCodigo) || '-',
+  },
   { header: 'Porte CBHPM', getValue: (paciente: Paciente) => paciente.cbhpmPorte || '-' },
   { header: 'Procedimento', getValue: (paciente: Paciente) => paciente.procedimento || '-' },
   { header: 'Autorização', getValue: (paciente: Paciente) => paciente.autorizacao || '-' },
   { header: 'Pagamento', getValue: (paciente: Paciente) => paciente.pagamento || '-' },
   { header: 'Repasse/Glosa', getValue: (paciente: Paciente) => paciente.repasseGlosa || '-' },
-  { header: 'Status pago', getValue: (paciente: Paciente) => (paciente.statusPago ? 'Pago' : 'Pendente') },
+  {
+    header: 'Status pago',
+    getValue: (paciente: Paciente) => (paciente.statusPago ? 'Pago' : 'Pendente'),
+  },
   { header: 'Ativo', getValue: (paciente: Paciente) => (paciente.ativo ? 'Sim' : 'Não') },
-  { header: 'Arquivos', getValue: (paciente: Paciente) => String(paciente.arquivosCount ?? paciente.arquivos.length) },
+  {
+    header: 'Arquivos',
+    getValue: (paciente: Paciente) => String(paciente.arquivosCount ?? paciente.arquivos.length),
+  },
 ] as const;
 
 export function getPacienteExportRows(items: Paciente[]) {
-  return items.map((paciente) => Object.fromEntries(
-    pacienteExportColumns.map((column) => [column.header, column.getValue(paciente)]),
-  ));
+  return items.map((paciente) =>
+    Object.fromEntries(
+      pacienteExportColumns.map((column) => [column.header, column.getValue(paciente)]),
+    ),
+  );
 }
 
 function slugifyFilePart(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'empresa';
+  return (
+    value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'empresa'
+  );
 }
 
 export function getPatientExportFileName(extension: 'xlsx' | 'pdf', companyName = 'Hemodinks') {
@@ -67,25 +92,31 @@ function getExcelColumnName(index: number) {
 function buildWorksheetXml(rows: Record<string, string>[]) {
   const headers = pacienteExportColumns.map((column) => column.header);
   const sheetRows = [headers, ...rows.map((row) => headers.map((header) => row[header] ?? ''))];
-  const columnsXml = headers.map((header, index) => {
-    const width = Math.min(36, Math.max(14, header.length + 4));
-    const columnNumber = index + 1;
-    return `<col min="${columnNumber}" max="${columnNumber}" width="${width}" customWidth="1"/>`;
-  }).join('');
+  const columnsXml = headers
+    .map((header, index) => {
+      const width = Math.min(36, Math.max(14, header.length + 4));
+      const columnNumber = index + 1;
+      return `<col min="${columnNumber}" max="${columnNumber}" width="${width}" customWidth="1"/>`;
+    })
+    .join('');
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
   <cols>${columnsXml}</cols>
   <sheetData>
-    ${sheetRows.map((cells, rowIndex) => {
-      const rowNumber = rowIndex + 1;
-      const cellXml = cells.map((cell, cellIndex) => {
-        const cellReference = `${getExcelColumnName(cellIndex)}${rowNumber}`;
-        const headerStyle = rowIndex === 0 ? ' s="1"' : '';
-        return `<c r="${cellReference}"${headerStyle} t="inlineStr"><is><t>${escapeXml(String(cell))}</t></is></c>`;
-      }).join('');
-      return `<row r="${rowNumber}">${cellXml}</row>`;
-    }).join('\n    ')}
+    ${sheetRows
+      .map((cells, rowIndex) => {
+        const rowNumber = rowIndex + 1;
+        const cellXml = cells
+          .map((cell, cellIndex) => {
+            const cellReference = `${getExcelColumnName(cellIndex)}${rowNumber}`;
+            const headerStyle = rowIndex === 0 ? ' s="1"' : '';
+            return `<c r="${cellReference}"${headerStyle} t="inlineStr"><is><t>${escapeXml(String(cell))}</t></is></c>`;
+          })
+          .join('');
+        return `<row r="${rowNumber}">${cellXml}</row>`;
+      })
+      .join('\n    ')}
   </sheetData>
 </worksheet>`;
 }
@@ -123,7 +154,7 @@ function getCrc32Table() {
     let value = index;
 
     for (let bit = 0; bit < 8; bit += 1) {
-      value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+      value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
     }
 
     return value >>> 0;
@@ -143,8 +174,10 @@ function getCrc32(bytes: Uint8Array) {
 }
 
 function getDosDateTime(date = new Date()) {
-  const time = (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
-  const dosDate = ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
+  const time =
+    (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
+  const dosDate =
+    ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
   return { time, date: dosDate };
 }
 
@@ -232,7 +265,9 @@ function createZipBlob(files: Array<{ name: string; content: string }>) {
   appendUint16(endRecord, 0);
 
   const zipBytes = concatBytes([...zipParts, centralDirectory, new Uint8Array(endRecord)]);
-  return new Blob([zipBytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  return new Blob([zipBytes], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
 }
 
 export function createXlsxBlob(rows: Record<string, string>[]) {

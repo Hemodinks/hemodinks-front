@@ -22,14 +22,21 @@ describe('cbhpmLookupUtils', () => {
   it('exige ao menos 3 caracteres em código e descrição quando preenchidos', () => {
     expect(areCbhpmFiltersSearchable({ codigo: '10', procedimento: '', porte: '' })).toBe(false);
     expect(areCbhpmFiltersSearchable({ codigo: '', procedimento: 'tu', porte: '' })).toBe(false);
-    expect(getCbhpmFilterValidationMessage({ codigo: '10', procedimento: 'tu', porte: '' }))
-      .toBe('Informe pelo menos 3 dígitos no código e 3 caracteres na descrição para consultar.');
+    expect(getCbhpmFilterValidationMessage({ codigo: '10', procedimento: 'tu', porte: '' })).toBe(
+      'Informe pelo menos 3 dígitos no código e 3 caracteres na descrição para consultar.',
+    );
   });
 
   it('monta parametros somente com filtros validos para a API', () => {
-    expect(buildCbhpmQueryFilters({ codigo: '101', procedimento: '', porte: '' })).toEqual({ codigo: '101' });
-    expect(buildCbhpmQueryFilters({ codigo: '', procedimento: ' tumor ', porte: '' })).toEqual({ procedimento: 'tumor' });
-    expect(buildCbhpmQueryFilters({ codigo: '4070101', procedimento: 'tumor', porte: '2b' })).toEqual({
+    expect(buildCbhpmQueryFilters({ codigo: '101', procedimento: '', porte: '' })).toEqual({
+      codigo: '101',
+    });
+    expect(buildCbhpmQueryFilters({ codigo: '', procedimento: ' tumor ', porte: '' })).toEqual({
+      procedimento: 'tumor',
+    });
+    expect(
+      buildCbhpmQueryFilters({ codigo: '4070101', procedimento: 'tumor', porte: '2b' }),
+    ).toEqual({
       codigo: '4070101',
       procedimento: 'tumor',
       porte: '2B',

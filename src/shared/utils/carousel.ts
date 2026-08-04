@@ -1,6 +1,9 @@
 import type { MouseEvent } from 'react';
 
-export function scrollListCarousel(event: MouseEvent<HTMLButtonElement>, direction: 'previous' | 'next') {
+export function scrollListCarousel(
+  event: MouseEvent<HTMLButtonElement>,
+  direction: 'previous' | 'next',
+) {
   const carousel = event.currentTarget
     .closest('.carousel-shell')
     ?.querySelector<HTMLElement>('.list-carousel-wrap');

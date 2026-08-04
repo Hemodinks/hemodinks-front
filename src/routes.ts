@@ -5,7 +5,10 @@ export const VIEW_PATHS: Record<AppView, string> = {
   users: '/usuarios',
   profile: '/meu-cadastro',
   patients: '/pacientes',
+  attendances: '/atendimentos-cirurgicos',
   billing: '/faturamento-medico',
+  finance: '/financeiro',
+  prices: '/tabela-de-precos',
   medicalGroups: '/grupos-medicos',
   agenda: '/agenda',
   settings: '/configuracoes',
@@ -19,10 +22,9 @@ export function getViewFromPath(pathname: string): AppView | null {
     return 'dashboard';
   }
 
-  const match = Object.entries(VIEW_PATHS)
-    .find(([, path]) => path === normalizedPath);
+  const match = Object.entries(VIEW_PATHS).find(([, path]) => path === normalizedPath);
 
-  return match ? match[0] as AppView : null;
+  return match ? (match[0] as AppView) : null;
 }
 
 export function isRootPath(pathname: string) {
