@@ -1,13 +1,16 @@
 import { type FormEvent } from 'react';
 import { LogIn } from 'lucide-react';
 import type { Theme } from '../../appTypes';
-import type { PublicClinic } from '../../shared/domain/clinicalContracts';
+import type { PublicClinic } from '../../types';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
-import { MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from '../../shared/utils/formatters';
+import {
+  MAX_EMAIL_LENGTH,
+  MAX_PASSWORD_LENGTH,
+} from '../../shared/utils/formatters';
 import './auth.css';
 
 type LoginScreenProps = {
@@ -80,9 +83,7 @@ export function LoginScreen({
                 {clinicsLoading ? 'Carregando clínicas...' : 'Selecione uma clínica'}
               </option>
               {clinics.map((clinic) => (
-                <option key={clinic.id} value={String(clinic.id)}>
-                  {clinic.nome}
-                </option>
+                <option key={clinic.id} value={String(clinic.id)}>{clinic.nome}</option>
               ))}
             </select>
           </label>
@@ -92,9 +93,7 @@ export function LoginScreen({
             <input
               type="email"
               value={loginEmail}
-              onChange={(event) =>
-                onLoginEmailChange(event.target.value.slice(0, MAX_EMAIL_LENGTH))
-              }
+              onChange={(event) => onLoginEmailChange(event.target.value.slice(0, MAX_EMAIL_LENGTH))}
               autoComplete="email"
               maxLength={MAX_EMAIL_LENGTH}
               required
@@ -115,12 +114,7 @@ export function LoginScreen({
           {loginInfo && <p className="alert success">{loginInfo}</p>}
 
           <div className="button-row login-actions">
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={onResetPassword}
-              disabled={resetPasswordLoading}
-            >
+            <button type="button" className="ghost-button" onClick={onResetPassword} disabled={resetPasswordLoading}>
               {resetPasswordLoading ? 'Resetando...' : 'Esqueci minha senha'}
             </button>
             <button className="primary-action" type="submit" disabled={loginLoading}>

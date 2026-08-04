@@ -5,7 +5,11 @@ type ClinicaRequestContext = {
   clinicaSlug?: string;
 };
 
-const RESERVED_HOST_SUFFIXES = ['.onrender.com', '.vercel.app', '.netlify.app'];
+const RESERVED_HOST_SUFFIXES = [
+  '.onrender.com',
+  '.vercel.app',
+  '.netlify.app',
+];
 
 function normalizeClinicaSlug(value?: string | null) {
   if (!value) {
@@ -73,12 +77,8 @@ export function extractClinicaContextFromToken(token?: string) {
     return null;
   }
 
-  const clinicaId = parseClinicaId(
-    typeof payload.clinicaId === 'string' ? payload.clinicaId : null,
-  );
-  const clinicaSlug = normalizeClinicaSlug(
-    typeof payload.clinicaSlug === 'string' ? payload.clinicaSlug : null,
-  );
+  const clinicaId = parseClinicaId(typeof payload.clinicaId === 'string' ? payload.clinicaId : null);
+  const clinicaSlug = normalizeClinicaSlug(typeof payload.clinicaSlug === 'string' ? payload.clinicaSlug : null);
 
   if (!clinicaId && !clinicaSlug) {
     return null;
@@ -92,9 +92,8 @@ export function extractClinicaContextFromToken(token?: string) {
 
 function resolveConfiguredClinicaContext() {
   const clinicaId = parseClinicaId(import.meta.env.VITE_CLINICA_ID);
-  const clinicaSlug =
-    normalizeClinicaSlug(import.meta.env.VITE_CLINICA_SLUG) ??
-    resolveClinicaSlugFromHostname(getBrowserHostname());
+  const clinicaSlug = normalizeClinicaSlug(import.meta.env.VITE_CLINICA_SLUG)
+    ?? resolveClinicaSlugFromHostname(getBrowserHostname());
 
   if (!clinicaId && !clinicaSlug) {
     return null;

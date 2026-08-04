@@ -1,6 +1,6 @@
 name: Deploy Azure Static Web Apps
 
-'on':
+"on":
   push:
     branches:
       - main
@@ -42,11 +42,6 @@ jobs:
       VITE_APP_VERSION: ${{ github.sha }}
       VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
       VITE_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.VITE_SENTRY_TRACES_SAMPLE_RATE }}
-      VITE_NEW_RELIC_ACCOUNT_ID: ${{ vars.VITE_NEW_RELIC_ACCOUNT_ID }}
-      VITE_NEW_RELIC_AGENT_ID: ${{ vars.VITE_NEW_RELIC_AGENT_ID }}
-      VITE_NEW_RELIC_APPLICATION_ID: ${{ vars.VITE_NEW_RELIC_APPLICATION_ID }}
-      VITE_NEW_RELIC_LICENSE_KEY: ${{ secrets.VITE_NEW_RELIC_LICENSE_KEY }}
-      VITE_NEW_RELIC_TRUST_KEY: ${{ vars.VITE_NEW_RELIC_TRUST_KEY }}
 
     steps:
       - name: Checkout
@@ -62,39 +57,42 @@ jobs:
             [ -n "$AZURE_STATIC_WEB_APPS_API_TOKEN" ] || missing+=("AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410")
           fi
 
-          new_relic_configured=false
-          for variable_name in \
-            VITE_NEW_RELIC_ACCOUNT_ID \
-            VITE_NEW_RELIC_AGENT_ID \
-            VITE_NEW_RELIC_APPLICATION_ID \
-            VITE_NEW_RELIC_LICENSE_KEY \
-            VITE_NEW_RELIC_TRUST_KEY; do
-            if [ -n "${!variable_name}" ]; then
-              new_relic_configured=true
-              break
-            fi
-          done
-
-          if [ "$GITHUB_EVENT_NAME" != "pull_request" ] && [ "$new_relic_configured" = true ]; then
-            [ -n "$VITE_NEW_RELIC_ACCOUNT_ID" ] || missing+=("VITE_NEW_RELIC_ACCOUNT_ID")
-            [ -n "$VITE_NEW_RELIC_AGENT_ID" ] || missing+=("VITE_NEW_RELIC_AGENT_ID")
-            [ -n "$VITE_NEW_RELIC_APPLICATION_ID" ] || missing+=("VITE_NEW_RELIC_APPLICATION_ID")
-            [ -n "$VITE_NEW_RELIC_LICENSE_KEY" ] || missing+=("VITE_NEW_RELIC_LICENSE_KEY")
-          elif [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
-            echo "::notice::New Relic Browser monitoring is disabled because no VITE_NEW_RELIC_* configuration was provided."
-          fi
-
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Missing required deployment configuration values: ${missing[*]}"
+            echo "::error::Missing required GitHub secrets: ${missing[*]}"
             exit 1
           fi
 
-      - name: Run complete frontend quality gate
-        uses: ./.github/actions/frontend-quality
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
 
-      - name: Validate production observability
-        if: github.event_name != 'pull_request'
-        run: npm run observability:check
+      - name: Install dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::npm ci failed after ${attempt} attempts."
+              exit 1
+            fi
+
+            echo "::warning::npm ci failed on attempt ${attempt}. Retrying in 15 seconds..."
+            sleep 15
+          done
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Check bundle budget
+        run: npm run budget
 
       - name: Deploy to Azure Static Web Apps
         if: github.event_name != 'pull_request'
@@ -104,7 +102,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: dist
-          api_location: ''
+          api_location: ""
           skip_app_build: true
 
   close_pull_request:

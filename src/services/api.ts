@@ -1,70 +1,18 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import { resolveClinicaRequestHeaders } from './clinicaContext';
-import { beginGlobalActivity, type GlobalActivityOptions } from './globalActivity';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 const DEFAULT_ERROR_MESSAGE = 'Nao foi possivel concluir a operacao.';
 const UNAUTHORIZED_ERROR_MESSAGE = 'Credenciais invalidas ou sessao expirada.';
 export const AUTH_EXPIRED_EVENT = 'hemodinks:auth-expired';
 
-type RequestConfig = Omit<AxiosRequestConfig, 'data' | 'method' | 'url'> & {
-  activity?: GlobalActivityOptions | 'background' | false;
-};
+type RequestConfig = Omit<AxiosRequestConfig, 'data' | 'method' | 'url'>;
 
 export const apiClient = axios.create({
   baseURL: API_URL,
-  withCredentials: true,
 });
 
 export const publicApiClient = axios.create();
-
-type AuthSessionRecoveryHandler = (token: string) => void;
-export type SessionRefreshResponse = { token: string; sessionIdleExpiresAt: string };
-
-let authSessionRecoveryHandler: AuthSessionRecoveryHandler | null = null;
-let refreshInFlight: Promise<SessionRefreshResponse> | null = null;
-
-export function configureAuthSessionRecovery(handler: AuthSessionRecoveryHandler | null) {
-  authSessionRecoveryHandler = handler;
-  return () => {
-    if (authSessionRecoveryHandler === handler) {
-      authSessionRecoveryHandler = null;
-    }
-  };
-}
-
-export function refreshAuthSessionWithCookie() {
-  if (refreshInFlight) return refreshInFlight;
-
-  refreshInFlight = apiClient
-    .request<SessionRefreshResponse>({
-      url: '/api/session/renovar',
-      method: 'POST',
-      data: {},
-      headers: { 'Content-Type': 'application/json' },
-    })
-    .then((response) => {
-      if (!response.data.token) {
-        throw new Error('A API nao retornou um novo token de acesso.');
-      }
-      authSessionRecoveryHandler?.(response.data.token);
-      return response.data;
-    })
-    .finally(() => {
-      refreshInFlight = null;
-    });
-
-  return refreshInFlight;
-}
-
-async function recoverAuthSession() {
-  if (!authSessionRecoveryHandler) return null;
-  try {
-    return (await refreshAuthSessionWithCookie()).token;
-  } catch {
-    return null;
-  }
-}
 
 function buildJsonHeaders(token?: string, headers?: AxiosRequestConfig['headers']) {
   return {
@@ -102,43 +50,19 @@ function toApiError(error: unknown, notifyUnauthorized = false) {
     const data = error.response?.data;
 
     if (typeof data === 'string' && data.trim()) {
-      const diagnostic =
-        /BadHttpRequestException|JsonException|System\.|stack trace| at Microsoft\./i.test(data);
-      return new Error(
-        diagnostic
-          ? 'Alguns campos estão ausentes ou possuem formato inválido. Revise os dados destacados e tente novamente.'
-          : data.length > 500
-            ? DEFAULT_ERROR_MESSAGE
-            : data,
-      );
+      return new Error(data);
     }
 
     if (typeof data === 'object' && data !== null) {
-      const validationMessage =
-        'errors' in data && typeof data.errors === 'object' && data.errors !== null
-          ? Object.values(data.errors)
-              .flatMap((value) => (Array.isArray(value) ? value : []))
-              .find((value): value is string => typeof value === 'string')
+      const message = 'message' in data && typeof data.message === 'string'
+        ? data.message
+        : 'error' in data && typeof data.error === 'string'
+          ? data.error
           : null;
-      const message =
-        validationMessage ??
-        ('message' in data && typeof data.message === 'string'
-          ? data.message
-          : 'error' in data && typeof data.error === 'string'
-            ? data.error
-            : 'title' in data && typeof data.title === 'string'
-              ? data.title
-              : null);
 
       if (message?.trim()) {
         return new Error(message);
       }
-    }
-
-    if (error.response?.status === 400) {
-      return new Error(
-        'Alguns campos estão ausentes ou possuem formato inválido. Revise os dados e tente novamente.',
-      );
     }
   }
 
@@ -149,24 +73,9 @@ function toApiError(error: unknown, notifyUnauthorized = false) {
   return new Error(DEFAULT_ERROR_MESSAGE);
 }
 
-async function executeRequest<T>(
-  client: AxiosInstance,
-  config: AxiosRequestConfig & { activity?: RequestConfig['activity'] },
-  notifyUnauthorized = false,
-): Promise<T> {
-  const { activity, ...axiosConfig } = config;
-  const isQuery = axiosConfig.method?.toUpperCase() === 'GET';
-  const defaultActivity = isQuery ? { kind: 'query' as const } : { kind: 'save' as const };
-  const activityOptions =
-    activity === false
-      ? null
-      : activity === 'background'
-        ? { kind: 'query' as const, presentation: 'background' as const }
-        : (activity ?? defaultActivity);
-  const finishActivity = activityOptions ? beginGlobalActivity(activityOptions) : null;
-
+async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConfig, notifyUnauthorized = false): Promise<T> {
   try {
-    const response = await client.request<T>(axiosConfig);
+    const response = await client.request<T>(config);
 
     if (response.status === 204) {
       return undefined as T;
@@ -174,64 +83,27 @@ async function executeRequest<T>(
 
     return response.data;
   } catch (error) {
-    if (notifyUnauthorized && axios.isAxiosError(error) && error.response?.status === 401) {
-      const refreshedToken = await recoverAuthSession();
-      if (refreshedToken) {
-        try {
-          const retryResponse = await client.request<T>({
-            ...axiosConfig,
-            headers: {
-              ...axiosConfig.headers,
-              Authorization: `Bearer ${refreshedToken}`,
-              ...resolveClinicaRequestHeaders(refreshedToken),
-            },
-          });
-
-          if (retryResponse.status === 204) {
-            return undefined as T;
-          }
-
-          return retryResponse.data;
-        } catch (retryError) {
-          throw toApiError(retryError, true);
-        }
-      }
-
-      notifyAuthExpired();
-      throw toApiError(error, false);
-    }
-
     throw toApiError(error, notifyUnauthorized);
-  } finally {
-    finishActivity?.();
   }
 }
 
 export function get<T>(path: string, token?: string, config: RequestConfig = {}) {
-  return executeRequest<T>(
-    apiClient,
-    {
-      url: path,
-      method: 'GET',
-      ...config,
-      headers: buildJsonHeaders(token, config.headers),
-    },
-    Boolean(token),
-  );
+  return executeRequest<T>(apiClient, {
+    url: path,
+    method: 'GET',
+    ...config,
+    headers: buildJsonHeaders(token, config.headers),
+  }, Boolean(token));
 }
 
 export function getBlob(path: string, token?: string, config: RequestConfig = {}) {
-  return executeRequest<Blob>(
-    apiClient,
-    {
-      url: path,
-      method: 'GET',
-      responseType: 'blob',
-      ...config,
-      headers: buildAuthHeaders(token, config.headers),
-    },
-    Boolean(token),
-  );
+  return executeRequest<Blob>(apiClient, {
+    url: path,
+    method: 'GET',
+    responseType: 'blob',
+    ...config,
+    headers: buildAuthHeaders(token, config.headers),
+  }, Boolean(token));
 }
 
 export function getExternal<T>(url: string, config: RequestConfig = {}) {
@@ -244,57 +116,40 @@ export function getExternal<T>(url: string, config: RequestConfig = {}) {
 }
 
 export function post<T>(path: string, data?: unknown, token?: string, config: RequestConfig = {}) {
-  return executeRequest<T>(
-    apiClient,
-    {
-      url: path,
-      method: 'POST',
-      data,
-      ...config,
-      headers: buildJsonHeaders(token, config.headers),
-    },
-    Boolean(token),
-  );
+  return executeRequest<T>(apiClient, {
+    url: path,
+    method: 'POST',
+    data,
+    ...config,
+    headers: buildJsonHeaders(token, config.headers),
+  }, Boolean(token));
 }
 
 export function put<T>(path: string, data?: unknown, token?: string, config: RequestConfig = {}) {
-  return executeRequest<T>(
-    apiClient,
-    {
-      url: path,
-      method: 'PUT',
-      data,
-      ...config,
-      headers: buildJsonHeaders(token, config.headers),
-    },
-    Boolean(token),
-  );
+  return executeRequest<T>(apiClient, {
+    url: path,
+    method: 'PUT',
+    data,
+    ...config,
+    headers: buildJsonHeaders(token, config.headers),
+  }, Boolean(token));
 }
 
 export function del<T>(path: string, token?: string, config: RequestConfig = {}) {
-  return executeRequest<T>(
-    apiClient,
-    {
-      url: path,
-      method: 'DELETE',
-      ...config,
-      headers: buildJsonHeaders(token, config.headers),
-    },
-    Boolean(token),
-  );
+  return executeRequest<T>(apiClient, {
+    url: path,
+    method: 'DELETE',
+    ...config,
+    headers: buildJsonHeaders(token, config.headers),
+  }, Boolean(token));
 }
 
 export function upload<T>(path: string, body: FormData, token: string, config: RequestConfig = {}) {
-  return executeRequest<T>(
-    apiClient,
-    {
-      url: path,
-      method: 'POST',
-      data: body,
-      activity: { kind: 'upload' },
-      ...config,
-      headers: buildAuthHeaders(token, config.headers),
-    },
-    Boolean(token),
-  );
+  return executeRequest<T>(apiClient, {
+    url: path,
+    method: 'POST',
+    data: body,
+    ...config,
+    headers: buildAuthHeaders(token, config.headers),
+  }, Boolean(token));
 }

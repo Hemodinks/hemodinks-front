@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Paciente } from './patientTypes';
+import type { Paciente } from '../../types';
 import {
   emptyPacienteForm,
   getDuplicatedMedicalTeamError,
@@ -88,41 +88,22 @@ describe('patientUtils', () => {
     expect(payload.procedimentos.map((item) => item.cbhpmCodigo)).toEqual(['10101012', '20101201']);
   });
 
-  it('envia email, celular e data de nascimento vazios como nulos', () => {
-    const payload = toPacientePayload({
-      ...emptyPacienteForm,
-      nomePaciente: 'Paciente sem contatos',
-    });
-
-    expect(payload).toEqual(
-      expect.objectContaining({
-        email: null,
-        telefone: null,
-        dataNascimento: null,
-      }),
-    );
-  });
-
   it('bloqueia selecao repetida entre cirurgiao e medicos auxiliares', () => {
-    expect(
-      getDuplicatedMedicalTeamError({
-        ...emptyPacienteForm,
-        medicoUserId: 1,
-        medico: 'Dra. Ana',
-        medicoAuxiliar1UserId: 1,
-        medicoAuxiliar1: 'Dra. Ana',
-      }),
-    ).toBe('Cirurgião e médicos auxiliares devem ser diferentes.');
+    expect(getDuplicatedMedicalTeamError({
+      ...emptyPacienteForm,
+      medicoUserId: 1,
+      medico: 'Dra. Ana',
+      medicoAuxiliar1UserId: 1,
+      medicoAuxiliar1: 'Dra. Ana',
+    })).toBe('Cirurgião e médicos auxiliares devem ser diferentes.');
 
-    expect(
-      getDuplicatedMedicalTeamError({
-        ...emptyPacienteForm,
-        medicoUserId: 1,
-        medico: 'Dra. Ana',
-        medicoAuxiliar1UserId: 2,
-        medicoAuxiliar1: 'Dr. Bruno',
-      }),
-    ).toBe('');
+    expect(getDuplicatedMedicalTeamError({
+      ...emptyPacienteForm,
+      medicoUserId: 1,
+      medico: 'Dra. Ana',
+      medicoAuxiliar1UserId: 2,
+      medicoAuxiliar1: 'Dr. Bruno',
+    })).toBe('');
   });
 
   it('normaliza codigos vindos da API ao preencher o formulario', () => {

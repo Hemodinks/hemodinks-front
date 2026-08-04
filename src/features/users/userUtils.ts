@@ -1,16 +1,16 @@
-import type { UserFormData, UserPayload } from './userTypes';
+import type { UserFormData, UserPayload } from '../../types';
 import {
   DEFAULT_PROFILE_ID,
   formatCpfInput,
   formatPhoneInput,
   isAssignableUserProfileId,
   isMedicalProfileId,
-  isValidProfileId,
   isValidBirthDate,
   isValidBrazilMobilePhone,
   isValidEmail,
   MAX_CRM_LENGTH,
   MAX_NAME_LENGTH,
+  normalizeCpfForPayload,
   normalizePhoneForPayload,
   parseDisplayDate,
   toDisplayDate,
@@ -60,7 +60,7 @@ export function getUserFormData(data: {
   };
 }
 
-export function validateUserForm(data: UserFormData, allowAllProfiles = false) {
+export function validateUserForm(data: UserFormData) {
   const birthDate = data.dataNascimento.trim();
 
   if (!data.nome.trim()) {
@@ -83,9 +83,7 @@ export function validateUserForm(data: UserFormData, allowAllProfiles = false) {
     return 'Informe a data de nascimento no formato dd/mm/yyyy.';
   }
 
-  if (
-    !(allowAllProfiles ? isValidProfileId(data.perfilId) : isAssignableUserProfileId(data.perfilId))
-  ) {
+  if (!isAssignableUserProfileId(data.perfilId)) {
     return 'Selecione um perfil valido.';
   }
 
@@ -107,13 +105,14 @@ export function validateUserForm(data: UserFormData, allowAllProfiles = false) {
 }
 
 export function toUserPayload(data: UserFormData): UserPayload {
+  const cpf = normalizeCpfForPayload(data.cpf);
   const birthDate = data.dataNascimento.trim();
 
   return {
     nome: data.nome.trim(),
     email: data.email.trim(),
     telefone: normalizePhoneForPayload(data.telefone),
-    cpf: null,
+    cpf: cpf || null,
     crm: isMedicalProfileId(data.perfilId) ? data.crm.trim() : '',
     crmUf: isMedicalProfileId(data.perfilId) ? data.crmUf.trim().toUpperCase() : '',
     fotoPerfil: data.fotoPerfil || null,

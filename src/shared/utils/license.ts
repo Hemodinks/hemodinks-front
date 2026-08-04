@@ -1,4 +1,4 @@
-import type { SessionUser } from '../domain/sessionTypes';
+import type { SessionUser } from '../../types';
 import {
   CONTROLLER_PROFILE_ID,
   MEDICAL_PROFILE_ID,
@@ -66,6 +66,9 @@ export function getSessionFeatures(user: SessionUser | null | undefined): Readon
   return new Set();
 }
 
-export function hasSessionFeature(user: SessionUser | null | undefined, feature: string) {
+export function hasSessionFeature(
+  user: SessionUser | null | undefined,
+  feature: string,
+) {
   return getSessionFeatures(user).has(feature);
 }

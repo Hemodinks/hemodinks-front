@@ -24,18 +24,18 @@ SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front
 
 ## URLs
 
-| Recurso                               | URL                                                 |
-| ------------------------------------- | --------------------------------------------------- |
-| Front local                           | `http://localhost:5173`                             |
-| Front producao                        | `https://hemodinks.gestao-saude.tec.br`             |
-| Front producao legado                 | `https://hemodinks-saude.vercel.app`                |
-| Front homologacao                     | `https://hemodinks-homologacao.gestao-saude.tec.br` |
-| Front homologacao legado              | `https://hemodinks-homologacao.vercel.app`          |
+| Recurso | URL |
+| --- | --- |
+| Front local | `http://localhost:5173` |
+| Front producao | `https://hemodinks.gestao-saude.tec.br` |
+| Front producao legado | `https://hemodinks-saude.vercel.app` |
+| Front homologacao | `https://hemodinks-homologacao.gestao-saude.tec.br` |
+| Front homologacao legado | `https://hemodinks-homologacao.vercel.app` |
 | Front confirmation (Render blueprint) | `https://hemodinks-front-confirmation.onrender.com` |
-| API local                             | `http://localhost:5000`                             |
-| Swagger local                         | `http://localhost:5000/swagger`                     |
-| Scalar local                          | `http://localhost:5000/scalar`                      |
-| OpenAPI local                         | `http://localhost:5000/openapi/v1.json`             |
+| API local | `http://localhost:5000` |
+| Swagger local | `http://localhost:5000/swagger` |
+| Scalar local | `http://localhost:5000/scalar` |
+| OpenAPI local | `http://localhost:5000/openapi/v1.json` |
 
 Em ambiente publicado, o front conversa com a base configurada em `VITE_API_URL`. Se a API publicada expuser documentacao interativa com `ApiDocumentation__Enabled=true`, os atalhos ficam em:
 
@@ -118,44 +118,43 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 
 ## Scripts
 
-| Script                     | O que faz                                             |
-| -------------------------- | ----------------------------------------------------- |
-| `npm run dev`              | inicia o Vite em desenvolvimento                      |
-| `npm run build`            | roda TypeScript e gera `dist`                         |
-| `npm run analyze`          | gera build com relatorio em `dist/bundle-stats.html`  |
-| `npm run budget`           | valida limites de tamanho do bundle                   |
-| `npm run audit:a11y`       | roda Playwright com axe nas rotas criticas            |
-| `npm run audit:lighthouse` | roda build e LHCI autenticado                         |
-| `npm test`                 | roda testes unitarios e de integracao                 |
-| `npm run test:coverage`    | roda a suite e aplica os limites minimos de cobertura |
-| `npm run test:e2e`         | roda testes E2E com Playwright                        |
-| `npm run preview`          | serve o build gerado em `dist`                        |
+| Script | O que faz |
+| --- | --- |
+| `npm run dev` | inicia o Vite em desenvolvimento |
+| `npm run build` | roda TypeScript e gera `dist` |
+| `npm run analyze` | gera build com relatorio em `dist/bundle-stats.html` |
+| `npm run budget` | valida limites de tamanho do bundle |
+| `npm run audit:a11y` | roda Playwright com axe nas rotas criticas |
+| `npm run audit:lighthouse` | roda build e LHCI autenticado |
+| `npm test` | roda testes unitarios e de integracao |
+| `npm run test:e2e` | roda testes E2E com Playwright |
+| `npm run preview` | serve o build gerado em `dist` |
 
 ## Rotas
 
-| Rota                        | Uso                                                                       |
-| --------------------------- | ------------------------------------------------------------------------- |
-| `/`                         | login ou redirecionamento para dashboard quando a sessao existe           |
-| `/reset-password?token=...` | confirmacao de reset de senha por token                                   |
-| `/dashboard`                | painel inicial                                                            |
-| `/usuarios`                 | listagem e cadastro de usuarios                                           |
-| `/meu-cadastro`             | autoatendimento do medico ou paciente                                     |
-| `/pacientes`                | listagem, cadastro, observacoes e exportacoes de pacientes                |
-| `/faturamento-medico`       | leitura financeira consolidada a partir dos pacientes                     |
-| `/grupos-medicos`           | grupos de medicos usados em notificacoes da agenda                        |
-| `/agenda`                   | agenda e notificacoes internas                                            |
-| `/configuracoes`            | tema e troca de senha                                                     |
-| `/clinicas`                 | CRUD, identidade visual e troca segura de clinica para SuperAdministrador |
+| Rota | Uso |
+| --- | --- |
+| `/` | login ou redirecionamento para dashboard quando a sessao existe |
+| `/reset-password?token=...` | confirmacao de reset de senha por token |
+| `/dashboard` | painel inicial |
+| `/usuarios` | listagem e cadastro de usuarios |
+| `/meu-cadastro` | autoatendimento do medico ou paciente |
+| `/pacientes` | listagem, cadastro, observacoes e exportacoes de pacientes |
+| `/faturamento-medico` | leitura financeira consolidada a partir dos pacientes |
+| `/grupos-medicos` | grupos de medicos usados em notificacoes da agenda |
+| `/agenda` | agenda e notificacoes internas |
+| `/configuracoes` | tema e troca de senha |
+| `/clinicas` | CRUD, identidade visual e troca segura de clinica para SuperAdministrador |
 
 ## Perfis e acesso
 
-| Perfil             | Acesso principal                                                                    |
-| ------------------ | ----------------------------------------------------------------------------------- |
-| Administrador      | dashboard, usuarios, pacientes, faturamento, grupos medicos, agenda e configuracoes |
-| SuperAdministrador | todos os modulos administrativos, CRUD de clinicas e troca segura de tenant         |
-| Medicos            | dashboard, meu cadastro, pacientes, faturamento, agenda e configuracoes             |
-| Controller         | pacientes, faturamento e configuracoes                                              |
-| Paciente           | meu cadastro, pacientes em modo leitura e configuracoes                             |
+| Perfil | Acesso principal |
+| --- | --- |
+| Administrador | dashboard, usuarios, pacientes, faturamento, grupos medicos, agenda e configuracoes |
+| SuperAdministrador | todos os modulos administrativos, CRUD de clinicas e troca segura de tenant |
+| Medicos | dashboard, meu cadastro, pacientes, faturamento, agenda e configuracoes |
+| Controller | pacientes, faturamento e configuracoes |
+| Paciente | meu cadastro, pacientes em modo leitura e configuracoes |
 
 ## Funcionalidades
 
@@ -186,15 +185,8 @@ src/
   features/
     auth/
     billing/
-      attendance/
-      invoicing/
-      prices/
-      receivables/
-      styles/
     dashboard/
-      styles/
     events/
-      styles/
     medicalGroups/
     patients/
     settings/
@@ -214,9 +206,7 @@ Pontos principais:
 - `src/shared/queryKeys.ts` centraliza chaves de cache.
 - `src/features/patients/usePatientsDomain.ts` coordena formulario, listagem, lookups, observacoes e exportacoes.
 - `src/features/users/useUsersDomain.ts` cobre listagem, autoedicao, upload de arquivos e troca de senha.
-- `src/features/billing/BillingPage.tsx` compoe os subdominios de atendimentos, faturamento, recebiveis e precos.
-- agenda, clinicas e dashboard usam containers de composicao apoiados por controllers e componentes especializados.
-- cada feature expoe uma API publica em `index.ts`; o carregamento dinamico preserva imports diretos para manter chunks separados.
+- `src/features/billing/BillingPage.tsx` compoe a tela financeira a partir de `GET /api/faturamentos-medicos`.
 - `src/features/settings/SystemSettingsPage.tsx` administra marca, tema e senha.
 - `src/observability.ts`, `src/newRelic.ts` e `src/otel.ts` inicializam a telemetria opcional.
 
@@ -240,14 +230,10 @@ Cache atual:
 - convenios
 - fornecedores OPME
 - CBHPM
-- atendimentos cirurgicos
-- faturamentos
-- contas a receber e resumo financeiro
-- precos de procedimentos
 
 Observacoes:
 
-- os quatro subdominios financeiros usam chaves proprias do TanStack Query e invalidacao explicita apos mutacoes
+- a tela de faturamento usa uma query propria (`billingRecords`) e carrega paginas de `GET /api/faturamentos-medicos` ate compor a visao agregada
 - a tela de notificacoes marca avisos da agenda como lidos via `POST /api/events/notifications/mark-read`
 - a confirmacao de reset envia `Idempotency-Key` em `POST /api/users/password/reset/confirm`
 
@@ -257,10 +243,6 @@ Suite principal:
 
 ```powershell
 npm test
-npm run test:coverage
-npm run lint
-npm run architecture:check
-npm run format:check
 npm run build
 npm run budget
 npm run test:e2e
@@ -271,14 +253,12 @@ npm run audit:lighthouse
 
 Cobertura atual inclui:
 
-- testes unitarios e de integracao para App e API separados por dominio, alem de utilitarios de pacientes e faturamento
+- testes unitarios e de integracao para `App`, `api.ts`, utilitarios de pacientes e faturamento
 - E2E de login, reset, navegacao autenticada e regras por perfil
 - E2E de usuarios, pacientes, agenda e mobile
 - axe para acessibilidade seria/critica
 - Lighthouse autenticado via LHCI
-- cobertura V8 com minimo de 70% para statements/lines e 60% para branches/functions, com relatorio HTML como artefato
 - budget de bundle e analise visual do build
-- Dependabot semanal para patches/minors do npm e mensal para GitHub Actions; atualizacoes major ficam isoladas
 
 ## Deploy
 

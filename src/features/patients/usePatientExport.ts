@@ -2,15 +2,8 @@ import { useState } from 'react';
 import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
 import { getPacientes } from '../../services';
 import { getErrorMessage, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
-import {
-  getPagedItems,
-  getPagedTotalPages,
-  sortPacientesForListing,
-} from '../../shared/utils/listing';
-import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
-import { withGlobalActivity } from '../../services/globalActivity';
-import type { AuthSession } from '../../shared/domain/sessionTypes';
-import type { Paciente } from './patientTypes';
+import { getPagedItems, getPagedTotalPages, sortPacientesForListing } from '../../shared/utils/listing';
+import type { AuthSession, Paciente } from '../../types';
 import {
   createXlsxBlob,
   downloadBlob,
@@ -34,12 +27,10 @@ export function usePatientExport({
   pacienteFilters,
   setPacientesError,
 }: UsePatientExportOptions) {
-  const [requestedFormat, setRequestedFormat] = useState<PacienteExportFormat>('xlsx');
+  const [pacienteExportLoading, setPacienteExportLoading] = useState<PacienteExportFormat | null>(null);
   const [pacienteExportScope, setPacienteExportScope] = useState<PacienteExportScope>('visible');
 
-  const fetchPacientesForExport = async (
-    query: NonNullable<Parameters<typeof getPacientes>[1]>,
-  ) => {
+  const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>) => {
     if (!session) {
       return [];
     }
@@ -83,8 +74,15 @@ export function usePatientExport({
     return fetchPacientesForExport({});
   };
 
-  const exportOperation = useAsyncOperation(async (_signal, format: PacienteExportFormat) =>
-    withGlobalActivity({ kind: 'export' }, async () => {
+  const handleExportPacientes = async (format: PacienteExportFormat) => {
+    if (!session || pacienteExportLoading) {
+      return;
+    }
+
+    setPacienteExportLoading(format);
+    setPacientesError('');
+
+    try {
       const exportItems = await loadPacientesForExport(pacienteExportScope);
       const rows = getPacienteExportRows(exportItems);
 
@@ -105,9 +103,7 @@ export function usePatientExport({
       document.text(`Gerado em ${new Intl.DateTimeFormat('pt-BR').format(new Date())}`, 40, 50);
       autoTable(document, {
         head: [pacienteExportColumns.map((column) => column.header)],
-        body: exportItems.map((paciente) =>
-          pacienteExportColumns.map((column) => column.getValue(paciente)),
-        ),
+        body: exportItems.map((paciente) => pacienteExportColumns.map((column) => column.getValue(paciente))),
         startY: 64,
         columnStyles: {
           0: { cellWidth: 80 },
@@ -128,26 +124,15 @@ export function usePatientExport({
         margin: { left: 24, right: 24 },
       });
       document.save(getPatientExportFileName('pdf', companyName));
-    }),
-  );
-
-  const handleExportPacientes = async (format: PacienteExportFormat) => {
-    if (!session || exportOperation.isLoading) {
-      return;
-    }
-
-    setRequestedFormat(format);
-    setPacientesError('');
-
-    try {
-      await exportOperation.execute(format);
     } catch (error) {
       setPacientesError(getErrorMessage(error));
+    } finally {
+      setPacienteExportLoading(null);
     }
   };
 
   return {
-    pacienteExportLoading: exportOperation.isLoading ? requestedFormat : null,
+    pacienteExportLoading,
     pacienteExportScope,
     setPacienteExportScope,
     handleExportPacientes,

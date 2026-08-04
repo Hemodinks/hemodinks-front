@@ -1,6 +1,7 @@
-import type { Paciente, PacienteFormData, PacientePayload } from './patientTypes';
+import type { Paciente, PacienteFormData, PacientePayload, PacienteProcedimento } from '../../types';
 import type { PacienteFilters } from '../../appTypes';
 import {
+  DEFAULT_PATIENT_BIRTH_DATE,
   formatCpfInput,
   formatCurrencyInput,
   formatPhoneInput,
@@ -11,17 +12,6 @@ import {
   parseDisplayDate,
   toDisplayDate,
 } from '../../shared/utils/formatters';
-import {
-  getPacienteProcedimentosFromPaciente,
-  normalizeCbhpmCodigo,
-  normalizePacienteProcedimentos,
-} from '../../shared/domain/cbhpm';
-
-export {
-  getPacienteProcedimentosFromPaciente,
-  normalizeCbhpmCodigo,
-  normalizePacienteProcedimentos,
-} from '../../shared/domain/cbhpm';
 
 export const emptyPacienteForm: PacienteFormData = {
   data: '',
@@ -75,9 +65,35 @@ export function getPacienteFilterQuery(filters: PacienteFilters, enabled: boolea
   };
 }
 
+export function normalizeCbhpmCodigo(value?: string | null) {
+  return value?.replace(/\D/g, '') ?? '';
+}
+
 function toApiDate(value: string) {
   const { day, month, year } = parseDisplayDate(value);
   return `${year}-${month}-${day}`;
+}
+
+export function normalizePacienteProcedimentos(procedimentos: PacienteProcedimento[]) {
+  const seen = new Set<string>();
+
+  return procedimentos
+    .map((item) => ({
+      cbhpmCodigo: normalizeCbhpmCodigo(item.cbhpmCodigo) || null,
+      cbhpmPorte: item.cbhpmPorte?.trim() || null,
+      procedimento: item.procedimento.trim(),
+      valorReferencia: item.valorReferencia ?? null,
+    }))
+    .filter((item) => item.procedimento)
+    .filter((item) => {
+      const key = item.cbhpmCodigo ? `codigo:${item.cbhpmCodigo}` : `livre:${item.procedimento}:${item.cbhpmPorte || ''}`;
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
 }
 
 export function getPacienteProcedimentosFromForm(data: PacienteFormData) {
@@ -93,6 +109,20 @@ export function getPacienteProcedimentosFromForm(data: PacienteFormData) {
       procedimento: data.procedimento,
     },
   ]);
+}
+
+export function getPacienteProcedimentosFromPaciente(paciente: Paciente) {
+  return normalizePacienteProcedimentos(
+    paciente.procedimentos?.length
+      ? paciente.procedimentos
+      : [
+          {
+            cbhpmCodigo: paciente.cbhpmCodigo,
+            cbhpmPorte: paciente.cbhpmPorte,
+            procedimento: paciente.procedimento || '',
+          },
+        ],
+  );
 }
 
 export function withPrimaryProcedimento(data: PacienteFormData): PacienteFormData {
@@ -115,10 +145,10 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
     diagnostico: paciente.diagnostico || '',
     tratamentoMedico: paciente.tratamentoMedico || '',
     cpf: formatCpfInput(paciente.cpf || ''),
-    email: paciente.email || '',
-    telefone: formatPhoneInput(paciente.telefone || ''),
+    email: paciente.email,
+    telefone: formatPhoneInput(paciente.telefone),
     fotoPerfil: paciente.fotoPerfil ?? null,
-    dataNascimento: toDisplayDate(paciente.dataNascimento || ''),
+    dataNascimento: toDisplayDate(paciente.dataNascimento),
     hospitalId: paciente.hospitalId ?? null,
     hospital: paciente.hospital || '',
     medicoUserId: paciente.medicoUserId ?? null,
@@ -149,6 +179,19 @@ export function validatePacienteForm(data: PacienteFormData) {
     return 'Informe o nome do paciente.';
   }
 
+  if (!data.hospitalId && !data.hospital.trim()) {
+    return 'Selecione um hospital.';
+  }
+
+  const duplicatedMedicalTeamError = getDuplicatedMedicalTeamError(data);
+  if (duplicatedMedicalTeamError) {
+    return duplicatedMedicalTeamError;
+  }
+
+  if (!getPacienteProcedimentosFromForm(data).length) {
+    return 'Selecione ao menos um procedimento.';
+  }
+
   return '';
 }
 
@@ -164,7 +207,7 @@ export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
   for (const member of medicalTeam) {
     if (member.userId != null) {
       if (selectedUserIds.has(member.userId)) {
-        return 'Cirurgião e médicos auxiliares devem ser diferentes.';
+          return 'Cirurgião e médicos auxiliares devem ser diferentes.';
       }
 
       selectedUserIds.add(member.userId);
@@ -187,7 +230,7 @@ export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
 }
 
 export function toPacientePayload(data: PacienteFormData): PacientePayload {
-  const cpf = normalizeCpfForPayload(data.cpf) || null;
+  const cpf = normalizeCpfForPayload(data.cpf);
   const telefone = getLocalBrazilPhoneDigits(data.telefone)
     ? normalizePhoneForPayload(data.telefone)
     : '';
@@ -200,10 +243,10 @@ export function toPacientePayload(data: PacienteFormData): PacientePayload {
     diagnostico: data.diagnostico.trim(),
     tratamentoMedico: data.tratamentoMedico.trim(),
     cpf,
-    email: data.email.trim() || null,
-    telefone: telefone || null,
+    email: data.email.trim(),
+    telefone,
     fotoPerfil: data.fotoPerfil || null,
-    dataNascimento: isValidBirthDate(data.dataNascimento) ? toApiDate(data.dataNascimento) : null,
+    dataNascimento: isValidBirthDate(data.dataNascimento) ? toApiDate(data.dataNascimento) : DEFAULT_PATIENT_BIRTH_DATE,
     hospitalId: data.hospitalId,
     hospital: data.hospital.trim(),
     medicoUserId: data.medicoUserId,

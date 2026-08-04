@@ -1,16 +1,27 @@
-import { CheckCircle2, Eye, FileText, Info, MessageSquareText, Pencil, Trash2 } from 'lucide-react';
-import type { Paciente } from './patientTypes';
-import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
-import { AlertMessage, DataPanel, IconButton } from '../../shared/components/ui';
-import { UserAvatar } from '../../shared/components/UserAvatar';
 import {
-  HorizontalTableScroller,
-  Pagination,
-  SortableHeader,
-  TableStateRow,
-} from '../../shared/components/listing';
-import { PatientListToolbar } from './PatientListToolbar';
-import { formatPersonName } from '../../shared/utils/formatters';
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Eye,
+  FileText,
+  Info,
+  MessageSquareText,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+} from 'lucide-react';
+import type { Paciente } from '../../types';
+import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
+import { AlertMessage, Button, DataPanel, IconButton, SearchField, SelectField, TextField } from '../../shared/components/ui';
+import {
+  CONVENIOS_DATALIST_ID,
+  MEDICAL_USERS_DATALIST_ID,
+} from '../../shared/utils/formatters';
+import { scrollListCarousel } from '../../shared/utils/carousel';
+import { UserAvatar } from '../users/UserAvatar';
 
 type PatientListProps = {
   pacientes: Paciente[];
@@ -38,9 +49,7 @@ type PatientListProps = {
   hasMedicalUsers: boolean;
   hasConvenios: boolean;
   onSearchChange: (value: string) => void;
-  onFiltersChange: (
-    filters: PacienteFilters | ((current: PacienteFilters) => PacienteFilters),
-  ) => void;
+  onFiltersChange: (filters: PacienteFilters | ((current: PacienteFilters) => PacienteFilters)) => void;
   onClearFilters: () => void;
   onExportScopeChange: (scope: PacienteExportScope) => void;
   onPageChange: (page: number | ((current: number) => number)) => void;
@@ -99,96 +108,157 @@ export function PatientList({
 
   return (
     <DataPanel>
-      <PatientListToolbar
-        totalItems={pacientesTotalItems}
-        canCreatePatients={canCreatePatients}
-        searchTerm={pacienteSearchTerm}
-        exportLoading={pacienteExportLoading}
-        exportScope={pacienteExportScope}
-        isAdmin={isAdmin}
-        filters={pacienteFilters}
-        hasMedicalUsers={hasMedicalUsers}
-        hasConvenios={hasConvenios}
-        onOpenNew={onOpenNewPacienteForm}
-        onSearchChange={onSearchChange}
-        onRefresh={onRefresh}
-        onExportScopeChange={onExportScopeChange}
-        onExport={onExportPacientes}
-        onFiltersChange={onFiltersChange}
-        onClearFilters={onClearFilters}
-      />
+      <div className="data-header">
+        <div>
+          <span className="eyebrow">Cadastro de pacientes</span>
+          <h2>{pacientesTotalItems} cadastrados</h2>
+        </div>
 
-      {pacienteSuccessMessage && (
-        <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>
-          {pacienteSuccessMessage}
-        </AlertMessage>
-      )}
+        <div className="table-tools">
+          {canCreatePatients && (
+            <Button onClick={onOpenNewPacienteForm}>
+              <Plus size={17} />
+              Novo paciente
+            </Button>
+          )}
+          <SearchField
+            label="Buscar pacientes"
+            value={pacienteSearchTerm}
+            onValueChange={onSearchChange}
+          />
+          <IconButton label="Atualizar lista de pacientes" onClick={onRefresh} title="Atualizar lista">
+            <RefreshCw size={18} />
+          </IconButton>
+          <div className="patient-export-actions" aria-label="Exportacoes de pacientes">
+            <SelectField
+              className="export-scope-field"
+              label="Exportar"
+              value={pacienteExportScope}
+              onChange={(event) => onExportScopeChange(event.target.value as PacienteExportScope)}
+            >
+              <option value="all">Todos os pacientes</option>
+              {isAdmin && <option value="doctor">Cirurgião selecionado</option>}
+              <option value="visible">Dados da tela</option>
+            </SelectField>
+            <Button
+              onClick={() => void onExportPacientes('xlsx')}
+              disabled={pacienteExportLoading !== null}
+            >
+              <Download size={17} />
+              {pacienteExportLoading === 'xlsx' ? 'Gerando...' : 'Exportar XLSX'}
+            </Button>
+            <Button
+              onClick={() => void onExportPacientes('pdf')}
+              disabled={pacienteExportLoading !== null}
+            >
+              <FileText size={17} />
+              {pacienteExportLoading === 'pdf' ? 'Gerando...' : 'Exportar PDF'}
+            </Button>
+          </div>
+          {isAdmin && (
+            <div className="patient-filter-grid" aria-label="Filtros administrativos de pacientes">
+              <TextField
+                className="filter-field"
+                label="Cirurgião"
+                type="search"
+                list={MEDICAL_USERS_DATALIST_ID}
+                value={pacienteFilters.medico}
+                onValueChange={(value) => onFiltersChange((current) => ({ ...current, medico: value }))}
+                disabled={!hasMedicalUsers}
+                placeholder={hasMedicalUsers ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
+              />
+              <TextField
+                className="filter-field"
+                label="Convênio"
+                type="search"
+                list={CONVENIOS_DATALIST_ID}
+                value={pacienteFilters.convenio}
+                onValueChange={(value) => onFiltersChange((current) => ({ ...current, convenio: value }))}
+                disabled={!hasConvenios}
+                placeholder={hasConvenios ? 'Convênio' : 'Nenhum convênio cadastrado'}
+              />
+              <TextField
+                className="filter-field"
+                label="Procedimento"
+                type="search"
+                value={pacienteFilters.procedimento}
+                onValueChange={(value) => onFiltersChange((current) => ({ ...current, procedimento: value }))}
+                placeholder="Procedimento"
+              />
+              <Button
+                className="patient-clear-filters"
+                onClick={onClearFilters}
+              >
+                <X size={17} />
+                Limpar filtros
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {pacienteSuccessMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{pacienteSuccessMessage}</AlertMessage>}
       {pacientesError && <AlertMessage type="error">{pacientesError}</AlertMessage>}
 
-      <HorizontalTableScroller entityLabel="pacientes" className="patients-carousel-wrap">
-        <table className="patients-table">
-          <thead>
-            <tr>
-              <SortableHeader
-                field="nome"
-                label="Paciente"
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onSortChange={onSortChange}
-              />
-              <th>Info</th>
-              <SortableHeader
-                field="medico"
-                label="Cirurgião"
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onSortChange={onSortChange}
-              />
-              <SortableHeader
-                field="status"
-                label="Status Pago"
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onSortChange={onSortChange}
-              />
-              <SortableHeader
-                field="arquivos"
-                label="Arquivos"
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onSortChange={onSortChange}
-              />
-              <th>Obs.</th>
-              <th aria-label="Ações" />
-            </tr>
-          </thead>
-          <tbody>
-            {pacientesLoading || !pacientes.length ? (
-              <TableStateRow
-                colSpan={7}
-                loading={pacientesLoading}
-                empty={!pacientes.length}
-                loadingLabel="Carregando pacientes..."
-                emptyLabel="Nenhum paciente encontrado."
-              />
-            ) : (
-              pacientes.map((paciente) => {
-                const unreadObservations = paciente.observacoesNaoLidasCount ?? 0;
-                const hasUnreadObservations = unreadObservations > 0;
-                const patientDisplayName = formatPersonName(paciente.nomePaciente);
+      <div className="carousel-shell">
+        <button
+          type="button"
+          className="carousel-nav carousel-nav-left"
+          onClick={(event) => scrollListCarousel(event, 'previous')}
+          aria-label="Voltar no carrossel de pacientes"
+          title="Voltar no carrossel"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <div className="table-wrap list-carousel-wrap patients-carousel-wrap">
+          <table className="patients-table">
+            <thead>
+              <tr>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('nome')} aria-sort={sortBy === 'nome' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Paciente
+                    {sortBy === 'nome' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>Info</th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('medico')} aria-sort={sortBy === 'medico' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Cirurgião
+                    {sortBy === 'medico' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('status')} aria-sort={sortBy === 'status' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Status Pago
+                    {sortBy === 'status' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('arquivos')} aria-sort={sortBy === 'arquivos' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Arquivos
+                    {sortBy === 'arquivos' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>Obs.</th>
+                <th aria-label="Ações" />
+              </tr>
+            </thead>
+            <tbody>
+              {pacientesLoading ? (
+                <tr>
+                  <td colSpan={7} className="empty-row">Carregando pacientes...</td>
+                </tr>
+              ) : pacientes.length ? (
+                pacientes.map((paciente) => {
+                  const unreadObservations = paciente.observacoesNaoLidasCount ?? 0;
+                  const hasUnreadObservations = unreadObservations > 0;
 
-                return (
+                  return (
                   <tr key={paciente.id}>
                     <td data-label="Paciente">
                       <div className="name-cell">
-                        <UserAvatar
-                          userId={paciente.userId}
-                          name={paciente.nomePaciente}
-                          photo={paciente.fotoPerfil}
-                          authToken={sessionToken}
-                          size="sm"
-                        />
-                        <span>{patientDisplayName}</span>
+                        <UserAvatar userId={paciente.userId} name={paciente.nomePaciente} photo={paciente.fotoPerfil} authToken={sessionToken} size="sm" />
+                        <span>{paciente.nomePaciente}</span>
                       </div>
                     </td>
                     <td data-label="Info">
@@ -196,13 +266,13 @@ export function PatientList({
                         type="button"
                         className="status-info-button"
                         title="Ver informações adicionais"
-                        aria-label={`Informações adicionais de ${patientDisplayName}`}
+                        aria-label={`Informações adicionais de ${paciente.nomePaciente}`}
                         onClick={() => onSelectPatientInfo(paciente)}
                       >
                         <Info size={18} />
                       </button>
                     </td>
-                    <td data-label="Cirurgião">{formatPersonName(paciente.medico) || '-'}</td>
+                    <td data-label="Cirurgião">{paciente.medico || '-'}</td>
                     <td data-label="Status Pago">
                       <span className={`status-pill ${paciente.statusPago ? 'ok' : 'warning'}`}>
                         {paciente.statusPago ? 'Pago' : 'Pendente'}
@@ -215,14 +285,15 @@ export function PatientList({
                           className="attachment-count attachment-button"
                           onClick={() => void onOpenPacienteFiles(paciente)}
                           title="Ver arquivos anexos"
-                          aria-label={`Arquivos anexos de ${patientDisplayName}`}
+                          aria-label={`Arquivos anexos de ${paciente.nomePaciente}`}
                         >
                           <FileText size={15} />
                           {paciente.arquivosCount ?? paciente.arquivos.length}
                         </button>
                       ) : (
                         <span className="attachment-count">
-                          <FileText size={15} />0
+                          <FileText size={15} />
+                          0
                         </span>
                       )}
                     </td>
@@ -233,15 +304,13 @@ export function PatientList({
                           className={`patient-observation-button${hasUnreadObservations ? ' has-unread-observations' : ''}`}
                           onClick={() => void onOpenPacienteObservacoes(paciente)}
                           title="Abrir observações"
-                          aria-label={`Observações de ${patientDisplayName}`}
+                          aria-label={`Observações de ${paciente.nomePaciente}`}
                         >
                           <MessageSquareText size={16} />
                           <span className="patient-observation-count">{unreadObservations}</span>
                         </button>
                       ) : (
-                        <span
-                          className={`attachment-count patient-observation-count${hasUnreadObservations ? ' has-unread-observations' : ''}`}
-                        >
+                        <span className={`attachment-count patient-observation-count${hasUnreadObservations ? ' has-unread-observations' : ''}`}>
                           <MessageSquareText size={15} />
                           {unreadObservations}
                         </span>
@@ -250,20 +319,16 @@ export function PatientList({
                     <td data-label="Ações">
                       <div className="row-actions">
                         <IconButton
-                          label={`${patientActionLabel} ${patientDisplayName}`}
+                          label={`${patientActionLabel} ${paciente.nomePaciente}`}
                           tone="muted"
                           onClick={() => void onEditPaciente(paciente)}
                           title={patientActionLabel}
                         >
-                          {patientReadOnly || !canEditPatients ? (
-                            <Eye size={17} />
-                          ) : (
-                            <Pencil size={17} />
-                          )}
+                          {patientReadOnly || !canEditPatients ? <Eye size={17} /> : <Pencil size={17} />}
                         </IconButton>
                         {canDeletePatients && (
                           <IconButton
-                            label={`Excluir ${patientDisplayName}`}
+                            label={`Excluir ${paciente.nomePaciente}`}
                             tone="danger"
                             onClick={() => void onDeletePaciente(paciente)}
                             title="Excluir"
@@ -274,22 +339,51 @@ export function PatientList({
                       </div>
                     </td>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </HorizontalTableScroller>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="empty-row">Nenhum paciente encontrado.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <button
+          type="button"
+          className="carousel-nav carousel-nav-right"
+          onClick={(event) => scrollListCarousel(event, 'next')}
+          aria-label="Avançar no carrossel de pacientes"
+          title="Avançar no carrossel"
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
 
-      <Pagination
-        entityLabel="pacientes"
-        visibleStart={pacienteVisibleStart}
-        visibleEnd={pacienteVisibleEnd}
-        totalItems={pacientesTotalItems}
-        currentPage={pacienteCurrentPage}
-        totalPages={pacienteTotalPages}
-        onPageChange={onPageChange}
-      />
+      <div className="pagination-bar">
+        <span>
+          {pacienteVisibleStart}-{pacienteVisibleEnd} de {pacientesTotalItems}
+        </span>
+        <div className="pagination-actions">
+          <IconButton
+            label="Página anterior de pacientes"
+            onClick={() => onPageChange((page) => Math.max(1, page - 1))}
+            disabled={pacienteCurrentPage === 1}
+            title="Página anterior"
+          >
+            <ChevronLeft size={18} />
+          </IconButton>
+          <span className="page-indicator">Página {pacienteCurrentPage} de {pacienteTotalPages}</span>
+          <IconButton
+            label="Próxima página de pacientes"
+            onClick={() => onPageChange((page) => Math.min(pacienteTotalPages, page + 1))}
+            disabled={pacienteCurrentPage === pacienteTotalPages}
+            title="Próxima página"
+          >
+            <ChevronRight size={18} />
+          </IconButton>
+        </div>
+      </div>
     </DataPanel>
   );
 }
