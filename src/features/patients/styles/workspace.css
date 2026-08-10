@@ -39,22 +39,22 @@
   white-space: nowrap;
 }
 
-.patient-export-actions .ghost-button:first-of-type {
-  background: var(--action-success);
-  border-color: color-mix(in srgb, var(--action-success) 82%, black);
-}
-
-.patient-export-actions .ghost-button:first-of-type:hover {
-  background: var(--action-success-hover);
-}
-
-.patient-export-actions .ghost-button:last-of-type {
+.patient-export-actions .export-pdf-btn {
   background: var(--action-accent);
   border-color: color-mix(in srgb, var(--action-accent) 82%, black);
 }
 
-.patient-export-actions .ghost-button:last-of-type:hover {
+.patient-export-actions .export-pdf-btn:hover {
   background: var(--action-accent-hover);
+}
+
+.patient-export-actions .export-xlsx-btn {
+  background: var(--action-success);
+  border-color: color-mix(in srgb, var(--action-success) 82%, black);
+}
+
+.patient-export-actions .export-xlsx-btn:hover {
+  background: var(--action-success-hover);
 }
 
 .export-scope-field {

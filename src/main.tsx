@@ -1,20 +1,21 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { initCspViolationMonitoring, initObservability } from './observability';
-import { initializeOptionalTelemetry } from './telemetryBootstrap';
+import { initNewRelicBrowser } from './newRelic';
+import { initOpenTelemetryBrowser } from './otel';
+import { initObservability } from './observability';
 import './styles.css';
 
-function initializeTelemetry() {
+async function bootstrap() {
+  initNewRelicBrowser();
   initObservability();
-  initCspViolationMonitoring();
-  void initializeOptionalTelemetry();
+  await initOpenTelemetryBrowser();
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
-
-queueMicrotask(initializeTelemetry);
+void bootstrap();

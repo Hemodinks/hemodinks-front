@@ -1,28 +1,27 @@
-import type { AuthSession } from '../shared/domain/sessionTypes';
-import { LICENSE_FEATURES, hasSessionFeature } from '../shared/utils/license';
+import type { AuthSession } from "../types";
+import { LICENSE_FEATURES, hasSessionFeature } from "../shared/utils/license";
 import {
   CONTROLLER_PROFILE_ID,
   MEDICAL_PROFILE_ID,
   PATIENT_PROFILE_ID,
   SUPER_ADMIN_PROFILE_ID,
-} from '../shared/utils/formatters';
+  TEAM_PROFILE_ID,
+} from "../shared/utils/formatters";
 
 export const MEDICAL_ALLOWED_ENTRY_PATHS = new Set([
-  '/agenda',
-  '/faturamento-medico',
-  '/atendimentos-cirurgicos',
-  '/financeiro',
-  '/tabela-de-precos',
-  '/meu-cadastro',
-  '/pacientes',
+  "/agenda",
+  "/faturamento-medico",
+  "/relatorios",
+  "/meu-cadastro",
+  "/pacientes",
 ]);
 
 export const CLINIC_MODULES = {
-  users: 'usuarios',
-  patients: 'pacientes',
-  billing: 'faturamento',
-  medicalGroups: 'grupos-medicos',
-  agenda: 'agenda',
+  users: "usuarios",
+  patients: "pacientes",
+  billing: "faturamento",
+  medicalGroups: "grupos-medicos",
+  agenda: "agenda",
 } as const;
 
 export function getAppAccess(session: AuthSession | null) {
@@ -31,28 +30,37 @@ export function getAppAccess(session: AuthSession | null) {
   const isAdmin = currentPerfilId === 1 || isSuperAdmin;
   const isMedical = currentPerfilId === MEDICAL_PROFILE_ID;
   const isController = currentPerfilId === CONTROLLER_PROFILE_ID;
+  const isTeam = currentPerfilId === TEAM_PROFILE_ID;
   const isPatient = currentPerfilId === PATIENT_PROFILE_ID;
   const contractedModules = session?.user.modulosLiberados;
   const hasClinicModule = (module: string) =>
     contractedModules == null || contractedModules.includes(module);
   const canAccessDashboard =
-    hasSessionFeature(session?.user, LICENSE_FEATURES.dashboardVisualizar) || isMedical;
+    hasSessionFeature(session?.user, LICENSE_FEATURES.dashboardVisualizar) ||
+    isMedical;
   const canAccessPatients =
-    (hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesVisualizar) || isMedical) &&
+    (hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesVisualizar) ||
+      isMedical) &&
     hasClinicModule(CLINIC_MODULES.patients);
   const canManagePatients =
-    (hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar) || isMedical) &&
+    (hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar) ||
+      isMedical) &&
     hasClinicModule(CLINIC_MODULES.patients);
   const canConsultCbhpm =
-    (hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar) || isMedical) &&
+    (hasSessionFeature(session?.user, LICENSE_FEATURES.cbhpmConsultar) ||
+      isMedical) &&
     hasClinicModule(CLINIC_MODULES.patients);
   const canAccessAgenda = hasClinicModule(CLINIC_MODULES.agenda);
-  const canAccessUsers = isAdmin && hasClinicModule(CLINIC_MODULES.users);
-  const canEditOwnUser = isAdmin || isMedical || isPatient;
+  const canAccessUsers =
+    (isAdmin || isTeam) && hasClinicModule(CLINIC_MODULES.users);
+  const canEditOwnUser = isMedical || isPatient;
   const canAccessBilling =
-    (isAdmin || isMedical || isController) && hasClinicModule(CLINIC_MODULES.billing);
+    (isAdmin || isMedical || isController || isTeam) &&
+    hasClinicModule(CLINIC_MODULES.billing);
+  const canAccessReports = canAccessBilling;
   const canAccessMedicalGroups =
-    (isAdmin || isController) && hasClinicModule(CLINIC_MODULES.medicalGroups);
+    (isAdmin || isController) &&
+    hasClinicModule(CLINIC_MODULES.medicalGroups);
   const canAccessSettings = isAdmin;
 
   return {
@@ -61,6 +69,7 @@ export function getAppAccess(session: AuthSession | null) {
     isSuperAdmin,
     isMedical,
     isController,
+    isTeam,
     isPatient,
     canAccessDashboard,
     canAccessPatients,
@@ -70,6 +79,7 @@ export function getAppAccess(session: AuthSession | null) {
     canAccessUsers,
     canEditOwnUser,
     canAccessBilling,
+    canAccessReports,
     canAccessMedicalGroups,
     canAccessSettings,
     canCreatePatients: canManagePatients,
@@ -82,13 +92,11 @@ export function getAppAccess(session: AuthSession | null) {
     canUseUsersRoute: canAccessUsers,
     canUseProfileRoute: canEditOwnUser,
     canUseBillingRoute: canAccessBilling,
-    canUseAttendancesRoute: canAccessBilling,
-    canUseFinanceRoute: canAccessBilling && !isMedical,
-    canUsePricesRoute: canAccessBilling,
+    canUseReportsRoute: canAccessReports,
     canUseMedicalGroupsRoute: canAccessMedicalGroups,
     canUseAgendaRoute: canAccessAgenda,
     canUseSettingsRoute: canAccessSettings,
-    canAccessClinics: isAdmin,
-    canUseClinicsRoute: isAdmin,
+    canAccessClinics: isSuperAdmin,
+    canUseClinicsRoute: isSuperAdmin,
   };
 }

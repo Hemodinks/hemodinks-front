@@ -1,90 +1,61 @@
 import { type FormEvent, useEffect, useState } from 'react';
-import type { NavigateFunction } from 'react-router-dom';
-import { authenticate, listPublicClinics, resetPassword } from '../../services';
+import { authenticate, identifyTeamOperator, listPublicClinics, resetPassword } from '../../services';
 import { queryClient } from '../../queryClient';
-import { API_ASSET_BASE_URL, getErrorMessage, isValidEmail } from '../../shared/utils/formatters';
-import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
-import type { AuthSession } from './authTypes';
-import type { PublicClinic } from '../../shared/domain/clinicalContracts';
-import {
-  buildSessionFromLogin,
-  getResetPasswordCompletedMessage,
-  shouldOpenDashboardAfterLogin,
-} from '../../app/appSession';
+import { getErrorMessage, isValidEmail } from '../../shared/utils/formatters';
+import type { AuthSession, PublicClinic, TeamLoginChallenge } from '../../types';
+import { buildSessionFromLogin, shouldOpenDashboardAfterLogin } from '../../app/appSession';
 
-type LoginFlowOptions = {
+type UseLoginFlowOptions = {
   session: AuthSession | null;
   persistSession: (session: AuthSession) => void;
-  navigate: NavigateFunction;
-  fallbackCompanyName: string;
-  fallbackCompanyPhoto?: string | null;
 };
 
-export function useLoginFlow({
-  session,
-  persistSession,
-  navigate,
-  fallbackCompanyName,
-  fallbackCompanyPhoto,
-}: LoginFlowOptions) {
+export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginClinicValue, setLoginClinicValue] = useState('');
   const [publicClinics, setPublicClinics] = useState<PublicClinic[]>([]);
+  const [publicClinicsLoading, setPublicClinicsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginInfo, setLoginInfo] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [openDashboardAfterLogin, setOpenDashboardAfterLogin] = useState(false);
+  const [teamChallenge, setTeamChallenge] = useState<TeamLoginChallenge | null>(null);
+  const [teamOperatorId, setTeamOperatorId] = useState('');
+  const [teamPin, setTeamPin] = useState('');
+
   const selectedLoginClinic = publicClinics.find(
     (clinic) => String(clinic.id) === loginClinicValue,
-  );
-  const publicClinicsOperation = useAsyncOperation(() => listPublicClinics());
-  const loginOperation = useAsyncOperation(
-    (_signal, email: string, password: string, clinicSlug: string) =>
-      authenticate(email, password, clinicSlug),
-  );
-  const resetPasswordOperation = useAsyncOperation((_signal, email: string, clinicSlug: string) =>
-    resetPassword(email, clinicSlug),
   );
 
   useEffect(() => {
     if (session) return;
 
-    let active = true;
-    void publicClinicsOperation
-      .execute()
+    let cancelled = false;
+    setPublicClinicsLoading(true);
+    void listPublicClinics()
       .then((clinics) => {
-        if (!active) return;
-        setPublicClinics(clinics);
-        if (clinics.length === 1) {
-          setLoginClinicValue(String(clinics[0].id));
+        if (cancelled) return;
+        if (!Array.isArray(clinics)) {
+          setPublicClinics([]);
+          setLoginError('Não foi possível carregar as clínicas cadastradas.');
+          return;
         }
+        setPublicClinics(clinics);
+        setLoginClinicValue('');
       })
       .catch((error) => {
-        if (active) setLoginError(getErrorMessage(error));
+        if (!cancelled) setLoginError(getErrorMessage(error));
+      })
+      .finally(() => {
+        if (!cancelled) setPublicClinicsLoading(false);
       });
 
     return () => {
-      active = false;
-      publicClinicsOperation.cancel();
+      cancelled = true;
     };
   }, [session]);
-
-  useEffect(() => {
-    if (session) {
-      publicClinicsOperation.reset();
-    }
-  }, [session]);
-
-  const returnToLogin = (infoMessage = '') => {
-    setLoginError('');
-    setLoginInfo(infoMessage);
-    setLoginPassword('');
-    navigate('/', { replace: true });
-  };
-
-  const handleResetPasswordCompleted = (message: string) => {
-    returnToLogin(getResetPasswordCompletedMessage(message));
-  };
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -100,18 +71,50 @@ export function useLoginFlow({
       return;
     }
 
+    setLoginLoading(true);
     try {
-      const result = await loginOperation.execute(
-        loginEmail.trim(),
-        loginPassword,
-        selectedLoginClinic.slug,
-      );
+      const result = await authenticate(loginEmail.trim(), loginPassword, selectedLoginClinic.slug);
+      if (result.equipeDesafio) {
+        setTeamChallenge(result.equipeDesafio);
+        setTeamOperatorId('');
+        setTeamPin('');
+        return;
+      }
       const nextSession = buildSessionFromLogin(result);
       queryClient.clear();
       setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin(nextSession.user.perfilId));
       persistSession(nextSession);
     } catch (error) {
       setLoginError(getErrorMessage(error));
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleTeamIdentification = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!teamChallenge || !selectedLoginClinic || !teamOperatorId) return;
+
+    setLoginLoading(true);
+    setLoginError('');
+    try {
+      const operator = teamChallenge.operadores.find(
+        (candidate) => String(candidate.id) === teamOperatorId,
+      );
+      const result = await identifyTeamOperator(
+        teamChallenge.token,
+        Number(teamOperatorId),
+        operator?.exigePin ? teamPin : null,
+        selectedLoginClinic.slug,
+      );
+      const nextSession = buildSessionFromLogin(result);
+      queryClient.clear();
+      persistSession(nextSession);
+      setTeamChallenge(null);
+    } catch (error) {
+      setLoginError(getErrorMessage(error));
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -124,54 +127,70 @@ export function useLoginFlow({
       return;
     }
 
+    setResetPasswordLoading(true);
     try {
       if (!selectedLoginClinic) {
         setLoginError('Selecione a clinica para redefinir a senha.');
         return;
       }
-      const result = await resetPasswordOperation.execute(
-        loginEmail.trim(),
-        selectedLoginClinic.slug,
-      );
-
+      const result = await resetPassword(loginEmail.trim(), selectedLoginClinic.slug);
+      if (result.mode === 'default-password') {
+        setLoginPassword('');
+        setLoginInfo(
+          'A senha foi redefinida. Use a credencial temporária fornecida pela clínica e altere-a após entrar.',
+        );
+        return;
+      }
       setLoginPassword('');
       setLoginInfo(
-        result.message ||
-          'Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.',
+        result.message || 'Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.',
       );
     } catch (error) {
       setLoginError(getErrorMessage(error));
+    } finally {
+      setResetPasswordLoading(false);
     }
   };
 
-  const companyName = selectedLoginClinic?.nome ?? fallbackCompanyName;
-  const companyPhoto = selectedLoginClinic?.fotoUrl
-    ? `${API_ASSET_BASE_URL}${selectedLoginClinic.fotoUrl}`
-    : fallbackCompanyPhoto;
+  const resetLoginState = (infoMessage = '') => {
+    setLoginError('');
+    setLoginInfo(infoMessage);
+    setLoginPassword('');
+  };
+
+  const cancelTeamIdentification = () => {
+    setTeamChallenge(null);
+    setTeamPin('');
+    setLoginError('');
+  };
 
   return {
     loginEmail,
-    setLoginEmail,
     loginPassword,
-    setLoginPassword,
     loginClinicValue,
-    setLoginClinicValue,
     publicClinics,
-    publicClinicsLoading: publicClinicsOperation.isLoading,
+    publicClinicsLoading,
     loginError,
-    setLoginError,
     loginInfo,
-    setLoginInfo,
-    loginLoading: loginOperation.isLoading,
-    resetPasswordLoading: resetPasswordOperation.isLoading,
+    loginLoading,
+    resetPasswordLoading,
     openDashboardAfterLogin,
+    teamChallenge,
+    teamOperatorId,
+    teamPin,
+    selectedLoginClinic,
+    setLoginEmail,
+    setLoginPassword,
+    setLoginClinicValue,
+    setLoginError,
     setOpenDashboardAfterLogin,
-    companyName,
-    companyPhoto,
-    returnToLogin,
-    handleResetPasswordCompleted,
+    setTeamOperatorId,
+    setTeamPin,
     handleLogin,
+    handleTeamIdentification,
     handleResetPassword,
+    resetLoginState,
+    cancelTeamIdentification,
   };
 }
 

@@ -1,12 +1,10 @@
 import { type ReactNode, Suspense } from 'react';
-import type { UsersDomainState } from '../features/users';
-import type { PatientsDomainState } from '../features/patients';
-import type { AuthSession } from '../shared/domain/sessionTypes';
-import type { DashboardNotification } from '../shared/domain/dashboardContracts';
+import { ContactModal, InfoModal } from '../features/users/UserModals';
+import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
+import type { UsersDomainState } from '../features/users/useUsersDomain';
+import type { DashboardNotification, AuthSession } from '../types';
 import {
   CbhpmLookupModal,
-  ContactModal,
-  InfoModal,
   NotificationsModal,
   PasswordModal,
   PatientFilesModal,
@@ -50,17 +48,11 @@ export function AppModals({
   return (
     <Suspense fallback={null}>
       {usersDomain.selectedInfoUser && (
-        <InfoModal
-          user={usersDomain.selectedInfoUser}
-          onClose={() => usersDomain.setSelectedInfoUser(null)}
-        />
+        <InfoModal user={usersDomain.selectedInfoUser} onClose={() => usersDomain.setSelectedInfoUser(null)} />
       )}
 
       {usersDomain.selectedContactUser && (
-        <ContactModal
-          user={usersDomain.selectedContactUser}
-          onClose={() => usersDomain.setSelectedContactUser(null)}
-        />
+        <ContactModal user={usersDomain.selectedContactUser} onClose={() => usersDomain.setSelectedContactUser(null)} />
       )}
 
       {notificationsOpen && (
@@ -101,11 +93,7 @@ export function AppModals({
       )}
 
       {patientsDomain.selectedPatientInfo && (
-        <PatientInfoModal
-          paciente={patientsDomain.selectedPatientInfo}
-          sessionToken={session.token}
-          onClose={() => patientsDomain.setSelectedPatientInfo(null)}
-        />
+        <PatientInfoModal paciente={patientsDomain.selectedPatientInfo} onClose={() => patientsDomain.setSelectedPatientInfo(null)} />
       )}
 
       {patientsDomain.selectedPatientFiles && (
@@ -129,11 +117,7 @@ export function AppModals({
           replyTo={patientsDomain.patientObservationReplyTo}
           onDraftChange={patientsDomain.setPatientObservationDraft}
           onReplyToChange={patientsDomain.setPatientObservationReplyTo}
-          onRefresh={() =>
-            void patientsDomain.handleOpenPacienteObservacoes(
-              patientsDomain.selectedPatientObservacoes!,
-            )
-          }
+          onRefresh={() => void patientsDomain.handleOpenPacienteObservacoes(patientsDomain.selectedPatientObservacoes!)}
           onSubmit={() => void patientsDomain.handleSubmitPacienteObservacao()}
           onClose={patientsDomain.closePatientObservacoesModal}
         />

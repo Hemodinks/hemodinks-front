@@ -3,7 +3,7 @@
   inset: 0;
   z-index: 20;
   display: grid;
-  place-items: center;
+  place-items: start center;
   padding: 20px;
   background: rgba(24, 33, 47, 0.54);
   overflow-y: auto;
@@ -11,9 +11,8 @@
 }
 
 .modal-panel {
+  margin-top: 12px;
   width: min(470px, 100%);
-  min-width: 0;
-  max-width: calc(100dvw - 40px);
   max-height: calc(100dvh - 40px);
   overflow: auto;
   padding: 22px;
@@ -39,8 +38,8 @@
   }
 
   .modal-panel {
+    margin-top: 0;
     width: 100%;
-    max-width: calc(100dvw - 20px);
     padding: 16px;
     max-height: calc(100dvh - 24px);
   }
@@ -66,9 +65,5 @@
 @media (max-width: 520px) {
   .modal-backdrop {
     padding: 6px;
-  }
-
-  .modal-panel {
-    max-width: calc(100dvw - 12px);
   }
 }

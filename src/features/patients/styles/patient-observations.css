@@ -188,11 +188,7 @@
 }
 
 .patient-observation-button.has-unread-observations:hover {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--blood) 94%, white),
-    var(--blood-dark)
-  );
+  background: linear-gradient(135deg, color-mix(in srgb, var(--blood) 94%, white), var(--blood-dark));
 }
 
 .patient-observation-summary {
@@ -211,11 +207,7 @@
 
 .patient-observation-list li.is-unread .patient-observation-card {
   border-color: color-mix(in srgb, var(--blood) 38%, var(--line));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--blood) 8%, var(--panel-strong)),
-    var(--panel-strong)
-  );
+  background: linear-gradient(180deg, color-mix(in srgb, var(--blood) 8%, var(--panel-strong)), var(--panel-strong));
 }
 
 .patient-observation-list li.is-unread .patient-observation-author {

@@ -6,9 +6,8 @@ describe('normalizeDisplayText', () => {
     expect(normalizeDisplayText('Bradesco Sa\u00c3\u00bade')).toBe('Bradesco Saúde');
     expect(normalizeDisplayText('Cemig Sa\uFFFDde')).toBe('Cemig Saúde');
     expect(normalizeDisplayText('Sul Am\u00c3\u00a9rica')).toBe('Sul América');
-    expect(normalizeDisplayText('Unimed Uberl\uFFFDndia - Plano  Unimed Interc\uFFFDmbio')).toBe(
-      'Unimed Uberlândia - Plano  Unimed Intercâmbio',
-    );
+    expect(normalizeDisplayText('Unimed Uberl\uFFFDndia - Plano  Unimed Interc\uFFFDmbio'))
+      .toBe('Unimed Uberlândia - Plano  Unimed Intercâmbio');
   });
 });
 
@@ -25,14 +24,16 @@ describe('formatProfileName', () => {
 });
 
 describe('formatPersonName', () => {
-  it('padroniza nomes em caixa alta ou com capitalizacao inconsistente', () => {
-    expect(formatPersonName('GEORGE MARCONE MORAIS DOS SANTOS')).toBe(
-      'George Marcone Morais dos Santos',
-    );
+  it('padroniza nomes e sobrenomes independentemente da caixa recebida', () => {
+    expect(formatPersonName('  MARIA   APARECIDA DA SILVA  ')).toBe('Maria Aparecida da Silva');
     expect(formatPersonName('joÃO pedro dE souZA')).toBe('João Pedro de Souza');
   });
 
-  it('preserva a capitalizacao de nomes compostos', () => {
+  it('padroniza nomes compostos com hifen e apostrofo', () => {
     expect(formatPersonName("ANA-MARIA D'ÁVILA")).toBe("Ana-Maria D'Ávila");
+  });
+
+  it('aceita valores ausentes', () => {
+    expect(formatPersonName(null)).toBe('');
   });
 });

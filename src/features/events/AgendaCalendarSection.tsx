@@ -1,5 +1,14 @@
-import { Bell, Check, ChevronLeft, ChevronRight, Clock, Pencil, Plus, Trash2 } from 'lucide-react';
-import type { AgendaEvent, PublicHoliday } from './agendaTypes';
+import {
+  Bell,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react';
+import type { AgendaEvent, PublicHoliday } from '../../types';
 import { Button, IconButton } from '../../shared/components/ui';
 import {
   eventTouchesDate,
@@ -68,9 +77,7 @@ export function AgendaCalendarSection({
 
       <div className="agenda-calendar" aria-busy={loading || holidayLoading}>
         {weekdayLabels.map((label) => (
-          <span className="agenda-weekday" key={label}>
-            {label}
-          </span>
+          <span className="agenda-weekday" key={label}>{label}</span>
         ))}
         {days.map((date) => {
           const dateKey = toDateKey(date);
@@ -90,16 +97,16 @@ export function AgendaCalendarSection({
                 isToday ? 'today' : '',
                 isSelected ? 'selected' : '',
                 holiday ? 'holiday' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
+              ].filter(Boolean).join(' ')}
               onClick={() => onSelectDate(date)}
               title={getHolidayTitle(holiday)}
             >
               <span className="agenda-day-number">{date.getDate()}</span>
               {holiday && <span className="agenda-holiday-dot">{getHolidayTitle(holiday)}</span>}
               {dayEvents.length > 0 && (
-                <span className="agenda-event-count">{dayEvents.length}</span>
+                <span className="agenda-event-count">
+                  {dayEvents.length}
+                </span>
               )}
             </button>
           );
@@ -108,13 +115,7 @@ export function AgendaCalendarSection({
 
       <div className="agenda-selected">
         <div className="agenda-selected-title">
-          <span>
-            {new Intl.DateTimeFormat('pt-BR', {
-              weekday: 'long',
-              day: '2-digit',
-              month: 'long',
-            }).format(fromDateKey(selectedDate))}
-          </span>
+          <span>{new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(fromDateKey(selectedDate))}</span>
           {selectedHoliday && <strong>{getHolidayTitle(selectedHoliday)}</strong>}
         </div>
 
@@ -139,10 +140,7 @@ export function AgendaCalendarSection({
               const canManage = isAdmin || agendaEvent.userId === currentUserId;
 
               return (
-                <article
-                  className={`agenda-event-item ${agendaEvent.isCompleted ? 'completed' : ''}`}
-                  key={agendaEvent.id}
-                >
+                <article className={`agenda-event-item ${agendaEvent.isCompleted ? 'completed' : ''}`} key={agendaEvent.id}>
                   <div className="agenda-event-main">
                     <span className="agenda-event-time">
                       <Clock size={15} />
@@ -151,42 +149,22 @@ export function AgendaCalendarSection({
                     <strong>{agendaEvent.title}</strong>
                     {agendaEvent.description && <p>{agendaEvent.description}</p>}
                     <div className="agenda-event-meta">
-                      {agendaEvent.notifyUser && (
-                        <span>
-                          <Bell size={14} /> Usuario
-                        </span>
-                      )}
-                      {agendaEvent.notifyMedicalProfile && (
-                        <span>
-                          <Bell size={14} /> {agendaEvent.medicalUserName || 'Perfil médico'}
-                        </span>
-                      )}
-                      {agendaEvent.isCompleted && (
-                        <span>
-                          <Check size={14} /> Concluido
-                        </span>
-                      )}
+                      {agendaEvent.notifyUser && <span><Bell size={14} /> Usuario</span>}
+                      {agendaEvent.notifyMedicalProfile && <span><Bell size={14} /> {agendaEvent.medicalUserName || 'Perfil médico'}</span>}
+                      {agendaEvent.isCompleted && <span><Check size={14} /> Concluido</span>}
                     </div>
                   </div>
                   {canManage && (
                     <div className="agenda-event-actions">
                       {!agendaEvent.isCompleted && (
-                        <IconButton
-                          label="Concluir"
-                          tone="muted"
-                          onClick={() => onComplete(agendaEvent)}
-                        >
+                        <IconButton label="Concluir" tone="muted" onClick={() => onComplete(agendaEvent)}>
                           <Check size={17} />
                         </IconButton>
                       )}
                       <IconButton label="Editar" tone="muted" onClick={() => onEdit(agendaEvent)}>
                         <Pencil size={17} />
                       </IconButton>
-                      <IconButton
-                        label="Excluir"
-                        tone="danger"
-                        onClick={() => onDelete(agendaEvent)}
-                      >
+                      <IconButton label="Excluir" tone="danger" onClick={() => onDelete(agendaEvent)}>
                         <Trash2 size={17} />
                       </IconButton>
                     </div>
