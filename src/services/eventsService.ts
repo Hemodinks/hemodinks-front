@@ -3,7 +3,7 @@ import type {
   AgendaEventPayload,
   AgendaMedicalUser,
   AgendaNotificationRecipientOptions,
-} from '../shared/domain/agendaContracts';
+} from '../types';
 import { del, get, post, put } from './api';
 
 export function getAgendaEvents(token: string, from?: string, to?: string) {

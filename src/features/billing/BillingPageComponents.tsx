@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { Modal } from '../../shared/components/Modal';
 import { IconButton } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
-import { UserAvatar } from '../../shared/components/UserAvatar';
+import { UserAvatar } from '../users/UserAvatar';
 import type { BillingBreakdownItem, BillingChecklistItem, BillingRecord } from './billingUtils';
 
 type BillingSummaryCardProps = {
@@ -32,12 +32,7 @@ type BillingRankingPanelProps = {
   emptyLabel: string;
 };
 
-export function BillingRankingPanel({
-  title,
-  subtitle,
-  items,
-  emptyLabel,
-}: BillingRankingPanelProps) {
+export function BillingRankingPanel({ title, subtitle, items, emptyLabel }: BillingRankingPanelProps) {
   return (
     <article className="billing-ranking-panel">
       <div className="billing-section-heading">
@@ -53,9 +48,7 @@ export function BillingRankingPanel({
             <li key={item.label}>
               <div>
                 <strong>{item.label}</strong>
-                <span>
-                  {item.totalRecords} cirurgia(s) | {item.pendingCount} com pendências
-                </span>
+                <span>{item.totalRecords} cirurgia(s) | {item.pendingCount} com pendências</span>
               </div>
               <div className="billing-ranking-values">
                 <strong>{formatCurrency(item.totalGrossAmount)}</strong>
@@ -98,9 +91,7 @@ export function BillingChecklist({ items }: { items: BillingChecklistItem[] }) {
       {items.map((item) => (
         <div key={item.label} className="billing-checklist-row">
           <dt>
-            <span className={`billing-flag ${item.status}`}>
-              {item.status === 'ok' ? 'Ok' : item.status === 'warning' ? 'Atenção' : 'Pendente'}
-            </span>
+            <span className={`billing-flag ${item.status}`}>{item.status === 'ok' ? 'Ok' : item.status === 'warning' ? 'Atenção' : 'Pendente'}</span>
             {item.label}
           </dt>
           <dd>
@@ -121,18 +112,14 @@ export function BillingProcedureList({ procedures }: { procedures: BillingRecord
           <div className="billing-procedure-content">
             <strong>{procedure.procedimento}</strong>
             <div className="billing-procedure-meta">
-              <span className="billing-procedure-chip">
-                {procedure.cbhpmCodigo || 'Sem código'}
-              </span>
+              <span className="billing-procedure-chip">{procedure.cbhpmCodigo || 'Sem código'}</span>
               {procedure.cbhpmPorte && (
                 <span className="billing-procedure-chip">Porte {procedure.cbhpmPorte}</span>
               )}
             </div>
           </div>
           <span className="billing-procedure-value">
-            {procedure.valorReferencia != null
-              ? formatCurrency(procedure.valorReferencia)
-              : 'Sem valor referência'}
+            {procedure.valorReferencia != null ? formatCurrency(procedure.valorReferencia) : 'Sem valor referência'}
           </span>
         </li>
       ))}
@@ -164,12 +151,7 @@ export function BillingSummaryModal({ record, authToken, onClose }: BillingSumma
             <p className="billing-summary-modal-subtitle">{record.doctorName}</p>
           </div>
         </div>
-        <IconButton
-          label="Fechar informações resumidas"
-          title="Fechar"
-          tone="muted"
-          onClick={onClose}
-        >
+        <IconButton label="Fechar informações resumidas" title="Fechar" tone="muted" onClick={onClose}>
           <X size={18} />
         </IconButton>
       </div>
@@ -185,45 +167,28 @@ export function BillingSummaryModal({ record, authToken, onClose }: BillingSumma
           <article className="billing-summary-info-card billing-summary-convenio-card">
             <span>Convênio / regime</span>
             <strong>{record.convenioName}</strong>
-            <p>
-              {record.regime === 'convenio' ? 'Convênio' : 'Particular'} |{' '}
-              {record.authorizationCode || 'Sem autorização informada'}
-            </p>
+            <p>{record.regime === 'convenio' ? 'Convênio' : 'Particular'} | {record.authorizationCode || 'Sem autorização informada'}</p>
           </article>
 
           <article className="billing-summary-info-card billing-summary-support-card">
             <span>Status / suporte</span>
             <strong>{record.statusLabel}</strong>
-            <p>
-              {record.filesCount} anexo(s) | {record.pendingChecklistItems} pendência(s)
-            </p>
+            <p>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendência(s)</p>
           </article>
         </section>
 
         <section className="billing-summary-metrics" aria-label="Valores do faturamento">
           <article className="billing-summary-metric-card">
             <span>Faturado</span>
-            <strong>
-              {record.paymentHasNumericValue
-                ? formatCurrency(record.paymentAmount)
-                : record.paymentRaw || '-'}
-            </strong>
+            <strong>{record.paymentHasNumericValue ? formatCurrency(record.paymentAmount) : record.paymentRaw || '-'}</strong>
           </article>
           <article className="billing-summary-metric-card">
             <span>Glosa</span>
-            <strong>
-              {record.glosaHasNumericValue
-                ? formatCurrency(record.glosaAmount)
-                : record.glosaRaw || '-'}
-            </strong>
+            <strong>{record.glosaHasNumericValue ? formatCurrency(record.glosaAmount) : record.glosaRaw || '-'}</strong>
           </article>
           <article className="billing-summary-metric-card">
             <span>Líquido</span>
-            <strong>
-              {record.paymentHasNumericValue || record.glosaHasNumericValue
-                ? formatCurrency(record.netAmount)
-                : '-'}
-            </strong>
+            <strong>{record.paymentHasNumericValue || record.glosaHasNumericValue ? formatCurrency(record.netAmount) : '-'}</strong>
           </article>
         </section>
 

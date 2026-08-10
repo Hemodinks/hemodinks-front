@@ -13,9 +13,18 @@ Principios atuais:
 - privilegiar comportamento real em mobile
 - validar fluxos criticos com Vitest, Playwright, axe e Lighthouse
 
-Decisoes e excecoes de seguranca de dependencias sao registradas em
-[`SECURITY.md`](./SECURITY.md). O registro inclui escopo, controles compensatorios e
-criterios de remocao da excecao.
+### Camadas e direcao de dependencias
+
+A arquitetura usa modulos verticais por funcionalidade e quatro papeis inspirados em Clean Architecture:
+
+1. **Dominio/dados puros**: tipos, schemas, normalizacao e regras deterministicas; nao acessa React, DOM ou HTTP.
+2. **Aplicacao**: hooks e casos de uso que coordenam regras e portas de dados.
+3. **Infraestrutura**: `services` HTTP e adaptadores de arquivo/telemetria.
+4. **Apresentacao**: paginas, componentes e layout; delega operacoes aos hooks/casos de uso.
+
+A direcao permitida e apresentacao -> aplicacao -> dominio, com infraestrutura injetada ou chamada pela aplicacao. `shared` e `services` nao podem depender de `app` ou `features`. O comando `npm run audit:architecture` verifica essas fronteiras e impede novos arquivos de producao acima de 550 linhas, avisando a partir de 500.
+
+O modulo `features/reports` segue a mesma direcao: `ReportsPage` apenas compoe a tela, `useReportsPage` orquestra estado e consulta, `reportFilters` concentra regras puras e `export/` possui os adaptadores PDF/XLSX. A rota `/relatorios` herda temporariamente a autorizacao de faturamento ate a definicao da matriz definitiva de perfis.
 
 ## Estrutura
 
@@ -25,70 +34,73 @@ src/
   features/
     auth/
     billing/
-      attendance/
-      invoicing/
-      prices/
-      receivables/
-      styles/
     dashboard/
-      styles/
     events/
-      styles/
     medicalGroups/
     patients/
+      export/
     settings/
     users/
   layout/
   services/
   shared/
     components/
-    domain/
+      ui/
     hooks/
     utils/
     queryKeys.ts
+  types/
   styles/
 ```
 
 Responsabilidades:
 
-| Caminho                                   | Responsabilidade                                                                    |
-| ----------------------------------------- | ----------------------------------------------------------------------------------- |
-| `src/services/api.ts`                     | cliente HTTP centralizado com axios, tratamento comum de erros e auth bearer        |
-| `src/services/*Service.ts`                | contratos por endpoint/modulo                                                       |
-| `src/app/AppContent.tsx`                  | sessao, regras de acesso por perfil, navegacao e orquestracao dos dominios          |
-| `src/app/useAppChrome.ts`                 | dashboard summary, notificacoes e configuracao do sistema                           |
-| `src/routes.ts`                           | mapeamento entre `AppView` e paths da SPA                                           |
-| `src/queryClient.ts`                      | configuracao global do TanStack Query                                               |
-| `src/otel.ts`                             | traces OTLP no browser com runtime config                                           |
-| `src/newRelic.ts`                         | inicializacao opcional do Browser agent do New Relic                                |
-| `src/observability.ts`                    | Sentry opcional e associacao do usuario logado                                      |
-| `src/shared/queryKeys.ts`                 | chaves padronizadas de cache                                                        |
-| `src/shared/components/ui.tsx`            | API publica das primitives, implementadas em `uiActions`, `uiFields` e `uiFeedback` |
-| `src/shared/utils/formatters.ts`          | API publica dos formatadores separados por identidade, data, moeda, perfil e lookup |
-| `src/shared/components/ErrorBoundary.tsx` | fallback visual para erros inesperados                                              |
-| `src/layout`                              | App shell, sidebar, topbar e navegacao global                                       |
+| Caminho | Responsabilidade |
+| --- | --- |
+| `src/services/api.ts` | cliente HTTP centralizado com axios, tratamento comum de erros e auth bearer |
+| `src/services/*Service.ts` | contratos por endpoint/modulo |
+| `src/app/AppContent.tsx` | composicao de navegacao, permissoes e dominios |
+| `src/features/auth/useLoginFlow.ts` | caso de uso de login, identificacao de equipe e reset de senha |
+| `src/features/auth/useSessionLifecycle.ts` | expiracao da sessao e hidratacao da licenca medica |
+| `src/app/useAppChrome.ts` | dashboard summary, notificacoes e configuracao do sistema |
+| `src/routes.ts` | mapeamento entre `AppView` e paths da SPA |
+| `src/queryClient.ts` | configuracao global do TanStack Query |
+| `src/otel.ts` | traces OTLP no browser com runtime config |
+| `src/newRelic.ts` | inicializacao opcional do Browser agent do New Relic |
+| `src/observability.ts` | Sentry opcional e associacao do usuario logado |
+| `src/shared/queryKeys.ts` | chaves padronizadas de cache |
+| `src/shared/components/ui.tsx` | API publica (barrel) das primitivas de UI reutilizadas |
+| `src/shared/components/ui/*` | implementacoes coesas das primitivas de UI |
+| `src/features/patients/export/*` | schemas puros e adaptadores PDF/XLSX de pacientes |
+| `src/features/patients/usePatientFileActions.ts` | estado e ações de anexos isolados do domínio principal |
+| `src/features/billing/billingTypes.ts` | contratos puros do faturamento |
+| `src/features/billing/billingAnalytics.ts` | filtros, totais e agrupamentos financeiros puros |
+| `src/shared/utils/dateFormatters.ts` | conversões e validações de datas sem dependência visual |
+| `src/types/*` | contratos de domínio separados, reexportados por `src/types.ts` |
+| `src/shared/components/ErrorBoundary.tsx` | fallback visual para erros inesperados |
+| `src/layout` | App shell, sidebar, topbar e navegacao global |
 
 ## Rotas e navegacao
 
 Rotas publicas:
 
-| Path                        | Uso                                      |
-| --------------------------- | ---------------------------------------- |
-| `/`                         | login ou redirecionamento para dashboard |
-| `/reset-password?token=...` | confirmacao de reset de senha            |
+| Path | Uso |
+| --- | --- |
+| `/` | login ou redirecionamento para dashboard |
+| `/reset-password?token=...` | confirmacao de reset de senha |
 
 Rotas internas:
 
-| Path                  | View interna    | Observacao                                                   |
-| --------------------- | --------------- | ------------------------------------------------------------ |
-| `/dashboard`          | `dashboard`     | indisponivel para controller                                 |
-| `/usuarios`           | `users`         | apenas administrador                                         |
-| `/meu-cadastro`       | `profile`       | medico e paciente                                            |
-| `/pacientes`          | `patients`      | todos os perfis autenticados; paciente entra em modo leitura |
-| `/faturamento-medico` | `billing`       | administrador, medico e controller                           |
-| `/grupos-medicos`     | `medicalGroups` | apenas administrador                                         |
-| `/agenda`             | `agenda`        | indisponivel para controller                                 |
-| `/configuracoes`      | `settings`      | todos os perfis autenticados                                 |
+| Path | View interna | Observacao |
+| --- | --- | --- |
+| `/dashboard` | `dashboard` | indisponivel para controller |
+| `/usuarios` | `users` | apenas administrador |
+| `/meu-cadastro` | `profile` | medico e paciente |
+| `/pacientes` | `patients` | todos os perfis autenticados; paciente entra em modo leitura |
+| `/faturamento-medico` | `billing` | administrador, medico e controller |
+| `/grupos-medicos` | `medicalGroups` | apenas administrador |
+| `/agenda` | `agenda` | indisponivel para controller |
+| `/configuracoes` | `settings` | todos os perfis autenticados |
 
 `useRouteView` sincroniza URL, permissoes e view ativa. Se a rota nao for permitida para o perfil atual, a aplicacao redireciona para uma view valida.
 
@@ -134,10 +146,6 @@ Queries padronizadas em `src/shared/queryKeys.ts`:
 - `convenios`
 - `opmeFornecedores`
 - `cbhpm`
-- `billingAttendances`
-- `billingInvoicing`
-- `billingReceivables`
-- `billingPrices`
 
 Observacoes:
 
@@ -151,10 +159,7 @@ Observacoes:
 
 Arquivos principais:
 
-- `src/features/dashboard/DashboardContainer.tsx`
-- `src/features/dashboard/DashboardModuleGrid.tsx`
-- `src/features/dashboard/dashboardModules.tsx`
-- `src/features/dashboard/dashboardModuleOrder.ts`
+- `src/features/dashboard/DashboardPage.tsx`
 - `src/app/useAppChrome.ts`
 
 Responsabilidades:
@@ -190,8 +195,7 @@ Arquivos principais:
 - `src/features/patients/usePatientsDomain.ts`
 - `src/features/patients/usePatientList.ts`
 - `src/features/patients/usePatientForm.ts`
-- `src/features/patients/usePatientsDomainQueries.ts`
-- `src/features/patients/patientQueryResults.ts`
+- `src/features/patients/usePatientLookups.ts`
 - `src/features/patients/useCbhpmLookup.ts`
 - `src/features/patients/PatientObservacoesModal.tsx`
 - `src/features/patients/patientExport.ts`
@@ -211,10 +215,6 @@ Responsabilidades:
 Arquivo principal:
 
 - `src/features/billing/BillingPage.tsx`
-- `src/features/billing/attendance`
-- `src/features/billing/invoicing`
-- `src/features/billing/receivables`
-- `src/features/billing/prices`
 
 Responsabilidades:
 
@@ -240,10 +240,7 @@ Responsabilidades:
 
 Arquivo principal:
 
-- `src/features/events/AgendaContainer.tsx`
-- `src/features/events/useAgendaController.ts`
-- `src/features/events/AgendaCalendarSection.tsx`
-- `src/features/events/AgendaEventForm.tsx`
+- `src/features/events/AgendaPage.tsx`
 
 Responsabilidades:
 
@@ -300,7 +297,7 @@ VITE_SENTRY_TRACES_SAMPLE_RATE
 Comportamento:
 
 - `src/main.tsx` tenta subir New Relic antes do bootstrap do React
-- `src/observability.ts` associa usuario ao contexto do Sentry e coleta LCP, CLS e INP via BrowserTracing quando a amostragem esta ativa
+- `src/observability.ts` associa usuario ao contexto do Sentry
 - `src/otel.ts` le `public/otel-runtime-config.json` e so inicializa se existir endpoint valido
 - sem as envs completas, as integracoes ficam desativadas sem bloquear o app
 
@@ -339,86 +336,69 @@ http://localhost:5000
 
 Endpoints consumidos:
 
-| Metodo   | Path                                              | Uso                               |
-| -------- | ------------------------------------------------- | --------------------------------- |
-| `POST`   | `/api/users/authenticate`                         | login                             |
-| `POST`   | `/api/users/password/reset`                       | solicitar reset                   |
-| `POST`   | `/api/users/password/reset/confirm`               | confirmar reset por token         |
-| `GET`    | `/api/dashboard/summary`                          | resumo dashboard                  |
-| `GET`    | `/api/dashboard/notifications`                    | notificacoes do dashboard         |
-| `GET`    | `/api/users/`                                     | listar usuarios                   |
-| `GET`    | `/api/users/{id}`                                 | detalhe ou meu cadastro           |
-| `GET`    | `/api/users/{id}/foto-perfil`                     | foto de perfil                    |
-| `POST`   | `/api/users/`                                     | criar usuario                     |
-| `PUT`    | `/api/users/{id}`                                 | editar usuario                    |
-| `DELETE` | `/api/users/{id}`                                 | excluir usuario                   |
-| `PUT`    | `/api/users/{id}/password`                        | trocar senha                      |
-| `POST`   | `/api/users/{id}/arquivos`                        | upload de documento medico        |
-| `DELETE` | `/api/users/{id}/arquivos/{arquivoId}`            | excluir documento medico          |
-| `GET`    | `/api/pacientes/`                                 | listar pacientes                  |
-| `GET`    | `/api/pacientes/{id}`                             | detalhe do paciente               |
-| `POST`   | `/api/pacientes/`                                 | criar paciente                    |
-| `PUT`    | `/api/pacientes/{id}`                             | editar paciente                   |
-| `DELETE` | `/api/pacientes/{id}`                             | excluir paciente                  |
-| `POST`   | `/api/pacientes/{id}/arquivos`                    | upload de anexo                   |
-| `DELETE` | `/api/pacientes/{id}/arquivos/{arquivoId}`        | excluir anexo                     |
-| `GET`    | `/api/pacientes/{id}/observacoes`                 | listar observacoes                |
-| `POST`   | `/api/pacientes/{id}/observacoes`                 | criar observacao                  |
-| `POST`   | `/api/pacientes/{id}/observacoes/marcar-lidas`    | marcar observacoes lidas          |
-| `GET`    | `/api/faturamentos-medicos/`                      | base do faturamento medico        |
-| `GET`    | `/api/grupos-medicos/`                            | listar grupos medicos             |
-| `GET`    | `/api/grupos-medicos/{id}`                        | detalhe do grupo                  |
-| `POST`   | `/api/grupos-medicos/`                            | criar grupo                       |
-| `PUT`    | `/api/grupos-medicos/{id}`                        | editar grupo                      |
-| `DELETE` | `/api/grupos-medicos/{id}`                        | excluir grupo                     |
-| `GET`    | `/api/grupos-medicos/medicos`                     | medicos elegiveis por escopo      |
-| `GET`    | `/api/events/`                                    | listar eventos                    |
-| `GET`    | `/api/events/medical-users`                       | medicos da agenda                 |
-| `GET`    | `/api/events/notification-recipients`             | usuarios e grupos permitidos      |
-| `POST`   | `/api/events/notifications/mark-read`             | marcar notificacoes da agenda     |
-| `POST`   | `/api/events/`                                    | criar evento                      |
-| `PUT`    | `/api/events/{id}`                                | editar evento                     |
-| `POST`   | `/api/events/{id}/complete`                       | concluir evento                   |
-| `DELETE` | `/api/events/{id}`                                | excluir evento                    |
-| `GET`    | `/api/hospitais/`                                 | lookup de hospitais               |
-| `GET`    | `/api/convenios/`                                 | lookup de convenios               |
-| `GET`    | `/api/opme/`                                      | lookup de fornecedores OPME       |
-| `GET`    | `/api/cbhpm/`                                     | busca CBHPM                       |
-| `GET`    | `/api/configuracoes-sistema/current`              | configuracao da empresa           |
-| `GET`    | `/api/configuracoes-sistema/current/foto-empresa` | logo/foto da empresa              |
-| `PUT`    | `/api/configuracoes-sistema/current`              | atualizar configuracao da empresa |
+| Metodo | Path | Uso |
+| --- | --- | --- |
+| `POST` | `/api/users/authenticate` | login |
+| `POST` | `/api/users/password/reset` | solicitar reset |
+| `POST` | `/api/users/password/reset/confirm` | confirmar reset por token |
+| `GET` | `/api/dashboard/summary` | resumo dashboard |
+| `GET` | `/api/dashboard/notifications` | notificacoes do dashboard |
+| `GET` | `/api/users/` | listar usuarios |
+| `GET` | `/api/users/{id}` | detalhe ou meu cadastro |
+| `GET` | `/api/users/{id}/foto-perfil` | foto de perfil |
+| `POST` | `/api/users/` | criar usuario |
+| `PUT` | `/api/users/{id}` | editar usuario |
+| `DELETE` | `/api/users/{id}` | excluir usuario |
+| `PUT` | `/api/users/{id}/password` | trocar senha |
+| `POST` | `/api/users/{id}/arquivos` | upload de documento medico |
+| `DELETE` | `/api/users/{id}/arquivos/{arquivoId}` | excluir documento medico |
+| `GET` | `/api/pacientes/` | listar pacientes |
+| `GET` | `/api/pacientes/{id}` | detalhe do paciente |
+| `POST` | `/api/pacientes/` | criar paciente |
+| `PUT` | `/api/pacientes/{id}` | editar paciente |
+| `DELETE` | `/api/pacientes/{id}` | excluir paciente |
+| `POST` | `/api/pacientes/{id}/arquivos` | upload de anexo |
+| `DELETE` | `/api/pacientes/{id}/arquivos/{arquivoId}` | excluir anexo |
+| `GET` | `/api/pacientes/{id}/observacoes` | listar observacoes |
+| `POST` | `/api/pacientes/{id}/observacoes` | criar observacao |
+| `POST` | `/api/pacientes/{id}/observacoes/marcar-lidas` | marcar observacoes lidas |
+| `GET` | `/api/faturamentos-medicos/` | base do faturamento medico |
+| `GET` | `/api/grupos-medicos/` | listar grupos medicos |
+| `GET` | `/api/grupos-medicos/{id}` | detalhe do grupo |
+| `POST` | `/api/grupos-medicos/` | criar grupo |
+| `PUT` | `/api/grupos-medicos/{id}` | editar grupo |
+| `DELETE` | `/api/grupos-medicos/{id}` | excluir grupo |
+| `GET` | `/api/grupos-medicos/medicos` | medicos elegiveis por escopo |
+| `GET` | `/api/events/` | listar eventos |
+| `GET` | `/api/events/medical-users` | medicos da agenda |
+| `GET` | `/api/events/notification-recipients` | usuarios e grupos permitidos |
+| `POST` | `/api/events/notifications/mark-read` | marcar notificacoes da agenda |
+| `POST` | `/api/events/` | criar evento |
+| `PUT` | `/api/events/{id}` | editar evento |
+| `POST` | `/api/events/{id}/complete` | concluir evento |
+| `DELETE` | `/api/events/{id}` | excluir evento |
+| `GET` | `/api/hospitais/` | lookup de hospitais |
+| `GET` | `/api/convenios/` | lookup de convenios |
+| `GET` | `/api/opme/` | lookup de fornecedores OPME |
+| `GET` | `/api/cbhpm/` | busca CBHPM |
+| `GET` | `/api/configuracoes-sistema/current` | configuracao da empresa |
+| `GET` | `/api/configuracoes-sistema/current/foto-empresa` | logo/foto da empresa |
+| `PUT` | `/api/configuracoes-sistema/current` | atualizar configuracao da empresa |
 
 ## Convencoes de manutencao
 
 - use `queryKeys` para qualquer cache novo
-- trate o TanStack Query como fonte unica de dados remotos; `useState` fica restrito a formularios, filtros, selecao e modais
-- consuma features por seus `index.ts`; imports profundos ficam reservados ao carregamento dinamico
-- mantenha containers como compositores; estado e comandos ficam em controllers/hooks e blocos visuais em componentes proprios
 - centralize chamadas HTTP em `src/services`
 - preserve imports pesados em `import()` quando o uso for eventual
 - mantenha labels e `aria-label` em controles interativos
 - ao adicionar rota nova, atualize `src/routes.ts`, `README.md` e este documento
 - ao mexer em faturamento, pacientes ou agenda, rode E2E
 - ao mexer em observabilidade, valide `public/otel-runtime-config.json` gerado no build
-- a cobertura minima obrigatoria e de 70% para statements/lines e 60% para branches/functions
-- atualizacoes patch/minor do npm sao agrupadas semanalmente pelo Dependabot; majors exigem migracao dedicada
-
-## Organizacao de testes e estilos
-
-- testes do cliente HTTP ficam separados em `api.auth`, `api.patients`, `api.users` e `api.settings-context`
-- testes integrados do App ficam separados por sessao, agenda/configuracoes, usuarios e pacientes
-- suporte E2E fica em `e2e/support`, dividido entre fixtures, builders, mock da API e assertions
-- estilos de agenda e dashboard ficam em subpastas `styles`
-- estilos financeiros ficam em `src/features/billing/styles`, mantendo fachadas CSS com imports ordenados
 
 ## Checklist para mudancas grandes
 
 ```powershell
 npm test
-npm run test:coverage
-npm run lint
-npm run architecture:check
-npm run format:check
 npm run build
 npm run budget
 npm run test:e2e

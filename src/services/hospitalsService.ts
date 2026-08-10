@@ -1,4 +1,4 @@
-import type { Hospital } from '../shared/domain/patientContracts';
+import type { Hospital } from '../types';
 import { get } from './api';
 
 export function getHospitais(token: string) {

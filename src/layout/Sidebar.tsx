@@ -1,22 +1,8 @@
-import { useEffect, useState } from 'react';
-import {
-  Building2,
-  CalendarDays,
-  ChevronDown,
-  ClipboardList,
-  FileText,
-  LayoutDashboard,
-  ReceiptText,
-  Settings,
-  ShieldPlus,
-  Stethoscope,
-  Tags,
-  Wallet,
-  Users,
-} from 'lucide-react';
+import { useEffect, useId, useState } from 'react';
+import { BarChart3, Building2, CalendarDays, ChevronDown, ClipboardList, FileText, LayoutDashboard, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
-import type { AuthSession } from '../shared/domain/sessionTypes';
-import { UserAvatar } from '../shared/components/UserAvatar';
+import type { AuthSession } from '../types';
+import { UserAvatar } from '../features/users/UserAvatar';
 import { formatPersonName } from '../shared/utils/formatters';
 
 type SidebarProps = {
@@ -29,7 +15,6 @@ type SidebarProps = {
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
-  showPrices: boolean;
   canAccessMedicalGroups: boolean;
   canAccessSettings: boolean;
   canAccessAgenda: boolean;
@@ -37,8 +22,6 @@ type SidebarProps = {
   usersCount: number;
   pacientesCount: number;
   medicalGroupsCount: number;
-  attendancesCount: number;
-  billingsCount: number;
   pendingPaymentsCount: number;
   unreadAgendaNotificationCount: number;
   onOpenDashboard: () => void;
@@ -46,9 +29,7 @@ type SidebarProps = {
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
   onOpenBilling: () => void;
-  onOpenAttendances: () => void;
-  onOpenFinance: () => void;
-  onOpenPrices: () => void;
+  onOpenReports: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
@@ -65,7 +46,6 @@ export function Sidebar({
   canAccessUsers,
   canEditOwnUser,
   canAccessBilling,
-  showPrices,
   canAccessMedicalGroups,
   canAccessSettings,
   canAccessAgenda,
@@ -73,8 +53,6 @@ export function Sidebar({
   usersCount,
   pacientesCount,
   medicalGroupsCount,
-  attendancesCount,
-  billingsCount,
   pendingPaymentsCount,
   unreadAgendaNotificationCount,
   onOpenDashboard,
@@ -82,22 +60,22 @@ export function Sidebar({
   onOpenMyProfile,
   onOpenPatientsList,
   onOpenBilling,
-  onOpenAttendances,
-  onOpenFinance,
-  onOpenPrices,
+  onOpenReports,
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
   onOpenClinics,
 }: SidebarProps) {
-  const controladoriaActive = ['attendances', 'billing', 'finance', 'prices'].includes(activeView);
-  const [controladoriaOpen, setControladoriaOpen] = useState(controladoriaActive);
+  const billingSubmenuId = useId();
+  const isBillingModuleActive = activeView === 'billing' || activeView === 'reports';
+  const canAccessBillingModule = canAccessBilling;
+  const [isBillingMenuOpen, setIsBillingMenuOpen] = useState(isBillingModuleActive);
 
   useEffect(() => {
-    if (controladoriaActive) {
-      setControladoriaOpen(true);
+    if (isBillingModuleActive) {
+      setIsBillingMenuOpen(true);
     }
-  }, [controladoriaActive]);
+  }, [activeView, isBillingModuleActive]);
 
   return (
     <aside className="sidebar-panel" aria-label="Sessão ativa">
@@ -110,14 +88,7 @@ export function Sidebar({
         <div className="session-card">
           <span className="session-label">Usuário</span>
           <div className="session-user-row">
-            <UserAvatar
-              userId={session.user.id}
-              name={session.user.nome}
-              photo={session.user.fotoPerfil}
-              authToken={session.token}
-              size="sm"
-              decorative
-            />
+            <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" decorative />
             <strong>{formatPersonName(session.user.nome)}</strong>
           </div>
         </div>
@@ -131,9 +102,7 @@ export function Sidebar({
         <div className="session-card">
           <span className="session-label">Perfil</span>
           <strong>{currentUserProfile}</strong>
-          <span className="session-meta">
-            {currentUserProfile} | {session.user.email}
-          </span>
+          <span className="session-meta">{currentUserProfile} | {session.user.email}</span>
         </div>
 
         <nav className="side-nav" aria-label="Navegação principal">
@@ -142,7 +111,6 @@ export function Sidebar({
               type="button"
               className={`side-nav-dashboard ${activeView === 'dashboard' ? 'active' : ''}`}
               aria-current={activeView === 'dashboard' ? 'page' : undefined}
-              title="Visão geral dos indicadores e atividades do sistema."
               onClick={onOpenDashboard}
             >
               <LayoutDashboard size={18} />
@@ -154,7 +122,6 @@ export function Sidebar({
               type="button"
               className={`side-nav-users ${activeView === 'users' ? 'active' : ''}`}
               aria-current={activeView === 'users' ? 'page' : undefined}
-              title="Cadastre usuários e gerencie seus acessos."
               onClick={onOpenUsersList}
             >
               <Users size={18} />
@@ -167,7 +134,6 @@ export function Sidebar({
               type="button"
               className={`side-nav-profile ${activeView === 'profile' ? 'active' : ''}`}
               aria-current={activeView === 'profile' ? 'page' : undefined}
-              title="Consulte e atualize os dados do seu cadastro."
               onClick={onOpenMyProfile}
             >
               <FileText size={18} />
@@ -179,82 +145,58 @@ export function Sidebar({
               type="button"
               className={`side-nav-patients ${activeView === 'patients' ? 'active' : ''}`}
               aria-current={activeView === 'patients' ? 'page' : undefined}
-              title="Consulte e gerencie os cadastros dos pacientes."
               onClick={onOpenPatientsList}
             >
               <ClipboardList size={18} />
-              <span>Pacientes</span>
+              <span>Pacientes - Cirurgias</span>
               <span className="side-nav-count">{pacientesCount}</span>
             </button>
           )}
-          {canAccessBilling && (
-            <div className={`side-nav-accordion ${controladoriaActive ? 'is-active' : ''}`}>
+          {canAccessBillingModule && (
+            <div className="side-nav-billing-group">
               <button
                 type="button"
-                className="side-nav-controladoria"
-                aria-expanded={controladoriaOpen}
-                aria-controls="controladoria-navigation"
-                onClick={() => setControladoriaOpen((current) => !current)}
+                className={`side-nav-billing side-nav-billing-toggle ${isBillingModuleActive ? 'active' : ''}`}
+                aria-expanded={isBillingMenuOpen}
+                aria-controls={billingSubmenuId}
+                onClick={() => setIsBillingMenuOpen((current) => !current)}
               >
                 <ReceiptText size={18} />
-                <span>Controladoria</span>
-                <ChevronDown className="side-nav-accordion-chevron" size={17} aria-hidden="true" />
+                <span>Faturamento</span>
+                {pendingPaymentsCount > 0 && (
+                  <span className="side-nav-count">{pendingPaymentsCount}</span>
+                )}
+                <ChevronDown className={`side-nav-chevron ${isBillingMenuOpen ? 'is-open' : ''}`} size={17} aria-hidden="true" />
               </button>
-              {controladoriaOpen && (
-                <div id="controladoria-navigation" className="side-nav-accordion-content">
+              <div
+                id={billingSubmenuId}
+                className="side-nav-billing-submenu"
+                aria-label="Opções de faturamento"
+                hidden={!isBillingMenuOpen}
+              >
+                {canAccessBilling && (
                   <button
                     type="button"
-                    className={`side-nav-billing ${activeView === 'attendances' ? 'active' : ''}`}
-                    aria-current={activeView === 'attendances' ? 'page' : undefined}
-                    aria-label={`Atendimentos: ${attendancesCount}`}
-                    title="Registre cirurgias e os procedimentos realizados."
-                    onClick={onOpenAttendances}
-                  >
-                    <Stethoscope size={18} />
-                    <span>Atendimentos</span>
-                    <span className="side-nav-count">{attendancesCount}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`side-nav-billing ${activeView === 'billing' ? 'active' : ''}`}
+                    className={`side-nav-billing side-nav-billing-subitem ${activeView === 'billing' ? 'active' : ''}`}
                     aria-current={activeView === 'billing' ? 'page' : undefined}
-                    aria-label={`Faturamento: ${billingsCount}`}
-                    title="Prepare, envie e acompanhe os faturamentos médicos."
                     onClick={onOpenBilling}
                   >
-                    <ReceiptText size={18} />
-                    <span>Faturamento</span>
-                    <span className="side-nav-count">{billingsCount}</span>
+                    <ReceiptText size={16} />
+                    <span>Gestão de faturamento</span>
                   </button>
-                  {session.user.perfilId !== 2 && (
-                    <button
-                      type="button"
-                      className={`side-nav-billing ${activeView === 'finance' ? 'active' : ''}`}
-                      aria-current={activeView === 'finance' ? 'page' : undefined}
-                      title="Acompanhe contas a receber, pagamentos e saldos."
-                      onClick={onOpenFinance}
-                    >
-                      <Wallet size={18} />
-                      <span>Financeiro</span>
-                      {pendingPaymentsCount > 0 && (
-                        <span className="side-nav-count">{pendingPaymentsCount}</span>
-                      )}
-                    </button>
-                  )}
-                  {showPrices && (
-                    <button
-                      type="button"
-                      className={`side-nav-billing ${activeView === 'prices' ? 'active' : ''}`}
-                      aria-current={activeView === 'prices' ? 'page' : undefined}
-                      title="Gerencie valores CBHPM e preços negociados por convênio."
-                      onClick={onOpenPrices}
-                    >
-                      <Tags size={18} />
-                      <span>Tabela de preços</span>
-                    </button>
-                  )}
-                </div>
-              )}
+                )}
+                {canAccessBilling && (
+                  <button
+                    type="button"
+                    className={`side-nav-reports side-nav-billing-subitem ${activeView === 'reports' ? 'active' : ''}`}
+                    aria-current={activeView === 'reports' ? 'page' : undefined}
+                    onClick={onOpenReports}
+                  >
+                    <BarChart3 size={16} />
+                    <span>Relatórios</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
           {canAccessMedicalGroups && (
@@ -262,7 +204,6 @@ export function Sidebar({
               type="button"
               className={`side-nav-medical-groups ${activeView === 'medicalGroups' ? 'active' : ''}`}
               aria-current={activeView === 'medicalGroups' ? 'page' : undefined}
-              title="Organize médicos e permissões em grupos de trabalho."
               onClick={onOpenMedicalGroups}
             >
               <ShieldPlus size={18} />
@@ -275,7 +216,6 @@ export function Sidebar({
               type="button"
               className={`side-nav-agenda ${activeView === 'agenda' ? 'active' : ''}`}
               aria-current={activeView === 'agenda' ? 'page' : undefined}
-              title="Consulte compromissos, lembretes e notificações."
               onClick={onOpenAgenda}
             >
               <CalendarDays size={18} />
@@ -290,7 +230,6 @@ export function Sidebar({
               type="button"
               className={`side-nav-clinics ${activeView === 'clinics' ? 'active' : ''}`}
               aria-current={activeView === 'clinics' ? 'page' : undefined}
-              title="Cadastre e administre as clínicas disponíveis."
               onClick={onOpenClinics}
             >
               <Building2 size={18} />
@@ -302,7 +241,6 @@ export function Sidebar({
               type="button"
               className={`side-nav-settings ${activeView === 'settings' ? 'active' : ''}`}
               aria-current={activeView === 'settings' ? 'page' : undefined}
-              title="Configure preferências e parâmetros gerais do sistema."
               onClick={onOpenSettings}
             >
               <Settings size={18} />

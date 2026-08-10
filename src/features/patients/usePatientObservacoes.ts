@@ -10,9 +10,7 @@ import {
 } from '../../services';
 import { queryKeys } from '../../shared/queryKeys';
 import { getErrorMessage } from '../../shared/utils/formatters';
-import type { AuthSession } from '../../shared/domain/sessionTypes';
-import type { Paciente, PacienteObservacao } from './patientTypes';
-import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
+import type { AuthSession, Paciente, PacienteObservacao } from '../../types';
 
 type UsePatientObservacoesOptions = {
   session: AuthSession | null;
@@ -20,6 +18,7 @@ type UsePatientObservacoesOptions = {
   moduleMode: ModuleMode;
   pacientes: Paciente[];
   editingPaciente: Paciente | null;
+  setPacientes: Dispatch<SetStateAction<Paciente[]>>;
   setEditingPacienteDetails: Dispatch<SetStateAction<Paciente | null>>;
   loadPacientes: (token?: string, forceRefresh?: boolean) => Promise<void>;
   loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
@@ -31,46 +30,41 @@ export function usePatientObservacoes({
   moduleMode,
   pacientes,
   editingPaciente,
+  setPacientes,
   setEditingPacienteDetails,
   loadPacientes,
   loadDashboardSummary,
 }: UsePatientObservacoesOptions) {
-  const [selectedPatientObservacoes, setSelectedPatientObservacoes] = useState<Paciente | null>(
-    null,
-  );
+  const [selectedPatientObservacoes, setSelectedPatientObservacoes] = useState<Paciente | null>(null);
   const [patientObservacoes, setPatientObservacoes] = useState<PacienteObservacao[]>([]);
+  const [patientObservacoesLoading, setPatientObservacoesLoading] = useState(false);
+  const [patientObservacoesSaving, setPatientObservacoesSaving] = useState(false);
   const [patientObservacoesError, setPatientObservacoesError] = useState('');
   const [patientObservationDraft, setPatientObservationDraft] = useState('');
-  const [patientObservationReplyTo, setPatientObservationReplyTo] =
-    useState<PacienteObservacao | null>(null);
+  const [patientObservationReplyTo, setPatientObservationReplyTo] = useState<PacienteObservacao | null>(null);
 
   const createPacienteObservacaoMutation = useMutation({
-    mutationFn: ({
-      pacienteId,
-      texto,
-      observacaoPaiId,
-      token,
-    }: {
-      pacienteId: number;
-      texto: string;
-      observacaoPaiId?: number | null;
-      token: string;
-    }) => createPacienteObservacao(pacienteId, { texto, observacaoPaiId }, token),
+    mutationFn: ({ pacienteId, texto, observacaoPaiId, token }: { pacienteId: number; texto: string; observacaoPaiId?: number | null; token: string }) => (
+      createPacienteObservacao(pacienteId, { texto, observacaoPaiId }, token)
+    ),
   });
-  const openObservacoesOperation = useAsyncOperation((_signal, action: () => Promise<void>) =>
-    action(),
-  );
-  const saveObservacaoOperation = useAsyncOperation((_signal, action: () => Promise<void>) =>
-    action(),
-  );
 
   const clearObservationIndicators = (pacienteId: number) => {
-    setSelectedPatientObservacoes((current) =>
-      current && current.id === pacienteId ? { ...current, observacoesNaoLidasCount: 0 } : current,
-    );
-    setEditingPacienteDetails((current) =>
-      current && current.id === pacienteId ? { ...current, observacoesNaoLidasCount: 0 } : current,
-    );
+    setPacientes((current) => current.map((paciente) => (
+      paciente.id === pacienteId
+        ? { ...paciente, observacoesNaoLidasCount: 0 }
+        : paciente
+    )));
+    setSelectedPatientObservacoes((current) => (
+      current && current.id === pacienteId
+        ? { ...current, observacoesNaoLidasCount: 0 }
+        : current
+    ));
+    setEditingPacienteDetails((current) => (
+      current && current.id === pacienteId
+        ? { ...current, observacoesNaoLidasCount: 0 }
+        : current
+    ));
   };
 
   const syncObservationViews = async (token: string, pacienteId: number, clearUnread = false) => {
@@ -102,23 +96,24 @@ export function usePatientObservacoes({
     setPatientObservationDraft('');
     setPatientObservationReplyTo(null);
     setPatientObservacoesError('');
+    setPatientObservacoesLoading(true);
 
     try {
-      await openObservacoesOperation.execute(async () => {
-        const [details, observacoes] = await Promise.all([
-          getPaciente(paciente.id, session.token),
-          getPacienteObservacoes(paciente.id, session.token),
-        ]);
-        setSelectedPatientObservacoes(details);
-        setPatientObservacoes(observacoes);
+      const [details, observacoes] = await Promise.all([
+        getPaciente(paciente.id, session.token),
+        getPacienteObservacoes(paciente.id, session.token),
+      ]);
+      setSelectedPatientObservacoes(details);
+      setPatientObservacoes(observacoes);
 
-        const readResult = await markPacienteObservacoesAsRead(paciente.id, session.token);
-        if (readResult.updatedCount > 0) {
-          await syncObservationViews(session.token, paciente.id, true);
-        }
-      });
+      const readResult = await markPacienteObservacoesAsRead(paciente.id, session.token);
+      if (readResult.updatedCount > 0) {
+        await syncObservationViews(session.token, paciente.id, true);
+      }
     } catch (error) {
       setPatientObservacoesError(getErrorMessage(error));
+    } finally {
+      setPatientObservacoesLoading(false);
     }
   };
 
@@ -131,10 +126,9 @@ export function usePatientObservacoes({
       return;
     }
 
-    const currentPaciente =
-      pacientes.find((item) => item.id === pacienteId) ??
-      (editingPaciente?.id === pacienteId ? editingPaciente : null) ??
-      (selectedPatientObservacoes?.id === pacienteId ? selectedPatientObservacoes : null);
+    const currentPaciente = pacientes.find((item) => item.id === pacienteId)
+      ?? (editingPaciente?.id === pacienteId ? editingPaciente : null)
+      ?? (selectedPatientObservacoes?.id === pacienteId ? selectedPatientObservacoes : null);
 
     if (currentPaciente) {
       await openPacienteObservacoesModal(currentPaciente);
@@ -160,28 +154,26 @@ export function usePatientObservacoes({
       return;
     }
 
+    setPatientObservacoesSaving(true);
     setPatientObservacoesError('');
 
     try {
-      await saveObservacaoOperation.execute(async () => {
-        await createPacienteObservacaoMutation.mutateAsync({
-          pacienteId: selectedPatientObservacoes.id,
-          texto,
-          observacaoPaiId: patientObservationReplyTo?.id ?? null,
-          token: session.token,
-        });
-
-        const observacoes = await getPacienteObservacoes(
-          selectedPatientObservacoes.id,
-          session.token,
-        );
-        setPatientObservacoes(observacoes);
-        setPatientObservationDraft('');
-        setPatientObservationReplyTo(null);
-        await syncObservationViews(session.token, selectedPatientObservacoes.id);
+      await createPacienteObservacaoMutation.mutateAsync({
+        pacienteId: selectedPatientObservacoes.id,
+        texto,
+        observacaoPaiId: patientObservationReplyTo?.id ?? null,
+        token: session.token,
       });
+
+      const observacoes = await getPacienteObservacoes(selectedPatientObservacoes.id, session.token);
+      setPatientObservacoes(observacoes);
+      setPatientObservationDraft('');
+      setPatientObservationReplyTo(null);
+      await syncObservationViews(session.token, selectedPatientObservacoes.id);
     } catch (error) {
       setPatientObservacoesError(getErrorMessage(error));
+    } finally {
+      setPatientObservacoesSaving(false);
     }
   };
 
@@ -189,8 +181,8 @@ export function usePatientObservacoes({
     setSelectedPatientObservacoes(null);
     setPatientObservacoes([]);
     setPatientObservacoesError('');
-    openObservacoesOperation.reset();
-    saveObservacaoOperation.reset();
+    setPatientObservacoesLoading(false);
+    setPatientObservacoesSaving(false);
     setPatientObservationDraft('');
     setPatientObservationReplyTo(null);
   };
@@ -202,8 +194,8 @@ export function usePatientObservacoes({
   return {
     selectedPatientObservacoes,
     patientObservacoes,
-    patientObservacoesLoading: openObservacoesOperation.isLoading,
-    patientObservacoesSaving: saveObservacaoOperation.isLoading,
+    patientObservacoesLoading,
+    patientObservacoesSaving,
     patientObservacoesError,
     patientObservationDraft,
     setPatientObservationDraft,

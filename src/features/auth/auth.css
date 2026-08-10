@@ -23,6 +23,12 @@
   width: min(520px, 100%);
 }
 
+.login-brand-placeholder {
+  display: block;
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+}
+
 .login-actions {
   width: 100%;
   display: grid;
@@ -64,7 +70,7 @@
   .auth-screen {
     min-height: 100vh;
     min-height: 100dvh;
-    grid-template-areas: 'auth';
+    grid-template-areas: "auth";
     align-content: center;
     justify-content: center;
     overflow-y: auto;

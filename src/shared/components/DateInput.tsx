@@ -15,14 +15,7 @@ type DateInputProps = {
   disabled?: boolean;
 };
 
-export function DateInput({
-  id,
-  label,
-  value,
-  onChange,
-  required = false,
-  disabled = false,
-}: DateInputProps) {
+export function DateInput({ id, label, value, onChange, required = false, disabled = false }: DateInputProps) {
   return (
     <div className="date-field">
       <label htmlFor={id}>{label}</label>

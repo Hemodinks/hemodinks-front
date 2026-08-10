@@ -1,6 +1,5 @@
 import { type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import type { MedicalGroup, MedicalGroupFormData } from './medicalGroupTypes';
-import type { MedicalUserOption } from '../../shared/domain/clinicalContracts';
+import type { MedicalGroup, MedicalGroupFormData, MedicalUserOption } from '../../types';
 import type { ModuleMode } from '../../appTypes';
 import { MedicalGroupForm } from './MedicalGroupForm';
 import { MedicalGroupList } from './MedicalGroupList';

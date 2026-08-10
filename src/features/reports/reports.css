@@ -1,0 +1,37 @@
+.reports-workspace { gap: 16px; }
+.reports-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: end; }
+.reports-filter-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.reports-filter-actions button { min-height: 44px; }
+.reports-query-actions { grid-column: 3 / -1; }
+.reports-pending-filter { grid-column: span 2; }
+.reports-filter-panel .multi-combobox-control:focus-within { border-color: var(--action-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--action-accent) 20%, transparent); }
+.reports-filter-panel .multi-combobox-toggle { right: 4px; color: var(--action-text); background: var(--action-accent); }
+.reports-filter-panel .multi-combobox-toggle:hover { color: var(--action-text); background: var(--action-accent-hover); }
+.reports-filter-panel .multi-combobox-chip { color: var(--action-accent-hover); background: color-mix(in srgb, var(--action-accent) 14%, var(--panel)); }
+.reports-filter-panel .multi-combobox-option:hover,
+.reports-filter-panel .multi-combobox-option.is-selected { background: color-mix(in srgb, var(--action-accent) 14%, var(--panel)); }
+.reports-export-button { min-width: 168px; color: var(--action-text); font-weight: 900; }
+.reports-export-pdf { background: var(--action-accent); border-color: color-mix(in srgb, var(--action-accent) 82%, black); }
+.reports-export-pdf:hover { background: var(--action-accent-hover); }
+.reports-export-xlsx { background: var(--action-success); border-color: color-mix(in srgb, var(--action-success) 82%, black); }
+.reports-export-xlsx:hover { background: var(--action-success-hover); }
+.reports-results-panel, .reports-list { display: grid; gap: 14px; }
+.report-record-card { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--line); border-left: 5px solid var(--action-primary); border-radius: 8px; background: var(--panel); }
+.report-record-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.report-record-header h3 { margin: 4px 0; }
+.report-record-header p { margin: 0; color: var(--muted); font-weight: 700; }
+.report-record-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.reports-individual-pdf { min-width: 92px; color: var(--action-text); background: var(--action-accent); border-color: color-mix(in srgb, var(--action-accent) 82%, black); font-weight: 900; }
+.reports-individual-pdf:hover:not(:disabled) { background: var(--action-accent-hover); }
+.report-record-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.report-record-grid div, .report-financial-grid div { display: grid; gap: 5px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--input-bg); }
+.report-record-grid dt, .report-financial-grid span { color: var(--muted); font-size: .74rem; font-weight: 900; text-transform: uppercase; }
+.report-record-grid dd { margin: 0; color: var(--ink); font-weight: 800; overflow-wrap: anywhere; }
+.report-financial-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.report-financial-grid strong { color: var(--teal); font-size: 1.08rem; }
+.report-record-details { border-top: 1px solid var(--line); padding-top: 12px; }
+.report-record-details > summary { color: var(--action-primary); cursor: pointer; font-weight: 900; }
+.report-record-details-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding-top: 14px; }
+.report-record-details-content h4 { margin: 0 0 10px; }
+@media (max-width: 1180px) { .reports-filter-grid, .report-record-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reports-query-actions { grid-column: 1 / -1; } }
+@media (max-width: 760px) { .reports-filter-grid, .report-record-grid, .report-financial-grid, .report-record-details-content { grid-template-columns: 1fr; } .reports-pending-filter, .reports-query-actions { grid-column: 1; } .reports-filter-actions button { flex: 1 1 150px; } .reports-export-button { min-width: 0; } .report-record-header { flex-direction: column; } }
