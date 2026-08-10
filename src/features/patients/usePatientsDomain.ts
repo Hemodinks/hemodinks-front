@@ -1,37 +1,32 @@
-import { type Dispatch, type SetStateAction, useEffect } from 'react';
-import type { AppView, ModuleMode } from '../../appTypes';
-import type { AuthSession } from '../../shared/domain/sessionTypes';
-import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
+import { type FormEvent, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import {
+  createPaciente,
+  createPacienteObservacao,
+  deletePaciente,
+  deletePacienteArquivo,
+  getPaciente,
+  updatePaciente,
+  uploadPacienteArquivo,
+} from '../../services';
+import { queryClient } from '../../queryClient';
+import { getErrorMessage } from '../../shared/utils/formatters';
+import { sortPacientesForListing } from '../../shared/utils/listing';
+import type { Paciente, PacientePayload } from '../../types';
+import { queryKeys } from '../../shared/queryKeys';
 import { emptyPacienteFilters } from './patientUtils';
+import { preparePatientPayload } from './patientDomainHelpers';
 import { useCbhpmLookup } from './useCbhpmLookup';
 import { usePatientsDomainQueries } from './usePatientsDomainQueries';
 import { usePatientExport } from './usePatientExport';
 import { usePatientForm } from './usePatientForm';
 import { usePatientList } from './usePatientList';
+import { usePatientLookups } from './usePatientLookups';
 import { usePatientObservacoes } from './usePatientObservacoes';
-import { usePatientFiles } from './usePatientFiles';
-import { usePatientCommands } from './usePatientCommands';
-import { usePatientDomainActions } from './usePatientDomainActions';
-import { createPatientsDomainState } from './createPatientsDomainState';
-
-type UsePatientsDomainOptions = {
-  session: AuthSession | null;
-  activeView: AppView;
-  moduleMode: ModuleMode;
-  companyName: string;
-  isAdmin: boolean;
-  isMedical: boolean;
-  canAccessPatients: boolean;
-  canCreatePatients: boolean;
-  canEditPatients: boolean;
-  canDeletePatients: boolean;
-  canConsultCbhpm: boolean;
-  patientReadOnly: boolean;
-  setModuleMode: Dispatch<SetStateAction<ModuleMode>>;
-  navigateToView: (view: AppView, replace?: boolean) => void;
-  loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
-  confirmAction: ConfirmAction;
-};
+import type { UsePatientsDomainOptions } from './patientsDomainTypes';
+import { usePatientFileActions } from './usePatientFileActions';
+import { usePatientProcedureActions } from './usePatientProcedureActions';
+import { usePatientPaginationGuards } from './usePatientPaginationGuards';
 
 export function usePatientsDomain({
   session,
@@ -52,59 +47,153 @@ export function usePatientsDomain({
   confirmAction,
 }: UsePatientsDomainOptions) {
   const patientList = usePatientList();
+  const patientForm = usePatientForm(patientList.pacientes);
+  const patientLookups = usePatientLookups();
   const cbhpmLookup = useCbhpmLookup();
+  const [selectedPatientInfo, setSelectedPatientInfo] = useState<Paciente | null>(null);
 
   const {
+    pacientes,
+    setPacientes,
+    pacientesLoading,
+    pacientesError,
     setPacientesError,
+    pacienteSuccessMessage,
     setPacienteSuccessMessage,
+    pacienteSearchTerm,
+    setPacienteSearchTerm,
     pacienteFilters,
     setPacienteFilters,
+    debouncedPacienteSearchTerm,
+    debouncedPacienteFilters,
     setDebouncedPacienteFilters,
     pacienteCurrentPage,
     setPacienteCurrentPage,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
+    pacientesTotalItems,
+    pacientesTotalPages,
+    pacienteTotalPages,
+    paginatedPacientes,
+    pacienteVisibleStart,
+    pacienteVisibleEnd,
     resetPatientListState,
   } = patientList;
-  const { cbhpmCurrentPage, setCbhpmCurrentPage, resetCbhpmLookup } = cbhpmLookup;
+  const {
+    pacienteFormData,
+    setPacienteFormData,
+    editingPacienteId,
+    setEditingPacienteDetails,
+    editingPaciente,
+    pacienteFormLoading,
+    setPacienteFormLoading,
+    pacienteFormError,
+    setPacienteFormError,
+    patientFileInputKey,
+    pendingPatientFiles,
+    setPendingPatientFiles,
+    resetPacienteForm,
+    applyPacienteToForm,
+  } = patientForm;
+  const {
+    medicalUsers,
+    hospitais,
+    hospitaisError,
+    convenios,
+    conveniosError,
+    opmeFornecedores,
+    opmeFornecedoresError,
+    resetPatientLookups,
+  } = patientLookups;
+  const {
+    cbhpmModalOpen,
+    setCbhpmModalOpen,
+    cbhpmItems,
+    cbhpmFilters,
+    setCbhpmFilters,
+    applyCbhpmFiltersNow,
+    cbhpmCurrentPage,
+    setCbhpmCurrentPage,
+    sortBy: cbhpmSortBy,
+    setSortBy: setCbhpmSortBy,
+    sortDirection: cbhpmSortDirection,
+    setSortDirection: setCbhpmSortDirection,
+    cbhpmTotalItems,
+    cbhpmTotalPageCount,
+    cbhpmLoading,
+    cbhpmError,
+    setCbhpmError,
+    cbhpmVisibleStart,
+    cbhpmVisibleEnd,
+    resetCbhpmLookup,
+  } = cbhpmLookup;
 
-  const queries = usePatientsDomainQueries({
+  const {
+    cbhpmFilterHint,
+    canSearchCbhpm,
+    loadMedicalUsers,
+    loadPacientes,
+    loadCbhpm,
+    loadHospitais,
+    loadConvenios,
+    loadOpmeFornecedores,
+  } = usePatientsDomainQueries({
     session,
     activeView,
     moduleMode,
-    isAdmin,
     canAccessPatients,
     canConsultCbhpm,
     patientReadOnly,
     patientList,
+    patientLookups,
     cbhpmLookup,
   });
-  const {
-    pacientes,
-    pacientesTotalPages,
-    canSearchCbhpm,
-    cbhpmTotalPages,
-    loadMedicalUsers,
-    loadPacientes,
-    loadHospitais,
-    loadOpmeFornecedores,
-  } = queries;
-  const patientLookups = {
-    medicalUsers: queries.medicalUsers,
-    hospitais: queries.hospitais,
-    hospitaisError: queries.hospitaisError,
-    convenios: queries.convenios,
-    conveniosError: queries.conveniosError,
-    opmeFornecedores: queries.opmeFornecedores,
-    opmeFornecedoresError: queries.opmeFornecedoresError,
-  };
-  const patientForm = usePatientForm(pacientes);
-  const { setEditingPacienteDetails, editingPaciente, resetPacienteForm } = patientForm;
+  const savePacienteMutation = useMutation({
+    mutationFn: ({ id, payload, token }: { id: number | null; payload: PacientePayload; token: string }) => (
+      id ? updatePaciente(id, payload, token) : createPaciente(payload, token)
+    ),
+  });
+  const deletePacienteMutation = useMutation({
+    mutationFn: ({ id, token }: { id: number; token: string }) => deletePaciente(id, token),
+  });
+  const deletePacienteArquivoMutation = useMutation({
+    mutationFn: ({ pacienteId, arquivoId, token }: { pacienteId: number; arquivoId: number; token: string }) => (
+      deletePacienteArquivo(pacienteId, arquivoId, token)
+    ),
+  });
+  const createPacienteObservacaoMutation = useMutation({
+    mutationFn: ({ pacienteId, texto, observacaoPaiId, token }: { pacienteId: number; texto: string; observacaoPaiId?: number | null; token: string }) => (
+      createPacienteObservacao(pacienteId, { texto, observacaoPaiId }, token)
+    ),
+  });
+
   const patientExport = usePatientExport({
     session,
     companyName,
-    paginatedPacientes: pacientes,
+    paginatedPacientes,
     pacienteFilters,
     setPacientesError,
   });
+  const patientFileActions = usePatientFileActions({
+    session,
+    readOnly: patientReadOnly,
+    setFormError: setPacienteFormError,
+    setPendingFiles: setPendingPatientFiles,
+  });
+  const {
+    selectedPatientFiles,
+    setSelectedPatientFiles,
+    patientFilesModalLoading,
+    setPatientFilesModalLoading,
+    patientFilesModalError,
+    setPatientFilesModalError,
+    handlePacienteFilesChange,
+    removePendingPatientFile,
+    handleOpenPacienteFiles,
+    closePatientFilesModal,
+  } = patientFileActions;
 
   const patientObservacoesState = usePatientObservacoes({
     session,
@@ -112,99 +201,343 @@ export function usePatientsDomain({
     moduleMode,
     pacientes,
     editingPaciente,
+    setPacientes,
     setEditingPacienteDetails,
     loadPacientes,
     loadDashboardSummary,
   });
-  const patientFiles = usePatientFiles({
-    session,
-    patientReadOnly,
-    canEditPatients,
-    patientForm,
-    setPacientesError,
-    loadPacientes,
-    loadDashboardSummary,
+  const patientProcedureActions = usePatientProcedureActions({
+    readOnly: patientReadOnly,
+    canEdit: canEditPatients,
+    setFormData: setPacienteFormData,
+    setFormError: setPacienteFormError,
+    setModalOpen: setCbhpmModalOpen,
+    setLookupError: setCbhpmError,
   });
-  const patientCommands = usePatientCommands({
-    session,
-    canCreatePatients,
-    canEditPatients,
-    canDeletePatients,
-    patientForm,
-    patientList,
-    patientLookups,
-    setModuleMode,
-    navigateToView,
-    loadPacientes,
-    loadDashboardSummary,
-    confirmAction,
-  });
-  const patientActions = usePatientDomainActions({
-    session,
-    isMedical,
-    canAccessPatients,
-    canCreatePatients,
-    canEditPatients,
-    canConsultCbhpm,
-    patientReadOnly,
-    canSearchCbhpm,
-    patientForm,
-    patientLookups,
-    cbhpmLookup,
-    setPacienteFilters,
-    setPacienteSuccessMessage,
-    setModuleMode,
-    navigateToView,
-    loadMedicalUsers,
-    loadPacientes,
-    loadHospitais,
-    loadOpmeFornecedores,
+  usePatientPaginationGuards({
+    isAdmin,
+    currentPage: pacienteCurrentPage,
+    totalPages: pacienteTotalPages,
+    cbhpmCurrentPage,
+    cbhpmTotalPages: cbhpmTotalPageCount,
+    setFilters: setPacienteFilters,
+    setDebouncedFilters: setDebouncedPacienteFilters,
+    setCurrentPage: setPacienteCurrentPage,
+    setCbhpmCurrentPage,
   });
 
   const resetPatientsState = () => {
     resetPatientListState();
-    patientFiles.reset();
+    resetPatientLookups();
+    setSelectedPatientInfo(null);
+    setSelectedPatientFiles(null);
     patientObservacoesState.resetPatientObservacoesState();
+    setPatientFilesModalError('');
+    setPatientFilesModalLoading(false);
     resetCbhpmLookup();
     resetPacienteForm();
   };
 
-  useEffect(() => {
-    if (isAdmin) {
+  const handleEditPaciente = async (paciente: Paciente) => {
+    if (!session) {
       return;
     }
 
+    setPacienteFormError('');
+    setPacienteSuccessMessage('');
+    navigateToView('patients');
+    setPendingPatientFiles([]);
+    setPacienteFormLoading(true);
+
+    try {
+      const details = await getPaciente(paciente.id, session.token);
+      applyPacienteToForm(details);
+    } catch (error) {
+      applyPacienteToForm(paciente);
+      setPacienteFormError(getErrorMessage(error));
+    } finally {
+      setPacienteFormLoading(false);
+      setModuleMode('form');
+    }
+  };
+
+  const handleSubmitPaciente = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!session) {
+      return;
+    }
+
+    if (editingPacienteId && !canEditPatients) {
+      setPacienteFormError('Sem permissao para editar pacientes.');
+      return;
+    }
+
+    if (!editingPacienteId && !canCreatePatients) {
+      setPacienteFormError('Sem permissao para cadastrar pacientes.');
+      return;
+    }
+
+    const prepared = preparePatientPayload({
+      pacienteFormData,
+      medicalUsers,
+      hospitais,
+      convenios,
+      opmeFornecedores,
+    });
+
+    if (prepared.error || !prepared.payload) {
+      setPacienteFormError(prepared.error);
+      return;
+    }
+    const payload = prepared.payload;
+
+    const observationText = pacienteFormData.novaObservacao.trim();
+
+    setPacienteFormLoading(true);
+    setPacienteFormError('');
+    setPacienteSuccessMessage('');
+
+    try {
+      const savedPaciente = await savePacienteMutation.mutateAsync({
+        id: editingPacienteId,
+        payload,
+        token: session.token,
+      });
+      let warningMessage = '';
+
+      for (const file of pendingPatientFiles) {
+        await uploadPacienteArquivo(savedPaciente.id, file, session.token);
+      }
+
+      if (observationText) {
+        try {
+          await createPacienteObservacaoMutation.mutateAsync({
+            pacienteId: savedPaciente.id,
+            texto: observationText,
+            token: session.token,
+          });
+        } catch (error) {
+          warningMessage = getErrorMessage(error);
+        }
+      }
+
+      setPacientes((current) => sortPacientesForListing(
+        editingPacienteId
+          ? current.map((paciente) => (paciente.id === savedPaciente.id ? savedPaciente : paciente))
+          : [savedPaciente, ...current],
+      ));
+      const baseSuccessMessage = editingPacienteId
+        ? 'Paciente atualizado.'
+        : 'Paciente cadastrado com senha temporária. Oriente a alteração no primeiro acesso.';
+      const successMessage = warningMessage
+        ? `${baseSuccessMessage} Paciente salvo, mas a observação não foi enviada.`
+        : observationText
+          ? `${baseSuccessMessage} Observação enviada.`
+          : baseSuccessMessage;
+      setPacienteSuccessMessage(successMessage);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardNotifications(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacienteObservacoesRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.convenios(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(session.token) }),
+      ]);
+      resetPacienteForm();
+      setPacienteCurrentPage(1);
+      setModuleMode('list');
+      await loadPacientes(session.token, true);
+      await loadDashboardSummary(session.token, true);
+      if (warningMessage) {
+        setPacientesError(warningMessage);
+      }
+    } catch (error) {
+      setPacienteFormError(getErrorMessage(error));
+    } finally {
+      setPacienteFormLoading(false);
+    }
+  };
+
+  const deleteSelectedPaciente = async (paciente: Paciente) => {
+    if (!session) {
+      return;
+    }
+
+    if (!canDeletePatients) {
+      setPacientesError('Apenas administradores podem excluir pacientes.');
+      return;
+    }
+
+    setPacientesError('');
+    setPacienteSuccessMessage('');
+
+    try {
+      await deletePacienteMutation.mutateAsync({ id: paciente.id, token: session.token });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
+      ]);
+      setPacienteSuccessMessage('Paciente excluído.');
+      await loadPacientes(session.token, true);
+      await loadDashboardSummary(session.token, true);
+    } catch (error) {
+      setPacientesError(getErrorMessage(error));
+    }
+  };
+
+  const handleDeletePaciente = (paciente: Paciente) => {
+    confirmAction({
+      tone: 'delete',
+      title: 'Excluir paciente?',
+      message: `Deseja excluir "${paciente.nomePaciente}"? Esta ação não poderá ser desfeita.`,
+      confirmLabel: 'Sim',
+      cancelLabel: 'Não',
+      onConfirm: () => deleteSelectedPaciente(paciente),
+    });
+  };
+
+  const handleDeletePacienteArquivo = async (paciente: Paciente, arquivoId: number) => {
+    if (!session) {
+      return;
+    }
+
+    if (!canEditPatients) {
+      setPacientesError('Sem permissao para excluir arquivo do paciente.');
+      return;
+    }
+
+    setPacientesError('');
+
+    try {
+      await deletePacienteArquivoMutation.mutateAsync({ pacienteId: paciente.id, arquivoId, token: session.token });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
+      ]);
+      const details = await getPaciente(paciente.id, session.token);
+      setEditingPacienteDetails(details);
+      await loadPacientes(session.token, true);
+      await loadDashboardSummary(session.token, true);
+    } catch (error) {
+      setPacientesError(getErrorMessage(error));
+    }
+  };
+
+  const openPatientsList = () => {
+    if (!canAccessPatients) {
+      return;
+    }
+
+    navigateToView('patients');
+    setModuleMode('list');
+  };
+
+  const openNewPacienteForm = () => {
+    if (!canCreatePatients) {
+      return;
+    }
+
+    resetPacienteForm();
+    if (isMedical && session) {
+      setPacienteFormData((current) => ({
+        ...current,
+        medicoUserId: session.user.id,
+        medico: session.user.nome,
+      }));
+    }
+    setPacienteSuccessMessage('');
+    navigateToView('patients');
+    setModuleMode('form');
+
+    if (session) {
+      void loadMedicalUsers(session.token);
+    }
+
+    if (session && !hospitais.length) {
+      void loadHospitais(session.token);
+    }
+
+    if (session && !opmeFornecedores.length) {
+      void loadOpmeFornecedores(session.token);
+    }
+  };
+
+  const closePacienteForm = () => {
+    resetPacienteForm();
+    setModuleMode('list');
+  };
+
+  const clearPacienteFilters = () => {
     setPacienteFilters(emptyPacienteFilters);
-    setDebouncedPacienteFilters(emptyPacienteFilters);
-  }, [isAdmin]);
+  };
 
-  useEffect(() => {
-    const totalPages = Math.max(1, pacientesTotalPages);
-    if (pacienteCurrentPage > totalPages) {
-      setPacienteCurrentPage(totalPages);
+  const refreshPacientes = () => {
+    if (session) {
+      void loadPacientes(session.token, true);
     }
-  }, [pacienteCurrentPage, pacientesTotalPages]);
+  };
 
-  useEffect(() => {
-    const totalPages = Math.max(1, cbhpmTotalPages);
-    if (cbhpmCurrentPage > totalPages) {
-      setCbhpmCurrentPage(totalPages);
+  const refreshCbhpm = () => {
+    applyCbhpmFiltersNow();
+
+    if (!session || !canSearchCbhpm || !canConsultCbhpm) {
+      return;
     }
-  }, [cbhpmCurrentPage, cbhpmTotalPages]);
 
-  return createPatientsDomainState({
-    patientList,
-    patientForm,
-    cbhpmLookup,
-    queries,
-    patientExport,
-    patientObservacoes: patientObservacoesState,
-    patientFiles,
-    patientCommands,
-    patientActions,
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmRoot(session.token) });
+  };
+
+  return {
+    ...patientList,
+    ...patientForm,
+    ...patientLookups,
+    ...cbhpmLookup,
+    ...patientExport,
+    ...patientObservacoesState,
+    // Preserve the public list aliases after spreading the CBHPM state,
+    // which also owns fields named sortBy and sortDirection.
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
+    cbhpmSortBy,
+    setCbhpmSortBy,
+    cbhpmSortDirection,
+    setCbhpmSortDirection,
+    selectedPatientInfo,
+    setSelectedPatientInfo,
+    selectedPatientFiles,
+    patientFilesModalLoading,
+    patientFilesModalError,
+    cbhpmFilterHint,
     canConsultCbhpm,
+    canSearchCbhpm,
+    loadMedicalUsers,
+    loadPacientes,
+    loadHospitais,
+    loadConvenios,
+    loadOpmeFornecedores,
+    loadCbhpm,
     resetPatientsState,
-  });
+    resetPacienteForm,
+    handleEditPaciente,
+    handlePacienteFilesChange,
+    removePendingPatientFile,
+    handleSubmitPaciente,
+    handleDeletePaciente,
+    handleDeletePacienteArquivo,
+    handleOpenPacienteFiles,
+    ...patientProcedureActions,
+    openPatientsList,
+    openNewPacienteForm,
+    closePacienteForm,
+    clearPacienteFilters,
+    refreshPacientes,
+    refreshCbhpm,
+    closePatientFilesModal,
+  };
 }
 
 export type PatientsDomainState = ReturnType<typeof usePatientsDomain>;

@@ -1,4 +1,4 @@
-import type { AgendaEvent, PublicHoliday } from './agendaTypes';
+import type { AgendaEvent, PublicHoliday } from '../../types';
 
 export type AgendaFormData = {
   title: string;
@@ -63,10 +63,7 @@ export function buildEmptyForm(
   userId?: number,
   now = new Date(),
 ): AgendaFormData {
-  const start =
-    toDateKey(now) === dateKey
-      ? new Date(now.getTime() + 60 * 60 * 1000)
-      : new Date(`${dateKey}T09:00:00`);
+  const start = toDateKey(now) === dateKey ? new Date(now.getTime() + 60 * 60 * 1000) : new Date(`${dateKey}T09:00:00`);
   start.setMinutes(0, 0, 0);
   const end = new Date(start.getTime() + 60 * 60 * 1000);
 
@@ -107,9 +104,8 @@ export function eventTouchesDate(event: AgendaEvent, dateKey: string) {
 }
 
 export function mergeAgendaEvent(currentEvents: AgendaEvent[], agendaEvent: AgendaEvent) {
-  return [...currentEvents.filter((item) => item.id !== agendaEvent.id), agendaEvent].sort(
-    (first, second) => new Date(first.start).getTime() - new Date(second.start).getTime(),
-  );
+  return [...currentEvents.filter((item) => item.id !== agendaEvent.id), agendaEvent]
+    .sort((first, second) => new Date(first.start).getTime() - new Date(second.start).getTime());
 }
 
 export function composeDateTime(dateKey: string, timeValue: string) {

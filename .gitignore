@@ -6,7 +6,7 @@ tsconfig.tsbuildinfo
 npm-debug.log*
 test-results
 playwright-report
-reports
-coverage
+/reports
 .lighthouseci
 public/otel-runtime-config.json
+vercel.json.example

@@ -1,4 +1,4 @@
-import type { AppView } from '../appTypes';
+import type { AppView, BreadcrumbItem, ModuleMode } from '../appTypes';
 
 type FormBreadcrumbOptions = {
   activeView: AppView;
@@ -11,51 +11,26 @@ type FormBreadcrumbOptions = {
 export function getAppTitle(activeView: AppView) {
   return activeView === 'dashboard'
     ? 'Painel inicial'
-    : activeView === 'users'
-      ? 'Usuários'
-      : activeView === 'profile'
-        ? 'Meu cadastro'
-        : activeView === 'patients'
-          ? 'Pacientes'
-          : activeView === 'attendances'
-            ? 'Atendimentos cirúrgicos'
-            : activeView === 'billing'
-              ? 'Faturamento'
-              : activeView === 'finance'
-                ? 'Financeiro'
-                : activeView === 'prices'
-                  ? 'Tabela de preços'
-                  : activeView === 'medicalGroups'
-                    ? 'Grupos médicos'
-                    : activeView === 'settings'
-                      ? 'Configuração do sistema'
-                      : activeView === 'clinics'
-                        ? 'Clínicas'
-                        : 'Agenda e notificações';
+    : activeView === 'users' ? 'Usuários'
+      : activeView === 'profile' ? 'Meu cadastro'
+        : activeView === 'patients' ? 'Pacientes'
+          : activeView === 'billing' ? 'Faturamento médico'
+            : activeView === 'reports' ? 'Relatórios'
+            : activeView === 'medicalGroups' ? 'Grupos médicos'
+              : activeView === 'settings' ? 'Configuração do sistema'
+                : activeView === 'clinics' ? 'Clínicas' : 'Agenda e notificações';
 }
 
 export function getActiveModuleLabel(activeView: AppView) {
   return activeView === 'users'
     ? 'Usuários'
-    : activeView === 'profile'
-      ? 'Meu cadastro'
-      : activeView === 'patients'
-        ? 'Pacientes'
-        : activeView === 'attendances'
-          ? 'Atendimentos cirúrgicos'
-          : activeView === 'billing'
-            ? 'Faturamento'
-            : activeView === 'finance'
-              ? 'Financeiro'
-              : activeView === 'prices'
-                ? 'Tabela de preços'
-                : activeView === 'medicalGroups'
-                  ? 'Grupos médicos'
-                  : activeView === 'settings'
-                    ? 'Configuração do sistema'
-                    : activeView === 'clinics'
-                      ? 'Clínicas'
-                      : 'Agenda e notificações';
+    : activeView === 'profile' ? 'Meu cadastro'
+      : activeView === 'patients' ? 'Pacientes'
+        : activeView === 'billing' ? 'Faturamento médico'
+          : activeView === 'reports' ? 'Relatórios'
+          : activeView === 'medicalGroups' ? 'Grupos médicos'
+            : activeView === 'settings' ? 'Configuração do sistema'
+              : activeView === 'clinics' ? 'Clínicas' : 'Agenda e notificações';
 }
 
 export function getFormBreadcrumbLabel({
@@ -66,22 +41,39 @@ export function getFormBreadcrumbLabel({
   editingGroupId,
 }: FormBreadcrumbOptions) {
   return activeView === 'users'
-    ? editingId
-      ? 'Editar usuário'
-      : 'Novo usuário'
-    : activeView === 'profile'
-      ? 'Meu cadastro'
-      : activeView === 'patients'
-        ? editingPacienteId
-          ? patientReadOnly
-            ? 'Visualizar paciente'
-            : 'Editar paciente'
-          : 'Novo paciente'
-        : activeView === 'medicalGroups'
-          ? editingGroupId
-            ? 'Editar grupo médico'
-            : 'Novo grupo médico'
-          : activeView === 'settings'
-            ? 'Configuração do sistema'
+    ? editingId ? 'Editar usuário' : 'Novo usuário'
+    : activeView === 'profile' ? 'Meu cadastro'
+      : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
+        : activeView === 'medicalGroups' ? editingGroupId ? 'Editar grupo médico' : 'Novo grupo médico'
+          : activeView === 'settings' ? 'Configuração do sistema'
             : 'Agenda e notificações';
+}
+
+type BreadcrumbOptions = FormBreadcrumbOptions & {
+  moduleMode: ModuleMode;
+  openDashboard: () => void;
+  openModuleByView: Record<AppView, () => void>;
+};
+
+export function buildBreadcrumbItems(options: BreadcrumbOptions): BreadcrumbItem[] {
+  if (options.activeView === 'dashboard') {
+    return [
+      { label: 'Início', onClick: options.openDashboard },
+      { label: 'Painel inicial' },
+    ];
+  }
+
+  const items: BreadcrumbItem[] = [
+    { label: 'Início', onClick: options.openDashboard },
+    {
+      label: getActiveModuleLabel(options.activeView),
+      onClick: options.moduleMode === 'form'
+        ? options.openModuleByView[options.activeView]
+        : undefined,
+    },
+  ];
+  if (options.moduleMode === 'form') {
+    items.push({ label: getFormBreadcrumbLabel(options) });
+  }
+  return items;
 }

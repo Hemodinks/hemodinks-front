@@ -31,6 +31,32 @@
   gap: 9px;
 }
 
+.panel-title-actions .patient-export-actions-button {
+  min-width: 140px;
+  min-height: 38px;
+  padding: 8px 14px;
+  color: white;
+  border-radius: 6px;
+}
+
+.panel-title-actions .patient-export-actions-button.export-pdf-btn {
+  background: var(--action-accent);
+  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
+}
+
+.panel-title-actions .patient-export-actions-button.export-pdf-btn:hover {
+  background: var(--action-accent-hover);
+}
+
+.panel-title-actions .patient-export-actions-button.export-xlsx-btn {
+  background: var(--action-success);
+  border-color: color-mix(in srgb, var(--action-success) 82%, black);
+}
+
+.panel-title-actions .patient-export-actions-button.export-xlsx-btn:hover {
+  background: var(--action-success-hover);
+}
+
 .module-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

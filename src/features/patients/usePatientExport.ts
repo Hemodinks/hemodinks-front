@@ -2,22 +2,10 @@ import { useState } from 'react';
 import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
 import { getPacientes } from '../../services';
 import { getErrorMessage, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
-import {
-  getPagedItems,
-  getPagedTotalPages,
-  sortPacientesForListing,
-} from '../../shared/utils/listing';
-import { useAsyncOperation } from '../../shared/hooks/useAsyncOperation';
-import { withGlobalActivity } from '../../services/globalActivity';
-import type { AuthSession } from '../../shared/domain/sessionTypes';
-import type { Paciente } from './patientTypes';
-import {
-  createXlsxBlob,
-  downloadBlob,
-  getPacienteExportRows,
-  getPatientExportFileName,
-  pacienteExportColumns,
-} from './patientExport';
+import { getPagedItems, getPagedTotalPages, sortPacientesForListing } from '../../shared/utils/listing';
+import type { AuthSession, Paciente } from '../../types';
+import { exportPatientList } from './export/patientListExporter';
+import { getPacienteFilterQuery } from './patientUtils';
 
 type UsePatientExportOptions = {
   session: AuthSession | null;
@@ -34,12 +22,10 @@ export function usePatientExport({
   pacienteFilters,
   setPacientesError,
 }: UsePatientExportOptions) {
-  const [requestedFormat, setRequestedFormat] = useState<PacienteExportFormat>('xlsx');
+  const [pacienteExportLoading, setPacienteExportLoading] = useState<PacienteExportFormat | null>(null);
   const [pacienteExportScope, setPacienteExportScope] = useState<PacienteExportScope>('visible');
 
-  const fetchPacientesForExport = async (
-    query: NonNullable<Parameters<typeof getPacientes>[1]>,
-  ) => {
+  const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>) => {
     if (!session) {
       return [];
     }
@@ -71,83 +57,49 @@ export function usePatientExport({
     }
 
     if (scope === 'doctor') {
-      const medico = pacienteFilters.medico.trim();
-
-      if (!medico) {
-        throw new Error('Selecione um cirurgião antes de exportar por cirurgião.');
+      if (!pacienteFilters.medicoUserIds.length) {
+        throw new Error('Selecione ao menos um cirurgião antes de exportar por cirurgião.');
       }
 
-      return fetchPacientesForExport({ medico });
+      return fetchPacientesForExport(getPacienteFilterQuery(pacienteFilters));
     }
 
-    return fetchPacientesForExport({});
+    return fetchPacientesForExport({
+      ...(pacienteFilters.dataInicio ? { dataInicio: pacienteFilters.dataInicio } : {}),
+      ...(pacienteFilters.dataFinal ? { dataFinal: pacienteFilters.dataFinal } : {}),
+    });
   };
 
-  const exportOperation = useAsyncOperation(async (_signal, format: PacienteExportFormat) =>
-    withGlobalActivity({ kind: 'export' }, async () => {
-      const exportItems = await loadPacientesForExport(pacienteExportScope);
-      const rows = getPacienteExportRows(exportItems);
-
-      if (format === 'xlsx') {
-        downloadBlob(createXlsxBlob(rows), getPatientExportFileName('xlsx', companyName));
-        return;
-      }
-
-      const [{ jsPDF }, autoTableModule] = await Promise.all([
-        import('jspdf'),
-        import('jspdf-autotable'),
-      ]);
-      const autoTable = autoTableModule.default;
-      const document = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-      document.setFontSize(14);
-      document.text(`Cadastro de pacientes - ${companyName}`, 40, 34);
-      document.setFontSize(9);
-      document.text(`Gerado em ${new Intl.DateTimeFormat('pt-BR').format(new Date())}`, 40, 50);
-      autoTable(document, {
-        head: [pacienteExportColumns.map((column) => column.header)],
-        body: exportItems.map((paciente) =>
-          pacienteExportColumns.map((column) => column.getValue(paciente)),
-        ),
-        startY: 64,
-        columnStyles: {
-          0: { cellWidth: 80 },
-          1: { cellWidth: 50 },
-          7: { cellWidth: 40 },
-          9: { cellWidth: 100 },
-          15: { cellWidth: 35 },
-        },
-        styles: {
-          fontSize: 6.6,
-          cellPadding: 3,
-          overflow: 'linebreak',
-        },
-        headStyles: {
-          fillColor: [15, 118, 110],
-          textColor: 255,
-        },
-        margin: { left: 24, right: 24 },
-      });
-      document.save(getPatientExportFileName('pdf', companyName));
-    }),
-  );
-
   const handleExportPacientes = async (format: PacienteExportFormat) => {
-    if (!session || exportOperation.isLoading) {
+    if (!session || pacienteExportLoading) {
       return;
     }
 
-    setRequestedFormat(format);
+    setPacienteExportLoading(format);
     setPacientesError('');
 
     try {
-      await exportOperation.execute(format);
+      const exportItems = await loadPacientesForExport(pacienteExportScope);
+      const period = [pacienteFilters.dataInicio, pacienteFilters.dataFinal].filter(Boolean).join(' a ');
+      const scopeLabel = pacienteExportScope === 'all'
+        ? 'Todos os pacientes'
+        : pacienteExportScope === 'doctor' ? 'Cirurgiões selecionados' : 'Dados da tela';
+      await exportPatientList({
+        format,
+        items: exportItems,
+        companyName,
+        sessionToken: session.token,
+        contextLines: [scopeLabel, period ? `Período: ${period}` : 'Período: todos'],
+      });
     } catch (error) {
       setPacientesError(getErrorMessage(error));
+    } finally {
+      setPacienteExportLoading(null);
     }
   };
 
   return {
-    pacienteExportLoading: exportOperation.isLoading ? requestedFormat : null,
+    pacienteExportLoading,
     pacienteExportScope,
     setPacienteExportScope,
     handleExportPacientes,

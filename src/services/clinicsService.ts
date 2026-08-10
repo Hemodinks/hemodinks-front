@@ -1,10 +1,4 @@
-import type {
-  ClinicPayload,
-  PlatformClinic,
-  PublicClinic,
-  SelectClinicResponse,
-  SessionClinic,
-} from '../shared/domain/clinicContracts';
+import type { ClinicPayload, PlatformClinic, PublicClinic, SelectClinicResponse, SessionClinic } from '../types';
 import { del, get, post, put } from './api';
 
 export function listPublicClinics(busca = '') {

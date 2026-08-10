@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
+import { useIsFetching } from '@tanstack/react-query';
 import type { AppView, BreadcrumbItem } from '../appTypes';
-import type { AuthSession } from '../shared/domain/sessionTypes';
-import type { Convenio, OpmeFornecedor } from '../shared/domain/patientContracts';
-import type { MedicalUserOption } from '../shared/domain/userContracts';
+import type { AuthSession, Convenio, MedicalUserOption, OpmeFornecedor } from '../types';
 import { LoadingOverlay } from '../shared/components/LoadingOverlay';
+import { useDelayedLoading } from '../shared/hooks/useDelayedLoading';
 import {
   CONVENIOS_DATALIST_ID,
   formatPersonName,
@@ -12,58 +12,6 @@ import {
 } from '../shared/utils/formatters';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
-import { TutorialPanel } from './TutorialPanel';
-
-export type AppShellNavigation = {
-  activeView: AppView;
-  openDashboard: () => void;
-  openUsersList: () => void;
-  openMyProfile: () => void;
-  openPatientsList: () => void;
-  openBilling: () => void;
-  openAttendances: () => void;
-  openFinance: () => void;
-  openPrices: () => void;
-  openMedicalGroups: () => void;
-  openAgenda: () => void;
-  openSettings: () => void;
-  openClinics: () => void;
-};
-
-export type AppShellCounters = {
-  users: number;
-  patients: number;
-  medicalGroups: number;
-  attendances: number;
-  billings: number;
-  pendingPayments: number;
-  unreadAgendaNotifications: number;
-  notifications: number;
-};
-
-export type AppShellAccess = {
-  dashboard: boolean;
-  patients: boolean;
-  users: boolean;
-  ownUser: boolean;
-  billing: boolean;
-  prices: boolean;
-  medicalGroups: boolean;
-  settings: boolean;
-  agenda: boolean;
-  clinics: boolean;
-};
-
-export type AppShellActions = {
-  toggleNotifications: () => void;
-  logout: () => void;
-};
-
-export type AppShellLookups = {
-  medicalUsers: MedicalUserOption[];
-  convenios: Convenio[];
-  opmeFornecedores: OpmeFornecedor[];
-};
 
 type AppShellProps = {
   children: ReactNode;
@@ -73,14 +21,40 @@ type AppShellProps = {
   appTitle: string;
   companyName: string;
   companyPhoto?: string | null;
+  activeView: AppView;
   breadcrumbItems: BreadcrumbItem[];
   notificationsOpen: boolean;
+  notificationCount: number;
   currentUserProfile: string;
-  navigation: AppShellNavigation;
-  counters: AppShellCounters;
-  access: AppShellAccess;
-  actions: AppShellActions;
-  lookups: AppShellLookups;
+  canAccessDashboard: boolean;
+  canAccessPatients: boolean;
+  canAccessUsers: boolean;
+  canEditOwnUser: boolean;
+  canAccessBilling: boolean;
+  canAccessMedicalGroups: boolean;
+  canAccessSettings: boolean;
+  canAccessAgenda: boolean;
+  canAccessClinics: boolean;
+  usersCount: number;
+  pacientesCount: number;
+  medicalGroupsCount: number;
+  pendingPaymentsCount: number;
+  unreadAgendaNotificationCount: number;
+  medicalUsers: MedicalUserOption[];
+  convenios: Convenio[];
+  opmeFornecedores: OpmeFornecedor[];
+  onToggleNotifications: () => void;
+  onLogout: () => void;
+  onOpenDashboard: () => void;
+  onOpenUsersList: () => void;
+  onOpenMyProfile: () => void;
+  onOpenPatientsList: () => void;
+  onOpenBilling: () => void;
+  onOpenReports: () => void;
+  onOpenMedicalGroups: () => void;
+  onOpenAgenda: () => void;
+  onOpenSettings: () => void;
+  onOpenClinics: () => void;
 };
 
 export function AppShell({
@@ -91,30 +65,59 @@ export function AppShell({
   appTitle,
   companyName,
   companyPhoto,
+  activeView,
   breadcrumbItems,
   notificationsOpen,
+  notificationCount,
   currentUserProfile,
-  navigation,
-  counters,
-  access,
-  actions,
-  lookups,
+  canAccessDashboard,
+  canAccessPatients,
+  canAccessUsers,
+  canEditOwnUser,
+  canAccessBilling,
+  canAccessMedicalGroups,
+  canAccessSettings,
+  canAccessAgenda,
+  canAccessClinics,
+  usersCount,
+  pacientesCount,
+  medicalGroupsCount,
+  pendingPaymentsCount,
+  unreadAgendaNotificationCount,
+  medicalUsers,
+  convenios,
+  opmeFornecedores,
+  onToggleNotifications,
+  onLogout,
+  onOpenDashboard,
+  onOpenUsersList,
+  onOpenMyProfile,
+  onOpenPatientsList,
+  onOpenBilling,
+  onOpenReports,
+  onOpenMedicalGroups,
+  onOpenAgenda,
+  onOpenSettings,
+  onOpenClinics,
 }: AppShellProps) {
+  const activeQueries = useIsFetching();
+  const isSlowQuery = useDelayedLoading(activeQueries > 0);
+
   return (
     <main className="app-shell">
-      <LoadingOverlay active={isBusy} />
+      <LoadingOverlay active={isBusy || isSlowQuery} />
       <datalist id={MEDICAL_USERS_DATALIST_ID}>
-        {lookups.medicalUsers.map((user) => (
+        {medicalUsers.map((user) => (
           <option key={user.id} value={formatPersonName(user.nome)} />
         ))}
       </datalist>
       <datalist id={CONVENIOS_DATALIST_ID}>
-        {lookups.convenios.map((convenio) => (
+        {convenios.map((convenio) => (
           <option key={convenio.idConvenio} value={convenio.descricaoConvenio} />
         ))}
       </datalist>
       <datalist id={OPME_FORNECEDORES_DATALIST_ID}>
-        {lookups.opmeFornecedores.map((fornecedor) => (
+        {opmeFornecedores.map((fornecedor) => (
           <option key={fornecedor.idFornecedor} value={fornecedor.fornecedor} />
         ))}
       </datalist>
@@ -126,55 +129,46 @@ export function AppShell({
         session={session}
         breadcrumbItems={breadcrumbItems}
         notificationsOpen={notificationsOpen}
-        notificationCount={counters.notifications}
-        onToggleNotifications={actions.toggleNotifications}
-        onLogout={actions.logout}
+        notificationCount={notificationCount}
+        onToggleNotifications={onToggleNotifications}
+        onLogout={onLogout}
       />
 
       <div className="app-layout">
         <Sidebar
           session={session}
-          activeView={navigation.activeView}
+          activeView={activeView}
           currentUserProfile={currentUserProfile}
           clinicName={companyName}
-          canAccessDashboard={access.dashboard}
-          canAccessPatients={access.patients}
-          canAccessUsers={access.users}
-          canEditOwnUser={access.ownUser}
-          canAccessBilling={access.billing}
-          showPrices={access.prices}
-          canAccessMedicalGroups={access.medicalGroups}
-          canAccessSettings={access.settings}
-          canAccessAgenda={access.agenda}
-          canAccessClinics={access.clinics}
-          usersCount={counters.users}
-          pacientesCount={counters.patients}
-          medicalGroupsCount={counters.medicalGroups}
-          attendancesCount={counters.attendances}
-          billingsCount={counters.billings}
-          pendingPaymentsCount={counters.pendingPayments}
-          unreadAgendaNotificationCount={counters.unreadAgendaNotifications}
-          onOpenDashboard={navigation.openDashboard}
-          onOpenUsersList={navigation.openUsersList}
-          onOpenMyProfile={navigation.openMyProfile}
-          onOpenPatientsList={navigation.openPatientsList}
-          onOpenBilling={navigation.openBilling}
-          onOpenAttendances={navigation.openAttendances}
-          onOpenFinance={navigation.openFinance}
-          onOpenPrices={navigation.openPrices}
-          onOpenMedicalGroups={navigation.openMedicalGroups}
-          onOpenAgenda={navigation.openAgenda}
-          onOpenSettings={navigation.openSettings}
-          onOpenClinics={navigation.openClinics}
+          canAccessDashboard={canAccessDashboard}
+          canAccessPatients={canAccessPatients}
+          canAccessUsers={canAccessUsers}
+          canEditOwnUser={canEditOwnUser}
+          canAccessBilling={canAccessBilling}
+          canAccessMedicalGroups={canAccessMedicalGroups}
+          canAccessSettings={canAccessSettings}
+          canAccessAgenda={canAccessAgenda}
+          canAccessClinics={canAccessClinics}
+          usersCount={usersCount}
+          pacientesCount={pacientesCount}
+          medicalGroupsCount={medicalGroupsCount}
+          pendingPaymentsCount={pendingPaymentsCount}
+          unreadAgendaNotificationCount={unreadAgendaNotificationCount}
+          onOpenDashboard={onOpenDashboard}
+          onOpenUsersList={onOpenUsersList}
+          onOpenMyProfile={onOpenMyProfile}
+          onOpenPatientsList={onOpenPatientsList}
+          onOpenBilling={onOpenBilling}
+          onOpenReports={onOpenReports}
+          onOpenMedicalGroups={onOpenMedicalGroups}
+          onOpenAgenda={onOpenAgenda}
+          onOpenSettings={onOpenSettings}
+          onOpenClinics={onOpenClinics}
         />
 
-        <div
-          className={`app-content ${navigation.activeView === 'dashboard' ? 'dashboard-content' : ''}`}
-        >
+        <div className={`app-content ${activeView === 'dashboard' ? 'dashboard-content' : ''}`}>
           {children}
         </div>
-
-        <TutorialPanel activeView={navigation.activeView} />
       </div>
 
       {modals}
