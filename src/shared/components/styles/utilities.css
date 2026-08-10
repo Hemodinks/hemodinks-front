@@ -75,9 +75,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  transition:
-    width 180ms ease,
-    background 180ms ease;
+  transition: width 180ms ease, background 180ms ease;
 }
 
 .strength-0 .strength-track span,

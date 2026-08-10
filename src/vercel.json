@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "destination": "https://hemodinks.gestao-saude.tec.br/:path*",
+      "permanent": true
+    }
+  ]
+}

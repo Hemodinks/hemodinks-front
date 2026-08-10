@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
+import { CBHPM_PAGE_SIZE } from '../../shared/utils/formatters';
+import type { CbhpmGeral } from '../../types';
 import type { CbhpmFilters } from '../../appTypes';
 import {
   areCbhpmAutoSearchFiltersEqual,
@@ -16,6 +18,7 @@ const emptyCbhpmFilters: CbhpmFilters = {
 
 export function useCbhpmLookup() {
   const [cbhpmModalOpen, setCbhpmModalOpen] = useState(false);
+  const [cbhpmItems, setCbhpmItems] = useState<CbhpmGeral[]>([]);
   const [cbhpmFilters, setCbhpmFilters] = useState<CbhpmFilters>(emptyCbhpmFilters);
   const [appliedCbhpmFilters, setAppliedCbhpmFilters] = useState<CbhpmFilters>(emptyCbhpmFilters);
   const [cbhpmCurrentPage, setCbhpmCurrentPage] = useState(1);
@@ -30,20 +33,32 @@ export function useCbhpmLookup() {
     setAppliedCbhpmFilters(buildAppliedCbhpmFilters(latestCbhpmFiltersRef.current));
   }, [resetCbhpmPage]);
 
-  const [, setDebouncedCbhpmAutoFilters] = useDebouncedValue(
-    getCbhpmAutoSearchFilters(cbhpmFilters),
-    {
-      delayMs: CBHPM_AUTO_SEARCH_DELAY_MS,
-      isEqual: areCbhpmAutoSearchFiltersEqual,
-      onCommit: commitDebouncedAutoSearch,
-    },
-  );
+  const [, setDebouncedCbhpmAutoFilters] = useDebouncedValue(getCbhpmAutoSearchFilters(cbhpmFilters), {
+    delayMs: CBHPM_AUTO_SEARCH_DELAY_MS,
+    isEqual: areCbhpmAutoSearchFiltersEqual,
+    onCommit: commitDebouncedAutoSearch,
+  });
+  const [cbhpmTotalItems, setCbhpmTotalItems] = useState(0);
+  const [cbhpmTotalPages, setCbhpmTotalPages] = useState(1);
+  const [cbhpmLoading, setCbhpmLoading] = useState(false);
+  const [cbhpmError, setCbhpmError] = useState('');
+
+  const cbhpmTotalPageCount = Math.max(1, cbhpmTotalPages);
+  const cbhpmPageStart = (cbhpmCurrentPage - 1) * CBHPM_PAGE_SIZE;
+  const cbhpmPageEnd = cbhpmPageStart + CBHPM_PAGE_SIZE;
+  const cbhpmVisibleStart = cbhpmTotalItems ? cbhpmPageStart + 1 : 0;
+  const cbhpmVisibleEnd = Math.min(cbhpmPageEnd, cbhpmTotalItems);
+
   const resetCbhpmLookup = () => {
     setCbhpmModalOpen(false);
+    setCbhpmItems([]);
     setCbhpmFilters(emptyCbhpmFilters);
     setAppliedCbhpmFilters(emptyCbhpmFilters);
     setDebouncedCbhpmAutoFilters(getCbhpmAutoSearchFilters(emptyCbhpmFilters));
     setCbhpmCurrentPage(1);
+    setCbhpmTotalItems(0);
+    setCbhpmTotalPages(1);
+    setCbhpmError('');
     setSortBy('codigo');
     setSortDirection('asc');
   };
@@ -57,6 +72,8 @@ export function useCbhpmLookup() {
   return {
     cbhpmModalOpen,
     setCbhpmModalOpen,
+    cbhpmItems,
+    setCbhpmItems,
     cbhpmFilters,
     setCbhpmFilters,
     appliedCbhpmFilters,
@@ -67,6 +84,16 @@ export function useCbhpmLookup() {
     setSortBy,
     sortDirection,
     setSortDirection,
+    cbhpmTotalItems,
+    setCbhpmTotalItems,
+    cbhpmTotalPageCount,
+    setCbhpmTotalPages,
+    cbhpmLoading,
+    setCbhpmLoading,
+    cbhpmError,
+    setCbhpmError,
+    cbhpmVisibleStart,
+    cbhpmVisibleEnd,
     resetCbhpmLookup,
   };
 }

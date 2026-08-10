@@ -1,11 +1,10 @@
-import type { UserFormData, UserPayload } from './userTypes';
+import type { UserFormData, UserPayload } from '../../types';
 import {
   DEFAULT_PROFILE_ID,
   formatCpfInput,
   formatPhoneInput,
   isAssignableUserProfileId,
   isMedicalProfileId,
-  isValidProfileId,
   isValidBirthDate,
   isValidBrazilMobilePhone,
   isValidEmail,
@@ -13,6 +12,8 @@ import {
   MAX_NAME_LENGTH,
   normalizePhoneForPayload,
   parseDisplayDate,
+  TEAM_PROFILE_ID,
+  SUPER_ADMIN_PROFILE_ID,
   toDisplayDate,
 } from '../../shared/utils/formatters';
 
@@ -60,7 +61,7 @@ export function getUserFormData(data: {
   };
 }
 
-export function validateUserForm(data: UserFormData, allowAllProfiles = false) {
+export function validateUserForm(data: UserFormData, allowTeamProfile = false, allowSuperAdminProfile = false) {
   const birthDate = data.dataNascimento.trim();
 
   if (!data.nome.trim()) {
@@ -75,7 +76,8 @@ export function validateUserForm(data: UserFormData, allowAllProfiles = false) {
     return 'Informe um email valido.';
   }
 
-  if (!isValidBrazilMobilePhone(data.telefone)) {
+  const hasPhone = data.telefone.replace(/\D/g, '').replace(/^55/, '').length > 0;
+  if ((!allowTeamProfile || data.perfilId !== TEAM_PROFILE_ID || hasPhone) && !isValidBrazilMobilePhone(data.telefone)) {
     return 'Informe um celular valido com DDD e 9 digitos.';
   }
 
@@ -83,9 +85,9 @@ export function validateUserForm(data: UserFormData, allowAllProfiles = false) {
     return 'Informe a data de nascimento no formato dd/mm/yyyy.';
   }
 
-  if (
-    !(allowAllProfiles ? isValidProfileId(data.perfilId) : isAssignableUserProfileId(data.perfilId))
-  ) {
+  if (!isAssignableUserProfileId(data.perfilId)
+    && !(allowTeamProfile && data.perfilId === TEAM_PROFILE_ID)
+    && !(allowSuperAdminProfile && data.perfilId === SUPER_ADMIN_PROFILE_ID)) {
     return 'Selecione um perfil valido.';
   }
 
@@ -112,7 +114,9 @@ export function toUserPayload(data: UserFormData): UserPayload {
   return {
     nome: data.nome.trim(),
     email: data.email.trim(),
-    telefone: normalizePhoneForPayload(data.telefone),
+    telefone: data.telefone.replace(/\D/g, '').replace(/^55/, '').length > 0
+      ? normalizePhoneForPayload(data.telefone)
+      : '',
     cpf: null,
     crm: isMedicalProfileId(data.perfilId) ? data.crm.trim() : '',
     crmUf: isMedicalProfileId(data.perfilId) ? data.crmUf.trim().toUpperCase() : '',

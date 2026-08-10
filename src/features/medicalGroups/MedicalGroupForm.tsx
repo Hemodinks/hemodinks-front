@@ -1,15 +1,7 @@
 import { type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { Plus, Save, ShieldPlus, X } from 'lucide-react';
-import type { MedicalGroupFormData } from './medicalGroupTypes';
-import type { MedicalUserOption } from '../../shared/domain/clinicalContracts';
-import {
-  AlertMessage,
-  Button,
-  CheckboxField,
-  FormPanel,
-  IconButton,
-  TextField,
-} from '../../shared/components/ui';
+import type { MedicalGroupFormData, MedicalUserOption } from '../../types';
+import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, TextField } from '../../shared/components/ui';
 import { formatPersonName, MAX_NAME_LENGTH } from '../../shared/utils/formatters';
 
 type MedicalGroupFormProps = {
@@ -62,9 +54,7 @@ export function MedicalGroupForm({
             label="Nome do grupo"
             type="text"
             value={formData.nome}
-            onValueChange={(value) =>
-              setFormData((current) => ({ ...current, nome: value.slice(0, MAX_NAME_LENGTH) }))
-            }
+            onValueChange={(value) => setFormData((current) => ({ ...current, nome: value.slice(0, MAX_NAME_LENGTH) }))}
             maxLength={MAX_NAME_LENGTH}
             required
           />
@@ -72,17 +62,13 @@ export function MedicalGroupForm({
           <CheckboxField
             label="Grupo ativo"
             checked={formData.ativo}
-            onCheckedChange={(checked) =>
-              setFormData((current) => ({ ...current, ativo: checked }))
-            }
+            onCheckedChange={(checked) => setFormData((current) => ({ ...current, ativo: checked }))}
           />
 
           <section className="medical-group-members-field">
             <div className="medical-group-members-header">
               <span className="field-label">Médicos do grupo</span>
-              <span className="medical-group-members-count">
-                {formData.medicoUserIds.length} selecionados
-              </span>
+              <span className="medical-group-members-count">{formData.medicoUserIds.length} selecionados</span>
             </div>
 
             {availableMedicalUsers.length ? (
@@ -91,10 +77,7 @@ export function MedicalGroupForm({
                   const checked = formData.medicoUserIds.includes(user.id);
 
                   return (
-                    <label
-                      key={user.id}
-                      className={`medical-group-member-card ${checked ? 'selected' : ''}`}
-                    >
+                    <label key={user.id} className={`medical-group-member-card ${checked ? 'selected' : ''}`}>
                       <input
                         type="checkbox"
                         checked={checked}
@@ -103,9 +86,7 @@ export function MedicalGroupForm({
                       <span className="medical-group-member-icon" aria-hidden="true">
                         <ShieldPlus size={16} />
                       </span>
-                      <span className="medical-group-member-name">
-                        {formatPersonName(user.nome)}
-                      </span>
+                      <span className="medical-group-member-name">{formatPersonName(user.nome)}</span>
                       <span className="medical-group-member-email">{user.email}</span>
                     </label>
                   );
@@ -121,11 +102,7 @@ export function MedicalGroupForm({
 
         <Button variant="primary" type="submit" disabled={formLoading}>
           {editingGroupId ? <Save size={18} /> : <Plus size={18} />}
-          {formLoading
-            ? 'Salvando...'
-            : editingGroupId
-              ? 'Salvar grupo médico'
-              : 'Cadastrar grupo médico'}
+          {formLoading ? 'Salvando...' : editingGroupId ? 'Salvar grupo médico' : 'Cadastrar grupo médico'}
         </Button>
       </form>
     </FormPanel>

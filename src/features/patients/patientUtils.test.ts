@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { Paciente } from './patientTypes';
+import type { Paciente } from '../../types';
 import {
   emptyPacienteForm,
+  getCalculatedPaymentValue,
   getDuplicatedMedicalTeamError,
   getPacienteFormData,
   normalizeCbhpmCodigo,
   normalizePacienteProcedimentos,
   toPacientePayload,
 } from './patientUtils';
+import { getPacienteFormExportRows } from './export/patientExportData';
 
 describe('patientUtils', () => {
   it('remove pontuacao de codigos CBHPM', () => {
@@ -16,7 +18,7 @@ describe('patientUtils', () => {
     expect(normalizeCbhpmCodigo(null)).toBe('');
   });
 
-  it('normaliza e deduplica procedimentos por codigo limpo', () => {
+  it('normaliza os procedimentos e preserva ocorrencias repetidas', () => {
     const result = normalizePacienteProcedimentos([
       {
         cbhpmCodigo: '1.01.01.01-2',
@@ -44,12 +46,24 @@ describe('patientUtils', () => {
         valorReferencia: null,
       },
       {
+        cbhpmCodigo: '10101012',
+        cbhpmPorte: '2B',
+        procedimento: 'Consulta duplicada',
+        valorReferencia: null,
+      },
+      {
         cbhpmCodigo: '20101201',
         cbhpmPorte: '2B',
         procedimento: 'Avaliacao clinica',
         valorReferencia: 125.5,
       },
     ]);
+  });
+
+  it('calcula o valor recebido a partir do estimado menos a glosa', () => {
+    expect(getCalculatedPaymentValue(300, '')).toBe('R$ 300,00');
+    expect(getCalculatedPaymentValue(300, 'R$ 12,50')).toBe('R$ 287,50');
+    expect(getCalculatedPaymentValue(0, '')).toBe('');
   });
 
   it('monta payload de paciente com codigos de procedimentos sem pontuacao', () => {
@@ -88,41 +102,49 @@ describe('patientUtils', () => {
     expect(payload.procedimentos.map((item) => item.cbhpmCodigo)).toEqual(['10101012', '20101201']);
   });
 
-  it('envia email, celular e data de nascimento vazios como nulos', () => {
-    const payload = toPacientePayload({
+  it('exporta uma linha para cada procedimento do formulario em xlsx', () => {
+    const rows = getPacienteFormExportRows({
       ...emptyPacienteForm,
-      nomePaciente: 'Paciente sem contatos',
+      nomePaciente: 'Paciente Teste',
+      procedimentos: [
+        {
+          cbhpmCodigo: '1.01.01.01-2',
+          cbhpmPorte: '2B',
+          procedimento: 'Consulta',
+          valorReferencia: 150,
+        },
+        {
+          cbhpmCodigo: '2.01.01.20-1',
+          cbhpmPorte: '3A',
+          procedimento: 'Avaliacao clinica',
+          valorReferencia: 250,
+        },
+      ],
     });
 
-    expect(payload).toEqual(
-      expect.objectContaining({
-        email: null,
-        telefone: null,
-        dataNascimento: null,
-      }),
-    );
+    expect(rows).toHaveLength(2);
+    expect(rows[0]['Procedimento']).toBe('Consulta');
+    expect(rows[1]['Procedimento']).toBe('Avaliacao clinica');
+    expect(rows[0]['Código CBHPM']).toBe('10101012');
+    expect(rows[1]['Código CBHPM']).toBe('20101201');
   });
 
   it('bloqueia selecao repetida entre cirurgiao e medicos auxiliares', () => {
-    expect(
-      getDuplicatedMedicalTeamError({
-        ...emptyPacienteForm,
-        medicoUserId: 1,
-        medico: 'Dra. Ana',
-        medicoAuxiliar1UserId: 1,
-        medicoAuxiliar1: 'Dra. Ana',
-      }),
-    ).toBe('Cirurgião e médicos auxiliares devem ser diferentes.');
+    expect(getDuplicatedMedicalTeamError({
+      ...emptyPacienteForm,
+      medicoUserId: 1,
+      medico: 'Dra. Ana',
+      medicoAuxiliar1UserId: 1,
+      medicoAuxiliar1: 'Dra. Ana',
+    })).toBe('Cirurgião e médicos auxiliares devem ser diferentes.');
 
-    expect(
-      getDuplicatedMedicalTeamError({
-        ...emptyPacienteForm,
-        medicoUserId: 1,
-        medico: 'Dra. Ana',
-        medicoAuxiliar1UserId: 2,
-        medicoAuxiliar1: 'Dr. Bruno',
-      }),
-    ).toBe('');
+    expect(getDuplicatedMedicalTeamError({
+      ...emptyPacienteForm,
+      medicoUserId: 1,
+      medico: 'Dra. Ana',
+      medicoAuxiliar1UserId: 2,
+      medicoAuxiliar1: 'Dr. Bruno',
+    })).toBe('');
   });
 
   it('normaliza codigos vindos da API ao preencher o formulario', () => {

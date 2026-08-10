@@ -1,7 +1,9 @@
-import { onlyDigits } from './identityFormatters';
+function onlyDateDigits(value: string) {
+  return value.replace(/\D/g, '');
+}
 
 export function formatDateInput(value: string) {
-  const digits = onlyDigits(value).slice(0, 8);
+  const digits = onlyDateDigits(value).slice(0, 8);
   if (digits.length <= 2) return digits;
   if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
@@ -10,7 +12,6 @@ export function formatDateInput(value: string) {
 export function toDisplayDate(value?: string | null) {
   if (!value) return '';
   if (value.includes('/')) return formatDateInput(value);
-
   const [year, month, day] = value.split('T')[0].split('-');
   return year && month && day ? `${day}/${month}/${year}` : '';
 }
@@ -48,7 +49,6 @@ export function getTodayPickerValue() {
 
 export function isValidBirthDate(value: string) {
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return false;
-
   const { day: dayText, month: monthText, year: yearText } = parseDisplayDate(value);
   const day = Number(dayText);
   const month = Number(monthText);
@@ -57,11 +57,9 @@ export function isValidBirthDate(value: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return (
-    year >= 1900 &&
-    date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day &&
-    date <= today
-  );
+  return year >= 1900
+    && date.getFullYear() === year
+    && date.getMonth() === month - 1
+    && date.getDate() === day
+    && date <= today;
 }

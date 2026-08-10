@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Download } from 'lucide-react';
 import { getErrorMessage } from '../utils/formatters';
+import { downloadBlob } from '../utils/downloadFile';
 
 type SecureFileDownloadButtonProps = {
   fileName: string;
@@ -22,14 +23,7 @@ export function SecureFileDownloadButton({
 
     try {
       const blob = await loadFile();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = fileName;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      downloadBlob(blob, fileName);
     } catch (downloadError) {
       setError(getErrorMessage(downloadError));
     } finally {

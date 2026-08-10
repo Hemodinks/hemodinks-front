@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Paciente } from '../../shared/domain/clinicalContracts';
+import type { Paciente } from '../../types';
 import {
   buildBillingRecords,
   createEmptyBillingFilters,
@@ -62,9 +62,7 @@ const basePaciente: Paciente = {
   arquivos: [],
 };
 
-function createFaturamento(
-  overrides: Partial<NonNullable<Paciente['faturamento']>> = {},
-): NonNullable<Paciente['faturamento']> {
+function createFaturamento(overrides: Partial<NonNullable<Paciente['faturamento']>> = {}): NonNullable<Paciente['faturamento']> {
   return {
     id: 1,
     pacienteId: 1,
@@ -170,9 +168,7 @@ describe('billingUtils', () => {
       competenciaFinal: '2026-07',
     });
 
-    expect(records.find((record) => record.id === 4)?.competenciaInicio).toBe(
-      '2026-07-05T10:00:00Z',
-    );
+    expect(records.find((record) => record.id === 4)?.competenciaInicio).toBe('2026-07-05T10:00:00Z');
     expect(filtered.map((record) => record.id)).toEqual([4]);
   });
 
@@ -202,9 +198,7 @@ describe('billingUtils', () => {
       competenciaFinal: '2026-08',
     });
 
-    expect(records.find((record) => record.id === 6)?.competenciaInicio).toBe(
-      '2026-06-30T15:25:50Z',
-    );
+    expect(records.find((record) => record.id === 6)?.competenciaInicio).toBe('2026-06-30T15:25:50Z');
     expect(filtered.map((record) => record.id)).toEqual([6]);
   });
 
@@ -225,21 +219,17 @@ describe('billingUtils', () => {
       },
     ]);
 
-    const filtered = filterBillingRecords(
-      records,
-      {
-        ...createEmptyBillingFilters(''),
-        competenciaInicio: '2026-06',
-        competenciaFinal: '2026-06',
-        status: 'glosa',
-        onlyPendingItems: true,
-      },
-      {
-        restrictToMedicalUser: true,
-        currentMedicalUserId: 7,
-        currentMedicalUserName: 'Dra. Helena Cortez',
-      },
-    );
+    const filtered = filterBillingRecords(records, {
+      ...createEmptyBillingFilters(''),
+      competenciaInicio: '2026-06',
+      competenciaFinal: '2026-06',
+      status: 'glosa',
+      onlyPendingItems: true,
+    }, {
+      restrictToMedicalUser: true,
+      currentMedicalUserId: 7,
+      currentMedicalUserName: 'Dra. Helena Cortez',
+    });
 
     expect(filtered).toHaveLength(1);
     expect(filtered[0].id).toBe(1);

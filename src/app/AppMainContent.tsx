@@ -1,20 +1,20 @@
 import { Suspense } from 'react';
 import type { AppView, ModuleMode, Theme } from '../appTypes';
-import type { MedicalGroupsDomainState } from '../features/medicalGroups';
-import type { PatientsDomainState } from '../features/patients';
-import type { UsersDomainState } from '../features/users';
-import type { AuthSession } from '../shared/domain/sessionTypes';
-import type { SelectClinicResponse } from '../shared/domain/clinicContracts';
+import { DashboardPage } from '../features/dashboard/DashboardPage';
+import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
+import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
+import type { UsersDomainState } from '../features/users/useUsersDomain';
+import type { AuthSession, SelectClinicResponse } from '../types';
 import {
   AgendaPage,
   BillingPage,
   ClinicsPage,
-  DashboardPage,
   MedicalGroupsPage,
   ModuleFallback,
-  PatientsContainer,
+  PatientsPage,
+  ReportsPage,
   SystemSettingsPage,
-  UsersContainer,
+  UsersPage,
 } from './lazyModules';
 
 type AccessState = {
@@ -22,6 +22,7 @@ type AccessState = {
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
+  canAccessReports: boolean;
   canAccessMedicalGroups: boolean;
   canAccessAgenda: boolean;
   canAccessSettings: boolean;
@@ -32,6 +33,7 @@ type AccessState = {
   patientReadOnly: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isTeam: boolean;
   isMedical: boolean;
   canAccessClinics: boolean;
 };
@@ -52,9 +54,7 @@ type NavigationActions = {
   openMyProfile: () => void;
   openPatientsList: () => void;
   openBilling: () => void;
-  openAttendances: () => void;
-  openFinance: () => void;
-  openPrices: () => void;
+  openReports: () => void;
   openMedicalGroups: () => void;
   openAgenda: () => void;
   openSettings: () => void;
@@ -79,11 +79,9 @@ type AppMainContentProps = {
   medicalGroupsDomain: MedicalGroupsDomainState;
   dashboardError: string;
   theme: Theme;
-  showPrices: boolean;
   navigation: NavigationActions;
   sortHandlers: SortHandlers;
   onThemeChange: (theme: Theme) => void;
-  onShowPricesChange: (visible: boolean) => void;
   onPasswordChanged: (message: string) => void;
   onClinicSelected: (result: SelectClinicResponse) => void;
 };
@@ -100,11 +98,9 @@ export function AppMainContent({
   medicalGroupsDomain,
   dashboardError,
   theme,
-  showPrices,
   navigation,
   sortHandlers,
   onThemeChange,
-  onShowPricesChange,
   onPasswordChanged,
   onClinicSelected,
 }: AppMainContentProps) {
@@ -113,6 +109,7 @@ export function AppMainContent({
     canAccessUsers,
     canEditOwnUser,
     canAccessBilling,
+    canAccessReports,
     canAccessMedicalGroups,
     canAccessAgenda,
     canAccessSettings,
@@ -123,6 +120,7 @@ export function AppMainContent({
     patientReadOnly,
     isAdmin,
     isSuperAdmin,
+    isTeam,
     isMedical,
     canAccessClinics,
   } = access;
@@ -150,7 +148,6 @@ export function AppMainContent({
           canAccessAgenda={canAccessAgenda}
           canAccessSettings={canAccessSettings}
           canAccessClinics={canAccessClinics}
-          isSuperAdmin={isSuperAdmin}
           patientReadOnly={patientReadOnly}
           usersCount={usersCount}
           pacientesCount={pacientesCount}
@@ -165,62 +162,135 @@ export function AppMainContent({
           onOpenUsersList={navigation.openUsersList}
           onOpenMyProfile={navigation.openMyProfile}
           onOpenPatientsList={navigation.openPatientsList}
-          onOpenController={navigation.openAttendances}
-          onOpenClinics={navigation.openClinics}
+          onOpenBilling={navigation.openBilling}
           onOpenMedicalGroups={navigation.openMedicalGroups}
           onOpenAgenda={navigation.openAgenda}
           onOpenSettings={navigation.openSettings}
+          onOpenClinics={navigation.openClinics}
         />
       ) : activeView === 'users' || activeView === 'profile' ? (
-        <UsersContainer
+        <UsersPage
           moduleMode={moduleMode}
-          domain={usersDomain}
           canAccessUsers={canAccessUsers}
-          canAssignAllProfiles={isSuperAdmin}
+          canManageUsers={isAdmin}
+          isSuperAdmin={isSuperAdmin}
+          canUseUserForm={usersDomain.canUseUserForm}
+          editingId={usersDomain.editingId}
+          editingUserDetails={usersDomain.editingUserDetails}
+          formData={usersDomain.formData}
+          formError={usersDomain.formError}
+          formLoading={usersDomain.formLoading}
+          pendingUserFiles={usersDomain.pendingUserFiles}
+          photoInputKey={usersDomain.photoInputKey}
+          userFileInputKey={usersDomain.userFileInputKey}
+          users={usersDomain.paginatedUsers}
+          usersLoading={usersDomain.usersLoading}
+          usersError={usersDomain.usersError}
+          successMessage={usersDomain.successMessage}
+          usersTotalItems={usersDomain.usersTotalItems}
+          visibleStart={usersDomain.visibleStart}
+          visibleEnd={usersDomain.visibleEnd}
+          currentPage={usersDomain.currentPage}
+          totalPages={usersDomain.totalPages}
+          searchTerm={usersDomain.searchTerm}
+          sortBy={usersDomain.sortBy}
+          sortDirection={usersDomain.sortDirection}
           sessionToken={session.token}
+          setFormData={usersDomain.setFormData}
+          setSearchTerm={usersDomain.setSearchTerm}
+          setCurrentPage={usersDomain.setCurrentPage}
           onSortChange={sortHandlers.handleUserSortChange}
+          closeUserForm={usersDomain.closeUserForm}
+          openNewUserForm={usersDomain.openNewUserForm}
+          handleSubmitUser={usersDomain.handleSubmitUser}
+          handleProfilePhotoChange={usersDomain.handleProfilePhotoChange}
+          handleRemoveProfilePhoto={usersDomain.handleRemoveProfilePhoto}
+          handleUserFilesChange={usersDomain.handleUserFilesChange}
+          removePendingUserFile={usersDomain.removePendingUserFile}
+          handleDeleteUserArquivo={usersDomain.handleDeleteUserArquivo}
+          handleEditUser={usersDomain.handleEditUser}
+          handleDeleteUser={usersDomain.handleDeleteUser}
+          setSelectedInfoUser={usersDomain.setSelectedInfoUser}
+          setSelectedContactUser={usersDomain.setSelectedContactUser}
+          refreshUsers={usersDomain.refreshUsers}
         />
       ) : activeView === 'patients' ? (
-        <PatientsContainer
+        <PatientsPage
           moduleMode={moduleMode}
-          domain={patientsDomain}
-          access={{
-            canCreatePatients,
-            canEditPatients,
-            canDeletePatients,
-            canManageObservacoes: canManagePatientObservacoes,
-            patientReadOnly,
-            isAdmin,
-            isMedical,
-          }}
+          canCreatePatients={canCreatePatients}
+          canEditPatients={canEditPatients}
+          canDeletePatients={canDeletePatients}
+          canManageObservacoes={canManagePatientObservacoes}
+          patientReadOnly={patientReadOnly}
+          editingPacienteId={patientsDomain.editingPacienteId}
+          editingPaciente={patientsDomain.editingPaciente}
+          pacienteFormData={patientsDomain.pacienteFormData}
+          pacienteFormError={patientsDomain.pacienteFormError}
+          pacienteFormLoading={patientsDomain.pacienteFormLoading}
+          pendingPatientFiles={patientsDomain.pendingPatientFiles}
+          patientFileInputKey={patientsDomain.patientFileInputKey}
+          pacientes={patientsDomain.paginatedPacientes}
+          pacientesLoading={patientsDomain.pacientesLoading}
+          pacientesError={patientsDomain.pacientesError}
+          pacienteSuccessMessage={patientsDomain.pacienteSuccessMessage}
+          pacientesTotalItems={patientsDomain.pacientesTotalItems}
+          pacienteVisibleStart={patientsDomain.pacienteVisibleStart}
+          pacienteVisibleEnd={patientsDomain.pacienteVisibleEnd}
+          pacienteCurrentPage={patientsDomain.pacienteCurrentPage}
+          pacienteTotalPages={patientsDomain.pacienteTotalPages}
+          pacienteSearchTerm={patientsDomain.pacienteSearchTerm}
+          sortBy={patientsDomain.sortBy}
+          sortDirection={patientsDomain.sortDirection}
+          pacienteFilters={patientsDomain.pacienteFilters}
+          pacienteExportLoading={patientsDomain.pacienteExportLoading}
+          pacienteExportScope={patientsDomain.pacienteExportScope}
+          hospitais={patientsDomain.hospitais}
+          hospitaisError={patientsDomain.hospitaisError}
+          medicalUsers={patientsDomain.medicalUsers}
+          convenios={patientsDomain.convenios}
+          conveniosError={patientsDomain.conveniosError}
+          opmeFornecedores={patientsDomain.opmeFornecedores}
+          opmeFornecedoresError={patientsDomain.opmeFornecedoresError}
+          isAdmin={isAdmin}
+          isTeam={isTeam}
+          isMedical={isMedical}
           sessionToken={session.token}
+          setPacienteFormData={patientsDomain.setPacienteFormData}
+          setPacienteSearchTerm={patientsDomain.setPacienteSearchTerm}
+          setPacienteFilters={patientsDomain.setPacienteFilters}
+          setPacienteExportScope={patientsDomain.setPacienteExportScope}
+          setPacienteCurrentPage={patientsDomain.setPacienteCurrentPage}
           onSortChange={sortHandlers.handlePacienteSortChange}
+          closePacienteForm={patientsDomain.closePacienteForm}
+          openNewPacienteForm={patientsDomain.openNewPacienteForm}
+          handleSubmitPaciente={patientsDomain.handleSubmitPaciente}
+          handleOpenCbhpmModal={patientsDomain.handleOpenCbhpmModal}
+          handleRemovePacienteProcedimento={patientsDomain.handleRemovePacienteProcedimento}
+          handlePacienteFilesChange={patientsDomain.handlePacienteFilesChange}
+          removePendingPatientFile={patientsDomain.removePendingPatientFile}
+          handleDeletePacienteArquivo={patientsDomain.handleDeletePacienteArquivo}
+          handleExportPacientes={patientsDomain.handleExportPacientes}
+          companyName={companyName}
+          handleEditPaciente={patientsDomain.handleEditPaciente}
+          handleDeletePaciente={patientsDomain.handleDeletePaciente}
+          handleOpenPacienteFiles={patientsDomain.handleOpenPacienteFiles}
+          handleOpenPacienteObservacoes={patientsDomain.handleOpenPacienteObservacoes}
+          setSelectedPatientInfo={patientsDomain.setSelectedPatientInfo}
+          clearPacienteFilters={patientsDomain.clearPacienteFilters}
+          refreshPacientes={patientsDomain.refreshPacientes}
         />
       ) : activeView === 'clinics' && canAccessClinics ? (
-        <ClinicsPage
-          session={session}
-          isSuperAdmin={isSuperAdmin}
-          onClinicSelected={onClinicSelected}
-        />
-      ) : ['attendances', 'billing', 'finance', 'prices'].includes(activeView) ? (
+        <ClinicsPage session={session} onClinicSelected={onClinicSelected} />
+      ) : activeView === 'billing' ? (
         <BillingPage
-          key={activeView}
           session={session}
           medicalUsers={patientsDomain.medicalUsers}
           convenios={patientsDomain.convenios}
-          opmeFornecedores={patientsDomain.opmeFornecedores}
           isAdmin={isAdmin}
           isMedical={isMedical}
-          section={
-            activeView === 'attendances'
-              ? 'atendimentos'
-              : activeView === 'finance'
-                ? 'financeiro'
-                : activeView === 'prices'
-                  ? 'precos'
-                  : 'faturamento'
-          }
         />
+      ) : activeView === 'reports' && canAccessReports ? (
+        <ReportsPage session={session} companyName={companyName} isMedical={isMedical} />
       ) : activeView === 'medicalGroups' ? (
         <MedicalGroupsPage
           moduleMode={moduleMode}
@@ -258,13 +328,15 @@ export function AppMainContent({
         <SystemSettingsPage
           session={session}
           theme={theme}
-          showPrices={showPrices}
           onThemeChange={onThemeChange}
-          onShowPricesChange={onShowPricesChange}
           onPasswordChanged={onPasswordChanged}
         />
       ) : (
-        <AgendaPage session={session} isAdmin={isAdmin} isMedical={isMedical} />
+        <AgendaPage
+          session={session}
+          isAdmin={isAdmin}
+          isMedical={isMedical}
+        />
       )}
     </Suspense>
   );

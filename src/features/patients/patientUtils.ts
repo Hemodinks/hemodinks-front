@@ -1,6 +1,7 @@
-import type { Paciente, PacienteFormData, PacientePayload } from './patientTypes';
+import type { Paciente, PacienteFormData, PacientePayload, PacienteProcedimento } from '../../types';
 import type { PacienteFilters } from '../../appTypes';
 import {
+  DEFAULT_PATIENT_BIRTH_DATE,
   formatCpfInput,
   formatCurrencyInput,
   formatPhoneInput,
@@ -11,17 +12,6 @@ import {
   parseDisplayDate,
   toDisplayDate,
 } from '../../shared/utils/formatters';
-import {
-  getPacienteProcedimentosFromPaciente,
-  normalizeCbhpmCodigo,
-  normalizePacienteProcedimentos,
-} from '../../shared/domain/cbhpm';
-
-export {
-  getPacienteProcedimentosFromPaciente,
-  normalizeCbhpmCodigo,
-  normalizePacienteProcedimentos,
-} from '../../shared/domain/cbhpm';
 
 export const emptyPacienteForm: PacienteFormData = {
   data: '',
@@ -58,26 +48,55 @@ export const emptyPacienteForm: PacienteFormData = {
 };
 
 export const emptyPacienteFilters: PacienteFilters = {
-  medico: '',
-  convenio: '',
+  medicoUserIds: [],
+  convenioIds: [],
   procedimento: '',
+  dataInicio: '',
+  dataFinal: '',
 };
 
-export function getPacienteFilterQuery(filters: PacienteFilters, enabled: boolean) {
-  if (!enabled) {
-    return {};
-  }
-
+export function getPacienteFilterQuery(filters: PacienteFilters) {
   return {
-    ...(filters.medico.trim() ? { medico: filters.medico.trim() } : {}),
-    ...(filters.convenio.trim() ? { convenio: filters.convenio.trim() } : {}),
+    ...(filters.medicoUserIds.length ? { medicoUserIds: filters.medicoUserIds.join(',') } : {}),
+    ...(filters.convenioIds.length ? { convenioIds: filters.convenioIds.join(',') } : {}),
     ...(filters.procedimento.trim() ? { procedimento: filters.procedimento.trim() } : {}),
+    ...(filters.dataInicio ? { dataInicio: filters.dataInicio } : {}),
+    ...(filters.dataFinal ? { dataFinal: filters.dataFinal } : {}),
   };
+}
+
+export function normalizeCbhpmCodigo(value?: string | null) {
+  return value?.replace(/\D/g, '') ?? '';
 }
 
 function toApiDate(value: string) {
   const { day, month, year } = parseDisplayDate(value);
   return `${year}-${month}-${day}`;
+}
+
+export function normalizePacienteProcedimentos(procedimentos: PacienteProcedimento[]) {
+  return procedimentos
+    .map((item) => ({
+      cbhpmCodigo: normalizeCbhpmCodigo(item.cbhpmCodigo) || null,
+      cbhpmPorte: item.cbhpmPorte?.trim() || null,
+      procedimento: item.procedimento.trim(),
+      valorReferencia: item.valorReferencia ?? null,
+    }))
+    .filter((item) => item.procedimento);
+}
+
+export function getCurrencyInputValue(value: string) {
+  const digits = value.replace(/\D/g, '');
+  return digits ? Number(digits) / 100 : 0;
+}
+
+export function getCalculatedPaymentValue(estimatedValue: number, glosa: string) {
+  if (estimatedValue <= 0 && !glosa.trim()) {
+    return '';
+  }
+
+  const netValue = Math.max(0, estimatedValue - getCurrencyInputValue(glosa));
+  return formatCurrencyInput(String(Math.round(netValue * 100)));
 }
 
 export function getPacienteProcedimentosFromForm(data: PacienteFormData) {
@@ -93,6 +112,20 @@ export function getPacienteProcedimentosFromForm(data: PacienteFormData) {
       procedimento: data.procedimento,
     },
   ]);
+}
+
+export function getPacienteProcedimentosFromPaciente(paciente: Paciente) {
+  return normalizePacienteProcedimentos(
+    paciente.procedimentos?.length
+      ? paciente.procedimentos
+      : [
+          {
+            cbhpmCodigo: paciente.cbhpmCodigo,
+            cbhpmPorte: paciente.cbhpmPorte,
+            procedimento: paciente.procedimento || '',
+          },
+        ],
+  );
 }
 
 export function withPrimaryProcedimento(data: PacienteFormData): PacienteFormData {
@@ -115,10 +148,10 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
     diagnostico: paciente.diagnostico || '',
     tratamentoMedico: paciente.tratamentoMedico || '',
     cpf: formatCpfInput(paciente.cpf || ''),
-    email: paciente.email || '',
-    telefone: formatPhoneInput(paciente.telefone || ''),
+    email: paciente.email,
+    telefone: formatPhoneInput(paciente.telefone),
     fotoPerfil: paciente.fotoPerfil ?? null,
-    dataNascimento: toDisplayDate(paciente.dataNascimento || ''),
+    dataNascimento: toDisplayDate(paciente.dataNascimento),
     hospitalId: paciente.hospitalId ?? null,
     hospital: paciente.hospital || '',
     medicoUserId: paciente.medicoUserId ?? null,
@@ -149,6 +182,19 @@ export function validatePacienteForm(data: PacienteFormData) {
     return 'Informe o nome do paciente.';
   }
 
+  if (!data.hospitalId && !data.hospital.trim()) {
+    return 'Selecione um hospital.';
+  }
+
+  const duplicatedMedicalTeamError = getDuplicatedMedicalTeamError(data);
+  if (duplicatedMedicalTeamError) {
+    return duplicatedMedicalTeamError;
+  }
+
+  if (!getPacienteProcedimentosFromForm(data).length) {
+    return 'Selecione ao menos um procedimento.';
+  }
+
   return '';
 }
 
@@ -164,7 +210,7 @@ export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
   for (const member of medicalTeam) {
     if (member.userId != null) {
       if (selectedUserIds.has(member.userId)) {
-        return 'Cirurgião e médicos auxiliares devem ser diferentes.';
+          return 'Cirurgião e médicos auxiliares devem ser diferentes.';
       }
 
       selectedUserIds.add(member.userId);
@@ -187,7 +233,7 @@ export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
 }
 
 export function toPacientePayload(data: PacienteFormData): PacientePayload {
-  const cpf = normalizeCpfForPayload(data.cpf) || null;
+  const cpf = normalizeCpfForPayload(data.cpf);
   const telefone = getLocalBrazilPhoneDigits(data.telefone)
     ? normalizePhoneForPayload(data.telefone)
     : '';
@@ -200,10 +246,10 @@ export function toPacientePayload(data: PacienteFormData): PacientePayload {
     diagnostico: data.diagnostico.trim(),
     tratamentoMedico: data.tratamentoMedico.trim(),
     cpf,
-    email: data.email.trim() || null,
-    telefone: telefone || null,
+    email: data.email.trim(),
+    telefone,
     fotoPerfil: data.fotoPerfil || null,
-    dataNascimento: isValidBirthDate(data.dataNascimento) ? toApiDate(data.dataNascimento) : null,
+    dataNascimento: isValidBirthDate(data.dataNascimento) ? toApiDate(data.dataNascimento) : DEFAULT_PATIENT_BIRTH_DATE,
     hospitalId: data.hospitalId,
     hospital: data.hospital.trim(),
     medicoUserId: data.medicoUserId,
