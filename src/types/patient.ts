@@ -49,6 +49,7 @@ export type Paciente = {
   id: number;
   userId: number;
   data?: string | null;
+  dataAtendimento?: string | null;
   dataCadastro?: string | null;
   dataCriacao?: string | null;
   dataAtualizacao?: string | null;
@@ -93,6 +94,7 @@ export type Paciente = {
 
 export type PacienteFormData = {
   data: string | null;
+  dataAtendimento: string | null;
   nomePaciente: string;
   diagnostico: string;
   tratamentoMedico: string;

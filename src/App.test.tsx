@@ -399,7 +399,7 @@ describe('App', () => {
     ));
   });
 
-  it('oculta no menu e no dashboard os modulos nao contratados ate para superadministrador', async () => {
+  it('exibe todos os módulos ao superadministrador mesmo em plano parcial', async () => {
     await renderAuthenticatedApp({
       sessionOverrides: {
         perfilId: 5,
@@ -410,13 +410,13 @@ describe('App', () => {
 
     const sidebar = screen.getByLabelText('Sessão ativa');
     expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
-    expect(within(sidebar).queryByRole('button', { name: /usuários/i })).not.toBeInTheDocument();
-    expect(within(sidebar).queryByRole('button', { name: /faturamento médico/i })).not.toBeInTheDocument();
-    expect(within(sidebar).queryByRole('button', { name: /agenda e notificações/i })).not.toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /^faturamento/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /agenda e notificações/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /^clínicas$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /abrir usuários/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /abrir agenda/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir usuários/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir agenda/i })).toBeInTheDocument();
   });
 
   it('encerra a sessao quando a API sinaliza token expirado', async () => {
@@ -1333,7 +1333,8 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
 
-    await user.type(screen.getByLabelText('Data procedimento'), '04062026');
+    await user.type(screen.getByLabelText('Data da Solicitação'), '04062026');
+    await user.type(screen.getByLabelText('Data do Atendimento'), '05062026');
     await user.type(screen.getByLabelText('Paciente'), 'Novo Paciente');
     expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
@@ -1399,6 +1400,7 @@ describe('App', () => {
 
     expect(api.createPaciente).toHaveBeenCalledWith({
       data: '2026-06-04',
+      dataAtendimento: '2026-06-05',
       nomePaciente: 'Novo Paciente',
       diagnostico: '',
       tratamentoMedico: '',

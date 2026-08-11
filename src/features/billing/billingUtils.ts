@@ -351,8 +351,10 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       hospitalName: paciente.hospital?.trim() || 'Não informado',
       convenioName: convenioName || 'Particular',
       regime: convenioName ? 'convenio' : 'particular',
-      surgeryDate: paciente.data ?? null,
-      surgeryDateLabel: paciente.data ? toDisplayDate(paciente.data) : '-',
+      surgeryDate: paciente.dataAtendimento ?? paciente.data ?? null,
+      surgeryDateLabel: paciente.dataAtendimento
+        ? toDisplayDate(paciente.dataAtendimento)
+        : paciente.data ? toDisplayDate(paciente.data) : '-',
       competenciaInicio: billingCadastroDate ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
       competenciaFinal: billingCadastroDate ?? faturamento?.competenciaFinal ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
       authorizationCode: faturamento?.guiaAutorizacaoConvenio?.trim() || paciente.autorizacao?.trim() || '',

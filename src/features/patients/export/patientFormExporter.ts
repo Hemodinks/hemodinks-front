@@ -77,9 +77,9 @@ export async function createPatientFormPdf(
   document.setFontSize(10);
 
   document.setFont('helvetica', 'bold');
-  document.text('Data procedimento:', leftColX, y);
+  document.text('Data da solicitação:', leftColX, y);
   document.setFont('helvetica', 'normal');
-  document.text(normalizeReportValue(formData.data), leftColX + 110, y);
+  document.text(normalizeReportValue(formData.data), leftColX + 120, y);
   document.setFont('helvetica', 'bold');
   document.text('Paciente:', rightColX, y);
   document.setFont('helvetica', 'normal');
@@ -90,6 +90,12 @@ export async function createPatientFormPdf(
   );
   document.text(patientLines, patientValueX, y);
   y += Math.max(lineHeight, patientLines.length * (lineHeight - 2));
+
+  document.setFont('helvetica', 'bold');
+  document.text('Data do atendimento:', leftColX, y);
+  document.setFont('helvetica', 'normal');
+  document.text(normalizeReportValue(formData.dataAtendimento), leftColX + 120, y);
+  y += lineHeight;
 
   document.setFont('helvetica', 'bold');
   document.text('Diagnóstico:', leftColX, y);

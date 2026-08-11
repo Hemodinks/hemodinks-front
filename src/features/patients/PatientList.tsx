@@ -257,7 +257,7 @@ export function PatientList({
                 </th>
                 <th>
                   <button type="button" className="sort-header-button" onClick={() => onSortChange('data')} aria-sort={sortBy === 'data' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Data do procedimento
+                    Data da solicitação
                     {sortBy === 'data' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
                   </button>
                 </th>
@@ -303,7 +303,7 @@ export function PatientList({
                         <span>{patientDisplayName}</span>
                       </div>
                     </td>
-                    <td data-label="Data do procedimento">{toDisplayDate(paciente.data) || '-'}</td>
+                    <td data-label="Data da solicitação">{toDisplayDate(paciente.data) || '-'}</td>
                     <td data-label="Info">
                       <button
                         type="button"
