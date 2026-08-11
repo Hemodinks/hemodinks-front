@@ -4,6 +4,8 @@ import type { MedicalGroup, Team } from '../../types';
 export type ReportFilters = {
   startDate: string;
   endDate: string;
+  requestStartDate: string;
+  requestEndDate: string;
   doctors: string[];
   teams: string[];
   medicalGroups: string[];

@@ -6,6 +6,8 @@ import type { ReportFilters, ReportRecord } from './reportTypes';
 export const emptyReportFilters: ReportFilters = {
   startDate: '',
   endDate: '',
+  requestStartDate: '',
+  requestEndDate: '',
   doctors: [],
   teams: [],
   medicalGroups: [],
@@ -65,12 +67,21 @@ function displayDateToIso(value: string) {
   return Number.isFinite(timestamp) ? `${year}-${month}-${day}` : '';
 }
 
-export function validateReportDateRange(filters: ReportFilters) {
-  const start = dateToTimestamp(filters.startDate);
-  const end = dateToTimestamp(filters.endDate, true);
-  if (Number.isNaN(start) || Number.isNaN(end)) return 'Informe datas válidas no formato dd/mm/aaaa.';
-  if (start != null && end != null && start > end) return 'A data inicial não pode ser posterior à data final.';
+function validateDateRange(startValue: string, endValue: string, periodName: string) {
+  const start = dateToTimestamp(startValue);
+  const end = dateToTimestamp(endValue, true);
+  if (Number.isNaN(start) || Number.isNaN(end)) {
+    return `Informe datas válidas para o período ${periodName} no formato dd/mm/aaaa.`;
+  }
+  if (start != null && end != null && start > end) {
+    return `A data inicial ${periodName} não pode ser posterior à data final.`;
+  }
   return '';
+}
+
+export function validateReportDateRange(filters: ReportFilters) {
+  return validateDateRange(filters.startDate, filters.endDate, 'do atendimento')
+    || validateDateRange(filters.requestStartDate, filters.requestEndDate, 'da solicitação');
 }
 
 function selectedIncludes(values: string[], candidate: string) {
@@ -82,12 +93,17 @@ function selectedOverlaps(values: string[], candidates: string[]) {
 }
 
 export function filterReportRecords(records: ReportRecord[], filters: ReportFilters) {
-  const start = displayDateToIso(filters.startDate);
-  const end = displayDateToIso(filters.endDate);
+  const attendanceStart = displayDateToIso(filters.startDate);
+  const attendanceEnd = displayDateToIso(filters.endDate);
+  const requestStart = displayDateToIso(filters.requestStartDate);
+  const requestEnd = displayDateToIso(filters.requestEndDate);
   return records.filter((record) => {
-    const surgeryDate = record.surgeryDate?.split('T')[0] ?? '';
-    if (start && (!surgeryDate || surgeryDate < start)) return false;
-    if (end && (!surgeryDate || surgeryDate > end)) return false;
+    const attendanceDate = record.surgeryDate?.split('T')[0] ?? '';
+    const requestDate = record.paciente.data?.split('T')[0] ?? '';
+    if (attendanceStart && (!attendanceDate || attendanceDate < attendanceStart)) return false;
+    if (attendanceEnd && (!attendanceDate || attendanceDate > attendanceEnd)) return false;
+    if (requestStart && (!requestDate || requestDate < requestStart)) return false;
+    if (requestEnd && (!requestDate || requestDate > requestEnd)) return false;
     return selectedIncludes(filters.doctors, record.doctorName)
       && selectedOverlaps(filters.teams, record.teamNames)
       && selectedOverlaps(filters.medicalGroups, record.medicalGroupNames)

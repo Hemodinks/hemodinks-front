@@ -163,9 +163,16 @@ export function PatientForm({
         <fieldset className="form-fieldset" disabled={formReadOnly}>
           <DateInput
             id="patient-procedure-date"
-            label="Data procedimento"
+            label="Data da Solicitação"
             value={pacienteFormData.data || ''}
             onChange={(value) => setPacienteFormData((current) => ({ ...current, data: value }))}
+          />
+
+          <DateInput
+            id="patient-appointment-date"
+            label="Data do Atendimento"
+            value={pacienteFormData.dataAtendimento || ''}
+            onChange={(value) => setPacienteFormData((current) => ({ ...current, dataAtendimento: value }))}
           />
 
           <TextField

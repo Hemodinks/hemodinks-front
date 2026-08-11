@@ -11,7 +11,8 @@ export type PatientExportRow = Record<string, string>;
 
 export const pacienteExportColumns: readonly PatientExportColumn<Paciente>[] = [
   { header: 'Paciente', getValue: (paciente) => formatPersonName(paciente.nomePaciente) },
-  { header: 'Data procedimento', getValue: (paciente) => toDisplayDate(paciente.data || '') || '-' },
+  { header: 'Data da solicitação', getValue: (paciente) => toDisplayDate(paciente.data || '') || '-' },
+  { header: 'Data do atendimento', getValue: (paciente) => toDisplayDate(paciente.dataAtendimento || '') || '-' },
   { header: 'Hospital', getValue: (paciente) => paciente.hospital || '-' },
   { header: 'Cirurgião', getValue: (paciente) => formatPersonName(paciente.medico) || '-' },
   { header: 'Médico auxiliar 1', getValue: (paciente) => formatPersonName(paciente.medicoAuxiliar1) || '-' },
@@ -30,7 +31,8 @@ export const pacienteExportColumns: readonly PatientExportColumn<Paciente>[] = [
 ];
 
 export const pacienteFormExportColumns: readonly PatientExportColumn<PacienteFormData>[] = [
-  { header: 'Data procedimento', getValue: (form) => toDisplayDate(form.data || '') || '-' },
+  { header: 'Data da solicitação', getValue: (form) => toDisplayDate(form.data || '') || '-' },
+  { header: 'Data do atendimento', getValue: (form) => toDisplayDate(form.dataAtendimento || '') || '-' },
   { header: 'Paciente', getValue: (form) => formatPersonName(form.nomePaciente) || '-' },
   { header: 'Diagnóstico', getValue: (form) => form.diagnostico || '-' },
   { header: 'Tratamento médico', getValue: (form) => form.tratamentoMedico || '-' },
