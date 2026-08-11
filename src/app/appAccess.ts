@@ -34,7 +34,7 @@ export function getAppAccess(session: AuthSession | null) {
   const isPatient = currentPerfilId === PATIENT_PROFILE_ID;
   const contractedModules = session?.user.modulosLiberados;
   const hasClinicModule = (module: string) =>
-    contractedModules == null || contractedModules.includes(module);
+    isSuperAdmin || contractedModules == null || contractedModules.includes(module);
   const canAccessDashboard =
     hasSessionFeature(session?.user, LICENSE_FEATURES.dashboardVisualizar) ||
     isMedical;

@@ -104,7 +104,7 @@ describe('matriz de acesso da interface por perfil', () => {
     expect(access).toMatchObject(expected);
   });
 
-  it('plano parcial restringe módulos operacionais sem remover administração da plataforma', () => {
+  it('SuperAdministrador acessa todos os módulos mesmo em clínica com plano parcial', () => {
     const access = getAppAccess(mockSession({
       perfilId: 5,
       perfilNome: 'SuperAdministrador',
@@ -113,11 +113,11 @@ describe('matriz de acesso da interface por perfil', () => {
 
     expect(access.canAccessPatients).toBe(true);
     expect(access.canDeletePatients).toBe(true);
-    expect(access.canAccessUsers).toBe(false);
-    expect(access.canAccessBilling).toBe(false);
-    expect(access.canAccessReports).toBe(false);
-    expect(access.canAccessMedicalGroups).toBe(false);
-    expect(access.canAccessAgenda).toBe(false);
+    expect(access.canAccessUsers).toBe(true);
+    expect(access.canAccessBilling).toBe(true);
+    expect(access.canAccessReports).toBe(true);
+    expect(access.canAccessMedicalGroups).toBe(true);
+    expect(access.canAccessAgenda).toBe(true);
     expect(access.canAccessClinics).toBe(true);
     expect(access.canAccessSettings).toBe(true);
   });

@@ -41,6 +41,8 @@ export function ReportsFiltersPanel(props: Props) {
         </summary>
         <div className="billing-filters-content">
           <div className="reports-filter-grid">
+            <DateInput id="report-request-start-date" label="Data inicial da solicitação" value={props.filters.requestStartDate} onChange={(requestStartDate) => props.setFilters((current) => ({ ...current, requestStartDate }))} />
+            <DateInput id="report-request-end-date" label="Data final da solicitação" value={props.filters.requestEndDate} onChange={(requestEndDate) => props.setFilters((current) => ({ ...current, requestEndDate }))} />
             <DateInput id="report-start-date" label="Data inicial do atendimento" value={props.filters.startDate} onChange={(startDate) => props.setFilters((current) => ({ ...current, startDate }))} />
             <DateInput id="report-end-date" label="Data final do atendimento" value={props.filters.endDate} onChange={(endDate) => props.setFilters((current) => ({ ...current, endDate }))} />
             {fields.map((field) => (

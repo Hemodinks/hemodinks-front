@@ -7,7 +7,12 @@ import { exportIndividualBillingPdf } from './export/individualBillingPdfExporte
 
 function describeFilters(filters: ReportFilters) {
   const lines: string[] = [];
-  if (filters.startDate || filters.endDate) lines.push(`Período: ${filters.startDate || 'início'} a ${filters.endDate || 'hoje'}`);
+  if (filters.requestStartDate || filters.requestEndDate) {
+    lines.push(`Período da solicitação: ${filters.requestStartDate || 'início'} a ${filters.requestEndDate || 'hoje'}`);
+  }
+  if (filters.startDate || filters.endDate) {
+    lines.push(`Período do atendimento: ${filters.startDate || 'início'} a ${filters.endDate || 'hoje'}`);
+  }
   const selections = [filters.doctors, filters.teams, filters.medicalGroups, filters.hospitals, filters.convenios, filters.procedures, filters.opmeSuppliers].flat();
   if (selections.length) lines.push(`Filtros: ${selections.join(', ')}`);
   const statusLabels: Record<ReportFilters['status'], string> = { all: 'Todos', paid: 'Pagos', pending: 'Pendentes', glosa: 'Com glosa', missing: 'Sem valor informado' };
