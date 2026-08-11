@@ -232,6 +232,7 @@ describe('services api client', () => {
 
     const payload = {
       data: null,
+      dataAtendimento: null,
       nomePaciente: 'Paciente Hemodinks',
       diagnostico: 'Doenca renal cronica',
       tratamentoMedico: 'Tratamento conservador',

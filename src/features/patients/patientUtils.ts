@@ -15,6 +15,7 @@ import {
 
 export const emptyPacienteForm: PacienteFormData = {
   data: '',
+  dataAtendimento: '',
   nomePaciente: '',
   diagnostico: '',
   tratamentoMedico: '',
@@ -144,6 +145,7 @@ export function withPrimaryProcedimento(data: PacienteFormData): PacienteFormDat
 export function getPacienteFormData(paciente: Paciente): PacienteFormData {
   return withPrimaryProcedimento({
     data: toDisplayDate(paciente.data || ''),
+    dataAtendimento: toDisplayDate(paciente.dataAtendimento || ''),
     nomePaciente: paciente.nomePaciente,
     diagnostico: paciente.diagnostico || '',
     tratamentoMedico: paciente.tratamentoMedico || '',
@@ -242,6 +244,9 @@ export function toPacientePayload(data: PacienteFormData): PacientePayload {
 
   return {
     data: data.data && isValidBirthDate(data.data) ? toApiDate(data.data) : null,
+    dataAtendimento: data.dataAtendimento && isValidBirthDate(data.dataAtendimento)
+      ? toApiDate(data.dataAtendimento)
+      : null,
     nomePaciente: data.nomePaciente.trim(),
     diagnostico: data.diagnostico.trim(),
     tratamentoMedico: data.tratamentoMedico.trim(),

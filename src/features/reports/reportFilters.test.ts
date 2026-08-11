@@ -8,7 +8,11 @@ function record(overrides: Partial<BillingRecord> = {}) {
     doctorUserId: 10,
     doctorName: 'Dra. Ana',
     assistantNames: [],
-    surgeryDate: '2026-06-10T00:00:00Z',
+    surgeryDate: '2026-06-15T00:00:00Z',
+    paciente: {
+      data: '2026-06-10T00:00:00Z',
+      dataAtendimento: '2026-06-15T00:00:00Z',
+    },
     hospitalName: 'Hospital Central',
     convenioName: 'Unimed',
     procedures: [{ procedimento: 'Consulta', cbhpmCodigo: '10101012' }],
@@ -18,10 +22,20 @@ function record(overrides: Partial<BillingRecord> = {}) {
 }
 
 describe('filtros de relatórios', () => {
-  it('filtra a data do procedimento de forma inclusiva e sem deslocamento de fuso', () => {
+  it('filtra a data do atendimento de forma inclusiva e sem deslocamento de fuso', () => {
     const records = enrichReportRecords([record()], [], []);
-    expect(filterReportRecords(records, { ...emptyReportFilters, startDate: '10/06/2026', endDate: '10/06/2026' })).toHaveLength(1);
-    expect(filterReportRecords(records, { ...emptyReportFilters, startDate: '11/06/2026' })).toHaveLength(0);
+    expect(filterReportRecords(records, { ...emptyReportFilters, startDate: '15/06/2026', endDate: '15/06/2026' })).toHaveLength(1);
+    expect(filterReportRecords(records, { ...emptyReportFilters, startDate: '16/06/2026' })).toHaveLength(0);
+  });
+
+  it('filtra a data da solicitação independentemente da data do atendimento', () => {
+    const records = enrichReportRecords([record()], [], []);
+    expect(filterReportRecords(records, {
+      ...emptyReportFilters,
+      requestStartDate: '10/06/2026',
+      requestEndDate: '10/06/2026',
+    })).toHaveLength(1);
+    expect(filterReportRecords(records, { ...emptyReportFilters, requestStartDate: '11/06/2026' })).toHaveLength(0);
   });
 
   it('relaciona equipe e grupo pelos membros médicos e aplica seleção múltipla', () => {
@@ -41,6 +55,12 @@ describe('filtros de relatórios', () => {
   it('rejeita intervalos inválidos antes da consulta', () => {
     expect(validateReportDateRange({ ...emptyReportFilters, startDate: '31/02/2026' })).toMatch(/datas válidas/i);
     expect(validateReportDateRange({ ...emptyReportFilters, startDate: '20/06/2026', endDate: '10/06/2026' })).toMatch(/posterior/i);
+    expect(validateReportDateRange({ ...emptyReportFilters, requestStartDate: '31/02/2026' })).toMatch(/solicitação/i);
+    expect(validateReportDateRange({
+      ...emptyReportFilters,
+      requestStartDate: '20/06/2026',
+      requestEndDate: '10/06/2026',
+    })).toMatch(/solicitação/i);
   });
 
   it('filtra por status, regime e pendências de faturamento', () => {
