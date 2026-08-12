@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { access, copyFile, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, join, relative } from 'node:path';
 import ffmpegPath from 'ffmpeg-static';
 import { capture, run } from './process-utils';
@@ -57,10 +57,15 @@ if (!ffmpegPath) throw new Error('O binário do FFmpeg não foi encontrado em ff
 await mkdir(reportsArtifacts, { recursive: true });
 
 const recordings = await findRecordedVideo(join(reportsArtifacts, '..', 'playwright-local-results'));
-if (!recordings.length) throw new Error('Nenhum video.webm do Playwright foi encontrado. Execute a gravação primeiro.');
-const candidates = await Promise.all(recordings.map(async (path) => ({ path, modified: (await stat(path)).mtimeMs })));
-const sourceVideo = candidates.sort((left, right) => right.modified - left.modified)[0].path;
-await copyFile(sourceVideo, rawVideoPath);
+if (recordings.length) {
+  const candidates = await Promise.all(recordings.map(async (path) => ({ path, modified: (await stat(path)).mtimeMs })));
+  const sourceVideo = candidates.sort((left, right) => right.modified - left.modified)[0].path;
+  await copyFile(sourceVideo, rawVideoPath);
+} else {
+  await access(rawVideoPath).catch(() => {
+    throw new Error('Nenhum vídeo bruto do Playwright foi encontrado. Execute a gravação primeiro.');
+  });
+}
 
 const manifest = JSON.parse(await readFile(audioManifestPath, 'utf8')) as AudioManifest;
 const timeline = JSON.parse(await readFile(timelinePath, 'utf8')) as Timeline;
@@ -103,13 +108,13 @@ const inputs = [rawVideoPath, ...synchronized.map((step) => join(audioRoot, step
 const inputArgs = inputs.flatMap((input) => ['-i', input]);
 const subtitleRelativePath = relative(workspaceRoot, assSubtitlesPath).replaceAll('\\', '/').replaceAll(':', '\\:');
 const audioDelays = synchronized.map((step, index) => (
-  `[${index + 1}:a]adelay=${Math.max(0, Math.round(step.narrationStartMs))}:all=1[a${index + 1}]`
+  `[${index + 1}:a]loudnorm=I=-14:TP=-1.0:LRA=7,adelay=${Math.max(0, Math.round(step.narrationStartMs))}:all=1[a${index + 1}]`
 ));
 const audioLabels = synchronized.map((_, index) => `[a${index + 1}]`).join('');
 const filter = [
   `[0:v]scale=1920:1080,subtitles='${subtitleRelativePath}'[video]`,
   ...audioDelays,
-  `${audioLabels}amix=inputs=${synchronized.length}:duration=longest:dropout_transition=0,volume=1.25,apad[audio]`,
+  `${audioLabels}amix=inputs=${synchronized.length}:duration=longest:dropout_transition=0:normalize=0,loudnorm=I=-14:TP=-2:LRA=7,apad[audio]`,
 ].join(';');
 const durationSeconds = (timeline.completedAtMs / 1000).toFixed(3);
 const common = ['-y', '-hide_banner', ...inputArgs, '-filter_complex', filter, '-map', '[video]', '-map', '[audio]', '-t', durationSeconds];
