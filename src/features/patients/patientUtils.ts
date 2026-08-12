@@ -10,6 +10,7 @@ import {
   normalizeCpfForPayload,
   normalizePhoneForPayload,
   parseDisplayDate,
+  toDatePickerValue,
   toDisplayDate,
 } from '../../shared/utils/formatters';
 
@@ -44,6 +45,7 @@ export const emptyPacienteForm: PacienteFormData = {
   pagamento: '',
   repasseGlosa: '',
   statusPago: false,
+  dataPagamento: '',
   ativo: true,
   novaObservacao: '',
 };
@@ -61,8 +63,8 @@ export function getPacienteFilterQuery(filters: PacienteFilters) {
     ...(filters.medicoUserIds.length ? { medicoUserIds: filters.medicoUserIds.join(',') } : {}),
     ...(filters.convenioIds.length ? { convenioIds: filters.convenioIds.join(',') } : {}),
     ...(filters.procedimento.trim() ? { procedimento: filters.procedimento.trim() } : {}),
-    ...(filters.dataInicio ? { dataInicio: filters.dataInicio } : {}),
-    ...(filters.dataFinal ? { dataFinal: filters.dataFinal } : {}),
+    ...(toDatePickerValue(filters.dataInicio) ? { dataInicio: toDatePickerValue(filters.dataInicio) } : {}),
+    ...(toDatePickerValue(filters.dataFinal) ? { dataFinal: toDatePickerValue(filters.dataFinal) } : {}),
   };
 }
 
@@ -91,13 +93,13 @@ export function getCurrencyInputValue(value: string) {
   return digits ? Number(digits) / 100 : 0;
 }
 
-export function getCalculatedPaymentValue(estimatedValue: number, glosa: string) {
-  if (estimatedValue <= 0 && !glosa.trim()) {
+export function getCalculatedGlosaValue(estimatedValue: number, receivedValue: string) {
+  if (estimatedValue <= 0 && !receivedValue.trim()) {
     return '';
   }
 
-  const netValue = Math.max(0, estimatedValue - getCurrencyInputValue(glosa));
-  return formatCurrencyInput(String(Math.round(netValue * 100)));
+  const glosaValue = Math.max(0, estimatedValue - getCurrencyInputValue(receivedValue));
+  return formatCurrencyInput(String(Math.round(glosaValue * 100)));
 }
 
 export function getPacienteProcedimentosFromForm(data: PacienteFormData) {
@@ -174,6 +176,7 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
     pagamento: formatCurrencyInput(paciente.pagamento || ''),
     repasseGlosa: formatCurrencyInput(paciente.repasseGlosa || ''),
     statusPago: paciente.statusPago,
+    dataPagamento: paciente.statusPago ? toDisplayDate(paciente.faturamento?.dataPagamento || '') : '',
     ativo: paciente.ativo,
     novaObservacao: '',
   });
@@ -275,6 +278,9 @@ export function toPacientePayload(data: PacienteFormData): PacientePayload {
     pagamento: data.pagamento.trim(),
     repasseGlosa: data.repasseGlosa.trim(),
     statusPago: data.statusPago,
+    dataPagamento: data.statusPago && data.dataPagamento && isValidBirthDate(data.dataPagamento)
+      ? toApiDate(data.dataPagamento)
+      : null,
     ativo: data.ativo,
   };
 }

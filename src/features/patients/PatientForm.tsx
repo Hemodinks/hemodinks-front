@@ -18,7 +18,7 @@ import {
   MAX_OBSERVATION_LENGTH,
   MAX_TREATMENT_MEDICAL_LENGTH,
 } from '../../shared/utils/formatters';
-import { getCalculatedPaymentValue } from './patientUtils';
+import { getCalculatedGlosaValue } from './patientUtils';
 import { usePatientFormExport } from './usePatientFormExport';
 
 type PatientFormProps = {
@@ -131,11 +131,11 @@ export function PatientForm({
     .map((user) => formatPersonName(user.nome));
 
   useEffect(() => {
-    const calculatedPayment = getCalculatedPaymentValue(estimatedValue, pacienteFormData.repasseGlosa);
-    setPacienteFormData((current) => current.pagamento === calculatedPayment
+    const calculatedGlosa = getCalculatedGlosaValue(estimatedValue, pacienteFormData.pagamento);
+    setPacienteFormData((current) => current.repasseGlosa === calculatedGlosa
       ? current
-      : { ...current, pagamento: calculatedPayment });
-  }, [estimatedValue, pacienteFormData.repasseGlosa, setPacienteFormData]);
+      : { ...current, repasseGlosa: calculatedGlosa });
+  }, [estimatedValue, pacienteFormData.pagamento, setPacienteFormData]);
 
   return (
     <FormPanel className="module-form-panel">
@@ -149,7 +149,7 @@ export function PatientForm({
             {exportLoading === 'pdf' ? 'Gerando PDF...' : 'Exportar PDF'}
           </Button>
           <Button variant="ghost" className="patient-export-actions-button export-xlsx-btn" type="button" disabled={!canExportForm || exportLoading != null} onClick={() => void handleExport('xlsx')}>
-            {exportLoading === 'xlsx' ? 'Gerando XLSX...' : 'Exportar XLSX'}
+            {exportLoading === 'xlsx' ? 'Gerando planilha...' : 'Exportar Planilha'}
           </Button>
           <IconButton label="Voltar para lista" tone="muted" onClick={onClose}>
             <X size={18} />
@@ -187,7 +187,7 @@ export function PatientForm({
           <div className="two-column-fields">
             <TextareaField
               className="patient-form-tall-field"
-              label="Diagnóstico"
+              label="Informações Adicionais"
               value={pacienteFormData.diagnostico}
               onValueChange={(value) => setPacienteFormData((current) => ({ ...current, diagnostico: value.slice(0, MAX_DIAGNOSIS_LENGTH) }))}
               maxLength={MAX_DIAGNOSIS_LENGTH}
@@ -358,10 +358,9 @@ export function PatientForm({
               label="Glosa"
               type="text"
               value={pacienteFormData.repasseGlosa}
-              onValueChange={(value) => setPacienteFormData((current) => ({ ...current, repasseGlosa: formatCurrencyInput(value) }))}
-              inputMode="decimal"
-              maxLength={24}
-              placeholder="R$ 0,00"
+              onValueChange={() => undefined}
+              disabled
+              aria-readonly="true"
             />
           </div>
 
@@ -466,11 +465,24 @@ export function PatientForm({
             ) : null}
           </div>
 
-          <CheckboxField
-            label="Status Pago"
-            checked={pacienteFormData.statusPago}
-            onCheckedChange={(checked) => setPacienteFormData((current) => ({ ...current, statusPago: checked }))}
-          />
+          <div className="two-column-fields">
+            <CheckboxField
+              label="Status Pago"
+              checked={pacienteFormData.statusPago}
+              onCheckedChange={(checked) => setPacienteFormData((current) => ({
+                ...current,
+                statusPago: checked,
+                dataPagamento: checked ? current.dataPagamento : '',
+              }))}
+            />
+            <DateInput
+              id="patient-payment-date"
+              label="Data do Pagamento"
+              value={pacienteFormData.dataPagamento}
+              onChange={(dataPagamento) => setPacienteFormData((current) => ({ ...current, dataPagamento }))}
+              disabled={!pacienteFormData.statusPago}
+            />
+          </div>
 
           <CheckboxField
             label="Paciente ativo"

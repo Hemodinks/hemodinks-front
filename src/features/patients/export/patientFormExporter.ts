@@ -1,5 +1,5 @@
 import type { PacienteExportFormat } from '../../../appTypes';
-import { formatCurrency } from '../../../shared/utils/formatters';
+import { formatCurrency, toDisplayDate } from '../../../shared/utils/formatters';
 import { downloadBlob } from '../../../shared/utils/downloadFile';
 import { addPdfReportFooters, drawPdfReportHeader, drawPdfSectionTitle, getPdfReportTableStyles, PDF_REPORT_BODY_START, PDF_REPORT_MARGIN } from '../../../shared/export/pdfReport';
 import { normalizeReportValue, resolveReportIdentity, type ReportIdentity } from '../../../shared/export/reportIdentity';
@@ -98,7 +98,7 @@ export async function createPatientFormPdf(
   y += lineHeight;
 
   document.setFont('helvetica', 'bold');
-  document.text('Diagnóstico:', leftColX, y);
+  document.text('Informações Adicionais:', leftColX, y);
   document.setFont('helvetica', 'normal');
   const diagnosisLines = document.splitTextToSize(normalizeReportValue(formData.diagnostico), pageWidth - marginLeft * 2);
   document.text(diagnosisLines, leftColX, y + lineHeight);
@@ -199,6 +199,16 @@ export async function createPatientFormPdf(
   document.text('Valor recebido/pago:', rightColX, y);
   document.setFont('helvetica', 'normal');
   document.text(normalizeReportValue(formData.pagamento), rightColX + 120, y);
+  y += 14;
+
+  document.setFont('helvetica', 'bold');
+  document.text('Status pago:', leftColX, y);
+  document.setFont('helvetica', 'normal');
+  document.text(formData.statusPago ? 'Pago' : 'Pendente', leftColX + 75, y);
+  document.setFont('helvetica', 'bold');
+  document.text('Data do pagamento:', rightColX, y);
+  document.setFont('helvetica', 'normal');
+  document.text(normalizeReportValue(toDisplayDate(formData.dataPagamento)), rightColX + 110, y);
   y += 18;
 
   const observation = buildObservationText(formData, observations);

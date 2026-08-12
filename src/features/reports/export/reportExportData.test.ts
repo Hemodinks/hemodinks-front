@@ -6,6 +6,7 @@ describe('dados exportáveis dos relatórios', () => {
     const headers = reportColumns.map((column) => column.header);
     expect(headers).toContain('Paciente');
     expect(headers).toContain('Faturado');
+    expect(headers).toContain('Data do pagamento');
     expect(headers).not.toContain('CPF');
     expect(headers).not.toContain('E-mail');
     expect(headers).not.toContain('Telefone');

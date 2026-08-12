@@ -1389,13 +1389,22 @@ describe('App', () => {
     await user.click(within(secondProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
     expect(screen.getByLabelText('Valor estimado')).toHaveValue('R$\u00a0300,00');
     expect(screen.getByLabelText('Valor estimado')).toBeDisabled();
-    expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 300,00');
-    await user.type(screen.getByLabelText('Glosa'), '1250');
-    expect(screen.getByLabelText('Glosa')).toHaveValue('R$ 12,50');
-    expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 287,50');
+    expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('');
+    expect(screen.getByLabelText('Glosa')).toHaveValue('R$ 300,00');
+    expect(screen.getByLabelText('Glosa')).toBeDisabled();
     await user.click(screen.getByLabelText('Valor recebido/pago'));
     await user.keyboard('125,45');
     expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 125,45');
+    expect(screen.getByLabelText('Glosa')).toHaveValue('R$ 174,55');
+    const paymentDateField = screen.getByLabelText('Data do Pagamento');
+    expect(paymentDateField).toBeDisabled();
+    await user.click(screen.getByLabelText('Status Pago'));
+    expect(paymentDateField).toBeEnabled();
+    await user.type(paymentDateField, '05062026');
+    expect(paymentDateField).toHaveValue('05/06/2026');
+    await user.click(screen.getByLabelText('Status Pago'));
+    expect(paymentDateField).toBeDisabled();
+    expect(paymentDateField).toHaveValue('');
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
     expect(api.createPaciente).toHaveBeenCalledWith({
@@ -1440,8 +1449,9 @@ describe('App', () => {
       ],
       autorizacao: '',
       pagamento: 'R$ 125,45',
-      repasseGlosa: 'R$ 12,50',
+      repasseGlosa: 'R$ 174,55',
       statusPago: false,
+      dataPagamento: null,
       ativo: true,
     }, 'jwt-token');
     expect(await screen.findByText('Paciente cadastrado com senha temporária. Oriente a alteração no primeiro acesso.')).toBeInTheDocument();
@@ -1462,8 +1472,8 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Convênio'), 'Particular');
     await user.click(screen.getByRole('option', { name: 'Particular' }));
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
-    await user.type(screen.getByLabelText('Data inicial'), '2026-06-01');
-    await user.type(screen.getByLabelText('Data final'), '2026-06-30');
+    await user.type(screen.getByLabelText('Data inicial do atendimento'), '01062026');
+    await user.type(screen.getByLabelText('Data final do atendimento'), '30062026');
 
     await waitFor(() => {
       expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', {
@@ -1695,6 +1705,9 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
     expect(screen.getByLabelText('Cirurgião')).toHaveValue('Dr. Fora da Lista');
+    expect(screen.getByLabelText('Status Pago')).toBeChecked();
+    expect(screen.getByLabelText('Data do Pagamento')).toBeEnabled();
+    expect(screen.getByLabelText('Data do Pagamento')).toHaveValue('');
 
     await user.click(screen.getByRole('button', { name: /salvar paciente/i }));
 
@@ -1898,7 +1911,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /exportar xlsx/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /exportar planilha/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar pdf/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();

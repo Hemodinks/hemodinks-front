@@ -378,6 +378,7 @@ export function BillingPage({
                     {sortBy === 'status' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
                   </button>
                 </th>
+                <th>Data do pagamento</th>
                 <th>Resumo</th>
                 <th>Visualizar</th>
               </tr>
@@ -385,7 +386,7 @@ export function BillingPage({
             <tbody>
               {billingQuery.isPending ? (
                 <tr>
-                  <td colSpan={5} className="empty-row">Carregando faturamento médico...</td>
+                  <td colSpan={6} className="empty-row">Carregando faturamento médico...</td>
                 </tr>
               ) : visibleBillingRecords.length ? (
                 visibleBillingRecords.map((record) => (
@@ -414,6 +415,7 @@ export function BillingPage({
                         {record.statusLabel}
                       </span>
                     </td>
+                    <td data-label="Data do pagamento">{record.paymentDateLabel}</td>
                     <td data-label="Resumo">
                       <IconButton
                         className="billing-row-action"
@@ -438,7 +440,7 @@ export function BillingPage({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
+                  <td colSpan={6} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
                 </tr>
               )}
             </tbody>

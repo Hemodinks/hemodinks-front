@@ -106,6 +106,7 @@ export function BillingDetailView({
                   <div><dt>Fornecedor OPME</dt><dd>{record.opmeSupplier}</dd></div>
                   <div><dt>Arquivos de suporte</dt><dd>{record.filesCount}</dd></div>
                   <div><dt>Pagamento bruto informado</dt><dd>{record.paymentRaw || '-'}</dd></div>
+                  <div><dt>Data do pagamento</dt><dd>{record.paymentDateLabel}</dd></div>
                 </dl>
               </section>
 
