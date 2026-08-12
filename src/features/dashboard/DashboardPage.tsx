@@ -9,6 +9,7 @@ import {
   FileText,
   GripVertical,
   Info,
+  PlayCircle,
   Settings,
   ShieldPlus,
   Users,
@@ -40,13 +41,14 @@ type DashboardPageProps = {
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
   onOpenBilling: () => void;
+  onOpenTutorials: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
   onOpenClinics: () => void;
 };
 
-type DashboardModuleId = 'users' | 'profile' | 'patients' | 'billing' | 'medicalGroups' | 'agenda' | 'clinics' | 'settings';
+type DashboardModuleId = 'users' | 'profile' | 'patients' | 'billing' | 'tutorials' | 'medicalGroups' | 'agenda' | 'clinics' | 'settings';
 
 type DashboardModule = {
   id: DashboardModuleId;
@@ -61,7 +63,7 @@ type DashboardModule = {
 };
 
 const DASHBOARD_MODULE_ORDER_KEY = 'hemodinks.dashboard.module-order';
-const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = ['users', 'profile', 'patients', 'billing', 'medicalGroups', 'agenda', 'clinics', 'settings'];
+const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = ['users', 'profile', 'patients', 'billing', 'tutorials', 'medicalGroups', 'agenda', 'clinics', 'settings'];
 
 function readStoredDashboardModuleOrder() {
   if (typeof window === 'undefined') {
@@ -138,6 +140,7 @@ export function DashboardPage({
   onOpenMyProfile,
   onOpenPatientsList,
   onOpenBilling,
+  onOpenTutorials,
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
@@ -196,6 +199,16 @@ export function DashboardPage({
           onOpen: onOpenBilling,
         }]
       : []),
+    {
+      id: 'tutorials',
+      title: 'Tutoriais interativos',
+      metric: 'Aprenda os fluxos do sistema',
+      footerLabel: '1 tutorial disponível',
+      className: 'module-card-tutorials',
+      ariaLabel: 'Abrir tutoriais interativos',
+      icon: <PlayCircle size={22} />,
+      onOpen: onOpenTutorials,
+    },
     ...(canAccessMedicalGroups
       ? [{
           id: 'medicalGroups' as const,

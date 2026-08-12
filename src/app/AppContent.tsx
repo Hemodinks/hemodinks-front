@@ -528,6 +528,7 @@ export function AppContent() {
           openPatientsList: patientsDomain.openPatientsList,
           openBilling,
           openReports,
+          openTutorials,
           openMedicalGroups,
           openAgenda,
           openSettings,

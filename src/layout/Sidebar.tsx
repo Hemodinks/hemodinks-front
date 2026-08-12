@@ -119,6 +119,15 @@ export function Sidebar({
               <span>Painel</span>
             </button>
           )}
+          <button
+            type="button"
+            className={`side-nav-tutorials ${activeView === 'tutorials' ? 'active' : ''}`}
+            aria-current={activeView === 'tutorials' ? 'page' : undefined}
+            onClick={onOpenTutorials}
+          >
+            <PlayCircle size={18} />
+            <span>Tutoriais interativos</span>
+          </button>
           {canAccessUsers && (
             <button
               type="button"
@@ -201,15 +210,6 @@ export function Sidebar({
               </div>
             </div>
           )}
-          <button
-            type="button"
-            className={`side-nav-tutorials ${activeView === 'tutorials' ? 'active' : ''}`}
-            aria-current={activeView === 'tutorials' ? 'page' : undefined}
-            onClick={onOpenTutorials}
-          >
-            <PlayCircle size={18} />
-            <span>Tutoriais interativos</span>
-          </button>
           {canAccessMedicalGroups && (
             <button
               type="button"
