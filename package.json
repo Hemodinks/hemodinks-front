@@ -17,6 +17,8 @@
     "audit:lighthouse": "npm run build && lhci autorun --config=./lighthouserc.cjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "record:tutorials": "playwright test --config=playwright.tutorials.config.ts",
+    "record:tutorials:reports": "playwright test --config=playwright.tutorials.config.ts --project=tutorial-reports",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
@@ -35,6 +37,7 @@
     "@tanstack/react-query": "^5.101.0",
     "@vitejs/plugin-react": "^5.1.1",
     "axios": "^1.18.0",
+    "driver.js": "^1.8.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lodash.debounce": "^4.0.8",

@@ -271,3 +271,76 @@ Cobertura atual inclui:
 ## Deploy
 
 Detalhes de Azure Static Web Apps, confirmation e checklist operacional em [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+# Tutoriais interativos
+
+O frontend possui uma infraestrutura reutilizável de missões guiadas com [Driver.js](https://driverjs.com/) e narração local pela Web Speech API (`SpeechSynthesisUtterance`, `pt-BR`). A primeira missão implementada é **Relatórios — consulta analítica e filtros**, com sete etapas.
+
+O acesso fica na gaveta **Como usar** da tela de Relatórios. O tutorial usa apenas seletores `data-tour`, mantém o alvo acionável, não simula cliques no modo interativo, interrompe a fala anterior ao trocar de etapa e encerra com uma mensagem segura se algum alvo não estiver disponível. As preferências de conclusão e “Não mostrar novamente” ficam somente no `localStorage` do navegador.
+
+## Levantamento funcional e missões recomendadas
+
+O aplicativo é um SaaS multiclínica com rotas protegidas por sessão, perfil, licença e módulos contratados. Os perfis identificados no frontend são SuperAdministrador, Administrador, Médico, Controlador, Equipe e Paciente. O menu libera Painel, Usuários/Meu cadastro, Pacientes-Cirurgias, Faturamento/Relatórios, Grupos médicos, Agenda, Clínicas e Configuração conforme essas permissões.
+
+| Missão | Objetivo | Etapas estimadas | Situação |
+| --- | --- | ---: | --- |
+| Seleção de clínica e login | Escolher o tenant e entrar com segurança | 5 | Planejada |
+| Cadastro de clínica | Configurar identidade, plano, módulos, limites e administrador | 7 | Planejada |
+| Equipe e identificação | Criar equipe, vincular membros e configurar identificação/PIN | 7 | Planejada |
+| Cadastro de paciente | Informar dados cadastrais, vínculos e documentos sanitizados | 6 | Planejada |
+| Atendimento/cirurgia | Registrar hospital, cirurgião, convênio e procedimentos | 7 | Planejada |
+| Gestão de faturamento | Consultar pendências, valores e detalhes financeiros | 6 | Planejada |
+| Relatórios e filtros | Combinar filtros e interpretar resumo e resultados | 7 | **Implementada** |
+| Exportação PDF/XLSX | Escolher escopo e gerar arquivos de relatório | 4 | Planejada |
+| Pesquisa Full-Text | Pesquisar termos e refinar resultados | 4 | Planejada |
+| Usuários e perfis | Cadastrar usuário e aplicar o perfil adequado | 7 | Planejada |
+| Troca de clínica | Selecionar outro tenant permitido na mesma sessão | 4 | Planejada |
+| Agenda e notificações | Criar evento, lembrete e destinatários | 7 | Planejada |
+
+Os demais tutoriais não foram implementados nesta etapa, para que o padrão de Relatórios possa ser validado antes da expansão.
+
+## Arquitetura e replicação
+
+- `src/features/tutorials/TutorialProvider.tsx`: ciclo de vida do Driver.js, fala, controles, conclusão e falhas amigáveis.
+- `src/features/tutorials/tutorialTypes.ts`: contrato das configurações.
+- `src/features/tutorials/tutorialRegistry.ts`: registro central e tipado.
+- `src/features/tutorials/configs/reportsTutorial.ts`: configuração isolada da missão de Relatórios.
+- `src/features/tutorials/tutorialStorage.ts`: preferências locais, sem dados clínicos.
+- `src/features/tutorials/speech.ts`: narração gratuita em português do Brasil.
+- `src/features/tutorials/tutorials.css`: aparência, foco, alvo animado, mobile e `prefers-reduced-motion`.
+
+Para adicionar uma missão:
+
+1. Adicione `data-tour="nome-estavel"` aos alvos reais; não use classes visuais como seletores.
+2. Crie um arquivo em `src/features/tutorials/configs/` com uma etapa por objetivo. Use `action: 'click'` quando a ação real for obrigatória e `action: 'continue'` para conteúdo informativo.
+3. Registre a configuração em `tutorialRegistry.ts` e libere o ID no `TutorialProvider` somente quando a permissão funcional correspondente estiver ativa.
+4. Exponha a missão na ajuda contextual da rota e acrescente a cobertura Playwright.
+5. Use apenas textos e opções fictícias de homologação. Nunca coloque pacientes, usuários, e-mails, documentos, tokens ou informações clínicas reais na configuração.
+
+## Testes dos tutoriais
+
+```bash
+npm run test:e2e -- --grep "tutorial"
+npm run audit:architecture
+npm test
+npm run build
+```
+
+Os testes cobrem existência dos alvos `data-tour`, bloqueio de avanço antes da ação, conclusão, voltar, repetir narração, sair, alvo ausente, desktop/mobile e restrição por perfil. O projeto não possui um script ESLint; `audit:architecture`, TypeScript no `build`, Vitest e Playwright formam a validação disponível.
+
+## Gravação passiva em homologação
+
+A gravação usa viewport e vídeo de `1920x1080`, espera entre as etapas e armazena os WebM em `artifacts/tutorials/test-results`. A autenticação roda antes, com vídeo desligado; portanto a senha não aparece na gravação. A sessão temporária também fica sob `artifacts/tutorials/.auth`, caminho ignorado pelo Git.
+
+Use exclusivamente uma conta e uma clínica fictícias e sanitizadas:
+
+```powershell
+$env:TUTORIAL_BASE_URL='https://homologacao.exemplo.com'
+$env:TUTORIAL_CLINIC='slug-ou-id-ficticio'
+$env:TUTORIAL_EMAIL='usuario-ficticio@exemplo.com'
+$env:TUTORIAL_PASSWORD='senha-da-conta-ficticia'
+$env:TUTORIAL_STEP_DELAY_MS='1800'
+npm run record:tutorials:reports
+```
+
+`npm run record:tutorials` grava todas as missões registradas no arquivo de gravação. Cada nova funcionalidade deve receber um teste próprio e, consequentemente, um WebM separado. Não publique os arquivos de sessão em artefatos compartilhados; conserve apenas os vídeos finais.

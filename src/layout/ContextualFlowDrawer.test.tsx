@@ -2,10 +2,17 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { AppView } from '../appTypes';
+import { TutorialProvider } from '../features/tutorials/TutorialProvider';
 import { ContextualFlowDrawer } from './ContextualFlowDrawer';
 import { CONTEXTUAL_FLOWS } from './contextualFlows';
 
 describe('guia contextual de fluxos', () => {
+  const renderDrawer = (activeView: AppView) => (
+    <TutorialProvider activeView={activeView} allowedTutorialIds={[]}>
+      <ContextualFlowDrawer activeView={activeView} />
+    </TutorialProvider>
+  );
+
   it('possui conteúdo para todas as telas da aplicação', () => {
     const views = Object.keys(CONTEXTUAL_FLOWS) as AppView[];
     expect(views).toHaveLength(10);
@@ -17,7 +24,7 @@ describe('guia contextual de fluxos', () => {
 
   it('abre o drawer, alterna o accordion e acompanha a tela atual', async () => {
     const user = userEvent.setup();
-    const { rerender } = render(<ContextualFlowDrawer activeView="dashboard" />);
+    const { rerender } = render(renderDrawer('dashboard'));
 
     const drawerToggle = screen.getByRole('button', { name: 'Abrir ajuda de Painel inicial' });
     expect(drawerToggle).toHaveAttribute('aria-expanded', 'false');
@@ -31,7 +38,7 @@ describe('guia contextual de fluxos', () => {
     expect(screen.getByRole('button', { name: 'Consultar os indicadores' })).toHaveAttribute('aria-expanded', 'false');
     expect(screen.getByRole('button', { name: 'Acessar um módulo' })).toHaveAttribute('aria-expanded', 'true');
 
-    rerender(<ContextualFlowDrawer activeView="patients" />);
+    rerender(renderDrawer('patients'));
     expect(screen.getByRole('complementary', { name: 'Ajuda contextual' })).toHaveClass('view-patients');
     expect(screen.getByRole('heading', { name: 'Pacientes - Cirurgias' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Cadastrar paciente ou cirurgia' })).toHaveAttribute('aria-expanded', 'true');
