@@ -24,7 +24,7 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
       headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
     });
     expect(configuration.globalHeaders?.['Content-Security-Policy'])
-      .toContain('https://hemodinks-api-prod.politepond-d3524c51.brazilsouth.azurecontainerapps.io');
+      .toContain('https://hemodinks-api-prod.politepond-d8524c51.brazilsouth.azurecontainerapps.io');
     expect(configuration.globalHeaders?.['X-Content-Type-Options']).toBe('nosniff');
   });
 
