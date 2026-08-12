@@ -16,9 +16,9 @@ export type TutorialStep = {
 
 export type TutorialConfig = {
   id: string;
-  view: AppView;
+  view: AppView | 'login';
   title: string;
   description: string;
+  preflightAllTargets?: boolean;
   steps: TutorialStep[];
 };
-

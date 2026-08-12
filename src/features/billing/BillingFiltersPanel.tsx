@@ -58,7 +58,7 @@ export function BillingFiltersPanel({
   onEndMonthChange,
 }: BillingFiltersPanelProps) {
   return (
-    <DataPanel className="billing-filter-panel">
+    <DataPanel className="billing-filter-panel" data-tour="billing-filters">
       <details className="billing-filters-accordion">
         <summary className="billing-filters-summary">
           <div><span className="eyebrow">Consulta de faturamento</span><h2>{resultCount} cirurgia(s) encontradas</h2></div>
@@ -66,12 +66,12 @@ export function BillingFiltersPanel({
         </summary>
         <div className="billing-filters-content">
           <div className="table-tools billing-toolbar">
-            <SearchField
+            <div data-tour="billing-search"><SearchField
               label="Buscar cirurgia faturada"
               value={filters.search}
               onValueChange={(search) => setFilters((current) => ({ ...current, search }))}
               placeholder="Paciente, procedimento, código, hospital..."
-            />
+            /></div>
             <IconButton label="Atualizar faturamento médico" title="Atualizar faturamento" onClick={onRefresh} disabled={isFetching}>
               <RefreshCw size={18} />
             </IconButton>
@@ -103,7 +103,7 @@ export function BillingFiltersPanel({
             <DateInput id="billing-payment-end-date" className="filter-field" label="Data final do pagamento" value={filters.paymentEndDate} min={filters.paymentStartDate || undefined} onChange={(paymentEndDate) => setFilters((current) => ({ ...current, paymentEndDate }))} />
             <CheckboxField className="billing-checkbox" label="Mostrar apenas cirurgias com pendências de faturamento" checked={filters.onlyPendingItems} onCheckedChange={(onlyPendingItems) => setFilters((current) => ({ ...current, onlyPendingItems }))} />
             <div className="billing-filter-actions">
-              <Button className="billing-apply-filters" variant="primary" onClick={onApply} disabled={isFetching}><Search size={16} />Consultar</Button>
+              <Button className="billing-apply-filters" variant="primary" onClick={onApply} disabled={isFetching} data-tour="billing-apply"><Search size={16} />Consultar</Button>
               <Button className="billing-clear-filters" onClick={onClear}>Limpar filtros</Button>
             </div>
           </div>

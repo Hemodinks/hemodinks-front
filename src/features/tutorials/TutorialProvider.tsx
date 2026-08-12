@@ -12,7 +12,7 @@ type TutorialContextValue = {
   activeTutorialId: string | null;
   completedTutorials: Set<string>;
   dismissNotice: () => void;
-  getTutorialForView: (view: AppView) => TutorialConfig | null;
+  getTutorialsForView: (view: AppView) => TutorialConfig[];
   notice: string;
   startTutorial: (id: string) => void;
 };
@@ -20,7 +20,7 @@ type TutorialContextValue = {
 const TutorialContext = createContext<TutorialContextValue | null>(null);
 
 type Props = {
-  activeView: AppView;
+  activeView: TutorialConfig['view'];
   allowedTutorialIds: TutorialId[];
   children: ReactNode;
 };
@@ -116,10 +116,10 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
       setNotice('Este tutorial não está disponível para o perfil ou para a tela atual.');
       return;
     }
-
-    const missingStep = tutorial.steps.find((step) => !document.querySelector(step.target));
-    if (missingStep) {
-      setNotice(`Não encontramos a área “${missingStep.title}” nesta tela. A missão foi encerrada com segurança.`);
+    const missingStep = (tutorial.preflightAllTargets ? tutorial.steps : tutorial.steps.slice(0, 1))
+      .find((step) => !document.querySelector(step.target));
+    if (missingStep || tutorial.steps.length === 0) {
+      setNotice(`Não encontramos a área “${missingStep?.title ?? 'inicial'}” nesta tela. A missão foi encerrada com segurança.`);
       return;
     }
 
@@ -195,7 +195,7 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
         } else if (completingRef.current) {
           markTutorialCompleted(tutorial.id);
           setCompletedTutorials(getCompletedTutorials());
-          setNotice('Missão concluída! Você já sabe consultar e interpretar os relatórios.');
+          setNotice(`Missão concluída! Você finalizou “${tutorial.title}”.`);
         }
       },
       steps: tutorial.steps.map((step) => ({
@@ -221,7 +221,7 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
     activeTutorialId,
     completedTutorials,
     dismissNotice: () => setNotice(''),
-    getTutorialForView: (view) => Object.values(TUTORIALS).find((tutorial) => tutorial.view === view && allowedTutorialIds.some((id) => id === tutorial.id)) ?? null,
+    getTutorialsForView: (view) => Object.values(TUTORIALS).filter((tutorial) => tutorial.view === view && allowedTutorialIds.some((id) => id === tutorial.id)),
     notice,
     startTutorial,
   }), [activeTutorialId, allowedTutorialIds, completedTutorials, notice, startTutorial]);

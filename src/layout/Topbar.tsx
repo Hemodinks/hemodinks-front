@@ -64,6 +64,7 @@ export function Topbar({
             onClick={onToggleNotifications}
             aria-expanded={notificationsOpen}
             aria-haspopup="dialog"
+            data-tour="agenda-notification-center"
           >
             <Bell size={17} />
             <span className="notification-label notification-label-wide">Notificações</span>

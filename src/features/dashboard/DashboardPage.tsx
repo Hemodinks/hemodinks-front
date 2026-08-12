@@ -203,7 +203,7 @@ export function DashboardPage({
       id: 'tutorials',
       title: 'Tutoriais interativos',
       metric: 'Aprenda os fluxos do sistema',
-      footerLabel: '1 tutorial disponível',
+      footerLabel: '12 tutoriais disponíveis',
       className: 'module-card-tutorials',
       ariaLabel: 'Abrir tutoriais interativos',
       icon: <PlayCircle size={22} />,

@@ -1,13 +1,20 @@
-import { BarChart3, Captions, Clock3, PlayCircle } from 'lucide-react';
+import { Captions, Clock3, PlayCircle } from 'lucide-react';
 import './tutorials-page.css';
 
-const REPORTS_VIDEO = {
-  title: 'Relatórios — consulta analítica',
-  description: 'Aprenda a combinar filtros, consultar os indicadores e conferir os resultados detalhados.',
-  duration: '1 min 52 s',
-  webm: '/tutorials/reports/tutorial-relatorios-narrado.webm',
-  mp4: '/tutorials/reports/tutorial-relatorios-narrado.mp4',
-};
+const TUTORIAL_VIDEOS = [
+  { slug: 'login-clinica', category: 'Acesso', title: 'Seleção de clínica e login', description: 'Escolha o tenant correto e faça uma autenticação segura.' },
+  { slug: 'cadastro-clinica', category: 'Plataforma', title: 'Cadastro de uma clínica', description: 'Configure identidade, plano e administrador inicial.' },
+  { slug: 'equipe-identificacao', category: 'Plataforma', title: 'Equipe e tipos de identificação', description: 'Entenda o acesso coletivo e os modos de identificação.' },
+  { slug: 'cadastro-paciente', category: 'Pacientes', title: 'Cadastro de paciente', description: 'Abra e revise os campos essenciais de um cadastro.' },
+  { slug: 'atendimento-cirurgia', category: 'Pacientes', title: 'Cadastro de atendimento e cirurgia', description: 'Associe datas, equipe e procedimentos ao atendimento.' },
+  { slug: 'gestao-faturamento', category: 'Faturamento', title: 'Gestão de faturamento', description: 'Consulte filtros, indicadores e registros financeiros.' },
+  { slug: 'relatorios', category: 'Faturamento', title: 'Relatórios — consulta analítica', description: 'Combine filtros e confira os resultados detalhados.', legacy: true },
+  { slug: 'exportacao-relatorios', category: 'Faturamento', title: 'Exportação em PDF e XLSX', description: 'Prepare a consulta e escolha o formato de exportação.' },
+  { slug: 'pesquisa-inteligente', category: 'Pesquisa', title: 'Pesquisa inteligente Full-Text Search', description: 'Localize registros com termos de pesquisa.' },
+  { slug: 'usuarios-perfis', category: 'Acessos', title: 'Usuários e perfis de acesso', description: 'Cadastre uma conta e entenda seu perfil.' },
+  { slug: 'troca-clinica', category: 'Plataforma', title: 'Troca de clínica', description: 'Alterne o contexto da sessão com segurança.' },
+  { slug: 'agenda-notificacoes', category: 'Agenda', title: 'Agenda e notificações', description: 'Cadastre eventos e configure os avisos.' },
+] as const;
 
 export function TutorialsPage() {
   return (
@@ -18,33 +25,36 @@ export function TutorialsPage() {
           <h2 id="tutorials-title">Tutoriais interativos</h2>
           <p>Assista às demonstrações gravadas e pratique os fluxos com segurança dentro do Hemodinks.</p>
         </div>
-        <div className="tutorials-library-count" aria-label="1 tutorial disponível">
+        <div className="tutorials-library-count" aria-label="12 tutoriais disponíveis">
           <PlayCircle aria-hidden="true" size={22} />
-          <strong>1</strong>
-          <span>disponível</span>
+          <strong>12</strong>
+          <span>disponíveis</span>
         </div>
       </header>
 
-      <article className="tutorial-video-card">
+      <div className="tutorial-video-grid">
+      {TUTORIAL_VIDEOS.map((tutorial) => {
+        const base = 'legacy' in tutorial && tutorial.legacy ? '/tutorials/reports/tutorial-relatorios-narrado' : `/tutorials/${tutorial.slug}/tutorial-${tutorial.slug}-narrado`;
+        return <article className="tutorial-video-card" key={tutorial.slug}>
         <div className="tutorial-video-heading">
           <div className="tutorial-video-icon" aria-hidden="true">
-            <BarChart3 size={24} />
+            <PlayCircle size={24} />
           </div>
           <div>
-            <span className="eyebrow">Faturamento</span>
-            <h3>{REPORTS_VIDEO.title}</h3>
-            <p>{REPORTS_VIDEO.description}</p>
+            <span className="eyebrow">{tutorial.category}</span>
+            <h3>{tutorial.title}</h3>
+            <p>{tutorial.description}</p>
           </div>
           <div className="tutorial-video-meta">
-            <span><Clock3 aria-hidden="true" size={16} /> {REPORTS_VIDEO.duration}</span>
+            <span><Clock3 aria-hidden="true" size={16} /> Tutorial curto</span>
             <span><Captions aria-hidden="true" size={16} /> Legendas em português</span>
           </div>
         </div>
 
         <div className="tutorial-video-frame">
-          <video controls preload="metadata" playsInline aria-label={`Tutorial: ${REPORTS_VIDEO.title}`}>
-            <source src={REPORTS_VIDEO.webm} type="video/webm" />
-            <source src={REPORTS_VIDEO.mp4} type="video/mp4" />
+          <video controls preload="metadata" playsInline aria-label={`Tutorial: ${tutorial.title}`}>
+            <source src={`${base}.webm`} type="video/webm" />
+            <source src={`${base}.mp4`} type="video/mp4" />
             Seu navegador não oferece suporte à reprodução deste tutorial.
           </video>
         </div>
@@ -52,7 +62,9 @@ export function TutorialsPage() {
         <p className="tutorial-video-note">
           A gravação utiliza exclusivamente dados fictícios e sanitizados.
         </p>
-      </article>
+      </article>;
+      })}
+      </div>
     </section>
   );
 }

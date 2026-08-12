@@ -2,6 +2,8 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+import { TUTORIALS, type TutorialId } from '../src/features/tutorials/tutorialRegistry';
+import { TUTORIAL_MEDIA } from '../scripts/tutorials/library-config';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
@@ -251,7 +253,7 @@ async function loginViaUi(page: Page, initialRoute = '/', loginSession = session
   await clinicField.selectOption('1');
   await page.getByLabel('Email').fill(loginSession.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
-  await page.getByRole('button', { name: /entrar/i }).click();
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
 }
 
 async function mockApi(page: Page, loginSession = session, options: { sanitizedTutorial?: boolean } = {}) {
@@ -579,16 +581,15 @@ test('abre o módulo de tutoriais interativos e carrega o vídeo de Relatórios'
   await page.getByLabel('Sessão ativa').getByRole('button', { name: 'Tutoriais interativos' }).click();
   await expect(page).toHaveURL(/\/tutoriais-interativos$/);
   await expect(page.getByRole('heading', { name: 'Tutoriais interativos', level: 2 })).toBeVisible();
+  await expect(page.getByText('12', { exact: true })).toBeVisible();
+  await expect(page.locator('.tutorial-video-card')).toHaveCount(12);
   await expect(page.getByRole('heading', { name: 'Relatórios — consulta analítica' })).toBeVisible();
 
   const video = page.getByLabel('Tutorial: Relatórios — consulta analítica');
   await expect(video).toBeVisible();
   await expect(video.locator('source[type="video/webm"]')).toHaveAttribute('src', '/tutorials/reports/tutorial-relatorios-narrado.webm');
   await expect(video.locator('source[type="video/mp4"]')).toHaveAttribute('src', '/tutorials/reports/tutorial-relatorios-narrado.mp4');
-  await page.waitForFunction(() => {
-    const element = document.querySelector<HTMLVideoElement>('video[aria-label^="Tutorial:"]');
-    return element != null && Number.isFinite(element.duration) && element.duration > 100;
-  });
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.duration)).toBeGreaterThan(100);
   await expectNoGlobalHorizontalOverflow(page);
 
   await page.setViewportSize({ width: 390, height: 860 });
@@ -596,6 +597,24 @@ test('abre o módulo de tutoriais interativos e carrega o vídeo de Relatórios'
   await expect(page.getByRole('heading', { name: 'Tutoriais interativos', level: 2 })).toBeVisible();
   await expect(page.getByLabel('Tutorial: Relatórios — consulta analítica')).toBeVisible();
   await expectNoGlobalHorizontalOverflow(page);
+});
+
+test('todos os tutoriais registrados possuem configuração e alvos estáveis', async ({ page }) => {
+  await mockApi(page, superAdminSession);
+  expect(Object.keys(TUTORIALS)).toHaveLength(12);
+  for (const tutorial of Object.values(TUTORIALS)) {
+    expect(tutorial.steps.length).toBeGreaterThanOrEqual(3);
+    expect(tutorial.steps.every((step) => step.target.startsWith('[data-tour="'))).toBe(true);
+    if (tutorial.view === 'login') {
+      await page.goto('/');
+    } else {
+      const route = Object.entries({ dashboard: '/dashboard', users: '/usuarios', patients: '/pacientes', billing: '/faturamento-medico', reports: '/relatorios', clinics: '/clinicas', agenda: '/agenda' })
+        .find(([view]) => view === tutorial.view)?.[1];
+      expect(route).toBeTruthy();
+      await loginViaUi(page, route!, superAdminSession);
+    }
+    await expect(page.locator(tutorial.steps[0].target)).toHaveCount(1);
+  }
 });
 
 test('exibe o fluxo contextual correspondente para o SuperAdministrador', async ({ page }) => {
@@ -1122,3 +1141,72 @@ test('grava tutorial local de relatórios com dados sanitizados', async ({ page 
     steps: timelineSteps,
   }, null, 2));
 });
+
+const libraryRecordingRoutes: Partial<Record<TutorialId, string>> = {
+  'login-clinic': '/',
+  'clinic-registration': '/clinicas',
+  'team-identification': '/clinicas',
+  'patient-registration': '/pacientes',
+  'surgery-registration': '/pacientes',
+  'billing-management': '/faturamento-medico',
+  'report-export': '/relatorios',
+  'full-text-search': '/pacientes',
+  'user-access': '/usuarios',
+  'clinic-switch': '/clinicas',
+  'agenda-notifications': '/agenda',
+};
+
+for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
+  test(`grava biblioteca sanitizada: ${tutorialId}`, async ({ page }, testInfo) => {
+    test.skip(process.env.TUTORIAL_LIBRARY_RECORDING !== '1');
+    const tutorial = TUTORIALS[tutorialId];
+    const media = TUTORIAL_MEDIA[tutorialId];
+    const artifactRoot = resolve('artifacts', 'tutorials', 'library', media.slug);
+    const manifest = JSON.parse(await readFile(resolve(artifactRoot, 'audio-manifest.json'), 'utf8')) as {
+      steps: Array<{ id: string; durationSeconds: number }>;
+    };
+    const recordingSession = tutorialId.startsWith('clinic-') || tutorialId === 'team-identification'
+      ? { ...superAdminSession, token: 'token-ficticio-biblioteca', user: { ...superAdminSession.user, nome: 'Administrador Fictício', email: 'admin@example.invalid' } }
+      : { ...session, token: 'token-ficticio-biblioteca', user: { ...session.user, nome: 'Usuário Fictício', email: 'tutorial@example.invalid' } };
+    await mockApi(page, recordingSession, { sanitizedTutorial: true });
+    const route = libraryRecordingRoutes[tutorialId]!;
+    if (tutorialId === 'login-clinic') {
+      await page.goto('/');
+      await page.getByLabel('Clínica').selectOption('1');
+      await page.getByLabel('Email').fill('tutorial@example.invalid');
+      await page.locator('#login-password').fill('credencial-ficticia');
+    } else {
+      await loginViaUi(page, route, recordingSession);
+      if (tutorialId === 'billing-management') {
+        const summary = page.locator('.billing-filters-summary');
+        if (await summary.getAttribute('aria-expanded') !== 'true') await summary.click();
+      }
+    }
+    await page.waitForTimeout(700);
+    const origin = Date.now();
+    if (tutorialId === 'login-clinic') {
+      await page.getByRole('button', { name: 'Tutorial de acesso' }).click();
+    } else {
+      const help = page.getByRole('complementary', { name: 'Ajuda contextual' });
+      await help.getByRole('button', { name: /Abrir ajuda/i }).click();
+      await page.locator(`[data-tour="start-${tutorialId}-tutorial"]`).click();
+    }
+    const timeline = { tutorialId, slug: media.slug, completedAtMs: 0, steps: [] as Array<Record<string, number | string>> };
+    for (const [index, step] of tutorial.steps.entries()) {
+      const audio = manifest.steps[index];
+      await expect(page.locator(step.target)).toBeVisible({ timeout: 10_000 });
+      const visualStartMs = Date.now() - origin;
+      await page.waitForTimeout(500);
+      const narrationStartMs = Date.now() - origin;
+      await page.waitForTimeout(Math.ceil(audio.durationSeconds * 1000));
+      const narrationEndMs = Date.now() - origin;
+      await page.waitForTimeout(650);
+      if (step.action === 'click') await page.locator(step.target).click();
+      else await page.locator('.tutorial-mission-popover').getByRole('button', { name: index === tutorial.steps.length - 1 ? 'Concluir tutorial' : 'Continuar tutorial' }).click();
+      timeline.steps.push({ index: index + 1, id: step.id, visualStartMs, narrationStartMs, narrationEndMs, actionAtMs: Date.now() - origin });
+    }
+    await page.waitForTimeout(800);
+    timeline.completedAtMs = Date.now() - origin;
+    await writeFile(testInfo.outputPath('timeline.json'), `${JSON.stringify(timeline, null, 2)}\n`, 'utf8');
+  });
+}

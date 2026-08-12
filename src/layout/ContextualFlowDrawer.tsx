@@ -14,8 +14,8 @@ export function ContextualFlowDrawer({ activeView }: ContextualFlowDrawerProps) 
   const viewFlows = CONTEXTUAL_FLOWS[activeView];
   const [isOpen, setIsOpen] = useState(false);
   const [openFlowId, setOpenFlowId] = useState<string | null>(viewFlows.flows[0]?.id ?? null);
-  const { activeTutorialId, completedTutorials, getTutorialForView, startTutorial } = useTutorials();
-  const tutorial = getTutorialForView(activeView);
+  const { activeTutorialId, completedTutorials, getTutorialsForView, startTutorial } = useTutorials();
+  const tutorials = getTutorialsForView(activeView);
 
   useEffect(() => {
     setOpenFlowId(viewFlows.flows[0]?.id ?? null);
@@ -43,25 +43,26 @@ export function ContextualFlowDrawer({ activeView }: ContextualFlowDrawerProps) 
           <p>{viewFlows.description}</p>
         </header>
 
-        {tutorial && (
-          <section className="contextual-tutorial-mission" aria-label="Tutorial interativo desta tela">
+        {tutorials.length > 0 && (
+          <section className="contextual-tutorial-mission" aria-label="Tutoriais interativos desta tela">
             <span className="eyebrow">Missão interativa</span>
-            <h3>{tutorial.title}</h3>
-            <p>{tutorial.description}</p>
-            <button
-              type="button"
-              className="contextual-tutorial-start"
-              onClick={() => {
-                setIsOpen(false);
-                startTutorial(tutorial.id);
-              }}
-              disabled={activeTutorialId != null}
-              data-tour="start-reports-tutorial"
-              aria-label={completedTutorials.has(tutorial.id) ? `Reiniciar ${tutorial.title}` : `Iniciar ${tutorial.title}`}
-            >
-              {completedTutorials.has(tutorial.id) ? <RotateCcw size={17} /> : <Play size={17} />}
-              <span>{completedTutorials.has(tutorial.id) ? 'Reiniciar tutorial' : 'Iniciar tutorial'}</span>
-            </button>
+            {tutorials.map((tutorial) => (
+              <div className="contextual-tutorial-option" key={tutorial.id}>
+                <h3>{tutorial.title}</h3>
+                <p>{tutorial.description}</p>
+                <button
+                  type="button"
+                  className="contextual-tutorial-start"
+                  onClick={() => { setIsOpen(false); startTutorial(tutorial.id); }}
+                  disabled={activeTutorialId != null}
+                  data-tour={tutorial.id === 'reports-analytics' ? 'start-reports-tutorial' : `start-${tutorial.id}-tutorial`}
+                  aria-label={completedTutorials.has(tutorial.id) ? `Reiniciar ${tutorial.title}` : `Iniciar ${tutorial.title}`}
+                >
+                  {completedTutorials.has(tutorial.id) ? <RotateCcw size={17} /> : <Play size={17} />}
+                  <span>{completedTutorials.has(tutorial.id) ? 'Reiniciar tutorial' : 'Iniciar tutorial'}</span>
+                </button>
+              </div>
+            ))}
           </section>
         )}
 

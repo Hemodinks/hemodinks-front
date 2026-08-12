@@ -5,6 +5,7 @@ export const reportsTutorial = {
   view: 'reports',
   title: 'Missão: dominar os relatórios',
   description: 'Aprenda a combinar filtros e interpretar os indicadores encontrados.',
+  preflightAllTargets: true,
   steps: [
     {
       id: 'overview',

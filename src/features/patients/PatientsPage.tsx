@@ -135,7 +135,7 @@ export function PatientsPage({
   refreshPacientes,
 }: PatientsPageProps) {
   return (
-    <section className="workspace patients-workspace">
+    <section className="workspace patients-workspace" data-tour="patients-overview">
       {moduleMode === 'form' ? (
         <PatientForm
           canEditPatients={canEditPatients}

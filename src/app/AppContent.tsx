@@ -26,7 +26,7 @@ import {
 } from "./appViewMeta";
 import { useAppChrome } from "./useAppChrome";
 import { TutorialProvider } from "../features/tutorials/TutorialProvider";
-
+import { getAllowedTutorialIds } from "../features/tutorials/tutorialAccess";
 const SESSION_EXPIRED_MESSAGE =
   "Sua sessao expirou. Entre novamente para continuar.";
 export function AppContent() {
@@ -184,7 +184,6 @@ export function AppContent() {
     usersDomain.formLoading ||
     patientsDomain.pacienteFormLoading ||
     medicalGroupsDomain.formLoading;
-
   useSessionExpiration(session, () => endSession(SESSION_EXPIRED_MESSAGE));
   useMedicalLicenseHydration(session, persistSession);
   useLayoutEffect(() => {
@@ -194,7 +193,6 @@ export function AppContent() {
     ) {
       return;
     }
-
     setOpenDashboardAfterLogin(false);
   }, [normalizedPath, openDashboardAfterLogin]);
   const resetProfileRouteState = () => {
@@ -328,6 +326,7 @@ export function AppContent() {
 
   if (!session) {
     return (
+      <TutorialProvider activeView="login" allowedTutorialIds={['login-clinic']}>
       <AppPublicContent
         loginFlow={loginFlow}
         isResetPasswordRoute={isResetPasswordRoute}
@@ -340,6 +339,7 @@ export function AppContent() {
         onBackToLogin={() => returnToLogin()}
         onResetCompleted={handleResetPasswordCompleted}
       />
+      </TutorialProvider>
     );
   }
 
@@ -415,8 +415,9 @@ export function AppContent() {
       clinics: openClinics,
     },
   });
+  const allowedTutorialIds = getAllowedTutorialIds({ canAccessAgenda, canAccessBilling, canAccessClinics, canAccessPatients, canAccessReports, canAccessUsers });
   return (
-    <TutorialProvider activeView={activeView} allowedTutorialIds={canAccessReports ? ["reports-analytics"] : []}>
+    <TutorialProvider activeView={activeView} allowedTutorialIds={allowedTutorialIds}>
     <AppShell
       session={session}
       isBusy={isBusy}
