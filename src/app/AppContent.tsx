@@ -25,6 +25,7 @@ import {
   getAppTitle,
 } from "./appViewMeta";
 import { useAppChrome } from "./useAppChrome";
+import { TutorialProvider } from "../features/tutorials/TutorialProvider";
 
 const SESSION_EXPIRED_MESSAGE =
   "Sua sessao expirou. Entre novamente para continuar.";
@@ -417,8 +418,8 @@ export function AppContent() {
       clinics: openClinics,
     },
   });
-
   return (
+    <TutorialProvider activeView={activeView} allowedTutorialIds={canAccessReports ? ["reports-analytics"] : []}>
     <AppShell
       session={session}
       isBusy={isBusy}
@@ -543,6 +544,6 @@ export function AppContent() {
         onPasswordChanged={usersDomain.handlePasswordChanged}
         onClinicSelected={handleClinicSelected}
       />
-    </AppShell>
+    </AppShell></TutorialProvider>
   );
 }

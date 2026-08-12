@@ -796,3 +796,100 @@ test('gera evidencias visuais desktop e mobile das telas principais', async ({ p
     await captureCurrentScreenshot(page, testInfo, 'pacientes-formulario', width);
   }
 });
+
+async function openReportsTutorial(page: Page) {
+  await page.getByRole('complementary', { name: 'Ajuda contextual' })
+    .getByRole('button', { name: /abrir ajuda de relatórios/i })
+    .click();
+  await page.getByRole('button', { name: /iniciar missão: dominar os relatórios|reiniciar missão: dominar os relatórios/i }).click();
+  await expect(page.locator('.tutorial-mission-popover')).toBeVisible();
+}
+
+test('tutorial de relatórios usa somente alvos data-tour existentes e conclui após as ações', async ({ page }) => {
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+
+  for (const target of [
+    'reports-overview',
+    'reports-filters',
+    'reports-period',
+    'reports-combined-filters',
+    'reports-apply',
+    'reports-summary',
+    'reports-results',
+  ]) {
+    await expect(page.locator(`[data-tour="${target}"]`)).toHaveCount(1);
+  }
+
+  await openReportsTutorial(page);
+  const mission = page.locator('.tutorial-mission-popover');
+  await expect(mission).toContainText('Etapa 1 de 7');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 2 de 7');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 3 de 7');
+
+  await page.waitForTimeout(250);
+  await expect(mission).toContainText('Etapa 3 de 7');
+  await page.getByRole('textbox', { name: 'Data inicial do atendimento', exact: true }).click();
+  await expect(mission).toContainText('Etapa 4 de 7');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 5 de 7');
+  await page.getByRole('button', { name: 'Consultar' }).click();
+  await expect(mission).toContainText('Etapa 6 de 7');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 7 de 7');
+  await mission.getByRole('button', { name: 'Concluir tutorial' }).click();
+  await expect(page.getByRole('status')).toContainText('Missão concluída');
+});
+
+test('tutorial permite voltar, repetir narração e sair sem executar ações pelo usuário', async ({ page }) => {
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+  await openReportsTutorial(page);
+
+  const mission = page.locator('.tutorial-mission-popover');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 2 de 7');
+  await mission.getByRole('button', { name: 'Repetir narração' }).click();
+  await mission.getByRole('button', { name: 'Voltar para a etapa anterior' }).click();
+  await expect(mission).toContainText('Etapa 1 de 7');
+  await mission.getByRole('button', { name: 'Sair do tutorial' }).click();
+  await expect(mission).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Relatórios', level: 1 })).toBeVisible();
+});
+
+test('tutorial encerra de forma amigável quando um alvo não existe', async ({ page }) => {
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+  await page.locator('[data-tour="reports-results"]').evaluate((element) => element.remove());
+
+  await page.getByRole('complementary', { name: 'Ajuda contextual' })
+    .getByRole('button', { name: /abrir ajuda de relatórios/i })
+    .click();
+  await page.getByRole('button', { name: /iniciar missão: dominar os relatórios/i }).click();
+  await expect(page.getByRole('status')).toContainText('foi encerrada com segurança');
+  await expect(page.locator('.tutorial-mission-popover')).toHaveCount(0);
+});
+
+test('tutorial de relatórios funciona em desktop e mobile e respeita o perfil', async ({ page }) => {
+  await mockApi(page);
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await loginViaUi(page, '/relatorios');
+    await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+    await openReportsTutorial(page);
+    await expect(page.locator('.tutorial-mission-popover')).toBeVisible();
+    await expectNoGlobalHorizontalOverflow(page);
+    await page.locator('.tutorial-mission-popover').getByRole('button', { name: 'Sair do tutorial' }).click();
+  }
+
+  await page.evaluate(() => sessionStorage.clear());
+  await mockApi(page, patientSession);
+  await loginViaUi(page, '/relatorios', patientSession);
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.locator('[data-tour="start-reports-tutorial"]')).toHaveCount(0);
+});

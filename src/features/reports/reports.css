@@ -1,5 +1,6 @@
 .reports-workspace { gap: 16px; }
 .reports-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: end; }
+.reports-period-tour-target { grid-column: span 2; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .reports-filter-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 .reports-filter-actions button { min-height: 44px; }
 .reports-query-actions { grid-column: 3 / -1; }
@@ -34,4 +35,4 @@
 .report-record-details-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding-top: 14px; }
 .report-record-details-content h4 { margin: 0 0 10px; }
 @media (max-width: 1180px) { .reports-filter-grid, .report-record-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reports-query-actions { grid-column: 1 / -1; } }
-@media (max-width: 760px) { .reports-filter-grid, .report-record-grid, .report-financial-grid, .report-record-details-content { grid-template-columns: 1fr; } .reports-pending-filter, .reports-query-actions { grid-column: 1; } .reports-filter-actions button { flex: 1 1 150px; } .reports-export-button { min-width: 0; } .report-record-header { flex-direction: column; } }
+@media (max-width: 760px) { .reports-filter-grid, .reports-period-tour-target, .report-record-grid, .report-financial-grid, .report-record-details-content { grid-template-columns: 1fr; } .reports-period-tour-target, .reports-pending-filter, .reports-query-actions { grid-column: 1; } .reports-filter-actions button { flex: 1 1 150px; } .reports-export-button { min-width: 0; } .report-record-header { flex-direction: column; } }

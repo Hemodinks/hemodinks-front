@@ -122,6 +122,40 @@
   gap: 10px;
 }
 
+.contextual-tutorial-mission {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--contextual-flow-color) 12%, var(--input-bg));
+  border: 1px solid color-mix(in srgb, var(--contextual-flow-color) 55%, var(--line));
+  border-radius: 10px;
+}
+
+.contextual-tutorial-mission h3,
+.contextual-tutorial-mission p {
+  margin: 0;
+}
+
+.contextual-tutorial-mission p {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.contextual-tutorial-start {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--action-text);
+  background: var(--action-primary);
+  border: 1px solid var(--action-primary-hover);
+  border-radius: 8px;
+  font-weight: 850;
+}
+
 .contextual-flow-item {
   overflow: hidden;
   border: 1px solid var(--line);
