@@ -348,7 +348,7 @@ npm run record:tutorials:reports
 
 ### Produção local com narração e legendas
 
-O pipeline local usa Piper TTS com a voz `pt_BR-faber-medium` e o binário do `ffmpeg-static`. Os textos são importados diretamente de `reportsTutorial.ts`; não há cópia paralela do roteiro. O ambiente Python, o modelo de voz, as faixas WAV, a timeline e os vídeos ficam em `artifacts/tutorials`, ignorado pelo Git. Cada faixa é normalizada em -14 LUFS e o mix final recebe margem de -2 dBTP, para manter a voz alta e uniforme sem clipping após a compressão.
+O pipeline local usa Piper TTS com a voz brasileira `pt_BR-faber-medium` e o binário do `ffmpeg-static`. Os textos são importados diretamente das configurações dos tutoriais; não há cópia paralela do roteiro. A síntese utiliza ritmo didático, menor variação fonética e pausas de quatro décimos de segundo entre frases para melhorar a dicção. O ambiente Python, o modelo de voz, as faixas WAV, a timeline e os vídeos ficam em `artifacts/tutorials`, ignorado pelo Git. Cada faixa é normalizada em -14 LUFS e o mix final recebe margem de -2 dBTP, para manter a voz alta e uniforme sem clipping após a compressão.
 
 ```bash
 npm run tutorial:produce:reports

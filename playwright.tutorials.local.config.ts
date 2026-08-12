@@ -6,7 +6,7 @@ export default defineConfig({
   testDir: './e2e',
   testMatch: /hemodinks\.spec\.ts/,
   grep: /grava tutorial local de relatórios/,
-  timeout: 120_000,
+  timeout: 240_000,
   outputDir: 'artifacts/tutorials/playwright-local-results',
   use: {
     ...devices['Desktop Chrome'],

@@ -36,8 +36,10 @@ for (const [index, step] of reportsTutorial.steps.entries()) {
     '--model', voiceModel,
     '--config', voiceConfig,
     '--output_file', output,
-    '--length-scale', '1.05',
-    '--sentence-silence', '0.28',
+    '--length-scale', '1.1',
+    '--noise-scale', '0.55',
+    '--noise-w-scale', '0.65',
+    '--sentence-silence', '0.4',
   ], { cwd: workspaceRoot, input: `${step.narration}\n` });
   const durationSeconds = wavDurationSeconds(await readFile(output));
   entries.push({
@@ -60,4 +62,3 @@ await writeFile(audioManifestPath, JSON.stringify({
 }, null, 2));
 
 console.log(`Narração gerada: ${entries.length} faixas em ${audioRoot}.`);
-
