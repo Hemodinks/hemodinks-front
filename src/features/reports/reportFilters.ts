@@ -8,6 +8,8 @@ export const emptyReportFilters: ReportFilters = {
   endDate: '',
   requestStartDate: '',
   requestEndDate: '',
+  paymentStartDate: '',
+  paymentEndDate: '',
   doctors: [],
   teams: [],
   medicalGroups: [],
@@ -81,7 +83,8 @@ function validateDateRange(startValue: string, endValue: string, periodName: str
 
 export function validateReportDateRange(filters: ReportFilters) {
   return validateDateRange(filters.startDate, filters.endDate, 'do atendimento')
-    || validateDateRange(filters.requestStartDate, filters.requestEndDate, 'da solicitação');
+    || validateDateRange(filters.requestStartDate, filters.requestEndDate, 'da solicitação')
+    || validateDateRange(filters.paymentStartDate, filters.paymentEndDate, 'do pagamento');
 }
 
 function selectedIncludes(values: string[], candidate: string) {
@@ -97,13 +100,18 @@ export function filterReportRecords(records: ReportRecord[], filters: ReportFilt
   const attendanceEnd = displayDateToIso(filters.endDate);
   const requestStart = displayDateToIso(filters.requestStartDate);
   const requestEnd = displayDateToIso(filters.requestEndDate);
+  const paymentStart = displayDateToIso(filters.paymentStartDate);
+  const paymentEnd = displayDateToIso(filters.paymentEndDate);
   return records.filter((record) => {
     const attendanceDate = record.surgeryDate?.split('T')[0] ?? '';
     const requestDate = record.paciente.data?.split('T')[0] ?? '';
+    const paymentDate = record.paymentDate?.split('T')[0] ?? '';
     if (attendanceStart && (!attendanceDate || attendanceDate < attendanceStart)) return false;
     if (attendanceEnd && (!attendanceDate || attendanceDate > attendanceEnd)) return false;
     if (requestStart && (!requestDate || requestDate < requestStart)) return false;
     if (requestEnd && (!requestDate || requestDate > requestEnd)) return false;
+    if (paymentStart && (!paymentDate || paymentDate < paymentStart)) return false;
+    if (paymentEnd && (!paymentDate || paymentDate > paymentEnd)) return false;
     return selectedIncludes(filters.doctors, record.doctorName)
       && selectedOverlaps(filters.teams, record.teamNames)
       && selectedOverlaps(filters.medicalGroups, record.medicalGroupNames)

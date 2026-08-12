@@ -1,4 +1,4 @@
-import { normalizeLookupText } from '../../shared/utils/formatters';
+import { normalizeLookupText, toDatePickerValue } from '../../shared/utils/formatters';
 import type {
   BillingBreakdownItem,
   BillingFilters,
@@ -82,6 +82,8 @@ export function filterBillingRecords(
 ) {
   const competenciaInicio = getCompetenciaMonthTimestamp(filters.competenciaInicio);
   const competenciaFinal = getCompetenciaMonthTimestamp(filters.competenciaFinal, true);
+  const paymentStartDate = toDatePickerValue(filters.paymentStartDate);
+  const paymentEndDate = toDatePickerValue(filters.paymentEndDate);
 
   return [...records]
     .filter((record) => matchesCurrentMedicalUser(record, options))
@@ -107,6 +109,12 @@ export function filterBillingRecords(
       return record.status === filters.status;
     })
     .filter((record) => !filters.onlyPendingItems || record.pendingChecklistItems > 0)
+    .filter((record) => {
+      const paymentDate = record.paymentDate?.split('T')[0] ?? '';
+      if (paymentStartDate && (!paymentDate || paymentDate < paymentStartDate)) return false;
+      if (paymentEndDate && (!paymentDate || paymentDate > paymentEndDate)) return false;
+      return true;
+    })
     .filter((record) => {
       const recordStart = getDateTimestamp(record.competenciaInicio);
       const recordEnd = getDateTimestamp(record.competenciaFinal);

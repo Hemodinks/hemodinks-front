@@ -4,7 +4,7 @@ import { CopyValue } from '../../shared/components/CopyValue';
 import { Modal } from '../../shared/components/Modal';
 import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
 import { AlertMessage, IconButton } from '../../shared/components/ui';
-import { formatPersonName } from '../../shared/utils/formatters';
+import { formatPersonName, toDisplayDate } from '../../shared/utils/formatters';
 import { downloadPacienteArquivo } from '../../services';
 import { getPacienteProcedimentosFromPaciente } from './patientUtils';
 import './patients.css';
@@ -54,9 +54,9 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
 
           <section className="patient-info-detail-grid" aria-label="Informações clínicas do paciente">
             <article className="patient-info-card">
-              <span>Diagnóstico</span>
+              <span>Informações Adicionais</span>
               <div className="patient-info-card-content">
-                {renderInfoValue('diagnóstico do paciente', paciente.diagnostico)}
+                {renderInfoValue('informações adicionais do paciente', paciente.diagnostico)}
               </div>
             </article>
 
@@ -78,6 +78,13 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
               <span>Fornecedor OPME</span>
               <div className="patient-info-card-content">
                 {renderInfoValue('fornecedor OPME', paciente.opmeFornecedor)}
+              </div>
+            </article>
+
+            <article className="patient-info-card">
+              <span>Data do pagamento</span>
+              <div className="patient-info-card-content">
+                {renderInfoValue('data do pagamento', toDisplayDate(paciente.faturamento?.dataPagamento))}
               </div>
             </article>
           </section>

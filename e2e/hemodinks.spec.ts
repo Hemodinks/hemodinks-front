@@ -638,13 +638,13 @@ test('cadastra evento na agenda', async ({ page }) => {
   });
 });
 
-test('exporta pacientes em XLSX e PDF', async ({ page }) => {
+test('exporta pacientes em planilha e PDF', async ({ page }) => {
   await mockApi(page);
   await loginViaUi(page, '/pacientes');
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
 
   const xlsxDownloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Exportar XLSX' }).click();
+  await page.getByRole('button', { name: 'Exportar Planilha' }).click();
   const xlsxDownload = await xlsxDownloadPromise;
   expect(xlsxDownload.suggestedFilename()).toMatch(/^pacientes-hemodinks-\d{4}-\d{2}-\d{2}\.xlsx$/);
 
@@ -672,7 +672,7 @@ test('consulta e exporta relatórios com filtros múltiplos', async ({ page }) =
   await expect(page.getByText('1 atendimento(s) encontrados')).toBeVisible();
 
   const xlsxDownloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Exportar XLSX' }).click();
+  await page.getByRole('button', { name: 'Exportar Planilha' }).click();
   expect((await xlsxDownloadPromise).suggestedFilename()).toMatch(/^relatorios-hemodinks-\d{4}-\d{2}-\d{2}\.xlsx$/);
 
   const pdfDownloadPromise = page.waitForEvent('download');

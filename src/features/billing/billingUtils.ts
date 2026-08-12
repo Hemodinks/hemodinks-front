@@ -311,6 +311,8 @@ export function createEmptyBillingFilters(defaultDoctor = '', defaultCompetencia
     procedimento: '',
     competenciaInicio: defaultCompetencia,
     competenciaFinal: defaultCompetencia,
+    paymentStartDate: '',
+    paymentEndDate: '',
     status: 'all',
     regime: 'all',
     onlyPendingItems: false,
@@ -355,6 +357,8 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       surgeryDateLabel: paciente.dataAtendimento
         ? toDisplayDate(paciente.dataAtendimento)
         : paciente.data ? toDisplayDate(paciente.data) : '-',
+      paymentDate: faturamento?.dataPagamento ?? null,
+      paymentDateLabel: toDisplayDate(faturamento?.dataPagamento) || '-',
       competenciaInicio: billingCadastroDate ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
       competenciaFinal: billingCadastroDate ?? faturamento?.competenciaFinal ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
       authorizationCode: faturamento?.guiaAutorizacaoConvenio?.trim() || paciente.autorizacao?.trim() || '',

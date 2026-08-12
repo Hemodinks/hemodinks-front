@@ -61,6 +61,7 @@ export function ReportsList(props: Props) {
                 <div><dt>Auxiliares</dt><dd>{tags(record.assistantNames, 'Não informados')}</dd></div>
                 <div><dt>Fornecedor OPME</dt><dd>{record.opmeSupplier}</dd></div>
                 <div><dt>Autorização</dt><dd>{record.authorizationCode || 'Não informada'}</dd></div>
+                <div><dt>Data do pagamento</dt><dd>{record.paymentDateLabel}</dd></div>
                 <div><dt>Anexos / pendências</dt><dd>{record.filesCount} / {record.pendingChecklistItems}</dd></div>
               </dl>
 
