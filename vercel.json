@@ -64,8 +64,14 @@
   ],
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/",
+      "destination": "https://hemodinks.gestao-saude.tec.br/",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "destination": "https://hemodinks.gestao-saude.tec.br/:path*",
+      "permanent": true
     }
   ]
 }
