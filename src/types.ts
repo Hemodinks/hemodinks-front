@@ -74,13 +74,17 @@ export type ListQuery = {
   search?: string;
   profileId?: number;
   sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
+  sortDirection?: "asc" | "desc";
 };
 
 export type PacienteListQuery = ListQuery & {
   medico?: string;
   convenio?: string;
+  medicoUserIds?: string;
+  convenioIds?: string;
   procedimento?: string;
+  dataInicio?: string;
+  dataFinal?: string;
   competenciaInicio?: string;
   competenciaFinal?: string;
 };
@@ -93,7 +97,7 @@ export type CbhpmListQuery = {
   procedimento?: string;
   porte?: string;
   sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
+  sortDirection?: "asc" | "desc";
 };
 
 export type CbhpmGeral = {
@@ -106,15 +110,6 @@ export type CbhpmGeral = {
   capitulo?: string | null;
   grupo?: string | null;
   paginaPdf?: number | null;
-};
-
-export type PacienteProcedimento = {
-  id?: number;
-  cbhpmCodigo?: string | null;
-  cbhpmPorte?: string | null;
-  procedimento: string;
-  valorReferencia?: number | null;
-  ordem?: number | null;
 };
 
 export type Hospital = {
@@ -233,10 +228,10 @@ export type PublicHoliday = {
 };
 
 export type LicencaFeature =
-  | 'Dashboard.Visualizar'
-  | 'Pacientes.Visualizar'
-  | 'Pacientes.Gerenciar'
-  | 'Cbhpm.Consultar'
+  | "Dashboard.Visualizar"
+  | "Pacientes.Visualizar"
+  | "Pacientes.Gerenciar"
+  | "Cbhpm.Consultar"
   | (string & {});
 
 export type Licenca = {
@@ -262,6 +257,7 @@ export type Licenca = {
 
 export type LoginResponse = {
   id: number;
+  usuarioGlobalId?: number;
   clinicaId?: number;
   clinicaSlug?: string | null;
   nome: string;
@@ -269,15 +265,50 @@ export type LoginResponse = {
   cpf?: string | null;
   crm?: string | null;
   crmUf?: string | null;
-  token: string;
+  token?: string | null;
   fotoPerfil?: string | null;
   precisaTrocarSenha: boolean;
+  precisaTrocarPin?: boolean;
   perfilId: number;
   perfilNome: string;
+  modulosLiberados?: string[];
   licenca?: Licenca | null;
+  equipeDesafio?: TeamLoginChallenge | null;
 };
 
-export type SessionUser = Pick<LoginResponse, 'id' | 'clinicaId' | 'clinicaSlug' | 'nome' | 'email' | 'cpf' | 'crm' | 'crmUf' | 'fotoPerfil' | 'precisaTrocarSenha' | 'perfilId' | 'perfilNome' | 'licenca'>;
+export type TeamLoginOperator = {
+  id: number;
+  nome: string;
+  exigePin: boolean;
+};
+
+export type TeamLoginChallenge = {
+  token: string;
+  equipeId: number;
+  equipeNome: string;
+  modoIdentificacao: "Nenhuma" | "Selecao" | "Pin";
+  expiraEm: string;
+  operadores: TeamLoginOperator[];
+};
+
+export type SessionUser = Pick<
+  LoginResponse,
+  | "id"
+  | "clinicaId"
+  | "clinicaSlug"
+  | "nome"
+  | "email"
+  | "cpf"
+  | "crm"
+  | "crmUf"
+  | "fotoPerfil"
+  | "precisaTrocarSenha"
+  | "precisaTrocarPin"
+  | "perfilId"
+  | "perfilNome"
+  | "modulosLiberados"
+  | "licenca"
+>;
 
 export type AuthSession = {
   token: string;
@@ -297,6 +328,110 @@ export type UpdateSystemSettingsPayload = {
   fotoEmpresa?: string | null;
 };
 
+export type PublicClinic = {
+  id: number;
+  nome: string;
+  slug: string;
+  fotoUrl?: string | null;
+};
+
+export type PlatformClinic = {
+  id: number;
+  nome: string;
+  slug: string;
+  fotoUrl?: string | null;
+  ativa: boolean;
+  plano: string;
+  modulosLiberados: string[];
+  assinaturaStatus: string;
+  trialAte?: string | null;
+  assinaturaValidaAte?: string | null;
+  limiteUsuarios?: number | null;
+  usuarios?: number | null;
+  dataCadastro: string;
+  dataAtualizacao?: string | null;
+};
+
+export type TeamIdentificationMode = "Nenhuma" | "Selecao" | "Pin";
+
+export type TeamMember = {
+  userId: number;
+  nome: string;
+  email: string;
+  perfilId: number;
+  operadorId: number;
+  operadorAtivo: boolean;
+  possuiPin: boolean;
+  precisaTrocarPin: boolean;
+  bloqueadoAte?: string | null;
+};
+
+export type Team = {
+  id: number;
+  nome: string;
+  usuarioLoginId: number;
+  email: string;
+  modoIdentificacao: TeamIdentificationMode;
+  ativa: boolean;
+  membros: TeamMember[];
+};
+
+export type TeamEligibleUser = {
+  usuarioGlobalId?: number | null;
+  userIdNaClinica?: number | null;
+  nome: string;
+  email: string;
+  perfilId: number;
+  perfilNome: string;
+  origemClinica: string;
+  cadastradoNaClinica: boolean;
+};
+
+export type CreateTeamPayload = {
+  nome: string;
+  email: string;
+  senha: string;
+  telefone?: string | null;
+  modoIdentificacao: TeamIdentificationMode;
+};
+
+export type ClinicPayload = {
+  nome: string;
+  slug: string;
+  ativa?: boolean;
+  plano?: string;
+  modulosLiberados?: string[];
+  assinaturaStatus?: string;
+  trialAte?: string | null;
+  assinaturaValidaAte?: string | null;
+  limiteUsuarios?: number | null;
+  fotoClinica?: string | null;
+  administradorNome?: string;
+  administradorEmail?: string;
+  administradorSenha?: string;
+  administradorTelefone?: string | null;
+  equipeInicial?: CreateTeamPayload | null;
+  novaEquipe?: CreateTeamPayload | null;
+};
+
+export type SessionClinic = {
+  clinicaId: number;
+  nome: string;
+  slug: string;
+  userId: number;
+  perfilId: number;
+  perfil: string;
+  modulosLiberados: string[];
+  clinicaPadrao: boolean;
+  usuarioClinicaId: number;
+};
+
+export type SelectClinicResponse = {
+  token: string;
+  usuarioGlobalId: number;
+  clinica: SessionClinic;
+};
+
 export type UserFormData = {
   nome: string;
   email: string;
@@ -310,7 +445,7 @@ export type UserFormData = {
   perfilId: number;
 };
 
-export type UserPayload = Omit<UserFormData, 'cpf' | 'dataNascimento'> & {
+export type UserPayload = Omit<UserFormData, "cpf" | "dataNascimento"> & {
   cpf?: string | null;
   dataNascimento?: string | null;
 };
@@ -320,153 +455,4 @@ export type ChangePasswordPayload = {
   novaSenha: string;
 };
 
-export type PacienteArquivo = {
-  id: number;
-  nomeOriginal: string;
-  contentType: string;
-  tamanhoBytes: number;
-  url: string;
-  dataUpload: string;
-};
-
-export type PacienteFaturamento = {
-  id: number;
-  pacienteId: number;
-  honorariosCirurgiao?: number | null;
-  honorariosAuxiliares?: number | null;
-  honorariosAnestesista?: number | null;
-  anestesistaFaturadoSeparado: boolean;
-  anestesista?: string | null;
-  codigoTussCbhpmAmb?: string | null;
-  porteCirurgicoAnestesico?: string | null;
-  guiaAutorizacaoConvenio?: string | null;
-  guiaInternacaoOuSadt?: string | null;
-  opmeMateriaisEspeciais?: string | null;
-  tissXmlStatus?: string | null;
-  valorGlosa?: number | null;
-  glosaStatus?: string | null;
-  recursoGlosa?: string | null;
-  conferenciaPagamentoRealizada: boolean;
-  repasseMedico?: number | null;
-  repasseMedicoObservacao?: string | null;
-  tipoFaturamentoParticular?: string | null;
-  reciboNotaContrato?: string | null;
-  observacoes?: string | null;
-  dataCadastro: string;
-  dataAtualizacao?: string | null;
-  competenciaInicio?: string | null;
-  competenciaFinal?: string | null;
-};
-
-export type Paciente = {
-  id: number;
-  userId: number;
-  data?: string | null;
-  dataCadastro?: string | null;
-  dataCriacao?: string | null;
-  dataAtualizacao?: string | null;
-  dataAlteracao?: string | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-  modifiedAt?: string | null;
-  nomePaciente: string;
-  diagnostico?: string | null;
-  tratamentoMedico?: string | null;
-  hospitalId?: number | null;
-  hospital?: string | null;
-  medicoUserId?: number | null;
-  medico?: string | null;
-  medicoAuxiliar1UserId?: number | null;
-  medicoAuxiliar1?: string | null;
-  medicoAuxiliar2UserId?: number | null;
-  medicoAuxiliar2?: string | null;
-  convenioId?: number | null;
-  convenio?: string | null;
-  opmeFornecedorId?: number | null;
-  opmeFornecedor?: string | null;
-  cbhpmCodigo?: string | null;
-  cbhpmPorte?: string | null;
-  procedimento?: string | null;
-  procedimentos?: PacienteProcedimento[];
-  autorizacao?: string | null;
-  pagamento?: string | null;
-  repasseGlosa?: string | null;
-  statusPago: boolean;
-  cpf?: string | null;
-  email: string;
-  telefone: string;
-  fotoPerfil?: string | null;
-  dataNascimento?: string | null;
-  ativo: boolean;
-  arquivosCount: number;
-  observacoesNaoLidasCount?: number;
-  faturamento?: PacienteFaturamento | null;
-  arquivos: PacienteArquivo[];
-};
-
-export type PacienteFormData = {
-  data: string | null;
-  nomePaciente: string;
-  diagnostico: string;
-  tratamentoMedico: string;
-  cpf: string;
-  email: string;
-  telefone: string;
-  fotoPerfil?: string | null;
-  dataNascimento: string;
-  hospitalId: number | null;
-  hospital: string;
-  medicoUserId: number | null;
-  medico: string;
-  medicoAuxiliar1UserId: number | null;
-  medicoAuxiliar1: string;
-  medicoAuxiliar2UserId: number | null;
-  medicoAuxiliar2: string;
-  convenioId: number | null;
-  convenio: string;
-  opmeFornecedorId: number | null;
-  opmeFornecedor: string;
-  cbhpmCodigo: string;
-  cbhpmPorte: string;
-  procedimento: string;
-  procedimentos: PacienteProcedimento[];
-  autorizacao: string;
-  pagamento: string;
-  repasseGlosa: string;
-  statusPago: boolean;
-  ativo: boolean;
-  novaObservacao: string;
-};
-
-export type PacientePayload = Omit<PacienteFormData, 'novaObservacao'>;
-
-export type PacienteObservacao = {
-  id: number;
-  pacienteId: number;
-  observacaoPaiId?: number | null;
-  texto: string;
-  dataCadastro: string;
-  dataLeitura?: string | null;
-  autorUserId: number;
-  autorNome: string;
-  autorPerfilId: number;
-  autorPerfilNome: string;
-  destinatarioUserId: number;
-  destinatarioNome: string;
-  destinatarioPerfilId: number;
-  destinatarioPerfilNome: string;
-  nomePaciente: string;
-  medicoUserId?: number | null;
-  medico?: string | null;
-  medicoAuxiliar1UserId?: number | null;
-  medicoAuxiliar1?: string | null;
-  medicoAuxiliar2UserId?: number | null;
-  medicoAuxiliar2?: string | null;
-  foiLida: boolean;
-  enviadaPorMim: boolean;
-};
-
-export type CreatePacienteObservacaoPayload = {
-  texto: string;
-  observacaoPaiId?: number | null;
-};
+export type * from './types/patient';

@@ -13,13 +13,13 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import type { Paciente } from '../../types';
+import type { Convenio, MedicalUserOption, Paciente } from '../../types';
 import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
-import { AlertMessage, Button, DataPanel, IconButton, SearchField, SelectField, TextField } from '../../shared/components/ui';
+import { DateInput } from '../../shared/components/DateInput';
+import { AlertMessage, Button, DataPanel, IconButton, MultiSelectComboboxField, SearchField, SelectField, TextField } from '../../shared/components/ui';
 import {
-  CONVENIOS_DATALIST_ID,
   formatPersonName,
-  MEDICAL_USERS_DATALIST_ID,
+  toDisplayDate,
 } from '../../shared/utils/formatters';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { UserAvatar } from '../users/UserAvatar';
@@ -47,8 +47,9 @@ type PatientListProps = {
   canManageObservacoes: boolean;
   patientReadOnly: boolean;
   isAdmin: boolean;
-  hasMedicalUsers: boolean;
-  hasConvenios: boolean;
+  isTeam: boolean;
+  medicalUsers: MedicalUserOption[];
+  convenios: Convenio[];
   onSearchChange: (value: string) => void;
   onFiltersChange: (filters: PacienteFilters | ((current: PacienteFilters) => PacienteFilters)) => void;
   onClearFilters: () => void;
@@ -88,8 +89,9 @@ export function PatientList({
   canManageObservacoes,
   patientReadOnly,
   isAdmin,
-  hasMedicalUsers,
-  hasConvenios,
+  isTeam,
+  medicalUsers,
+  convenios,
   onSearchChange,
   onFiltersChange,
   onClearFilters,
@@ -138,46 +140,63 @@ export function PatientList({
               onChange={(event) => onExportScopeChange(event.target.value as PacienteExportScope)}
             >
               <option value="all">Todos os pacientes</option>
-              {isAdmin && <option value="doctor">Cirurgião selecionado</option>}
+              {(isAdmin || isTeam) && <option value="doctor">Cirurgiões selecionados</option>}
               <option value="visible">Dados da tela</option>
             </SelectField>
             <Button
-              onClick={() => void onExportPacientes('xlsx')}
-              disabled={pacienteExportLoading !== null}
-            >
-              <Download size={17} />
-              {pacienteExportLoading === 'xlsx' ? 'Gerando...' : 'Exportar XLSX'}
-            </Button>
-            <Button
+              className="export-pdf-btn"
               onClick={() => void onExportPacientes('pdf')}
               disabled={pacienteExportLoading !== null}
             >
               <FileText size={17} />
               {pacienteExportLoading === 'pdf' ? 'Gerando...' : 'Exportar PDF'}
             </Button>
+            <Button
+              className="export-xlsx-btn"
+              onClick={() => void onExportPacientes('xlsx')}
+              disabled={pacienteExportLoading !== null}
+            >
+              <Download size={17} />
+              {pacienteExportLoading === 'xlsx' ? 'Gerando...' : 'Exportar Planilha'}
+            </Button>
           </div>
-          {isAdmin && (
-            <div className="patient-filter-grid" aria-label="Filtros administrativos de pacientes">
-              <TextField
-                className="filter-field"
-                label="Cirurgião"
-                type="search"
-                list={MEDICAL_USERS_DATALIST_ID}
-                value={pacienteFilters.medico}
-                onValueChange={(value) => onFiltersChange((current) => ({ ...current, medico: value }))}
-                disabled={!hasMedicalUsers}
-                placeholder={hasMedicalUsers ? 'Todos os cirurgiões' : 'Nenhum médico cadastrado'}
-              />
-              <TextField
-                className="filter-field"
-                label="Convênio"
-                type="search"
-                list={CONVENIOS_DATALIST_ID}
-                value={pacienteFilters.convenio}
-                onValueChange={(value) => onFiltersChange((current) => ({ ...current, convenio: value }))}
-                disabled={!hasConvenios}
-                placeholder={hasConvenios ? 'Convênio' : 'Nenhum convênio cadastrado'}
-              />
+          <div className="patient-filter-grid" aria-label="Filtros de pacientes e cirurgias">
+            {(isAdmin || isTeam) && (
+              <>
+                <MultiSelectComboboxField
+                  className="filter-field"
+                  label="Cirurgião"
+                  values={pacienteFilters.medicoUserIds.map(String)}
+                  options={medicalUsers.map((user) => ({ value: String(user.id), label: user.nome }))}
+                  onValuesChange={(values) => onFiltersChange((current) => ({
+                    ...current,
+                    medicoUserIds: values.map(Number).filter(Number.isInteger),
+                  }))}
+                  disabled={!medicalUsers.length}
+                  allOptionLabel={isTeam ? 'Toda a equipe' : 'Todos os cirurgiões'}
+                  placeholder={medicalUsers.length
+                    ? (isTeam ? 'Toda a equipe' : 'Todos os cirurgiões')
+                    : 'Nenhum médico disponível'}
+                />
+                <MultiSelectComboboxField
+                  className="filter-field"
+                  label="Convênio"
+                  values={pacienteFilters.convenioIds.map(String)}
+                  options={convenios.map((convenio) => ({
+                    value: String(convenio.idConvenio),
+                    label: convenio.descricaoConvenio,
+                  }))}
+                  onValuesChange={(values) => onFiltersChange((current) => ({
+                    ...current,
+                    convenioIds: values.map(Number).filter(Number.isInteger),
+                  }))}
+                  disabled={!convenios.length}
+                  allOptionLabel="Todos os convênios"
+                  placeholder={convenios.length ? 'Todos os convênios' : 'Nenhum convênio cadastrado'}
+                />
+              </>
+            )}
+            {(isAdmin || isTeam) && (
               <TextField
                 className="filter-field"
                 label="Procedimento"
@@ -186,15 +205,31 @@ export function PatientList({
                 onValueChange={(value) => onFiltersChange((current) => ({ ...current, procedimento: value }))}
                 placeholder="Procedimento"
               />
-              <Button
-                className="patient-clear-filters"
-                onClick={onClearFilters}
-              >
-                <X size={17} />
-                Limpar filtros
-              </Button>
-            </div>
-          )}
+            )}
+            <DateInput
+              id="patient-attendance-start-date"
+              className="filter-field"
+              label="Data inicial do atendimento"
+              value={pacienteFilters.dataInicio}
+              max={pacienteFilters.dataFinal || undefined}
+              onChange={(value) => onFiltersChange((current) => ({ ...current, dataInicio: value }))}
+            />
+            <DateInput
+              id="patient-attendance-end-date"
+              className="filter-field"
+              label="Data final do atendimento"
+              value={pacienteFilters.dataFinal}
+              min={pacienteFilters.dataInicio || undefined}
+              onChange={(value) => onFiltersChange((current) => ({ ...current, dataFinal: value }))}
+            />
+            <Button
+              className="patient-clear-filters"
+              onClick={onClearFilters}
+            >
+              <X size={17} />
+              Limpar filtros
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -219,6 +254,12 @@ export function PatientList({
                   <button type="button" className="sort-header-button" onClick={() => onSortChange('nome')} aria-sort={sortBy === 'nome' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
                     Paciente
                     {sortBy === 'nome' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('data')} aria-sort={sortBy === 'data' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Data da solicitação
+                    {sortBy === 'data' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
                   </button>
                 </th>
                 <th>Info</th>
@@ -247,7 +288,7 @@ export function PatientList({
             <tbody>
               {pacientesLoading ? (
                 <tr>
-                  <td colSpan={7} className="empty-row">Carregando pacientes...</td>
+                  <td colSpan={8} className="empty-row">Carregando pacientes...</td>
                 </tr>
               ) : pacientes.length ? (
                 pacientes.map((paciente) => {
@@ -263,6 +304,7 @@ export function PatientList({
                         <span>{patientDisplayName}</span>
                       </div>
                     </td>
+                    <td data-label="Data da solicitação">{toDisplayDate(paciente.data) || '-'}</td>
                     <td data-label="Info">
                       <button
                         type="button"
@@ -345,7 +387,7 @@ export function PatientList({
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="empty-row">Nenhum paciente encontrado.</td>
+                  <td colSpan={8} className="empty-row">Nenhum paciente encontrado.</td>
                 </tr>
               )}
             </tbody>

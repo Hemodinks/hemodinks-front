@@ -13,6 +13,19 @@ Principios atuais:
 - privilegiar comportamento real em mobile
 - validar fluxos criticos com Vitest, Playwright, axe e Lighthouse
 
+### Camadas e direcao de dependencias
+
+A arquitetura usa modulos verticais por funcionalidade e quatro papeis inspirados em Clean Architecture:
+
+1. **Dominio/dados puros**: tipos, schemas, normalizacao e regras deterministicas; nao acessa React, DOM ou HTTP.
+2. **Aplicacao**: hooks e casos de uso que coordenam regras e portas de dados.
+3. **Infraestrutura**: `services` HTTP e adaptadores de arquivo/telemetria.
+4. **Apresentacao**: paginas, componentes e layout; delega operacoes aos hooks/casos de uso.
+
+A direcao permitida e apresentacao -> aplicacao -> dominio, com infraestrutura injetada ou chamada pela aplicacao. `shared` e `services` nao podem depender de `app` ou `features`. O comando `npm run audit:architecture` verifica essas fronteiras e impede novos arquivos de producao acima de 550 linhas, avisando a partir de 500.
+
+O modulo `features/reports` segue a mesma direcao: `ReportsPage` apenas compoe a tela, `useReportsPage` orquestra estado e consulta, `reportFilters` concentra regras puras e `export/` possui os adaptadores PDF/XLSX. A rota `/relatorios` herda temporariamente a autorizacao de faturamento ate a definicao da matriz definitiva de perfis.
+
 ## Estrutura
 
 ```text
@@ -25,15 +38,18 @@ src/
     events/
     medicalGroups/
     patients/
+      export/
     settings/
     users/
   layout/
   services/
   shared/
     components/
+      ui/
     hooks/
     utils/
     queryKeys.ts
+  types/
   styles/
 ```
 
@@ -43,7 +59,9 @@ Responsabilidades:
 | --- | --- |
 | `src/services/api.ts` | cliente HTTP centralizado com axios, tratamento comum de erros e auth bearer |
 | `src/services/*Service.ts` | contratos por endpoint/modulo |
-| `src/app/AppContent.tsx` | sessao, regras de acesso por perfil, navegacao e orquestracao dos dominios |
+| `src/app/AppContent.tsx` | composicao de navegacao, permissoes e dominios |
+| `src/features/auth/useLoginFlow.ts` | caso de uso de login, identificacao de equipe e reset de senha |
+| `src/features/auth/useSessionLifecycle.ts` | expiracao da sessao e hidratacao da licenca medica |
 | `src/app/useAppChrome.ts` | dashboard summary, notificacoes e configuracao do sistema |
 | `src/routes.ts` | mapeamento entre `AppView` e paths da SPA |
 | `src/queryClient.ts` | configuracao global do TanStack Query |
@@ -51,7 +69,14 @@ Responsabilidades:
 | `src/newRelic.ts` | inicializacao opcional do Browser agent do New Relic |
 | `src/observability.ts` | Sentry opcional e associacao do usuario logado |
 | `src/shared/queryKeys.ts` | chaves padronizadas de cache |
-| `src/shared/components/ui.tsx` | primitives de UI reutilizadas |
+| `src/shared/components/ui.tsx` | API publica (barrel) das primitivas de UI reutilizadas |
+| `src/shared/components/ui/*` | implementacoes coesas das primitivas de UI |
+| `src/features/patients/export/*` | schemas puros e adaptadores PDF/XLSX de pacientes |
+| `src/features/patients/usePatientFileActions.ts` | estado e ações de anexos isolados do domínio principal |
+| `src/features/billing/billingTypes.ts` | contratos puros do faturamento |
+| `src/features/billing/billingAnalytics.ts` | filtros, totais e agrupamentos financeiros puros |
+| `src/shared/utils/dateFormatters.ts` | conversões e validações de datas sem dependência visual |
+| `src/types/*` | contratos de domínio separados, reexportados por `src/types.ts` |
 | `src/shared/components/ErrorBoundary.tsx` | fallback visual para erros inesperados |
 | `src/layout` | App shell, sidebar, topbar e navegacao global |
 

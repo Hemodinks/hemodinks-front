@@ -101,6 +101,7 @@ export function AppModals({
           paciente={patientsDomain.selectedPatientFiles}
           loading={patientsDomain.patientFilesModalLoading}
           error={patientsDomain.patientFilesModalError}
+          sessionToken={session.token}
           onClose={patientsDomain.closePatientFilesModal}
         />
       )}

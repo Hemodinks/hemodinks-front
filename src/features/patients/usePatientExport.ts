@@ -4,13 +4,8 @@ import { getPacientes } from '../../services';
 import { getErrorMessage, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
 import { getPagedItems, getPagedTotalPages, sortPacientesForListing } from '../../shared/utils/listing';
 import type { AuthSession, Paciente } from '../../types';
-import {
-  createXlsxBlob,
-  downloadBlob,
-  getPacienteExportRows,
-  getPatientExportFileName,
-  pacienteExportColumns,
-} from './patientExport';
+import { exportPatientList } from './export/patientListExporter';
+import { getPacienteFilterQuery } from './patientUtils';
 
 type UsePatientExportOptions = {
   session: AuthSession | null;
@@ -62,16 +57,15 @@ export function usePatientExport({
     }
 
     if (scope === 'doctor') {
-      const medico = pacienteFilters.medico.trim();
-
-      if (!medico) {
-        throw new Error('Selecione um cirurgião antes de exportar por cirurgião.');
+      if (!pacienteFilters.medicoUserIds.length) {
+        throw new Error('Selecione ao menos um cirurgião antes de exportar por cirurgião.');
       }
 
-      return fetchPacientesForExport({ medico });
+      return fetchPacientesForExport(getPacienteFilterQuery(pacienteFilters));
     }
 
-    return fetchPacientesForExport({});
+    const { dataInicio, dataFinal } = getPacienteFilterQuery(pacienteFilters);
+    return fetchPacientesForExport({ dataInicio, dataFinal });
   };
 
   const handleExportPacientes = async (format: PacienteExportFormat) => {
@@ -84,46 +78,17 @@ export function usePatientExport({
 
     try {
       const exportItems = await loadPacientesForExport(pacienteExportScope);
-      const rows = getPacienteExportRows(exportItems);
-
-      if (format === 'xlsx') {
-        downloadBlob(createXlsxBlob(rows), getPatientExportFileName('xlsx', companyName));
-        return;
-      }
-
-      const [{ jsPDF }, autoTableModule] = await Promise.all([
-        import('jspdf'),
-        import('jspdf-autotable'),
-      ]);
-      const autoTable = autoTableModule.default;
-      const document = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-      document.setFontSize(14);
-      document.text(`Cadastro de pacientes - ${companyName}`, 40, 34);
-      document.setFontSize(9);
-      document.text(`Gerado em ${new Intl.DateTimeFormat('pt-BR').format(new Date())}`, 40, 50);
-      autoTable(document, {
-        head: [pacienteExportColumns.map((column) => column.header)],
-        body: exportItems.map((paciente) => pacienteExportColumns.map((column) => column.getValue(paciente))),
-        startY: 64,
-        columnStyles: {
-          0: { cellWidth: 80 },
-          1: { cellWidth: 50 },
-          7: { cellWidth: 40 },
-          9: { cellWidth: 100 },
-          15: { cellWidth: 35 },
-        },
-        styles: {
-          fontSize: 6.6,
-          cellPadding: 3,
-          overflow: 'linebreak',
-        },
-        headStyles: {
-          fillColor: [15, 118, 110],
-          textColor: 255,
-        },
-        margin: { left: 24, right: 24 },
+      const period = [pacienteFilters.dataInicio, pacienteFilters.dataFinal].filter(Boolean).join(' a ');
+      const scopeLabel = pacienteExportScope === 'all'
+        ? 'Todos os pacientes'
+        : pacienteExportScope === 'doctor' ? 'Cirurgiões selecionados' : 'Dados da tela';
+      await exportPatientList({
+        format,
+        items: exportItems,
+        companyName,
+        sessionToken: session.token,
+        contextLines: [scopeLabel, period ? `Período: ${period}` : 'Período: todos'],
       });
-      document.save(getPatientExportFileName('pdf', companyName));
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     } finally {

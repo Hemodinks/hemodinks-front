@@ -4,6 +4,7 @@ import { resolveClinicaRequestHeaders } from './clinicaContext';
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 const DEFAULT_ERROR_MESSAGE = 'Nao foi possivel concluir a operacao.';
 const UNAUTHORIZED_ERROR_MESSAGE = 'Credenciais invalidas ou sessao expirada.';
+const FORBIDDEN_ERROR_MESSAGE = 'Operação não permitida.';
 export const AUTH_EXPIRED_EVENT = 'hemodinks:auth-expired';
 
 type RequestConfig = Omit<AxiosRequestConfig, 'data' | 'method' | 'url'>;
@@ -45,6 +46,10 @@ function toApiError(error: unknown, notifyUnauthorized = false) {
       }
 
       return new Error(UNAUTHORIZED_ERROR_MESSAGE);
+    }
+
+    if (error.response?.status === 403) {
+      return new Error(FORBIDDEN_ERROR_MESSAGE);
     }
 
     const data = error.response?.data;
@@ -103,7 +108,7 @@ export function getBlob(path: string, token?: string, config: RequestConfig = {}
     responseType: 'blob',
     ...config,
     headers: buildAuthHeaders(token, config.headers),
-  }, Boolean(token));
+  });
 }
 
 export function getExternal<T>(url: string, config: RequestConfig = {}) {

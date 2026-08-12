@@ -1,5 +1,4 @@
 import {
-  type ButtonHTMLAttributes,
   type ChangeEvent,
   type HTMLAttributes,
   type InputHTMLAttributes,
@@ -10,130 +9,16 @@ import {
   useRef,
   useState,
 } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { Check, ChevronDown, X } from 'lucide-react';
+import { classNames as cx } from './ui/classNames';
 
-function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(' ');
-}
+export { Button, IconButton, SearchField, TextField } from './ui/actions';
 
 function normalizeComboboxText(value: string) {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase('pt-BR');
-}
-
-type ButtonVariant = 'primary' | 'ghost' | 'danger-ghost';
-
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: ButtonVariant;
-  fullWidth?: boolean;
-};
-
-export function Button({
-  variant = 'ghost',
-  fullWidth = false,
-  className,
-  type = 'button',
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      {...props}
-      type={type}
-      className={cx(
-        variant === 'primary' && 'primary-action',
-        variant === 'ghost' && 'ghost-button',
-        variant === 'danger-ghost' && 'ghost-button danger-text',
-        fullWidth && 'full-width',
-        className,
-      )}
-    />
-  );
-}
-
-type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  label: string;
-  tone?: 'default' | 'muted' | 'danger';
-};
-
-export function IconButton({
-  label,
-  tone = 'default',
-  className,
-  title,
-  type = 'button',
-  ...props
-}: IconButtonProps) {
-  return (
-    <button
-      {...props}
-      type={type}
-      aria-label={label}
-      title={title ?? label}
-      className={cx(
-        'icon-button',
-        tone === 'muted' && 'muted',
-        tone === 'danger' && 'danger',
-        className,
-      )}
-    />
-  );
-}
-
-type SearchFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> & {
-  label: string;
-  value: string;
-  onValueChange: (value: string) => void;
-};
-
-export function SearchField({
-  label,
-  value,
-  onValueChange,
-  className,
-  placeholder = 'Buscar',
-  ...props
-}: SearchFieldProps) {
-  return (
-    <label className={cx('search-box', className)}>
-      <Search size={17} aria-hidden="true" />
-      <span className="sr-only">{label}</span>
-      <input
-        {...props}
-        type="search"
-        value={value}
-        onChange={(event) => onValueChange(event.target.value)}
-        placeholder={placeholder}
-        aria-label={label}
-      />
-    </label>
-  );
-}
-
-type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> & {
-  label: string;
-  value: string;
-  onValueChange: (value: string, event: ChangeEvent<HTMLInputElement>) => void;
-};
-
-export function TextField({
-  label,
-  value,
-  onValueChange,
-  className,
-  ...props
-}: TextFieldProps) {
-  return (
-    <label className={className}>
-      {label}
-      <input
-        {...props}
-        value={value}
-        onChange={(event) => onValueChange(event.target.value, event)}
-      />
-    </label>
-  );
 }
 
 type ComboboxFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'children'> & {
@@ -157,7 +42,7 @@ export function ComboboxField({
 }: ComboboxFieldProps) {
   const fieldId = useId();
   const listboxId = `${fieldId}-listbox`;
-  const fieldRef = useRef<HTMLLabelElement>(null);
+  const fieldRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -180,7 +65,7 @@ export function ComboboxField({
   };
 
   return (
-    <label
+    <div
       ref={fieldRef}
       className={cx('combobox-field', className)}
       onBlur={(event) => {
@@ -194,10 +79,11 @@ export function ComboboxField({
         setActiveIndex(-1);
       }}
     >
-      {label}
+      <label htmlFor={fieldId}>{label}</label>
       <div className="combobox-control">
         <input
           {...props}
+          id={fieldId}
           ref={inputRef}
           type="text"
           value={value}
@@ -307,7 +193,174 @@ export function ComboboxField({
           </div>
         )}
       </div>
-    </label>
+    </div>
+  );
+}
+
+export type MultiSelectOption = {
+  value: string;
+  label: string;
+};
+
+type MultiSelectComboboxFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'children'> & {
+  label: string;
+  values: string[];
+  options: MultiSelectOption[];
+  onValuesChange: (values: string[]) => void;
+  allOptionLabel?: string;
+  noOptionsLabel?: string;
+};
+
+export function MultiSelectComboboxField({
+  label,
+  values,
+  options,
+  onValuesChange,
+  allOptionLabel = 'Todos',
+  noOptionsLabel = 'Nenhuma opção encontrada.',
+  className,
+  disabled = false,
+  placeholder,
+  ...props
+}: MultiSelectComboboxFieldProps) {
+  const fieldId = useId();
+  const listboxId = `${fieldId}-listbox`;
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedValues = new Set(values);
+  const uniqueOptions = options.filter((option, index, list) => (
+    option.value && list.findIndex((candidate) => candidate.value === option.value) === index
+  ));
+  const normalizedQuery = normalizeComboboxText(query.trim());
+  const filteredOptions = normalizedQuery
+    ? uniqueOptions.filter((option) => normalizeComboboxText(option.label).includes(normalizedQuery))
+    : uniqueOptions;
+
+  const toggleValue = (value: string) => {
+    onValuesChange(selectedValues.has(value)
+      ? values.filter((selected) => selected !== value)
+      : [...values, value]);
+    setQuery('');
+    setIsOpen(true);
+    inputRef.current?.focus();
+  };
+
+  return (
+    <div
+      ref={fieldRef}
+      className={cx('multi-combobox-field', className)}
+      onBlur={(event) => {
+        const nextTarget = event.relatedTarget;
+        if (!(nextTarget instanceof Node) || !fieldRef.current?.contains(nextTarget)) {
+          setIsOpen(false);
+          setQuery('');
+        }
+      }}
+    >
+      <label htmlFor={fieldId}>{label}</label>
+      <div className="multi-combobox-control" onClick={() => inputRef.current?.focus()}>
+        {values.map((value) => {
+          const option = uniqueOptions.find((candidate) => candidate.value === value);
+          return option ? (
+            <span className="multi-combobox-chip" key={value}>
+              {option.label}
+              <button
+                type="button"
+                aria-label={`Remover ${option.label}`}
+                disabled={disabled}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleValue(value);
+                }}
+              >
+                <X size={13} />
+              </button>
+            </span>
+          ) : null;
+        })}
+        <input
+          {...props}
+          id={fieldId}
+          ref={inputRef}
+          type="text"
+          value={query}
+          disabled={disabled}
+          placeholder={values.length ? 'Digite para adicionar...' : (placeholder ?? allOptionLabel)}
+          autoComplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-controls={listboxId}
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          onFocus={() => !disabled && setIsOpen(true)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setIsOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              setIsOpen(false);
+              setQuery('');
+            } else if (event.key === 'Backspace' && !query && values.length) {
+              onValuesChange(values.slice(0, -1));
+            } else if (event.key === 'Enter' && filteredOptions.length === 1) {
+              event.preventDefault();
+              toggleValue(filteredOptions[0].value);
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="multi-combobox-toggle"
+          aria-label={`${isOpen ? 'Fechar' : 'Abrir'} opções de ${label.toLowerCase()}`}
+          disabled={disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={(event) => {
+            event.stopPropagation();
+            setIsOpen((current) => !current);
+            inputRef.current?.focus();
+          }}
+        >
+          {isOpen ? <X size={16} /> : <ChevronDown size={16} />}
+        </button>
+      </div>
+      {isOpen && !disabled && (
+        <div className="multi-combobox-listbox" id={listboxId} role="listbox" aria-multiselectable="true">
+          <button
+            type="button"
+            className={cx('multi-combobox-option', values.length === 0 && 'is-selected')}
+            role="option"
+            aria-selected={values.length === 0}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              onValuesChange([]);
+              setQuery('');
+            }}
+          >
+            <span>{allOptionLabel}</span>
+            {values.length === 0 && <Check size={16} />}
+          </button>
+          {filteredOptions.map((option) => (
+            <button
+              type="button"
+              className={cx('multi-combobox-option', selectedValues.has(option.value) && 'is-selected')}
+              key={option.value}
+              role="option"
+              aria-selected={selectedValues.has(option.value)}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => toggleValue(option.value)}
+            >
+              <span>{option.label}</span>
+              {selectedValues.has(option.value) && <Check size={16} />}
+            </button>
+          ))}
+          {!filteredOptions.length && <div className="combobox-empty">{noOptionsLabel}</div>}
+        </div>
+      )}
+    </div>
   );
 }
 

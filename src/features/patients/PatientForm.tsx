@@ -1,23 +1,25 @@
-import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect } from 'react';
 import { FileText, FileUp, MessageSquareText, Plus, Save, Search, Trash2, X } from 'lucide-react';
 import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
-import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
+import { AlertMessage, Button, CheckboxField, ComboboxField, FormPanel, IconButton, TextField, TextareaField } from '../../shared/components/ui';
+import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
+import { downloadPacienteArquivo } from '../../services';
 import {
-  CONVENIOS_DATALIST_ID,
   findConvenioByDescription,
   findHospitalByName,
+  findMedicalUserByName,
   findOpmeFornecedorByName,
   formatCurrency,
   formatCurrencyInput,
   formatPersonName,
-  HOSPITAIS_DATALIST_ID,
   MAX_DIAGNOSIS_LENGTH,
   MAX_NAME_LENGTH,
   MAX_OBSERVATION_LENGTH,
   MAX_TREATMENT_MEDICAL_LENGTH,
-  OPME_FORNECEDORES_DATALIST_ID,
 } from '../../shared/utils/formatters';
+import { getCalculatedGlosaValue } from './patientUtils';
+import { usePatientFormExport } from './usePatientFormExport';
 
 type PatientFormProps = {
   canEditPatients: boolean;
@@ -29,6 +31,7 @@ type PatientFormProps = {
   pacienteFormLoading: boolean;
   pendingPatientFiles: File[];
   patientFileInputKey: number;
+  sessionToken: string;
   hospitais: Hospital[];
   hospitaisError: string;
   medicalUsers: MedicalUserOption[];
@@ -37,6 +40,7 @@ type PatientFormProps = {
   opmeFornecedores: OpmeFornecedor[];
   opmeFornecedoresError: string;
   isMedical: boolean;
+  companyName: string;
   setPacienteFormData: Dispatch<SetStateAction<PacienteFormData>>;
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -66,6 +70,7 @@ export function PatientForm({
   pacienteFormLoading,
   pendingPatientFiles,
   patientFileInputKey,
+  sessionToken,
   hospitais,
   hospitaisError,
   medicalUsers,
@@ -74,6 +79,7 @@ export function PatientForm({
   opmeFornecedores,
   opmeFornecedoresError,
   isMedical,
+  companyName,
   setPacienteFormData,
   onClose,
   onSubmit,
@@ -86,43 +92,16 @@ export function PatientForm({
 }: PatientFormProps) {
   const formReadOnly = patientReadOnly || (editingPacienteId ? !canEditPatients : false);
   const canSubmitForm = !formReadOnly && (!editingPacienteId || canEditPatients);
+  const { exportLoading, exportError, handleExport } = usePatientFormExport({
+    editingPacienteId,
+    sessionToken,
+    pacienteFormData,
+    companyName,
+  });
   const estimatedValue = pacienteFormData.procedimentos.reduce(
     (total, procedimento) => total + (procedimento.valorReferencia ?? 0),
     0,
   );
-
-  const getLegacyMedicalOption = (field: MedicalTeamField) => {
-    const config = medicalTeamFields[field];
-    const userId = pacienteFormData[config.idKey];
-    const legacyName = formatPersonName(pacienteFormData[config.nameKey]);
-
-    if (!legacyName) {
-      return null;
-    }
-
-    if (userId != null && medicalUsers.some((user) => user.id === userId)) {
-      return null;
-    }
-
-    return {
-      value: userId != null ? `legacy:${userId}` : 'legacy',
-      label: userId != null
-        ? `${legacyName} (fora da sua lista)`
-        : `${legacyName} (fora do cadastro)`,
-    };
-  };
-
-  const getMedicalSelectValue = (field: MedicalTeamField) => {
-    const config = medicalTeamFields[field];
-    const userId = pacienteFormData[config.idKey];
-    const legacyOption = getLegacyMedicalOption(field);
-
-    if (userId != null && !legacyOption) {
-      return String(userId);
-    }
-
-    return legacyOption?.value ?? '';
-  };
 
   const isMedicalUserSelectedElsewhere = (field: MedicalTeamField, userId: number) => (
     Object.entries(medicalTeamFields).some(([currentField, config]) => (
@@ -130,10 +109,15 @@ export function PatientForm({
     ))
   );
 
+  const hasExportableFormData = pacienteFormData.nomePaciente.trim().length > 0
+    && pacienteFormData.hospital.trim().length > 0
+    && pacienteFormData.procedimentos.length > 0;
+
+  const canExportForm = Boolean(editingPacienteId || hasExportableFormData);
+
   const updateMedicalTeamMember = (field: MedicalTeamField, value: string) => {
     const config = medicalTeamFields[field];
-    const userId = value && !value.startsWith('legacy') ? Number(value) : null;
-    const selectedUser = userId != null ? medicalUsers.find((user) => user.id === userId) : undefined;
+    const selectedUser = findMedicalUserByName(medicalUsers, value);
 
     setPacienteFormData((current) => ({
       ...current,
@@ -142,23 +126,16 @@ export function PatientForm({
     }));
   };
 
-  const renderMedicalOptions = (field: MedicalTeamField, emptyLabel: string) => {
-    const legacyOption = getLegacyMedicalOption(field);
+  const getMedicalOptions = (field: MedicalTeamField) => medicalUsers
+    .filter((user) => !isMedicalUserSelectedElsewhere(field, user.id))
+    .map((user) => formatPersonName(user.nome));
 
-    return (
-      <>
-        <option value="">{emptyLabel}</option>
-        {legacyOption && (
-          <option value={legacyOption.value}>{legacyOption.label}</option>
-        )}
-        {medicalUsers.map((user) => (
-          <option key={user.id} value={user.id} disabled={isMedicalUserSelectedElsewhere(field, user.id)}>
-            {formatPersonName(user.nome)}
-          </option>
-        ))}
-      </>
-    );
-  };
+  useEffect(() => {
+    const calculatedGlosa = getCalculatedGlosaValue(estimatedValue, pacienteFormData.pagamento);
+    setPacienteFormData((current) => current.repasseGlosa === calculatedGlosa
+      ? current
+      : { ...current, repasseGlosa: calculatedGlosa });
+  }, [estimatedValue, pacienteFormData.pagamento, setPacienteFormData]);
 
   return (
     <FormPanel className="module-form-panel">
@@ -168,19 +145,34 @@ export function PatientForm({
           <h2>{editingPacienteId ? formReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'}</h2>
         </div>
         <div className="panel-title-actions">
+          <Button variant="ghost" className="patient-export-actions-button export-pdf-btn" type="button" disabled={!canExportForm || exportLoading != null} onClick={() => void handleExport('pdf')}>
+            {exportLoading === 'pdf' ? 'Gerando PDF...' : 'Exportar PDF'}
+          </Button>
+          <Button variant="ghost" className="patient-export-actions-button export-xlsx-btn" type="button" disabled={!canExportForm || exportLoading != null} onClick={() => void handleExport('xlsx')}>
+            {exportLoading === 'xlsx' ? 'Gerando planilha...' : 'Exportar Planilha'}
+          </Button>
           <IconButton label="Voltar para lista" tone="muted" onClick={onClose}>
             <X size={18} />
           </IconButton>
         </div>
       </div>
 
+      {exportError && <AlertMessage type="error">{exportError}</AlertMessage>}
+
       <form className="stack module-form-grid" onSubmit={onSubmit}>
         <fieldset className="form-fieldset" disabled={formReadOnly}>
           <DateInput
             id="patient-procedure-date"
-            label="Data procedimento"
+            label="Data da Solicitação"
             value={pacienteFormData.data || ''}
             onChange={(value) => setPacienteFormData((current) => ({ ...current, data: value }))}
+          />
+
+          <DateInput
+            id="patient-appointment-date"
+            label="Data do Atendimento"
+            value={pacienteFormData.dataAtendimento || ''}
+            onChange={(value) => setPacienteFormData((current) => ({ ...current, dataAtendimento: value }))}
           />
 
           <TextField
@@ -195,7 +187,7 @@ export function PatientForm({
           <div className="two-column-fields">
             <TextareaField
               className="patient-form-tall-field"
-              label="Diagnóstico"
+              label="Informações Adicionais"
               value={pacienteFormData.diagnostico}
               onValueChange={(value) => setPacienteFormData((current) => ({ ...current, diagnostico: value.slice(0, MAX_DIAGNOSIS_LENGTH) }))}
               maxLength={MAX_DIAGNOSIS_LENGTH}
@@ -213,19 +205,12 @@ export function PatientForm({
           </div>
 
           <div className="patient-form-clinical-grid">
-            <datalist id={HOSPITAIS_DATALIST_ID}>
-              {hospitais.map((hospital) => (
-                <option key={hospital.id} value={hospital.nome} />
-              ))}
-            </datalist>
-
             <div className="patient-form-clinical-column">
               <div className="patient-form-slot">
-                <TextField
+                <ComboboxField
                   label="Convênio"
-                  type="text"
-                  list={CONVENIOS_DATALIST_ID}
                   value={pacienteFormData.convenio}
+                  options={convenios.map((convenio) => convenio.descricaoConvenio)}
                   onValueChange={(value) => {
                     const convenio = value.slice(0, MAX_NAME_LENGTH);
                     const selectedConvenio = findConvenioByDescription(convenios, convenio);
@@ -238,16 +223,16 @@ export function PatientForm({
                   disabled={formReadOnly}
                   maxLength={MAX_NAME_LENGTH}
                   placeholder={convenios.length ? 'Selecione ou digite o convênio' : 'Digite o convênio'}
+                  noOptionsLabel="Novo convênio: será cadastrado ao salvar."
                 />
                 {conveniosError && <AlertMessage type="error">{conveniosError}</AlertMessage>}
               </div>
 
               <div className="patient-form-slot">
-                <TextField
+                <ComboboxField
                   label="Hospital"
-                  type="text"
-                  list={HOSPITAIS_DATALIST_ID}
                   value={pacienteFormData.hospital}
+                  options={hospitais.map((hospital) => hospital.nome)}
                   onValueChange={(value) => {
                     const hospital = value.slice(0, MAX_NAME_LENGTH);
                     const selectedHospital = findHospitalByName(hospitais, hospital);
@@ -260,17 +245,17 @@ export function PatientForm({
                   disabled={formReadOnly}
                   maxLength={MAX_NAME_LENGTH}
                   placeholder={hospitais.length ? 'Selecione ou digite o hospital' : 'Digite o hospital'}
+                  noOptionsLabel="Novo hospital: será cadastrado ao salvar."
                   required
                 />
                 {hospitaisError && <AlertMessage type="error">{hospitaisError}</AlertMessage>}
               </div>
 
               <div className="patient-form-slot">
-                <TextField
+                <ComboboxField
                   label="Fornecedor OPME"
-                  type="text"
-                  list={OPME_FORNECEDORES_DATALIST_ID}
                   value={pacienteFormData.opmeFornecedor}
+                  options={opmeFornecedores.map((fornecedor) => fornecedor.fornecedor)}
                   onValueChange={(value) => {
                     const opmeFornecedor = value.slice(0, MAX_NAME_LENGTH);
                     const selectedFornecedor = findOpmeFornecedorByName(opmeFornecedores, opmeFornecedor);
@@ -282,6 +267,7 @@ export function PatientForm({
                   }}
                   maxLength={MAX_NAME_LENGTH}
                   placeholder={opmeFornecedores.length ? 'Selecione ou digite o fornecedor OPME' : 'Digite o fornecedor OPME'}
+                  noOptionsLabel="Novo fornecedor: será cadastrado ao salvar."
                 />
                 {opmeFornecedoresError && <AlertMessage type="error">{opmeFornecedoresError}</AlertMessage>}
               </div>
@@ -289,36 +275,36 @@ export function PatientForm({
 
             <div className="patient-form-clinical-column">
               <div className="patient-form-slot">
-                <SelectField
+                <ComboboxField
                   label="Cirurgião"
-                  value={getMedicalSelectValue('medico')}
-                  onChange={(event) => updateMedicalTeamMember('medico', event.target.value)}
+                  value={formatPersonName(pacienteFormData.medico)}
+                  options={getMedicalOptions('medico')}
+                  onValueChange={(value) => updateMedicalTeamMember('medico', value)}
                   disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medico)}
-                >
-                  {renderMedicalOptions('medico', medicalUsers.length ? 'Selecione um cirurgião' : 'Nenhum médico cadastrado')}
-                </SelectField>
+                  placeholder={medicalUsers.length ? 'Digite para buscar um cirurgião' : 'Nenhum médico cadastrado'}
+                />
               </div>
 
               <div className="patient-form-slot">
-                <SelectField
+                <ComboboxField
                   label="Médico auxiliar 1"
-                  value={getMedicalSelectValue('medicoAuxiliar1')}
-                  onChange={(event) => updateMedicalTeamMember('medicoAuxiliar1', event.target.value)}
+                  value={formatPersonName(pacienteFormData.medicoAuxiliar1)}
+                  options={getMedicalOptions('medicoAuxiliar1')}
+                  onValueChange={(value) => updateMedicalTeamMember('medicoAuxiliar1', value)}
                   disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar1)}
-                >
-                  {renderMedicalOptions('medicoAuxiliar1', medicalUsers.length ? 'Selecione um médico auxiliar' : 'Nenhum médico cadastrado')}
-                </SelectField>
+                  placeholder={medicalUsers.length ? 'Digite para buscar um médico auxiliar' : 'Nenhum médico cadastrado'}
+                />
               </div>
 
               <div className="patient-form-slot">
-                <SelectField
+                <ComboboxField
                   label="Médico auxiliar 2"
-                  value={getMedicalSelectValue('medicoAuxiliar2')}
-                  onChange={(event) => updateMedicalTeamMember('medicoAuxiliar2', event.target.value)}
+                  value={formatPersonName(pacienteFormData.medicoAuxiliar2)}
+                  options={getMedicalOptions('medicoAuxiliar2')}
+                  onValueChange={(value) => updateMedicalTeamMember('medicoAuxiliar2', value)}
                   disabled={formReadOnly || (!medicalUsers.length && !pacienteFormData.medicoAuxiliar2)}
-                >
-                  {renderMedicalOptions('medicoAuxiliar2', medicalUsers.length ? 'Selecione um médico auxiliar' : 'Nenhum médico cadastrado')}
-                </SelectField>
+                  placeholder={medicalUsers.length ? 'Digite para buscar um médico auxiliar' : 'Nenhum médico cadastrado'}
+                />
               </div>
             </div>
           </div>
@@ -372,10 +358,9 @@ export function PatientForm({
               label="Glosa"
               type="text"
               value={pacienteFormData.repasseGlosa}
-              onValueChange={(value) => setPacienteFormData((current) => ({ ...current, repasseGlosa: formatCurrencyInput(value) }))}
-              inputMode="numeric"
-              maxLength={24}
-              placeholder="R$ 0,00"
+              onValueChange={() => undefined}
+              disabled
+              aria-readonly="true"
             />
           </div>
 
@@ -394,7 +379,8 @@ export function PatientForm({
               type="text"
               value={pacienteFormData.pagamento}
               onValueChange={(value) => setPacienteFormData((current) => ({ ...current, pagamento: formatCurrencyInput(value) }))}
-              inputMode="numeric"
+              inputMode="decimal"
+              onFocus={(event) => event.currentTarget.select()}
               maxLength={24}
               placeholder="R$ 0,00"
             />
@@ -463,7 +449,11 @@ export function PatientForm({
                 {editingPaciente.arquivos.map((arquivo) => (
                   <li key={arquivo.id}>
                     <FileText size={15} />
-                    <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
+                    <SecureFileDownloadButton
+                      fileName={arquivo.nomeOriginal}
+                      label={arquivo.nomeOriginal}
+                      loadFile={() => downloadPacienteArquivo(editingPaciente.id, arquivo.id, sessionToken)}
+                    />
                     {!formReadOnly && canEditPatients && (
                       <IconButton label="Excluir arquivo" tone="muted" className="mini" onClick={() => void onDeletePacienteArquivo(editingPaciente, arquivo.id)}>
                         <Trash2 size={14} />
@@ -475,11 +465,24 @@ export function PatientForm({
             ) : null}
           </div>
 
-          <CheckboxField
-            label="Status Pago"
-            checked={pacienteFormData.statusPago}
-            onCheckedChange={(checked) => setPacienteFormData((current) => ({ ...current, statusPago: checked }))}
-          />
+          <div className="two-column-fields">
+            <CheckboxField
+              label="Status Pago"
+              checked={pacienteFormData.statusPago}
+              onCheckedChange={(checked) => setPacienteFormData((current) => ({
+                ...current,
+                statusPago: checked,
+                dataPagamento: checked ? current.dataPagamento : '',
+              }))}
+            />
+            <DateInput
+              id="patient-payment-date"
+              label="Data do Pagamento"
+              value={pacienteFormData.dataPagamento}
+              onChange={(dataPagamento) => setPacienteFormData((current) => ({ ...current, dataPagamento }))}
+              disabled={!pacienteFormData.statusPago}
+            />
+          </div>
 
           <CheckboxField
             label="Paciente ativo"

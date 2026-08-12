@@ -4,15 +4,15 @@ import { DashboardPage } from '../features/dashboard/DashboardPage';
 import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
 import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
 import type { UsersDomainState } from '../features/users/useUsersDomain';
-import { queryClient } from '../queryClient';
-import { queryKeys } from '../shared/queryKeys';
-import type { AuthSession, SystemSettings } from '../types';
+import type { AuthSession, SelectClinicResponse } from '../types';
 import {
   AgendaPage,
   BillingPage,
+  ClinicsPage,
   MedicalGroupsPage,
   ModuleFallback,
   PatientsPage,
+  ReportsPage,
   SystemSettingsPage,
   UsersPage,
 } from './lazyModules';
@@ -22,7 +22,9 @@ type AccessState = {
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
+  canAccessReports: boolean;
   canAccessMedicalGroups: boolean;
+  canAccessAgenda: boolean;
   canAccessSettings: boolean;
   canCreatePatients: boolean;
   canEditPatients: boolean;
@@ -30,7 +32,10 @@ type AccessState = {
   canManagePatientObservacoes: boolean;
   patientReadOnly: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
+  isTeam: boolean;
   isMedical: boolean;
+  canAccessClinics: boolean;
 };
 
 type DashboardCounts = {
@@ -49,9 +54,11 @@ type NavigationActions = {
   openMyProfile: () => void;
   openPatientsList: () => void;
   openBilling: () => void;
+  openReports: () => void;
   openMedicalGroups: () => void;
   openAgenda: () => void;
   openSettings: () => void;
+  openClinics: () => void;
 };
 
 type SortHandlers = {
@@ -72,13 +79,11 @@ type AppMainContentProps = {
   medicalGroupsDomain: MedicalGroupsDomainState;
   dashboardError: string;
   theme: Theme;
-  systemSettings: SystemSettings;
-  settingsLoading: boolean;
-  settingsError: string;
   navigation: NavigationActions;
   sortHandlers: SortHandlers;
   onThemeChange: (theme: Theme) => void;
   onPasswordChanged: (message: string) => void;
+  onClinicSelected: (result: SelectClinicResponse) => void;
 };
 
 export function AppMainContent({
@@ -93,20 +98,20 @@ export function AppMainContent({
   medicalGroupsDomain,
   dashboardError,
   theme,
-  systemSettings,
-  settingsLoading,
-  settingsError,
   navigation,
   sortHandlers,
   onThemeChange,
   onPasswordChanged,
+  onClinicSelected,
 }: AppMainContentProps) {
   const {
     canAccessPatients,
     canAccessUsers,
     canEditOwnUser,
     canAccessBilling,
+    canAccessReports,
     canAccessMedicalGroups,
+    canAccessAgenda,
     canAccessSettings,
     canCreatePatients,
     canEditPatients,
@@ -114,7 +119,10 @@ export function AppMainContent({
     canManagePatientObservacoes,
     patientReadOnly,
     isAdmin,
+    isSuperAdmin,
+    isTeam,
     isMedical,
+    canAccessClinics,
   } = access;
   const {
     usersCount,
@@ -137,7 +145,9 @@ export function AppMainContent({
           canEditOwnUser={canEditOwnUser}
           canAccessBilling={canAccessBilling}
           canAccessMedicalGroups={canAccessMedicalGroups}
+          canAccessAgenda={canAccessAgenda}
           canAccessSettings={canAccessSettings}
+          canAccessClinics={canAccessClinics}
           patientReadOnly={patientReadOnly}
           usersCount={usersCount}
           pacientesCount={pacientesCount}
@@ -156,11 +166,14 @@ export function AppMainContent({
           onOpenMedicalGroups={navigation.openMedicalGroups}
           onOpenAgenda={navigation.openAgenda}
           onOpenSettings={navigation.openSettings}
+          onOpenClinics={navigation.openClinics}
         />
       ) : activeView === 'users' || activeView === 'profile' ? (
         <UsersPage
           moduleMode={moduleMode}
           canAccessUsers={canAccessUsers}
+          canManageUsers={isAdmin}
+          isSuperAdmin={isSuperAdmin}
           canUseUserForm={usersDomain.canUseUserForm}
           editingId={usersDomain.editingId}
           editingUserDetails={usersDomain.editingUserDetails}
@@ -239,6 +252,7 @@ export function AppMainContent({
           opmeFornecedores={patientsDomain.opmeFornecedores}
           opmeFornecedoresError={patientsDomain.opmeFornecedoresError}
           isAdmin={isAdmin}
+          isTeam={isTeam}
           isMedical={isMedical}
           sessionToken={session.token}
           setPacienteFormData={patientsDomain.setPacienteFormData}
@@ -256,6 +270,7 @@ export function AppMainContent({
           removePendingPatientFile={patientsDomain.removePendingPatientFile}
           handleDeletePacienteArquivo={patientsDomain.handleDeletePacienteArquivo}
           handleExportPacientes={patientsDomain.handleExportPacientes}
+          companyName={companyName}
           handleEditPaciente={patientsDomain.handleEditPaciente}
           handleDeletePaciente={patientsDomain.handleDeletePaciente}
           handleOpenPacienteFiles={patientsDomain.handleOpenPacienteFiles}
@@ -264,6 +279,8 @@ export function AppMainContent({
           clearPacienteFilters={patientsDomain.clearPacienteFilters}
           refreshPacientes={patientsDomain.refreshPacientes}
         />
+      ) : activeView === 'clinics' && canAccessClinics ? (
+        <ClinicsPage session={session} onClinicSelected={onClinicSelected} />
       ) : activeView === 'billing' ? (
         <BillingPage
           session={session}
@@ -272,6 +289,8 @@ export function AppMainContent({
           isAdmin={isAdmin}
           isMedical={isMedical}
         />
+      ) : activeView === 'reports' && canAccessReports ? (
+        <ReportsPage session={session} companyName={companyName} isMedical={isMedical} />
       ) : activeView === 'medicalGroups' ? (
         <MedicalGroupsPage
           moduleMode={moduleMode}
@@ -308,13 +327,8 @@ export function AppMainContent({
       ) : activeView === 'settings' ? (
         <SystemSettingsPage
           session={session}
-          settings={systemSettings}
-          settingsLoading={settingsLoading}
-          settingsError={settingsError}
-          isAdmin={isAdmin}
           theme={theme}
           onThemeChange={onThemeChange}
-          onSettingsUpdated={(updated) => queryClient.setQueryData(queryKeys.systemSettings(), updated)}
           onPasswordChanged={onPasswordChanged}
         />
       ) : (

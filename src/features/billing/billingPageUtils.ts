@@ -1,7 +1,43 @@
 import { getFaturamentosMedicos } from '../../services';
 import { normalizeDisplayText, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
 import type { Paciente } from '../../types';
-import type { BillingFilters, BillingRegimeFilter, BillingStatusFilter } from './billingUtils';
+import type { BillingFilters, BillingRecord, BillingRegimeFilter, BillingStatusFilter } from './billingUtils';
+
+export type BillingSortField = 'patient' | 'doctor' | 'status';
+
+type BillingPageOptions = {
+  currentPage: number;
+  pageSize: number;
+  sortBy: BillingSortField;
+  sortDirection: 'asc' | 'desc';
+};
+
+export function getBillingPage(records: BillingRecord[], options: BillingPageOptions) {
+  const sortedRecords = [...records].sort((left, right) => {
+    const leftValue = options.sortBy === 'patient'
+      ? left.patientName
+      : options.sortBy === 'doctor'
+        ? left.doctorName
+        : left.statusLabel;
+    const rightValue = options.sortBy === 'patient'
+      ? right.patientName
+      : options.sortBy === 'doctor'
+        ? right.doctorName
+        : right.statusLabel;
+    const comparison = leftValue.localeCompare(rightValue, 'pt-BR', {
+      numeric: true,
+      sensitivity: 'base',
+    });
+    return options.sortDirection === 'asc' ? comparison : -comparison;
+  });
+  const totalPages = Math.max(1, Math.ceil(sortedRecords.length / options.pageSize));
+  const visiblePage = Math.min(options.currentPage, totalPages);
+  const visibleStart = sortedRecords.length ? ((visiblePage - 1) * options.pageSize) + 1 : 0;
+  const visibleEnd = Math.min(visiblePage * options.pageSize, sortedRecords.length);
+  const recordsForPage = sortedRecords.slice(visibleStart ? visibleStart - 1 : 0, visibleEnd);
+
+  return { totalPages, visiblePage, visibleStart, visibleEnd, records: recordsForPage };
+}
 
 export const BILLING_STATUS_FILTER_OPTIONS: Array<{ label: string; value: BillingStatusFilter }> = [
   { label: 'Todos', value: 'all' },
@@ -64,6 +100,8 @@ export function areBillingFiltersEqual(left: BillingFilters, right: BillingFilte
     && normalizeBillingFilterText(left.procedimento) === normalizeBillingFilterText(right.procedimento)
     && left.competenciaInicio === right.competenciaInicio
     && left.competenciaFinal === right.competenciaFinal
+    && left.paymentStartDate === right.paymentStartDate
+    && left.paymentEndDate === right.paymentEndDate
     && left.status === right.status
     && left.regime === right.regime
     && left.onlyPendingItems === right.onlyPendingItems;

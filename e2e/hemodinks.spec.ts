@@ -3,6 +3,15 @@ import AxeBuilder from '@axe-core/playwright';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
+test.beforeEach(async ({ page }) => {
+  page.on('pageerror', (error) => {
+    console.error(`[browser pageerror] ${error.stack ?? error.message}`);
+  });
+  page.on('console', (message) => {
+    if (message.type() === 'error') console.error(`[browser console] ${message.text()}`);
+  });
+});
+
 const session = {
   token: 'jwt-token',
   user: {
@@ -206,6 +215,10 @@ function buildAgendaEventFromPayload(id: number, payload: Payload) {
 
 async function loginViaUi(page: Page, initialRoute = '/', loginSession = session) {
   await page.goto(initialRoute);
+  const clinicField = page.getByRole('combobox', { name: 'Clínica', exact: true });
+  if (await clinicField.count() === 0) return;
+
+  await clinicField.selectOption('1');
   await page.getByLabel('Email').fill(loginSession.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: /entrar/i }).click();
@@ -230,6 +243,12 @@ async function mockApi(page: Page, loginSession = session) {
     const url = new URL(request.url());
     const path = url.pathname;
     const method = request.method();
+
+    if (path === '/api/public/clinicas') {
+      return route.fulfill({
+        json: [{ id: 1, nome: 'Clínica Hemodinks', slug: 'clinica-hemodinks', fotoUrl: null }],
+      });
+    }
 
     if (path === '/api/users/authenticate' && method === 'POST') {
       state.loginPayload = request.postDataJSON() as Payload;
@@ -341,6 +360,33 @@ async function mockApi(page: Page, loginSession = session) {
       return route.fulfill({ json: [opmeFornecedor] });
     }
 
+    if (path === '/api/faturamentos-medicos/') {
+      return route.fulfill({ json: paged(state.pacientes) });
+    }
+
+    if (path === '/api/grupos-medicos/') {
+      return route.fulfill({ json: paged([{
+        id: 1,
+        nome: 'Grupo Cirúrgico',
+        ativo: true,
+        dataCadastro: '2026-01-01T00:00:00Z',
+        membrosCount: 1,
+        membros: [{ userId: 1, nome: 'Dra. Ana', email: 'ana@hemodinks.com' }],
+      }]) });
+    }
+
+    if (path === '/api/equipes/') {
+      return route.fulfill({ json: [{
+        id: 1,
+        nome: 'Equipe Azul',
+        usuarioLoginId: 99,
+        email: 'equipe@hemodinks.com',
+        modoIdentificacao: 'Nenhuma',
+        ativa: true,
+        membros: [{ userId: 1, nome: 'Dra. Ana', email: 'ana@hemodinks.com', perfilId: 2, operadorId: 1, operadorAtivo: true, possuiPin: false, precisaTrocarPin: false }],
+      }] });
+    }
+
     if (path === '/api/grupos-medicos/medicos') {
       return route.fulfill({ json: [{ id: user.id, nome: user.nome, email: user.email }] });
     }
@@ -415,6 +461,9 @@ async function expectTableRowVisible(page: Page, tableSelector: string, rowText:
 async function captureRouteScreenshot(page: Page, testInfo: TestInfo, route: string, width: number) {
   await page.setViewportSize({ width, height: width < 600 ? 860 : 900 });
   await loginViaUi(page, route);
+  if (route === '/relatorios') {
+    await expect(page.getByText('Consulta analítica')).toBeVisible();
+  }
   await page.screenshot({ path: testInfo.outputPath(`${route.replace('/', '') || 'home'}-${width}.png`), fullPage: true });
   await expectNoGlobalHorizontalOverflow(page);
 }
@@ -429,6 +478,7 @@ test('faz login pelo formulario e abre o dashboard', async ({ page }) => {
   const apiState = await mockApi(page);
 
   await page.goto('/');
+  await page.getByLabel('Clínica').selectOption('1');
   await page.getByLabel('Email').fill('gmarcone@gmail.com');
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: /entrar/i }).click();
@@ -525,9 +575,9 @@ test('cadastra e edita paciente usando o fluxo real do formulario', async ({ pag
   await page.getByRole('button', { name: 'Novo paciente' }).click();
   await expect(page.getByRole('heading', { name: 'Novo paciente' })).toBeVisible();
   await page.getByLabel('Paciente', { exact: true }).fill('Paciente Novo');
-  await page.getByLabel('Hospital').fill('Santa Clara - Mater Dei');
-  await page.getByLabel('Cirurgião').selectOption('1');
-  await page.locator('input[list="hemodinks-convenios-options"]').fill('Particular');
+  await page.getByRole('combobox', { name: 'Hospital', exact: true }).fill('Santa Clara - Mater Dei');
+  await page.getByRole('combobox', { name: 'Cirurgião', exact: true }).fill(user.nome);
+  await page.getByRole('combobox', { name: 'Convênio', exact: true }).fill('Particular');
 
   await page.getByRole('button', { name: 'Adicionar procedimento' }).click();
   await expect(page.getByRole('heading', { name: 'Selecionar procedimento' })).toBeVisible();
@@ -588,13 +638,13 @@ test('cadastra evento na agenda', async ({ page }) => {
   });
 });
 
-test('exporta pacientes em XLSX e PDF', async ({ page }) => {
+test('exporta pacientes em planilha e PDF', async ({ page }) => {
   await mockApi(page);
   await loginViaUi(page, '/pacientes');
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
 
   const xlsxDownloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Exportar XLSX' }).click();
+  await page.getByRole('button', { name: 'Exportar Planilha' }).click();
   const xlsxDownload = await xlsxDownloadPromise;
   expect(xlsxDownload.suggestedFilename()).toMatch(/^pacientes-hemodinks-\d{4}-\d{2}-\d{2}\.xlsx$/);
 
@@ -602,6 +652,32 @@ test('exporta pacientes em XLSX e PDF', async ({ page }) => {
   await page.getByRole('button', { name: 'Exportar PDF' }).click();
   const pdfDownload = await pdfDownloadPromise;
   expect(pdfDownload.suggestedFilename()).toMatch(/^pacientes-hemodinks-\d{4}-\d{2}-\d{2}\.pdf$/);
+});
+
+test('consulta e exporta relatórios com filtros múltiplos', async ({ page }) => {
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await expect(page).toHaveURL(/\/relatorios$/);
+  await expect(page.getByRole('heading', { name: 'Relatórios', level: 1 })).toBeVisible();
+  await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+
+  await page.getByRole('textbox', { name: 'Data inicial do atendimento', exact: true }).fill('01/06/2026');
+  const doctorsFilter = page.getByRole('combobox', { name: 'Médicos', exact: true });
+  await doctorsFilter.fill('Dra. Ana');
+  await doctorsFilter.press('Enter');
+  const teamsFilter = page.getByRole('combobox', { name: 'Equipes', exact: true });
+  await teamsFilter.fill('Equipe Azul');
+  await teamsFilter.press('Enter');
+  await page.getByRole('button', { name: 'Consultar' }).click();
+  await expect(page.getByText('1 atendimento(s) encontrados')).toBeVisible();
+
+  const xlsxDownloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exportar Planilha' }).click();
+  expect((await xlsxDownloadPromise).suggestedFilename()).toMatch(/^relatorios-hemodinks-\d{4}-\d{2}-\d{2}\.xlsx$/);
+
+  const pdfDownloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exportar PDF' }).click();
+  expect((await pdfDownloadPromise).suggestedFilename()).toMatch(/^relatorios-hemodinks-\d{4}-\d{2}-\d{2}\.pdf$/);
 });
 
 test('bloqueia rota de usuarios para perfil paciente', async ({ page }) => {
@@ -612,10 +688,17 @@ test('bloqueia rota de usuarios para perfil paciente', async ({ page }) => {
   await expect(page.getByRole('button', { name: /abrir usuários/i })).toHaveCount(0);
 });
 
+test('protege relatórios com a autorização provisória do faturamento', async ({ page }) => {
+  await mockApi(page, patientSession);
+  await loginViaUi(page, '/relatorios', patientSession);
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByLabel('Sessão ativa').getByRole('button', { name: 'Relatórios' })).toHaveCount(0);
+});
+
 test('nao apresenta violacoes serias de acessibilidade nas rotas principais', async ({ page }) => {
   await mockApi(page);
 
-  for (const route of ['/dashboard', '/usuarios', '/pacientes', '/agenda']) {
+  for (const route of ['/dashboard', '/usuarios', '/pacientes', '/relatorios', '/agenda']) {
     await loginViaUi(page, route);
     await expect(page.locator('main, .app-shell, .login-shell').first()).toBeVisible();
 
@@ -637,6 +720,7 @@ test('gera evidencias visuais desktop e mobile das telas principais', async ({ p
     await captureRouteScreenshot(page, testInfo, '/dashboard', width);
     await captureRouteScreenshot(page, testInfo, '/usuarios', width);
     await captureRouteScreenshot(page, testInfo, '/pacientes', width);
+    await captureRouteScreenshot(page, testInfo, '/relatorios', width);
     await captureRouteScreenshot(page, testInfo, '/agenda', width);
 
     await loginViaUi(page, '/usuarios');

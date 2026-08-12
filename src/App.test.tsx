@@ -33,6 +33,13 @@ vi.mock('./services', () => ({
     dataAtualizacao: null,
   },
   authenticate: vi.fn(),
+  listPublicClinics: vi.fn(),
+  listPlatformClinics: vi.fn(),
+  createPlatformClinic: vi.fn(),
+  updatePlatformClinic: vi.fn(),
+  deactivatePlatformClinic: vi.fn(),
+  listSessionClinics: vi.fn(),
+  selectSessionClinic: vi.fn(),
   completeAgendaEvent: vi.fn(),
   createAgendaEvent: vi.fn(),
   deleteAgendaEvent: vi.fn(),
@@ -69,8 +76,10 @@ vi.mock('./services', () => ({
   deletePaciente: vi.fn(),
   uploadPacienteArquivo: vi.fn(),
   deletePacienteArquivo: vi.fn(),
+  downloadPacienteArquivo: vi.fn(),
   updateUser: vi.fn(),
   deleteUser: vi.fn(),
+  downloadUserArquivo: vi.fn(),
   changePassword: vi.fn(),
   confirmPasswordReset: vi.fn(),
   resetPassword: vi.fn(),
@@ -86,11 +95,16 @@ function createJwtToken(payload: Record<string, unknown>) {
 describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     queryClient.clear();
     window.history.pushState({}, '', '/');
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
     vi.clearAllMocks();
+    vi.mocked(api.listPublicClinics).mockResolvedValue([
+      { id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null },
+    ]);
+    vi.mocked(api.listPlatformClinics).mockResolvedValue([]);
     vi.mocked(api.getDashboardSummary).mockResolvedValue({
       usersCount: 1,
       activeUsersCount: 1,
@@ -207,11 +221,12 @@ describe('App', () => {
 
     expect(screen.getByText('GM Tech Solutions')).toBeInTheDocument();
 
+    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
-    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123');
+    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123', 'hemodinks');
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/dashboard');
     expect(screen.getByText('Administrador | gmarcone@gmail.com')).toBeInTheDocument();
@@ -225,7 +240,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
     expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
     await waitFor(() => {
-      expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
+      expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'data', sortDirection: 'desc' });
     });
 
     await user.click(screen.getByRole('button', { name: /abrir usuários/i }));
@@ -246,19 +261,162 @@ describe('App', () => {
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ana Hemodinks' })).not.toBeInTheDocument());
 
-    const storedSession = JSON.parse(localStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
-    expect(storedSession.token).toBeUndefined();
+    const storedSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
+    expect(storedSession.token).toBe('jwt-token');
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
   });
 
-  it('sempre inicia no login mesmo com uma sessao salva anteriormente', () => {
+  it('sempre inicia no login mesmo com uma sessao salva anteriormente', async () => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
 
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: 'Hemodinks' })).toBeInTheDocument();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
+  });
+
+  it('restaura a sessao salva na aba ao recarregar a aplicacao', async () => {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(api.authenticate).not.toHaveBeenCalled();
+    expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
+  });
+
+  it('exige e envia a clinica escolhida no login pesquisavel', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.listPublicClinics).mockResolvedValue([
+      { id: 1, nome: 'Clinica Alfa', slug: 'clinica-alfa', fotoUrl: null },
+      { id: 2, nome: 'Clinica Beta', slug: 'clinica-beta', fotoUrl: null },
+    ]);
+    vi.mocked(api.authenticate).mockResolvedValue({
+      id: 2,
+      clinicaId: 2,
+      clinicaSlug: 'clinica-beta',
+      nome: 'George Beta',
+      email: 'gmarcone@gmail.com',
+      token: 'jwt-token',
+      precisaTrocarSenha: false,
+      perfilId: 1,
+      perfilNome: 'Administrador',
+    });
+
+    render(<App />);
+    const clinicInput = await screen.findByLabelText('Clínica');
+    await user.selectOptions(clinicInput, '2');
+    expect(clinicInput).toHaveValue('2');
+    expect(screen.queryByText('clinica-beta')).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(screen.getByLabelText('Senha'), 'test-password');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
+
+    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'test-password', 'clinica-beta');
+  });
+
+  it('libera menu administrativo completo e CRUD de clinicas para superadministrador', async () => {
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: { perfilId: 5, perfilNome: 'SuperAdministrador' },
+    });
+    vi.mocked(api.listPlatformClinics).mockResolvedValue([]);
+
+    const sidebar = screen.getByLabelText('Sessão ativa');
+    expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
+    const billingMenu = within(sidebar).getByRole('button', { name: /^faturamento/i });
+    expect(billingMenu).toHaveAttribute('aria-expanded', 'false');
+    await user.click(billingMenu);
+    expect(billingMenu).toHaveAttribute('aria-expanded', 'true');
+    expect(within(sidebar).getByRole('button', { name: /gestão de faturamento/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /^relatórios$/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /grupos médicos/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /^clínicas$/i })).toBeInTheDocument();
+
+    await user.click(within(sidebar).getByRole('button', { name: /^clínicas$/i }));
+    expect(await screen.findByRole('heading', { name: 'Clínicas', level: 1 })).toBeInTheDocument();
+    expect(await screen.findByText('0 clinicas cadastradas')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /nova clinica/i }));
+    const planSelect = screen.getByLabelText('Plano');
+    expect(planSelect).toHaveValue('Trial');
+    expect(within(planSelect).getByRole('option', { name: 'Completa' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Trial ate')).toBeInTheDocument();
+    await user.selectOptions(planSelect, 'Completa');
+    expect(screen.queryByLabelText('Trial ate')).not.toBeInTheDocument();
+    await user.selectOptions(planSelect, 'Parcial');
+    expect(screen.queryByLabelText('Trial ate')).not.toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Módulos contratados' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Pacientes')).toBeInTheDocument();
+
+    const navigationButtons = within(within(sidebar).getByRole('navigation', { name: 'Navegação principal' })).getAllByRole('button');
+    expect(navigationButtons.at(-1)).toHaveTextContent('Configuração');
+  });
+
+  it('permite ao superadministrador editar o próprio perfil sem rebaixá-lo', async () => {
+    const ownUser: User = {
+      ...baseUser,
+      id: 99,
+      nome: 'George Marcone',
+      email: 'gmarcone@gmail.com',
+      telefone: '+5581999999999',
+      crm: null,
+      crmUf: null,
+      perfilId: 5,
+      perfilNome: 'SuperAdministrador',
+    };
+    vi.mocked(api.getUsers).mockResolvedValue(paged([ownUser]));
+    vi.mocked(api.getUser).mockResolvedValue(ownUser);
+    vi.mocked(api.updateUser).mockResolvedValue({ ...ownUser, nome: 'George Marcone Atualizado' });
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        id: ownUser.id,
+        nome: ownUser.nome,
+        email: ownUser.email,
+        perfilId: ownUser.perfilId,
+        perfilNome: ownUser.perfilNome,
+      },
+    });
+
+    await openUsersModule(user);
+    const row = (await screen.findAllByText('George Marcone'))
+      .map((element) => element.closest('tr'))
+      .find((element): element is HTMLTableRowElement => element !== null)!;
+    await user.click(within(row).getByTitle('Editar'));
+
+    const profileSelect = screen.getByLabelText('Perfil');
+    expect(profileSelect).toHaveValue('5');
+    expect(within(profileSelect).getByRole('option', { name: 'SuperAdministrador' })).toBeInTheDocument();
+    await user.clear(screen.getByLabelText('Nome completo'));
+    await user.type(screen.getByLabelText('Nome completo'), 'George Marcone Atualizado');
+    await user.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+
+    await waitFor(() => expect(api.updateUser).toHaveBeenCalledWith(
+      ownUser.id,
+      expect.objectContaining({ perfilId: 5, nome: 'George Marcone Atualizado' }),
+      'jwt-token',
+    ));
+  });
+
+  it('exibe todos os módulos ao superadministrador mesmo em plano parcial', async () => {
+    await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 5,
+        perfilNome: 'SuperAdministrador',
+        modulosLiberados: ['pacientes'],
+      },
+    });
+
+    const sidebar = screen.getByLabelText('Sessão ativa');
+    expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /^faturamento/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /agenda e notificações/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /^clínicas$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir usuários/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abrir agenda/i })).toBeInTheDocument();
   });
 
   it('encerra a sessao quando a API sinaliza token expirado', async () => {
@@ -292,6 +450,7 @@ describe('App', () => {
 
     render(<App />);
 
+    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
@@ -319,25 +478,24 @@ describe('App', () => {
       expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
     });
     await waitFor(() => {
-      expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
+      expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'data', sortDirection: 'desc' });
     });
     expect(await screen.findByText('1 cadastrados')).toBeInTheDocument();
     expect(screen.queryByText(/request failed with status code 403/i)).not.toBeInTheDocument();
   });
 
-  it('usa a foto configurada da empresa na tela de login', async () => {
-    vi.mocked(api.getSystemSettings).mockResolvedValue({
-      id: 1,
-      nomeEmpresa: 'Hemodinks',
-      fotoEmpresa: 'data:image/png;base64,YnJhbmQ=',
-      dataCadastro: '2026-06-22T00:00:00Z',
-      dataAtualizacao: null,
-    });
+  it('usa a foto publica da clinica selecionada na tela de login', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.listPublicClinics).mockResolvedValue([
+      { id: 1, nome: 'Clinica Alfa', slug: 'clinica-alfa', fotoUrl: '/api/public/clinicas/clinica-alfa/foto' },
+    ]);
 
     render(<App />);
 
+    expect(screen.queryByAltText('Clinica Alfa')).not.toBeInTheDocument();
+    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await waitFor(() => {
-      expect(screen.getByAltText('Hemodinks')).toHaveAttribute('src', 'data:image/png;base64,YnJhbmQ=');
+      expect(screen.getByAltText('Clinica Alfa')).toHaveAttribute('src', 'http://localhost:5000/api/public/clinicas/clinica-alfa/foto');
     });
   });
 
@@ -448,30 +606,17 @@ describe('App', () => {
     expect(localStorage.getItem('hemodinks.theme')).toBe('light');
   });
 
-  it('atualiza a marca da empresa nas configuracoes do sistema', async () => {
+  it('remove a edicao da marca das configuracoes do sistema', async () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /abrir configuração do sistema/i }));
     expect(await screen.findByRole('heading', { name: 'Configuração do sistema', level: 1 })).toBeInTheDocument();
 
-    const companyInput = screen.getByLabelText('Nome exibido no sistema');
-    await user.clear(companyInput);
-    await user.type(companyInput, 'Clinica Alfa');
-    await user.upload(
-      screen.getByLabelText('Foto da empresa'),
-      new File(['brand'], 'brand.png', { type: 'image/png' }),
-    );
-
-    await user.click(screen.getByRole('button', { name: /salvar marca/i }));
-
-    await waitFor(() => expect(api.updateSystemSettings).toHaveBeenCalledWith({
-      nomeEmpresa: 'Clinica Alfa',
-      fotoEmpresa: 'data:image/png;base64,YnJhbmQ=',
-    }, 'jwt-token'));
-    expect(within(screen.getByRole('banner')).getByText('Clinica Alfa')).toBeInTheDocument();
-    expect(screen.getByText('Marca da empresa atualizada.')).toBeInTheDocument();
-    expect(screen.getByAltText('Clinica Alfa')).toHaveAttribute('src', 'data:image/png;base64,YnJhbmQ=');
+    expect(screen.queryByLabelText('Nome exibido no sistema')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Foto da empresa')).not.toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Tema do sistema' })).toBeInTheDocument();
+    expect(api.updateSystemSettings).not.toHaveBeenCalled();
   });
 
   it('oculta configuracao para medico e bloqueia a rota direta', async () => {
@@ -633,7 +778,7 @@ describe('App', () => {
     const passwordInput = screen.getByLabelText('Senha');
     expect(passwordInput).toHaveAttribute('type', 'password');
 
-    await user.type(passwordInput, 'Senha@123');
+    await user.type(passwordInput, 'test-password');
     await user.click(screen.getByRole('button', { name: /mostrar senha/i }));
 
     expect(passwordInput).toHaveAttribute('type', 'text');
@@ -665,26 +810,24 @@ describe('App', () => {
     expect(screen.getByLabelText('Sem foto de George Marcone')).toBeInTheDocument();
   });
 
-  it('carrega a foto da empresa pela API quando a configuracao usa o storage', async () => {
-    vi.mocked(api.getSystemSettings).mockResolvedValue({
-      id: 1,
-      nomeEmpresa: 'Clinica Alfa',
-      fotoEmpresa: '/profile-photos/clinica-alfa.png',
-      dataCadastro: '2026-06-22T00:00:00Z',
-      dataAtualizacao: '2026-06-22T12:00:00Z',
-    });
-    vi.mocked(api.getSystemSettingsCompanyPhoto).mockResolvedValue(new Blob(['brand'], { type: 'image/png' }));
+  it('carrega diretamente a foto publica da clinica', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.listPublicClinics).mockResolvedValue([
+      { id: 1, nome: 'Clinica Alfa', slug: 'clinica-alfa', fotoUrl: '/api/public/clinicas/clinica-alfa/foto' },
+    ]);
 
     render(<App />);
 
+    expect(screen.queryByAltText('Clinica Alfa')).not.toBeInTheDocument();
+    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     const brandMark = await screen.findByAltText('Clinica Alfa');
     await waitFor(() => {
-      expect(brandMark).toHaveAttribute('src', 'blob:hemodinks-avatar');
-      expect(api.getSystemSettingsCompanyPhoto).toHaveBeenCalledTimes(1);
+      expect(brandMark).toHaveAttribute('src', 'http://localhost:5000/api/public/clinicas/clinica-alfa/foto');
+      expect(api.getSystemSettingsCompanyPhoto).not.toHaveBeenCalled();
     });
   });
 
-  it('reseta para a senha padrao e exige troca ao entrar', async () => {
+  it('não revela nem preenche a credencial temporária após o reset de contingência', async () => {
     const user = userEvent.setup();
     vi.mocked(api.resetPassword).mockResolvedValue({
       id: 99,
@@ -692,34 +835,19 @@ describe('App', () => {
       message: 'Nao foi possivel enviar o email de redefinicao agora. A senha padrao foi aplicada para voce entrar e trocar a seguir.',
       mode: 'default-password',
     });
-    vi.mocked(api.authenticate).mockResolvedValue({
-      id: 99,
-      nome: 'George Marcone',
-      email: 'gmarcone@gmail.com',
-      token: 'jwt-token',
-      cpf: '00000000191',
-      fotoPerfil: null,
-      precisaTrocarSenha: false,
-      perfilId: 1,
-      perfilNome: 'Administrador',
-    });
-
     render(<App />);
 
+    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
 
     await waitFor(() => {
-      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com');
+      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com', 'hemodinks');
     });
 
-    expect(screen.getByLabelText('Senha')).toHaveValue('Senha@123');
-
-    await user.click(screen.getByRole('button', { name: /entrar/i }));
-
-    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'Senha@123');
-    expect(await screen.findByRole('heading', { name: 'Troque sua senha' })).toBeInTheDocument();
-    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Senha')).toHaveValue('');
+    expect(screen.getByText(/credencial temporária fornecida pela clínica/i)).toBeInTheDocument();
+    expect(api.authenticate).not.toHaveBeenCalled();
   });
 
   it('mostra a instrucao de email quando o backend confirma o envio', async () => {
@@ -731,11 +859,12 @@ describe('App', () => {
 
     render(<App />);
 
+    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
 
     await waitFor(() => {
-      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com');
+      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com', 'hemodinks');
     });
 
     expect(screen.getByLabelText('Senha')).toHaveValue('');
@@ -759,11 +888,11 @@ describe('App', () => {
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Nova senha'), 'NovaSenha@123');
-    await user.type(screen.getByLabelText('Confirmar nova senha'), 'NovaSenha@123');
+    await user.type(screen.getByLabelText('Nova senha'), 'different-test-password');
+    await user.type(screen.getByLabelText('Confirmar nova senha'), 'different-test-password');
     await user.click(screen.getByRole('button', { name: /redefinir senha/i }));
 
-    expect(api.confirmPasswordReset).toHaveBeenCalledWith('token-123', 'NovaSenha@123');
+    expect(api.confirmPasswordReset).toHaveBeenCalledWith('token-123', 'different-test-password');
     expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
     expect(screen.getByText('Senha redefinida com sucesso. Entre com a nova senha.')).toBeInTheDocument();
     expect(window.location.pathname).toBe('/');
@@ -804,21 +933,22 @@ describe('App', () => {
 
     render(<App />);
 
+    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
-    await user.type(screen.getByLabelText('Senha'), 'Senha@123');
+    await user.type(screen.getByLabelText('Senha'), 'temporary-test-password');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(await screen.findByRole('heading', { name: 'Troque sua senha' })).toBeInTheDocument();
     expect(api.getUsers).not.toHaveBeenCalled();
 
-    await user.type(screen.getByLabelText('Senha atual'), 'Senha@123');
-    await user.type(screen.getByLabelText('Nova senha'), 'NovaSenha@123');
-    await user.type(screen.getByLabelText('Confirmar nova senha'), 'NovaSenha@123');
+    await user.type(screen.getByLabelText('Senha atual'), 'temporary-test-password');
+    await user.type(screen.getByLabelText('Nova senha'), 'different-test-password');
+    await user.type(screen.getByLabelText('Confirmar nova senha'), 'different-test-password');
     await user.click(screen.getByRole('button', { name: /alterar senha/i }));
 
     expect(api.changePassword).toHaveBeenCalledWith(
       99,
-      { senhaAtual: 'Senha@123', novaSenha: 'NovaSenha@123' },
+      { senhaAtual: 'temporary-test-password', novaSenha: 'different-test-password' },
       'jwt-token',
     );
     expect(await screen.findByText('Senha alterada com sucesso')).toBeInTheDocument();
@@ -872,7 +1002,7 @@ describe('App', () => {
       ativo: true,
       perfilId: 2,
     }, 'jwt-token');
-    expect(await screen.findByText('Usuário cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
+    expect(await screen.findByText('Usuário cadastrado com senha temporária. Oriente a alteração no primeiro acesso.')).toBeInTheDocument();
     expect(api.getUsers).toHaveBeenCalledTimes(2);
   });
 
@@ -1199,11 +1329,12 @@ describe('App', () => {
 
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(screen.getByText('Pago')).toBeInTheDocument();
-    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
+    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'data', sortDirection: 'desc' });
 
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
 
-    await user.type(screen.getByLabelText('Data procedimento'), '04062026');
+    await user.type(screen.getByLabelText('Data da Solicitação'), '04062026');
+    await user.type(screen.getByLabelText('Data do Atendimento'), '05062026');
     await user.type(screen.getByLabelText('Paciente'), 'Novo Paciente');
     expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
@@ -1213,9 +1344,12 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Convênio'), 'Convenio Manual');
     await user.type(screen.getByLabelText('Hospital'), 'Hospital Manual');
     await user.type(screen.getByLabelText('Fornecedor OPME'), 'Fornecedor Manual');
-    await user.selectOptions(screen.getByLabelText('Cirurgião'), '1');
-    await user.selectOptions(screen.getByLabelText('Médico auxiliar 1'), '2');
-    await user.selectOptions(screen.getByLabelText('Médico auxiliar 2'), '3');
+    await user.type(screen.getByLabelText('Cirurgião'), 'Ana Hemodinks');
+    await user.click(screen.getByRole('option', { name: 'Ana Hemodinks' }));
+    await user.type(screen.getByLabelText('Médico auxiliar 1'), 'Bruno Hemodinks');
+    await user.click(screen.getByRole('option', { name: 'Bruno Hemodinks' }));
+    await user.type(screen.getByLabelText('Médico auxiliar 2'), 'Clara Hemodinks');
+    await user.click(screen.getByRole('option', { name: 'Clara Hemodinks' }));
     await user.click(screen.getByRole('button', { name: /adicionar procedimento/i }));
     const cbhpmDialog = await screen.findByRole('dialog', { name: 'Selecionar procedimento' });
     const refreshProceduresButton = within(cbhpmDialog).getByRole('button', { name: /consultar procedimentos/i });
@@ -1255,14 +1389,27 @@ describe('App', () => {
     await user.click(within(secondProcedureRow!).getByRole('button', { name: /^adicionar$/i }));
     expect(screen.getByLabelText('Valor estimado')).toHaveValue('R$\u00a0300,00');
     expect(screen.getByLabelText('Valor estimado')).toBeDisabled();
-    await user.type(screen.getByLabelText('Valor recebido/pago'), '200000');
-    await user.type(screen.getByLabelText('Glosa'), '1250');
-    expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 2.000,00');
-    expect(screen.getByLabelText('Glosa')).toHaveValue('R$ 12,50');
+    expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('');
+    expect(screen.getByLabelText('Glosa')).toHaveValue('R$ 300,00');
+    expect(screen.getByLabelText('Glosa')).toBeDisabled();
+    await user.click(screen.getByLabelText('Valor recebido/pago'));
+    await user.keyboard('125,45');
+    expect(screen.getByLabelText('Valor recebido/pago')).toHaveValue('R$ 125,45');
+    expect(screen.getByLabelText('Glosa')).toHaveValue('R$ 174,55');
+    const paymentDateField = screen.getByLabelText('Data do Pagamento');
+    expect(paymentDateField).toBeDisabled();
+    await user.click(screen.getByLabelText('Status Pago'));
+    expect(paymentDateField).toBeEnabled();
+    await user.type(paymentDateField, '05062026');
+    expect(paymentDateField).toHaveValue('05/06/2026');
+    await user.click(screen.getByLabelText('Status Pago'));
+    expect(paymentDateField).toBeDisabled();
+    expect(paymentDateField).toHaveValue('');
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
     expect(api.createPaciente).toHaveBeenCalledWith({
       data: '2026-06-04',
+      dataAtendimento: '2026-06-05',
       nomePaciente: 'Novo Paciente',
       diagnostico: '',
       tratamentoMedico: '',
@@ -1301,12 +1448,13 @@ describe('App', () => {
         },
       ],
       autorizacao: '',
-      pagamento: 'R$ 2.000,00',
-      repasseGlosa: 'R$ 12,50',
+      pagamento: 'R$ 125,45',
+      repasseGlosa: 'R$ 174,55',
       statusPago: false,
+      dataPagamento: null,
       ativo: true,
     }, 'jwt-token');
-    expect(await screen.findByText('Paciente cadastrado com senha inicial Senha@123.')).toBeInTheDocument();
+    expect(await screen.findByText('Paciente cadastrado com senha temporária. Oriente a alteração no primeiro acesso.')).toBeInTheDocument();
   }, 15000);
 
   it('permite ao administrador filtrar pacientes por cirurgiao, convenio e procedimento', async () => {
@@ -1320,18 +1468,24 @@ describe('App', () => {
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Cirurgião'), 'Ana Hemodinks');
+    await user.click(screen.getByRole('option', { name: 'Ana Hemodinks' }));
     await user.type(screen.getByLabelText('Convênio'), 'Particular');
+    await user.click(screen.getByRole('option', { name: 'Particular' }));
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
+    await user.type(screen.getByLabelText('Data inicial do atendimento'), '01062026');
+    await user.type(screen.getByLabelText('Data final do atendimento'), '30062026');
 
     await waitFor(() => {
       expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', {
         page: 1,
         pageSize: 10,
         search: '',
-        medico: 'Ana Hemodinks',
-        convenio: 'Particular',
+        medicoUserIds: '1',
+        convenioIds: '7',
         procedimento: 'Consulta',
-        sortBy: 'recent',
+        dataInicio: '2026-06-01',
+        dataFinal: '2026-06-30',
+        sortBy: 'data',
         sortDirection: 'desc',
       });
     });
@@ -1376,7 +1530,7 @@ describe('App', () => {
     expect(screen.queryByLabelText('Cirurgião')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Convênio')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Procedimento')).not.toBeInTheDocument();
-    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'recent', sortDirection: 'desc' });
+    expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'data', sortDirection: 'desc' });
     expect(api.getScopedMedicalUsers).toHaveBeenCalledWith('jwt-token');
 
     await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
@@ -1550,8 +1704,10 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
 
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /dr\. fora da lista \(fora da sua lista\)/i })).toBeInTheDocument();
-    expect(screen.getByLabelText('Cirurgião')).toHaveValue('legacy:55');
+    expect(screen.getByLabelText('Cirurgião')).toHaveValue('Dr. Fora da Lista');
+    expect(screen.getByLabelText('Status Pago')).toBeChecked();
+    expect(screen.getByLabelText('Data do Pagamento')).toBeEnabled();
+    expect(screen.getByLabelText('Data do Pagamento')).toHaveValue('');
 
     await user.click(screen.getByRole('button', { name: /salvar paciente/i }));
 
@@ -1605,6 +1761,49 @@ describe('App', () => {
       expect(window.location.pathname).toBe('/dashboard');
     });
     expect(api.getUsers).not.toHaveBeenCalled();
+  });
+
+  it('permite equipe consultar seus usuarios e pacientes sem gerenciar usuarios ou grupos medicos', async () => {
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: {
+        perfilId: 6,
+        perfilNome: 'Equipe',
+        nome: 'Equipe Cirúrgica',
+      },
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    const sidebar = screen.getByLabelText('Sessão ativa');
+    expect(within(sidebar).getByRole('button', { name: /^usuários/i })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('button', { name: /pacientes - cirurgias/i })).toBeInTheDocument();
+    expect(within(sidebar).queryByRole('button', { name: /grupos médicos/i })).not.toBeInTheDocument();
+
+    await user.click(within(sidebar).getByRole('button', { name: /^usuários/i }));
+    expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
+    expect(api.getUsers).toHaveBeenCalledWith('jwt-token', {
+      page: 1,
+      pageSize: 10,
+      search: '',
+      sortBy: 'recent',
+      sortDirection: 'desc',
+    });
+    expect(screen.queryByRole('button', { name: /novo usuário/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /editar ana hemodinks/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /excluir ana hemodinks/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /detalhes de ana hemodinks/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /contato de ana hemodinks/i })).toBeInTheDocument();
+
+    await user.click(within(sidebar).getByRole('button', { name: /pacientes - cirurgias/i }));
+    expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();
+
+    await user.click(within(sidebar).getByRole('button', { name: /agenda e notificações/i }));
+    expect(await screen.findByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeInTheDocument();
+    expect(api.getAgendaEvents).toHaveBeenCalledWith('jwt-token', expect.any(String), expect.any(String));
+    expect(api.getAgendaNotificationRecipientOptions).toHaveBeenCalledWith('jwt-token');
+    expect(window.location.pathname).toBe('/agenda');
   });
 
   it('permite ao medico fechar o proprio cadastro e voltar ao painel', async () => {
@@ -1712,7 +1911,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /exportar xlsx/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /exportar planilha/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar pdf/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();

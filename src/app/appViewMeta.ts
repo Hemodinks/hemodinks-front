@@ -1,4 +1,4 @@
-import type { AppView } from '../appTypes';
+import type { AppView, BreadcrumbItem, ModuleMode } from '../appTypes';
 
 type FormBreadcrumbOptions = {
   activeView: AppView;
@@ -15,8 +15,10 @@ export function getAppTitle(activeView: AppView) {
       : activeView === 'profile' ? 'Meu cadastro'
         : activeView === 'patients' ? 'Pacientes'
           : activeView === 'billing' ? 'Faturamento médico'
+            : activeView === 'reports' ? 'Relatórios'
             : activeView === 'medicalGroups' ? 'Grupos médicos'
-              : activeView === 'settings' ? 'Configuração do sistema' : 'Agenda e notificações';
+              : activeView === 'settings' ? 'Configuração do sistema'
+                : activeView === 'clinics' ? 'Clínicas' : 'Agenda e notificações';
 }
 
 export function getActiveModuleLabel(activeView: AppView) {
@@ -25,8 +27,10 @@ export function getActiveModuleLabel(activeView: AppView) {
     : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? 'Pacientes'
         : activeView === 'billing' ? 'Faturamento médico'
+          : activeView === 'reports' ? 'Relatórios'
           : activeView === 'medicalGroups' ? 'Grupos médicos'
-            : activeView === 'settings' ? 'Configuração do sistema' : 'Agenda e notificações';
+            : activeView === 'settings' ? 'Configuração do sistema'
+              : activeView === 'clinics' ? 'Clínicas' : 'Agenda e notificações';
 }
 
 export function getFormBreadcrumbLabel({
@@ -43,4 +47,33 @@ export function getFormBreadcrumbLabel({
         : activeView === 'medicalGroups' ? editingGroupId ? 'Editar grupo médico' : 'Novo grupo médico'
           : activeView === 'settings' ? 'Configuração do sistema'
             : 'Agenda e notificações';
+}
+
+type BreadcrumbOptions = FormBreadcrumbOptions & {
+  moduleMode: ModuleMode;
+  openDashboard: () => void;
+  openModuleByView: Record<AppView, () => void>;
+};
+
+export function buildBreadcrumbItems(options: BreadcrumbOptions): BreadcrumbItem[] {
+  if (options.activeView === 'dashboard') {
+    return [
+      { label: 'Início', onClick: options.openDashboard },
+      { label: 'Painel inicial' },
+    ];
+  }
+
+  const items: BreadcrumbItem[] = [
+    { label: 'Início', onClick: options.openDashboard },
+    {
+      label: getActiveModuleLabel(options.activeView),
+      onClick: options.moduleMode === 'form'
+        ? options.openModuleByView[options.activeView]
+        : undefined,
+    },
+  ];
+  if (options.moduleMode === 'form') {
+    items.push({ label: getFormBreadcrumbLabel(options) });
+  }
+  return items;
 }

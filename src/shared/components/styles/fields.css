@@ -117,6 +117,131 @@ textarea::placeholder {
   font-weight: 700;
 }
 
+.multi-combobox-field {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.multi-combobox-control {
+  min-height: 43px;
+  border: 1px solid #cbd5d0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 5px 43px 5px 7px;
+  position: relative;
+  background: var(--input-bg);
+  cursor: text;
+}
+
+.multi-combobox-control:focus-within {
+  border-color: var(--selection-accent);
+  box-shadow: 0 0 0 3px var(--selection-accent-soft);
+}
+
+.multi-combobox-control > input {
+  flex: 1 1 150px;
+  width: auto;
+  min-width: 120px;
+  min-height: 31px;
+  border: 0;
+  padding: 3px 5px;
+  box-shadow: none;
+}
+
+.multi-combobox-chip {
+  max-width: 100%;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 7px 5px 10px;
+  color: var(--ink);
+  background: var(--soft);
+  font-size: 0.78rem;
+}
+
+.multi-combobox-chip button {
+  width: 20px;
+  min-height: 20px;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+}
+
+.multi-combobox-chip button:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.multi-combobox-toggle {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  width: 34px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  background: transparent;
+  transform: translateY(-50%);
+}
+
+.multi-combobox-toggle:hover {
+  color: var(--ink);
+  background: var(--soft);
+}
+
+.multi-combobox-listbox {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: min(280px, 40vh);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-strong);
+  box-shadow: 0 18px 32px rgba(24, 33, 47, 0.16);
+  overflow-y: auto;
+}
+
+.multi-combobox-option {
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 11px;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  font-weight: 700;
+}
+
+.multi-combobox-option:hover,
+.multi-combobox-option.is-selected {
+  background: var(--soft);
+}
+
 .date-input-control > input[type="text"] {
   padding-right: 48px;
 }

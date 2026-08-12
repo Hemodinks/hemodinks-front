@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MEDICAL_PROFILE_ID, PATIENT_PROFILE_ID } from '../../shared/utils/formatters';
+import { MEDICAL_PROFILE_ID, PATIENT_PROFILE_ID, SUPER_ADMIN_PROFILE_ID, TEAM_PROFILE_ID } from '../../shared/utils/formatters';
 import { emptyUserForm, toUserPayload, validateUserForm } from './userUtils';
 
 describe('userUtils', () => {
@@ -40,5 +40,43 @@ describe('userUtils', () => {
     });
 
     expect(payload.cpf).toBeNull();
+  });
+
+  it('permite editar usuario de equipe sem telefone', () => {
+    const form = {
+      ...emptyUserForm,
+      nome: 'Raquel Fernandes',
+      email: 'equipe@hemodinks.com',
+      telefone: '+55 ',
+      perfilId: TEAM_PROFILE_ID,
+    };
+
+    expect(validateUserForm(form, true)).toBe('');
+    expect(toUserPayload(form).telefone).toBe('');
+  });
+
+  it('mantem a validacao quando usuario de equipe informa telefone', () => {
+    const error = validateUserForm({
+      ...emptyUserForm,
+      nome: 'Raquel Fernandes',
+      email: 'equipe@hemodinks.com',
+      telefone: '+55 (81) 1234-5678',
+      perfilId: TEAM_PROFILE_ID,
+    }, true);
+
+    expect(error).toBe('Informe um celular valido com DDD e 9 digitos.');
+  });
+
+  it('permite ao SuperAdministrador manter o próprio perfil na edição', () => {
+    const form = {
+      ...emptyUserForm,
+      nome: 'Super Administrador',
+      email: 'superadmin@hemodinks.com',
+      telefone: '+55 (81) 99999-9999',
+      perfilId: SUPER_ADMIN_PROFILE_ID,
+    };
+
+    expect(validateUserForm(form, false, true)).toBe('');
+    expect(validateUserForm(form)).toBe('Selecione um perfil valido.');
   });
 });

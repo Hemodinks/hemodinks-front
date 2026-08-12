@@ -12,8 +12,9 @@ import type {
   MedicalUserOption,
   OpmeFornecedor,
   PacienteFormData,
+  PacientePayload,
 } from '../../types';
-import { toPacientePayload } from './patientUtils';
+import { toPacientePayload, validatePacienteForm } from './patientUtils';
 
 export const LIST_CACHE_TIME_MS = 20 * 1000;
 export const LOOKUP_CACHE_TIME_MS = 30 * 60 * 1000;
@@ -103,4 +104,27 @@ export function buildPatientPayloadWithLookups({
       opmeFornecedor: selectedOpmeFornecedor?.fornecedor ?? pacienteFormData.opmeFornecedor,
     }),
   };
+}
+
+export function preparePatientPayload(options: BuildPatientPayloadWithLookupsOptions): {
+  payload: PacientePayload | null;
+  error: string;
+} {
+  const validationError = validatePacienteForm(options.pacienteFormData);
+  if (validationError) return { payload: null, error: validationError };
+
+  const result = buildPatientPayloadWithLookups(options);
+  const selections = [
+    [result.selectedMedico, 'Selecione um cirurgião cadastrado com perfil Médicos.'],
+    [result.selectedMedicoAuxiliar1, 'Selecione o médico auxiliar 1 no cadastro de médicos.'],
+    [result.selectedMedicoAuxiliar2, 'Selecione o médico auxiliar 2 no cadastro de médicos.'],
+  ] as const;
+
+  const invalidSelection = selections.find(([selection]) => (
+    selection.trimmedName && !selection.selectedUser && !selection.hasScopedSelection
+  ));
+
+  return invalidSelection
+    ? { payload: null, error: invalidSelection[1] }
+    : { payload: result.payload, error: '' };
 }

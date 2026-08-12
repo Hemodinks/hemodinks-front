@@ -7,8 +7,10 @@ import {
   createUser,
   deletePaciente,
   deletePacienteArquivo,
+  downloadPacienteArquivo,
   deleteUser,
   deleteUserArquivo,
+  downloadUserArquivo,
   getAllCbhpmGeral,
   getBrazilPublicHolidays,
   getConvenios,
@@ -84,13 +86,13 @@ describe('services api client', () => {
       perfilNome: 'Administrador',
     }));
 
-    const result = await authenticate('gmarcone@gmail.com', 'Senha@123');
+    const result = await authenticate('gmarcone@gmail.com', 'test-password');
 
     expect(result.token).toBe('jwt-token');
     expect(requestSpy).toHaveBeenCalledWith({
       url: '/api/users/authenticate',
       method: 'POST',
-      data: { email: 'gmarcone@gmail.com', senha: 'Senha@123' },
+      data: { email: 'gmarcone@gmail.com', senha: 'test-password' },
       headers: { 'Content-Type': 'application/json' },
     });
   });
@@ -107,12 +109,12 @@ describe('services api client', () => {
       perfilNome: 'Administrador',
     }));
 
-    await authenticate('gmarcone@gmail.com', 'Senha@123');
+    await authenticate('gmarcone@gmail.com', 'test-password');
 
     expect(requestSpy).toHaveBeenCalledWith({
       url: '/api/users/authenticate',
       method: 'POST',
-      data: { email: 'gmarcone@gmail.com', senha: 'Senha@123' },
+      data: { email: 'gmarcone@gmail.com', senha: 'test-password' },
       headers: {
         'Content-Type': 'application/json',
         'X-Clinica-Slug': 'clinica-alfa',
@@ -230,6 +232,7 @@ describe('services api client', () => {
 
     const payload = {
       data: null,
+      dataAtendimento: null,
       nomePaciente: 'Paciente Hemodinks',
       diagnostico: 'Doenca renal cronica',
       tratamentoMedico: 'Tratamento conservador',
@@ -265,6 +268,7 @@ describe('services api client', () => {
       pagamento: 'Pix',
       repasseGlosa: '',
       statusPago: true,
+      dataPagamento: '2026-06-20',
       ativo: true,
     };
 
@@ -378,6 +382,23 @@ describe('services api client', () => {
     expect(config?.params?.toString()).toBe('page=2&pageSize=10&search=ana&medico=Dra.+Ana&convenio=Particular&procedimento=Consulta');
   });
 
+  it('envia filtros múltiplos e intervalo da data do procedimento', async () => {
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(
+      axiosResponse({ items: [], page: 1, pageSize: 10, totalItems: 0, totalPages: 1 }),
+    );
+
+    await getPacientes('jwt-token', {
+      medicoUserIds: '1,2',
+      convenioIds: '7,8',
+      dataInicio: '2026-06-01',
+      dataFinal: '2026-06-30',
+    });
+
+    expect(requestSpy.mock.calls[0]?.[0].params?.toString()).toBe(
+      'medicoUserIds=1%2C2&convenioIds=7%2C8&dataInicio=2026-06-01&dataFinal=2026-06-30',
+    );
+  });
+
   it('carrega todas as paginas da consulta CBHPM para cache local', async () => {
     const requestSpy = vi.spyOn(apiClient, 'request');
 
@@ -436,7 +457,7 @@ describe('services api client', () => {
 
     await createUser(payload, 'jwt-token');
     await updateUser(1, payload, 'jwt-token');
-    await changePassword(1, { senhaAtual: 'Senha@123', novaSenha: 'NovaSenha@123' }, 'jwt-token');
+    await changePassword(1, { senhaAtual: 'temporary-test-password', novaSenha: 'different-test-password' }, 'jwt-token');
     await resetPassword('ana@hemodinks.com');
     await expect(deleteUser(1, 'jwt-token')).resolves.toBeUndefined();
 
@@ -461,7 +482,7 @@ describe('services api client', () => {
     expect(requestSpy).toHaveBeenNthCalledWith(3, {
       url: '/api/users/1/password',
       method: 'PUT',
-      data: { senhaAtual: 'Senha@123', novaSenha: 'NovaSenha@123' },
+      data: { senhaAtual: 'temporary-test-password', novaSenha: 'different-test-password' },
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
@@ -604,6 +625,30 @@ describe('services api client', () => {
     await expect(authenticate('email@teste.com', 'senha')).rejects.toThrow('Credenciais invalidas ou sessao expirada.');
   });
 
+  it('baixa documentos privados com token bearer', async () => {
+    const patientBlob = new Blob(['laudo'], { type: 'application/pdf' });
+    const userBlob = new Blob(['crm'], { type: 'application/pdf' });
+    const requestSpy = vi.spyOn(apiClient, 'request')
+      .mockResolvedValueOnce(axiosResponse(patientBlob))
+      .mockResolvedValueOnce(axiosResponse(userBlob));
+
+    await expect(downloadPacienteArquivo(10, 3, 'jwt-token')).resolves.toBe(patientBlob);
+    await expect(downloadUserArquivo(2, 7, 'jwt-token')).resolves.toBe(userBlob);
+
+    expect(requestSpy).toHaveBeenNthCalledWith(1, {
+      url: '/api/pacientes/10/arquivos/3/download',
+      method: 'GET',
+      responseType: 'blob',
+      headers: { Authorization: 'Bearer jwt-token' },
+    });
+    expect(requestSpy).toHaveBeenNthCalledWith(2, {
+      url: '/api/users/2/arquivos/7/download',
+      method: 'GET',
+      responseType: 'blob',
+      headers: { Authorization: 'Bearer jwt-token' },
+    });
+  });
+
   it('notifica a aplicacao quando uma chamada autenticada retorna 401', async () => {
     const authExpiredHandler = vi.fn();
     window.addEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
@@ -612,6 +657,23 @@ describe('services api client', () => {
     await expect(getUsers('jwt-token')).rejects.toThrow('Credenciais invalidas ou sessao expirada.');
 
     expect(authExpiredHandler).toHaveBeenCalledTimes(1);
+    window.removeEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
+  });
+
+  it('traduz respostas 403 para uma mensagem amigável em toda chamada da API', async () => {
+    vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(403));
+
+    await expect(getUsers('jwt-token')).rejects.toThrow('Operação não permitida.');
+  });
+
+  it('nao encerra a sessao quando apenas uma foto protegida retorna 401', async () => {
+    const authExpiredHandler = vi.fn();
+    window.addEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
+    vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(401));
+
+    await expect(getUserProfilePhoto(99, 'jwt-token')).rejects.toThrow('Credenciais invalidas ou sessao expirada.');
+
+    expect(authExpiredHandler).not.toHaveBeenCalled();
     window.removeEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
   });
 

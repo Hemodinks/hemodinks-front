@@ -4,115 +4,22 @@ import {
   formatCurrency,
   formatPersonName,
   normalizeDisplayText,
-  normalizeLookupText,
   toDisplayDate,
 } from '../../shared/utils/formatters';
+import type {
+  BillingChecklistItem,
+  BillingFilters,
+  BillingRecord,
+  BillingRecordStatus,
+} from './billingTypes';
 
-export type BillingChecklistStatus = 'ok' | 'warning' | 'missing';
-export type BillingStatusFilter = 'all' | 'paid' | 'pending' | 'glosa' | 'missing';
-export type BillingRegimeFilter = 'all' | 'convenio' | 'particular';
-export type BillingRecordStatus = 'paid' | 'pending' | 'missing';
-
-export type BillingChecklistItem = {
-  label: string;
-  value: string;
-  status: BillingChecklistStatus;
-  hint?: string;
-};
-
-export type BillingFilters = {
-  search: string;
-  medico: string;
-  convenio: string;
-  hospital: string;
-  procedimento: string;
-  competenciaInicio: string;
-  competenciaFinal: string;
-  status: BillingStatusFilter;
-  regime: BillingRegimeFilter;
-  onlyPendingItems: boolean;
-};
-
-export type BillingRecord = {
-  id: number;
-  paciente: Paciente;
-  patientName: string;
-  doctorName: string;
-  doctorUserId?: number | null;
-  assistantNames: string[];
-  hospitalName: string;
-  convenioName: string;
-  regime: 'convenio' | 'particular';
-  surgeryDate: string | null;
-  surgeryDateLabel: string;
-  competenciaInicio: string | null;
-  competenciaFinal: string | null;
-  authorizationCode: string;
-  paymentRaw: string;
-  paymentAmount: number;
-  paymentHasNumericValue: boolean;
-  glosaRaw: string;
-  glosaAmount: number;
-  glosaHasNumericValue: boolean;
-  assistantFeesAmount?: number | null;
-  anesthesiologistFeesAmount?: number | null;
-  anesthesiologistName: string;
-  anesthesiologistBilledSeparately: boolean;
-  guiaInternacaoOuSadt: string;
-  tissXmlStatus: string;
-  glosaStatus: string;
-  recursoGlosa: string;
-  repasseMedicoObservacao: string;
-  tipoFaturamentoParticular: string;
-  reciboNotaContrato: string;
-  netAmount: number;
-  status: BillingRecordStatus;
-  statusLabel: string;
-  filesCount: number;
-  hasOpme: boolean;
-  opmeSupplier: string;
-  procedureSummary: string;
-  procedureCodes: string[];
-  primaryProcedureLabel: string;
-  procedures: ReturnType<typeof getPacienteProcedimentosFromPaciente>;
-  surgicalPortes: string[];
-  billingChecklist: BillingChecklistItem[];
-  pendingChecklistItems: number;
-};
-
-export type BillingSummary = {
-  totalRecords: number;
-  totalGrossAmount: number;
-  totalGlosaAmount: number;
-  totalNetAmount: number;
-  paidCount: number;
-  pendingCount: number;
-  missingAmountCount: number;
-  particularCount: number;
-  convenioCount: number;
-  authorizationCount: number;
-  opmeCount: number;
-  attachmentCount: number;
-  glosaCasesCount: number;
-  recordsWithPendingItems: number;
-  nonNumericPaymentCount: number;
-  nonNumericGlosaCount: number;
-};
-
-export type BillingBreakdownItem = {
-  label: string;
-  totalGrossAmount: number;
-  totalNetAmount: number;
-  totalGlosaAmount: number;
-  totalRecords: number;
-  pendingCount: number;
-};
-
-type FilterBillingOptions = {
-  restrictToMedicalUser?: boolean;
-  currentMedicalUserId?: number | null;
-  currentMedicalUserName?: string | null;
-};
+export type * from './billingTypes';
+export {
+  filterBillingRecords,
+  groupBillingByConvenio,
+  groupBillingByDoctor,
+  summarizeBillingRecords,
+} from './billingAnalytics';
 
 function parseCurrencyLikeValue(value?: string | null) {
   const raw = value?.trim() ?? '';
@@ -138,7 +45,6 @@ function parseCurrencyLikeValue(value?: string | null) {
     ? { amount, hasNumericValue: true }
     : { amount: 0, hasNumericValue: false };
 }
-
 function getBillingStatus(paciente: Paciente, hasPaymentValue: boolean, hasGlosaValue: boolean): BillingRecordStatus {
   if (paciente.statusPago) {
     return 'paid';
@@ -161,43 +67,6 @@ function getBillingStatusLabel(status: BillingRecordStatus) {
   }
 
   return 'Sem valor';
-}
-
-function toNormalizedIncludes(haystack: string, needle: string) {
-  const normalizedNeedle = normalizeLookupText(needle);
-
-  if (!normalizedNeedle) {
-    return true;
-  }
-
-  return normalizeLookupText(haystack).includes(normalizedNeedle);
-}
-
-function getDateTimestamp(value?: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const timestamp = new Date(value).getTime();
-  return Number.isFinite(timestamp) ? timestamp : null;
-}
-
-function getCompetenciaMonthTimestamp(value: string, endOfMonth = false) {
-  if (!/^\d{4}-\d{2}$/.test(value)) {
-    return null;
-  }
-
-  const [year, month] = value.split('-').map(Number);
-
-  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
-    return null;
-  }
-
-  const timestamp = endOfMonth
-    ? new Date(year, month, 0, 23, 59, 59, 999).getTime()
-    : new Date(year, month - 1, 1).getTime();
-
-  return Number.isFinite(timestamp) ? timestamp : null;
 }
 
 function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 'pendingChecklistItems'>) {
@@ -442,6 +311,8 @@ export function createEmptyBillingFilters(defaultDoctor = '', defaultCompetencia
     procedimento: '',
     competenciaInicio: defaultCompetencia,
     competenciaFinal: defaultCompetencia,
+    paymentStartDate: '',
+    paymentEndDate: '',
     status: 'all',
     regime: 'all',
     onlyPendingItems: false,
@@ -482,8 +353,12 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       hospitalName: paciente.hospital?.trim() || 'Não informado',
       convenioName: convenioName || 'Particular',
       regime: convenioName ? 'convenio' : 'particular',
-      surgeryDate: paciente.data ?? null,
-      surgeryDateLabel: paciente.data ? toDisplayDate(paciente.data) : '-',
+      surgeryDate: paciente.dataAtendimento ?? paciente.data ?? null,
+      surgeryDateLabel: paciente.dataAtendimento
+        ? toDisplayDate(paciente.dataAtendimento)
+        : paciente.data ? toDisplayDate(paciente.data) : '-',
+      paymentDate: faturamento?.dataPagamento ?? null,
+      paymentDateLabel: toDisplayDate(faturamento?.dataPagamento) || '-',
       competenciaInicio: billingCadastroDate ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
       competenciaFinal: billingCadastroDate ?? faturamento?.competenciaFinal ?? faturamento?.competenciaInicio ?? paciente.data ?? null,
       authorizationCode: faturamento?.guiaAutorizacaoConvenio?.trim() || paciente.autorizacao?.trim() || '',
@@ -530,187 +405,4 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       pendingChecklistItems: checklist.pendingChecklistItems,
     };
   });
-}
-
-export function summarizeBillingRecords(records: BillingRecord[]): BillingSummary {
-  return records.reduce<BillingSummary>((summary, record) => ({
-    totalRecords: summary.totalRecords + 1,
-    totalGrossAmount: summary.totalGrossAmount + record.paymentAmount,
-    totalGlosaAmount: summary.totalGlosaAmount + record.glosaAmount,
-    totalNetAmount: summary.totalNetAmount + record.netAmount,
-    paidCount: summary.paidCount + (record.status === 'paid' ? 1 : 0),
-    pendingCount: summary.pendingCount + (record.status === 'pending' ? 1 : 0),
-    missingAmountCount: summary.missingAmountCount + (record.status === 'missing' ? 1 : 0),
-    particularCount: summary.particularCount + (record.regime === 'particular' ? 1 : 0),
-    convenioCount: summary.convenioCount + (record.regime === 'convenio' ? 1 : 0),
-    authorizationCount: summary.authorizationCount + (record.authorizationCode ? 1 : 0),
-    opmeCount: summary.opmeCount + (record.hasOpme ? 1 : 0),
-    attachmentCount: summary.attachmentCount + (record.filesCount > 0 ? 1 : 0),
-    glosaCasesCount: summary.glosaCasesCount + (record.glosaAmount > 0 ? 1 : 0),
-    recordsWithPendingItems: summary.recordsWithPendingItems + (record.pendingChecklistItems > 0 ? 1 : 0),
-    nonNumericPaymentCount: summary.nonNumericPaymentCount + (!record.paymentHasNumericValue && record.paymentRaw ? 1 : 0),
-    nonNumericGlosaCount: summary.nonNumericGlosaCount + (!record.glosaHasNumericValue && record.glosaRaw ? 1 : 0),
-  }), {
-    totalRecords: 0,
-    totalGrossAmount: 0,
-    totalGlosaAmount: 0,
-    totalNetAmount: 0,
-    paidCount: 0,
-    pendingCount: 0,
-    missingAmountCount: 0,
-    particularCount: 0,
-    convenioCount: 0,
-    authorizationCount: 0,
-    opmeCount: 0,
-    attachmentCount: 0,
-    glosaCasesCount: 0,
-    recordsWithPendingItems: 0,
-    nonNumericPaymentCount: 0,
-    nonNumericGlosaCount: 0,
-  });
-}
-
-function matchesCurrentMedicalUser(record: BillingRecord, options: FilterBillingOptions) {
-  if (!options.restrictToMedicalUser) {
-    return true;
-  }
-
-  if (options.currentMedicalUserId != null && record.doctorUserId === options.currentMedicalUserId) {
-    return true;
-  }
-
-  const currentMedicalName = options.currentMedicalUserName?.trim() || '';
-
-  if (!currentMedicalName) {
-    return false;
-  }
-
-  return normalizeLookupText(record.doctorName) === normalizeLookupText(currentMedicalName);
-}
-
-export function filterBillingRecords(records: BillingRecord[], filters: BillingFilters, options: FilterBillingOptions = {}) {
-  const competenciaInicio = getCompetenciaMonthTimestamp(filters.competenciaInicio);
-  const competenciaFinal = getCompetenciaMonthTimestamp(filters.competenciaFinal, true);
-
-  return [...records]
-    .filter((record) => matchesCurrentMedicalUser(record, options))
-    .filter((record) => {
-      const searchableFields = [
-        record.patientName,
-        record.doctorName,
-        record.hospitalName,
-        record.convenioName,
-        record.authorizationCode,
-        record.procedureSummary,
-        record.procedureCodes.join(' '),
-        record.paymentRaw,
-        record.glosaRaw,
-      ].join(' ');
-
-      return toNormalizedIncludes(searchableFields, filters.search);
-    })
-    .filter((record) => toNormalizedIncludes(record.doctorName, filters.medico))
-    .filter((record) => toNormalizedIncludes(record.convenioName, filters.convenio))
-    .filter((record) => toNormalizedIncludes(record.hospitalName, filters.hospital))
-    .filter((record) => toNormalizedIncludes(record.procedureSummary, filters.procedimento))
-    .filter((record) => {
-      if (filters.regime === 'all') {
-        return true;
-      }
-
-      return record.regime === filters.regime;
-    })
-    .filter((record) => {
-      if (filters.status === 'all') {
-        return true;
-      }
-
-      if (filters.status === 'paid') {
-        return record.status === 'paid';
-      }
-
-      if (filters.status === 'pending') {
-        return record.status === 'pending';
-      }
-
-      if (filters.status === 'glosa') {
-        return record.glosaAmount > 0;
-      }
-
-      return record.status === 'missing';
-    })
-    .filter((record) => {
-      if (!filters.onlyPendingItems) {
-        return true;
-      }
-
-      return record.pendingChecklistItems > 0;
-    })
-    .filter((record) => {
-      const competenciaRecordStart = getDateTimestamp(record.competenciaInicio);
-      const competenciaRecordEnd = getDateTimestamp(record.competenciaFinal);
-
-      if (competenciaInicio != null && (competenciaRecordEnd == null || competenciaRecordEnd < competenciaInicio)) {
-        return false;
-      }
-
-      if (competenciaFinal != null && (competenciaRecordStart == null || competenciaRecordStart > competenciaFinal)) {
-        return false;
-      }
-
-      return true;
-    })
-    .sort((left, right) => {
-      const rightTimestamp = getDateTimestamp(right.surgeryDate) ?? 0;
-      const leftTimestamp = getDateTimestamp(left.surgeryDate) ?? 0;
-
-      if (rightTimestamp !== leftTimestamp) {
-        return rightTimestamp - leftTimestamp;
-      }
-
-      return left.patientName.localeCompare(right.patientName, 'pt-BR');
-    });
-}
-
-function buildBreakdown(records: BillingRecord[], getLabel: (record: BillingRecord) => string) {
-  const bucket = new Map<string, BillingBreakdownItem>();
-
-  records.forEach((record) => {
-    const label = getLabel(record);
-    const current = bucket.get(label);
-
-    if (current) {
-      current.totalGrossAmount += record.paymentAmount;
-      current.totalNetAmount += record.netAmount;
-      current.totalGlosaAmount += record.glosaAmount;
-      current.totalRecords += 1;
-      current.pendingCount += record.pendingChecklistItems > 0 ? 1 : 0;
-      return;
-    }
-
-    bucket.set(label, {
-      label,
-      totalGrossAmount: record.paymentAmount,
-      totalNetAmount: record.netAmount,
-      totalGlosaAmount: record.glosaAmount,
-      totalRecords: 1,
-      pendingCount: record.pendingChecklistItems > 0 ? 1 : 0,
-    });
-  });
-
-  return [...bucket.values()].sort((left, right) => {
-    if (right.totalGrossAmount !== left.totalGrossAmount) {
-      return right.totalGrossAmount - left.totalGrossAmount;
-    }
-
-    return left.label.localeCompare(right.label, 'pt-BR');
-  });
-}
-
-export function groupBillingByDoctor(records: BillingRecord[]) {
-  return buildBreakdown(records, (record) => record.doctorName || 'Sem cirurgião');
-}
-
-export function groupBillingByConvenio(records: BillingRecord[]) {
-  return buildBreakdown(records, (record) => record.regime === 'particular' ? 'Particular' : record.convenioName || 'Convênio não informado');
 }

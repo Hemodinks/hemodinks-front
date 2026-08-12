@@ -1,6 +1,7 @@
 import { type FormEvent } from 'react';
 import { LogIn } from 'lucide-react';
 import type { Theme } from '../../appTypes';
+import type { PublicClinic } from '../../types';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
@@ -19,6 +20,9 @@ type LoginScreenProps = {
   theme: Theme;
   loginEmail: string;
   loginPassword: string;
+  loginClinicValue: string;
+  clinics: PublicClinic[];
+  clinicsLoading: boolean;
   loginError: string;
   loginInfo: string;
   loginLoading: boolean;
@@ -26,6 +30,7 @@ type LoginScreenProps = {
   onThemeToggle: () => void;
   onLoginEmailChange: (value: string) => void;
   onLoginPasswordChange: (value: string) => void;
+  onLoginClinicChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onResetPassword: () => void;
 };
@@ -37,6 +42,9 @@ export function LoginScreen({
   theme,
   loginEmail,
   loginPassword,
+  loginClinicValue,
+  clinics,
+  clinicsLoading,
   loginError,
   loginInfo,
   loginLoading,
@@ -44,6 +52,7 @@ export function LoginScreen({
   onThemeToggle,
   onLoginEmailChange,
   onLoginPasswordChange,
+  onLoginClinicChange,
   onSubmit,
   onResetPassword,
 }: LoginScreenProps) {
@@ -54,7 +63,9 @@ export function LoginScreen({
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel">
         <div className="brand-block">
-          <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
+          {loginClinicValue
+            ? <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
+            : <span className="brand-mark login-brand-placeholder" aria-hidden="true" />}
           <div>
             <span className="eyebrow">{companyName}</span>
             <h1>Acesso ao sistema</h1>
@@ -62,6 +73,23 @@ export function LoginScreen({
         </div>
 
         <form className="stack" onSubmit={onSubmit}>
+          <label>
+            Clínica
+            <select
+              value={loginClinicValue}
+              onChange={(event) => onLoginClinicChange(event.target.value)}
+              disabled={clinicsLoading}
+              required
+            >
+              <option value="">
+                {clinicsLoading ? 'Carregando clínicas...' : 'Selecione uma clínica'}
+              </option>
+              {clinics.map((clinic) => (
+                <option key={clinic.id} value={String(clinic.id)}>{clinic.nome}</option>
+              ))}
+            </select>
+          </label>
+
           <label>
             Email
             <input

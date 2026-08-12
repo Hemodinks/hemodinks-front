@@ -3,6 +3,8 @@ import { FileText, FileUp, ImagePlus, Plus, Save, Trash2, X } from 'lucide-react
 import type { User, UserFormData } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
+import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
+import { downloadUserArquivo } from '../../services';
 import {
   BRAZIL_UF_OPTIONS,
   formatPhoneInput,
@@ -12,6 +14,10 @@ import {
   MAX_NAME_LENGTH,
   MAX_PHONE_LENGTH,
   MEDICAL_PROFILE_ID,
+  PATIENT_PROFILE_ID,
+  PROFILE_OPTIONS,
+  SUPER_ADMIN_PROFILE_ID,
+  TEAM_PROFILE_ID,
   USER_PROFILE_OPTIONS,
 } from '../../shared/utils/formatters';
 import { UserAvatar } from './UserAvatar';
@@ -19,6 +25,7 @@ import { UserAvatar } from './UserAvatar';
 type UserFormProps = {
   canAccessUsers: boolean;
   canUseUserForm: boolean;
+  isSuperAdmin: boolean;
   editingId: number | null;
   editingUserDetails: User | null;
   formData: UserFormData;
@@ -41,6 +48,7 @@ type UserFormProps = {
 export function UserForm({
   canAccessUsers,
   canUseUserForm,
+  isSuperAdmin,
   editingId,
   editingUserDetails,
   formData,
@@ -60,6 +68,12 @@ export function UserForm({
   onDeleteUserArquivo,
 }: UserFormProps) {
   const isFormBusy = formLoading;
+  const assignableProfileOptions = isSuperAdmin
+    ? [...USER_PROFILE_OPTIONS, PROFILE_OPTIONS.find((profile) => profile.id === SUPER_ADMIN_PROFILE_ID)!]
+    : [...USER_PROFILE_OPTIONS];
+  const profileOptions = editingUserDetails?.perfilId === TEAM_PROFILE_ID
+    ? [...assignableProfileOptions, PROFILE_OPTIONS.find((profile) => profile.id === TEAM_PROFILE_ID)!]
+    : assignableProfileOptions;
 
   return (
     <FormPanel className="module-form-panel">
@@ -105,7 +119,7 @@ export function UserForm({
             disabled={isFormBusy}
             onChange={(event) => void onProfilePhotoChange(event)}
           />
-          <span className="file-hint">PNG, JPG ou WEBP até 1 MB.</span>
+          <span className="file-hint">PNG, JPG ou WEBP até 2 MB.</span>
         </div>
 
         <div className="two-column-fields user-form-columns">
@@ -125,7 +139,7 @@ export function UserForm({
               disabled={isFormBusy || !canAccessUsers}
               required
             >
-              {USER_PROFILE_OPTIONS.map((profile) => (
+              {profileOptions.map((profile) => (
                 <option key={profile.id} value={profile.id}>
                   {profile.nome}
                 </option>
@@ -160,7 +174,7 @@ export function UserForm({
               value={formData.email}
               onValueChange={(value) => setFormData((current) => ({ ...current, email: value.slice(0, MAX_EMAIL_LENGTH) }))}
               maxLength={MAX_EMAIL_LENGTH}
-              disabled={isFormBusy}
+              disabled={isFormBusy || (!canAccessUsers && formData.perfilId === PATIENT_PROFILE_ID)}
               required
             />
 
@@ -174,7 +188,7 @@ export function UserForm({
               maxLength={MAX_PHONE_LENGTH}
               placeholder="+55 (81) 99999-9999"
               disabled={isFormBusy}
-              required
+              required={formData.perfilId !== TEAM_PROFILE_ID}
             />
           </div>
         </div>
@@ -248,7 +262,11 @@ export function UserForm({
                 {editingUserDetails.arquivos.map((arquivo) => (
                   <li key={arquivo.id}>
                     <FileText size={15} />
-                    <a href={arquivo.url} target="_blank" rel="noreferrer">{arquivo.nomeOriginal}</a>
+                    <SecureFileDownloadButton
+                      fileName={arquivo.nomeOriginal}
+                      label={arquivo.nomeOriginal}
+                      loadFile={() => downloadUserArquivo(editingUserDetails.id, arquivo.id, sessionToken)}
+                    />
                     <IconButton label="Excluir arquivo" tone="muted" className="mini" onClick={() => void onDeleteUserArquivo(editingUserDetails, arquivo.id)}>
                       <Trash2 size={14} />
                     </IconButton>

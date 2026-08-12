@@ -42,6 +42,7 @@ type PatientsPageProps = {
   opmeFornecedores: OpmeFornecedor[];
   opmeFornecedoresError: string;
   isAdmin: boolean;
+  isTeam: boolean;
   isMedical: boolean;
   sessionToken: string;
   setPacienteFormData: Dispatch<SetStateAction<PacienteFormData>>;
@@ -59,6 +60,7 @@ type PatientsPageProps = {
   removePendingPatientFile: (index: number) => void;
   handleDeletePacienteArquivo: (paciente: Paciente, arquivoId: number) => void | Promise<void>;
   handleExportPacientes: (format: PacienteExportFormat) => void | Promise<void>;
+  companyName: string;
   handleEditPaciente: (paciente: Paciente) => void | Promise<void>;
   handleDeletePaciente: (paciente: Paciente) => void | Promise<void>;
   handleOpenPacienteFiles: (paciente: Paciente) => void | Promise<void>;
@@ -105,6 +107,7 @@ export function PatientsPage({
   opmeFornecedores,
   opmeFornecedoresError,
   isAdmin,
+  isTeam,
   isMedical,
   sessionToken,
   setPacienteFormData,
@@ -122,6 +125,7 @@ export function PatientsPage({
   removePendingPatientFile,
   handleDeletePacienteArquivo,
   handleExportPacientes,
+  companyName,
   handleEditPaciente,
   handleDeletePaciente,
   handleOpenPacienteFiles,
@@ -143,6 +147,7 @@ export function PatientsPage({
           pacienteFormLoading={pacienteFormLoading}
           pendingPatientFiles={pendingPatientFiles}
           patientFileInputKey={patientFileInputKey}
+          sessionToken={sessionToken}
           hospitais={hospitais}
           hospitaisError={hospitaisError}
           medicalUsers={medicalUsers}
@@ -160,6 +165,7 @@ export function PatientsPage({
           onRemovePendingPatientFile={removePendingPatientFile}
           onDeletePacienteArquivo={handleDeletePacienteArquivo}
           onOpenPacienteObservacoes={editingPaciente ? () => void handleOpenPacienteObservacoes(editingPaciente) : undefined}
+          companyName={companyName}
         />
       ) : (
         <PatientList
@@ -185,8 +191,9 @@ export function PatientsPage({
           canManageObservacoes={canManageObservacoes}
           patientReadOnly={patientReadOnly}
           isAdmin={isAdmin}
-          hasMedicalUsers={medicalUsers.length > 0}
-          hasConvenios={convenios.length > 0}
+          isTeam={isTeam}
+          medicalUsers={medicalUsers}
+          convenios={convenios}
           onSearchChange={setPacienteSearchTerm}
           onFiltersChange={setPacienteFilters}
           onClearFilters={clearPacienteFilters}

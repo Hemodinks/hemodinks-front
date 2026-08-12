@@ -1,4 +1,4 @@
-import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   createUser,
@@ -9,21 +9,16 @@ import {
   updateUser,
   uploadUserArquivo,
 } from '../../services';
-import type { AppView, ModuleMode } from '../../appTypes';
 import { queryClient } from '../../queryClient';
 import { queryKeys } from '../../shared/queryKeys';
-import { readProfilePhoto } from '../../shared/utils/files';
 import {
-  ALLOWED_PATIENT_FILE_TYPES,
-  ALLOWED_PROFILE_PHOTO_TYPES,
-  DEFAULT_PASSWORD,
   DEFAULT_PROFILE_ID,
   formatProfileName,
   getErrorMessage,
-  MAX_PATIENT_FILE_BYTES,
-  MAX_PROFILE_PHOTO_BYTES,
   MEDICAL_PROFILE_ID,
   PAGE_SIZE,
+  TEAM_PROFILE_ID,
+  SUPER_ADMIN_PROFILE_ID,
 } from '../../shared/utils/formatters';
 import {
   getPagedItems,
@@ -32,30 +27,16 @@ import {
   sortUsersForListing,
 } from '../../shared/utils/listing';
 import type { AuthSession, User, UserFormData, UserPayload } from '../../types';
-import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import {
   toUserPayload,
   validateUserForm,
 } from './userUtils';
 import { useUserForm } from './useUserForm';
 import { useUserList } from './useUserList';
+import type { UseUsersDomainOptions } from './usersDomainTypes';
+import { useUserFileInputs } from './useUserFileInputs';
 
 const LIST_CACHE_TIME_MS = 20 * 1000;
-
-type UseUsersDomainOptions = {
-  session: AuthSession | null;
-  activeView: AppView;
-  moduleMode: ModuleMode;
-  canAccessUsers: boolean;
-  canEditOwnUser: boolean;
-  isAdmin: boolean;
-  setModuleMode: Dispatch<SetStateAction<ModuleMode>>;
-  navigateToView: (view: AppView, replace?: boolean) => void;
-  persistSession: (nextSession: AuthSession) => void;
-  loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
-  onDeleteCurrentUser: () => void;
-  confirmAction: ConfirmAction;
-};
 
 export function useUsersDomain({
   session,
@@ -126,6 +107,12 @@ export function useUsersDomain({
     applyUserToForm,
   } = userForm;
   const canUseUserForm = isAdmin || (canEditOwnUser && editingId === session?.user.id);
+  const userFileInputs = useUserFileInputs({
+    setFormData,
+    setFormError,
+    setPhotoInputKey,
+    setPendingFiles: setPendingUserFiles,
+  });
   const usersQueryParams = useMemo(() => ({
     page: currentPage,
     pageSize: PAGE_SIZE,
@@ -238,61 +225,6 @@ export function useUsersDomain({
     }
   };
 
-  const handleProfilePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-
-    if (!file) {
-      return;
-    }
-
-    if (!ALLOWED_PROFILE_PHOTO_TYPES.has(file.type)) {
-      setFormError('Use uma foto PNG, JPG ou WEBP.');
-      return;
-    }
-
-    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
-      setFormError('A foto deve ter no maximo 1 MB.');
-      return;
-    }
-
-    try {
-      const fotoPerfil = await readProfilePhoto(file);
-      setFormData((current) => ({ ...current, fotoPerfil }));
-      setFormError('');
-    } catch (error) {
-      setFormError(getErrorMessage(error));
-    }
-  };
-
-  const handleRemoveProfilePhoto = () => {
-    setFormData((current) => ({ ...current, fotoPerfil: null }));
-    setPhotoInputKey((key) => key + 1);
-  };
-
-  const handleUserFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = '';
-
-    if (!files.length) {
-      return;
-    }
-
-    const invalidFile = files.find((file) => !ALLOWED_PATIENT_FILE_TYPES.has(file.type) || file.size > MAX_PATIENT_FILE_BYTES);
-
-    if (invalidFile) {
-      setFormError('Use PDF, DOC, DOCX, JPG, JPEG, PNG, XLS, XLSX, TXT, CSV, PPT ou PPTX de até 10 MB.');
-      return;
-    }
-
-    setPendingUserFiles((current) => [...current, ...files]);
-    setFormError('');
-  };
-
-  const removePendingUserFile = (indexToRemove: number) => {
-    setPendingUserFiles((current) => current.filter((_, index) => index !== indexToRemove));
-  };
-
   const handleDeleteUserArquivo = async (user: User, arquivoId: number) => {
     if (!session) {
       return;
@@ -322,7 +254,11 @@ export function useUsersDomain({
       return;
     }
 
-    const validationError = validateUserForm(formData);
+    const validationError = validateUserForm(
+      formData,
+      editingUserDetails?.perfilId === TEAM_PROFILE_ID,
+      session.user.perfilId === SUPER_ADMIN_PROFILE_ID,
+    );
 
     if (validationError) {
       setFormError(validationError);
@@ -343,7 +279,7 @@ export function useUsersDomain({
         setSuccessMessage('Usuário atualizado.');
       } else {
         savedUser = await saveUserMutation.mutateAsync({ id: null, payload, token: session.token });
-        setSuccessMessage(`Usuário cadastrado com senha inicial ${DEFAULT_PASSWORD}.`);
+        setSuccessMessage('Usuário cadastrado com senha temporária. Oriente a alteração no primeiro acesso.');
       }
 
       if (savedUser.perfilId === MEDICAL_PROFILE_ID) {
@@ -465,7 +401,7 @@ export function useUsersDomain({
   };
 
   const openNewUserForm = () => {
-    if (!canAccessUsers) {
+    if (!canAccessUsers || !isAdmin) {
       return;
     }
 
@@ -548,35 +484,9 @@ export function useUsersDomain({
   }, [currentPage, totalPages]);
 
   return {
-    users,
-    usersLoading,
-    usersError,
-    successMessage,
-    setSuccessMessage,
-    searchTerm,
-    setSearchTerm,
-    currentPage,
-    setCurrentPage,
-    sortBy,
-    setSortBy,
-    sortDirection,
-    setSortDirection,
-    debouncedSearchTerm,
-    usersTotalItems,
-    usersTotalPages,
-    totalPages,
-    paginatedUsers,
-    visibleStart,
-    visibleEnd,
-    formData,
-    setFormData,
-    editingId,
-    editingUserDetails,
-    formLoading,
-    formError,
-    photoInputKey,
-    userFileInputKey,
-    pendingUserFiles,
+    ...userList,
+    ...userForm,
+    ...userFileInputs,
     showPasswordModal,
     setShowPasswordModal,
     selectedInfoUser,
@@ -585,12 +495,7 @@ export function useUsersDomain({
     setSelectedContactUser,
     canUseUserForm,
     resetUsersState,
-    resetUserForm,
     handleEditUser,
-    handleProfilePhotoChange,
-    handleRemoveProfilePhoto,
-    handleUserFilesChange,
-    removePendingUserFile,
     handleDeleteUserArquivo,
     handleSubmitUser,
     handleDeleteUser,

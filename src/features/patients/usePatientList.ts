@@ -6,9 +6,11 @@ import type { Paciente } from '../../types';
 import { emptyPacienteFilters } from './patientUtils';
 
 function arePacienteFiltersEqual(current: PacienteFilters, debounced: PacienteFilters) {
-  return current.medico === debounced.medico
-    && current.convenio === debounced.convenio
-    && current.procedimento === debounced.procedimento;
+  return current.medicoUserIds.join(',') === debounced.medicoUserIds.join(',')
+    && current.convenioIds.join(',') === debounced.convenioIds.join(',')
+    && current.procedimento === debounced.procedimento
+    && current.dataInicio === debounced.dataInicio
+    && current.dataFinal === debounced.dataFinal;
 }
 
 export function usePatientList() {
@@ -19,7 +21,7 @@ export function usePatientList() {
   const [pacienteSearchTerm, setPacienteSearchTerm] = useState('');
   const [pacienteFilters, setPacienteFilters] = useState<PacienteFilters>(emptyPacienteFilters);
   const [pacienteCurrentPage, setPacienteCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState('recent');
+  const [sortBy, setSortBy] = useState('data');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const resetPacientesPage = useCallback(() => setPacienteCurrentPage(1), []);
   const [debouncedPacienteSearchTerm] = useDebouncedValue(pacienteSearchTerm, { onCommit: resetPacientesPage });
@@ -47,7 +49,7 @@ export function usePatientList() {
     setPacienteCurrentPage(1);
     setPacientesTotalItems(0);
     setPacientesTotalPages(1);
-    setSortBy('recent');
+    setSortBy('data');
     setSortDirection('desc');
   };
 

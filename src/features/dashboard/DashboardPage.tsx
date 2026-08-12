@@ -1,6 +1,7 @@
 import { type DragEvent, type ReactNode, useEffect, useState } from 'react';
 import {
   ArrowRight,
+  Building2,
   CalendarDays,
   CheckCircle2,
   CircleCheck,
@@ -21,7 +22,9 @@ type DashboardPageProps = {
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
   canAccessMedicalGroups: boolean;
+  canAccessAgenda: boolean;
   canAccessSettings: boolean;
+  canAccessClinics: boolean;
   patientReadOnly: boolean;
   usersCount: number;
   pacientesCount: number;
@@ -40,9 +43,10 @@ type DashboardPageProps = {
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
+  onOpenClinics: () => void;
 };
 
-type DashboardModuleId = 'users' | 'profile' | 'patients' | 'billing' | 'medicalGroups' | 'agenda' | 'settings';
+type DashboardModuleId = 'users' | 'profile' | 'patients' | 'billing' | 'medicalGroups' | 'agenda' | 'clinics' | 'settings';
 
 type DashboardModule = {
   id: DashboardModuleId;
@@ -57,7 +61,7 @@ type DashboardModule = {
 };
 
 const DASHBOARD_MODULE_ORDER_KEY = 'hemodinks.dashboard.module-order';
-const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = ['users', 'profile', 'patients', 'billing', 'medicalGroups', 'agenda', 'settings'];
+const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = ['users', 'profile', 'patients', 'billing', 'medicalGroups', 'agenda', 'clinics', 'settings'];
 
 function readStoredDashboardModuleOrder() {
   if (typeof window === 'undefined') {
@@ -116,7 +120,9 @@ export function DashboardPage({
   canEditOwnUser,
   canAccessBilling,
   canAccessMedicalGroups,
+  canAccessAgenda,
   canAccessSettings,
+  canAccessClinics,
   patientReadOnly,
   usersCount,
   pacientesCount,
@@ -135,6 +141,7 @@ export function DashboardPage({
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
+  onOpenClinics,
 }: DashboardPageProps) {
   const [moduleOrder, setModuleOrder] = useState<DashboardModuleId[]>(() => readStoredDashboardModuleOrder());
   const [draggedModuleId, setDraggedModuleId] = useState<DashboardModuleId | null>(null);
@@ -201,17 +208,31 @@ export function DashboardPage({
           onOpen: onOpenMedicalGroups,
         }]
       : []),
-    {
-      id: 'agenda',
-      title: 'Agenda e notificações',
-      metric: 'Eventos, lembretes e avisos',
-      footerLabel: `${upcomingEventsCount} próximos`,
-      className: 'module-card-agenda',
-      ariaLabel: 'Abrir agenda e notificações',
-      icon: <CalendarDays size={24} />,
-      onOpen: onOpenAgenda,
-      badge: unreadAgendaNotificationCount > 0 ? `${unreadAgendaNotificationCount} não lidas` : undefined,
-    },
+    ...(canAccessAgenda
+      ? [{
+          id: 'agenda' as const,
+          title: 'Agenda e notificações',
+          metric: 'Eventos, lembretes e avisos',
+          footerLabel: `${upcomingEventsCount} próximos`,
+          className: 'module-card-agenda',
+          ariaLabel: 'Abrir agenda e notificações',
+          icon: <CalendarDays size={24} />,
+          onOpen: onOpenAgenda,
+          badge: unreadAgendaNotificationCount > 0 ? `${unreadAgendaNotificationCount} não lidas` : undefined,
+        }]
+      : []),
+    ...(canAccessClinics
+      ? [{
+          id: 'clinics' as const,
+          title: 'Clínicas',
+          metric: 'Gestão da plataforma',
+          footerLabel: 'Administrar clínicas',
+          className: 'module-card-clinics',
+          ariaLabel: 'Abrir clínicas',
+          icon: <Building2 size={24} />,
+          onOpen: onOpenClinics,
+        }]
+      : []),
     ...(canAccessSettings
       ? [{
           id: 'settings' as const,

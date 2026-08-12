@@ -123,6 +123,47 @@
   --side-nav-border: rgba(180, 83, 9, 0.3);
 }
 
+.side-nav-billing-group,
+.side-nav-billing-submenu {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.side-nav-billing-toggle,
+.side-nav-billing-subitem {
+  width: 100%;
+}
+
+.side-nav-chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  transition: transform 180ms ease;
+}
+
+.side-nav-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.side-nav-billing-submenu {
+  padding-left: 18px;
+}
+
+.side-nav-billing-submenu[hidden] {
+  display: none;
+}
+
+.side-nav .side-nav-billing-subitem {
+  min-height: 40px;
+  padding-right: 10px;
+  font-size: 0.82rem;
+}
+.side-nav-reports {
+  --side-nav-color: #1d4ed8;
+  --side-nav-soft: rgba(29, 78, 216, .12);
+  --side-nav-border: rgba(29, 78, 216, .32);
+}
+
 .side-nav-profile {
   --side-nav-color: #7c3aed;
   --side-nav-soft: rgba(124, 58, 237, 0.1);
@@ -139,6 +180,12 @@
   --side-nav-color: #8a5a14;
   --side-nav-soft: rgba(138, 90, 20, 0.12);
   --side-nav-border: rgba(138, 90, 20, 0.34);
+}
+
+.side-nav-clinics {
+  --side-nav-color: var(--action-secondary);
+  --side-nav-soft: color-mix(in srgb, var(--action-secondary) 12%, transparent);
+  --side-nav-border: color-mix(in srgb, var(--action-secondary) 32%, transparent);
 }
 
 .side-nav-settings {
@@ -204,6 +251,18 @@
   }
 
   .side-nav-count {
+    margin-left: 0;
+  }
+
+  .side-nav-billing-group {
+    align-self: start;
+  }
+
+  .side-nav-billing-submenu {
+    padding-left: 0;
+  }
+
+  .side-nav-chevron {
     margin-left: 0;
   }
 }
