@@ -6,7 +6,7 @@ import type {
   PacientePayload,
   PagedResult,
 } from '../types';
-import { del, get, post, put, upload } from './api';
+import { del, get, getBlob, post, put, upload } from './api';
 import { buildListQueryParams } from './queryParams';
 
 export function getPacientes(token: string, query?: PacienteListQuery) {
@@ -59,4 +59,8 @@ export function markPacienteObservacoesAsRead(id: number, token: string) {
 
 export function deletePacienteArquivo(id: number, arquivoId: number, token: string) {
   return del<void>(`/api/pacientes/${id}/arquivos/${arquivoId}`, token);
+}
+
+export function downloadPacienteArquivo(id: number, arquivoId: number, token: string) {
+  return getBlob(`/api/pacientes/${id}/arquivos/${arquivoId}/download`, token);
 }

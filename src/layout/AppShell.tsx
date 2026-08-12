@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
+import { useIsFetching } from '@tanstack/react-query';
 import type { AppView, BreadcrumbItem } from '../appTypes';
 import type { AuthSession, Convenio, MedicalUserOption, OpmeFornecedor } from '../types';
 import { LoadingOverlay } from '../shared/components/LoadingOverlay';
+import { useDelayedLoading } from '../shared/hooks/useDelayedLoading';
 import {
   CONVENIOS_DATALIST_ID,
   formatPersonName,
@@ -32,6 +34,7 @@ type AppShellProps = {
   canAccessMedicalGroups: boolean;
   canAccessSettings: boolean;
   canAccessAgenda: boolean;
+  canAccessClinics: boolean;
   usersCount: number;
   pacientesCount: number;
   medicalGroupsCount: number;
@@ -47,9 +50,11 @@ type AppShellProps = {
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
   onOpenBilling: () => void;
+  onOpenReports: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
+  onOpenClinics: () => void;
 };
 
 export function AppShell({
@@ -73,6 +78,7 @@ export function AppShell({
   canAccessMedicalGroups,
   canAccessSettings,
   canAccessAgenda,
+  canAccessClinics,
   usersCount,
   pacientesCount,
   medicalGroupsCount,
@@ -88,13 +94,18 @@ export function AppShell({
   onOpenMyProfile,
   onOpenPatientsList,
   onOpenBilling,
+  onOpenReports,
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
+  onOpenClinics,
 }: AppShellProps) {
+  const activeQueries = useIsFetching();
+  const isSlowQuery = useDelayedLoading(activeQueries > 0);
+
   return (
     <main className="app-shell">
-      <LoadingOverlay active={isBusy} />
+      <LoadingOverlay active={isBusy || isSlowQuery} />
       <datalist id={MEDICAL_USERS_DATALIST_ID}>
         {medicalUsers.map((user) => (
           <option key={user.id} value={formatPersonName(user.nome)} />
@@ -128,6 +139,7 @@ export function AppShell({
           session={session}
           activeView={activeView}
           currentUserProfile={currentUserProfile}
+          clinicName={companyName}
           canAccessDashboard={canAccessDashboard}
           canAccessPatients={canAccessPatients}
           canAccessUsers={canAccessUsers}
@@ -136,6 +148,7 @@ export function AppShell({
           canAccessMedicalGroups={canAccessMedicalGroups}
           canAccessSettings={canAccessSettings}
           canAccessAgenda={canAccessAgenda}
+          canAccessClinics={canAccessClinics}
           usersCount={usersCount}
           pacientesCount={pacientesCount}
           medicalGroupsCount={medicalGroupsCount}
@@ -146,9 +159,11 @@ export function AppShell({
           onOpenMyProfile={onOpenMyProfile}
           onOpenPatientsList={onOpenPatientsList}
           onOpenBilling={onOpenBilling}
+          onOpenReports={onOpenReports}
           onOpenMedicalGroups={onOpenMedicalGroups}
           onOpenAgenda={onOpenAgenda}
           onOpenSettings={onOpenSettings}
+          onOpenClinics={onOpenClinics}
         />
 
         <div className={`app-content ${activeView === 'dashboard' ? 'dashboard-content' : ''}`}>

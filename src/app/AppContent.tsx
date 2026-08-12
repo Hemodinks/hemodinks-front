@@ -1,55 +1,53 @@
-import { type FormEvent, useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { AUTH_EXPIRED_EVENT, authenticate, getCurrentLicenca, resetPassword } from '../services';
-import { LoginScreen } from '../features/auth/LoginScreen';
-import { PasswordRequiredScreen } from '../features/auth/PasswordRequiredScreen';
-import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
-import { useAuthSession } from '../features/auth/useAuthSession';
-import { useMedicalGroupsDomain } from '../features/medicalGroups/useMedicalGroupsDomain';
-import { usePatientsDomain } from '../features/patients/usePatientsDomain';
-import { useUsersDomain } from '../features/users/useUsersDomain';
-import { AppShell } from '../layout/AppShell';
-import type { AppView, BreadcrumbItem, ModuleMode } from '../appTypes';
-import { queryClient } from '../queryClient';
-import { useConfirmationDialog } from '../shared/components/ConfirmationDialog';
-import { useRouteView } from '../shared/hooks/useRouteView';
-import { useThemePreference } from '../shared/hooks/useThemePreference';
+import { useCallback, useLayoutEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuthSession } from "../features/auth/useAuthSession";
+import { useLoginFlow } from "../features/auth/useLoginFlow";
+import { useMedicalLicenseHydration, useSessionExpiration } from "../features/auth/useSessionLifecycle";
+import { useMedicalGroupsDomain } from "../features/medicalGroups/useMedicalGroupsDomain";
+import { usePatientsDomain } from "../features/patients/usePatientsDomain";
+import { useUsersDomain } from "../features/users/useUsersDomain";
+import { AppShell } from "../layout/AppShell";
+import type { AppView, ModuleMode } from "../appTypes";
+import { queryClient } from "../queryClient";
+import { useConfirmationDialog } from "../shared/components/ConfirmationDialog";
+import { useRouteView } from "../shared/hooks/useRouteView";
+import { useThemePreference } from "../shared/hooks/useThemePreference";
+import { formatProfileName, API_ASSET_BASE_URL } from "../shared/utils/formatters";
+import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from "./appAccess";
+import { AppMainContent } from "./AppMainContent";
+import { AppModals } from "./AppModals";
+import { AppPublicContent } from "./AppPublicContent";
+import { AppCredentialGate } from "./AppCredentialGate";
+import { buildSessionForSelectedClinic, getResetPasswordCompletedMessage } from "./appSession";
+import { createAppSortHandlers } from "./appSortHandlers";
 import {
-  DEFAULT_PASSWORD,
-  formatProfileName,
-  getErrorMessage,
-  isValidEmail,
-  MEDICAL_PROFILE_ID,
-} from '../shared/utils/formatters';
-import { getJwtExpirationDelayMs, isJwtExpired } from '../shared/utils/jwt';
-import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from './appAccess';
-import { AppMainContent } from './AppMainContent';
-import { AppModals } from './AppModals';
-import { buildSessionFromLogin, getResetPasswordCompletedMessage, shouldOpenDashboardAfterLogin } from './appSession';
-import { updateSort } from './appSort';
-import { getActiveModuleLabel, getAppTitle, getFormBreadcrumbLabel } from './appViewMeta';
-import { useAppChrome } from './useAppChrome';
+  buildBreadcrumbItems,
+  getAppTitle,
+} from "./appViewMeta";
+import { useAppChrome } from "./useAppChrome";
 
-const SESSION_EXPIRED_MESSAGE = 'Sua sessao expirou. Entre novamente para continuar.';
-const SESSION_EXPIRATION_LEEWAY_MS = 30_000;
-
+const SESSION_EXPIRED_MESSAGE =
+  "Sua sessao expirou. Entre novamente para continuar.";
 export function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { session, persistSession, clearSession } = useAuthSession();
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
-  const [moduleMode, setModuleMode] = useState<ModuleMode>('list');
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [loginInfo, setLoginInfo] = useState('');
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
-  const [openDashboardAfterLogin, setOpenDashboardAfterLogin] = useState(false);
+  const [moduleMode, setModuleMode] = useState<ModuleMode>("list");
+  const loginFlow = useLoginFlow({ session, persistSession });
+  const {
+    loginLoading,
+    resetPasswordLoading,
+    openDashboardAfterLogin,
+    setOpenDashboardAfterLogin,
+    resetLoginState,
+  } = loginFlow;
 
   const {
     isAdmin,
+    isSuperAdmin,
+    isTeam,
     isMedical,
     canAccessDashboard,
     canAccessPatients,
@@ -58,6 +56,7 @@ export function AppContent() {
     canAccessUsers,
     canEditOwnUser,
     canAccessBilling,
+    canAccessReports,
     canAccessMedicalGroups,
     canAccessSettings,
     canCreatePatients,
@@ -70,11 +69,16 @@ export function AppContent() {
     canUseUsersRoute,
     canUseProfileRoute,
     canUseBillingRoute,
+    canUseReportsRoute,
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
     canUseSettingsRoute,
+    canAccessClinics,
+    canUseClinicsRoute,
   } = getAppAccess(session);
-  const forceDashboardRoute = openDashboardAfterLogin && Boolean(session && !session.user.precisaTrocarSenha);
+  const forceDashboardRoute =
+    openDashboardAfterLogin &&
+    Boolean(session && !session.user.precisaTrocarSenha);
   const { activeView, navigateToView } = useRouteView({
     session,
     canUseDashboardRoute,
@@ -82,34 +86,37 @@ export function AppContent() {
     canUseUsersRoute,
     canUseProfileRoute,
     canUseBillingRoute,
+    canUseReportsRoute,
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
     canUseSettingsRoute,
+    canUseClinicsRoute,
     forceDashboardRoute,
   });
   const appChrome = useAppChrome({ session });
-  const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
-  const isResetPasswordRoute = normalizedPath === '/reset-password';
+  const normalizedPath = location.pathname.replace(/\/+$/, "") || "/";
+  const isResetPasswordRoute = normalizedPath === "/reset-password";
   const resetToken = isResetPasswordRoute
-    ? new URLSearchParams(location.search).get('token')?.trim() ?? ''
-    : '';
-  const navigateToViewFromInteraction = useCallback((view: AppView, replace = false) => {
-    setOpenDashboardAfterLogin(false);
-    navigateToView(view, replace);
-  }, [navigateToView]);
+    ? (new URLSearchParams(location.search).get("token")?.trim() ?? "")
+    : "";
+  const navigateToViewFromInteraction = useCallback(
+    (view: AppView, replace = false) => {
+      setOpenDashboardAfterLogin(false);
+      navigateToView(view, replace);
+    },
+    [navigateToView],
+  );
 
-  const returnToLogin = (infoMessage = '') => {
-    setLoginError('');
-    setLoginInfo(infoMessage);
-    setLoginPassword('');
-    navigate('/', { replace: true });
+  const returnToLogin = (infoMessage = "") => {
+    resetLoginState(infoMessage);
+    navigate("/", { replace: true });
   };
 
   const handleResetPasswordCompleted = (message: string) => {
     returnToLogin(getResetPasswordCompletedMessage(message));
   };
 
-  function endSession(infoMessage = '') {
+  function endSession(infoMessage = "") {
     queryClient.clear();
     clearSession();
     appChrome.resetAppChrome();
@@ -117,15 +124,13 @@ export function AppContent() {
     patientsDomain.resetPatientsState();
     medicalGroupsDomain.resetMedicalGroupsState();
     if (infoMessage) {
-      navigate('/', { replace: true });
+      navigate("/", { replace: true });
     } else {
-      navigateToView('dashboard', true);
+      navigateToView("dashboard", true);
     }
-    setModuleMode('list');
+    setModuleMode("list");
     setOpenDashboardAfterLogin(false);
-    setLoginError('');
-    setLoginInfo(infoMessage);
-    setLoginPassword('');
+    resetLoginState(infoMessage);
   }
 
   function logout() {
@@ -175,142 +180,29 @@ export function AppContent() {
     confirmAction,
   });
 
-  const isBusy = loginLoading
-    || resetPasswordLoading
-    || usersDomain.formLoading
-    || patientsDomain.pacienteFormLoading
-    || medicalGroupsDomain.formLoading;
+  const isBusy =
+    loginLoading ||
+    resetPasswordLoading ||
+    usersDomain.formLoading ||
+    patientsDomain.pacienteFormLoading ||
+    medicalGroupsDomain.formLoading;
 
-  useEffect(() => {
-    if (!session) {
-      return;
-    }
-
-    const expireSession = () => {
-      endSession(SESSION_EXPIRED_MESSAGE);
-    };
-
-    const handleAuthExpired = () => {
-      expireSession();
-    };
-
-    window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
-
-    if (isJwtExpired(session.token, Date.now(), SESSION_EXPIRATION_LEEWAY_MS)) {
-      expireSession();
-      return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
-    }
-
-    const expirationDelayMs = getJwtExpirationDelayMs(session.token, Date.now(), SESSION_EXPIRATION_LEEWAY_MS);
-    const timeoutId = expirationDelayMs === null
-      ? null
-      : window.setTimeout(expireSession, expirationDelayMs);
-
-    return () => {
-      window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
-
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-      }
-    };
-  }, [session?.token]);
-
-  useEffect(() => {
-    if (!session || session.user.perfilId !== MEDICAL_PROFILE_ID || session.user.licenca) {
-      return;
-    }
-
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const licenca = await getCurrentLicenca(session.token);
-
-        if (!licenca || cancelled) {
-          return;
-        }
-
-        persistSession({
-          ...session,
-          user: {
-            ...session.user,
-            licenca,
-          },
-        });
-      } catch {
-        // Mantem o fallback legado do medico quando a API ainda nao retorna a licenca no login.
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [persistSession, session]);
+  useSessionExpiration(session, () => endSession(SESSION_EXPIRED_MESSAGE));
+  useMedicalLicenseHydration(session, persistSession);
 
   useLayoutEffect(() => {
-    if (!openDashboardAfterLogin || MEDICAL_ALLOWED_ENTRY_PATHS.has(normalizedPath)) {
+    if (
+      !openDashboardAfterLogin ||
+      MEDICAL_ALLOWED_ENTRY_PATHS.has(normalizedPath)
+    ) {
       return;
     }
 
     setOpenDashboardAfterLogin(false);
   }, [normalizedPath, openDashboardAfterLogin]);
 
-  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoginError('');
-    setLoginInfo('');
-
-    if (!isValidEmail(loginEmail)) {
-      setLoginError('Informe um email valido.');
-      return;
-    }
-
-    setLoginLoading(true);
-
-    try {
-      const result = await authenticate(loginEmail.trim(), loginPassword);
-      const nextSession = buildSessionFromLogin(result, loginPassword);
-      queryClient.clear();
-      setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin(nextSession.user.perfilId));
-      persistSession(nextSession);
-    } catch (error) {
-      setLoginError(getErrorMessage(error));
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
-  const handleResetPassword = async () => {
-    setLoginError('');
-    setLoginInfo('');
-
-    if (!isValidEmail(loginEmail)) {
-      setLoginError('Informe um email valido para resetar a senha.');
-      return;
-    }
-
-    setResetPasswordLoading(true);
-
-    try {
-      const result = await resetPassword(loginEmail.trim());
-
-      if (result.mode === 'default-password') {
-        setLoginPassword(DEFAULT_PASSWORD);
-        setLoginInfo(`Senha redefinida para ${DEFAULT_PASSWORD}. Use-a para entrar e altere a seguir.`);
-        return;
-      }
-
-      setLoginPassword('');
-      setLoginInfo(result.message || 'Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.');
-    } catch (error) {
-      setLoginError(getErrorMessage(error));
-    } finally {
-      setResetPasswordLoading(false);
-    }
-  };
-
   const resetProfileRouteState = () => {
-    if (activeView === 'profile') {
+    if (activeView === "profile") {
       usersDomain.resetUserFormState({ suppressProfileAutoOpen: true });
     }
   };
@@ -319,8 +211,8 @@ export function AppContent() {
     resetProfileRouteState();
 
     if (canAccessDashboard) {
-      navigateToViewFromInteraction('dashboard');
-      setModuleMode('list');
+      navigateToViewFromInteraction("dashboard");
+      setModuleMode("list");
       return;
     }
 
@@ -335,19 +227,19 @@ export function AppContent() {
     }
 
     if (canAccessBilling) {
-      navigateToViewFromInteraction('billing');
-      setModuleMode('list');
+      navigateToViewFromInteraction("billing");
+      setModuleMode("list");
       return;
     }
 
     if (canAccessAgenda) {
-      navigateToViewFromInteraction('agenda');
-      setModuleMode('list');
+      navigateToViewFromInteraction("agenda");
+      setModuleMode("list");
       return;
     }
 
-    navigateToViewFromInteraction('settings');
-    setModuleMode('list');
+    navigateToViewFromInteraction("settings");
+    setModuleMode("list");
   };
 
   const openAgenda = () => {
@@ -358,8 +250,8 @@ export function AppContent() {
       return;
     }
 
-    navigateToViewFromInteraction('agenda');
-    setModuleMode('list');
+    navigateToViewFromInteraction("agenda");
+    setModuleMode("list");
   };
 
   const openPatientsListFromMenu = () => {
@@ -386,8 +278,15 @@ export function AppContent() {
       return;
     }
 
-    navigateToViewFromInteraction('billing');
-    setModuleMode('list');
+    navigateToViewFromInteraction("billing");
+    setModuleMode("list");
+  };
+
+  const openReports = () => {
+    resetProfileRouteState();
+    if (!canAccessReports) return openDashboard();
+    navigateToViewFromInteraction("reports");
+    setModuleMode("list");
   };
 
   const openSettings = () => {
@@ -398,61 +297,48 @@ export function AppContent() {
       return;
     }
 
-    navigateToViewFromInteraction('settings');
-    setModuleMode('list');
+    navigateToViewFromInteraction("settings");
+    setModuleMode("list");
   };
 
-  const handleUserSortChange = (field: string) => {
-    updateSort(
-      field,
-      usersDomain.sortBy,
-      usersDomain.setCurrentPage,
-      usersDomain.setSortBy,
-      usersDomain.setSortDirection,
-      field === 'recent' ? 'desc' : 'asc',
-    );
+  const openClinics = () => {
+    resetProfileRouteState();
+    if (!canAccessClinics) {
+      openDashboard();
+      return;
+    }
+    navigateToViewFromInteraction("clinics");
+    setModuleMode("list");
   };
 
-  const handlePacienteSortChange = (field: string) => {
-    updateSort(
-      field,
-      patientsDomain.sortBy,
-      patientsDomain.setPacienteCurrentPage,
-      patientsDomain.setSortBy,
-      patientsDomain.setSortDirection,
-      field === 'recent' ? 'desc' : 'asc',
-    );
+  const handleClinicSelected = (
+    result: import("../types").SelectClinicResponse,
+  ) => {
+    if (!session) return;
+    queryClient.clear();
+    appChrome.resetAppChrome();
+    persistSession(buildSessionForSelectedClinic(session, result));
+    setModuleMode("list");
+    navigateToViewFromInteraction("dashboard", true);
   };
 
-  const handleCbhpmSortChange = (field: string) => {
-    updateSort(
-      field,
-      patientsDomain.cbhpmSortBy,
-      patientsDomain.setCbhpmCurrentPage,
-      patientsDomain.setCbhpmSortBy,
-      patientsDomain.setCbhpmSortDirection,
-      'asc',
-    );
-  };
+  const {
+    handleUserSortChange,
+    handlePacienteSortChange,
+    handleCbhpmSortChange,
+    handleMedicalGroupSortChange,
+  } = createAppSortHandlers(usersDomain, patientsDomain, medicalGroupsDomain);
 
-  const handleMedicalGroupSortChange = (field: string) => {
-    updateSort(
-      field,
-      medicalGroupsDomain.sortBy,
-      medicalGroupsDomain.setCurrentPage,
-      medicalGroupsDomain.setSortBy,
-      medicalGroupsDomain.setSortDirection,
-      field === 'recent' ? 'desc' : 'asc',
-    );
-  };
-
-  if (!session && isResetPasswordRoute) {
+  if (!session) {
     return (
-      <ResetPasswordScreen
+      <AppPublicContent
+        loginFlow={loginFlow}
+        isResetPasswordRoute={isResetPasswordRoute}
+        resetToken={resetToken}
         companyName={appChrome.companyName}
         companyPhoto={appChrome.systemSettings.fotoEmpresa}
+        isBusy={isBusy}
         theme={theme}
-        token={resetToken}
         onThemeToggle={toggleTheme}
         onBackToLogin={() => returnToLogin()}
         onResetCompleted={handleResetPasswordCompleted}
@@ -460,82 +346,77 @@ export function AppContent() {
     );
   }
 
-  if (!session) {
+  if (session.user.precisaTrocarSenha || session.user.precisaTrocarPin) {
     return (
-      <LoginScreen
-        companyName={appChrome.companyName}
-        companyPhoto={appChrome.systemSettings.fotoEmpresa}
-        isBusy={isBusy}
-        theme={theme}
-        loginEmail={loginEmail}
-        loginPassword={loginPassword}
-        loginError={loginError}
-        loginInfo={loginInfo}
-        loginLoading={loginLoading}
-        resetPasswordLoading={resetPasswordLoading}
-        onThemeToggle={toggleTheme}
-        onLoginEmailChange={setLoginEmail}
-        onLoginPasswordChange={setLoginPassword}
-        onSubmit={handleLogin}
-        onResetPassword={() => void handleResetPassword()}
-      />
-    );
-  }
-
-  if (session.user.precisaTrocarSenha) {
-    return (
-      <PasswordRequiredScreen
+      <AppCredentialGate
         session={session}
-        isBusy={isBusy}
         theme={theme}
+        isBusy={isBusy}
         onThemeToggle={toggleTheme}
         onPasswordChanged={usersDomain.handlePasswordChanged}
+        onPinChanged={(token) => persistSession({
+          token,
+          user: { ...session.user, precisaTrocarPin: false },
+        })}
         onLogout={logout}
       />
     );
   }
 
-  const currentUserProfile = formatProfileName(session.user.perfilId, session.user.perfilNome);
+  const currentUserProfile = formatProfileName(
+    session.user.perfilId,
+    session.user.perfilNome,
+  );
   const activeUsersCount = appChrome.dashboardSummary?.activeUsersCount ?? 0;
-  const activePatientsCount = appChrome.dashboardSummary?.activePatientsCount ?? patientsDomain.pacientesTotalItems;
-  const pendingPaymentsCount = appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;
+  const activePatientsCount =
+    appChrome.dashboardSummary?.activePatientsCount ??
+    patientsDomain.pacientesTotalItems;
+  const pendingPaymentsCount =
+    appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;
   const patientFilesCount = appChrome.dashboardSummary?.patientFilesCount ?? 0;
-  const upcomingEventsCount = appChrome.dashboardSummary?.upcomingEventsCount ?? 0;
-  const unreadObservationCount = appChrome.dashboardSummary?.unreadObservationCount ?? 0;
-  const unreadAgendaNotificationCount = appChrome.dashboardSummary?.unreadAgendaNotificationCount ?? 0;
-  const notificationCount = appChrome.notificationsOpen && appChrome.notifications.length
-    ? appChrome.notifications.length
-    : pendingPaymentsCount + upcomingEventsCount + unreadObservationCount + unreadAgendaNotificationCount;
-  const usersCount = appChrome.dashboardSummary?.usersCount ?? usersDomain.usersTotalItems;
-  const pacientesCount = appChrome.dashboardSummary?.pacientesCount ?? patientsDomain.pacientesTotalItems;
-  const activeModuleLabel = getActiveModuleLabel(activeView);
-  const formBreadcrumbLabel = getFormBreadcrumbLabel({
+  const upcomingEventsCount =
+    appChrome.dashboardSummary?.upcomingEventsCount ?? 0;
+  const unreadObservationCount =
+    appChrome.dashboardSummary?.unreadObservationCount ?? 0;
+  const unreadAgendaNotificationCount =
+    appChrome.dashboardSummary?.unreadAgendaNotificationCount ?? 0;
+  const notificationCount =
+    appChrome.notificationsOpen && appChrome.notifications.length
+      ? appChrome.notifications.length
+      : pendingPaymentsCount +
+        upcomingEventsCount +
+        unreadObservationCount +
+        unreadAgendaNotificationCount;
+  const usersCount =
+    appChrome.dashboardSummary?.usersCount ?? usersDomain.usersTotalItems;
+  const pacientesCount =
+    appChrome.dashboardSummary?.pacientesCount ??
+    patientsDomain.pacientesTotalItems;
+  const currentClinicPhoto =
+    appChrome.systemSettings.fotoEmpresa && session.user.clinicaSlug
+      ? `${API_ASSET_BASE_URL}/api/public/clinicas/${session.user.clinicaSlug}/foto`
+      : null;
+  const breadcrumbItems = buildBreadcrumbItems({
     activeView,
+    moduleMode,
     editingId: usersDomain.editingId,
     editingPacienteId: patientsDomain.editingPacienteId,
     patientReadOnly,
     editingGroupId: medicalGroupsDomain.editingGroupId,
+    openDashboard,
+    openModuleByView: {
+      dashboard: openDashboard,
+      users: usersDomain.openUsersList,
+      profile: usersDomain.openMyProfile,
+      patients: patientsDomain.openPatientsList,
+      billing: openBilling,
+      reports: openReports,
+      medicalGroups: openMedicalGroups,
+      agenda: openAgenda,
+      settings: openSettings,
+      clinics: openClinics,
+    },
   });
-  const openActiveModuleList = activeView === 'users'
-    ? usersDomain.openUsersList
-    : activeView === 'profile' ? usersDomain.openMyProfile
-      : activeView === 'patients' ? patientsDomain.openPatientsList
-        : activeView === 'billing' ? openBilling
-          : activeView === 'medicalGroups' ? openMedicalGroups
-            : activeView === 'settings' ? openSettings : openAgenda;
-  const breadcrumbItems: BreadcrumbItem[] = activeView === 'dashboard'
-    ? [
-      { label: 'Início', onClick: openDashboard },
-      { label: 'Painel inicial' },
-    ]
-    : [
-      { label: 'Início', onClick: openDashboard },
-      {
-        label: activeModuleLabel,
-        onClick: moduleMode === 'form' ? openActiveModuleList : undefined,
-      },
-      ...(moduleMode === 'form' ? [{ label: formBreadcrumbLabel }] : []),
-    ];
 
   return (
     <AppShell
@@ -543,7 +424,7 @@ export function AppContent() {
       isBusy={isBusy}
       appTitle={getAppTitle(activeView)}
       companyName={appChrome.companyName}
-      companyPhoto={appChrome.systemSettings.fotoEmpresa}
+      companyPhoto={currentClinicPhoto}
       activeView={activeView}
       breadcrumbItems={breadcrumbItems}
       notificationsOpen={appChrome.notificationsOpen}
@@ -557,6 +438,7 @@ export function AppContent() {
       canAccessMedicalGroups={canAccessMedicalGroups}
       canAccessSettings={canAccessSettings}
       canAccessAgenda={canAccessAgenda}
+      canAccessClinics={canAccessClinics}
       usersCount={usersCount}
       pacientesCount={pacientesCount}
       medicalGroupsCount={medicalGroupsDomain.medicalGroupsCount}
@@ -572,10 +454,12 @@ export function AppContent() {
       onOpenMyProfile={usersDomain.openMyProfile}
       onOpenPatientsList={openPatientsListFromMenu}
       onOpenBilling={openBilling}
+      onOpenReports={openReports}
       onOpenMedicalGroups={openMedicalGroups}
       onOpenAgenda={openAgenda}
       onOpenSettings={openSettings}
-      modals={(
+      onOpenClinics={openClinics}
+      modals={
         <AppModals
           session={session}
           usersDomain={usersDomain}
@@ -595,7 +479,7 @@ export function AppContent() {
           onPasswordChanged={usersDomain.handlePasswordChanged}
           confirmationDialog={confirmationDialog}
         />
-      )}
+      }
     >
       <AppMainContent
         session={session}
@@ -607,7 +491,9 @@ export function AppContent() {
           canAccessUsers,
           canEditOwnUser,
           canAccessBilling,
+          canAccessReports,
           canAccessMedicalGroups,
+          canAccessAgenda,
           canAccessSettings,
           canCreatePatients,
           canEditPatients,
@@ -615,7 +501,10 @@ export function AppContent() {
           canManagePatientObservacoes,
           patientReadOnly,
           isAdmin,
+          isSuperAdmin,
+          isTeam,
           isMedical,
+          canAccessClinics,
         }}
         counts={{
           usersCount,
@@ -632,17 +521,16 @@ export function AppContent() {
         medicalGroupsDomain={medicalGroupsDomain}
         dashboardError={appChrome.dashboardError}
         theme={theme}
-        systemSettings={appChrome.systemSettings}
-        settingsLoading={appChrome.systemSettingsQuery.isLoading || appChrome.systemSettingsQuery.isFetching}
-        settingsError={appChrome.systemSettingsError}
         navigation={{
           openUsersList: usersDomain.openUsersList,
           openMyProfile: usersDomain.openMyProfile,
           openPatientsList: patientsDomain.openPatientsList,
           openBilling,
+          openReports,
           openMedicalGroups,
           openAgenda,
           openSettings,
+          openClinics,
         }}
         sortHandlers={{
           handleUserSortChange,
@@ -651,6 +539,7 @@ export function AppContent() {
         }}
         onThemeChange={setThemePreference}
         onPasswordChanged={usersDomain.handlePasswordChanged}
+        onClinicSelected={handleClinicSelected}
       />
     </AppShell>
   );

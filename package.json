@@ -11,6 +11,8 @@
     "preanalyze": "node scripts/write-otel-runtime-config.mjs",
     "analyze": "tsc -b && vite build --mode analyze",
     "budget": "node scripts/check-bundle-budget.mjs",
+    "audit:architecture": "node scripts/check-frontend-architecture.mjs",
+    "verify": "npm run audit:architecture && npm test && npm run build",
     "audit:a11y": "playwright test --grep acessibilidade",
     "audit:lighthouse": "npm run build && lhci autorun --config=./lighthouserc.cjs",
     "test": "vitest run",

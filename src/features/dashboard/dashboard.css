@@ -294,6 +294,40 @@
   --module-border: var(--dashboard-agenda-border);
 }
 
+.module-card:active,
+.module-card:focus,
+.module-card:focus-visible {
+  color: var(--module-color, var(--action-secondary));
+  border-color: var(--selection-accent);
+  background: color-mix(in srgb, var(--module-color, var(--action-secondary)) 20%, transparent);
+  box-shadow:
+    0 0 0 2px var(--selection-accent),
+    0 0 0 4px var(--selection-accent-soft),
+    inset 0 0 0 1px color-mix(in srgb, var(--module-color, var(--action-secondary)) 24%, transparent),
+    0 8px 16px color-mix(in srgb, var(--module-color, var(--action-secondary)) 12%, transparent);
+}
+
+.module-card:active .module-title,
+.module-card:active .module-metric,
+.module-card:active .module-card-foot,
+.module-card:active .module-card-foot span,
+.module-card:focus .module-title,
+.module-card:focus .module-metric,
+.module-card:focus .module-card-foot,
+.module-card:focus .module-card-foot span,
+.module-card:focus-visible .module-title,
+.module-card:focus-visible .module-metric,
+.module-card:focus-visible .module-card-foot,
+.module-card:focus-visible .module-card-foot span {
+  color: var(--module-color, var(--action-secondary));
+}
+
+.module-card-clinics {
+  --module-color: var(--action-secondary);
+  --module-soft: color-mix(in srgb, var(--action-secondary) 12%, transparent);
+  --module-border: color-mix(in srgb, var(--action-secondary) 32%, transparent);
+}
+
 .module-card-settings {
   --module-color: var(--dashboard-settings);
   --module-soft: var(--dashboard-settings-soft);

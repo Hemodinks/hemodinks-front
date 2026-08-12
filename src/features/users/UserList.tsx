@@ -19,6 +19,7 @@ type UserListProps = {
   sortBy: string;
   sortDirection: 'asc' | 'desc';
   sessionToken: string;
+  canManageUsers: boolean;
   onSearchChange: (value: string) => void;
   onPageChange: (page: number | ((current: number) => number)) => void;
   onSortChange: (field: string) => void;
@@ -44,6 +45,7 @@ export function UserList({
   sortBy,
   sortDirection,
   sessionToken,
+  canManageUsers,
   onSearchChange,
   onPageChange,
   onSortChange,
@@ -63,10 +65,12 @@ export function UserList({
         </div>
 
         <div className="table-tools">
-          <Button onClick={onOpenNewUserForm}>
-            <Plus size={17} />
-            Novo usuário
-          </Button>
+          {canManageUsers && (
+            <Button onClick={onOpenNewUserForm}>
+              <Plus size={17} />
+              Novo usuário
+            </Button>
+          )}
           <SearchField
             label="Buscar usuários"
             value={searchTerm}
@@ -109,13 +113,13 @@ export function UserList({
                 </th>
                 <th>Info</th>
                 <th>Contato</th>
-                <th aria-label="Ações" />
+                {canManageUsers && <th aria-label="Ações" />}
               </tr>
             </thead>
             <tbody>
               {usersLoading ? (
                 <tr>
-                  <td colSpan={5} className="empty-row">Carregando usuários...</td>
+                  <td colSpan={canManageUsers ? 5 : 4} className="empty-row">Carregando usuários...</td>
                 </tr>
               ) : users.length ? (
                 users.map((user) => {
@@ -154,22 +158,24 @@ export function UserList({
                         <Phone size={14} />
                       </button>
                     </td>
-                    <td data-label="Ações">
-                      <div className="row-actions">
-                        <IconButton label={`Editar ${displayName}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
-                          <Pencil size={17} />
-                        </IconButton>
-                        <IconButton label={`Excluir ${displayName}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
-                          <Trash2 size={17} />
-                        </IconButton>
-                      </div>
-                    </td>
+                    {canManageUsers && (
+                      <td data-label="Ações">
+                        <div className="row-actions">
+                          <IconButton label={`Editar ${displayName}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
+                            <Pencil size={17} />
+                          </IconButton>
+                          <IconButton label={`Excluir ${displayName}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
+                            <Trash2 size={17} />
+                          </IconButton>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={5} className="empty-row">Nenhum usuário encontrado.</td>
+                  <td colSpan={canManageUsers ? 5 : 4} className="empty-row">Nenhum usuário encontrado.</td>
                 </tr>
               )}
             </tbody>

@@ -94,6 +94,29 @@ describe('billingUtils', () => {
     expect(record.pendingChecklistItems).toBeGreaterThan(0);
   });
 
+  it('usa a data do atendimento no registro e preserva a solicitação no paciente', () => {
+    const [record] = buildBillingRecords([{
+      ...basePaciente,
+      data: '2026-06-10T00:00:00Z',
+      dataAtendimento: '2026-06-15T00:00:00Z',
+    }]);
+
+    expect(record.surgeryDate).toBe('2026-06-15T00:00:00Z');
+    expect(record.surgeryDateLabel).toBe('15/06/2026');
+    expect(record.paciente.data).toBe('2026-06-10T00:00:00Z');
+  });
+
+  it('expõe e filtra a data do pagamento do faturamento', () => {
+    const records = buildBillingRecords([{
+      ...basePaciente,
+      faturamento: createFaturamento({ dataPagamento: '2026-06-20T00:00:00Z' }),
+    }]);
+
+    expect(records[0].paymentDateLabel).toBe('20/06/2026');
+    expect(filterBillingRecords(records, { ...createEmptyBillingFilters(''), paymentStartDate: '20/06/2026', paymentEndDate: '20/06/2026' })).toHaveLength(1);
+    expect(filterBillingRecords(records, { ...createEmptyBillingFilters(''), paymentStartDate: '21/06/2026' })).toHaveLength(0);
+  });
+
   it('resume e agrupa faturamento por medico e convenio', () => {
     const records = buildBillingRecords([
       basePaciente,

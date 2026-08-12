@@ -7,7 +7,9 @@ import './users.css';
 type UsersPageProps = {
   moduleMode: 'list' | 'form';
   canAccessUsers: boolean;
+  canManageUsers: boolean;
   canUseUserForm: boolean;
+  isSuperAdmin: boolean;
   editingId: number | null;
   editingUserDetails: User | null;
   formData: UserFormData;
@@ -51,7 +53,9 @@ type UsersPageProps = {
 export function UsersPage({
   moduleMode,
   canAccessUsers,
+  canManageUsers,
   canUseUserForm,
+  isSuperAdmin,
   editingId,
   editingUserDetails,
   formData,
@@ -99,6 +103,7 @@ export function UsersPage({
         <UserForm
           canAccessUsers={canAccessUsers}
           canUseUserForm={canUseUserForm}
+          isSuperAdmin={isSuperAdmin}
           editingId={editingId}
           editingUserDetails={editingUserDetails}
           formData={formData}
@@ -132,6 +137,7 @@ export function UsersPage({
           sortBy={sortBy}
           sortDirection={sortDirection}
           sessionToken={sessionToken}
+          canManageUsers={canManageUsers}
           onSearchChange={setSearchTerm}
           onPageChange={setCurrentPage}
           onSortChange={onSortChange}

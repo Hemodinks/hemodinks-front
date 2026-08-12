@@ -27,6 +27,8 @@ export async function renderAuthenticatedApp(options?: {
 
   render(<App />);
 
+  const clinicSelect = await screen.findByLabelText('Clínica');
+  await user.selectOptions(clinicSelect, '1');
   await user.type(screen.getByLabelText('Email'), session.user.email);
   await user.type(screen.getByLabelText('Senha'), options?.password ?? 'SenhaAlterada@123');
   await user.click(screen.getByRole('button', { name: /entrar/i }));

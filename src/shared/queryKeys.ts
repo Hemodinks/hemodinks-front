@@ -1,8 +1,7 @@
-import type { PacienteFilters } from '../appTypes';
-import type { CbhpmListQuery } from '../types';
+import type { CbhpmListQuery, PacienteListQuery } from '../types';
 
 export const queryKeys = {
-  systemSettings: () => ['systemSettings'] as const,
+  systemSettings: (token = '') => ['systemSettings', token] as const,
   dashboardSummary: (token: string) => ['dashboardSummary', token] as const,
   dashboardNotifications: (token: string) => ['dashboardNotifications', token] as const,
   users: (token: string, query?: { page: number; pageSize: number; search: string }) => ['users', token, query] as const,
@@ -12,7 +11,7 @@ export const queryKeys = {
   medicalGroupsRoot: (token: string) => ['medicalGroups', token] as const,
   pacientes: (
     token: string,
-    query?: { page: number; pageSize: number; search: string } & Partial<PacienteFilters>,
+    query?: PacienteListQuery,
   ) => ['pacientes', token, query] as const,
   pacientesRoot: (token: string) => ['pacientes', token] as const,
   pacienteObservacoes: (token: string, pacienteId: number) => ['pacienteObservacoes', token, pacienteId] as const,

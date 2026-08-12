@@ -19,8 +19,16 @@ export function buildListQueryParams(query?: ListQuery | PacienteListQuery | Cbh
     params.set('profileId', String(query.profileId));
   }
 
+  if (query && 'medicoUserIds' in query && query.medicoUserIds?.trim()) {
+    params.set('medicoUserIds', query.medicoUserIds.trim());
+  }
+
   if (query && 'medico' in query && query.medico?.trim()) {
     params.set('medico', query.medico.trim());
+  }
+
+  if (query && 'convenioIds' in query && query.convenioIds?.trim()) {
+    params.set('convenioIds', query.convenioIds.trim());
   }
 
   if (query && 'convenio' in query && query.convenio?.trim()) {
@@ -33,6 +41,14 @@ export function buildListQueryParams(query?: ListQuery | PacienteListQuery | Cbh
 
   if (query && 'procedimento' in query && query.procedimento?.trim()) {
     params.set('procedimento', query.procedimento.trim());
+  }
+
+  if (query && 'dataInicio' in query && query.dataInicio?.trim()) {
+    params.set('dataInicio', query.dataInicio.trim());
+  }
+
+  if (query && 'dataFinal' in query && query.dataFinal?.trim()) {
+    params.set('dataFinal', query.dataFinal.trim());
   }
 
   if (query && 'competenciaInicio' in query && query.competenciaInicio?.trim()) {

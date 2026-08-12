@@ -1,4 +1,5 @@
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
+import { useEffect, useId, useState } from 'react';
+import { BarChart3, Building2, CalendarDays, ChevronDown, ClipboardList, FileText, LayoutDashboard, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -8,6 +9,7 @@ type SidebarProps = {
   session: AuthSession;
   activeView: AppView;
   currentUserProfile: string;
+  clinicName: string;
   canAccessDashboard: boolean;
   canAccessPatients: boolean;
   canAccessUsers: boolean;
@@ -16,6 +18,7 @@ type SidebarProps = {
   canAccessMedicalGroups: boolean;
   canAccessSettings: boolean;
   canAccessAgenda: boolean;
+  canAccessClinics: boolean;
   usersCount: number;
   pacientesCount: number;
   medicalGroupsCount: number;
@@ -26,15 +29,18 @@ type SidebarProps = {
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
   onOpenBilling: () => void;
+  onOpenReports: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
+  onOpenClinics: () => void;
 };
 
 export function Sidebar({
   session,
   activeView,
   currentUserProfile,
+  clinicName,
   canAccessDashboard,
   canAccessPatients,
   canAccessUsers,
@@ -43,6 +49,7 @@ export function Sidebar({
   canAccessMedicalGroups,
   canAccessSettings,
   canAccessAgenda,
+  canAccessClinics,
   usersCount,
   pacientesCount,
   medicalGroupsCount,
@@ -53,10 +60,23 @@ export function Sidebar({
   onOpenMyProfile,
   onOpenPatientsList,
   onOpenBilling,
+  onOpenReports,
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
+  onOpenClinics,
 }: SidebarProps) {
+  const billingSubmenuId = useId();
+  const isBillingModuleActive = activeView === 'billing' || activeView === 'reports';
+  const canAccessBillingModule = canAccessBilling;
+  const [isBillingMenuOpen, setIsBillingMenuOpen] = useState(isBillingModuleActive);
+
+  useEffect(() => {
+    if (isBillingModuleActive) {
+      setIsBillingMenuOpen(true);
+    }
+  }, [activeView, isBillingModuleActive]);
+
   return (
     <aside className="sidebar-panel" aria-label="Sessão ativa">
       <div className="sidebar-card">
@@ -71,6 +91,12 @@ export function Sidebar({
             <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" decorative />
             <strong>{formatPersonName(session.user.nome)}</strong>
           </div>
+        </div>
+
+        <div className="session-card">
+          <span className="session-label">Clínica atual</span>
+          <strong>{clinicName}</strong>
+          <span className="session-meta">{session.user.clinicaSlug}</span>
         </div>
 
         <div className="session-card">
@@ -122,23 +148,56 @@ export function Sidebar({
               onClick={onOpenPatientsList}
             >
               <ClipboardList size={18} />
-              <span>Pacientes</span>
+              <span>Pacientes - Cirurgias</span>
               <span className="side-nav-count">{pacientesCount}</span>
             </button>
           )}
-          {canAccessBilling && (
-            <button
-              type="button"
-              className={`side-nav-billing ${activeView === 'billing' ? 'active' : ''}`}
-              aria-current={activeView === 'billing' ? 'page' : undefined}
-              onClick={onOpenBilling}
-            >
-              <ReceiptText size={18} />
-              <span>Faturamento médico</span>
-              {pendingPaymentsCount > 0 && (
-                <span className="side-nav-count">{pendingPaymentsCount}</span>
-              )}
-            </button>
+          {canAccessBillingModule && (
+            <div className="side-nav-billing-group">
+              <button
+                type="button"
+                className={`side-nav-billing side-nav-billing-toggle ${isBillingModuleActive ? 'active' : ''}`}
+                aria-expanded={isBillingMenuOpen}
+                aria-controls={billingSubmenuId}
+                onClick={() => setIsBillingMenuOpen((current) => !current)}
+              >
+                <ReceiptText size={18} />
+                <span>Faturamento</span>
+                {pendingPaymentsCount > 0 && (
+                  <span className="side-nav-count">{pendingPaymentsCount}</span>
+                )}
+                <ChevronDown className={`side-nav-chevron ${isBillingMenuOpen ? 'is-open' : ''}`} size={17} aria-hidden="true" />
+              </button>
+              <div
+                id={billingSubmenuId}
+                className="side-nav-billing-submenu"
+                aria-label="Opções de faturamento"
+                hidden={!isBillingMenuOpen}
+              >
+                {canAccessBilling && (
+                  <button
+                    type="button"
+                    className={`side-nav-billing side-nav-billing-subitem ${activeView === 'billing' ? 'active' : ''}`}
+                    aria-current={activeView === 'billing' ? 'page' : undefined}
+                    onClick={onOpenBilling}
+                  >
+                    <ReceiptText size={16} />
+                    <span>Gestão de faturamento</span>
+                  </button>
+                )}
+                {canAccessBilling && (
+                  <button
+                    type="button"
+                    className={`side-nav-reports side-nav-billing-subitem ${activeView === 'reports' ? 'active' : ''}`}
+                    aria-current={activeView === 'reports' ? 'page' : undefined}
+                    onClick={onOpenReports}
+                  >
+                    <BarChart3 size={16} />
+                    <span>Relatórios</span>
+                  </button>
+                )}
+              </div>
+            </div>
           )}
           {canAccessMedicalGroups && (
             <button
@@ -164,6 +223,17 @@ export function Sidebar({
               {unreadAgendaNotificationCount > 0 && (
                 <span className="side-nav-count">{unreadAgendaNotificationCount}</span>
               )}
+            </button>
+          )}
+          {canAccessClinics && (
+            <button
+              type="button"
+              className={`side-nav-clinics ${activeView === 'clinics' ? 'active' : ''}`}
+              aria-current={activeView === 'clinics' ? 'page' : undefined}
+              onClick={onOpenClinics}
+            >
+              <Building2 size={18} />
+              <span>Clínicas</span>
             </button>
           )}
           {canAccessSettings && (

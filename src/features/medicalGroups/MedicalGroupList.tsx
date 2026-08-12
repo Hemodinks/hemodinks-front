@@ -106,7 +106,12 @@ export function MedicalGroupList({
                     {sortBy === 'ativo' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
                   </button>
                 </th>
-                <th>Membros</th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('nomesmembros')} aria-sort={sortBy === 'nomesmembros' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Membros
+                    {sortBy === 'nomesmembros' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
                 <th aria-label="Ações" />
               </tr>
             </thead>

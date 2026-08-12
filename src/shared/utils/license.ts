@@ -3,6 +3,8 @@ import {
   CONTROLLER_PROFILE_ID,
   MEDICAL_PROFILE_ID,
   PATIENT_PROFILE_ID,
+  SUPER_ADMIN_PROFILE_ID,
+  TEAM_PROFILE_ID,
 } from './formatters';
 
 const ADMIN_PROFILE_ID = 1;
@@ -41,12 +43,19 @@ const MEDICAL_FULL_FEATURES = new Set<string>([
   LICENSE_FEATURES.cbhpmConsultar,
 ]);
 
+const TEAM_IMPLICIT_FEATURES = new Set<string>([
+  LICENSE_FEATURES.dashboardVisualizar,
+  LICENSE_FEATURES.pacientesVisualizar,
+  LICENSE_FEATURES.pacientesGerenciar,
+  LICENSE_FEATURES.cbhpmConsultar,
+]);
+
 export function getSessionFeatures(user: SessionUser | null | undefined): ReadonlySet<string> {
   if (!user) {
     return new Set();
   }
 
-  if (user.perfilId === ADMIN_PROFILE_ID) {
+  if (user.perfilId === ADMIN_PROFILE_ID || user.perfilId === SUPER_ADMIN_PROFILE_ID) {
     return ADMIN_FEATURES;
   }
 
@@ -60,6 +69,10 @@ export function getSessionFeatures(user: SessionUser | null | undefined): Readon
 
   if (user.perfilId === MEDICAL_PROFILE_ID) {
     return MEDICAL_FULL_FEATURES;
+  }
+
+  if (user.perfilId === TEAM_PROFILE_ID) {
+    return TEAM_IMPLICIT_FEATURES;
   }
 
   return new Set();

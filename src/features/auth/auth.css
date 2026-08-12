@@ -23,6 +23,12 @@
   width: min(520px, 100%);
 }
 
+.login-brand-placeholder {
+  display: block;
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+}
+
 .login-actions {
   width: 100%;
   display: grid;

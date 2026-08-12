@@ -108,7 +108,7 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
           <TextField
             label="Código"
             type="search"
-            
+
             autoComplete="on"
             value={filters.codigo}
             onValueChange={(value) => updateFilter('codigo', normalizeCbhpmCodigo(value))}

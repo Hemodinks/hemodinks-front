@@ -177,3 +177,29 @@
     height: 62px;
   }
 }
+.team-admin-panel {
+  grid-column: 1 / -1;
+}
+.team-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.team-member-list {
+  display: grid;
+  gap: 0.6rem;
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+}
+.team-member-list li {
+  align-items: center;
+  border-top: 1px solid var(--border-color, #dbe4e7);
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.65rem;
+}
+.team-member-list span {
+  display: grid;
+  gap: 0.15rem;
+}

@@ -1,6 +1,6 @@
 export type Theme = 'light' | 'dark';
 
-export type AppView = 'dashboard' | 'users' | 'profile' | 'patients' | 'billing' | 'medicalGroups' | 'agenda' | 'settings';
+export type AppView = 'dashboard' | 'users' | 'profile' | 'patients' | 'billing' | 'reports' | 'medicalGroups' | 'agenda' | 'settings' | 'clinics';
 
 export type ModuleMode = 'list' | 'form';
 
@@ -16,9 +16,11 @@ export type CbhpmFilters = {
 };
 
 export type PacienteFilters = {
-  medico: string;
-  convenio: string;
+  medicoUserIds: number[];
+  convenioIds: number[];
   procedimento: string;
+  dataInicio: string;
+  dataFinal: string;
 };
 
 export type PacienteExportFormat = 'xlsx' | 'pdf';

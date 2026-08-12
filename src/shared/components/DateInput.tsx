@@ -11,13 +11,26 @@ type DateInputProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  className?: string;
+  min?: string;
+  max?: string;
   required?: boolean;
   disabled?: boolean;
 };
 
-export function DateInput({ id, label, value, onChange, required = false, disabled = false }: DateInputProps) {
+export function DateInput({
+  id,
+  label,
+  value,
+  onChange,
+  className,
+  min,
+  max = getTodayPickerValue(),
+  required = false,
+  disabled = false,
+}: DateInputProps) {
   return (
-    <div className="date-field">
+    <div className={['date-field', className].filter(Boolean).join(' ')}>
       <label htmlFor={id}>{label}</label>
       <div className="date-input-control">
         <input
@@ -37,7 +50,8 @@ export function DateInput({ id, label, value, onChange, required = false, disabl
             type="date"
             value={toDatePickerValue(value)}
             onChange={(event) => onChange(fromDatePickerValue(event.target.value))}
-            max={getTodayPickerValue()}
+            min={min ? toDatePickerValue(min) : undefined}
+            max={max ? toDatePickerValue(max) : undefined}
             aria-label={`Selecionar ${label.toLowerCase()}`}
             disabled={disabled}
           />

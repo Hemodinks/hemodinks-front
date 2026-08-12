@@ -37,7 +37,6 @@ type UsePatientsDomainQueriesOptions = {
   session: AuthSession | null;
   activeView: AppView;
   moduleMode: ModuleMode;
-  isAdmin: boolean;
   canAccessPatients: boolean;
   canConsultCbhpm: boolean;
   patientReadOnly: boolean;
@@ -50,7 +49,6 @@ export function usePatientsDomainQueries({
   session,
   activeView,
   moduleMode,
-  isAdmin,
   canAccessPatients,
   canConsultCbhpm,
   patientReadOnly,
@@ -97,10 +95,10 @@ export function usePatientsDomainQueries({
     page: pacienteCurrentPage,
     pageSize: PAGE_SIZE,
     search: debouncedPacienteSearchTerm,
-    ...getPacienteFilterQuery(debouncedPacienteFilters, isAdmin),
+    ...getPacienteFilterQuery(debouncedPacienteFilters),
     sortBy,
     sortDirection,
-  }), [debouncedPacienteFilters, debouncedPacienteSearchTerm, isAdmin, pacienteCurrentPage, sortBy, sortDirection]);
+  }), [debouncedPacienteFilters, debouncedPacienteSearchTerm, pacienteCurrentPage, sortBy, sortDirection]);
   const sessionReady = Boolean(session && !session.user.precisaTrocarSenha);
   const pacientesQuery = useQuery({
     queryKey: queryKeys.pacientes(session?.token ?? '', pacientesQueryParams),

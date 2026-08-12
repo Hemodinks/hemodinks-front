@@ -10,11 +10,13 @@ import {
   normalizeCpfForPayload,
   normalizePhoneForPayload,
   parseDisplayDate,
+  toDatePickerValue,
   toDisplayDate,
 } from '../../shared/utils/formatters';
 
 export const emptyPacienteForm: PacienteFormData = {
   data: '',
+  dataAtendimento: '',
   nomePaciente: '',
   diagnostico: '',
   tratamentoMedico: '',
@@ -43,25 +45,26 @@ export const emptyPacienteForm: PacienteFormData = {
   pagamento: '',
   repasseGlosa: '',
   statusPago: false,
+  dataPagamento: '',
   ativo: true,
   novaObservacao: '',
 };
 
 export const emptyPacienteFilters: PacienteFilters = {
-  medico: '',
-  convenio: '',
+  medicoUserIds: [],
+  convenioIds: [],
   procedimento: '',
+  dataInicio: '',
+  dataFinal: '',
 };
 
-export function getPacienteFilterQuery(filters: PacienteFilters, enabled: boolean) {
-  if (!enabled) {
-    return {};
-  }
-
+export function getPacienteFilterQuery(filters: PacienteFilters) {
   return {
-    ...(filters.medico.trim() ? { medico: filters.medico.trim() } : {}),
-    ...(filters.convenio.trim() ? { convenio: filters.convenio.trim() } : {}),
+    ...(filters.medicoUserIds.length ? { medicoUserIds: filters.medicoUserIds.join(',') } : {}),
+    ...(filters.convenioIds.length ? { convenioIds: filters.convenioIds.join(',') } : {}),
     ...(filters.procedimento.trim() ? { procedimento: filters.procedimento.trim() } : {}),
+    ...(toDatePickerValue(filters.dataInicio) ? { dataInicio: toDatePickerValue(filters.dataInicio) } : {}),
+    ...(toDatePickerValue(filters.dataFinal) ? { dataFinal: toDatePickerValue(filters.dataFinal) } : {}),
   };
 }
 
@@ -75,8 +78,6 @@ function toApiDate(value: string) {
 }
 
 export function normalizePacienteProcedimentos(procedimentos: PacienteProcedimento[]) {
-  const seen = new Set<string>();
-
   return procedimentos
     .map((item) => ({
       cbhpmCodigo: normalizeCbhpmCodigo(item.cbhpmCodigo) || null,
@@ -84,16 +85,21 @@ export function normalizePacienteProcedimentos(procedimentos: PacienteProcedimen
       procedimento: item.procedimento.trim(),
       valorReferencia: item.valorReferencia ?? null,
     }))
-    .filter((item) => item.procedimento)
-    .filter((item) => {
-      const key = item.cbhpmCodigo ? `codigo:${item.cbhpmCodigo}` : `livre:${item.procedimento}:${item.cbhpmPorte || ''}`;
-      if (seen.has(key)) {
-        return false;
-      }
+    .filter((item) => item.procedimento);
+}
 
-      seen.add(key);
-      return true;
-    });
+export function getCurrencyInputValue(value: string) {
+  const digits = value.replace(/\D/g, '');
+  return digits ? Number(digits) / 100 : 0;
+}
+
+export function getCalculatedGlosaValue(estimatedValue: number, receivedValue: string) {
+  if (estimatedValue <= 0 && !receivedValue.trim()) {
+    return '';
+  }
+
+  const glosaValue = Math.max(0, estimatedValue - getCurrencyInputValue(receivedValue));
+  return formatCurrencyInput(String(Math.round(glosaValue * 100)));
 }
 
 export function getPacienteProcedimentosFromForm(data: PacienteFormData) {
@@ -141,6 +147,7 @@ export function withPrimaryProcedimento(data: PacienteFormData): PacienteFormDat
 export function getPacienteFormData(paciente: Paciente): PacienteFormData {
   return withPrimaryProcedimento({
     data: toDisplayDate(paciente.data || ''),
+    dataAtendimento: toDisplayDate(paciente.dataAtendimento || ''),
     nomePaciente: paciente.nomePaciente,
     diagnostico: paciente.diagnostico || '',
     tratamentoMedico: paciente.tratamentoMedico || '',
@@ -169,6 +176,7 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
     pagamento: formatCurrencyInput(paciente.pagamento || ''),
     repasseGlosa: formatCurrencyInput(paciente.repasseGlosa || ''),
     statusPago: paciente.statusPago,
+    dataPagamento: paciente.statusPago ? toDisplayDate(paciente.faturamento?.dataPagamento || '') : '',
     ativo: paciente.ativo,
     novaObservacao: '',
   });
@@ -239,6 +247,9 @@ export function toPacientePayload(data: PacienteFormData): PacientePayload {
 
   return {
     data: data.data && isValidBirthDate(data.data) ? toApiDate(data.data) : null,
+    dataAtendimento: data.dataAtendimento && isValidBirthDate(data.dataAtendimento)
+      ? toApiDate(data.dataAtendimento)
+      : null,
     nomePaciente: data.nomePaciente.trim(),
     diagnostico: data.diagnostico.trim(),
     tratamentoMedico: data.tratamentoMedico.trim(),
@@ -267,6 +278,9 @@ export function toPacientePayload(data: PacienteFormData): PacientePayload {
     pagamento: data.pagamento.trim(),
     repasseGlosa: data.repasseGlosa.trim(),
     statusPago: data.statusPago,
+    dataPagamento: data.statusPago && data.dataPagamento && isValidBirthDate(data.dataPagamento)
+      ? toApiDate(data.dataPagamento)
+      : null,
     ativo: data.ativo,
   };
 }

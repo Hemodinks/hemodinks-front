@@ -1,6 +1,6 @@
 # Hemodinks Front
 
-SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front cobre autenticacao, redefinicao de senha, dashboard, usuarios, meu cadastro, pacientes, observacoes, faturamento medico, grupos medicos, agenda/notificacoes e configuracao do sistema.
+SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front cobre autenticacao multiclinica, redefinicao de senha, dashboard, usuarios, meu cadastro, pacientes, observacoes, faturamento medico, grupos medicos, agenda/notificacoes, configuracao da conta e administracao de clinicas.
 
 ## Stack
 
@@ -28,9 +28,7 @@ SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front
 | --- | --- |
 | Front local | `http://localhost:5173` |
 | Front producao | `https://hemodinks.gestao-saude.tec.br` |
-| Front producao legado | `https://hemodinks-saude.vercel.app` |
 | Front homologacao | `https://hemodinks-homologacao.gestao-saude.tec.br` |
-| Front homologacao legado | `https://hemodinks-homologacao.vercel.app` |
 | Front confirmation (Render blueprint) | `https://hemodinks-front-confirmation.onrender.com` |
 | API local | `http://localhost:5000` |
 | Swagger local | `http://localhost:5000/swagger` |
@@ -100,8 +98,8 @@ Copy-Item .env.confirmation.example .env.local
 
 Observacoes:
 
-- Em ambiente multi-clinica, o front envia automaticamente `X-Clinica-Slug` ou `X-Clinica-Id` nas chamadas publicas quando `VITE_CLINICA_SLUG` ou `VITE_CLINICA_ID` estiverem preenchidos.
-- Em chamadas autenticadas, o front reaproveita os claims `clinicaId` e `clinicaSlug` do JWT para manter o contexto da clinica atual.
+- No login multi-clinica, o front consulta as clinicas ativas, exige uma selecao e envia o `X-Clinica-Slug` escolhido apenas para autenticar.
+- Em chamadas autenticadas, o tenant vem dos claims `clinicaId` e `clinicaSlug` do JWT. A troca usa `/api/session/selecionar-clinica` e substitui o token.
 - Se o front estiver em um dominio customizado por clinica, como `clinica-a.seudominio.com`, o client tambem tenta inferir o slug pela URL. Hosts compartilhados de plataforma, como `onrender.com` e `vercel.app`, sao ignorados nessa inferencia para evitar falsos positivos.
 - `VITE_NEW_RELIC_BEACON` e `VITE_NEW_RELIC_ERROR_BEACON` sao avancadas. Se ficarem vazias, o app usa `bam.nr-data.net`.
 - `scripts/write-otel-runtime-config.mjs` gera `public/otel-runtime-config.json` antes de `dev`, `build` e `analyze`.
@@ -143,13 +141,15 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `/faturamento-medico` | leitura financeira consolidada a partir dos pacientes |
 | `/grupos-medicos` | grupos de medicos usados em notificacoes da agenda |
 | `/agenda` | agenda e notificacoes internas |
-| `/configuracoes` | marca da empresa, tema e troca de senha |
+| `/configuracoes` | tema e troca de senha |
+| `/clinicas` | CRUD, identidade visual e troca segura de clinica para SuperAdministrador |
 
 ## Perfis e acesso
 
 | Perfil | Acesso principal |
 | --- | --- |
 | Administrador | dashboard, usuarios, pacientes, faturamento, grupos medicos, agenda e configuracoes |
+| SuperAdministrador | todos os modulos administrativos, CRUD de clinicas e troca segura de tenant |
 | Medicos | dashboard, meu cadastro, pacientes, faturamento, agenda e configuracoes |
 | Controller | pacientes, faturamento e configuracoes |
 | Paciente | meu cadastro, pacientes em modo leitura e configuracoes |
@@ -170,7 +170,7 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 - faturamento medico derivado dos dados de pacientes e procedimentos
 - grupos medicos usados como destinatarios de notificacao
 - agenda com eventos, lembretes e notificacoes internas
-- configuracao do nome e da foto da empresa
+- configuracao do nome e da foto no CRUD exclusivo de clinicas
 - tema claro/escuro
 - Error Boundary com fallback visual
 - observabilidade opcional via Sentry, New Relic Browser e OTLP
@@ -187,28 +187,38 @@ src/
     events/
     medicalGroups/
     patients/
+      export/       # schema e adaptadores PDF/XLSX
     settings/
     users/
   layout/
   services/
   shared/
+    components/ui/  # primitivas visuais coesas
   styles/
 ```
 
 Pontos principais:
 
-- `src/app/AppContent.tsx` concentra autenticacao, regras de acesso por perfil, navegacao e composicao dos dominios.
+- `src/app/AppContent.tsx` compoe regras de acesso, navegacao e dominios; login e ciclo de sessao ficam em hooks de aplicacao dedicados.
+- `src/features/auth/useLoginFlow.ts` coordena login, equipe e reset de senha.
+- `src/features/auth/useSessionLifecycle.ts` isola expiracao do token e hidratacao de licenca.
 - `src/app/useAppChrome.ts` carrega resumo, notificacoes e configuracao do sistema.
 - `src/features/auth/useAuthSession.ts` limpa `localStorage` e mantem a sessao apenas em memoria.
 - `src/queryClient.ts` define `staleTime`, `gcTime` e retries globais.
 - `src/shared/queryKeys.ts` centraliza chaves de cache.
 - `src/features/patients/usePatientsDomain.ts` coordena formulario, listagem, lookups, observacoes e exportacoes.
+- `src/features/patients/export` separa schema de dados, escrita XLSX, PDFs e disparo de download.
+- `src/features/patients/usePatientFileActions.ts` isola seleção, validação e abertura de anexos.
+- `src/features/billing/billingAnalytics.ts` mantém filtros e consolidações financeiras como funções puras.
+- `src/types.ts` preserva a API pública enquanto contratos extensos são divididos em `src/types`.
 - `src/features/users/useUsersDomain.ts` cobre listagem, autoedicao, upload de arquivos e troca de senha.
 - `src/features/billing/BillingPage.tsx` compoe a tela financeira a partir de `GET /api/faturamentos-medicos`.
 - `src/features/settings/SystemSettingsPage.tsx` administra marca, tema e senha.
 - `src/observability.ts`, `src/newRelic.ts` e `src/otel.ts` inicializam a telemetria opcional.
 
 Mais detalhes em [TECHNICAL.md](./TECHNICAL.md).
+
+Guarda arquitetural: `npm run audit:architecture`. Validacao completa local: `npm run verify` e `npm run test:e2e`.
 
 ## Cache e API
 
@@ -260,4 +270,4 @@ Cobertura atual inclui:
 
 ## Deploy
 
-Detalhes de Vercel, Render, confirmation e checklist operacional em [DEPLOYMENT.md](./DEPLOYMENT.md).
+Detalhes de Azure Static Web Apps, confirmation e checklist operacional em [DEPLOYMENT.md](./DEPLOYMENT.md).
