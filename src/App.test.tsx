@@ -595,12 +595,12 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /abrir configuração do sistema/i }));
     expect(await screen.findByRole('heading', { name: 'Configuração do sistema', level: 1 })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /escuro/i }));
+    await user.click(screen.getByTitle('Usar tema escuro'));
 
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
     expect(localStorage.getItem('hemodinks.theme')).toBe('dark');
 
-    await user.click(screen.getByRole('button', { name: /claro/i }));
+    await user.click(screen.getByTitle('Usar tema claro'));
 
     expect(document.documentElement).not.toHaveAttribute('data-theme');
     expect(localStorage.getItem('hemodinks.theme')).toBe('light');
@@ -2072,9 +2072,9 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /abrir configuração do sistema/i }));
     expect(await screen.findByRole('heading', { name: 'Configuração do sistema', level: 1 })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /escuro/i }));
+    await user.click(screen.getByTitle('Usar tema escuro'));
 
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
-    expect(screen.getByRole('button', { name: /claro/i })).toBeInTheDocument();
+    expect(screen.getByTitle('Usar tema claro')).toBeInTheDocument();
   });
 });
