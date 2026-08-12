@@ -335,12 +335,30 @@ A gravação usa viewport e vídeo de `1920x1080`, espera entre as etapas e arma
 Use exclusivamente uma conta e uma clínica fictícias e sanitizadas:
 
 ```powershell
-$env:TUTORIAL_BASE_URL='https://homologacao.exemplo.com'
+$env:TUTORIAL_BASE_URL='https://homologacao.example.invalid'
 $env:TUTORIAL_CLINIC='slug-ou-id-ficticio'
-$env:TUTORIAL_EMAIL='usuario-ficticio@exemplo.com'
+$env:TUTORIAL_EMAIL='tutorial@example.invalid'
 $env:TUTORIAL_PASSWORD='senha-da-conta-ficticia'
+$env:TUTORIAL_DATA_CONFIRMATION='SANITIZED_ONLY'
 $env:TUTORIAL_STEP_DELAY_MS='1800'
 npm run record:tutorials:reports
 ```
 
 `npm run record:tutorials` grava todas as missões registradas no arquivo de gravação. Cada nova funcionalidade deve receber um teste próprio e, consequentemente, um WebM separado. Não publique os arquivos de sessão em artefatos compartilhados; conserve apenas os vídeos finais.
+
+### Produção local com narração e legendas
+
+O pipeline local usa Piper TTS com a voz `pt_BR-faber-medium` e o binário do `ffmpeg-static`. Os textos são importados diretamente de `reportsTutorial.ts`; não há cópia paralela do roteiro. O ambiente Python, o modelo de voz, as faixas WAV, a timeline e os vídeos ficam em `artifacts/tutorials`, ignorado pelo Git.
+
+```bash
+npm run tutorial:produce:reports
+```
+
+O comando instala o Piper em um ambiente virtual isolado, baixa e valida o modelo de voz, gera uma faixa por etapa, grava o fluxo com pausas antes e depois de cada ação e exporta:
+
+- `artifacts/tutorials/reports/tutorial-relatorios-narrado.webm` — VP9 + Opus;
+- `artifacts/tutorials/reports/tutorial-relatorios-narrado.mp4` — H.264 + AAC;
+- `artifacts/tutorials/reports/tutorial-relatorios.srt` — legendas sincronizadas;
+- `artifacts/tutorials/reports/audio/step-*.wav` — uma faixa por etapa.
+
+As legendas também são queimadas nos dois vídeos para permanecerem visíveis em players sem suporte a faixas externas. O Piper requer Python 3.9 ou superior e o primeiro uso baixa aproximadamente 65 MB do modelo oficial de voz.

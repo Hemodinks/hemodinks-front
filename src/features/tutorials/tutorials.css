@@ -92,6 +92,15 @@
   font-size: 0.82rem;
 }
 
+.tutorial-hide-preference input[type='checkbox'] {
+  flex: 0 0 18px;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 0;
+}
+
 .tutorial-target-action.driver-active-element {
   outline: 4px solid var(--amber);
   outline-offset: 4px;
@@ -146,4 +155,3 @@
     bottom: 16px;
   }
 }
-

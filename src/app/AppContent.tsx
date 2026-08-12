@@ -58,6 +58,7 @@ export function AppContent() {
     canEditOwnUser,
     canAccessBilling,
     canAccessReports,
+    canAccessTutorials,
     canAccessMedicalGroups,
     canAccessSettings,
     canCreatePatients,
@@ -71,6 +72,7 @@ export function AppContent() {
     canUseProfileRoute,
     canUseBillingRoute,
     canUseReportsRoute,
+    canUseTutorialsRoute,
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
     canUseSettingsRoute,
@@ -88,6 +90,7 @@ export function AppContent() {
     canUseProfileRoute,
     canUseBillingRoute,
     canUseReportsRoute,
+    canUseTutorialsRoute,
     canUseMedicalGroupsRoute,
     canUseAgendaRoute,
     canUseSettingsRoute,
@@ -107,16 +110,13 @@ export function AppContent() {
     },
     [navigateToView],
   );
-
   const returnToLogin = (infoMessage = "") => {
     resetLoginState(infoMessage);
     navigate("/", { replace: true });
   };
-
   const handleResetPasswordCompleted = (message: string) => {
     returnToLogin(getResetPasswordCompletedMessage(message));
   };
-
   function endSession(infoMessage = "") {
     queryClient.clear();
     clearSession();
@@ -137,7 +137,6 @@ export function AppContent() {
   function logout() {
     endSession();
   }
-
   const usersDomain = useUsersDomain({
     session,
     activeView,
@@ -152,7 +151,6 @@ export function AppContent() {
     onDeleteCurrentUser: logout,
     confirmAction,
   });
-
   const patientsDomain = usePatientsDomain({
     session,
     activeView,
@@ -180,7 +178,6 @@ export function AppContent() {
     navigateToView: navigateToViewFromInteraction,
     confirmAction,
   });
-
   const isBusy =
     loginLoading ||
     resetPasswordLoading ||
@@ -190,7 +187,6 @@ export function AppContent() {
 
   useSessionExpiration(session, () => endSession(SESSION_EXPIRED_MESSAGE));
   useMedicalLicenseHydration(session, persistSession);
-
   useLayoutEffect(() => {
     if (
       !openDashboardAfterLogin ||
@@ -201,13 +197,11 @@ export function AppContent() {
 
     setOpenDashboardAfterLogin(false);
   }, [normalizedPath, openDashboardAfterLogin]);
-
   const resetProfileRouteState = () => {
     if (activeView === "profile") {
       usersDomain.resetUserFormState({ suppressProfileAutoOpen: true });
     }
   };
-
   const openDashboard = () => {
     resetProfileRouteState();
 
@@ -216,23 +210,19 @@ export function AppContent() {
       setModuleMode("list");
       return;
     }
-
     if (canAccessPatients) {
       patientsDomain.openPatientsList();
       return;
     }
-
     if (canEditOwnUser) {
       usersDomain.openMyProfile();
       return;
     }
-
     if (canAccessBilling) {
       navigateToViewFromInteraction("billing");
       setModuleMode("list");
       return;
     }
-
     if (canAccessAgenda) {
       navigateToViewFromInteraction("agenda");
       setModuleMode("list");
@@ -288,6 +278,12 @@ export function AppContent() {
     if (!canAccessReports) return openDashboard();
     navigateToViewFromInteraction("reports");
     setModuleMode("list");
+  };
+
+  const openTutorials = () => {
+    resetProfileRouteState();
+    if (!canAccessTutorials) return openDashboard();
+    navigateToViewFromInteraction("tutorials"); setModuleMode("list");
   };
 
   const openSettings = () => {
@@ -412,6 +408,7 @@ export function AppContent() {
       patients: patientsDomain.openPatientsList,
       billing: openBilling,
       reports: openReports,
+      tutorials: openTutorials,
       medicalGroups: openMedicalGroups,
       agenda: openAgenda,
       settings: openSettings,
@@ -458,6 +455,7 @@ export function AppContent() {
       onOpenPatientsList={openPatientsListFromMenu}
       onOpenBilling={openBilling}
       onOpenReports={openReports}
+      onOpenTutorials={openTutorials}
       onOpenMedicalGroups={openMedicalGroups}
       onOpenAgenda={openAgenda}
       onOpenSettings={openSettings}
