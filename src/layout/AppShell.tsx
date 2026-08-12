@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useIsFetching } from '@tanstack/react-query';
-import type { AppView, BreadcrumbItem } from '../appTypes';
+import type { AppView, BreadcrumbItem, Theme } from '../appTypes';
 import type { AuthSession, Convenio, MedicalUserOption, OpmeFornecedor } from '../types';
 import { LoadingOverlay } from '../shared/components/LoadingOverlay';
 import { useDelayedLoading } from '../shared/hooks/useDelayedLoading';
@@ -12,6 +12,7 @@ import {
 } from '../shared/utils/formatters';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { ContextualFlowDrawer } from './ContextualFlowDrawer';
 
 type AppShellProps = {
   children: ReactNode;
@@ -25,6 +26,7 @@ type AppShellProps = {
   breadcrumbItems: BreadcrumbItem[];
   notificationsOpen: boolean;
   notificationCount: number;
+  theme: Theme;
   currentUserProfile: string;
   canAccessDashboard: boolean;
   canAccessPatients: boolean;
@@ -44,6 +46,7 @@ type AppShellProps = {
   convenios: Convenio[];
   opmeFornecedores: OpmeFornecedor[];
   onToggleNotifications: () => void;
+  onThemeToggle: () => void;
   onLogout: () => void;
   onOpenDashboard: () => void;
   onOpenUsersList: () => void;
@@ -69,6 +72,7 @@ export function AppShell({
   breadcrumbItems,
   notificationsOpen,
   notificationCount,
+  theme,
   currentUserProfile,
   canAccessDashboard,
   canAccessPatients,
@@ -88,6 +92,7 @@ export function AppShell({
   convenios,
   opmeFornecedores,
   onToggleNotifications,
+  onThemeToggle,
   onLogout,
   onOpenDashboard,
   onOpenUsersList,
@@ -130,7 +135,9 @@ export function AppShell({
         breadcrumbItems={breadcrumbItems}
         notificationsOpen={notificationsOpen}
         notificationCount={notificationCount}
+        theme={theme}
         onToggleNotifications={onToggleNotifications}
+        onThemeToggle={onThemeToggle}
         onLogout={onLogout}
       />
 
@@ -170,6 +177,8 @@ export function AppShell({
           {children}
         </div>
       </div>
+
+      <ContextualFlowDrawer activeView={activeView} />
 
       {modals}
     </main>

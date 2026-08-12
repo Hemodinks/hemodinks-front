@@ -429,6 +429,7 @@ export function AppContent() {
       breadcrumbItems={breadcrumbItems}
       notificationsOpen={appChrome.notificationsOpen}
       notificationCount={notificationCount}
+      theme={theme}
       currentUserProfile={currentUserProfile}
       canAccessDashboard={canAccessDashboard}
       canAccessPatients={canAccessPatients}
@@ -448,6 +449,7 @@ export function AppContent() {
       convenios={patientsDomain.convenios}
       opmeFornecedores={patientsDomain.opmeFornecedores}
       onToggleNotifications={() => void appChrome.handleToggleNotifications()}
+      onThemeToggle={toggleTheme}
       onLogout={logout}
       onOpenDashboard={openDashboard}
       onOpenUsersList={usersDomain.openUsersList}

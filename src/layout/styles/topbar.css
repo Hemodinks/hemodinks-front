@@ -26,6 +26,22 @@
   gap: 12px;
 }
 
+.topbar-left {
+  min-width: 0;
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.topbar-left .theme-toggle {
+  width: auto;
+  min-width: 132px;
+  min-height: 36px;
+  justify-content: center;
+  padding-inline: 12px;
+  font-size: 0.8rem;
+}
+
 .brand-kicker {
   display: flex;
   flex-direction: column;
@@ -67,12 +83,12 @@
 }
 
 .topbar-actions {
-  gap: 8px;
-  flex-wrap: wrap;
+  display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
 
-.topbar-actions .ghost-button,
+.topbar-primary-actions .ghost-button,
 .topbar-info-panel {
   min-height: 44px;
   color: var(--action-text);
@@ -199,6 +215,10 @@
     gap: 12px;
   }
 
+  .topbar-left {
+    width: 100%;
+  }
+
   .topbar-right {
     width: 100%;
     justify-items: start;
@@ -206,24 +226,18 @@
   }
 
   .topbar-actions {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    align-items: stretch;
     width: 100%;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .topbar-actions .ghost-button,
+  .topbar-primary-actions .ghost-button,
   .topbar-info-panel {
     width: 100%;
     min-width: 0;
     min-height: 42px;
     padding: 0 10px;
     font-size: 0.82rem;
-  }
-
-  .theme-toggle {
-    min-width: 0;
   }
 
   .notification-label {
@@ -296,12 +310,10 @@
   }
 
   .topbar-actions {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
   }
 
   .topbar-actions .notification-chip {
-    grid-column: 1 / -1;
     min-height: 40px;
     flex-direction: row;
     justify-content: flex-start;
@@ -309,11 +321,10 @@
     text-align: left;
   }
 
-  .topbar-actions .theme-toggle,
   .topbar-actions .logout-button {
-    min-height: 56px;
-    flex-direction: column;
-    gap: 4px;
+    min-height: 44px;
+    flex-direction: row;
+    gap: 6px;
     padding: 6px 8px;
     font-size: 0.76rem;
     line-height: 1.15;
@@ -327,12 +338,12 @@
   }
 
   .notification-label-wide,
-  .theme-label-wide {
+  .topbar-actions .theme-label-wide {
     display: none;
   }
 
   .notification-label-short,
-  .theme-label-short {
+  .topbar-actions .theme-label-short {
     display: inline;
   }
 
@@ -350,9 +361,8 @@
     gap: 7px;
   }
 
-  .topbar-actions .theme-toggle,
   .topbar-actions .logout-button {
-    min-height: 52px;
+    min-height: 42px;
     padding: 5px 6px;
     font-size: 0.72rem;
   }
@@ -379,9 +389,8 @@
     gap: 6px;
   }
 
-  .topbar-actions .theme-toggle,
   .topbar-actions .logout-button {
-    min-height: 50px;
+    min-height: 40px;
     font-size: 0.68rem;
   }
 
