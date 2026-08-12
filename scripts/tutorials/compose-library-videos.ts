@@ -54,10 +54,12 @@ for (const timelineFile of timelines) {
   const header = `[Script Info]\nScriptType: v4.00+\nPlayResX: 1920\nPlayResY: 1080\nWrapStyle: 0\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Tutorial,Arial,34,&H00FFFFFF,&H000000FF,&H00131A2A,&H90000000,-1,0,0,0,100,100,0,0,1,3,1,2,110,110,42,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n`;
   await writeFile(assPath, header + steps.map((step) => `Dialogue: 0,${assTime(step.narrationStartMs)},${assTime(step.narrationEndMs)},Tutorial,,0,0,0,,${step.text}`).join('\n'), 'utf8');
   const inputs = [raw, ...steps.map((step) => join(root, 'audio', step.audioFile))].flatMap((path) => ['-i', path]);
-  const delays = steps.map((step, index) => `[${index + 1}:a]adelay=${Math.round(step.narrationStartMs)}:all=1[a${index + 1}]`);
+  const delays = steps.map((step, index) => (
+    `[${index + 1}:a]loudnorm=I=-14:TP=-1.0:LRA=7,adelay=${Math.round(step.narrationStartMs)}:all=1[a${index + 1}]`
+  ));
   const labels = steps.map((_, index) => `[a${index + 1}]`).join('');
   const subtitle = relative(workspaceRoot, assPath).replaceAll('\\', '/').replaceAll(':', '\\:');
-  const filter = [`[0:v]scale=1920:1080,subtitles='${subtitle}'[video]`, ...delays, `${labels}amix=inputs=${steps.length}:duration=longest:dropout_transition=0,volume=1.25,apad[audio]`].join(';');
+  const filter = [`[0:v]scale=1920:1080,subtitles='${subtitle}'[video]`, ...delays, `${labels}amix=inputs=${steps.length}:duration=longest:dropout_transition=0:normalize=0,loudnorm=I=-14:TP=-2:LRA=7,apad[audio]`].join(';');
   const common = ['-y', '-hide_banner', '-loglevel', 'error', ...inputs, '-filter_complex', filter, '-map', '[video]', '-map', '[audio]', '-t', (timeline.completedAtMs / 1000).toFixed(3)];
   await run(ffmpegPath, [...common, '-c:v', 'libvpx-vp9', '-crf', '32', '-b:v', '0', '-deadline', 'good', '-cpu-used', '4', '-c:a', 'libopus', '-b:a', '112k', webm], { cwd: workspaceRoot });
   await run(ffmpegPath, [...common, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', mp4], { cwd: workspaceRoot });
