@@ -354,6 +354,14 @@ O pipeline local usa Piper TTS com a voz `pt_BR-faber-medium` e o binário do `f
 npm run tutorial:produce:reports
 ```
 
+Para gerar a biblioteca completa com os 11 fluxos adicionais, uma faixa de áudio por etapa, gravações independentes em 1920×1080 e publicação automática em `public/tutorials`, execute:
+
+```bash
+npm run tutorial:produce:library
+```
+
+O módulo autenticado fica disponível em `/tutoriais-interativos` e apresenta os 12 vídeos nos formatos WebM e MP4 H.264. A produção completa utiliza somente os dados fictícios definidos nos testes locais; os diretórios temporários, timelines e faixas WAV permanecem em `artifacts/tutorials` e não são versionados.
+
 O comando instala o Piper em um ambiente virtual isolado, baixa e valida o modelo de voz, gera uma faixa por etapa, grava o fluxo com pausas antes e depois de cada ação e exporta:
 
 - `artifacts/tutorials/reports/tutorial-relatorios-narrado.webm` — VP9 + Opus;

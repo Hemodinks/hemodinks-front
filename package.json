@@ -24,6 +24,10 @@
     "tutorial:audio:reports": "tsx scripts/tutorials/generate-narration.ts",
     "tutorial:compose:reports": "tsx scripts/tutorials/compose-video.ts",
     "tutorial:produce:reports": "npm run tutorial:setup && npm run tutorial:audio:reports && npm run record:tutorials:reports:local && npm run tutorial:compose:reports",
+    "tutorial:audio:library": "tsx scripts/tutorials/generate-library-narration.ts",
+    "tutorial:record:library": "playwright test --config=playwright.tutorials.library.config.ts",
+    "tutorial:compose:library": "tsx scripts/tutorials/compose-library-videos.ts",
+    "tutorial:produce:library": "npm run tutorial:setup && npm run tutorial:audio:library && npm run tutorial:record:library && npm run tutorial:compose:library",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

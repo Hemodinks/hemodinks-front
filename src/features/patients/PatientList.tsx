@@ -110,7 +110,7 @@ export function PatientList({
   const patientActionLabel = patientReadOnly || !canEditPatients ? 'Visualizar' : 'Editar';
 
   return (
-    <DataPanel>
+    <DataPanel data-tour="patients-list">
       <div className="data-header">
         <div>
           <span className="eyebrow">Cadastro de pacientes</span>
@@ -119,16 +119,16 @@ export function PatientList({
 
         <div className="table-tools">
           {canCreatePatients && (
-            <Button onClick={onOpenNewPacienteForm}>
+            <Button onClick={onOpenNewPacienteForm} data-tour="patients-new">
               <Plus size={17} />
               Novo paciente
             </Button>
           )}
-          <SearchField
+          <div data-tour="patients-search"><SearchField
             label="Buscar pacientes"
             value={pacienteSearchTerm}
             onValueChange={onSearchChange}
-          />
+          /></div>
           <IconButton label="Atualizar lista de pacientes" onClick={onRefresh} title="Atualizar lista">
             <RefreshCw size={18} />
           </IconButton>

@@ -80,7 +80,7 @@ export function ReportsFiltersPanel(props: Props) {
               <Button className="billing-clear-filters" onClick={props.onClear}>Limpar filtros</Button>
             </div>
           </div>
-          <div className="reports-filter-actions">
+          <div className="reports-filter-actions" data-tour="reports-export">
             <IconButton label="Atualizar dados dos relatórios" title="Atualizar" onClick={props.onRefresh} disabled={props.isFetching}><RefreshCw size={18} /></IconButton>
             <Button className="reports-export-button reports-export-pdf" onClick={() => props.onExport('pdf')} disabled={props.exportLoading || !props.resultCount}><FileText size={17} />Exportar PDF</Button>
             <Button className="reports-export-button reports-export-xlsx" onClick={() => props.onExport('xlsx')} disabled={props.exportLoading || !props.resultCount}><Download size={17} />Exportar Planilha</Button>

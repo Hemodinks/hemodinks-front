@@ -42,7 +42,7 @@ export function AgendaEventForm({
   onToggleNotificationGroup,
 }: AgendaEventFormProps) {
   return (
-    <FormPanel className="agenda-form-panel">
+    <FormPanel className="agenda-form-panel" data-tour="agenda-form">
       <div className="panel-title">
         <div>
           <span className="eyebrow">{editingEventId ? 'Edição' : 'Cadastro'}</span>
@@ -62,7 +62,7 @@ export function AgendaEventForm({
       </div>
 
       <form className="stack agenda-form" onSubmit={onSubmit}>
-        <div className="agenda-form-section">
+        <div className="agenda-form-section" data-tour="agenda-details">
           <TextField
             label="Título"
             type="text"
@@ -154,7 +154,7 @@ export function AgendaEventForm({
           )}
         </div>
 
-        <div className="agenda-form-section agenda-notification-section">
+        <div className="agenda-form-section agenda-notification-section" data-tour="agenda-notifications">
           <TextareaField
             label="Mensagem da notificação"
             value={formData.notificationMessage}
@@ -215,7 +215,7 @@ export function AgendaEventForm({
           )}
         </div>
 
-        <Button variant="primary" type="submit" disabled={formLoading}>
+        <Button variant="primary" type="submit" disabled={formLoading} data-tour="agenda-save">
           {editingEventId ? <Save size={18} /> : <Plus size={18} />}
           {formLoading ? 'Salvando...' : editingEventId ? 'Salvar evento' : 'Cadastrar evento'}
         </Button>

@@ -4,6 +4,7 @@ import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
 import { TeamIdentificationScreen } from '../features/auth/TeamIdentificationScreen';
 import type { LoginFlowState } from '../features/auth/useLoginFlow';
 import { API_ASSET_BASE_URL } from '../shared/utils/formatters';
+import { useTutorials } from '../features/tutorials/TutorialProvider';
 
 type AppPublicContentProps = {
   loginFlow: LoginFlowState;
@@ -30,6 +31,7 @@ export function AppPublicContent({
   onBackToLogin,
   onResetCompleted,
 }: AppPublicContentProps) {
+  const { startTutorial } = useTutorials();
   if (isResetPasswordRoute) {
     return (
       <ResetPasswordScreen
@@ -85,6 +87,7 @@ export function AppPublicContent({
       onLoginClinicChange={loginFlow.setLoginClinicValue}
       onSubmit={loginFlow.handleLogin}
       onResetPassword={() => void loginFlow.handleResetPassword()}
+      onStartTutorial={() => startTutorial('login-clinic')}
     />
   );
 }
