@@ -106,6 +106,17 @@ describe('billingUtils', () => {
     expect(record.paciente.data).toBe('2026-06-10T00:00:00Z');
   });
 
+  it('expõe e filtra a data do pagamento do faturamento', () => {
+    const records = buildBillingRecords([{
+      ...basePaciente,
+      faturamento: createFaturamento({ dataPagamento: '2026-06-20T00:00:00Z' }),
+    }]);
+
+    expect(records[0].paymentDateLabel).toBe('20/06/2026');
+    expect(filterBillingRecords(records, { ...createEmptyBillingFilters(''), paymentStartDate: '20/06/2026', paymentEndDate: '20/06/2026' })).toHaveLength(1);
+    expect(filterBillingRecords(records, { ...createEmptyBillingFilters(''), paymentStartDate: '21/06/2026' })).toHaveLength(0);
+  });
+
   it('resume e agrupa faturamento por medico e convenio', () => {
     const records = buildBillingRecords([
       basePaciente,

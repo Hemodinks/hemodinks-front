@@ -38,6 +38,12 @@ describe('filtros de relatórios', () => {
     expect(filterReportRecords(records, { ...emptyReportFilters, requestStartDate: '11/06/2026' })).toHaveLength(0);
   });
 
+  it('filtra a data do pagamento de forma inclusiva', () => {
+    const records = enrichReportRecords([record({ paymentDate: '2026-06-20T00:00:00Z' })], [], []);
+    expect(filterReportRecords(records, { ...emptyReportFilters, paymentStartDate: '20/06/2026', paymentEndDate: '20/06/2026' })).toHaveLength(1);
+    expect(filterReportRecords(records, { ...emptyReportFilters, paymentStartDate: '21/06/2026' })).toHaveLength(0);
+  });
+
   it('relaciona equipe e grupo pelos membros médicos e aplica seleção múltipla', () => {
     const records = enrichReportRecords([record()], [{
       id: 2, nome: 'Ortopedia', ativo: true, dataCadastro: '', membrosCount: 1,
@@ -56,6 +62,7 @@ describe('filtros de relatórios', () => {
     expect(validateReportDateRange({ ...emptyReportFilters, startDate: '31/02/2026' })).toMatch(/datas válidas/i);
     expect(validateReportDateRange({ ...emptyReportFilters, startDate: '20/06/2026', endDate: '10/06/2026' })).toMatch(/posterior/i);
     expect(validateReportDateRange({ ...emptyReportFilters, requestStartDate: '31/02/2026' })).toMatch(/solicitação/i);
+    expect(validateReportDateRange({ ...emptyReportFilters, paymentStartDate: '31/02/2026' })).toMatch(/pagamento/i);
     expect(validateReportDateRange({
       ...emptyReportFilters,
       requestStartDate: '20/06/2026',

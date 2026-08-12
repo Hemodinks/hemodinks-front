@@ -10,6 +10,7 @@ import {
   SelectField,
 } from '../../shared/components/ui';
 import { formatPersonName } from '../../shared/utils/formatters';
+import { DateInput } from '../../shared/components/DateInput';
 import { BillingMonthField } from './BillingPageComponents';
 import {
   BILLING_REGIME_FILTER_OPTIONS,
@@ -98,6 +99,8 @@ export function BillingFiltersPanel({
             </SelectField>
             <BillingMonthField id="billing-period-start" label="Competência inicial" value={filters.competenciaInicio} onChange={onStartMonthChange} />
             <BillingMonthField id="billing-period-end" label="Competência final" value={filters.competenciaFinal} onChange={onEndMonthChange} />
+            <DateInput id="billing-payment-start-date" className="filter-field" label="Data inicial do pagamento" value={filters.paymentStartDate} max={filters.paymentEndDate || undefined} onChange={(paymentStartDate) => setFilters((current) => ({ ...current, paymentStartDate }))} />
+            <DateInput id="billing-payment-end-date" className="filter-field" label="Data final do pagamento" value={filters.paymentEndDate} min={filters.paymentStartDate || undefined} onChange={(paymentEndDate) => setFilters((current) => ({ ...current, paymentEndDate }))} />
             <CheckboxField className="billing-checkbox" label="Mostrar apenas cirurgias com pendências de faturamento" checked={filters.onlyPendingItems} onCheckedChange={(onlyPendingItems) => setFilters((current) => ({ ...current, onlyPendingItems }))} />
             <div className="billing-filter-actions">
               <Button className="billing-apply-filters" variant="primary" onClick={onApply} disabled={isFetching}><Search size={16} />Consultar</Button>

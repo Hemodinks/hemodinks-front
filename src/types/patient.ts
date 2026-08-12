@@ -34,6 +34,7 @@ export type PacienteFaturamento = {
   glosaStatus?: string | null;
   recursoGlosa?: string | null;
   conferenciaPagamentoRealizada: boolean;
+  dataPagamento?: string | null;
   repasseMedico?: number | null;
   repasseMedicoObservacao?: string | null;
   tipoFaturamentoParticular?: string | null;
@@ -123,11 +124,14 @@ export type PacienteFormData = {
   pagamento: string;
   repasseGlosa: string;
   statusPago: boolean;
+  dataPagamento: string;
   ativo: boolean;
   novaObservacao: string;
 };
 
-export type PacientePayload = Omit<PacienteFormData, 'novaObservacao'>;
+export type PacientePayload = Omit<PacienteFormData, 'novaObservacao' | 'dataPagamento'> & {
+  dataPagamento: string | null;
+};
 
 export type PacienteObservacao = {
   id: number;

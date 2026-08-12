@@ -45,6 +45,8 @@ export function ReportsFiltersPanel(props: Props) {
             <DateInput id="report-request-end-date" label="Data final da solicitação" value={props.filters.requestEndDate} onChange={(requestEndDate) => props.setFilters((current) => ({ ...current, requestEndDate }))} />
             <DateInput id="report-start-date" label="Data inicial do atendimento" value={props.filters.startDate} onChange={(startDate) => props.setFilters((current) => ({ ...current, startDate }))} />
             <DateInput id="report-end-date" label="Data final do atendimento" value={props.filters.endDate} onChange={(endDate) => props.setFilters((current) => ({ ...current, endDate }))} />
+            <DateInput id="report-payment-start-date" label="Data inicial do pagamento" value={props.filters.paymentStartDate} max={props.filters.paymentEndDate || undefined} onChange={(paymentStartDate) => props.setFilters((current) => ({ ...current, paymentStartDate }))} />
+            <DateInput id="report-payment-end-date" label="Data final do pagamento" value={props.filters.paymentEndDate} min={props.filters.paymentStartDate || undefined} onChange={(paymentEndDate) => props.setFilters((current) => ({ ...current, paymentEndDate }))} />
             {fields.map((field) => (
               <MultiSelectComboboxField
                 key={field.key}
@@ -78,7 +80,7 @@ export function ReportsFiltersPanel(props: Props) {
           <div className="reports-filter-actions">
             <IconButton label="Atualizar dados dos relatórios" title="Atualizar" onClick={props.onRefresh} disabled={props.isFetching}><RefreshCw size={18} /></IconButton>
             <Button className="reports-export-button reports-export-pdf" onClick={() => props.onExport('pdf')} disabled={props.exportLoading || !props.resultCount}><FileText size={17} />Exportar PDF</Button>
-            <Button className="reports-export-button reports-export-xlsx" onClick={() => props.onExport('xlsx')} disabled={props.exportLoading || !props.resultCount}><Download size={17} />Exportar XLSX</Button>
+            <Button className="reports-export-button reports-export-xlsx" onClick={() => props.onExport('xlsx')} disabled={props.exportLoading || !props.resultCount}><Download size={17} />Exportar Planilha</Button>
           </div>
         </div>
       </details>

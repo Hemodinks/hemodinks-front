@@ -6,6 +6,8 @@ export type ReportFilters = {
   endDate: string;
   requestStartDate: string;
   requestEndDate: string;
+  paymentStartDate: string;
+  paymentEndDate: string;
   doctors: string[];
   teams: string[];
   medicalGroups: string[];

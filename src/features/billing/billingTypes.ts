@@ -21,6 +21,8 @@ export type BillingFilters = {
   procedimento: string;
   competenciaInicio: string;
   competenciaFinal: string;
+  paymentStartDate: string;
+  paymentEndDate: string;
   status: BillingStatusFilter;
   regime: BillingRegimeFilter;
   onlyPendingItems: boolean;
@@ -38,6 +40,8 @@ export type BillingRecord = {
   regime: 'convenio' | 'particular';
   surgeryDate: string | null;
   surgeryDateLabel: string;
+  paymentDate: string | null;
+  paymentDateLabel: string;
   competenciaInicio: string | null;
   competenciaFinal: string | null;
   authorizationCode: string;

@@ -64,10 +64,8 @@ export function usePatientExport({
       return fetchPacientesForExport(getPacienteFilterQuery(pacienteFilters));
     }
 
-    return fetchPacientesForExport({
-      ...(pacienteFilters.dataInicio ? { dataInicio: pacienteFilters.dataInicio } : {}),
-      ...(pacienteFilters.dataFinal ? { dataFinal: pacienteFilters.dataFinal } : {}),
-    });
+    const { dataInicio, dataFinal } = getPacienteFilterQuery(pacienteFilters);
+    return fetchPacientesForExport({ dataInicio, dataFinal });
   };
 
   const handleExportPacientes = async (format: PacienteExportFormat) => {

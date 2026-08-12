@@ -23,7 +23,7 @@ describe('xlsxWriter', () => {
     const binaryContent = new TextDecoder().decode(await blob.arrayBuffer());
 
     expect(blob.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    expect(binaryContent).toContain('Diagnóstico');
+    expect(binaryContent).toContain('Informações Adicionais');
     expect(binaryContent).toContain('Tratamento médico');
     expect(binaryContent).toContain('Diagnóstico de teste');
     expect(binaryContent).toContain('Paciente Exportado');

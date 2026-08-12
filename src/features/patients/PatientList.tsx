@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { Convenio, MedicalUserOption, Paciente } from '../../types';
 import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
+import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, DataPanel, IconButton, MultiSelectComboboxField, SearchField, SelectField, TextField } from '../../shared/components/ui';
 import {
   formatPersonName,
@@ -156,7 +157,7 @@ export function PatientList({
               disabled={pacienteExportLoading !== null}
             >
               <Download size={17} />
-              {pacienteExportLoading === 'xlsx' ? 'Gerando...' : 'Exportar XLSX'}
+              {pacienteExportLoading === 'xlsx' ? 'Gerando...' : 'Exportar Planilha'}
             </Button>
           </div>
           <div className="patient-filter-grid" aria-label="Filtros de pacientes e cirurgias">
@@ -205,21 +206,21 @@ export function PatientList({
                 placeholder="Procedimento"
               />
             )}
-            <TextField
+            <DateInput
+              id="patient-attendance-start-date"
               className="filter-field"
-              label="Data inicial"
-              type="date"
+              label="Data inicial do atendimento"
               value={pacienteFilters.dataInicio}
               max={pacienteFilters.dataFinal || undefined}
-              onValueChange={(value) => onFiltersChange((current) => ({ ...current, dataInicio: value }))}
+              onChange={(value) => onFiltersChange((current) => ({ ...current, dataInicio: value }))}
             />
-            <TextField
+            <DateInput
+              id="patient-attendance-end-date"
               className="filter-field"
-              label="Data final"
-              type="date"
+              label="Data final do atendimento"
               value={pacienteFilters.dataFinal}
               min={pacienteFilters.dataInicio || undefined}
-              onValueChange={(value) => onFiltersChange((current) => ({ ...current, dataFinal: value }))}
+              onChange={(value) => onFiltersChange((current) => ({ ...current, dataFinal: value }))}
             />
             <Button
               className="patient-clear-filters"
