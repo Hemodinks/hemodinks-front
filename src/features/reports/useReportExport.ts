@@ -13,6 +13,9 @@ function describeFilters(filters: ReportFilters) {
   if (filters.startDate || filters.endDate) {
     lines.push(`Período do atendimento: ${filters.startDate || 'início'} a ${filters.endDate || 'hoje'}`);
   }
+  if (filters.paymentStartDate || filters.paymentEndDate) {
+    lines.push(`Período do pagamento: ${filters.paymentStartDate || 'início'} a ${filters.paymentEndDate || 'hoje'}`);
+  }
   const selections = [filters.doctors, filters.teams, filters.medicalGroups, filters.hospitals, filters.convenios, filters.procedures, filters.opmeSuppliers].flat();
   if (selections.length) lines.push(`Filtros: ${selections.join(', ')}`);
   const statusLabels: Record<ReportFilters['status'], string> = { all: 'Todos', paid: 'Pagos', pending: 'Pendentes', glosa: 'Com glosa', missing: 'Sem valor informado' };

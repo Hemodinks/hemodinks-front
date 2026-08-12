@@ -100,6 +100,8 @@ export function areBillingFiltersEqual(left: BillingFilters, right: BillingFilte
     && normalizeBillingFilterText(left.procedimento) === normalizeBillingFilterText(right.procedimento)
     && left.competenciaInicio === right.competenciaInicio
     && left.competenciaFinal === right.competenciaFinal
+    && left.paymentStartDate === right.paymentStartDate
+    && left.paymentEndDate === right.paymentEndDate
     && left.status === right.status
     && left.regime === right.regime
     && left.onlyPendingItems === right.onlyPendingItems;

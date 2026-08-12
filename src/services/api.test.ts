@@ -268,6 +268,7 @@ describe('services api client', () => {
       pagamento: 'Pix',
       repasseGlosa: '',
       statusPago: true,
+      dataPagamento: '2026-06-20',
       ativo: true,
     };
 

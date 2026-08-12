@@ -190,6 +190,10 @@ export function BillingSummaryModal({ record, authToken, onClose }: BillingSumma
             <span>Líquido</span>
             <strong>{record.paymentHasNumericValue || record.glosaHasNumericValue ? formatCurrency(record.netAmount) : '-'}</strong>
           </article>
+          <article className="billing-summary-metric-card">
+            <span>Data do pagamento</span>
+            <strong>{record.paymentDateLabel}</strong>
+          </article>
         </section>
 
         <section className="billing-detail-section billing-summary-main">

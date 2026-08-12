@@ -26,6 +26,7 @@ export const pacienteExportColumns: readonly PatientExportColumn<Paciente>[] = [
   { header: 'Pagamento', getValue: (paciente) => paciente.pagamento || '-' },
   { header: 'Repasse/Glosa', getValue: (paciente) => paciente.repasseGlosa || '-' },
   { header: 'Status pago', getValue: (paciente) => (paciente.statusPago ? 'Pago' : 'Pendente') },
+  { header: 'Data do pagamento', getValue: (paciente) => toDisplayDate(paciente.faturamento?.dataPagamento || '') || '-' },
   { header: 'Ativo', getValue: (paciente) => (paciente.ativo ? 'Sim' : 'Não') },
   { header: 'Arquivos', getValue: (paciente) => String(paciente.arquivosCount ?? paciente.arquivos.length) },
 ];
@@ -34,7 +35,7 @@ export const pacienteFormExportColumns: readonly PatientExportColumn<PacienteFor
   { header: 'Data da solicitação', getValue: (form) => toDisplayDate(form.data || '') || '-' },
   { header: 'Data do atendimento', getValue: (form) => toDisplayDate(form.dataAtendimento || '') || '-' },
   { header: 'Paciente', getValue: (form) => formatPersonName(form.nomePaciente) || '-' },
-  { header: 'Diagnóstico', getValue: (form) => form.diagnostico || '-' },
+  { header: 'Informações Adicionais', getValue: (form) => form.diagnostico || '-' },
   { header: 'Tratamento médico', getValue: (form) => form.tratamentoMedico || '-' },
   { header: 'CPF', getValue: (form) => form.cpf || '-' },
   { header: 'E-mail', getValue: (form) => form.email || '-' },
@@ -53,6 +54,7 @@ export const pacienteFormExportColumns: readonly PatientExportColumn<PacienteFor
   { header: 'Pagamento', getValue: (form) => form.pagamento || '-' },
   { header: 'Repasse/Glosa', getValue: (form) => form.repasseGlosa || '-' },
   { header: 'Status pago', getValue: (form) => (form.statusPago ? 'Pago' : 'Pendente') },
+  { header: 'Data do pagamento', getValue: (form) => toDisplayDate(form.dataPagamento || '') || '-' },
   { header: 'Paciente ativo', getValue: (form) => (form.ativo ? 'Sim' : 'Não') },
   { header: 'Nova observação', getValue: (form) => form.novaObservacao || '-' },
 ];
