@@ -1,10 +1,11 @@
 import { Bell, LogOut } from 'lucide-react';
-import type { BreadcrumbItem } from '../appTypes';
+import type { BreadcrumbItem, Theme } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
 import { formatPersonName } from '../shared/utils/formatters';
 import { CompanyLogo } from '../shared/components/CompanyLogo';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
+import { ThemeToggle } from '../shared/components/ThemeToggle';
 
 type TopbarProps = {
   appTitle: string;
@@ -14,7 +15,9 @@ type TopbarProps = {
   breadcrumbItems: BreadcrumbItem[];
   notificationsOpen: boolean;
   notificationCount: number;
+  theme: Theme;
   onToggleNotifications: () => void;
+  onThemeToggle: () => void;
   onLogout: () => void;
 };
 
@@ -26,21 +29,26 @@ export function Topbar({
   breadcrumbItems,
   notificationsOpen,
   notificationCount,
+  theme,
   onToggleNotifications,
+  onThemeToggle,
   onLogout,
 }: TopbarProps) {
   return (
     <header className="topbar">
-      <div className="topbar-brand">
-        <CompanyLogo companyName={companyName} photo={companyPhoto} className="topbar-logo" decorative />
-        <div>
-          <div className="brand-kicker">
-            <span className="company-name">GM Tech Solutions</span>
-            <span className="product-name">{companyName}</span>
+      <div className="topbar-left">
+        <div className="topbar-brand">
+          <CompanyLogo companyName={companyName} photo={companyPhoto} className="topbar-logo" decorative />
+          <div>
+            <div className="brand-kicker">
+              <span className="company-name">GM Tech Solutions</span>
+              <span className="product-name">{companyName}</span>
+            </div>
+            <h1>{appTitle}</h1>
+            <Breadcrumbs items={breadcrumbItems} />
           </div>
-          <h1>{appTitle}</h1>
-          <Breadcrumbs items={breadcrumbItems} />
         </div>
+        <ThemeToggle theme={theme} onToggle={onThemeToggle} />
       </div>
 
       <div className="topbar-right">
@@ -49,7 +57,7 @@ export function Topbar({
           <span className="current-user-name">{formatPersonName(session.user.nome)}</span>
         </div>
 
-        <div className="topbar-actions">
+        <div className="topbar-actions topbar-primary-actions">
           <button
             type="button"
             className="topbar-info-panel notification-chip"
