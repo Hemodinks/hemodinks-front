@@ -8,9 +8,7 @@ Frontend React/Vite publicado como SPA. O build final fica em `dist` e toda rota
 | --- | --- |
 | Local | `http://localhost:5173` |
 | Producao | `https://hemodinks.gestao-saude.tec.br` |
-| Producao legado | `https://hemodinks-saude.vercel.app` |
 | Homologacao | `https://hemodinks-homologacao.gestao-saude.tec.br` |
-| Homologacao legado | `https://hemodinks-homologacao.vercel.app` |
 | Confirmation (Render blueprint) | `https://hemodinks-front-confirmation.onrender.com` |
 | API local | `http://localhost:5000` |
 | Swagger local | `http://localhost:5000/swagger` |
@@ -99,98 +97,28 @@ public/otel-runtime-config.json
 reports/lighthouse/
 ```
 
-## Vercel
+## Azure Static Web Apps: producao
 
-`vercel.json` define:
+`public/staticwebapp.config.json` define o fallback SPA, os headers de seguranca e as regras de cache. O arquivo e copiado para a raiz de `dist` pelo build do Vite.
 
-- framework `vite`
-- install `npm ci`
-- build `npm run build`
-- output `dist`
-- rewrite SPA para `/index.html`
+O workflow `.github/workflows/azure-static-web-apps-white-grass-0d59a4410.yml`:
 
-Workflow atual:
+- roda apenas em `push` para `main` ou acionamento manual selecionando a `main`
+- executa testes, build e budget antes da publicacao
+- publica `dist` no Azure Static Web Apps
+- nao cria preview nem deploy de producao em pull requests
 
-```text
-.github/workflows/deploy-vercel.yml
-```
-
-O workflow:
-
-- roda em push para `main` e `workflow_dispatch`
-- instala Node 22
-- executa `npm test`, `npm run build` e `npm run budget`
-- so segue para deploy quando `VERCEL_TOKEN`, `VERCEL_ORG_ID` e `VERCEL_PROJECT_ID` existem
-
-Segredos do workflow:
+Segredos necessarios:
 
 ```text
-VERCEL_TOKEN
-VERCEL_ORG_ID
-VERCEL_PROJECT_ID
+AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410
 VITE_API_URL
 VITE_SENTRY_DSN
 ```
 
-Variaveis definidas pelo workflow:
+O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate dos PRs e pushes. Lighthouse fica separado em `.github/workflows/lighthouse.yml` e deve ser iniciado manualmente quando necessario.
 
-```text
-VITE_APP_ENV=production
-VITE_APP_VERSION=<sha>
-VITE_SENTRY_TRACES_SAMPLE_RATE=<vars do ambiente GitHub>
-```
-
-Variaveis opcionais de observabilidade que devem ficar no projeto Vercel quando o build depender delas:
-
-```text
-VITE_NEW_RELIC_ACCOUNT_ID
-VITE_NEW_RELIC_AGENT_ID
-VITE_NEW_RELIC_APPLICATION_ID
-VITE_NEW_RELIC_BEACON
-VITE_NEW_RELIC_ERROR_BEACON
-VITE_NEW_RELIC_LICENSE_KEY
-VITE_NEW_RELIC_TRUST_KEY
-VITE_OTEL_EXPORTER_OTLP_ENDPOINT
-VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-VITE_OTEL_EXPORTER_OTLP_HEADERS
-VITE_OTEL_EXPORTER_OTLP_TRACES_HEADERS
-VITE_OTEL_SERVICE_NAME
-VITE_OTEL_TRACES_SAMPLE_RATE
-```
-
-O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate principal para PRs e pushes, pois ele roda testes, build, budget e E2E. Lighthouse fica separado em `.github/workflows/lighthouse.yml` e deve ser iniciado manualmente quando necessario.
-
-## Render producao
-
-`render.yaml` define um Static Site:
-
-- service: `hemodinks-front`
-- branch: `main`
-- build `npm ci && npm run build && npm run budget`
-- publish path `./dist`
-- rewrite SPA para `/index.html`
-- headers `X-Frame-Options: sameorigin` e `X-Content-Type-Options: nosniff`
-
-Variaveis do blueprint:
-
-```text
-NODE_VERSION=22.12.0
-VITE_APP_ENV=production
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
-```
-
-Variaveis que precisam ser preenchidas manualmente:
-
-```text
-VITE_API_URL=https://<api-publica>
-VITE_APP_VERSION=<versao-ou-sha>
-VITE_NEW_RELIC_ACCOUNT_ID=<opcional>
-VITE_NEW_RELIC_AGENT_ID=<opcional>
-VITE_NEW_RELIC_APPLICATION_ID=<opcional>
-VITE_NEW_RELIC_LICENSE_KEY=<opcional>
-VITE_NEW_RELIC_TRUST_KEY=<opcional>
-VITE_SENTRY_DSN=<opcional>
-```
+Os arquivos `vercel.json` e `src/vercel.json` existem somente para definir `git.deploymentEnabled=false` nos dois projetos Vercel anteriormente conectados. Eles impedem novos deploys automaticos enquanto as conexoes Git nao forem removidas no painel da Vercel.
 
 ## Render homologacao: confirmation
 
@@ -222,27 +150,13 @@ Producao:
 
 ```text
 Cors__AllowedOrigins__0=https://hemodinks.gestao-saude.tec.br
-Cors__AllowedOrigins__1=https://hemodinks-saude.vercel.app
-```
-
-Preview Vercel ou outros dominios:
-
-```text
-Cors__AllowedOrigins__1=https://<preview>.vercel.app
 ```
 
 Confirmation Render:
 
 ```text
 Cors__AllowedOrigins__0=https://hemodinks-homologacao.gestao-saude.tec.br
-Cors__AllowedOrigins__1=https://hemodinks-homologacao.vercel.app
-Cors__AllowedOrigins__2=https://hemodinks-front-confirmation.onrender.com
-```
-
-Se a API confirmation tambem aceitar outros previews Vercel, adicione o proximo indice:
-
-```text
-Cors__AllowedOrigins__3=https://<preview>.vercel.app
+Cors__AllowedOrigins__1=https://hemodinks-front-confirmation.onrender.com
 ```
 
 ## Smoke test apos deploy
