@@ -26,6 +26,20 @@ const session = {
   },
 };
 
+const superAdminSession = {
+  token: 'super-admin-token',
+  user: {
+    id: 100,
+    nome: 'Super Administrador',
+    email: 'superadmin@hemodinks.com',
+    cpf: '39053344705',
+    fotoPerfil: null,
+    precisaTrocarSenha: false,
+    perfilId: 5,
+    perfilNome: 'SuperAdministrador',
+  },
+};
+
 const patientSession = {
   token: 'patient-token',
   user: {
@@ -247,6 +261,27 @@ async function mockApi(page: Page, loginSession = session) {
     if (path === '/api/public/clinicas') {
       return route.fulfill({
         json: [{ id: 1, nome: 'Clínica Hemodinks', slug: 'clinica-hemodinks', fotoUrl: null }],
+      });
+    }
+
+    if (path === '/api/platform/clinicas') {
+      return route.fulfill({
+        json: [{
+          id: 1,
+          nome: 'Clínica Hemodinks',
+          slug: 'clinica-hemodinks',
+          fotoUrl: null,
+          ativa: true,
+          plano: 'Completo',
+          modulosLiberados: ['usuarios', 'pacientes', 'faturamento', 'grupos-medicos', 'agenda'],
+          assinaturaStatus: 'Ativa',
+          trialAte: null,
+          assinaturaValidaAte: '2027-06-01T00:00:00Z',
+          limiteUsuarios: 100,
+          usuarios: 2,
+          dataCadastro: '2026-01-01T00:00:00Z',
+          dataAtualizacao: null,
+        }],
       });
     }
 
@@ -509,6 +544,33 @@ test('navega pelos fluxos principais autenticados', async ({ page }) => {
   await expect(openNewEventButton).toBeVisible();
   await openNewEventButton.click();
   await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
+});
+
+test('exibe o fluxo contextual correspondente para o SuperAdministrador', async ({ page }) => {
+  await mockApi(page, superAdminSession);
+  const routes = [
+    ['/dashboard', 'Painel inicial'],
+    ['/usuarios', 'Usuários'],
+    ['/pacientes', 'Pacientes - Cirurgias'],
+    ['/faturamento-medico', 'Faturamento médico'],
+    ['/relatorios', 'Relatórios'],
+    ['/grupos-medicos', 'Grupos médicos'],
+    ['/agenda', 'Agenda e notificações'],
+    ['/configuracoes', 'Configuração do sistema'],
+    ['/clinicas', 'Clínicas'],
+  ] as const;
+
+  for (const [route, title] of routes) {
+    await loginViaUi(page, route, superAdminSession);
+    await expect(page).toHaveURL(new RegExp(`${route.replaceAll('/', '\\/')}$`));
+
+    const help = page.getByRole('complementary', { name: 'Ajuda contextual' });
+    await help.getByRole('button', { name: new RegExp(`Abrir ajuda de ${title}`, 'i') }).click();
+    await expect(help.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    await expect(help.locator('.contextual-flow-item').first().getByRole('button')).toHaveAttribute('aria-expanded', 'true');
+    await expectNoGlobalHorizontalOverflow(page);
+    await help.getByRole('button', { name: 'Fechar ajuda da tela' }).click();
+  }
 });
 
 test('mantem telas criticas sem overflow horizontal no mobile', async ({ page }) => {
