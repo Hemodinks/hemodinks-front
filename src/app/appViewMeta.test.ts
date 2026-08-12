@@ -10,6 +10,7 @@ function handlers() {
     patients: vi.fn(),
     billing: vi.fn(),
     reports: vi.fn(),
+    tutorials: vi.fn(),
     medicalGroups: vi.fn(),
     agenda: vi.fn(),
     settings: vi.fn(),

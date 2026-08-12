@@ -4,6 +4,7 @@ export const NotificationsModal = lazy(() => import('../features/dashboard/Notif
 export const AgendaPage = lazy(() => import('../features/events/AgendaPage').then((module) => ({ default: module.AgendaPage })));
 export const BillingPage = lazy(() => import('../features/billing/BillingPage').then((module) => ({ default: module.BillingPage })));
 export const ReportsPage = lazy(() => import('../features/reports/ReportsPage').then((module) => ({ default: module.ReportsPage })));
+export const TutorialsPage = lazy(() => import('../features/tutorials/TutorialsPage').then((module) => ({ default: module.TutorialsPage })));
 export const ClinicsPage = lazy(() => import('../features/clinics/ClinicsPage').then((module) => ({ default: module.ClinicsPage })));
 export const MedicalGroupsPage = lazy(() => import('../features/medicalGroups/MedicalGroupsPage').then((module) => ({ default: module.MedicalGroupsPage })));
 export const SystemSettingsPage = lazy(() => import('../features/settings/SystemSettingsPage').then((module) => ({ default: module.SystemSettingsPage })));

@@ -164,6 +164,12 @@
   --side-nav-border: rgba(29, 78, 216, .32);
 }
 
+.side-nav-tutorials {
+  --side-nav-color: #7c3aed;
+  --side-nav-soft: rgba(124, 58, 237, 0.12);
+  --side-nav-border: rgba(124, 58, 237, 0.32);
+}
+
 .side-nav-profile {
   --side-nav-color: #7c3aed;
   --side-nav-soft: rgba(124, 58, 237, 0.1);

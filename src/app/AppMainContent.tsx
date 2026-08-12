@@ -13,6 +13,7 @@ import {
   ModuleFallback,
   PatientsPage,
   ReportsPage,
+  TutorialsPage,
   SystemSettingsPage,
   UsersPage,
 } from './lazyModules';
@@ -291,6 +292,8 @@ export function AppMainContent({
         />
       ) : activeView === 'reports' && canAccessReports ? (
         <ReportsPage session={session} companyName={companyName} isMedical={isMedical} />
+      ) : activeView === 'tutorials' ? (
+        <TutorialsPage />
       ) : activeView === 'medicalGroups' ? (
         <MedicalGroupsPage
           moduleMode={moduleMode}

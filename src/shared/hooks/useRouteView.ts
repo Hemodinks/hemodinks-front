@@ -12,6 +12,7 @@ type UseRouteViewOptions = {
   canUseProfileRoute: boolean;
   canUseBillingRoute: boolean;
   canUseReportsRoute: boolean;
+  canUseTutorialsRoute: boolean;
   canUseMedicalGroupsRoute: boolean;
   canUseAgendaRoute: boolean;
   canUseSettingsRoute: boolean;
@@ -27,6 +28,7 @@ export function useRouteView({
   canUseProfileRoute,
   canUseBillingRoute,
   canUseReportsRoute,
+  canUseTutorialsRoute,
   canUseMedicalGroupsRoute,
   canUseAgendaRoute,
   canUseSettingsRoute,
@@ -44,6 +46,7 @@ export function useRouteView({
     || (routeView === 'profile' && !canUseProfileRoute)
     || (routeView === 'billing' && !canUseBillingRoute)
     || (routeView === 'reports' && !canUseReportsRoute)
+    || (routeView === 'tutorials' && !canUseTutorialsRoute)
     || (routeView === 'medicalGroups' && !canUseMedicalGroupsRoute)
     || (routeView === 'agenda' && !canUseAgendaRoute)
     || (routeView === 'settings' && !canUseSettingsRoute)
@@ -60,6 +63,8 @@ export function useRouteView({
           ? 'billing'
           : canUseReportsRoute
             ? 'reports'
+            : canUseTutorialsRoute
+              ? 'tutorials'
             : canUseMedicalGroupsRoute
               ? 'medicalGroups'
               : canUseAgendaRoute

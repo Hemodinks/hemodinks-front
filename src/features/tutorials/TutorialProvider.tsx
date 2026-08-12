@@ -130,12 +130,32 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
     missingTargetRef.current = false;
     voiceEnabledRef.current = true;
     const reducedMotion = supportsReducedMotion();
+    const handleTutorialKeyDown = (event: KeyboardEvent) => {
+      const activeDriver = driverRef.current;
+      const activeStep = activeStepRef.current;
+      if (!activeDriver?.isActive() || !activeStep || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        activeDriver.destroy();
+      } else if (event.key === 'ArrowLeft' && activeDriver.hasPreviousStep()) {
+        event.preventDefault();
+        activeDriver.movePrevious();
+      } else if (event.key === 'ArrowRight' && activeStep.action === 'continue') {
+        event.preventDefault();
+        if (activeDriver.hasNextStep()) activeDriver.moveNext();
+        else {
+          completingRef.current = true;
+          activeDriver.destroy();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleTutorialKeyDown);
     const tutorialDriver = driver({
       animate: false,
       smoothScroll: !reducedMotion,
       allowClose: true,
       allowScroll: true,
-      allowKeyboardControl: true,
+      allowKeyboardControl: false,
       overlayClickBehavior: () => undefined,
       overlayColor: '#0f172a',
       overlayOpacity: 0.76,
@@ -165,6 +185,7 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
         options.driver.destroy();
       },
       onDestroyed: () => {
+        document.removeEventListener('keydown', handleTutorialKeyDown);
         stopTutorialNarration();
         document.querySelectorAll('.tutorial-target-action').forEach((target) => target.classList.remove('tutorial-target-action'));
         driverRef.current = null;

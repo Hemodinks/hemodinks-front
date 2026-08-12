@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { BarChart3, Building2, CalendarDays, ChevronDown, ClipboardList, FileText, LayoutDashboard, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
+import { BarChart3, Building2, CalendarDays, ChevronDown, ClipboardList, FileText, LayoutDashboard, PlayCircle, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -30,6 +30,7 @@ type SidebarProps = {
   onOpenPatientsList: () => void;
   onOpenBilling: () => void;
   onOpenReports: () => void;
+  onOpenTutorials: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
@@ -61,6 +62,7 @@ export function Sidebar({
   onOpenPatientsList,
   onOpenBilling,
   onOpenReports,
+  onOpenTutorials,
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
@@ -199,6 +201,15 @@ export function Sidebar({
               </div>
             </div>
           )}
+          <button
+            type="button"
+            className={`side-nav-tutorials ${activeView === 'tutorials' ? 'active' : ''}`}
+            aria-current={activeView === 'tutorials' ? 'page' : undefined}
+            onClick={onOpenTutorials}
+          >
+            <PlayCircle size={18} />
+            <span>Tutoriais interativos</span>
+          </button>
           {canAccessMedicalGroups && (
             <button
               type="button"
