@@ -1705,6 +1705,9 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
     expect(screen.getByLabelText('Cirurgião')).toHaveValue('Dr. Fora da Lista');
+    expect(screen.getByLabelText('Status Pago')).toBeChecked();
+    expect(screen.getByLabelText('Data do Pagamento')).toBeEnabled();
+    expect(screen.getByLabelText('Data do Pagamento')).toHaveValue('');
 
     await user.click(screen.getByRole('button', { name: /salvar paciente/i }));
 

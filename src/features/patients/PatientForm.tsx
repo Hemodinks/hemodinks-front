@@ -480,7 +480,6 @@ export function PatientForm({
               label="Data do Pagamento"
               value={pacienteFormData.dataPagamento}
               onChange={(dataPagamento) => setPacienteFormData((current) => ({ ...current, dataPagamento }))}
-              required={pacienteFormData.statusPago}
               disabled={!pacienteFormData.statusPago}
             />
           </div>
