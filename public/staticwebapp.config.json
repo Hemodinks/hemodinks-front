@@ -1,4 +1,24 @@
 {
+  "routes": [
+    {
+      "route": "/index.html",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "route": "/otel-runtime-config.json",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "route": "/assets/*",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    }
+  ],
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [
@@ -7,7 +27,11 @@
     ]
   },
   "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://hemodinks-api-prod.politepond-d3524c51.brazilsouth.azurecontainerapps.io https://hemodinks-api-confirmation.onrender.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.nr-data.net https://*.grafana.net https://*.applicationinsights.azure.com https://*.monitor.azure.com http://localhost:* ws://localhost:* wss://localhost:*; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+    "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "X-Content-Type-Options": "nosniff"
+    "Strict-Transport-Security": "max-age=31536000",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN"
   }
 }

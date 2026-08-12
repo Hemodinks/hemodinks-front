@@ -28,9 +28,7 @@ SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front
 | --- | --- |
 | Front local | `http://localhost:5173` |
 | Front producao | `https://hemodinks.gestao-saude.tec.br` |
-| Front producao legado | `https://hemodinks-saude.vercel.app` |
 | Front homologacao | `https://hemodinks-homologacao.gestao-saude.tec.br` |
-| Front homologacao legado | `https://hemodinks-homologacao.vercel.app` |
 | Front confirmation (Render blueprint) | `https://hemodinks-front-confirmation.onrender.com` |
 | API local | `http://localhost:5000` |
 | Swagger local | `http://localhost:5000/swagger` |
@@ -272,4 +270,4 @@ Cobertura atual inclui:
 
 ## Deploy
 
-Detalhes de Vercel, Render, confirmation e checklist operacional em [DEPLOYMENT.md](./DEPLOYMENT.md).
+Detalhes de Azure Static Web Apps, confirmation e checklist operacional em [DEPLOYMENT.md](./DEPLOYMENT.md).
