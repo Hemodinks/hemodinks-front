@@ -1,5 +1,6 @@
 import type { TutorialConfig } from '../tutorialTypes';
-export const userAccessTutorial = {
+import { defineStaticAudioTutorial } from '../tutorialNarration';
+export const userAccessTutorial = defineStaticAudioTutorial({
   id: 'user-access', view: 'users', title: 'Missão: gerir usuários e perfis', description: 'Cadastre uma conta e entenda o perfil de acesso.',
   steps: [
     { id: 'list', target: '[data-tour="users-list"]', title: 'Usuários autorizados', objective: 'Conheça a base de contas da clínica.', narration: 'Esta lista reúne as contas vinculadas à clínica. O que você pode visualizar ou alterar depende da sua permissão administrativa.', action: 'continue' },
@@ -8,4 +9,4 @@ export const userAccessTutorial = {
     { id: 'form', target: '[data-tour="users-form"]', title: 'Dados da conta', objective: 'Revise os dados cadastrais.', narration: 'Preencha os dados da conta e confira os campos obrigatórios. Durante esta demonstração, utilize apenas nome, e-mail e demais informações fictícias.', action: 'continue' },
     { id: 'save', target: '[data-tour="users-save"]', title: 'Revisar acesso', objective: 'Localize a ação final.', narration: 'Antes de cadastrar, revise os dados e confirme se o perfil escolhido é realmente necessário. Neste tutorial, apenas localize o botão. A conta não será criada.', action: 'continue' },
   ],
-} satisfies TutorialConfig;
+} satisfies TutorialConfig, 'usuarios-perfis');

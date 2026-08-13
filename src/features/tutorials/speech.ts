@@ -2,6 +2,14 @@ export function stopTutorialNarration() {
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 }
 
+export function pauseTutorialNarration() {
+  if ('speechSynthesis' in window && typeof window.speechSynthesis.pause === 'function') window.speechSynthesis.pause();
+}
+
+export function resumeTutorialNarration() {
+  if ('speechSynthesis' in window && typeof window.speechSynthesis.resume === 'function') window.speechSynthesis.resume();
+}
+
 export function speakTutorialNarration(text: string) {
   if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return false;
   stopTutorialNarration();
@@ -13,4 +21,3 @@ export function speakTutorialNarration(text: string) {
   window.speechSynthesis.speak(utterance);
   return true;
 }
-

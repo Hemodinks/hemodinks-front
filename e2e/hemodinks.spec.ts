@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { TUTORIALS, type TutorialId } from '../src/features/tutorials/tutorialRegistry';
+import { getTutorialNarration } from '../src/features/tutorials/tutorialNarration';
 import { TUTORIAL_MEDIA } from '../scripts/tutorials/library-config';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
@@ -939,7 +940,7 @@ test('tutorial de relatórios usa somente alvos data-tour existentes e conclui a
   await mission.getByRole('button', { name: 'Sair do tutorial' }).click();
 });
 
-test('tutorial valida voz, preferência persistente e navegação por teclado', async ({ page }) => {
+test('tutorial valida MP3, preferência persistente e navegação por teclado', async ({ page }) => {
   await page.addInitScript(() => {
     const speechState = { cancelCount: 0, spoken: [] as Array<{ text: string; lang: string; rate: number }> };
     class MockUtterance {
@@ -955,6 +956,8 @@ test('tutorial valida voz, preferência persistente e navegação por teclado', 
       configurable: true,
       value: {
         cancel: () => { speechState.cancelCount += 1; },
+        pause: () => undefined,
+        resume: () => undefined,
         getVoices: () => [{ lang: 'pt-BR', name: 'Voz de teste' }],
         speak: (utterance: MockUtterance) => speechState.spoken.push({ text: utterance.text, lang: utterance.lang, rate: utterance.rate }),
       },
@@ -966,20 +969,28 @@ test('tutorial valida voz, preferência persistente e navegação por teclado', 
   await openReportsTutorial(page);
 
   const mission = page.locator('.tutorial-mission-popover');
+  const runtime = page.locator('[data-tutorial-audio-state]');
   const speech = () => page.evaluate(() => (window as typeof window & { __tutorialSpeechState: { cancelCount: number; spoken: Array<{ text: string; lang: string; rate: number }> } }).__tutorialSpeechState);
-  await expect.poll(async () => (await speech()).spoken.length).toBeGreaterThan(0);
-  expect((await speech()).spoken[0]).toMatchObject({ lang: 'pt-BR', rate: 0.96 });
-  expect((await speech()).spoken[0].text).toContain('central de relatórios');
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
+  expect((await speech()).spoken).toHaveLength(0);
 
   const initialCancelCount = (await speech()).cancelCount;
   await mission.getByRole('button', { name: 'Pausar narração' }).click();
-  await expect(mission.getByRole('button', { name: 'Ativar narração' })).toHaveAttribute('aria-pressed', 'false');
-  expect((await speech()).cancelCount).toBeGreaterThan(initialCancelCount);
+  await expect(mission.getByRole('button', { name: 'Continuar narração' })).toHaveAttribute('aria-pressed', 'false');
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'paused');
+  expect((await speech()).cancelCount).toBeGreaterThanOrEqual(initialCancelCount);
   const spokenBeforeReactivate = (await speech()).spoken.length;
-  await mission.getByRole('button', { name: 'Ativar narração' }).click();
-  expect((await speech()).spoken.length).toBe(spokenBeforeReactivate + 1);
+  await mission.getByRole('button', { name: 'Continuar narração' }).click();
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
+  expect((await speech()).spoken.length).toBe(spokenBeforeReactivate);
   await mission.getByRole('button', { name: 'Repetir narração' }).click();
-  expect((await speech()).spoken.length).toBe(spokenBeforeReactivate + 2);
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
+  expect((await speech()).spoken.length).toBe(spokenBeforeReactivate);
+  await mission.getByRole('button', { name: 'Desativar narração' }).click();
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'disabled');
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('hemodinks.tutorials.narration-enabled'))).toBe('false');
+  await mission.getByRole('button', { name: 'Ativar narração' }).click();
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
 
   const preference = mission.getByRole('checkbox', { name: 'Não mostrar este tutorial novamente' });
   await preference.check();
@@ -1003,6 +1014,27 @@ test('tutorial valida voz, preferência persistente e navegação por teclado', 
   await openReportsTutorial(page);
   await expect(mission.getByRole('checkbox', { name: 'Não mostrar este tutorial novamente' })).toBeChecked();
   await mission.getByRole('button', { name: 'Sair do tutorial' }).click();
+});
+
+test('tutorial usa Web Speech apenas como fallback quando o MP3 falha', async ({ page }) => {
+  await page.route('**/tutorials/audio/**', (route) => route.abort());
+  await page.addInitScript(() => {
+    const state = { spoken: [] as string[] };
+    class MockUtterance { lang = ''; rate = 1; voice = null; constructor(public text: string) {} }
+    Object.defineProperty(window, '__tutorialFallbackState', { value: state });
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', { configurable: true, value: MockUtterance });
+    Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+      cancel: () => undefined, pause: () => undefined, resume: () => undefined,
+      getVoices: () => [{ lang: 'pt-BR', name: 'Fallback de teste' }],
+      speak: (utterance: MockUtterance) => state.spoken.push(utterance.text),
+    } });
+  });
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await openReportsTutorial(page);
+  await expect(page.locator('[data-tutorial-audio-state]')).toHaveAttribute('data-tutorial-audio-state', 'error');
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __tutorialFallbackState: { spoken: string[] } }).__tutorialFallbackState.spoken.length)).toBeGreaterThan(0);
+  await page.locator('.tutorial-mission-popover').getByRole('button', { name: 'Sair do tutorial' }).click();
 });
 
 test('tutorial respeita prefers-reduced-motion', async ({ page }) => {
@@ -1080,13 +1112,8 @@ test('tutorial de relatórios funciona em desktop e mobile e respeita o perfil',
 
 test('grava tutorial local de relatórios com dados sanitizados', async ({ page }) => {
   test.skip(process.env.TUTORIAL_LOCAL_RECORDING !== '1', 'Executado somente pelo script de gravação local.');
-  const manifestPath = resolve('artifacts/tutorials/reports/audio-manifest.json');
   const timelineOutput = resolve('artifacts/tutorials/reports/timeline.json');
-  const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as {
-    tutorialId: string;
-    steps: Array<{ index: number; id: string; durationSeconds: number }>;
-  };
-  const preNarrationMs = 500;
+  const tutorial = TUTORIALS['reports-analytics'];
   const postNarrationMs = 650;
   const recordingOriginEpochMs = Date.now();
   const timelineSteps: Array<{
@@ -1112,35 +1139,31 @@ test('grava tutorial local de relatórios com dados sanitizados', async ({ page 
   await pause(700);
   await page.getByRole('button', { name: /iniciar missão: dominar os relatórios|reiniciar missão: dominar os relatórios/i }).click();
   const mission = page.locator('.tutorial-mission-popover');
-  const actions = [
-    () => mission.getByRole('button', { name: 'Continuar tutorial' }).click(),
-    () => mission.getByRole('button', { name: 'Continuar tutorial' }).click(),
-    () => page.getByRole('textbox', { name: 'Data inicial do atendimento', exact: true }).click(),
-    () => mission.getByRole('button', { name: 'Continuar tutorial' }).click(),
-    () => page.getByRole('button', { name: 'Consultar' }).click(),
-    () => mission.getByRole('button', { name: 'Continuar tutorial' }).click(),
-    () => mission.getByRole('button', { name: 'Concluir tutorial' }).click(),
-  ];
-
-  for (const [position, step] of manifest.steps.entries()) {
-    await expect(mission).toContainText(`Etapa ${step.index} de ${manifest.steps.length}`);
+  const runtime = page.locator('[data-tutorial-audio-state]');
+  for (const [position, step] of tutorial.steps.entries()) {
+    const index = position + 1;
+    const narration = getTutorialNarration(step);
+    if (!narration.audio) throw new Error(`Etapa ${step.id} não possui MP3 estático.`);
+    await expect(mission).toContainText(`Etapa ${index} de ${tutorial.steps.length}`);
     const visualStartMs = elapsed();
-    await pause(preNarrationMs);
+    await expect(runtime).toHaveAttribute('data-tutorial-step', step.id);
+    await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
     const narrationStartMs = elapsed();
-    await pause(Math.ceil(step.durationSeconds * 1000));
+    await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'finished', { timeout: 60_000 });
     const narrationEndMs = elapsed();
     await pause(postNarrationMs);
     const actionAtMs = elapsed();
-    timelineSteps.push({ index: step.index, id: step.id, visualStartMs, narrationStartMs, narrationEndMs, actionAtMs });
-    await actions[position]();
+    timelineSteps.push({ index, id: step.id, visualStartMs, narrationStartMs, narrationEndMs, actionAtMs });
+    if (step.interaction?.type === 'click') await page.locator(step.interaction.target).click();
+    else await mission.getByRole('button', { name: position === tutorial.steps.length - 1 ? 'Concluir tutorial' : 'Continuar tutorial' }).click();
   }
   await expect(page.getByRole('status')).toContainText('Missão concluída');
   await pause(900);
   await mkdir(dirname(timelineOutput), { recursive: true });
   await writeFile(timelineOutput, JSON.stringify({
-    tutorialId: manifest.tutorialId,
+    tutorialId: tutorial.id,
     recordingOriginEpochMs,
-    preNarrationMs,
+    preNarrationMs: 0,
     postNarrationMs,
     completedAtMs: elapsed(),
     steps: timelineSteps,
@@ -1166,10 +1189,6 @@ for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
     test.skip(process.env.TUTORIAL_LIBRARY_RECORDING !== '1');
     const tutorial = TUTORIALS[tutorialId];
     const media = TUTORIAL_MEDIA[tutorialId];
-    const artifactRoot = resolve('artifacts', 'tutorials', 'library', media.slug);
-    const manifest = JSON.parse(await readFile(resolve(artifactRoot, 'audio-manifest.json'), 'utf8')) as {
-      steps: Array<{ id: string; durationSeconds: number }>;
-    };
     const recordingSession = tutorialId.startsWith('clinic-') || tutorialId === 'team-identification'
       ? { ...superAdminSession, token: 'token-ficticio-biblioteca', user: { ...superAdminSession.user, nome: 'Administrador Fictício', email: 'admin@example.invalid' } }
       : { ...session, token: 'token-ficticio-biblioteca', user: { ...session.user, nome: 'Usuário Fictício', email: 'tutorial@example.invalid' } };
@@ -1197,16 +1216,17 @@ for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
       await page.locator(`[data-tour="start-${tutorialId}-tutorial"]`).click();
     }
     const timeline = { tutorialId, slug: media.slug, completedAtMs: 0, steps: [] as Array<Record<string, number | string>> };
+    const runtime = page.locator('[data-tutorial-audio-state]');
     for (const [index, step] of tutorial.steps.entries()) {
-      const audio = manifest.steps[index];
       await expect(page.locator(step.target)).toBeVisible({ timeout: 10_000 });
       const visualStartMs = Date.now() - origin;
-      await page.waitForTimeout(500);
+      await expect(runtime).toHaveAttribute('data-tutorial-step', step.id);
+      await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
       const narrationStartMs = Date.now() - origin;
-      await page.waitForTimeout(Math.ceil(audio.durationSeconds * 1000));
+      await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'finished', { timeout: 60_000 });
       const narrationEndMs = Date.now() - origin;
       await page.waitForTimeout(650);
-      if (step.action === 'click') await page.locator(step.target).click();
+      if (step.interaction?.type === 'click') await page.locator(step.interaction.target).click();
       else await page.locator('.tutorial-mission-popover').getByRole('button', { name: index === tutorial.steps.length - 1 ? 'Concluir tutorial' : 'Continuar tutorial' }).click();
       timeline.steps.push({ index: index + 1, id: step.id, visualStartMs, narrationStartMs, narrationEndMs, actionAtMs: Date.now() - origin });
     }

@@ -1,5 +1,6 @@
 import type { TutorialConfig } from '../tutorialTypes';
-export const surgeryRegistrationTutorial = {
+import { defineStaticAudioTutorial } from '../tutorialNarration';
+export const surgeryRegistrationTutorial = defineStaticAudioTutorial({
   id: 'surgery-registration', view: 'patients', title: 'Missão: registrar atendimento e cirurgia', description: 'Associe datas, procedimento e dados operacionais.',
   steps: [
     { id: 'new', target: '[data-tour="patients-new"]', title: 'Novo atendimento', objective: 'Clique para abrir o cadastro.', narration: 'O registro de um atendimento ou de uma cirurgia começa neste cadastro. Clique em Novo paciente para abrir uma ficha fictícia de demonstração.', action: 'click' },
@@ -7,4 +8,4 @@ export const surgeryRegistrationTutorial = {
     { id: 'procedure', target: '[data-tour="patients-procedure"]', title: 'Procedimentos', objective: 'Localize a seleção de procedimento.', narration: 'Nesta seção, pesquise o procedimento e confira o código correspondente antes de adicioná-lo. Para esta demonstração, não informe nem salve qualquer dado clínico real.', action: 'continue' },
     { id: 'save', target: '[data-tour="patients-save"]', title: 'Revisão final', objective: 'Confira onde o atendimento seria cadastrado.', narration: 'Antes de cadastrar o atendimento, revise as datas, a equipe, o hospital, o convênio e os procedimentos selecionados. Neste tutorial, nenhuma informação será salva.', action: 'continue' },
   ],
-} satisfies TutorialConfig;
+} satisfies TutorialConfig, 'atendimento-cirurgia');
