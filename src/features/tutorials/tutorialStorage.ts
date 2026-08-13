@@ -1,5 +1,6 @@
 const COMPLETED_KEY = 'hemodinks.tutorials.completed';
 const HIDDEN_KEY = 'hemodinks.tutorials.hidden';
+const NARRATION_KEY = 'hemodinks.tutorials.narration-enabled';
 
 function readIds(key: string) {
   try {
@@ -35,3 +36,10 @@ export function setTutorialHidden(id: string, hidden: boolean) {
   writeIds(HIDDEN_KEY, ids);
 }
 
+export function isTutorialNarrationEnabled() {
+  return localStorage.getItem(NARRATION_KEY) !== 'false';
+}
+
+export function setTutorialNarrationEnabled(enabled: boolean) {
+  localStorage.setItem(NARRATION_KEY, String(enabled));
+}

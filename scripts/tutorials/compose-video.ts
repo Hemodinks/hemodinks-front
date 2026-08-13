@@ -1,11 +1,11 @@
 import { access, copyFile, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, join, relative } from 'node:path';
 import ffmpegPath from 'ffmpeg-static';
+import { reportsTutorial } from '../../src/features/tutorials/configs/reportsTutorial';
+import { getTutorialNarration } from '../../src/features/tutorials/tutorialNarration';
 import { capture, run } from './process-utils';
 import {
   assSubtitlesPath,
-  audioManifestPath,
-  audioRoot,
   narratedMp4Path,
   narratedWebmPath,
   publishedMp4Path,
@@ -17,10 +17,6 @@ import {
   timelinePath,
   workspaceRoot,
 } from './tutorial-paths';
-
-type AudioManifest = {
-  steps: Array<{ index: number; id: string; text: string; audioFile: string; durationSeconds: number }>;
-};
 
 type Timeline = {
   completedAtMs: number;
@@ -67,14 +63,15 @@ if (recordings.length) {
   });
 }
 
-const manifest = JSON.parse(await readFile(audioManifestPath, 'utf8')) as AudioManifest;
 const timeline = JSON.parse(await readFile(timelinePath, 'utf8')) as Timeline;
-if (manifest.steps.length !== timeline.steps.length) throw new Error('Manifesto de áudio e timeline possuem quantidades diferentes de etapas.');
+if (reportsTutorial.steps.length !== timeline.steps.length) throw new Error('Definição do tutorial e timeline possuem quantidades diferentes de etapas.');
 
-const synchronized = manifest.steps.map((audioStep, index) => {
+const synchronized = reportsTutorial.steps.map((tutorialStep, index) => {
   const timelineStep = timeline.steps[index];
-  if (audioStep.id !== timelineStep.id) throw new Error(`Etapa divergente na posição ${index + 1}.`);
-  return { ...audioStep, ...timelineStep };
+  if (tutorialStep.id !== timelineStep.id) throw new Error(`Etapa divergente na posição ${index + 1}.`);
+  const narration = getTutorialNarration(tutorialStep);
+  if (!narration.audio) throw new Error(`Etapa ${tutorialStep.id} não possui áudio estático.`);
+  return { index: index + 1, id: tutorialStep.id, text: narration.text, audioFile: join(workspaceRoot, 'public', narration.audio.replace(/^\//, '')), ...timelineStep };
 });
 
 const srt = synchronized.map((step, index) => [
@@ -104,7 +101,7 @@ const assEvents = synchronized.map((step) => (
 )).join('\n');
 await writeFile(assSubtitlesPath, `${assHeader}${assEvents}\n`, 'utf8');
 
-const inputs = [rawVideoPath, ...synchronized.map((step) => join(audioRoot, step.audioFile))];
+const inputs = [rawVideoPath, ...synchronized.map((step) => step.audioFile)];
 const inputArgs = inputs.flatMap((input) => ['-i', input]);
 const subtitleRelativePath = relative(workspaceRoot, assSubtitlesPath).replaceAll('\\', '/').replaceAll(':', '\\:');
 const audioDelays = synchronized.map((step, index) => (
@@ -119,17 +116,21 @@ const filter = [
 const durationSeconds = (timeline.completedAtMs / 1000).toFixed(3);
 const common = ['-y', '-hide_banner', ...inputArgs, '-filter_complex', filter, '-map', '[video]', '-map', '[audio]', '-t', durationSeconds];
 
-await run(ffmpegPath, [
-  ...common,
-  '-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0', '-row-mt', '1',
-  '-c:a', 'libopus', '-b:a', '112k',
-  narratedWebmPath,
-], { cwd: workspaceRoot });
+if (process.env.TUTORIAL_REUSE_COMPOSED_WEBM !== '1') {
+  await run(ffmpegPath, [
+    ...common,
+    '-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0', '-row-mt', '1', '-deadline', 'good', '-cpu-used', '4',
+    '-c:a', 'libopus', '-b:a', '112k',
+    narratedWebmPath,
+  ], { cwd: workspaceRoot });
+} else {
+  console.log('Reaproveitando WebM composto nesta execução interrompida; a validação de mídia continua obrigatória.');
+}
 
 await run(ffmpegPath, [
-  ...common,
+  '-y', '-hide_banner', '-i', narratedWebmPath,
   '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p',
-  '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart',
+  '-c:a', 'aac', '-b:a', '128k', '-ar', '48000', '-movflags', '+faststart',
   narratedMp4Path,
 ], { cwd: workspaceRoot });
 
@@ -145,6 +146,10 @@ for (const output of [narratedWebmPath, narratedMp4Path]) {
     !details.includes(expectedAudioCodec)
   ) {
     throw new Error(`Validação de mídia falhou para ${basename(output)}.\n${details}`);
+  }
+  const decoding = await capture(ffmpegPath, ['-v', 'error', '-i', output, '-map', '0:v:0', '-map', '0:a:0', '-f', 'null', '-'], workspaceRoot);
+  if (decoding.code !== 0 || decoding.stderr.trim()) {
+    throw new Error(`Decodificação integral falhou para ${basename(output)}.\n${decoding.stderr.slice(0, 2000)}`);
   }
   console.log(`${basename(output)} validado: 1920x1080, ${expectedVideoCodec}, ${expectedAudioCodec}.`);
 }

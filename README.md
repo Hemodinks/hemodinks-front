@@ -21,6 +21,7 @@ SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front
 - `README.md`: onboarding rapido, stack, rotas e fluxo de desenvolvimento
 - `TECHNICAL.md`: arquitetura, contratos de API e convencoes de manutencao
 - `DEPLOYMENT.md`: deploy, ambientes, CORS e checklist operacional
+- `TUTORIALS.md`: autoria, Azure Speech, áudio incremental, Playwright e gravação dos tutoriais
 
 ## URLs
 

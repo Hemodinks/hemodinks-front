@@ -7,7 +7,7 @@ export default defineConfig({
   testDir: './e2e',
   testMatch: /hemodinks\.spec\.ts/,
   grep: /grava biblioteca sanitizada:/,
-  timeout: 120_000,
+  timeout: 180_000,
   workers: 1,
   outputDir: 'artifacts/tutorials/playwright-library-results',
   use: {

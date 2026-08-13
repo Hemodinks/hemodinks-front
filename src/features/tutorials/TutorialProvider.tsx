@@ -3,8 +3,10 @@ import { driver, type Driver, type PopoverDOM } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import type { AppView } from '../../appTypes';
 import { getTutorial, TUTORIALS, type TutorialId } from './tutorialRegistry';
-import { getCompletedTutorials, isTutorialHidden, markTutorialCompleted, setTutorialHidden } from './tutorialStorage';
-import { speakTutorialNarration, stopTutorialNarration } from './speech';
+import { getCompletedTutorials, isTutorialHidden, isTutorialNarrationEnabled, markTutorialCompleted, setTutorialHidden, setTutorialNarrationEnabled } from './tutorialStorage';
+import { pauseTutorialNarration, resumeTutorialNarration, speakTutorialNarration, stopTutorialNarration } from './speech';
+import { TutorialAudioPlayer, type TutorialAudioState } from './TutorialAudioPlayer';
+import { getTutorialNarration } from './tutorialNarration';
 import type { TutorialConfig, TutorialStep } from './tutorialTypes';
 import './tutorials.css';
 
@@ -41,17 +43,32 @@ function supportsReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+function emitTutorialEvent(name: string, detail: Record<string, unknown>) {
+  window.dispatchEvent(new CustomEvent(name, { detail }));
+}
+
 export function TutorialProvider({ activeView, allowedTutorialIds, children }: Props) {
   const driverRef = useRef<Driver | null>(null);
-  const voiceEnabledRef = useRef(true);
+  const voiceEnabledRef = useRef(isTutorialNarrationEnabled());
   const activeStepRef = useRef<TutorialStep | null>(null);
+  const audioPlayerRef = useRef<TutorialAudioPlayer | null>(null);
   const completingRef = useRef(false);
   const missingTargetRef = useRef(false);
   const [activeTutorialId, setActiveTutorialId] = useState<string | null>(null);
   const [completedTutorials, setCompletedTutorials] = useState(() => getCompletedTutorials());
   const [notice, setNotice] = useState('');
+  const [activeStepId, setActiveStepId] = useState('');
+  const [audioState, setAudioState] = useState<TutorialAudioState>('idle');
+  const audioStateRef = useRef<TutorialAudioState>('idle');
+  const updateAudioState = useCallback((state: TutorialAudioState) => {
+    audioStateRef.current = state;
+    setAudioState(state);
+  }, []);
+
+  if (!audioPlayerRef.current && typeof Audio !== 'undefined') audioPlayerRef.current = new TutorialAudioPlayer(updateAudioState);
 
   const stop = useCallback(() => {
+    audioPlayerRef.current?.stop();
     stopTutorialNarration();
     driverRef.current?.destroy();
     driverRef.current = null;
@@ -62,6 +79,33 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
   useEffect(() => {
     if (activeTutorialId && getTutorial(activeTutorialId)?.view !== activeView) stop();
   }, [activeTutorialId, activeView, stop]);
+
+  useEffect(() => {
+    if (!activeTutorialId) return;
+    const eventName = audioState === 'finished' ? 'tutorial:audio-ended' : `tutorial:audio-${audioState}`;
+    emitTutorialEvent(eventName, { tutorialId: activeTutorialId, stepId: activeStepId, state: audioState });
+  }, [activeStepId, activeTutorialId, audioState]);
+
+  const playStepNarration = useCallback((step: TutorialStep, tutorial: TutorialConfig) => {
+    const narration = getTutorialNarration(step);
+    audioPlayerRef.current?.stop();
+    stopTutorialNarration();
+    if (!voiceEnabledRef.current) { updateAudioState('disabled'); return; }
+    if (narration.audio && audioPlayerRef.current) {
+      void audioPlayerRef.current.play(`${narration.audio}?v=${tutorial.version ?? 1}`).catch(() => {
+        console.warn(`[tutorial] Áudio estático indisponível em ${narration.audio}; usando Web Speech como fallback.`);
+        speakTutorialNarration(narration.text);
+      });
+      const index = tutorial.steps.findIndex((candidate) => candidate.id === step.id);
+      const next = tutorial.steps[index + 1];
+      if (next) {
+        const nextAudio = getTutorialNarration(next).audio;
+        if (nextAudio) audioPlayerRef.current.preload(`${nextAudio}?v=${tutorial.version ?? 1}`);
+      }
+      return;
+    }
+    updateAudioState(speakTutorialNarration(narration.text) ? 'playing' : 'error');
+  }, [updateAudioState]);
 
   const renderExtraControls = useCallback((popover: PopoverDOM, tutorial: TutorialConfig) => {
     const step = activeStepRef.current;
@@ -79,24 +123,44 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
 
     const voiceButton = addButton(
       controls,
-      voiceEnabledRef.current ? 'Pausar narração' : 'Ativar narração',
+      audioStateRef.current === 'paused' ? 'Continuar narração' : 'Pausar narração',
       () => {
-        voiceEnabledRef.current = !voiceEnabledRef.current;
-        voiceButton.textContent = voiceEnabledRef.current ? 'Pausar narração' : 'Ativar narração';
+        if (audioStateRef.current === 'paused') {
+          void audioPlayerRef.current?.resume();
+          resumeTutorialNarration();
+          voiceButton.textContent = 'Pausar narração';
+        } else {
+          audioPlayerRef.current?.pause();
+          pauseTutorialNarration();
+          updateAudioState('paused');
+          voiceButton.textContent = 'Continuar narração';
+        }
         voiceButton.setAttribute('aria-label', voiceButton.textContent);
-        voiceButton.setAttribute('aria-pressed', String(voiceEnabledRef.current));
-        if (voiceEnabledRef.current) speakTutorialNarration(step.narration);
-        else stopTutorialNarration();
+        voiceButton.setAttribute('aria-pressed', String(voiceButton.textContent === 'Pausar narração'));
       },
       voiceEnabledRef.current,
     );
     addButton(controls, 'Repetir narração', () => {
       voiceEnabledRef.current = true;
+      setTutorialNarrationEnabled(true);
       voiceButton.textContent = 'Pausar narração';
       voiceButton.setAttribute('aria-label', 'Pausar narração');
       voiceButton.setAttribute('aria-pressed', 'true');
-      speakTutorialNarration(step.narration);
+      const narration = getTutorialNarration(step);
+      if (narration.audio && audioPlayerRef.current) void audioPlayerRef.current.replay().catch(() => speakTutorialNarration(narration.text));
+      else speakTutorialNarration(narration.text);
     });
+    const toggleButton = addButton(controls, voiceEnabledRef.current ? 'Desativar narração' : 'Ativar narração', () => {
+      voiceEnabledRef.current = !voiceEnabledRef.current;
+      setTutorialNarrationEnabled(voiceEnabledRef.current);
+      toggleButton.textContent = voiceEnabledRef.current ? 'Desativar narração' : 'Ativar narração';
+      toggleButton.setAttribute('aria-label', toggleButton.textContent);
+      toggleButton.setAttribute('aria-pressed', String(voiceEnabledRef.current));
+      voiceButton.disabled = !voiceEnabledRef.current;
+      if (voiceEnabledRef.current) playStepNarration(step, tutorial);
+      else { audioPlayerRef.current?.stop(); stopTutorialNarration(); updateAudioState('disabled'); }
+    }, voiceEnabledRef.current);
+    voiceButton.disabled = !voiceEnabledRef.current;
 
     const preference = document.createElement('label');
     preference.className = 'tutorial-hide-preference';
@@ -108,7 +172,7 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
     preference.append(checkbox, document.createTextNode('Não mostrar novamente'));
     controls.appendChild(preference);
     popover.footer.before(controls);
-  }, []);
+  }, [playStepNarration, updateAudioState]);
 
   const startTutorial = useCallback((id: string) => {
     const tutorial = getTutorial(id);
@@ -126,9 +190,10 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
     stop();
     setNotice('');
     setActiveTutorialId(id);
+    emitTutorialEvent('tutorial:start', { tutorialId: id });
     completingRef.current = false;
     missingTargetRef.current = false;
-    voiceEnabledRef.current = true;
+    voiceEnabledRef.current = isTutorialNarrationEnabled();
     const reducedMotion = supportsReducedMotion();
     const handleTutorialKeyDown = (event: KeyboardEvent) => {
       const activeDriver = driverRef.current;
@@ -170,6 +235,8 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
       onHighlightStarted: (element, driveStep, options) => {
         const step = driveStep.data?.tutorialStep as TutorialStep | undefined;
         activeStepRef.current = step ?? null;
+        setActiveStepId(step?.id ?? '');
+        if (step) emitTutorialEvent('tutorial:step-change', { tutorialId: tutorial.id, stepId: step.id });
         document.querySelectorAll('.tutorial-target-action').forEach((target) => target.classList.remove('tutorial-target-action'));
         if (!element || !step) {
           missingTargetRef.current = true;
@@ -177,7 +244,7 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
           return;
         }
         if (step.action === 'click') element.classList.add('tutorial-target-action');
-        if (voiceEnabledRef.current) speakTutorialNarration(step.narration);
+        playStepNarration(step, tutorial);
       },
       onPopoverRender: (popover) => renderExtraControls(popover, tutorial),
       onDoneClick: (_element, _step, options) => {
@@ -187,6 +254,8 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
       onDestroyed: () => {
         document.removeEventListener('keydown', handleTutorialKeyDown);
         stopTutorialNarration();
+        audioPlayerRef.current?.stop();
+        setActiveStepId('');
         document.querySelectorAll('.tutorial-target-action').forEach((target) => target.classList.remove('tutorial-target-action'));
         driverRef.current = null;
         setActiveTutorialId(null);
@@ -196,6 +265,9 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
           markTutorialCompleted(tutorial.id);
           setCompletedTutorials(getCompletedTutorials());
           setNotice(`Missão concluída! Você finalizou “${tutorial.title}”.`);
+          emitTutorialEvent('tutorial:complete', { tutorialId: tutorial.id });
+        } else {
+          emitTutorialEvent('tutorial:exit', { tutorialId: tutorial.id });
         }
       },
       steps: tutorial.steps.map((step) => ({
@@ -215,7 +287,7 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
     });
     driverRef.current = tutorialDriver;
     tutorialDriver.drive();
-  }, [activeView, allowedTutorialIds, renderExtraControls, stop]);
+  }, [activeView, allowedTutorialIds, playStepNarration, renderExtraControls, stop]);
 
   const value = useMemo<TutorialContextValue>(() => ({
     activeTutorialId,
@@ -229,6 +301,13 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
   return (
     <TutorialContext.Provider value={value}>
       {children}
+      <span
+        className="tutorial-runtime-state"
+        data-tutorial-id={activeTutorialId ?? ''}
+        data-tutorial-step={activeStepId}
+        data-tutorial-audio-state={activeTutorialId ? audioState : 'idle'}
+        aria-hidden="true"
+      />
       {notice && (
         <div className="tutorial-notice" role="status" aria-live="polite">
           <span>{notice}</span>
