@@ -59,6 +59,28 @@ export function TutorialsPage() {
           </video>
         </div>
 
+        <label className="tutorial-playback-rate">
+          <span>Velocidade do vídeo e da narração</span>
+          <select
+            defaultValue="1"
+            aria-label={`Velocidade: ${tutorial.title}`}
+            onChange={(event) => {
+              const video = event.currentTarget.closest('.tutorial-video-card')?.querySelector('video');
+              if (video) {
+                const rate = Number(event.currentTarget.value);
+                video.defaultPlaybackRate = rate;
+                video.playbackRate = rate;
+              }
+            }}
+          >
+            <option value="0.75">0,75×</option>
+            <option value="1">Normal — 1×</option>
+            <option value="1.25">1,25×</option>
+            <option value="1.5">1,5×</option>
+            <option value="2">2×</option>
+          </select>
+        </label>
+
         <p className="tutorial-video-note">
           A gravação utiliza exclusivamente dados fictícios e sanitizados.
         </p>

@@ -21,6 +21,7 @@
     "record:tutorials:reports": "playwright test --config=playwright.tutorials.config.ts --project=tutorial-reports",
     "record:tutorials:reports:local": "playwright test --config=playwright.tutorials.local.config.ts",
     "tutorial:setup": "tsx scripts/tutorials/setup-tools.ts",
+    "tutorial:verify:pronunciation": "tsx scripts/tutorials/verify-pronunciation.ts",
     "tutorial:audio:reports": "tsx scripts/tutorials/generate-narration.ts",
     "tutorial:compose:reports": "tsx scripts/tutorials/compose-video.ts",
     "tutorial:produce:reports": "npm run tutorial:setup && npm run tutorial:audio:reports && npm run record:tutorials:reports:local && npm run tutorial:compose:reports",
