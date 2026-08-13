@@ -36,10 +36,10 @@ for (const [index, step] of reportsTutorial.steps.entries()) {
     '--model', voiceModel,
     '--config', voiceConfig,
     '--output_file', output,
-    '--length-scale', '1.1',
+    '--length-scale', '1.0',
     '--noise-scale', '0.55',
     '--noise-w-scale', '0.65',
-    '--sentence-silence', '0.4',
+    '--sentence-silence', '0.3',
   ], { cwd: workspaceRoot, input: `${step.narration}\n` });
   const durationSeconds = wavDurationSeconds(await readFile(output));
   entries.push({

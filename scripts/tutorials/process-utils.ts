@@ -2,11 +2,18 @@ import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
+function childEnvironment() {
+  return {
+    ...process.env,
+    ...(process.platform === 'win32' ? { PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8' } : {}),
+  };
+}
+
 export async function run(command: string, args: string[], options: { cwd?: string; input?: string } = {}) {
   await new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd,
-      env: process.env,
+      env: childEnvironment(),
       stdio: [options.input == null ? 'inherit' : 'pipe', 'inherit', 'inherit'],
       windowsHide: true,
     });
@@ -20,9 +27,15 @@ export async function run(command: string, args: string[], options: { cwd?: stri
   });
 }
 
-export async function capture(command: string, args: string[], cwd?: string) {
+export async function capture(command: string, args: string[], cwd?: string, input?: string) {
   return new Promise<{ stdout: string; stderr: string; code: number }>((resolve, reject) => {
-    const child = spawn(command, args, { cwd, env: process.env, windowsHide: true });
+    const child = spawn(command, args, {
+      cwd,
+      env: childEnvironment(),
+      stdio: [input == null ? 'ignore' : 'pipe', 'pipe', 'pipe'],
+      windowsHide: true,
+    });
+    if (input != null) child.stdin.end(input, 'utf8');
     let stdout = '';
     let stderr = '';
     child.stdout.setEncoding('utf8').on('data', (chunk) => { stdout += chunk; });
