@@ -57,7 +57,7 @@ export function UserList({
   onSelectContactUser,
 }: UserListProps) {
   return (
-    <DataPanel>
+    <DataPanel data-tour="users-list">
       <div className="data-header">
         <div>
           <span className="eyebrow">Base de usuários</span>
@@ -66,16 +66,16 @@ export function UserList({
 
         <div className="table-tools">
           {canManageUsers && (
-            <Button onClick={onOpenNewUserForm}>
+            <Button onClick={onOpenNewUserForm} data-tour="users-new">
               <Plus size={17} />
               Novo usuário
             </Button>
           )}
-          <SearchField
+          <div data-tour="users-search"><SearchField
             label="Buscar usuários"
             value={searchTerm}
             onValueChange={onSearchChange}
-          />
+          /></div>
           <IconButton label="Atualizar lista de usuários" onClick={onRefresh} title="Atualizar lista">
             <RefreshCw size={18} />
           </IconButton>

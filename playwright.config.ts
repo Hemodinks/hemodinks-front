@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: /tutorials-(auth|recording)\./,
   timeout: 30_000,
   expect: {
     timeout: 8_000,

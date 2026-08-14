@@ -33,7 +33,7 @@ const fields: Array<{ key: keyof Options; label: string; all: string }> = [
 
 export function ReportsFiltersPanel(props: Props) {
   return (
-    <DataPanel className="billing-filter-panel reports-filter-panel">
+    <DataPanel className="billing-filter-panel reports-filter-panel" data-tour="reports-filters">
       <details className="billing-filters-accordion" open>
         <summary className="billing-filters-summary">
           <div><span className="eyebrow">Consulta analítica</span><h2>{props.resultCount} atendimento(s) encontrados</h2></div>
@@ -43,8 +43,10 @@ export function ReportsFiltersPanel(props: Props) {
           <div className="reports-filter-grid">
             <DateInput id="report-request-start-date" label="Data inicial da solicitação" value={props.filters.requestStartDate} onChange={(requestStartDate) => props.setFilters((current) => ({ ...current, requestStartDate }))} />
             <DateInput id="report-request-end-date" label="Data final da solicitação" value={props.filters.requestEndDate} onChange={(requestEndDate) => props.setFilters((current) => ({ ...current, requestEndDate }))} />
-            <DateInput id="report-start-date" label="Data inicial do atendimento" value={props.filters.startDate} onChange={(startDate) => props.setFilters((current) => ({ ...current, startDate }))} />
-            <DateInput id="report-end-date" label="Data final do atendimento" value={props.filters.endDate} onChange={(endDate) => props.setFilters((current) => ({ ...current, endDate }))} />
+            <div className="reports-period-tour-target" data-tour="reports-period">
+              <DateInput id="report-start-date" label="Data inicial do atendimento" value={props.filters.startDate} onChange={(startDate) => props.setFilters((current) => ({ ...current, startDate }))} />
+              <DateInput id="report-end-date" label="Data final do atendimento" value={props.filters.endDate} onChange={(endDate) => props.setFilters((current) => ({ ...current, endDate }))} />
+            </div>
             <DateInput id="report-payment-start-date" label="Data inicial do pagamento" value={props.filters.paymentStartDate} max={props.filters.paymentEndDate || undefined} onChange={(paymentStartDate) => props.setFilters((current) => ({ ...current, paymentStartDate }))} />
             <DateInput id="report-payment-end-date" label="Data final do pagamento" value={props.filters.paymentEndDate} min={props.filters.paymentStartDate || undefined} onChange={(paymentEndDate) => props.setFilters((current) => ({ ...current, paymentEndDate }))} />
             {fields.map((field) => (
@@ -58,6 +60,7 @@ export function ReportsFiltersPanel(props: Props) {
                 allOptionLabel={field.all}
                 placeholder={field.all}
                 noOptionsLabel={`Nenhuma opção de ${field.label.toLowerCase()} encontrada.`}
+                {...(field.key === 'doctors' ? { 'data-tour': 'reports-combined-filters' } : {})}
               />
             ))}
             <SelectField className="filter-field" label="Status" value={props.filters.status} onChange={(event) => props.setFilters((current) => ({ ...current, status: event.target.value as ReportFilters['status'] }))}>
@@ -73,11 +76,11 @@ export function ReportsFiltersPanel(props: Props) {
               onCheckedChange={(onlyPendingItems) => props.setFilters((current) => ({ ...current, onlyPendingItems }))}
             />
             <div className="billing-filter-actions reports-query-actions">
-              <Button className="billing-apply-filters" variant="primary" onClick={props.onApply} disabled={props.isFetching}><Search size={16} />Consultar</Button>
+              <Button className="billing-apply-filters" variant="primary" onClick={props.onApply} disabled={props.isFetching} data-tour="reports-apply"><Search size={16} />Consultar</Button>
               <Button className="billing-clear-filters" onClick={props.onClear}>Limpar filtros</Button>
             </div>
           </div>
-          <div className="reports-filter-actions">
+          <div className="reports-filter-actions" data-tour="reports-export">
             <IconButton label="Atualizar dados dos relatórios" title="Atualizar" onClick={props.onRefresh} disabled={props.isFetching}><RefreshCw size={18} /></IconButton>
             <Button className="reports-export-button reports-export-pdf" onClick={() => props.onExport('pdf')} disabled={props.exportLoading || !props.resultCount}><FileText size={17} />Exportar PDF</Button>
             <Button className="reports-export-button reports-export-xlsx" onClick={() => props.onExport('xlsx')} disabled={props.exportLoading || !props.resultCount}><Download size={17} />Exportar Planilha</Button>

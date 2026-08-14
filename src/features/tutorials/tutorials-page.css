@@ -1,0 +1,159 @@
+.tutorials-library {
+  display: grid;
+  gap: 22px;
+}
+
+.tutorials-library-header,
+.tutorial-video-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.tutorials-library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px;
+}
+
+.tutorials-library-header h2,
+.tutorial-video-heading h3 {
+  margin: 4px 0 8px;
+}
+
+.tutorials-library-header p,
+.tutorial-video-heading p,
+.tutorial-video-note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.tutorials-library-count {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 0 8px;
+  min-width: 128px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  color: #6d28d9;
+  background: color-mix(in srgb, #7c3aed 12%, var(--panel));
+}
+
+.tutorials-library-count strong {
+  font-size: 1.5rem;
+}
+
+.tutorials-library-count span {
+  grid-column: 1 / -1;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.tutorial-video-card {
+  overflow: hidden;
+}
+
+.tutorial-video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 18px;
+}
+
+.tutorial-video-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 24px;
+}
+
+.tutorial-video-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 14px;
+  color: #1d4ed8;
+  background: color-mix(in srgb, #2563eb 12%, var(--panel));
+}
+
+.tutorial-video-meta {
+  display: grid;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.tutorial-video-meta span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tutorial-video-frame {
+  padding: 0 24px;
+  background: #09090b;
+}
+
+.tutorial-video-frame video {
+  display: block;
+  width: 100%;
+  max-height: min(72vh, 900px);
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  background: #09090b;
+}
+
+.tutorial-playback-rate {
+  align-items: center;
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 10px 18px 0;
+}
+
+.tutorial-playback-rate select {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #172033;
+  min-height: 36px;
+  padding: 5px 10px;
+}
+
+.tutorial-video-note {
+  padding: 14px 24px 18px;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 760px) {
+  .tutorial-video-grid {
+    grid-template-columns: 1fr;
+  }
+  .tutorials-library-header,
+  .tutorial-video-heading {
+    align-items: flex-start;
+  }
+
+  .tutorials-library-header {
+    flex-direction: column;
+  }
+
+  .tutorial-video-heading {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .tutorial-video-meta {
+    grid-column: 1 / -1;
+  }
+
+  .tutorial-video-frame {
+    padding: 0;
+  }
+}

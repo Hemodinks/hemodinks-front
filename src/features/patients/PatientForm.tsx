@@ -138,7 +138,7 @@ export function PatientForm({
   }, [estimatedValue, pacienteFormData.pagamento, setPacienteFormData]);
 
   return (
-    <FormPanel className="module-form-panel">
+    <FormPanel className="module-form-panel" data-tour="patients-form">
       <div className="panel-title">
         <div>
           <span className="eyebrow">{editingPacienteId ? formReadOnly ? 'Visualizacao' : 'Edicao' : 'Cadastro'}</span>
@@ -160,7 +160,7 @@ export function PatientForm({
       {exportError && <AlertMessage type="error">{exportError}</AlertMessage>}
 
       <form className="stack module-form-grid" onSubmit={onSubmit}>
-        <fieldset className="form-fieldset" disabled={formReadOnly}>
+        <fieldset className="form-fieldset" disabled={formReadOnly} data-tour="patients-identification">
           <DateInput
             id="patient-procedure-date"
             label="Data da Solicitação"
@@ -312,7 +312,7 @@ export function PatientForm({
           <div className="procedure-field">
             <span className="field-label">Procedimento</span>
             <div className="procedure-selector">
-              <Button className="procedure-select-button" onClick={onOpenCbhpmModal} disabled={formReadOnly}>
+              <Button className="procedure-select-button" onClick={onOpenCbhpmModal} disabled={formReadOnly} data-tour="patients-procedure">
                 <Search size={17} />
                 Adicionar procedimento
               </Button>
@@ -494,7 +494,7 @@ export function PatientForm({
         {pacienteFormError && <AlertMessage type="error">{pacienteFormError}</AlertMessage>}
 
         {canSubmitForm && (
-          <Button variant="primary" type="submit" disabled={pacienteFormLoading}>
+          <Button variant="primary" type="submit" disabled={pacienteFormLoading} data-tour="patients-save">
             {editingPacienteId ? <Save size={18} /> : <Plus size={18} />}
             {pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar paciente' : 'Cadastrar paciente'}
           </Button>
