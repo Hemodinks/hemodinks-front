@@ -3,7 +3,7 @@
   display: grid;
   align-items: center;
   justify-items: center;
-  padding: 32px;
+  padding: 40px;
 }
 
 .auth-screen.compact {
@@ -27,6 +27,21 @@
   display: block;
   border: 1px solid var(--line);
   background: var(--input-bg);
+}
+
+.ghost-button.login-tutorial-button {
+  width: 100%;
+  margin: -10px 0 20px;
+  justify-content: center;
+  color: var(--action-text);
+  background: var(--action-accent);
+  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-accent) 24%, transparent);
+}
+
+.ghost-button.login-tutorial-button:hover {
+  background: var(--action-accent-hover);
+  border-color: color-mix(in srgb, var(--action-accent-hover) 82%, black);
 }
 
 .login-actions {
