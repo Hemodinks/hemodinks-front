@@ -17,7 +17,7 @@ type Props = {
 export function ReportsPage({ session, companyName, isMedical }: Props) {
   const report = useReportsPage({ session, companyName, isMedical });
   return (
-    <section className="workspace billing-workspace reports-workspace">
+    <section className="workspace billing-workspace reports-workspace" data-tour="reports-overview">
       {isMedical && <AlertMessage type="warning" icon={<Info size={17} />}>Os dados estão restritos aos atendimentos vinculados ao médico autenticado.</AlertMessage>}
       {report.unavailableCatalogs.length > 0 && (
         <AlertMessage type="warning" icon={<TriangleAlert size={17} />}>

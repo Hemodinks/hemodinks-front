@@ -25,6 +25,9 @@
   --dashboard-settings: #475569;
   --dashboard-settings-soft: rgba(71, 85, 105, 0.12);
   --dashboard-settings-border: rgba(71, 85, 105, 0.3);
+  --dashboard-tutorials: #7c3aed;
+  --dashboard-tutorials-soft: rgba(124, 58, 237, 0.12);
+  --dashboard-tutorials-border: rgba(124, 58, 237, 0.32);
   --dashboard-pending: #b7791f;
   --dashboard-pending-soft: rgba(183, 121, 31, 0.14);
   --dashboard-pending-border: rgba(183, 121, 31, 0.34);
@@ -137,22 +140,22 @@
 
 .module-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
 }
 
 .module-card {
   position: relative;
-  min-height: 142px;
+  min-height: 112px;
   display: grid;
   align-content: stretch;
   justify-items: start;
-  gap: 10px;
+  gap: 6px;
   border: 1px solid var(--module-border, var(--line));
   border-left-width: 6px;
   border-radius: 8px;
-  padding: 22px;
-  padding-right: 58px;
+  padding: 15px;
+  padding-right: 48px;
   color: #fff;
   background: linear-gradient(135deg, var(--module-color, var(--action-secondary)), color-mix(in srgb, var(--module-color, var(--action-secondary)) 78%, black));
   box-shadow: 0 12px 24px color-mix(in srgb, var(--module-color, var(--action-secondary)) 18%, transparent);
@@ -188,8 +191,8 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -205,8 +208,8 @@
 }
 
 .module-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -235,7 +238,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  margin-top: 8px;
+  margin-top: 4px;
   color: #fff;
   font-weight: 900;
 }
@@ -332,6 +335,12 @@
   --module-color: var(--dashboard-settings);
   --module-soft: var(--dashboard-settings-soft);
   --module-border: var(--dashboard-settings-border);
+}
+
+.module-card-tutorials {
+  --module-color: var(--dashboard-tutorials);
+  --module-soft: var(--dashboard-tutorials-soft);
+  --module-border: var(--dashboard-tutorials-border);
 }
 
 .notifications-modal {

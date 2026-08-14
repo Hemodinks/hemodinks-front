@@ -1,5 +1,10 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { TUTORIALS, type TutorialId } from '../src/features/tutorials/tutorialRegistry';
+import { getTutorialNarration } from '../src/features/tutorials/tutorialNarration';
+import { TUTORIAL_MEDIA } from '../scripts/tutorials/library-config';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
@@ -51,6 +56,20 @@ const patientSession = {
     precisaTrocarSenha: false,
     perfilId: 3,
     perfilNome: 'Pacientes',
+  },
+};
+
+const tutorialRecordingSession = {
+  token: 'token-ficticio-da-gravacao',
+  user: {
+    id: 900,
+    nome: 'Usuário Fictício',
+    email: 'tutorial@example.invalid',
+    cpf: '00000000000',
+    fotoPerfil: null,
+    precisaTrocarSenha: false,
+    perfilId: 1,
+    perfilNome: 'Administrador',
   },
 };
 
@@ -235,13 +254,23 @@ async function loginViaUi(page: Page, initialRoute = '/', loginSession = session
   await clinicField.selectOption('1');
   await page.getByLabel('Email').fill(loginSession.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
-  await page.getByRole('button', { name: /entrar/i }).click();
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
 }
 
-async function mockApi(page: Page, loginSession = session) {
+async function mockApi(page: Page, loginSession = session, options: { sanitizedTutorial?: boolean } = {}) {
+  const sanitizedPatient = options.sanitizedTutorial ? {
+    ...paciente,
+    nomePaciente: 'Registro Fictício 001',
+    hospital: 'Hospital Demonstração',
+    medico: 'Profissional Fictício',
+    cpf: '',
+    email: '',
+    telefone: '',
+    autorizacao: 'DEMO-001',
+  } : paciente;
   const state = {
     users: [user],
-    pacientes: [paciente],
+    pacientes: [sanitizedPatient],
     events: [agendaEvent],
     loginPayload: null as Payload | null,
     createdUserPayload: null as Payload | null,
@@ -546,6 +575,54 @@ test('navega pelos fluxos principais autenticados', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Novo evento', level: 2 })).toBeVisible();
 });
 
+test('abre o módulo de tutoriais interativos e carrega o vídeo de Relatórios', async ({ page }) => {
+  await mockApi(page);
+  await loginViaUi(page, '/dashboard');
+
+  await page.getByLabel('Sessão ativa').getByRole('button', { name: 'Tutoriais interativos' }).click();
+  await expect(page).toHaveURL(/\/tutoriais-interativos$/);
+  await expect(page.getByRole('heading', { name: 'Tutoriais interativos', level: 2 })).toBeVisible();
+  await expect(page.getByText('12', { exact: true })).toBeVisible();
+  await expect(page.locator('.tutorial-video-card')).toHaveCount(12);
+  await expect(page.getByRole('heading', { name: 'Relatórios — consulta analítica' })).toBeVisible();
+
+  const video = page.getByLabel('Tutorial: Relatórios — consulta analítica');
+  await expect(video).toBeVisible();
+  await expect(video.locator('source[type="video/webm"]')).toHaveAttribute('src', '/tutorials/reports/tutorial-relatorios-narrado.webm');
+  await expect(video.locator('source[type="video/mp4"]')).toHaveAttribute('src', '/tutorials/reports/tutorial-relatorios-narrado.mp4');
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.duration)).toBeGreaterThan(80);
+  await page.getByLabel('Velocidade: Relatórios — consulta analítica').selectOption('1.5');
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => ({
+    playbackRate: element.playbackRate,
+    defaultPlaybackRate: element.defaultPlaybackRate,
+  }))).toEqual({ playbackRate: 1.5, defaultPlaybackRate: 1.5 });
+  await expectNoGlobalHorizontalOverflow(page);
+
+  await page.setViewportSize({ width: 390, height: 860 });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Tutoriais interativos', level: 2 })).toBeVisible();
+  await expect(page.getByLabel('Tutorial: Relatórios — consulta analítica')).toBeVisible();
+  await expectNoGlobalHorizontalOverflow(page);
+});
+
+test('todos os tutoriais registrados possuem configuração e alvos estáveis', async ({ page }) => {
+  await mockApi(page, superAdminSession);
+  expect(Object.keys(TUTORIALS)).toHaveLength(12);
+  for (const tutorial of Object.values(TUTORIALS)) {
+    expect(tutorial.steps.length).toBeGreaterThanOrEqual(3);
+    expect(tutorial.steps.every((step) => step.target.startsWith('[data-tour="'))).toBe(true);
+    if (tutorial.view === 'login') {
+      await page.goto('/');
+    } else {
+      const route = Object.entries({ dashboard: '/dashboard', users: '/usuarios', patients: '/pacientes', billing: '/faturamento-medico', reports: '/relatorios', clinics: '/clinicas', agenda: '/agenda' })
+        .find(([view]) => view === tutorial.view)?.[1];
+      expect(route).toBeTruthy();
+      await loginViaUi(page, route!, superAdminSession);
+    }
+    await expect(page.locator(tutorial.steps[0].target)).toHaveCount(1);
+  }
+});
+
 test('exibe o fluxo contextual correspondente para o SuperAdministrador', async ({ page }) => {
   await mockApi(page, superAdminSession);
   const routes = [
@@ -554,6 +631,7 @@ test('exibe o fluxo contextual correspondente para o SuperAdministrador', async 
     ['/pacientes', 'Pacientes - Cirurgias'],
     ['/faturamento-medico', 'Faturamento médico'],
     ['/relatorios', 'Relatórios'],
+    ['/tutoriais-interativos', 'Tutoriais interativos'],
     ['/grupos-medicos', 'Grupos médicos'],
     ['/agenda', 'Agenda e notificações'],
     ['/configuracoes', 'Configuração do sistema'],
@@ -796,3 +874,364 @@ test('gera evidencias visuais desktop e mobile das telas principais', async ({ p
     await captureCurrentScreenshot(page, testInfo, 'pacientes-formulario', width);
   }
 });
+
+async function openReportsTutorial(page: Page) {
+  await page.getByRole('complementary', { name: 'Ajuda contextual' })
+    .getByRole('button', { name: /abrir ajuda de relatórios/i })
+    .click();
+  await page.getByRole('button', { name: /iniciar missão: dominar os relatórios|reiniciar missão: dominar os relatórios/i }).click();
+  await expect(page.locator('.tutorial-mission-popover')).toBeVisible();
+}
+
+async function expectActiveTourTarget(page: Page, target: string) {
+  await expect(page.locator(`[data-tour="${target}"]`)).toHaveClass(/driver-active-element/);
+}
+
+test('tutorial de relatórios usa somente alvos data-tour existentes e conclui após as ações', async ({ page }) => {
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+
+  for (const target of [
+    'reports-overview',
+    'reports-filters',
+    'reports-period',
+    'reports-combined-filters',
+    'reports-apply',
+    'reports-summary',
+    'reports-results',
+  ]) {
+    await expect(page.locator(`[data-tour="${target}"]`)).toHaveCount(1);
+  }
+
+  await openReportsTutorial(page);
+  const mission = page.locator('.tutorial-mission-popover');
+  await expect(mission).toContainText('Etapa 1 de 7');
+  await expectActiveTourTarget(page, 'reports-overview');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 2 de 7');
+  await expectActiveTourTarget(page, 'reports-filters');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 3 de 7');
+  await expectActiveTourTarget(page, 'reports-period');
+
+  await page.waitForTimeout(250);
+  await expect(mission).toContainText('Etapa 3 de 7');
+  await page.getByRole('textbox', { name: 'Data inicial do atendimento', exact: true }).click();
+  await expect(mission).toContainText('Etapa 4 de 7');
+  await expectActiveTourTarget(page, 'reports-combined-filters');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 5 de 7');
+  await expectActiveTourTarget(page, 'reports-apply');
+  await page.getByRole('button', { name: 'Consultar' }).click();
+  await expect(mission).toContainText('Etapa 6 de 7');
+  await expectActiveTourTarget(page, 'reports-summary');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 7 de 7');
+  await expectActiveTourTarget(page, 'reports-results');
+  await mission.getByRole('button', { name: 'Concluir tutorial' }).click();
+  await expect(page.getByRole('status')).toContainText('Missão concluída');
+
+  await page.getByRole('button', { name: 'Fechar mensagem do tutorial' }).click();
+  await page.getByRole('complementary', { name: 'Ajuda contextual' }).getByRole('button', { name: /abrir ajuda de relatórios/i }).click();
+  await expect(page.getByRole('button', { name: 'Reiniciar Missão: dominar os relatórios' })).toBeVisible();
+  await page.getByRole('button', { name: 'Reiniciar Missão: dominar os relatórios' }).click();
+  await expect(mission).toContainText('Etapa 1 de 7');
+  await mission.getByRole('button', { name: 'Sair do tutorial' }).click();
+});
+
+test('tutorial valida MP3, preferência persistente e navegação por teclado', async ({ page }) => {
+  await page.addInitScript(() => {
+    const speechState = { cancelCount: 0, spoken: [] as Array<{ text: string; lang: string; rate: number }> };
+    class MockUtterance {
+      text: string;
+      lang = '';
+      rate = 1;
+      voice: SpeechSynthesisVoice | null = null;
+      constructor(text: string) { this.text = text; }
+    }
+    Object.defineProperty(window, '__tutorialSpeechState', { value: speechState });
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', { configurable: true, value: MockUtterance });
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: {
+        cancel: () => { speechState.cancelCount += 1; },
+        pause: () => undefined,
+        resume: () => undefined,
+        getVoices: () => [{ lang: 'pt-BR', name: 'Voz de teste' }],
+        speak: (utterance: MockUtterance) => speechState.spoken.push({ text: utterance.text, lang: utterance.lang, rate: utterance.rate }),
+      },
+    });
+  });
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+  await openReportsTutorial(page);
+
+  const mission = page.locator('.tutorial-mission-popover');
+  const runtime = page.locator('[data-tutorial-audio-state]');
+  const speech = () => page.evaluate(() => (window as typeof window & { __tutorialSpeechState: { cancelCount: number; spoken: Array<{ text: string; lang: string; rate: number }> } }).__tutorialSpeechState);
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
+  expect((await speech()).spoken).toHaveLength(0);
+
+  const initialCancelCount = (await speech()).cancelCount;
+  await mission.getByRole('button', { name: 'Pausar narração' }).click();
+  await expect(mission.getByRole('button', { name: 'Continuar narração' })).toHaveAttribute('aria-pressed', 'false');
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'paused');
+  expect((await speech()).cancelCount).toBeGreaterThanOrEqual(initialCancelCount);
+  const spokenBeforeReactivate = (await speech()).spoken.length;
+  await mission.getByRole('button', { name: 'Continuar narração' }).click();
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
+  expect((await speech()).spoken.length).toBe(spokenBeforeReactivate);
+  await mission.getByRole('button', { name: 'Repetir narração' }).click();
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
+  expect((await speech()).spoken.length).toBe(spokenBeforeReactivate);
+  await mission.getByRole('button', { name: 'Desativar narração' }).click();
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'disabled');
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('hemodinks.tutorials.narration-enabled'))).toBe('false');
+  await mission.getByRole('button', { name: 'Ativar narração' }).click();
+  await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
+
+  const preference = mission.getByRole('checkbox', { name: 'Não mostrar este tutorial novamente' });
+  await preference.check();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('hemodinks.tutorials.hidden'))).toContain('reports-analytics');
+
+  await page.keyboard.press('ArrowRight');
+  await expect(mission).toContainText('Etapa 2 de 7');
+  await page.keyboard.press('ArrowRight');
+  await expect(mission).toContainText('Etapa 3 de 7');
+  await page.keyboard.press('ArrowRight');
+  await expect(mission).toContainText('Etapa 3 de 7');
+  await page.getByRole('textbox', { name: 'Data inicial do atendimento', exact: true }).click();
+  await expect(mission).toContainText('Etapa 4 de 7');
+  await page.keyboard.press('ArrowLeft');
+  await expect(mission).toContainText('Etapa 3 de 7');
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(() => document.activeElement?.matches('.driver-active-element *, .tutorial-mission-popover *'))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(mission).toHaveCount(0);
+
+  await openReportsTutorial(page);
+  await expect(mission.getByRole('checkbox', { name: 'Não mostrar este tutorial novamente' })).toBeChecked();
+  await mission.getByRole('button', { name: 'Sair do tutorial' }).click();
+});
+
+test('tutorial usa Web Speech apenas como fallback quando o MP3 falha', async ({ page }) => {
+  await page.route('**/tutorials/audio/**', (route) => route.abort());
+  await page.addInitScript(() => {
+    const state = { spoken: [] as string[] };
+    class MockUtterance { lang = ''; rate = 1; voice = null; constructor(public text: string) {} }
+    Object.defineProperty(window, '__tutorialFallbackState', { value: state });
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', { configurable: true, value: MockUtterance });
+    Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+      cancel: () => undefined, pause: () => undefined, resume: () => undefined,
+      getVoices: () => [{ lang: 'pt-BR', name: 'Fallback de teste' }],
+      speak: (utterance: MockUtterance) => state.spoken.push(utterance.text),
+    } });
+  });
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await openReportsTutorial(page);
+  await expect(page.locator('[data-tutorial-audio-state]')).toHaveAttribute('data-tutorial-audio-state', 'error');
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __tutorialFallbackState: { spoken: string[] } }).__tutorialFallbackState.spoken.length)).toBeGreaterThan(0);
+  await page.locator('.tutorial-mission-popover').getByRole('button', { name: 'Sair do tutorial' }).click();
+});
+
+test('tutorial respeita prefers-reduced-motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+  await openReportsTutorial(page);
+  const mission = page.locator('.tutorial-mission-popover');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 3 de 7');
+  await expect(page.locator('[data-tour="reports-period"]')).toHaveCSS('animation-name', 'none');
+  await mission.getByRole('button', { name: 'Sair do tutorial' }).click();
+});
+
+test('tutorial permite voltar, repetir narração e sair sem executar ações pelo usuário', async ({ page }) => {
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+  await openReportsTutorial(page);
+
+  const mission = page.locator('.tutorial-mission-popover');
+  await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+  await expect(mission).toContainText('Etapa 2 de 7');
+  await mission.getByRole('button', { name: 'Repetir narração' }).click();
+  await mission.getByRole('button', { name: 'Voltar para a etapa anterior' }).click();
+  await expect(mission).toContainText('Etapa 1 de 7');
+  await mission.getByRole('button', { name: 'Sair do tutorial' }).click();
+  await expect(mission).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Relatórios', level: 1 })).toBeVisible();
+});
+
+test('tutorial encerra de forma amigável quando um alvo não existe', async ({ page }) => {
+  await mockApi(page);
+  await loginViaUi(page, '/relatorios');
+  await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+  await page.locator('[data-tour="reports-results"]').evaluate((element) => element.remove());
+
+  await page.getByRole('complementary', { name: 'Ajuda contextual' })
+    .getByRole('button', { name: /abrir ajuda de relatórios/i })
+    .click();
+  await page.getByRole('button', { name: /iniciar missão: dominar os relatórios/i }).click();
+  await expect(page.getByRole('status')).toContainText('foi encerrada com segurança');
+  await expect(page.locator('.tutorial-mission-popover')).toHaveCount(0);
+});
+
+test('tutorial de relatórios funciona em desktop e mobile e respeita o perfil', async ({ page }) => {
+  const isValidationCapture = process.env.TUTORIAL_CAPTURE_VALIDATION === '1';
+  const validationSession = isValidationCapture ? tutorialRecordingSession : session;
+  await mockApi(page, validationSession, { sanitizedTutorial: isValidationCapture });
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await loginViaUi(page, '/relatorios', validationSession);
+    await expect(page.getByText(isValidationCapture ? 'Registro Fictício 001' : 'Paciente Hemodinks')).toBeVisible();
+    await openReportsTutorial(page);
+    await expect(page.locator('.tutorial-mission-popover')).toBeVisible();
+    await expectNoGlobalHorizontalOverflow(page);
+    if (isValidationCapture) {
+      const mission = page.locator('.tutorial-mission-popover');
+      await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+      await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
+      await expect(mission).toContainText('Etapa 3 de 7');
+      await page.screenshot({ path: `artifacts/tutorials/validation/reports-${width}.png` });
+    }
+    await page.locator('.tutorial-mission-popover').getByRole('button', { name: 'Sair do tutorial' }).click();
+  }
+
+  await page.evaluate(() => sessionStorage.clear());
+  await mockApi(page, patientSession);
+  await loginViaUi(page, '/relatorios', patientSession);
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.locator('[data-tour="start-reports-tutorial"]')).toHaveCount(0);
+});
+
+test('grava tutorial local de relatórios com dados sanitizados', async ({ page }) => {
+  test.skip(process.env.TUTORIAL_LOCAL_RECORDING !== '1', 'Executado somente pelo script de gravação local.');
+  const timelineOutput = resolve('artifacts/tutorials/reports/timeline.json');
+  const tutorial = TUTORIALS['reports-analytics'];
+  const postNarrationMs = 650;
+  const recordingOriginEpochMs = Date.now();
+  const timelineSteps: Array<{
+    index: number;
+    id: string;
+    visualStartMs: number;
+    narrationStartMs: number;
+    narrationEndMs: number;
+    actionAtMs: number;
+  }> = [];
+  const elapsed = () => Date.now() - recordingOriginEpochMs;
+  const pause = (milliseconds: number) => page.waitForTimeout(milliseconds);
+  await mockApi(page, tutorialRecordingSession, { sanitizedTutorial: true });
+  await page.addInitScript((storedSession) => {
+    sessionStorage.setItem('hemodinks.session', JSON.stringify(storedSession));
+  }, tutorialRecordingSession);
+  await page.goto('/relatorios');
+  await expect(page.getByText('Registro Fictício 001')).toBeVisible();
+  await expect(page.getByLabel('Usuário logado').getByText('Usuário Fictício')).toBeVisible();
+  await expect(page.getByText('tutorial@example.invalid')).toBeVisible();
+  await pause(700);
+  await page.getByRole('complementary', { name: 'Ajuda contextual' }).getByRole('button', { name: /abrir ajuda de relatórios/i }).click();
+  await pause(700);
+  await page.getByRole('button', { name: /iniciar missão: dominar os relatórios|reiniciar missão: dominar os relatórios/i }).click();
+  const mission = page.locator('.tutorial-mission-popover');
+  const runtime = page.locator('[data-tutorial-audio-state]');
+  for (const [position, step] of tutorial.steps.entries()) {
+    const index = position + 1;
+    const narration = getTutorialNarration(step);
+    if (!narration.audio) throw new Error(`Etapa ${step.id} não possui MP3 estático.`);
+    await expect(mission).toContainText(`Etapa ${index} de ${tutorial.steps.length}`);
+    const visualStartMs = elapsed();
+    await expect(runtime).toHaveAttribute('data-tutorial-step', step.id);
+    await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
+    const narrationStartMs = elapsed();
+    await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'finished', { timeout: 60_000 });
+    const narrationEndMs = elapsed();
+    await pause(postNarrationMs);
+    const actionAtMs = elapsed();
+    timelineSteps.push({ index, id: step.id, visualStartMs, narrationStartMs, narrationEndMs, actionAtMs });
+    if (step.interaction?.type === 'click') await page.locator(step.interaction.target).click();
+    else await mission.getByRole('button', { name: position === tutorial.steps.length - 1 ? 'Concluir tutorial' : 'Continuar tutorial' }).click();
+  }
+  await expect(page.getByRole('status')).toContainText('Missão concluída');
+  await pause(900);
+  await mkdir(dirname(timelineOutput), { recursive: true });
+  await writeFile(timelineOutput, JSON.stringify({
+    tutorialId: tutorial.id,
+    recordingOriginEpochMs,
+    preNarrationMs: 0,
+    postNarrationMs,
+    completedAtMs: elapsed(),
+    steps: timelineSteps,
+  }, null, 2));
+});
+
+const libraryRecordingRoutes: Partial<Record<TutorialId, string>> = {
+  'login-clinic': '/',
+  'clinic-registration': '/clinicas',
+  'team-identification': '/clinicas',
+  'patient-registration': '/pacientes',
+  'surgery-registration': '/pacientes',
+  'billing-management': '/faturamento-medico',
+  'report-export': '/relatorios',
+  'full-text-search': '/pacientes',
+  'user-access': '/usuarios',
+  'clinic-switch': '/clinicas',
+  'agenda-notifications': '/agenda',
+};
+
+for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
+  test(`grava biblioteca sanitizada: ${tutorialId}`, async ({ page }, testInfo) => {
+    test.skip(process.env.TUTORIAL_LIBRARY_RECORDING !== '1');
+    const tutorial = TUTORIALS[tutorialId];
+    const media = TUTORIAL_MEDIA[tutorialId];
+    const recordingSession = tutorialId.startsWith('clinic-') || tutorialId === 'team-identification'
+      ? { ...superAdminSession, token: 'token-ficticio-biblioteca', user: { ...superAdminSession.user, nome: 'Administrador Fictício', email: 'admin@example.invalid' } }
+      : { ...session, token: 'token-ficticio-biblioteca', user: { ...session.user, nome: 'Usuário Fictício', email: 'tutorial@example.invalid' } };
+    await mockApi(page, recordingSession, { sanitizedTutorial: true });
+    const route = libraryRecordingRoutes[tutorialId]!;
+    if (tutorialId === 'login-clinic') {
+      await page.goto('/');
+      await page.getByLabel('Clínica').selectOption('1');
+      await page.getByLabel('Email').fill('tutorial@example.invalid');
+      await page.locator('#login-password').fill('credencial-ficticia');
+    } else {
+      await loginViaUi(page, route, recordingSession);
+      if (tutorialId === 'billing-management') {
+        const summary = page.locator('.billing-filters-summary');
+        if (await summary.getAttribute('aria-expanded') !== 'true') await summary.click();
+      }
+    }
+    await page.waitForTimeout(700);
+    const origin = Date.now();
+    if (tutorialId === 'login-clinic') {
+      await page.getByRole('button', { name: 'Tutorial de acesso' }).click();
+    } else {
+      const help = page.getByRole('complementary', { name: 'Ajuda contextual' });
+      await help.getByRole('button', { name: /Abrir ajuda/i }).click();
+      await page.locator(`[data-tour="start-${tutorialId}-tutorial"]`).click();
+    }
+    const timeline = { tutorialId, slug: media.slug, completedAtMs: 0, steps: [] as Array<Record<string, number | string>> };
+    const runtime = page.locator('[data-tutorial-audio-state]');
+    for (const [index, step] of tutorial.steps.entries()) {
+      await expect(page.locator(step.target)).toBeVisible({ timeout: 10_000 });
+      const visualStartMs = Date.now() - origin;
+      await expect(runtime).toHaveAttribute('data-tutorial-step', step.id);
+      await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'playing');
+      const narrationStartMs = Date.now() - origin;
+      await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'finished', { timeout: 60_000 });
+      const narrationEndMs = Date.now() - origin;
+      await page.waitForTimeout(650);
+      if (step.interaction?.type === 'click') await page.locator(step.interaction.target).click();
+      else await page.locator('.tutorial-mission-popover').getByRole('button', { name: index === tutorial.steps.length - 1 ? 'Concluir tutorial' : 'Continuar tutorial' }).click();
+      timeline.steps.push({ index: index + 1, id: step.id, visualStartMs, narrationStartMs, narrationEndMs, actionAtMs: Date.now() - origin });
+    }
+    await page.waitForTimeout(800);
+    timeline.completedAtMs = Date.now() - origin;
+    await writeFile(testInfo.outputPath('timeline.json'), `${JSON.stringify(timeline, null, 2)}\n`, 'utf8');
+  });
+}

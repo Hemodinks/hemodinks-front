@@ -5,7 +5,7 @@ import type { ReportSummary } from './reportTypes';
 
 export function ReportsSummary({ summary }: { summary: ReportSummary }) {
   return (
-    <section className="billing-summary-grid" aria-label="Indicadores dos relatórios">
+    <section className="billing-summary-grid" aria-label="Indicadores dos relatórios" data-tour="reports-summary">
       <BillingSummaryCard title="Valor faturado" value={formatCurrency(summary.totalGrossAmount)} caption={`${summary.totalRecords} atendimento(s) no período`} tone="gross" icon={<Wallet size={18} />} />
       <BillingSummaryCard title="Valor líquido" value={formatCurrency(summary.totalNetAmount)} caption="Faturado menos glosas informadas" tone="net" icon={<ReceiptText size={18} />} />
       <BillingSummaryCard title="Glosas" value={formatCurrency(summary.totalGlosaAmount)} caption={`${summary.glosaCasesCount} atendimento(s) com glosa`} tone="glosa" icon={<TriangleAlert size={18} />} />

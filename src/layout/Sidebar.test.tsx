@@ -31,6 +31,7 @@ function createProps(overrides: Partial<ComponentProps<typeof Sidebar>> = {}): C
     onOpenPatientsList: vi.fn(),
     onOpenBilling: vi.fn(),
     onOpenReports: vi.fn(),
+    onOpenTutorials: vi.fn(),
     onOpenMedicalGroups: vi.fn(),
     onOpenAgenda: vi.fn(),
     onOpenSettings: vi.fn(),
@@ -86,5 +87,17 @@ describe('menu lateral de faturamento', () => {
 
     rerender(<Sidebar {...createProps({ canAccessBilling: false })} />);
     expect(screen.queryByRole('button', { name: /^Faturamento/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('menu de tutoriais interativos', () => {
+  it('abre a biblioteca e identifica a rota ativa', async () => {
+    const onOpenTutorials = vi.fn();
+    render(<Sidebar {...createProps({ activeView: 'tutorials', onOpenTutorials })} />);
+
+    const tutorials = screen.getByRole('button', { name: 'Tutoriais interativos' });
+    expect(tutorials).toHaveAttribute('aria-current', 'page');
+    await userEvent.click(tutorials);
+    expect(onOpenTutorials).toHaveBeenCalledOnce();
   });
 });

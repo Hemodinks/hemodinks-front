@@ -13,6 +13,7 @@ import {
   ModuleFallback,
   PatientsPage,
   ReportsPage,
+  TutorialsPage,
   SystemSettingsPage,
   UsersPage,
 } from './lazyModules';
@@ -55,6 +56,7 @@ type NavigationActions = {
   openPatientsList: () => void;
   openBilling: () => void;
   openReports: () => void;
+  openTutorials: () => void;
   openMedicalGroups: () => void;
   openAgenda: () => void;
   openSettings: () => void;
@@ -163,6 +165,7 @@ export function AppMainContent({
           onOpenMyProfile={navigation.openMyProfile}
           onOpenPatientsList={navigation.openPatientsList}
           onOpenBilling={navigation.openBilling}
+          onOpenTutorials={navigation.openTutorials}
           onOpenMedicalGroups={navigation.openMedicalGroups}
           onOpenAgenda={navigation.openAgenda}
           onOpenSettings={navigation.openSettings}
@@ -291,6 +294,8 @@ export function AppMainContent({
         />
       ) : activeView === 'reports' && canAccessReports ? (
         <ReportsPage session={session} companyName={companyName} isMedical={isMedical} />
+      ) : activeView === 'tutorials' ? (
+        <TutorialsPage />
       ) : activeView === 'medicalGroups' ? (
         <MedicalGroupsPage
           moduleMode={moduleMode}

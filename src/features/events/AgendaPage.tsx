@@ -376,7 +376,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
   };
 
   return (
-    <section className="workspace agenda-workspace">
+    <section className="workspace agenda-workspace" data-tour="agenda-overview">
       <DataPanel className="agenda-panel">
         <div className="data-header agenda-header">
           <div>
@@ -399,6 +399,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
               type="button"
               variant="ghost"
               className={`agenda-section-tab agenda-new-event-button ${activeSection === 'cadastro' ? 'is-active' : ''}`}
+              data-tour="agenda-new"
               onClick={openCadastroSection}
               aria-pressed={activeSection === 'cadastro'}
             >

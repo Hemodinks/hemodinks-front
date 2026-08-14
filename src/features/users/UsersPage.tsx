@@ -98,7 +98,7 @@ export function UsersPage({
   const shouldShowUserForm = moduleMode === 'form' || !canAccessUsers;
 
   return (
-    <section className="workspace">
+    <section className="workspace" data-tour="users-overview">
       {shouldShowUserForm ? (
         <UserForm
           canAccessUsers={canAccessUsers}
