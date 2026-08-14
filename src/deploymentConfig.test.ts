@@ -9,7 +9,9 @@ type AzureStaticWebAppsConfiguration = {
 };
 
 type VercelConfiguration = {
-  git?: { deploymentEnabled?: boolean };
+  git?: { deploymentEnabled?: boolean | Record<string, boolean> };
+  headers?: Array<{ headers: Array<{ key: string; value: string }> }>;
+  rewrites?: Array<{ source: string; destination: string; permanent?: boolean }>;
 };
 
 describe('configuração de deploy do Azure Static Web Apps', () => {
@@ -28,9 +30,29 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
     expect(configuration.globalHeaders?.['X-Content-Type-Options']).toBe('nosniff');
   });
 
-  it.each(['vercel.json', 'src/vercel.json'])('mantém os deploys da Vercel desabilitados em %s', (path) => {
+  it('habilita na Vercel somente a homologação da branch developer', () => {
     const configuration = JSON.parse(
-      readFileSync(resolve(process.cwd(), path), 'utf8'),
+      readFileSync(resolve(process.cwd(), 'vercel.json'), 'utf8'),
+    ) as VercelConfiguration;
+
+    expect(configuration.git?.deploymentEnabled).toEqual({
+      '*': false,
+      developer: true,
+    });
+    expect(configuration.rewrites).toContainEqual({
+      source: '/(.*)',
+      destination: '/index.html',
+    });
+    expect(configuration.rewrites?.every((rewrite) => rewrite.permanent == null)).toBe(true);
+    const contentSecurityPolicy = configuration.headers
+      ?.flatMap((entry) => entry.headers)
+      .find((header) => header.key === 'Content-Security-Policy');
+    expect(contentSecurityPolicy?.value).toContain('https://hemodinks-api-confirmation.onrender.com');
+  });
+
+  it('mantém desabilitado o projeto Vercel legado de produção', () => {
+    const configuration = JSON.parse(
+      readFileSync(resolve(process.cwd(), 'src/vercel.json'), 'utf8'),
     ) as VercelConfiguration;
 
     expect(configuration.git?.deploymentEnabled).toBe(false);

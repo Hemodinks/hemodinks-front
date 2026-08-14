@@ -23,7 +23,7 @@ function tags(values: string[], fallback: string) {
 
 export function ReportsList(props: Props) {
   return (
-    <DataPanel className="reports-results-panel">
+    <DataPanel className="reports-results-panel" data-tour="reports-results">
       <div className="billing-section-heading">
         <div><span className="eyebrow">Resultados detalhados</span><h3>Atendimentos e faturamento</h3></div>
         <span className="billing-inline-note">Somente dados necessários à análise financeira e operacional.</span>

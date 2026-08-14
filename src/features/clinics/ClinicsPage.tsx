@@ -317,7 +317,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
   };
 
   return (
-    <section className="workspace clinics-workspace">
+    <section className="workspace clinics-workspace" data-tour="clinics-overview">
       <DataPanel>
         <div className="data-header">
           <div>
@@ -325,7 +325,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
             <h2>{clinics.length} clinicas cadastradas</h2>
           </div>
           <div className="table-tools">
-            <Button onClick={openNew}><Plus size={17} />Nova clinica</Button>
+            <Button onClick={openNew} data-tour="clinics-new"><Plus size={17} />Nova clinica</Button>
             <IconButton label="Atualizar clinicas" onClick={() => void loadClinics()}><RefreshCw size={18} /></IconButton>
           </div>
         </div>
@@ -333,7 +333,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
         {success && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{success}</AlertMessage>}
         {error && <AlertMessage type="error">{error}</AlertMessage>}
 
-        <div className="table-wrap">
+        <div className="table-wrap" data-tour="clinics-switch">
           <table className="users-table clinics-table">
             <thead><tr><th>{sortHeader('nome', 'Clinica')}</th><th>{sortHeader('plano', 'Plano')}</th><th>{sortHeader('assinatura', 'Assinatura')}</th><th>{sortHeader('usuarios', 'Usuarios')}</th><th>{sortHeader('status', 'Status')}</th><th aria-label="Acoes" /></tr></thead>
             <tbody>
@@ -356,14 +356,14 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
         </div>
       </DataPanel>
 
-      {formOpen && <DataPanel className="clinic-form-panel">
+      {formOpen && <DataPanel className="clinic-form-panel" data-tour="clinics-form">
         <div className="settings-section-heading"><span className="settings-section-icon"><Building2 size={19} /></span><div><span className="eyebrow">{editing ? 'Edicao' : 'Onboarding'}</span><h3>{editing ? `Editar ${editing.nome}` : 'Nova clinica'}</h3></div></div>
         <form className="clinic-form" onSubmit={submit}>
           <div className="clinic-brand-editor">
             <CompanyLogo companyName={form.nome || 'Clinica'} photo={photoPreview} className="clinic-brand-photo" />
             <div className="clinic-brand-actions"><label className="ghost-button file-action" htmlFor="clinic-photo-input"><ImagePlus size={17} />Selecionar foto</label><input id="clinic-photo-input" className="sr-only" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => void handlePhotoChange(event)} />{photoPreview && <Button variant="danger-ghost" onClick={() => { setForm((current) => ({ ...current, fotoClinica: '' })); setPhotoPreview(null); }}><Trash2 size={16} />Remover foto</Button>}</div>
           </div>
-          <div className="clinic-form-grid">
+          <div className="clinic-form-grid" data-tour="clinics-identity">
             <TextField label="Nome da clinica" value={form.nome} onValueChange={(nome) => setForm((current) => ({ ...current, nome: nome.slice(0, MAX_CLINIC_NAME_LENGTH) }))} maxLength={MAX_CLINIC_NAME_LENGTH} required />
             <TextField label="Slug" value={form.slug} onValueChange={(slug) => setForm((current) => ({ ...current, slug: slug.slice(0, MAX_CLINIC_SLUG_LENGTH) }))} maxLength={MAX_CLINIC_SLUG_LENGTH} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required />
             <label>Plano<select value={form.plano} onChange={(event) => setForm((current) => ({
@@ -380,7 +380,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
           </div>
           {form.plano === 'Parcial' && <fieldset className="clinic-modules-fieldset"><legend>Módulos contratados</legend><div className="clinic-module-options">{CLINIC_MODULE_OPTIONS.map((module) => <label key={module.value}><input type="checkbox" checked={form.modulosLiberados.includes(module.value)} onChange={(event) => setForm((current) => ({ ...current, modulosLiberados: event.target.checked ? [...current.modulosLiberados, module.value] : current.modulosLiberados.filter((value) => value !== module.value) }))} />{module.label}</label>)}</div></fieldset>}
           {!editing && <fieldset className="clinic-admin-fields"><legend>Administrador inicial</legend><div className="clinic-form-grid"><TextField label="Nome" value={form.administradorNome} onValueChange={(administradorNome) => setForm((current) => ({ ...current, administradorNome: administradorNome.slice(0, MAX_NAME_LENGTH) }))} maxLength={MAX_NAME_LENGTH} required /><TextField label="Email" type="email" value={form.administradorEmail} onValueChange={(administradorEmail) => setForm((current) => ({ ...current, administradorEmail: administradorEmail.slice(0, MAX_EMAIL_LENGTH) }))} maxLength={MAX_EMAIL_LENGTH} required /><TextField label="Senha inicial" type="password" minLength={8} maxLength={MAX_ADMIN_PASSWORD_LENGTH} value={form.administradorSenha} onValueChange={(administradorSenha) => setForm((current) => ({ ...current, administradorSenha: administradorSenha.slice(0, MAX_ADMIN_PASSWORD_LENGTH) }))} required /><TextField label="Telefone" type="tel" inputMode="tel" autoComplete="tel" value={form.administradorTelefone} onValueChange={(administradorTelefone) => setForm((current) => ({ ...current, administradorTelefone: formatPhoneInput(administradorTelefone) }))} maxLength={MAX_BRAZIL_MOBILE_MASK_LENGTH} placeholder="+55 (DDD) 99999-9999" /></div></fieldset>}
-          <fieldset className="clinic-team-fields">
+          <fieldset className="clinic-team-fields" data-tour="clinics-team">
             <legend>{editing ? 'Adicionar equipe' : 'Equipe inicial'}</legend>
             <label className="clinic-team-toggle">
               <input type="checkbox" checked={form.criarEquipeInicial} onChange={(event) => setForm((current) => ({ ...current, criarEquipeInicial: event.target.checked }))} />
@@ -401,13 +401,13 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
                 </select>
               </label>
               <small className="file-hint">{getTeamIdentificationDescription(form.equipeModoIdentificacao)}</small>
-              <div className="team-identification-options" aria-label="Explicação dos modos de identificação">
+              <div className="team-identification-options" aria-label="Explicação dos modos de identificação" data-tour="clinics-identification-mode">
                 {TEAM_IDENTIFICATION_OPTIONS.map((option) => <p key={option.value}><strong>{option.label}:</strong> {option.description}</p>)}
               </div>
             </div>}
           </fieldset>
           {editing && <ClinicTeamsPanel key={editing.id} session={session} clinicId={editing.id} clinicName={editing.nome} />}
-          <div className="button-row"><Button onClick={() => setFormOpen(false)}>Cancelar</Button><Button variant="primary" type="submit" disabled={saving}><Save size={18} />{saving ? 'Salvando...' : 'Salvar clinica'}</Button></div>
+          <div className="button-row" data-tour="clinics-save"><Button onClick={() => setFormOpen(false)}>Cancelar</Button><Button variant="primary" type="submit" disabled={saving}><Save size={18} />{saving ? 'Salvando...' : 'Salvar clinica'}</Button></div>
         </form>
       </DataPanel>}
     </section>

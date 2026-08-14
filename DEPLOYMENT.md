@@ -9,7 +9,6 @@ Frontend React/Vite publicado como SPA. O build final fica em `dist` e toda rota
 | Local | `http://localhost:5173` |
 | Producao | `https://hemodinks.gestao-saude.tec.br` |
 | Homologacao | `https://hemodinks-homologacao.gestao-saude.tec.br` |
-| Confirmation (Render blueprint) | `https://hemodinks-front-confirmation.onrender.com` |
 | API local | `http://localhost:5000` |
 | Swagger local | `http://localhost:5000/swagger` |
 | Scalar local | `http://localhost:5000/scalar` |
@@ -118,22 +117,23 @@ VITE_SENTRY_DSN
 
 O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate dos PRs e pushes. Lighthouse fica separado em `.github/workflows/lighthouse.yml` e deve ser iniciado manualmente quando necessario.
 
-Os arquivos `vercel.json` e `src/vercel.json` existem somente para definir `git.deploymentEnabled=false` nos dois projetos Vercel anteriormente conectados. Eles impedem novos deploys automaticos enquanto as conexoes Git nao forem removidas no painel da Vercel.
+O arquivo `src/vercel.json` mantém desabilitado o projeto Vercel legado de produção. O `vercel.json` da raiz pertence à homologação e habilita deploy automático somente para a branch `developer`.
 
-## Render homologacao: confirmation
+## Vercel: homologacao
 
-`render.confirmation.yaml` define um Static Site separado:
+`vercel.json` define o projeto `hemodinks-front-confirmation`:
 
-- service: `hemodinks-front-confirmation`
-- branch: `developer`
-- build `npm ci && npm run build && npm run budget`
-- publish path `./dist`
-- rewrite SPA para `/index.html`
+- framework `vite`
+- install `npm ci`
+- build `npm run build && npm run budget`
+- output `dist`
+- deploy Git habilitado somente para `developer`
+- rewrite SPA de `/(.*)` para `/index.html`
+- headers de segurança e cache dos assets
 
 Variaveis principais:
 
 ```text
-NODE_VERSION=22.12.0
 VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
 VITE_APP_ENV=confirmation
 VITE_APP_VERSION=<versao-ou-sha>
@@ -141,6 +141,8 @@ VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 Use `.env.confirmation.example` para reproduzir esse build localmente.
+
+Não use **Redeploy** em um deployment antigo que ainda contenha redirects ou rewrites inválidos. Crie um deployment a partir da versão mais recente da branch `developer`; a Vercel aplicará o `vercel.json` correspondente ao novo commit.
 
 ## CORS esperado na API
 
@@ -152,11 +154,10 @@ Producao:
 Cors__AllowedOrigins__0=https://hemodinks.gestao-saude.tec.br
 ```
 
-Confirmation Render:
+Homologacao Vercel:
 
 ```text
 Cors__AllowedOrigins__0=https://hemodinks-homologacao.gestao-saude.tec.br
-Cors__AllowedOrigins__1=https://hemodinks-front-confirmation.onrender.com
 ```
 
 ## Smoke test apos deploy

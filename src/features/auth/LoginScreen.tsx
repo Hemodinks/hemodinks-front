@@ -33,6 +33,7 @@ type LoginScreenProps = {
   onLoginClinicChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onResetPassword: () => void;
+  onStartTutorial: () => void;
 };
 
 export function LoginScreen({
@@ -55,13 +56,14 @@ export function LoginScreen({
   onLoginClinicChange,
   onSubmit,
   onResetPassword,
+  onStartTutorial,
 }: LoginScreenProps) {
   return (
     <main className="auth-screen">
       <LoadingOverlay active={isBusy} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
-      <section className="auth-panel">
+      <section className="auth-panel" data-tour="login-overview">
         <div className="brand-block">
           {loginClinicValue
             ? <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
@@ -72,8 +74,10 @@ export function LoginScreen({
           </div>
         </div>
 
+        <button type="button" className="ghost-button login-tutorial-button" onClick={onStartTutorial}>Tutorial de acesso</button>
+
         <form className="stack" onSubmit={onSubmit}>
-          <label>
+          <label data-tour="login-clinic">
             Clínica
             <select
               value={loginClinicValue}
@@ -90,7 +94,7 @@ export function LoginScreen({
             </select>
           </label>
 
-          <label>
+          <label data-tour="login-email">
             Email
             <input
               type="email"
@@ -102,7 +106,7 @@ export function LoginScreen({
             />
           </label>
 
-          <PasswordInput
+          <div data-tour="login-password"><PasswordInput
             id="login-password"
             label="Senha"
             value={loginPassword}
@@ -110,7 +114,7 @@ export function LoginScreen({
             autoComplete="current-password"
             maxLength={MAX_PASSWORD_LENGTH}
             required
-          />
+          /></div>
 
           {loginError && <p className="alert error">{loginError}</p>}
           {loginInfo && <p className="alert success">{loginInfo}</p>}
@@ -119,7 +123,7 @@ export function LoginScreen({
             <button type="button" className="ghost-button" onClick={onResetPassword} disabled={resetPasswordLoading}>
               {resetPasswordLoading ? 'Resetando...' : 'Esqueci minha senha'}
             </button>
-            <button className="primary-action" type="submit" disabled={loginLoading}>
+            <button className="primary-action" type="submit" disabled={loginLoading} data-tour="login-submit">
               <LogIn size={18} />
               {loginLoading ? 'Entrando...' : 'Entrar'}
             </button>

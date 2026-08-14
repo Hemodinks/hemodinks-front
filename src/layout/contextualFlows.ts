@@ -59,6 +59,13 @@ export const CONTEXTUAL_FLOWS: Record<AppView, ViewFlows> = {
       { id: 'reports-export', title: 'Consultar e exportar relatório', steps: ['Informe período, médicos, equipes ou outros filtros.', 'Selecione “Consultar”.', 'Confira a quantidade de atendimentos encontrada.', 'Selecione “Exportar PDF” ou “Exportar Planilha”.'] },
     ],
   },
+  tutorials: {
+    title: 'Tutoriais interativos',
+    description: 'Assista a demonstrações sanitizadas dos principais fluxos do Hemodinks.',
+    flows: [
+      { id: 'tutorials-watch', title: 'Assistir a um tutorial', steps: ['Escolha o tutorial desejado.', 'Use os controles do player para reproduzir, pausar ou ajustar o volume.', 'Acompanhe a narração e as legendas exibidas no vídeo.'] },
+    ],
+  },
   medicalGroups: {
     title: 'Grupos médicos',
     description: 'Organize médicos em grupos utilizados pela agenda e pelas notificações.',

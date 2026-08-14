@@ -28,7 +28,8 @@ function renderDashboard(overrides: Partial<React.ComponentProps<typeof Dashboar
     onOpenUsersList: vi.fn(),
     onOpenMyProfile: vi.fn(),
     onOpenPatientsList: vi.fn(),
-    onOpenBilling: vi.fn(),
+      onOpenBilling: vi.fn(),
+      onOpenTutorials: vi.fn(),
     onOpenMedicalGroups: vi.fn(),
     onOpenAgenda: vi.fn(),
     onOpenSettings: vi.fn(),
@@ -46,7 +47,8 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('button', { name: 'Abrir usuários' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Abrir faturamento médico' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Abrir clínicas' })).toBeVisible();
-    expect(screen.getAllByRole('button')).toHaveLength(3);
+    expect(screen.getByRole('button', { name: 'Abrir tutoriais interativos' })).toBeVisible();
+    expect(screen.getAllByRole('button')).toHaveLength(4);
   });
 
   it('abre pelo cartão a mesma navegação usada pelo menu de clínicas', async () => {
