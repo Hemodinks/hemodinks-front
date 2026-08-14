@@ -78,6 +78,7 @@
   box-shadow: -8px 10px 24px color-mix(in srgb, var(--contextual-flow-color) 28%, transparent);
   font-weight: 900;
   writing-mode: vertical-rl;
+  transform-origin: right center;
   cursor: pointer;
   transition:
     background 220ms ease,
@@ -389,7 +390,7 @@
   }
 
   74% {
-    transform: translateX(-7px) scale(1.025);
+    transform: translateX(-8px) scale(1.08);
   }
 
   80% {
@@ -397,7 +398,7 @@
   }
 
   86% {
-    transform: translateX(-4px) scale(1.015);
+    transform: translateX(-4px) scale(1.04);
   }
 
   92% {
