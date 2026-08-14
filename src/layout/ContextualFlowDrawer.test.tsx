@@ -32,11 +32,18 @@ describe('guia contextual de fluxos', () => {
     await user.click(drawerToggle);
     expect(screen.getByRole('complementary', { name: 'Ajuda contextual' })).toHaveClass('view-dashboard');
     expect(screen.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Consultar os indicadores' })).toHaveAttribute('aria-expanded', 'true');
+    const firstFlowToggle = screen.getByRole('button', { name: 'Consultar os indicadores' });
+    const firstFlowContent = document.getElementById(firstFlowToggle.getAttribute('aria-controls') ?? '');
+    expect(firstFlowToggle).toHaveAttribute('aria-expanded', 'true');
+    expect(firstFlowContent).toHaveAttribute('aria-hidden', 'false');
 
-    await user.click(screen.getByRole('button', { name: 'Acessar um módulo' }));
-    expect(screen.getByRole('button', { name: 'Consultar os indicadores' })).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.getByRole('button', { name: 'Acessar um módulo' })).toHaveAttribute('aria-expanded', 'true');
+    const secondFlowToggle = screen.getByRole('button', { name: 'Acessar um módulo' });
+    const secondFlowContent = document.getElementById(secondFlowToggle.getAttribute('aria-controls') ?? '');
+    await user.click(secondFlowToggle);
+    expect(firstFlowToggle).toHaveAttribute('aria-expanded', 'false');
+    expect(firstFlowContent).toHaveAttribute('aria-hidden', 'true');
+    expect(secondFlowToggle).toHaveAttribute('aria-expanded', 'true');
+    expect(secondFlowContent).toHaveAttribute('aria-hidden', 'false');
 
     rerender(renderDrawer('patients'));
     expect(screen.getByRole('complementary', { name: 'Ajuda contextual' })).toHaveClass('view-patients');

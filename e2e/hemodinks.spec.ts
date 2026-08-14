@@ -876,10 +876,14 @@ test('gera evidencias visuais desktop e mobile das telas principais', async ({ p
 });
 
 async function openReportsTutorial(page: Page) {
-  await page.getByRole('complementary', { name: 'Ajuda contextual' })
-    .getByRole('button', { name: /abrir ajuda de relatórios/i })
-    .click();
-  await page.getByRole('button', { name: /iniciar missão: dominar os relatórios|reiniciar missão: dominar os relatórios/i }).click();
+  await expect(page.locator('[data-tour="reports-overview"]')).toBeVisible();
+  const helpButton = page.getByRole('complementary', { name: 'Ajuda contextual' })
+    .getByRole('button', { name: /abrir ajuda de relatórios/i });
+  await expect(helpButton).toBeVisible();
+  await helpButton.click();
+  const startButton = page.getByRole('button', { name: /iniciar missão: dominar os relatórios|reiniciar missão: dominar os relatórios/i });
+  await expect(startButton).toBeVisible();
+  await startButton.click();
   await expect(page.locator('.tutorial-mission-popover')).toBeVisible();
 }
 
