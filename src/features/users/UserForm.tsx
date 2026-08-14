@@ -76,7 +76,7 @@ export function UserForm({
     : assignableProfileOptions;
 
   return (
-    <FormPanel className="module-form-panel">
+    <FormPanel className="module-form-panel" data-tour="users-form">
       <div className="panel-title">
         <div>
           <span className="eyebrow">{canAccessUsers ? editingId ? 'Edição' : 'Cadastro' : 'Perfil'}</span>
@@ -124,7 +124,7 @@ export function UserForm({
 
         <div className="two-column-fields user-form-columns">
           <div className="user-form-column">
-            <SelectField
+            <div data-tour="users-profile"><SelectField
               label="Perfil"
               value={formData.perfilId}
               onChange={(event) => {
@@ -144,7 +144,7 @@ export function UserForm({
                   {profile.nome}
                 </option>
               ))}
-            </SelectField>
+            </SelectField></div>
 
             <TextField
               label="Nome completo"
@@ -286,7 +286,7 @@ export function UserForm({
 
         {formError && <AlertMessage type="error">{formError}</AlertMessage>}
 
-        <Button variant="primary" type="submit" disabled={formLoading}>
+        <Button variant="primary" type="submit" disabled={formLoading} data-tour="users-save">
           {editingId ? <Save size={18} /> : <Plus size={18} />}
           {formLoading ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Cadastrar usuário'}
         </Button>

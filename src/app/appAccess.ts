@@ -12,6 +12,7 @@ export const MEDICAL_ALLOWED_ENTRY_PATHS = new Set([
   "/agenda",
   "/faturamento-medico",
   "/relatorios",
+  "/tutoriais-interativos",
   "/meu-cadastro",
   "/pacientes",
 ]);
@@ -58,6 +59,7 @@ export function getAppAccess(session: AuthSession | null) {
     (isAdmin || isMedical || isController || isTeam) &&
     hasClinicModule(CLINIC_MODULES.billing);
   const canAccessReports = canAccessBilling;
+  const canAccessTutorials = Boolean(session);
   const canAccessMedicalGroups =
     (isAdmin || isController) &&
     hasClinicModule(CLINIC_MODULES.medicalGroups);
@@ -80,6 +82,7 @@ export function getAppAccess(session: AuthSession | null) {
     canEditOwnUser,
     canAccessBilling,
     canAccessReports,
+    canAccessTutorials,
     canAccessMedicalGroups,
     canAccessSettings,
     canCreatePatients: canManagePatients,
@@ -93,6 +96,7 @@ export function getAppAccess(session: AuthSession | null) {
     canUseProfileRoute: canEditOwnUser,
     canUseBillingRoute: canAccessBilling,
     canUseReportsRoute: canAccessReports,
+    canUseTutorialsRoute: canAccessTutorials,
     canUseMedicalGroupsRoute: canAccessMedicalGroups,
     canUseAgendaRoute: canAccessAgenda,
     canUseSettingsRoute: canAccessSettings,

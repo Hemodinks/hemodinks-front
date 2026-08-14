@@ -253,7 +253,7 @@ export function BillingPage({
   }
 
   return (
-    <section className="workspace billing-workspace">
+    <section className="workspace billing-workspace" data-tour="billing-overview">
       {(summary.nonNumericPaymentCount > 0 || summary.nonNumericGlosaCount > 0) && (
         <AlertMessage type="warning" icon={<TriangleAlert size={17} />}>
           {summary.nonNumericPaymentCount > 0 && `${summary.nonNumericPaymentCount} registro(s) possuem pagamento preenchido sem valor monetário estruturado. `}
@@ -281,7 +281,7 @@ export function BillingPage({
         onEndMonthChange={updateCompetenciaFinal}
       />
 
-      <section className="billing-summary-grid" aria-label="Resumo financeiro">
+      <section className="billing-summary-grid" aria-label="Resumo financeiro" data-tour="billing-summary">
         <BillingSummaryCard
           title="Faturado informado"
           value={formatCurrency(summary.totalGrossAmount)}
@@ -347,7 +347,7 @@ export function BillingPage({
         </AlertMessage>
       )}
 
-      <DataPanel className="billing-table-panel">
+      <DataPanel className="billing-table-panel" data-tour="billing-results">
         <div className="billing-section-heading">
           <div>
             <span className="eyebrow">Cirurgias faturadas</span>

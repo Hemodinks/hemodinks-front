@@ -3,7 +3,7 @@
   display: grid;
   align-items: center;
   justify-items: center;
-  padding: 32px;
+  padding: 40px;
 }
 
 .auth-screen.compact {
@@ -27,6 +27,21 @@
   display: block;
   border: 1px solid var(--line);
   background: var(--input-bg);
+}
+
+.ghost-button.login-tutorial-button {
+  width: 100%;
+  margin: -10px 0 20px;
+  justify-content: center;
+  color: var(--action-text);
+  background: var(--action-accent);
+  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--action-accent) 24%, transparent);
+}
+
+.ghost-button.login-tutorial-button:hover {
+  background: var(--action-accent-hover);
+  border-color: color-mix(in srgb, var(--action-accent-hover) 82%, black);
 }
 
 .login-actions {
@@ -70,56 +85,67 @@
   .auth-screen {
     min-height: 100vh;
     min-height: 100dvh;
-    grid-template-areas: "auth";
-    align-content: center;
-    justify-content: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "credit theme"
+      "auth auth";
+    align-content: safe center;
+    align-items: center;
+    justify-content: stretch;
+    gap: 16px 12px;
     overflow-y: auto;
-    padding: 72px 16px 84px;
+    padding:
+      max(16px, env(safe-area-inset-top))
+      16px
+      max(16px, env(safe-area-inset-bottom));
   }
 
   .auth-screen > .auth-panel {
     grid-area: auth;
-    align-self: center;
     justify-self: center;
   }
 
   .auth-screen .tech-credit {
-    position: fixed;
-    top: calc(18px + env(safe-area-inset-top));
-    left: 50%;
-    z-index: 40;
-    width: max-content;
-    max-width: calc(100% - 32px);
+    position: static;
+    grid-area: credit;
+    justify-self: start;
+    width: auto;
+    max-width: 100%;
     margin: 0;
     padding: 0;
-    text-align: center;
-    transform: translateX(-50%);
+    text-align: left;
+    transform: none;
   }
 
   .auth-screen .theme-toggle.floating {
-    top: auto;
-    right: 16px;
-    bottom: calc(16px + env(safe-area-inset-bottom));
+    position: static;
+    grid-area: theme;
+    justify-self: end;
   }
 }
 
 @media (max-width: 520px) {
   .auth-screen {
-    padding: 72px 12px 84px;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      12px
+      max(12px, env(safe-area-inset-bottom));
   }
 
   .auth-panel,
   .password-required {
     width: 100%;
+    padding: 24px;
   }
 
   .brand-block {
     align-items: flex-start;
+    gap: 12px;
   }
 
   .brand-mark {
-    width: 54px;
-    height: 54px;
+    width: 50px;
+    height: 50px;
   }
 
   .login-actions,
@@ -129,5 +155,25 @@
 
   .button-row.reset-password-actions .primary-action {
     min-width: 0;
+  }
+}
+
+@media (max-width: 340px) {
+  .auth-panel,
+  .password-required {
+    padding: 20px;
+  }
+
+  .auth-screen .theme-toggle.floating {
+    min-width: 0;
+    padding-inline: 10px;
+  }
+
+  .auth-screen .theme-toggle.floating .theme-label-wide {
+    display: none;
+  }
+
+  .auth-screen .theme-toggle.floating .theme-label-short {
+    display: inline;
   }
 }

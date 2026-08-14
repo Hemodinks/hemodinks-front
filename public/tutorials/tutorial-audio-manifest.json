@@ -1,0 +1,379 @@
+{
+  "version": 1,
+  "voice": {
+    "locale": "pt-BR",
+    "name": "pt-BR-FranciscaNeural",
+    "rate": "+0%",
+    "pitch": "+0%",
+    "volume": "default",
+    "outputFormat": "audio-24khz-96kbitrate-mono-mp3"
+  },
+  "tutorials": {
+    "reports-analytics": {
+      "steps": {
+        "overview": {
+          "hash": "8e9c625501c2384986e66bfa3694048a029a4e288f90387f541baa3e25bcbbd5",
+          "file": "/tutorials/audio/reports/overview.mp3",
+          "generatedAt": "2026-08-13T21:33:02.418Z",
+          "characters": 159
+        },
+        "filters": {
+          "hash": "14f57681edd0d22b46d2a0e3664b10d3bce7b9b9e535e869ee3b10deae87ea2c",
+          "file": "/tutorials/audio/reports/filters.mp3",
+          "generatedAt": "2026-08-13T21:33:02.422Z",
+          "characters": 232
+        },
+        "period": {
+          "hash": "65e047b4536e135e74a7331c9e7732d0fa309386000e629271205c64c57c5a25",
+          "file": "/tutorials/audio/reports/period.mp3",
+          "generatedAt": "2026-08-13T21:33:02.712Z",
+          "characters": 135
+        },
+        "combined-filters": {
+          "hash": "616c2e89e3b42286967224d72b530174a4d5efdde72b319bb77137e95495726f",
+          "file": "/tutorials/audio/reports/combined-filters.mp3",
+          "generatedAt": "2026-08-13T21:33:02.767Z",
+          "characters": 186
+        },
+        "apply": {
+          "hash": "1d895d296a1b0c1cab778076613efb94c837e1c0747f20587c4d7038827e6499",
+          "file": "/tutorials/audio/reports/apply.mp3",
+          "generatedAt": "2026-08-13T21:33:03.068Z",
+          "characters": 168
+        },
+        "summary": {
+          "hash": "a5733642840f6da0f3a7df9b44f983d252c96456c74b4e40ac0a8f579656ef77",
+          "file": "/tutorials/audio/reports/summary.mp3",
+          "generatedAt": "2026-08-13T21:49:01.503Z",
+          "characters": 177
+        },
+        "results": {
+          "hash": "a06c99bb01c11c47f35295c5c32b4ec73b4c28421d49508d3810c6cdda214215",
+          "file": "/tutorials/audio/reports/results.mp3",
+          "generatedAt": "2026-08-13T21:33:03.489Z",
+          "characters": 262
+        }
+      }
+    },
+    "login-clinic": {
+      "steps": {
+        "overview": {
+          "hash": "cac3d6d080e6fd31135f05911d63e858b422680ce43e2eb3ab72b8da0bcee394",
+          "file": "/tutorials/audio/login-clinica/overview.mp3",
+          "generatedAt": "2026-08-13T22:30:16.456Z",
+          "characters": 192
+        },
+        "clinic": {
+          "hash": "08d4bf0e307f7b7393212d68c5be9f367873b22b5883e5e2f68785d9f31fe8b6",
+          "file": "/tutorials/audio/login-clinica/clinic.mp3",
+          "generatedAt": "2026-08-13T22:03:28.585Z",
+          "characters": 137
+        },
+        "email": {
+          "hash": "32f818f6ee3691f418ea1bfba87e50c9cde2d964442268dbb65e2e12c6b61425",
+          "file": "/tutorials/audio/login-clinica/email.mp3",
+          "generatedAt": "2026-08-13T22:03:29.060Z",
+          "characters": 109
+        },
+        "password": {
+          "hash": "29283d6f46e3cad9c04753e52ac16f4bee63c20aca061e2beca1024cd882cbd6",
+          "file": "/tutorials/audio/login-clinica/password.mp3",
+          "generatedAt": "2026-08-13T22:03:29.079Z",
+          "characters": 165
+        },
+        "submit": {
+          "hash": "10f6153716186c587c42b923a4d1e8b39c2765f8372998db0169e4c13d96054f",
+          "file": "/tutorials/audio/login-clinica/submit.mp3",
+          "generatedAt": "2026-08-13T22:03:29.464Z",
+          "characters": 154
+        }
+      }
+    },
+    "clinic-registration": {
+      "steps": {
+        "overview": {
+          "hash": "2f209f1f5446a07062276887d1ffc4f83197a56f2aa8a19034dbea41a2bde03b",
+          "file": "/tutorials/audio/cadastro-clinica/overview.mp3",
+          "generatedAt": "2026-08-13T22:03:29.561Z",
+          "characters": 161
+        },
+        "new": {
+          "hash": "0d06a62ba6710cf5b91adcb00384f345e52ac9ee7ac8dd8759c2bfbd2c98336d",
+          "file": "/tutorials/audio/cadastro-clinica/new.mp3",
+          "generatedAt": "2026-08-13T22:03:29.754Z",
+          "characters": 142
+        },
+        "identity": {
+          "hash": "1da012715c4a226611060db5c205fe422362725fb7ee3089dfbe81bb3c7d27c6",
+          "file": "/tutorials/audio/cadastro-clinica/identity.mp3",
+          "generatedAt": "2026-08-13T22:03:29.942Z",
+          "characters": 197
+        },
+        "save": {
+          "hash": "156bad1a33cea68ec04c7302dfce3ac1e917c45912b886fae49a2a69a425f015",
+          "file": "/tutorials/audio/cadastro-clinica/save.mp3",
+          "generatedAt": "2026-08-13T22:03:30.087Z",
+          "characters": 171
+        }
+      }
+    },
+    "team-identification": {
+      "steps": {
+        "new": {
+          "hash": "a71f21d3868c84391dd4c5bd420bc672b32854f959aa8b9a075691f4055b810b",
+          "file": "/tutorials/audio/equipe-identificacao/new.mp3",
+          "generatedAt": "2026-08-13T22:03:30.285Z",
+          "characters": 114
+        },
+        "team": {
+          "hash": "c2436f2180ac74333b497ed1803d83b0a573ca2a676943f0a3fdf5a359d7efef",
+          "file": "/tutorials/audio/equipe-identificacao/team.mp3",
+          "generatedAt": "2026-08-13T22:03:30.479Z",
+          "characters": 208
+        },
+        "mode": {
+          "hash": "a4e091d866e0a744f0cb8549302c8ce7964f2669a21e63970aa086d5ffd1a0ce",
+          "file": "/tutorials/audio/equipe-identificacao/mode.mp3",
+          "generatedAt": "2026-08-13T22:03:30.657Z",
+          "characters": 191
+        },
+        "finish": {
+          "hash": "25e1427d81bc0ce703be13005442256099ea028f04c5af7a18178ce52c23515b",
+          "file": "/tutorials/audio/equipe-identificacao/finish.mp3",
+          "generatedAt": "2026-08-13T22:03:30.845Z",
+          "characters": 151
+        }
+      }
+    },
+    "patient-registration": {
+      "steps": {
+        "list": {
+          "hash": "7655581db3c0821e446e3a910099e0364437b29f31d9a09c8c74d476789f0848",
+          "file": "/tutorials/audio/cadastro-paciente/list.mp3",
+          "generatedAt": "2026-08-13T22:03:31.095Z",
+          "characters": 188
+        },
+        "new": {
+          "hash": "2d374518ca5bad4e070086f81c3cd196898d6a2f8969db5194f162b051f0665f",
+          "file": "/tutorials/audio/cadastro-paciente/new.mp3",
+          "generatedAt": "2026-08-13T22:03:31.267Z",
+          "characters": 108
+        },
+        "identity": {
+          "hash": "f0acbdcaf5ff05eb009376b754a866b412dab60f57c664a22cfd69b64b55f7ed",
+          "file": "/tutorials/audio/cadastro-paciente/identity.mp3",
+          "generatedAt": "2026-08-13T22:03:31.497Z",
+          "characters": 188
+        },
+        "save": {
+          "hash": "08c0a5c2f8f3d967b7502321fe1067a87acfa39f2dbd1867d9e7b9a8c5761b3b",
+          "file": "/tutorials/audio/cadastro-paciente/save.mp3",
+          "generatedAt": "2026-08-13T22:03:31.603Z",
+          "characters": 176
+        }
+      }
+    },
+    "surgery-registration": {
+      "steps": {
+        "new": {
+          "hash": "6d0b88bf95ec22bd8bdb568d5a70b6f694dd843767d95604609fbf69150a419f",
+          "file": "/tutorials/audio/atendimento-cirurgia/new.mp3",
+          "generatedAt": "2026-08-13T22:03:31.771Z",
+          "characters": 141
+        },
+        "form": {
+          "hash": "a4eeeac951f751332c62af94f06fa714fb2e650076816e3992775aad4c9f9234",
+          "file": "/tutorials/audio/atendimento-cirurgia/form.mp3",
+          "generatedAt": "2026-08-13T22:03:32.000Z",
+          "characters": 168
+        },
+        "procedure": {
+          "hash": "ff2efb4fdb05477d23204176939a1baf3490f71164f0004e681d878c55921f17",
+          "file": "/tutorials/audio/atendimento-cirurgia/procedure.mp3",
+          "generatedAt": "2026-08-13T22:03:32.119Z",
+          "characters": 166
+        },
+        "save": {
+          "hash": "b478cda77a9d4a28fcde15739b1838b6f700a19f2a051f10a5410275f78f1d7c",
+          "file": "/tutorials/audio/atendimento-cirurgia/save.mp3",
+          "generatedAt": "2026-08-13T22:03:32.461Z",
+          "characters": 163
+        }
+      }
+    },
+    "billing-management": {
+      "steps": {
+        "overview": {
+          "hash": "dad60f8723f4c1fc80525d516258e556adbe11250b62d2ca20817a114c95596a",
+          "file": "/tutorials/audio/gestao-faturamento/overview.mp3",
+          "generatedAt": "2026-08-13T22:03:32.461Z",
+          "characters": 155
+        },
+        "apply": {
+          "hash": "1dbe0abe6726cb05b9ae08d9d94212154099d06143af54316b22d89d0b52b871",
+          "file": "/tutorials/audio/gestao-faturamento/apply.mp3",
+          "generatedAt": "2026-08-13T22:03:32.802Z",
+          "characters": 130
+        },
+        "filters": {
+          "hash": "540965ebc49e7ad59ede8050161c12ba9843976cc67353063d938fcd8e3e3c03",
+          "file": "/tutorials/audio/gestao-faturamento/filters.mp3",
+          "generatedAt": "2026-08-13T22:03:32.873Z",
+          "characters": 175
+        },
+        "summary": {
+          "hash": "019f54b70558d927112b7bf2b2aefba08d4bc8f6715ca3fe5782eaa9abb3c930",
+          "file": "/tutorials/audio/gestao-faturamento/summary.mp3",
+          "generatedAt": "2026-08-13T22:03:33.189Z",
+          "characters": 169
+        },
+        "results": {
+          "hash": "59212705e905f9a75dc17a6e010d8281bd4f998a898f1f2e7561d8620169a513",
+          "file": "/tutorials/audio/gestao-faturamento/results.mp3",
+          "generatedAt": "2026-08-13T22:03:33.211Z",
+          "characters": 133
+        }
+      }
+    },
+    "report-export": {
+      "steps": {
+        "filters": {
+          "hash": "ac221fafb055457a869e0f7894bc46c928266d953dd3bf83e3f8965f1b424617",
+          "file": "/tutorials/audio/exportacao-relatorios/filters.mp3",
+          "generatedAt": "2026-08-13T22:03:33.508Z",
+          "characters": 145
+        },
+        "apply": {
+          "hash": "ff383088670f0b8c045a4e68b33055cd48a73bb40930d87482e0406ea6fbd2fd",
+          "file": "/tutorials/audio/exportacao-relatorios/apply.mp3",
+          "generatedAt": "2026-08-13T22:03:33.546Z",
+          "characters": 102
+        },
+        "results": {
+          "hash": "b1c18137b3da5ab0ba003c56c26d0edc15d64f9dfe7c7b5970ff5c9cfc603fc9",
+          "file": "/tutorials/audio/exportacao-relatorios/results.mp3",
+          "generatedAt": "2026-08-13T22:03:33.842Z",
+          "characters": 140
+        },
+        "export": {
+          "hash": "bdbf09026922fe0b162c2ae751d0bdc24caaf5b0528b7c51112efafd61d659af",
+          "file": "/tutorials/audio/exportacao-relatorios/export.mp3",
+          "generatedAt": "2026-08-13T22:30:16.472Z",
+          "characters": 158
+        }
+      }
+    },
+    "full-text-search": {
+      "steps": {
+        "overview": {
+          "hash": "a16bf0aaa8ae1710539d3263a97ab0fb75ef0a7db900d046d7f55eab10ff93ad",
+          "file": "/tutorials/audio/pesquisa-inteligente/overview.mp3",
+          "generatedAt": "2026-08-13T22:03:34.194Z",
+          "characters": 154
+        },
+        "search": {
+          "hash": "6a82bb19b1a371d76151643f6d707b5b8e8f186e06e6e951013bb2ee12bbe63b",
+          "file": "/tutorials/audio/pesquisa-inteligente/search.mp3",
+          "generatedAt": "2026-08-13T22:03:34.278Z",
+          "characters": 190
+        },
+        "results": {
+          "hash": "aaf75f6a65faa529d6b4b9b82365452aee0ebc2845d9460aa862761403a9b162",
+          "file": "/tutorials/audio/pesquisa-inteligente/results.mp3",
+          "generatedAt": "2026-08-13T22:03:34.530Z",
+          "characters": 170
+        }
+      }
+    },
+    "user-access": {
+      "steps": {
+        "list": {
+          "hash": "f6fab33594e4a76b856d4ee728847615ab088ce148c1eeb2267ff700bf0ef768",
+          "file": "/tutorials/audio/usuarios-perfis/list.mp3",
+          "generatedAt": "2026-08-13T22:03:34.571Z",
+          "characters": 127
+        },
+        "new": {
+          "hash": "eebd7286c1ed3e39745bc58b8946e7a8275ab05d387d8bd075dbe52b1959619b",
+          "file": "/tutorials/audio/usuarios-perfis/new.mp3",
+          "generatedAt": "2026-08-13T22:03:34.854Z",
+          "characters": 112
+        },
+        "profile": {
+          "hash": "c6659262843fc9b0c903a58c82797686bf2aa22ee6539903c6b2f994674ebfcc",
+          "file": "/tutorials/audio/usuarios-perfis/profile.mp3",
+          "generatedAt": "2026-08-13T22:03:34.986Z",
+          "characters": 184
+        },
+        "form": {
+          "hash": "247d3f0215322d4b66365800b30beafb3cd2b09bf4585039d54a264a146b4ae4",
+          "file": "/tutorials/audio/usuarios-perfis/form.mp3",
+          "generatedAt": "2026-08-13T22:03:35.094Z",
+          "characters": 147
+        },
+        "save": {
+          "hash": "531a8363bb024e51b8137519faeb5708ed717889aab23f3f7850daed74afe9ab",
+          "file": "/tutorials/audio/usuarios-perfis/save.mp3",
+          "generatedAt": "2026-08-13T22:03:35.414Z",
+          "characters": 158
+        }
+      }
+    },
+    "clinic-switch": {
+      "steps": {
+        "overview": {
+          "hash": "ed4f537234151a0f41262e690fe0c4bd0bb153b273ecb76063fcf3f142e86550",
+          "file": "/tutorials/audio/troca-clinica/overview.mp3",
+          "generatedAt": "2026-08-13T22:03:35.330Z",
+          "characters": 173
+        },
+        "list": {
+          "hash": "7bc696c23a0559d78b92058be69e1cfb9e94be8d3efddf7793a29cd7540dd097",
+          "file": "/tutorials/audio/troca-clinica/list.mp3",
+          "generatedAt": "2026-08-13T22:03:35.726Z",
+          "characters": 160
+        },
+        "finish": {
+          "hash": "b211d197da57f9ddbf1618b0d7f22a324b9434e467ee862d3b78ca5266756c2b",
+          "file": "/tutorials/audio/troca-clinica/finish.mp3",
+          "generatedAt": "2026-08-13T22:03:35.763Z",
+          "characters": 164
+        }
+      }
+    },
+    "agenda-notifications": {
+      "steps": {
+        "overview": {
+          "hash": "c0236f95672452f9c55f6c649ab76d57652bb49f4c561eb979fd2d44580f32a3",
+          "file": "/tutorials/audio/agenda-notificacoes/overview.mp3",
+          "generatedAt": "2026-08-13T22:03:35.943Z",
+          "characters": 118
+        },
+        "new": {
+          "hash": "ea03941079f95a164c292e72f2c4a4e34ec19bf129ea17e3d9183a1d2592be5e",
+          "file": "/tutorials/audio/agenda-notificacoes/new.mp3",
+          "generatedAt": "2026-08-13T22:03:36.024Z",
+          "characters": 120
+        },
+        "details": {
+          "hash": "bea041ce963e0b6ca8e17d75e6aa9c1f556703690b513a77984155e28eff0c0e",
+          "file": "/tutorials/audio/agenda-notificacoes/details.mp3",
+          "generatedAt": "2026-08-13T22:03:36.179Z",
+          "characters": 163
+        },
+        "notifications": {
+          "hash": "ce07ac49a7fb611c951969ad2cb388d32ab91697a8834601d5e7a2d6912f58f5",
+          "file": "/tutorials/audio/agenda-notificacoes/notifications.mp3",
+          "generatedAt": "2026-08-13T22:03:36.376Z",
+          "characters": 159
+        },
+        "save": {
+          "hash": "8da159cf914e6fba895baf38e282966620827f3f11b69ab6be7c88a354ae7ac3",
+          "file": "/tutorials/audio/agenda-notificacoes/save.mp3",
+          "generatedAt": "2026-08-13T22:03:36.530Z",
+          "characters": 160
+        }
+      }
+    }
+  }
+}

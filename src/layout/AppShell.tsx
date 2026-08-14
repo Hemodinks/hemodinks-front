@@ -54,6 +54,7 @@ type AppShellProps = {
   onOpenPatientsList: () => void;
   onOpenBilling: () => void;
   onOpenReports: () => void;
+  onOpenTutorials: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
   onOpenSettings: () => void;
@@ -100,6 +101,7 @@ export function AppShell({
   onOpenPatientsList,
   onOpenBilling,
   onOpenReports,
+  onOpenTutorials,
   onOpenMedicalGroups,
   onOpenAgenda,
   onOpenSettings,
@@ -167,6 +169,7 @@ export function AppShell({
           onOpenPatientsList={onOpenPatientsList}
           onOpenBilling={onOpenBilling}
           onOpenReports={onOpenReports}
+          onOpenTutorials={onOpenTutorials}
           onOpenMedicalGroups={onOpenMedicalGroups}
           onOpenAgenda={onOpenAgenda}
           onOpenSettings={onOpenSettings}
