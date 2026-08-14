@@ -21,19 +21,32 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (!id.includes('node_modules')) {
+          const normalizedId = id.replaceAll('\\', '/');
+
+          if (
+            normalizedId.includes('/node_modules/driver.js/')
+            || (
+              normalizedId.includes('/src/features/tutorials/')
+              && !normalizedId.endsWith('/TutorialsPage.tsx')
+              && !normalizedId.endsWith('/tutorials-page.css')
+            )
+          ) {
+            return 'tutorial-runtime';
+          }
+
+          if (!normalizedId.includes('/node_modules/')) {
             return undefined;
           }
 
-          if (id.includes('@sentry/react')) {
+          if (normalizedId.includes('@sentry/react')) {
             return 'observability';
           }
 
-          if (id.includes('react-router-dom') || id.includes('react-dom') || id.includes('/react/')) {
+          if (normalizedId.includes('react-router-dom') || normalizedId.includes('react-dom') || normalizedId.includes('/react/')) {
             return 'react-vendor';
           }
 
-          if (id.includes('@tanstack/react-query')) {
+          if (normalizedId.includes('@tanstack/react-query')) {
             return 'query-vendor';
           }
 
