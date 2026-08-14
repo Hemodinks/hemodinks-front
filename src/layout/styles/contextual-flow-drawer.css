@@ -10,7 +10,7 @@
   grid-template-columns: 48px minmax(0, 1fr);
   color: var(--ink);
   transform: translateX(calc(100% - 48px));
-  transition: transform 220ms ease;
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .contextual-flow-drawer.view-dashboard {
@@ -37,12 +37,20 @@
   --contextual-flow-color: #1d4ed8;
 }
 
+.contextual-flow-drawer.view-tutorials {
+  --contextual-flow-color: #7c3aed;
+}
+
 .contextual-flow-drawer.view-medicalGroups {
   --contextual-flow-color: #0f4c81;
 }
 
 .contextual-flow-drawer.view-agenda {
   --contextual-flow-color: #8a5a14;
+}
+
+.contextual-flow-drawer.view-clinics {
+  --contextual-flow-color: var(--action-secondary);
 }
 
 .contextual-flow-drawer.view-settings {
@@ -62,19 +70,46 @@
   justify-content: center;
   gap: 9px;
   padding: 12px 10px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--contextual-flow-color) 78%, black);
   border-right: 0;
   border-radius: 8px 0 0 8px;
   color: #fff;
-  background: var(--action-secondary);
-  box-shadow: -8px 10px 24px rgba(15, 23, 42, 0.18);
+  background: var(--contextual-flow-color);
+  box-shadow: -8px 10px 24px color-mix(in srgb, var(--contextual-flow-color) 28%, transparent);
   font-weight: 900;
   writing-mode: vertical-rl;
   cursor: pointer;
+  transition:
+    background 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.contextual-flow-drawer:not(.is-open) .contextual-flow-trigger {
+  animation: contextual-help-invite 3.2s ease-in-out infinite;
+}
+
+.contextual-flow-trigger:hover,
+.contextual-flow-trigger:focus-visible {
+  background: color-mix(in srgb, var(--contextual-flow-color) 86%, black);
+  box-shadow:
+    -10px 12px 28px color-mix(in srgb, var(--contextual-flow-color) 38%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--contextual-flow-color) 22%, transparent);
+}
+
+.contextual-flow-drawer.is-open .contextual-flow-trigger {
+  box-shadow:
+    -6px 8px 20px color-mix(in srgb, var(--contextual-flow-color) 30%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
 .contextual-flow-trigger svg {
   flex: 0 0 auto;
+}
+
+.contextual-flow-drawer.is-open .contextual-flow-trigger svg {
+  animation: contextual-trigger-confirm 460ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .contextual-flow-panel {
@@ -92,6 +127,10 @@
 
 .contextual-flow-panel[hidden] {
   display: none;
+}
+
+.contextual-flow-drawer.is-open .contextual-flow-panel {
+  animation: contextual-panel-enter 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .contextual-flow-heading {
@@ -170,6 +209,7 @@
 .contextual-flow-item.is-open {
   border-color: var(--selection-accent);
   background: color-mix(in srgb, var(--contextual-flow-color) 20%, transparent);
+  animation: contextual-flow-highlight 480ms cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow:
     0 0 0 2px var(--selection-accent),
     0 0 0 4px var(--selection-accent-soft),
@@ -178,6 +218,8 @@
 }
 
 .contextual-flow-toggle {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   min-height: 48px;
   display: flex;
@@ -192,6 +234,40 @@
   font-weight: 900;
   text-align: left;
   cursor: pointer;
+}
+
+.contextual-flow-drawer.is-open .contextual-flow-toggle {
+  animation: contextual-accordion-enter 440ms both cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.contextual-flow-drawer.is-open .contextual-flow-item:nth-child(2) .contextual-flow-toggle {
+  animation-delay: 90ms;
+}
+
+.contextual-flow-drawer.is-open .contextual-flow-item:nth-child(3) .contextual-flow-toggle {
+  animation-delay: 180ms;
+}
+
+.contextual-flow-drawer.is-open .contextual-flow-item:nth-child(n + 4) .contextual-flow-toggle {
+  animation-delay: 270ms;
+}
+
+.contextual-flow-toggle::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    color-mix(in srgb, var(--contextual-flow-color) 22%, transparent) 50%,
+    transparent 70%
+  );
+  pointer-events: none;
+  transform: translateX(-120%);
+}
+
+.contextual-flow-drawer.is-open .contextual-flow-toggle::after {
+  animation: contextual-toggle-shine 720ms ease-out 360ms both;
 }
 
 .contextual-flow-toggle svg {
@@ -209,18 +285,38 @@
 }
 
 .contextual-flow-content {
-  padding: 0 13px 14px;
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    grid-template-rows 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    visibility 0s linear 280ms;
 }
 
-.contextual-flow-content[hidden] {
-  display: none;
+.contextual-flow-item.is-open .contextual-flow-content {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    grid-template-rows 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease 40ms,
+    visibility 0s linear;
+}
+
+.contextual-flow-content-inner {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .contextual-flow-content ol {
   display: grid;
   gap: 10px;
   margin: 0;
-  padding: 0;
+  padding: 0 13px 14px;
   list-style: none;
   counter-reset: contextual-step;
 }
@@ -240,6 +336,121 @@
   margin-top: 2px;
   color: color-mix(in srgb, var(--contextual-flow-color) 65%, var(--ink));
   stroke-width: 2.5;
+}
+
+.contextual-flow-item.is-open .contextual-flow-content li {
+  animation: contextual-step-enter 260ms both cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.contextual-flow-item.is-open .contextual-flow-content li:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.contextual-flow-item.is-open .contextual-flow-content li:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.contextual-flow-item.is-open .contextual-flow-content li:nth-child(4) {
+  animation-delay: 135ms;
+}
+
+.contextual-flow-item.is-open .contextual-flow-content li:nth-child(n + 5) {
+  animation-delay: 180ms;
+}
+
+@keyframes contextual-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes contextual-trigger-confirm {
+  0%,
+  100% {
+    transform: scale(1) rotate(0);
+  }
+
+  45% {
+    transform: scale(1.28) rotate(-12deg);
+  }
+}
+
+@keyframes contextual-help-invite {
+  0%,
+  68%,
+  100% {
+    transform: translateX(0) scale(1);
+  }
+
+  74% {
+    transform: translateX(-7px) scale(1.025);
+  }
+
+  80% {
+    transform: translateX(0) scale(1);
+  }
+
+  86% {
+    transform: translateX(-4px) scale(1.015);
+  }
+
+  92% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes contextual-accordion-enter {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes contextual-toggle-shine {
+  from {
+    transform: translateX(-120%);
+  }
+
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes contextual-flow-highlight {
+  0% {
+    transform: scale(0.985);
+  }
+
+  55% {
+    transform: scale(1.008);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes contextual-step-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 760px) {
@@ -263,7 +474,18 @@
 @media (prefers-reduced-motion: reduce) {
   .contextual-flow-drawer,
   .contextual-flow-item,
+  .contextual-flow-content,
   .contextual-flow-toggle svg {
     transition: none;
+  }
+
+  .contextual-flow-drawer.is-open .contextual-flow-panel,
+  .contextual-flow-drawer:not(.is-open) .contextual-flow-trigger,
+  .contextual-flow-drawer.is-open .contextual-flow-trigger svg,
+  .contextual-flow-drawer.is-open .contextual-flow-toggle,
+  .contextual-flow-drawer.is-open .contextual-flow-toggle::after,
+  .contextual-flow-item.is-open,
+  .contextual-flow-item.is-open .contextual-flow-content li {
+    animation: none;
   }
 }

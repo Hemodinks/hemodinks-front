@@ -82,15 +82,17 @@ export function ContextualFlowDrawer({ activeView }: ContextualFlowDrawerProps) 
                   <span>{flow.title}</span>
                   <ChevronDown size={18} aria-hidden="true" />
                 </button>
-                <div id={contentId} className="contextual-flow-content" hidden={!flowIsOpen}>
-                  <ol>
-                    {flow.steps.map((step) => (
-                      <li key={step}>
-                        <CheckCircle2 size={17} aria-hidden="true" />
-                        <span>{step}</span>
-                      </li>
-                    ))}
-                  </ol>
+                <div id={contentId} className="contextual-flow-content" aria-hidden={!flowIsOpen}>
+                  <div className="contextual-flow-content-inner">
+                    <ol>
+                      {flow.steps.map((step) => (
+                        <li key={step}>
+                          <CheckCircle2 size={17} aria-hidden="true" />
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
                 </div>
               </section>
             );
