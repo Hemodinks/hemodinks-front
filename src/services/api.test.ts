@@ -392,10 +392,12 @@ describe('services api client', () => {
       convenioIds: '7,8',
       dataInicio: '2026-06-01',
       dataFinal: '2026-06-30',
+      dataSolicitacaoInicio: '2026-05-01',
+      dataSolicitacaoFinal: '2026-05-31',
     });
 
     expect(requestSpy.mock.calls[0]?.[0].params?.toString()).toBe(
-      'medicoUserIds=1%2C2&convenioIds=7%2C8&dataInicio=2026-06-01&dataFinal=2026-06-30',
+      'medicoUserIds=1%2C2&convenioIds=7%2C8&dataInicio=2026-06-01&dataFinal=2026-06-30&dataSolicitacaoInicio=2026-05-01&dataSolicitacaoFinal=2026-05-31',
     );
   });
 

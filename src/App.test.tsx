@@ -349,6 +349,10 @@ describe('App', () => {
     expect(screen.queryByLabelText('Trial ate')).not.toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Módulos contratados' })).toBeInTheDocument();
     expect(screen.getByLabelText('Pacientes')).toBeInTheDocument();
+    const clinicPassword = screen.getByLabelText('Senha inicial');
+    expect(clinicPassword).toHaveAttribute('type', 'password');
+    await user.click(screen.getByRole('button', { name: 'Mostrar senha inicial' }));
+    expect(clinicPassword).toHaveAttribute('type', 'text');
 
     const navigationButtons = within(within(sidebar).getByRole('navigation', { name: 'Navegação principal' })).getAllByRole('button');
     expect(navigationButtons.at(-1)).toHaveTextContent('Configuração');
@@ -1474,6 +1478,8 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
     await user.type(screen.getByLabelText('Data inicial do atendimento'), '01062026');
     await user.type(screen.getByLabelText('Data final do atendimento'), '30062026');
+    await user.type(screen.getByLabelText('Data inicial da solicitação'), '01052026');
+    await user.type(screen.getByLabelText('Data final da solicitação'), '31052026');
 
     await waitFor(() => {
       expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', {
@@ -1485,8 +1491,32 @@ describe('App', () => {
         procedimento: 'Consulta',
         dataInicio: '2026-06-01',
         dataFinal: '2026-06-30',
+        dataSolicitacaoInicio: '2026-05-01',
+        dataSolicitacaoFinal: '2026-05-31',
         sortBy: 'data',
         sortDirection: 'desc',
+      });
+    });
+  });
+
+  it('exibe e ordena pacientes pela data do atendimento', async () => {
+    vi.mocked(api.getPacientes).mockResolvedValue(paged([{
+      ...basePaciente,
+      dataAtendimento: '2026-06-15T00:00:00Z',
+    }]));
+    const { user } = await renderAuthenticatedApp();
+
+    await openPatientsModule(user);
+    expect(await screen.findByText('15/06/2026')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^data do atendimento$/i }));
+
+    await waitFor(() => {
+      expect(api.getPacientes).toHaveBeenLastCalledWith('jwt-token', {
+        page: 1,
+        pageSize: 10,
+        search: '',
+        sortBy: 'dataAtendimento',
+        sortDirection: 'asc',
       });
     });
   });

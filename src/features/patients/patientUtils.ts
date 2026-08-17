@@ -56,6 +56,8 @@ export const emptyPacienteFilters: PacienteFilters = {
   procedimento: '',
   dataInicio: '',
   dataFinal: '',
+  dataSolicitacaoInicio: '',
+  dataSolicitacaoFinal: '',
 };
 
 export function getPacienteFilterQuery(filters: PacienteFilters) {
@@ -65,6 +67,8 @@ export function getPacienteFilterQuery(filters: PacienteFilters) {
     ...(filters.procedimento.trim() ? { procedimento: filters.procedimento.trim() } : {}),
     ...(toDatePickerValue(filters.dataInicio) ? { dataInicio: toDatePickerValue(filters.dataInicio) } : {}),
     ...(toDatePickerValue(filters.dataFinal) ? { dataFinal: toDatePickerValue(filters.dataFinal) } : {}),
+    ...(toDatePickerValue(filters.dataSolicitacaoInicio) ? { dataSolicitacaoInicio: toDatePickerValue(filters.dataSolicitacaoInicio) } : {}),
+    ...(toDatePickerValue(filters.dataSolicitacaoFinal) ? { dataSolicitacaoFinal: toDatePickerValue(filters.dataSolicitacaoFinal) } : {}),
   };
 }
 

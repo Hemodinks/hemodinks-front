@@ -56,7 +56,7 @@ export function TeamIdentificationScreen({
         </div>
         <form className="stack" onSubmit={onSubmit}>
           <label>
-            Funcionário
+            Membro da Equipe
             <select
               value={operatorId}
               onChange={(event) => onOperatorChange(event.target.value)}
