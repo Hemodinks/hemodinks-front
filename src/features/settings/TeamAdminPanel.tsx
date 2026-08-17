@@ -300,7 +300,7 @@ export function ClinicTeamsPanel({ session, clinicId, clinicName }: ClinicTeamsP
                 {openSelector === team.id && <div id={`team-member-options-${team.id}`} className="team-member-options" role="listbox" aria-multiselectable="true">
                   <div className="team-member-options-header">
                     <span>Selecionar médicos, controllers e equipe</span>
-                    <button type="button" aria-label="Fechar lista de funcionários" onMouseDown={(event) => event.preventDefault()} onClick={() => setOpenSelector(null)}><X size={17} /></button>
+                    <button type="button" aria-label="Fechar lista de membros" onMouseDown={(event) => event.preventDefault()} onClick={() => setOpenSelector(null)}><X size={17} /></button>
                   </div>
                   {matchingUsers(team).map((user) => <button
                       key={getUserSelectionKey(user)}
@@ -322,7 +322,7 @@ export function ClinicTeamsPanel({ session, clinicId, clinicName }: ClinicTeamsP
                 </div>}
               </div>
               {(newUserDrafts[team.id] ?? []).length > 0 && <div className="new-team-users-editor">
-                <small className="file-hint">Novos funcionários usarão o e-mail coletivo <strong>{team.email}</strong> e a senha da equipe.</small>
+                <small className="file-hint">Novos membros da equipe usarão o e-mail coletivo <strong>{team.email}</strong> e a senha da equipe.</small>
                 {(newUserDrafts[team.id] ?? []).map((draft) => <div key={draft.id} className="new-team-user-row">
                   <input aria-label={`Nome de ${draft.nome}`} value={draft.nome} onChange={(event) => setNewUserDrafts((current) => ({ ...current, [team.id]: (current[team.id] ?? []).map((item) => item.id === draft.id ? { ...item, nome: event.target.value } : item) }))} placeholder="Nome completo" />
                   <input aria-label={`E-mail coletivo de ${draft.nome}`} type="email" value={team.email} readOnly title="Este funcionário usará o e-mail coletivo da equipe" />

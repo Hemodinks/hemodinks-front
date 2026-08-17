@@ -10,7 +10,9 @@ function arePacienteFiltersEqual(current: PacienteFilters, debounced: PacienteFi
     && current.convenioIds.join(',') === debounced.convenioIds.join(',')
     && current.procedimento === debounced.procedimento
     && current.dataInicio === debounced.dataInicio
-    && current.dataFinal === debounced.dataFinal;
+    && current.dataFinal === debounced.dataFinal
+    && current.dataSolicitacaoInicio === debounced.dataSolicitacaoInicio
+    && current.dataSolicitacaoFinal === debounced.dataSolicitacaoFinal;
 }
 
 export function usePatientList() {

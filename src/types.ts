@@ -85,6 +85,8 @@ export type PacienteListQuery = ListQuery & {
   procedimento?: string;
   dataInicio?: string;
   dataFinal?: string;
+  dataSolicitacaoInicio?: string;
+  dataSolicitacaoFinal?: string;
   competenciaInicio?: string;
   competenciaFinal?: string;
 };
@@ -409,6 +411,7 @@ export type ClinicPayload = {
   administradorNome?: string;
   administradorEmail?: string;
   administradorSenha?: string;
+  administradorNovaSenha?: string | null;
   administradorTelefone?: string | null;
   equipeInicial?: CreateTeamPayload | null;
   novaEquipe?: CreateTeamPayload | null;

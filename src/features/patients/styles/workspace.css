@@ -1,20 +1,28 @@
 .patients-workspace .data-header {
   align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
 }
 
 .patients-workspace .table-tools {
-  flex: 1 1 560px;
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
-  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: flex-start;
 }
 
-.patients-workspace .table-tools > .search-box {
-  flex: 1 1 280px;
+.patients-workspace .table-tools > [data-tour="patients-search"] {
+  width: 100%;
   min-width: min(230px, 100%);
   max-width: 420px;
+}
+
+.patients-workspace .table-tools > [data-tour="patients-search"] .search-box {
+  width: 100%;
 }
 
 .patients-workspace .table-tools > .icon-button {
@@ -22,7 +30,7 @@
 }
 
 .patient-export-actions {
-  flex: 0 0 100%;
+  grid-column: 1 / -1;
   width: 100%;
   min-width: 0;
   display: grid;
@@ -71,13 +79,18 @@
 }
 
 .patient-filter-grid {
-  flex: 0 0 100%;
+  grid-column: 1 / -1;
   width: 100%;
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(150px, auto);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   align-items: end;
+}
+
+.patient-filter-grid > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .filter-field {
@@ -112,7 +125,7 @@
     justify-content: flex-start;
   }
 
-  .patients-workspace .table-tools > .search-box {
+  .patients-workspace .table-tools > [data-tour="patients-search"] {
     max-width: none;
   }
 
@@ -145,11 +158,16 @@
   }
 
   .patients-workspace .table-tools {
+    grid-template-columns: minmax(0, 1fr) auto;
     justify-content: flex-start;
   }
 
-  .patients-workspace .table-tools > .search-box {
-    flex-basis: 100%;
+  .patients-workspace .table-tools > [data-tour="patients-new"] {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .patients-workspace .table-tools > [data-tour="patients-search"] {
     min-width: 0;
     max-width: none;
   }
