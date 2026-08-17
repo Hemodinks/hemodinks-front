@@ -75,7 +75,14 @@ describe('patientUtils', () => {
       procedimento: '',
       dataInicio: '01/06/2026',
       dataFinal: '30/06/2026',
-    })).toEqual({ dataInicio: '2026-06-01', dataFinal: '2026-06-30' });
+      dataSolicitacaoInicio: '05/06/2026',
+      dataSolicitacaoFinal: '25/06/2026',
+    })).toEqual({
+      dataInicio: '2026-06-01',
+      dataFinal: '2026-06-30',
+      dataSolicitacaoInicio: '2026-06-05',
+      dataSolicitacaoFinal: '2026-06-25',
+    });
   });
 
   it('monta payload de paciente com codigos de procedimentos sem pontuacao', () => {

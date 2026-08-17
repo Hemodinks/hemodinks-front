@@ -222,6 +222,22 @@ export function PatientList({
               min={pacienteFilters.dataInicio || undefined}
               onChange={(value) => onFiltersChange((current) => ({ ...current, dataFinal: value }))}
             />
+            <DateInput
+              id="patient-request-start-date"
+              className="filter-field"
+              label="Data inicial da solicitação"
+              value={pacienteFilters.dataSolicitacaoInicio}
+              max={pacienteFilters.dataSolicitacaoFinal || undefined}
+              onChange={(value) => onFiltersChange((current) => ({ ...current, dataSolicitacaoInicio: value }))}
+            />
+            <DateInput
+              id="patient-request-end-date"
+              className="filter-field"
+              label="Data final da solicitação"
+              value={pacienteFilters.dataSolicitacaoFinal}
+              min={pacienteFilters.dataSolicitacaoInicio || undefined}
+              onChange={(value) => onFiltersChange((current) => ({ ...current, dataSolicitacaoFinal: value }))}
+            />
             <Button
               className="patient-clear-filters"
               onClick={onClearFilters}
@@ -262,6 +278,12 @@ export function PatientList({
                     {sortBy === 'data' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
                   </button>
                 </th>
+                <th>
+                  <button type="button" className="sort-header-button" onClick={() => onSortChange('dataAtendimento')} aria-sort={sortBy === 'dataAtendimento' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                    Data do atendimento
+                    {sortBy === 'dataAtendimento' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
+                  </button>
+                </th>
                 <th>Info</th>
                 <th>
                   <button type="button" className="sort-header-button" onClick={() => onSortChange('medico')} aria-sort={sortBy === 'medico' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
@@ -288,7 +310,7 @@ export function PatientList({
             <tbody>
               {pacientesLoading ? (
                 <tr>
-                  <td colSpan={8} className="empty-row">Carregando pacientes...</td>
+                  <td colSpan={9} className="empty-row">Carregando pacientes...</td>
                 </tr>
               ) : pacientes.length ? (
                 pacientes.map((paciente) => {
@@ -305,6 +327,7 @@ export function PatientList({
                       </div>
                     </td>
                     <td data-label="Data da solicitação">{toDisplayDate(paciente.data) || '-'}</td>
+                    <td data-label="Data do atendimento">{toDisplayDate(paciente.dataAtendimento || '') || '-'}</td>
                     <td data-label="Info">
                       <button
                         type="button"
@@ -387,7 +410,7 @@ export function PatientList({
                 })
               ) : (
                 <tr>
-                  <td colSpan={8} className="empty-row">Nenhum paciente encontrado.</td>
+                  <td colSpan={9} className="empty-row">Nenhum paciente encontrado.</td>
                 </tr>
               )}
             </tbody>
