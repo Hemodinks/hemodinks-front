@@ -21,6 +21,8 @@ export type PacienteFilters = {
   procedimento: string;
   dataInicio: string;
   dataFinal: string;
+  dataSolicitacaoInicio: string;
+  dataSolicitacaoFinal: string;
 };
 
 export type PacienteExportFormat = 'xlsx' | 'pdf';

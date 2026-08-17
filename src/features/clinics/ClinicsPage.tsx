@@ -23,6 +23,7 @@ import {
   normalizePhoneForPayload,
 } from '../../shared/utils/formatters';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
+import { PasswordInput } from '../../shared/components/PasswordInput';
 import { getTeamIdentificationDescription, TEAM_IDENTIFICATION_OPTIONS } from '../../shared/utils/teamIdentification';
 import { ClinicTeamsPanel } from '../settings/TeamAdminPanel';
 import './clinics.css';
@@ -41,6 +42,7 @@ type ClinicForm = {
   administradorNome: string;
   administradorEmail: string;
   administradorSenha: string;
+  administradorNovaSenha: string;
   administradorTelefone: string;
   criarEquipeInicial: boolean;
   equipeNome: string;
@@ -64,6 +66,7 @@ const EMPTY_FORM: ClinicForm = {
   administradorNome: '',
   administradorEmail: '',
   administradorSenha: '',
+  administradorNovaSenha: '',
   administradorTelefone: '',
   criarEquipeInicial: true,
   equipeNome: '',
@@ -268,6 +271,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
           modoIdentificacao: form.equipeModoIdentificacao,
         } : null,
       } : {
+        administradorNovaSenha: form.administradorNovaSenha || null,
         novaEquipe: form.criarEquipeInicial ? {
           nome: form.equipeNome.trim(),
           email: form.equipeEmail.trim(),
@@ -379,7 +383,8 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
             {editing && <label className="toggle-row"><input type="checkbox" checked={form.ativa} onChange={(event) => setForm((current) => ({ ...current, ativa: event.target.checked }))} />Clinica ativa</label>}
           </div>
           {form.plano === 'Parcial' && <fieldset className="clinic-modules-fieldset"><legend>Módulos contratados</legend><div className="clinic-module-options">{CLINIC_MODULE_OPTIONS.map((module) => <label key={module.value}><input type="checkbox" checked={form.modulosLiberados.includes(module.value)} onChange={(event) => setForm((current) => ({ ...current, modulosLiberados: event.target.checked ? [...current.modulosLiberados, module.value] : current.modulosLiberados.filter((value) => value !== module.value) }))} />{module.label}</label>)}</div></fieldset>}
-          {!editing && <fieldset className="clinic-admin-fields"><legend>Administrador inicial</legend><div className="clinic-form-grid"><TextField label="Nome" value={form.administradorNome} onValueChange={(administradorNome) => setForm((current) => ({ ...current, administradorNome: administradorNome.slice(0, MAX_NAME_LENGTH) }))} maxLength={MAX_NAME_LENGTH} required /><TextField label="Email" type="email" value={form.administradorEmail} onValueChange={(administradorEmail) => setForm((current) => ({ ...current, administradorEmail: administradorEmail.slice(0, MAX_EMAIL_LENGTH) }))} maxLength={MAX_EMAIL_LENGTH} required /><TextField label="Senha inicial" type="password" minLength={8} maxLength={MAX_ADMIN_PASSWORD_LENGTH} value={form.administradorSenha} onValueChange={(administradorSenha) => setForm((current) => ({ ...current, administradorSenha: administradorSenha.slice(0, MAX_ADMIN_PASSWORD_LENGTH) }))} required /><TextField label="Telefone" type="tel" inputMode="tel" autoComplete="tel" value={form.administradorTelefone} onValueChange={(administradorTelefone) => setForm((current) => ({ ...current, administradorTelefone: formatPhoneInput(administradorTelefone) }))} maxLength={MAX_BRAZIL_MOBILE_MASK_LENGTH} placeholder="+55 (DDD) 99999-9999" /></div></fieldset>}
+          {!editing && <fieldset className="clinic-admin-fields"><legend>Administrador inicial</legend><div className="clinic-form-grid"><TextField label="Nome" value={form.administradorNome} onValueChange={(administradorNome) => setForm((current) => ({ ...current, administradorNome: administradorNome.slice(0, MAX_NAME_LENGTH) }))} maxLength={MAX_NAME_LENGTH} required /><TextField label="Email" type="email" value={form.administradorEmail} onValueChange={(administradorEmail) => setForm((current) => ({ ...current, administradorEmail: administradorEmail.slice(0, MAX_EMAIL_LENGTH) }))} maxLength={MAX_EMAIL_LENGTH} required /><PasswordInput id="clinic-administrator-password" label="Senha inicial" value={form.administradorSenha} onChange={(administradorSenha) => setForm((current) => ({ ...current, administradorSenha: administradorSenha.slice(0, MAX_ADMIN_PASSWORD_LENGTH) }))} autoComplete="new-password" minLength={8} maxLength={MAX_ADMIN_PASSWORD_LENGTH} required /><TextField label="Telefone" type="tel" inputMode="tel" autoComplete="tel" value={form.administradorTelefone} onValueChange={(administradorTelefone) => setForm((current) => ({ ...current, administradorTelefone: formatPhoneInput(administradorTelefone) }))} maxLength={MAX_BRAZIL_MOBILE_MASK_LENGTH} placeholder="+55 (DDD) 99999-9999" /></div></fieldset>}
+          {editing && <fieldset className="clinic-admin-fields"><legend>Segurança do administrador principal</legend><div className="clinic-form-grid"><PasswordInput id="clinic-administrator-new-password" label="Definir nova senha" value={form.administradorNovaSenha} onChange={(administradorNovaSenha) => setForm((current) => ({ ...current, administradorNovaSenha: administradorNovaSenha.slice(0, MAX_ADMIN_PASSWORD_LENGTH) }))} autoComplete="new-password" minLength={8} maxLength={MAX_ADMIN_PASSWORD_LENGTH} /></div><small className="file-hint">A senha atual não pode ser visualizada. Deixe em branco para mantê-la; ao redefinir, o administrador deverá trocá-la no próximo acesso.</small></fieldset>}
           <fieldset className="clinic-team-fields" data-tour="clinics-team">
             <legend>{editing ? 'Adicionar equipe' : 'Equipe inicial'}</legend>
             <label className="clinic-team-toggle">
@@ -391,11 +396,11 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
               <div className="clinic-form-grid">
                 <TextField label="Nome da equipe" value={form.equipeNome} onValueChange={(equipeNome) => setForm((current) => ({ ...current, equipeNome: equipeNome.slice(0, MAX_NAME_LENGTH) }))} maxLength={MAX_NAME_LENGTH} required />
                 <TextField label="E-mail coletivo" type="email" value={form.equipeEmail} onValueChange={(equipeEmail) => setForm((current) => ({ ...current, equipeEmail: equipeEmail.slice(0, MAX_EMAIL_LENGTH) }))} maxLength={MAX_EMAIL_LENGTH} required />
-                <TextField label="Senha coletiva inicial" type="password" minLength={8} maxLength={MAX_ADMIN_PASSWORD_LENGTH} value={form.equipeSenha} onValueChange={(equipeSenha) => setForm((current) => ({ ...current, equipeSenha: equipeSenha.slice(0, MAX_ADMIN_PASSWORD_LENGTH) }))} required />
+                <PasswordInput id="clinic-team-password" label="Senha coletiva inicial" value={form.equipeSenha} onChange={(equipeSenha) => setForm((current) => ({ ...current, equipeSenha: equipeSenha.slice(0, MAX_ADMIN_PASSWORD_LENGTH) }))} autoComplete="new-password" minLength={8} maxLength={MAX_ADMIN_PASSWORD_LENGTH} required />
                 <TextField label="Telefone da equipe" type="tel" inputMode="tel" autoComplete="tel" value={form.equipeTelefone} onValueChange={(equipeTelefone) => setForm((current) => ({ ...current, equipeTelefone: formatPhoneInput(equipeTelefone) }))} maxLength={MAX_BRAZIL_MOBILE_MASK_LENGTH} placeholder="+55 (DDD) 99999-9999" />
               </div>
               <label>
-                Identificação dos funcionários
+                Identificação dos membros da equipe
                 <select value={form.equipeModoIdentificacao} onChange={(event) => setForm((current) => ({ ...current, equipeModoIdentificacao: event.target.value as TeamIdentificationMode }))}>
                   {TEAM_IDENTIFICATION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
