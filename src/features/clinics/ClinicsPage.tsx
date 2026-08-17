@@ -395,7 +395,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
                 <TextField label="Telefone da equipe" type="tel" inputMode="tel" autoComplete="tel" value={form.equipeTelefone} onValueChange={(equipeTelefone) => setForm((current) => ({ ...current, equipeTelefone: formatPhoneInput(equipeTelefone) }))} maxLength={MAX_BRAZIL_MOBILE_MASK_LENGTH} placeholder="+55 (DDD) 99999-9999" />
               </div>
               <label>
-                Identificação dos funcionários
+                Identificação dos membros da equipe
                 <select value={form.equipeModoIdentificacao} onChange={(event) => setForm((current) => ({ ...current, equipeModoIdentificacao: event.target.value as TeamIdentificationMode }))}>
                   {TEAM_IDENTIFICATION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
