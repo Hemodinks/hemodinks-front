@@ -326,9 +326,9 @@
 }
 
 .module-card-clinics {
-  --module-color: var(--action-secondary);
-  --module-soft: color-mix(in srgb, var(--action-secondary) 12%, transparent);
-  --module-border: color-mix(in srgb, var(--action-secondary) 32%, transparent);
+  --module-color: var(--clinics-accent);
+  --module-soft: color-mix(in srgb, var(--clinics-accent) 12%, transparent);
+  --module-border: color-mix(in srgb, var(--clinics-accent) 32%, transparent);
 }
 
 .module-card-settings {

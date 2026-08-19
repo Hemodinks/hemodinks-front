@@ -189,9 +189,9 @@
 }
 
 .side-nav-clinics {
-  --side-nav-color: var(--action-secondary);
-  --side-nav-soft: color-mix(in srgb, var(--action-secondary) 12%, transparent);
-  --side-nav-border: color-mix(in srgb, var(--action-secondary) 32%, transparent);
+  --side-nav-color: var(--clinics-accent);
+  --side-nav-soft: color-mix(in srgb, var(--clinics-accent) 12%, transparent);
+  --side-nav-border: color-mix(in srgb, var(--clinics-accent) 32%, transparent);
 }
 
 .side-nav-settings {

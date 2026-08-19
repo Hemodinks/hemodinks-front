@@ -50,7 +50,7 @@
 }
 
 .contextual-flow-drawer.view-clinics {
-  --contextual-flow-color: var(--action-secondary);
+  --contextual-flow-color: var(--clinics-accent);
 }
 
 .contextual-flow-drawer.view-settings {
