@@ -100,7 +100,7 @@ Rotas internas:
 | `/faturamento-medico` | `billing` | administrador, medico e controller |
 | `/grupos-medicos` | `medicalGroups` | apenas administrador |
 | `/agenda` | `agenda` | indisponivel para controller |
-| `/configuracoes` | `settings` | todos os perfis autenticados |
+| `/opcoes` | `settings` | administrador e SuperAdministrador; `/configuracoes` permanece como alias legado |
 
 `useRouteView` sincroniza URL, permissoes e view ativa. Se a rota nao for permitida para o perfil atual, a aplicacao redireciona para uma view valida.
 
@@ -384,6 +384,8 @@ Endpoints consumidos:
 | `GET` | `/api/configuracoes-sistema/current` | configuracao da empresa |
 | `GET` | `/api/configuracoes-sistema/current/foto-empresa` | logo/foto da empresa |
 | `PUT` | `/api/configuracoes-sistema/current` | atualizar configuracao da empresa |
+| `GET` | `/api/monitoramento/erros` | erros técnicos paginados e restritos à clínica do administrador |
+| `DELETE` | `/api/monitoramento/erros` | limpa o histórico técnico no escopo do administrador |
 
 ## Convencoes de manutencao
 

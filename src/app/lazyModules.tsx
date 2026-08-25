@@ -7,7 +7,7 @@ export const ReportsPage = lazy(() => import('../features/reports/ReportsPage').
 export const TutorialsPage = lazy(() => import('../features/tutorials/TutorialsPage').then((module) => ({ default: module.TutorialsPage })));
 export const ClinicsPage = lazy(() => import('../features/clinics/ClinicsPage').then((module) => ({ default: module.ClinicsPage })));
 export const MedicalGroupsPage = lazy(() => import('../features/medicalGroups/MedicalGroupsPage').then((module) => ({ default: module.MedicalGroupsPage })));
-export const SystemSettingsPage = lazy(() => import('../features/settings/SystemSettingsPage').then((module) => ({ default: module.SystemSettingsPage })));
+export const OptionsPage = lazy(() => import('../features/settings/OptionsPage').then((module) => ({ default: module.OptionsPage })));
 export const CbhpmLookupModal = lazy(() => import('../features/patients/CbhpmLookupModal').then((module) => ({ default: module.CbhpmLookupModal })));
 export const PatientInfoModal = lazy(() => import('../features/patients/PatientModals').then((module) => ({ default: module.PatientInfoModal })));
 export const PatientFilesModal = lazy(() => import('../features/patients/PatientModals').then((module) => ({ default: module.PatientFilesModal })));

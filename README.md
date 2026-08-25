@@ -142,18 +142,18 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `/faturamento-medico` | leitura financeira consolidada a partir dos pacientes |
 | `/grupos-medicos` | grupos de medicos usados em notificacoes da agenda |
 | `/agenda` | agenda e notificacoes internas |
-| `/configuracoes` | tema e troca de senha |
+| `/opcoes` | configurações da conta e monitoramento técnico de erros |
 | `/clinicas` | CRUD, identidade visual e troca segura de clinica para SuperAdministrador |
 
 ## Perfis e acesso
 
 | Perfil | Acesso principal |
 | --- | --- |
-| Administrador | dashboard, usuarios, pacientes, faturamento, grupos medicos, agenda e configuracoes |
+| Administrador | dashboard, usuarios, pacientes, faturamento, grupos medicos, agenda e opcoes |
 | SuperAdministrador | todos os modulos administrativos, CRUD de clinicas e troca segura de tenant |
-| Medicos | dashboard, meu cadastro, pacientes, faturamento, agenda e configuracoes |
-| Controller | pacientes, faturamento e configuracoes |
-| Paciente | meu cadastro, pacientes em modo leitura e configuracoes |
+| Medicos | dashboard, meu cadastro, pacientes, faturamento e agenda |
+| Controller | pacientes e faturamento |
+| Paciente | meu cadastro e pacientes em modo leitura |
 
 ## Funcionalidades
 

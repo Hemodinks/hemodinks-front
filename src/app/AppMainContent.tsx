@@ -14,7 +14,7 @@ import {
   PatientsPage,
   ReportsPage,
   TutorialsPage,
-  SystemSettingsPage,
+  OptionsPage,
   UsersPage,
 } from './lazyModules';
 
@@ -330,7 +330,7 @@ export function AppMainContent({
           }}
         />
       ) : activeView === 'settings' ? (
-        <SystemSettingsPage
+        <OptionsPage
           session={session}
           theme={theme}
           onThemeChange={onThemeChange}
