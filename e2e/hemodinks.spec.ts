@@ -634,7 +634,7 @@ test('exibe o fluxo contextual correspondente para o SuperAdministrador', async 
     ['/tutoriais-interativos', 'Tutoriais interativos'],
     ['/grupos-medicos', 'Grupos médicos'],
     ['/agenda', 'Agenda e notificações'],
-    ['/configuracoes', 'Configuração do sistema'],
+    ['/opcoes', 'Opções'],
     ['/clinicas', 'Clínicas'],
   ] as const;
 
