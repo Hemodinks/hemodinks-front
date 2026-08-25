@@ -255,7 +255,7 @@ export function Sidebar({
               onClick={onOpenSettings}
             >
               <Settings size={18} />
-              <span>Configuração</span>
+              <span>Opções</span>
             </button>
           )}
         </nav>

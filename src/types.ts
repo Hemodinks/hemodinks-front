@@ -330,6 +330,22 @@ export type UpdateSystemSettingsPayload = {
   fotoEmpresa?: string | null;
 };
 
+export type MonitoringError = {
+  timestamp: string;
+  module: string;
+  classFlow: string[];
+  method: string;
+  line?: number | null;
+  technicalDescription: string;
+  userName: string;
+  userEmail: string;
+  query?: string | null;
+  databaseOperation?: "SELECT" | "INSERT" | "UPDATE" | "DELETE" | null;
+  requestId?: string | null;
+};
+
+export type MonitoringErrorPage = PagedResult<MonitoringError>;
+
 export type PublicClinic = {
   id: number;
   nome: string;

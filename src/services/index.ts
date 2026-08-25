@@ -9,6 +9,7 @@ export * from "./eventsService";
 export * from "./hospitalsService";
 export * from "./licencaService";
 export * from "./medicalGroupsService";
+export * from "./monitoringService";
 export * from "./opmeService";
 export * from "./patientsService";
 export * from "./publicHolidaysService";

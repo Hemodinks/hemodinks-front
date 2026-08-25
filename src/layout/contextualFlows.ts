@@ -83,7 +83,7 @@ export const CONTEXTUAL_FLOWS: Record<AppView, ViewFlows> = {
     ],
   },
   settings: {
-    title: 'Configuração do sistema',
+    title: 'Opções',
     description: 'Ajuste a aparência da conta e suas credenciais de acesso.',
     flows: [
       { id: 'settings-theme', title: 'Alterar tema', steps: ['Encontre a seção “Tema”.', 'Selecione “Claro” ou “Escuro”.', 'A preferência é aplicada imediatamente.'] },
