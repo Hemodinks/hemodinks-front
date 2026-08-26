@@ -77,6 +77,7 @@ const paciente = {
   id: 10,
   userId: 20,
   data: '2026-06-01T00:00:00Z',
+  dataAtendimento: '2026-06-01T00:00:00Z',
   nomePaciente: 'Paciente Hemodinks',
   hospitalId: 1,
   hospital: 'Santa Clara - Mater Dei',
@@ -428,6 +429,10 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
       return route.fulfill({ json: paged(state.pacientes) });
     }
 
+    if (path === '/api/faturamentos-medicos/historico/arquivos') {
+      return route.fulfill({ json: [] });
+    }
+
     if (path === '/api/grupos-medicos/') {
       return route.fulfill({ json: paged([{
         id: 1,
@@ -659,12 +664,12 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   await expect(page).toHaveURL(/\/historico-faturamento$/);
   await expect(page.getByRole('heading', { name: 'Histórico', level: 2 })).toBeVisible();
 
-  const yearButton = page.getByRole('button', { name: /2026 1 faturamento/i });
+  const yearButton = page.getByRole('button', { name: /2026 1 atendimento/i });
   await expect(yearButton).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.getByRole('button', { name: /^Janeiro 0 faturamento/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Dezembro 0 faturamento/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Janeiro 0 atendimento/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Dezembro 0 atendimento/i })).toBeVisible();
 
-  const juneButton = page.getByRole('button', { name: /^Junho 1 faturamento/i });
+  const juneButton = page.getByRole('button', { name: /^Junho 1 atendimento/i });
   await juneButton.click();
   await expect(juneButton).toHaveAttribute('aria-expanded', 'true');
   await expect(page.getByRole('cell', { name: 'Paciente Hemodinks Particular', exact: true })).toBeVisible();

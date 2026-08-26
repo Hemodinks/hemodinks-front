@@ -53,6 +53,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
     },
   ), [billingQuery.data, isMedical, session.user.id, session.user.nome]);
   const history = useMemo(() => buildBillingHistory(records), [records]);
+  const historyFiles = Array.isArray(filesQuery.data) ? filesQuery.data : [];
   const summaryRecord = summaryRecordId == null
     ? null
     : records.find((record) => record.id === summaryRecordId) ?? null;
@@ -230,11 +231,11 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
                                     </label>
                                   )}
                                 </div>
-                                {(filesQuery.data ?? []).filter((file) => file.ano === yearGroup.year && file.mes === monthGroup.month).length === 0 ? (
+                                {historyFiles.filter((file) => file.ano === yearGroup.year && file.mes === monthGroup.month).length === 0 ? (
                                   <p className="billing-history-files-empty">Nenhum arquivo anexado neste mês.</p>
                                 ) : (
                                   <ul className="billing-history-file-list">
-                                    {(filesQuery.data ?? []).filter((file) => file.ano === yearGroup.year && file.mes === monthGroup.month).map((file) => (
+                                    {historyFiles.filter((file) => file.ano === yearGroup.year && file.mes === monthGroup.month).map((file) => (
                                       <li key={file.id}>
                                         <span><FileText size={17} /><span><strong>{file.nomeOriginal}</strong><small>{formatFileSize(file.tamanhoBytes)} · {new Date(file.dataUpload).toLocaleString('pt-BR')}</small></span></span>
                                         <span className="billing-history-file-actions">
