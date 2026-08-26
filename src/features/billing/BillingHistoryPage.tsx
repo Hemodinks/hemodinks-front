@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarClock, ChevronDown, Download, FileText, ReceiptText, Trash2, TriangleAlert, Upload, Wallet } from 'lucide-react';
+import { BarChart3, CalendarClock, ChevronDown, Download, FileText, History, ReceiptText, Trash2, TriangleAlert, Upload, Wallet } from 'lucide-react';
 import { AlertMessage, DataPanel, IconButton } from '../../shared/components/ui';
 import { deleteBillingHistoryFile, downloadBillingHistoryFile, getBillingHistoryFiles, uploadBillingHistoryFile } from '../../services';
 import { downloadBlob } from '../../shared/utils/downloadFile';
 import { formatCurrency } from '../../shared/utils/formatters';
 import { BillingSummaryModal } from './BillingPageComponents';
-import { buildBillingHistory } from './billingHistory';
+import { BillingHistoryCharts, BillingHistoryMonthSummary, QuarterlyDashboard } from './BillingHistoryInsights';
+import { buildBillingHistory, getBillingHistoryMonthTone, getBillingQuarterHighlights } from './billingHistory';
 import { loadBillingPatients } from './billingPageUtils';
 import type { BillingPageProps } from './billingPageTypes';
 import { buildBillingRecords, createEmptyBillingFilters, filterBillingRecords } from './billingUtils';
@@ -22,7 +23,9 @@ function formatFileSize(bytes: number) {
 
 export function BillingHistoryPage({ session, isMedical, canManageFiles }: BillingHistoryPageProps) {
   const [openYears, setOpenYears] = useState<Set<number>>(new Set());
-  const [openMonths, setOpenMonths] = useState<Set<string>>(new Set());
+  const [openMonth, setOpenMonth] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'history' | 'charts'>('history');
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [summaryRecordId, setSummaryRecordId] = useState<number | null>(null);
   const [busyFileKey, setBusyFileKey] = useState<string | null>(null);
   const [fileMessage, setFileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -62,9 +65,11 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
     const newestYear = history.years[0]?.year;
     if (newestYear == null) return;
     setOpenYears((current) => current.size ? current : new Set([newestYear]));
+    setSelectedYear((current) => current ?? newestYear);
   }, [history.years]);
 
   const toggleYear = (year: number) => {
+    setSelectedYear(year);
     setOpenYears((current) => {
       const next = new Set(current);
       if (next.has(year)) next.delete(year);
@@ -75,12 +80,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
 
   const toggleMonth = (year: number, month: number) => {
     const key = `${year}-${month}`;
-    setOpenMonths((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    setOpenMonth((current) => current === key ? null : key);
   };
 
   const handleFilesChange = async (year: number, month: number, selectedFiles: FileList | null) => {
@@ -141,6 +141,14 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
             <p>Consulte todos os atendimentos organizados pelo mês e ano da data de atendimento.</p>
           </div>
         </div>
+        <div className="billing-history-tabs" role="tablist" aria-label="Visualização do histórico">
+          <button type="button" role="tab" aria-selected={activeTab === 'history'} className={activeTab === 'history' ? 'is-active' : ''} onClick={() => setActiveTab('history')}>
+            <History size={18} />Histórico
+          </button>
+          <button type="button" role="tab" aria-selected={activeTab === 'charts'} className={activeTab === 'charts' ? 'is-active' : ''} onClick={() => setActiveTab('charts')}>
+            <BarChart3 size={18} />Gráficos
+          </button>
+        </div>
       </DataPanel>
 
       {billingQuery.error && (
@@ -167,11 +175,26 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
         <DataPanel><p className="empty-row" role="status">Carregando histórico de faturamento...</p></DataPanel>
       ) : history.years.length === 0 ? (
         <DataPanel><p className="empty-row" role="status">Nenhum faturamento disponível no histórico.</p></DataPanel>
+      ) : activeTab === 'charts' ? (
+        <BillingHistoryCharts
+          year={history.years.find((year) => year.year === selectedYear) ?? history.years[0]}
+          years={history.years}
+          selectedYear={selectedYear ?? history.years[0].year}
+          onChange={setSelectedYear}
+        />
       ) : (
-        <div className="billing-history-years">
+        <>
+          <QuarterlyDashboard
+            year={history.years.find((year) => year.year === selectedYear) ?? history.years[0]}
+            years={history.years}
+            selectedYear={selectedYear ?? history.years[0].year}
+            onChange={setSelectedYear}
+          />
+          <div className="billing-history-years">
           {history.years.map((yearGroup) => {
             const yearIsOpen = openYears.has(yearGroup.year);
             const yearPanelId = `billing-history-year-${yearGroup.year}`;
+            const quarterHighlights = getBillingQuarterHighlights(yearGroup);
             return (
               <DataPanel className={`billing-history-year ${yearIsOpen ? 'is-open' : ''}`} key={yearGroup.year}>
                 <button
@@ -193,10 +216,11 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
                   <div id={yearPanelId} className="billing-history-months">
                     {yearGroup.months.map((monthGroup) => {
                       const monthKey = `${yearGroup.year}-${monthGroup.month}`;
-                      const monthIsOpen = openMonths.has(monthKey);
+                      const monthIsOpen = openMonth === monthKey;
                       const monthPanelId = `billing-history-month-${monthKey}`;
+                      const monthTone = getBillingHistoryMonthTone(monthGroup.month, quarterHighlights);
                       return (
-                        <section className={`billing-history-month ${monthIsOpen ? 'is-open' : ''}`} key={monthKey}>
+                        <section className={`billing-history-month is-${monthTone} ${monthIsOpen ? 'is-open' : ''}`} key={monthKey}>
                           <button
                             type="button"
                             className="billing-history-month-toggle"
@@ -211,6 +235,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
 
                           {monthIsOpen && (
                             <div id={monthPanelId} className="billing-history-month-content">
+                              <BillingHistoryMonthSummary month={monthGroup} />
                               <div className="billing-history-files">
                                 <div className="billing-history-files-heading">
                                   <div><strong>Arquivos do mês</strong><small>Documentos vinculados a {monthGroup.name.toLocaleLowerCase('pt-BR')} de {yearGroup.year}.</small></div>
@@ -282,7 +307,8 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
               </DataPanel>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
 
       {summaryRecord && <BillingSummaryModal record={summaryRecord} authToken={session.token} onClose={() => setSummaryRecordId(null)} />}

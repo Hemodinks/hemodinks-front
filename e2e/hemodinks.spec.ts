@@ -663,6 +663,7 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
 
   await expect(page).toHaveURL(/\/historico-faturamento$/);
   await expect(page.getByRole('heading', { name: 'Histórico', level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Meses de maior e menor faturamento' })).toBeVisible();
 
   const yearButton = page.getByRole('button', { name: /2026 1 atendimento/i });
   await expect(yearButton).toHaveAttribute('aria-expanded', 'true');
@@ -670,9 +671,21 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   await expect(page.getByRole('button', { name: /^Dezembro 0 atendimento/i })).toBeVisible();
 
   const juneButton = page.getByRole('button', { name: /^Junho 1 atendimento/i });
+  await expect(juneButton.locator('..')).toHaveClass(/is-highest/);
+  await expect(page.getByRole('button', { name: /^Abril 0 atendimento/i }).locator('..')).toHaveClass(/is-lowest/);
   await juneButton.click();
   await expect(juneButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('heading', { name: 'Total faturado em Junho' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'Paciente Hemodinks Particular', exact: true })).toBeVisible();
+
+  const mayButton = page.getByRole('button', { name: /^Maio 0 atendimento/i });
+  await mayButton.click();
+  await expect(mayButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(juneButton).toHaveAttribute('aria-expanded', 'false');
+
+  await page.getByRole('tab', { name: 'Gráficos' }).click();
+  await expect(page.getByRole('heading', { name: 'Faturamento por mês' })).toBeVisible();
+  await expect(page.getByRole('img', { name: /Gráfico circular do faturamento trimestral de 2026/i })).toBeVisible();
   await expectNoGlobalHorizontalOverflow(page);
 });
 

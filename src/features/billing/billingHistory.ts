@@ -30,6 +30,16 @@ export type BillingHistoryYear = {
   months: BillingHistoryMonth[];
 };
 
+export type BillingQuarterHighlight = {
+  quarter: number;
+  months: BillingHistoryMonth[];
+  highestMonth: BillingHistoryMonth;
+  lowestMonth: BillingHistoryMonth;
+  totalGrossAmount: number;
+};
+
+export type BillingHistoryMonthTone = 'highest' | 'lowest' | 'neutral';
+
 export function getBillingHistoryDate(record: BillingRecord) {
   return record.attendanceDate;
 }
@@ -84,4 +94,44 @@ export function buildBillingHistory(records: BillingRecord[]) {
     }));
 
   return { years, recordsWithoutAttendanceDate };
+}
+
+export function getBillingQuarterHighlights(year: BillingHistoryYear): BillingQuarterHighlight[] {
+  return [0, 1, 2, 3].map((quarterIndex) => {
+    const months = year.months.slice(quarterIndex * 3, quarterIndex * 3 + 3);
+    const highestMonth = months.reduce((highest, month) => (
+      month.summary.totalGrossAmount > highest.summary.totalGrossAmount
+      || (month.summary.totalGrossAmount === highest.summary.totalGrossAmount
+        && month.summary.totalRecords > highest.summary.totalRecords)
+        ? month
+        : highest
+    ));
+    const lowestMonth = months
+      .filter((month) => month.month !== highestMonth.month)
+      .reduce((lowest, month) => (
+        month.summary.totalGrossAmount < lowest.summary.totalGrossAmount
+        || (month.summary.totalGrossAmount === lowest.summary.totalGrossAmount
+          && month.summary.totalRecords < lowest.summary.totalRecords)
+          ? month
+          : lowest
+      ));
+
+    return {
+      quarter: quarterIndex + 1,
+      months,
+      highestMonth,
+      lowestMonth,
+      totalGrossAmount: months.reduce((total, month) => total + month.summary.totalGrossAmount, 0),
+    };
+  });
+}
+
+export function getBillingHistoryMonthTone(
+  month: number,
+  highlights: BillingQuarterHighlight[],
+): BillingHistoryMonthTone {
+  const quarter = highlights.find((item) => item.months.some((itemMonth) => itemMonth.month === month));
+  if (quarter?.highestMonth.month === month) return 'highest';
+  if (quarter?.lowestMonth.month === month) return 'lowest';
+  return 'neutral';
 }
