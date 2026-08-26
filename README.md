@@ -140,6 +140,7 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `/meu-cadastro` | autoatendimento do medico ou paciente |
 | `/pacientes` | listagem, cadastro, observacoes e exportacoes de pacientes |
 | `/faturamento-medico` | leitura financeira consolidada a partir dos pacientes |
+| `/historico-faturamento` | histórico mensal, destaques trimestrais, gráficos e arquivos de faturamento |
 | `/grupos-medicos` | grupos de medicos usados em notificacoes da agenda |
 | `/agenda` | agenda e notificacoes internas |
 | `/opcoes` | configurações da conta e monitoramento técnico de erros |
@@ -169,10 +170,14 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 - observacoes por paciente com leitura, resposta e contadores de nao lidas
 - exportacao de pacientes em XLSX e PDF
 - faturamento medico derivado dos dados de pacientes e procedimentos
+- histórico de faturamento por data de atendimento, com dashboard trimestral, gráfico de barras mensal e gráfico circular trimestral
+- destaques verde/vermelho para maior e menor faturamento de cada trimestre e composição financeira no accordion mensal
+- tooltips acessíveis nos gráficos e arquivos vinculados por ano/mês
 - grupos medicos usados como destinatarios de notificacao
 - agenda com eventos, lembretes e notificacoes internas
 - configuracao do nome e da foto no CRUD exclusivo de clinicas
-- tema claro/escuro
+- tema claro/escuro, iniciando no escuro quando ainda não existe preferência salva
+- monitoramento técnico paginado com inspeção de fluxo, query e limpeza confirmada dos logs
 - Error Boundary com fallback visual
 - observabilidade opcional via Sentry, New Relic Browser e OTLP
 
@@ -211,10 +216,12 @@ Pontos principais:
 - `src/features/patients/export` separa schema de dados, escrita XLSX, PDFs e disparo de download.
 - `src/features/patients/usePatientFileActions.ts` isola seleção, validação e abertura de anexos.
 - `src/features/billing/billingAnalytics.ts` mantém filtros e consolidações financeiras como funções puras.
+- `src/features/billing/billingHistory.ts` agrupa os registros por data de atendimento e calcula os destaques trimestrais.
+- `src/features/billing/BillingHistoryPage.tsx` coordena abas, accordions e arquivos mensais; `BillingHistoryInsights.tsx` renderiza dashboard, gráficos, tooltips e composição do mês.
 - `src/types.ts` preserva a API pública enquanto contratos extensos são divididos em `src/types`.
 - `src/features/users/useUsersDomain.ts` cobre listagem, autoedicao, upload de arquivos e troca de senha.
 - `src/features/billing/BillingPage.tsx` compoe a tela financeira a partir de `GET /api/faturamentos-medicos`.
-- `src/features/settings/SystemSettingsPage.tsx` administra marca, tema e senha.
+- `src/features/settings/OptionsPage.tsx` alterna entre configurações e monitoramento; `SystemSettingsPage.tsx` administra tema e senha, e `MonitoringPage.tsx` apresenta os erros técnicos da clínica.
 - `src/observability.ts`, `src/newRelic.ts` e `src/otel.ts` inicializam a telemetria opcional.
 
 Mais detalhes em [TECHNICAL.md](./TECHNICAL.md).
@@ -243,6 +250,7 @@ Cache atual:
 Observacoes:
 
 - a tela de faturamento usa uma query propria (`billingRecords`) e carrega paginas de `GET /api/faturamentos-medicos` ate compor a visao agregada
+- o histórico reutiliza essa visão agregada e consulta os documentos mensais separadamente por `billingHistoryFiles`
 - a tela de notificacoes marca avisos da agenda como lidos via `POST /api/events/notifications/mark-read`
 - a confirmacao de reset envia `Idempotency-Key` em `POST /api/users/password/reset/confirm`
 

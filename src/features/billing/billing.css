@@ -920,12 +920,72 @@
 }
 
 .billing-history-bar-column {
+  position: relative;
   height: 100%;
   display: grid;
   grid-template-rows: 30px minmax(0, 1fr) 28px;
   align-items: end;
   gap: 5px;
   text-align: center;
+}
+
+.billing-history-bar-column:focus-visible {
+  outline: 2px solid var(--action-primary);
+  outline-offset: 3px;
+  border-radius: 7px;
+}
+
+.billing-history-chart-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 42px);
+  z-index: 20;
+  min-width: 170px;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: #fff;
+  background: #0f172a;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  text-align: left;
+  transform: translateX(-50%) translateY(4px);
+  transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
+}
+
+.billing-history-chart-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: 6px solid transparent;
+  border-top-color: #0f172a;
+  transform: translateX(-50%);
+}
+
+.billing-history-chart-tooltip strong,
+.billing-history-chart-tooltip b {
+  color: #fff;
+  font-size: 0.78rem;
+}
+
+.billing-history-chart-tooltip small {
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.billing-history-bar-column:hover .billing-history-chart-tooltip,
+.billing-history-bar-column:focus .billing-history-chart-tooltip,
+.billing-history-pie-hotspots button:hover .billing-history-chart-tooltip,
+.billing-history-pie-hotspots button:focus .billing-history-chart-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 .billing-history-bar-value { align-self: center; color: var(--muted); font-size: 0.65rem; font-weight: 800; white-space: nowrap; }
@@ -936,6 +996,7 @@
 .billing-history-pie-layout { display: grid; justify-items: center; gap: 22px; }
 
 .billing-history-pie {
+  position: relative;
   width: min(240px, 72vw);
   aspect-ratio: 1;
   display: grid;
@@ -943,6 +1004,37 @@
   border-radius: 50%;
   background: var(--billing-history-pie);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.billing-history-pie-hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.billing-history-pie-hotspots button {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: help;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
+.billing-history-pie-hotspots button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.billing-history-chart-tooltip.is-pie {
+  bottom: calc(100% + 8px);
 }
 
 .billing-history-pie::before { content: ''; width: 54%; aspect-ratio: 1; grid-area: 1 / 1; border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 1px var(--line); }

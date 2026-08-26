@@ -50,4 +50,16 @@ describe('guia contextual de fluxos', () => {
     expect(screen.getByRole('heading', { name: 'Pacientes - Cirurgias' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Cadastrar paciente ou cirurgia' })).toHaveAttribute('aria-expanded', 'true');
   });
+
+  it('documenta histórico, gráficos e monitoramento nas ajudas correspondentes', () => {
+    expect(CONTEXTUAL_FLOWS.billingHistory.title).toBe('Histórico');
+    expect(CONTEXTUAL_FLOWS.billingHistory.flows.map((flow) => flow.title)).toEqual([
+      'Consultar o histórico',
+      'Interpretar os destaques trimestrais',
+      'Consultar os gráficos',
+      'Gerenciar arquivos mensais',
+    ]);
+    expect(CONTEXTUAL_FLOWS.settings.flows.map((flow) => flow.title)).toContain('Consultar o monitoramento');
+    expect(CONTEXTUAL_FLOWS.settings.flows.map((flow) => flow.title)).toContain('Limpar os logs de erro');
+  });
 });
