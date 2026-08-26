@@ -258,7 +258,7 @@ async function loginViaUi(page: Page, initialRoute = '/', loginSession = session
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
 }
 
-async function mockApi(page: Page, loginSession = session, options: { sanitizedTutorial?: boolean } = {}) {
+async function mockApi(page: Page, loginSession = session, options: { sanitizedTutorial?: boolean; billingAmount?: string } = {}) {
   const sanitizedPatient = options.sanitizedTutorial ? {
     ...paciente,
     nomePaciente: 'Registro Fictício 001',
@@ -268,7 +268,7 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
     email: '',
     telefone: '',
     autorizacao: 'DEMO-001',
-  } : paciente;
+  } : { ...paciente, pagamento: options.billingAmount ?? paciente.pagamento };
   const state = {
     users: [user],
     pacientes: [sanitizedPatient],
@@ -431,6 +431,31 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
 
     if (path === '/api/faturamentos-medicos/historico/arquivos') {
       return route.fulfill({ json: [] });
+    }
+
+    if (path === '/api/monitoramento/erros') {
+      if (method === 'DELETE') return route.fulfill({ json: { clearedAt: '2026-08-26T12:00:00Z' } });
+      return route.fulfill({
+        json: {
+          items: [{
+            timestamp: '2026-08-26T11:42:18Z',
+            module: 'Faturamento',
+            classFlow: ['BillingController', 'BillingService', 'BillingRepository'],
+            method: 'ConsultarHistorico',
+            line: 142,
+            technicalDescription: 'Falha fictícia de demonstração ao consultar o histórico.',
+            userName: 'Usuário Fictício',
+            userEmail: 'tutorial@example.invalid',
+            query: 'SELECT * FROM Faturamentos WHERE ClinicaId = @ClinicaId',
+            databaseOperation: 'SELECT',
+            requestId: 'demo-request-001',
+          }],
+          page: 1,
+          pageSize: 25,
+          totalItems: 1,
+          totalPages: 1,
+        },
+      });
     }
 
     if (path === '/api/grupos-medicos/') {
@@ -658,7 +683,7 @@ test('exibe o fluxo contextual correspondente para o SuperAdministrador', async 
 });
 
 test('consulta o histórico de faturamento por ano e mês', async ({ page }) => {
-  await mockApi(page, superAdminSession);
+  await mockApi(page, superAdminSession, { billingAmount: 'R$ 125,45' });
   await loginViaUi(page, '/historico-faturamento', superAdminSession);
 
   await expect(page).toHaveURL(/\/historico-faturamento$/);
@@ -692,10 +717,22 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   await expect(juneBar.getByRole('tooltip')).toContainText('Junho de 2026');
   await expect(juneBar.getByRole('tooltip')).toContainText('2º trimestre');
 
-  const secondQuarter = page.getByRole('button', { name: /2º trimestre de 2026, Abril a Junho/i });
-  await secondQuarter.focus();
-  await expect(secondQuarter.getByRole('tooltip')).toBeVisible();
-  await expect(secondQuarter.getByRole('tooltip')).toContainText('Abril a Junho');
+  const secondQuarterSlice = page.getByLabel(/^2º trimestre de 2026, Abril a Junho/i);
+  await expect(secondQuarterSlice).toHaveAttribute('stroke', '#2563eb');
+  const pieSvg = page.getByRole('group', { name: /Participação dos trimestres no faturamento de 2026/i });
+  const pieBox = await pieSvg.boundingBox();
+  expect(pieBox).not.toBeNull();
+  await page.mouse.move(pieBox!.x + pieBox!.width / 2, pieBox!.y + pieBox!.height * (32 / 240));
+  const pieTooltip = page.getByRole('group', { name: /Gráfico circular do faturamento trimestral de 2026/i }).getByRole('tooltip');
+  await expect(pieTooltip).toBeVisible();
+  await expect(pieTooltip).toContainText('2º trimestre de 2026');
+  await expect(pieTooltip).toContainText('Abril a Junho');
+
+  const fourthQuarterLegend = page.getByRole('button', { name: /Consultar 4º trimestre de 2026/i });
+  await fourthQuarterLegend.focus();
+  await expect(pieTooltip).toContainText('4º trimestre de 2026');
+  await expect(pieTooltip).toContainText('Sem participação no faturamento anual');
+  await expect(page.locator('.billing-history-pie-slice[stroke="#d97706"]')).toHaveCount(0);
   await expectNoGlobalHorizontalOverflow(page);
 });
 
@@ -921,6 +958,51 @@ test('gera evidencias visuais desktop e mobile das telas principais', async ({ p
     await expect(page.getByRole('heading', { name: 'Novo paciente' })).toBeVisible();
     await captureCurrentScreenshot(page, testInfo, 'pacientes-formulario', width);
   }
+});
+
+test('gera capturas sanitizadas para o carrossel do portfolio', async ({ page }) => {
+  const outputDir = process.env.PORTFOLIO_SCREENSHOTS_DIR;
+  test.skip(!outputDir, 'Executado somente para atualizar as imagens publicas do portfolio.');
+  await mkdir(outputDir!, { recursive: true });
+  await mockApi(page, superAdminSession, { billingAmount: 'R$ 1.250,45' });
+  await page.setViewportSize({ width: 1600, height: 1000 });
+
+  const capture = async (fileName: string) => {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({
+      path: resolve(outputDir!, fileName),
+      type: 'jpeg',
+      quality: 88,
+      fullPage: false,
+      animations: 'disabled',
+    });
+  };
+
+  const captureRoute = async (route: string, fileName: string) => {
+    await loginViaUi(page, route, superAdminSession);
+    await expect(page.locator('main.app-shell')).toBeVisible();
+    const readySelector = route === '/dashboard' ? '.dashboard-workspace' : 'main.app-shell .workspace';
+    await expect(page.locator(readySelector).first()).toBeVisible();
+    await capture(fileName);
+  };
+
+  await captureRoute('/dashboard', '01-painel-inicial.jpg');
+  await captureRoute('/tutoriais-interativos', '02-tutoriais-interativos.jpg');
+  await captureRoute('/usuarios', '03-usuarios.jpg');
+  await captureRoute('/pacientes', '04-pacientes-cirurgias.jpg');
+  await captureRoute('/faturamento-medico', '05-gestao-faturamento.jpg');
+  await captureRoute('/relatorios', '06-relatorios.jpg');
+  await captureRoute('/historico-faturamento', '07-historico-faturamento.jpg');
+  await page.getByRole('tab', { name: 'Gráficos' }).click();
+  await expect(page.getByRole('heading', { name: 'Faturamento por mês' })).toBeVisible();
+  await capture('08-graficos-faturamento.jpg');
+  await captureRoute('/grupos-medicos', '09-grupos-medicos.jpg');
+  await captureRoute('/agenda', '10-agenda-notificacoes.jpg');
+  await captureRoute('/clinicas', '11-clinicas.jpg');
+  await captureRoute('/opcoes', '12-configuracoes.jpg');
+  await page.getByRole('button', { name: 'Monitoramento' }).click();
+  await expect(page.getByRole('heading', { name: 'Monitoramento' })).toBeVisible();
+  await capture('13-monitoramento.jpg');
 });
 
 async function openReportsTutorial(page: Page) {

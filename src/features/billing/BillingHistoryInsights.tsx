@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useState } from 'react';
 import { BarChart3, CircleDollarSign, PieChart, ReceiptText, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { DataPanel } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
@@ -81,32 +81,23 @@ type BillingHistoryChartsProps = BillingHistoryYearPickerProps & {
 };
 
 export function BillingHistoryCharts({ year, years, selectedYear, onChange }: BillingHistoryChartsProps) {
+  const [activeQuarter, setActiveQuarter] = useState<number | null>(null);
   const quarters = getBillingQuarterHighlights(year);
   const maximumMonthlyAmount = Math.max(...year.months.map((month) => month.summary.totalGrossAmount), 1);
   const annualAmount = year.summary.totalGrossAmount;
   let accumulatedPercentage = 0;
   const quarterMetrics = quarters.map((quarter, index) => {
     const start = accumulatedPercentage;
-    const percentage = annualAmount > 0 ? (quarter.totalGrossAmount / annualAmount) * 100 : 25;
+    const percentage = annualAmount > 0 ? (quarter.totalGrossAmount / annualAmount) * 100 : 0;
     accumulatedPercentage += percentage;
-    const midpointRadians = ((start + percentage / 2) / 100) * Math.PI * 2;
     return {
       quarter,
       color: QUARTER_COLORS[index],
-      percentage: annualAmount > 0 ? percentage : 0,
+      percentage,
       start,
-      end: accumulatedPercentage,
-      hotspotStyle: {
-        left: `${50 + 36 * Math.sin(midpointRadians)}%`,
-        top: `${50 - 36 * Math.cos(midpointRadians)}%`,
-      } as CSSProperties,
     };
   });
-  const pieStops = quarterMetrics.flatMap((metric) => [
-    `${metric.color} ${metric.start}%`,
-    `${metric.color} ${metric.end}%`,
-  ]);
-  const pieStyle = { '--billing-history-pie': `conic-gradient(${pieStops.join(', ')})` } as CSSProperties;
+  const activeQuarterMetric = quarterMetrics.find(({ quarter }) => quarter.quarter === activeQuarter) ?? null;
 
   return (
     <div className="billing-history-charts-view">
@@ -156,39 +147,66 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
         <DataPanel className="billing-history-chart-panel billing-history-pie-panel">
           <div className="billing-history-chart-title"><PieChart size={21} /><div><h3>Participação por trimestre</h3><p>Distribuição do total anual</p></div></div>
           <div className="billing-history-pie-layout">
-            <div className="billing-history-pie" style={pieStyle} role="group" aria-label={`Gráfico circular do faturamento trimestral de ${year.year}`}>
-              <span><small>Total anual</small><strong>{formatCurrency(annualAmount)}</strong></span>
-              <div className="billing-history-pie-hotspots">
-                {quarterMetrics.map(({ quarter, percentage, hotspotStyle }) => {
+            <div
+              className="billing-history-pie"
+              role="group"
+              aria-label={`Gráfico circular do faturamento trimestral de ${year.year}`}
+              onMouseLeave={() => setActiveQuarter(null)}
+            >
+              <svg className="billing-history-pie-svg" viewBox="0 0 240 240" role="group" aria-label={`Participação dos trimestres no faturamento de ${year.year}`}>
+                <circle className="billing-history-pie-track" cx="120" cy="120" r="88" pathLength="100" />
+                {quarterMetrics.filter(({ percentage }) => percentage > 0).map(({ quarter, color, percentage, start }) => {
                   const monthsLabel = `${quarter.months[0].name} a ${quarter.months[2].name}`;
-                  const tooltipId = `billing-pie-tooltip-${year.year}-${quarter.quarter}`;
                   return (
-                    <button
-                      type="button"
-                      style={hotspotStyle}
-                      aria-describedby={tooltipId}
+                    <circle
+                      className="billing-history-pie-slice"
+                      cx="120"
+                      cy="120"
+                      r="88"
+                      pathLength="100"
+                      fill="none"
+                      stroke={color}
+                      strokeDasharray={`${percentage} ${100 - percentage}`}
+                      strokeDashoffset={-start}
+                      tabIndex={0}
                       aria-label={`${quarter.quarter}º trimestre de ${year.year}, ${monthsLabel}, ${formatCurrency(quarter.totalGrossAmount)}, ${formatPercentage(percentage)} do total anual`}
+                      onMouseEnter={() => setActiveQuarter(quarter.quarter)}
+                      onFocus={() => setActiveQuarter(quarter.quarter)}
+                      onBlur={() => setActiveQuarter(null)}
                       key={quarter.quarter}
-                    >
-                      <span className="billing-history-chart-tooltip is-pie" id={tooltipId} role="tooltip">
-                        <strong>{quarter.quarter}º trimestre de {year.year}</strong>
-                        <small>{monthsLabel}</small>
-                        <b>{formatCurrency(quarter.totalGrossAmount)} · {formatPercentage(percentage)}</b>
-                      </span>
-                    </button>
+                    />
                   );
                 })}
-              </div>
+              </svg>
+              <span className="billing-history-pie-total"><small>Total anual</small><strong>{formatCurrency(annualAmount)}</strong></span>
+              {activeQuarterMetric && (
+                <span className="billing-history-chart-tooltip is-pie is-visible" role="tooltip">
+                  <strong><i style={{ backgroundColor: activeQuarterMetric.color }} />{activeQuarterMetric.quarter.quarter}º trimestre de {year.year}</strong>
+                  <small>{activeQuarterMetric.quarter.months[0].name} a {activeQuarterMetric.quarter.months[2].name}</small>
+                  <b>{formatCurrency(activeQuarterMetric.quarter.totalGrossAmount)} · {formatPercentage(activeQuarterMetric.percentage)}</b>
+                  {activeQuarterMetric.percentage === 0 && <small>Sem participação no faturamento anual.</small>}
+                </span>
+              )}
             </div>
             <ul className="billing-history-pie-legend">
               {quarterMetrics.map(({ quarter, color, percentage }) => (
-                <li title={`${quarter.months[0].name} a ${quarter.months[2].name} de ${year.year}: ${formatCurrency(quarter.totalGrossAmount)}`} key={quarter.quarter}>
-                  <i style={{ backgroundColor: color }} />
-                  <span><strong>{quarter.quarter}º trimestre</strong><small>{formatPercentage(percentage)}</small></span>
-                  <b>{formatCurrency(quarter.totalGrossAmount)}</b>
+                <li className={activeQuarter === quarter.quarter ? 'is-active' : ''} key={quarter.quarter}>
+                  <button
+                    type="button"
+                    aria-label={`Consultar ${quarter.quarter}º trimestre de ${year.year}, ${quarter.months[0].name} a ${quarter.months[2].name}`}
+                    onMouseEnter={() => setActiveQuarter(quarter.quarter)}
+                    onMouseLeave={() => setActiveQuarter(null)}
+                    onFocus={() => setActiveQuarter(quarter.quarter)}
+                    onBlur={() => setActiveQuarter(null)}
+                  >
+                    <i style={{ backgroundColor: color }} />
+                    <span><strong>{quarter.quarter}º trimestre</strong><small>{percentage > 0 ? formatPercentage(percentage) : 'Sem faturamento'}</small></span>
+                    <b>{formatCurrency(quarter.totalGrossAmount)}</b>
+                  </button>
                 </li>
               ))}
             </ul>
+            <p className="billing-history-pie-note">Trimestres sem faturamento permanecem na legenda, mas não ocupam uma fatia do gráfico.</p>
           </div>
         </DataPanel>
       </div>

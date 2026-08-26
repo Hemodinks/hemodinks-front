@@ -244,7 +244,7 @@ Responsabilidades:
 - fornecer tooltips por mouse e teclado com ano, mes, trimestre, valor e percentual
 - listar, enviar, baixar e excluir arquivos associados ao ano/mes; envio e exclusao dependem de perfil administrativo ou controller
 
-Os graficos sao implementados com HTML/CSS e `conic-gradient`, sem biblioteca externa. Os dados exibidos sao derivados dos mesmos `BillingRecord` usados pela tabela, evitando divergencia entre indicadores, graficos e detalhamento.
+Os graficos sao implementados sem biblioteca externa. As barras usam HTML/CSS e o grafico circular usa setores SVG com `strokeDasharray`, permitindo que toda a fatia seja interativa. Trimestres zerados permanecem consultaveis pela legenda, mas nao criam uma fatia invisivel. Os dados exibidos sao derivados dos mesmos `BillingRecord` usados pela tabela, evitando divergencia entre indicadores, graficos e detalhamento.
 
 ### Grupos medicos
 
