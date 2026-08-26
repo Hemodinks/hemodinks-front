@@ -7,6 +7,10 @@ import type { BillingHistoryMonth, BillingHistoryYear } from './billingHistory';
 
 const QUARTER_COLORS = ['#0f766e', '#2563eb', '#7c3aed', '#d97706'];
 
+function formatPercentage(value: number) {
+  return `${value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+}
+
 type BillingHistoryYearPickerProps = {
   years: BillingHistoryYear[];
   selectedYear: number;
@@ -81,11 +85,27 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
   const maximumMonthlyAmount = Math.max(...year.months.map((month) => month.summary.totalGrossAmount), 1);
   const annualAmount = year.summary.totalGrossAmount;
   let accumulatedPercentage = 0;
-  const pieStops = quarters.flatMap((quarter, index) => {
+  const quarterMetrics = quarters.map((quarter, index) => {
     const start = accumulatedPercentage;
-    accumulatedPercentage += annualAmount > 0 ? (quarter.totalGrossAmount / annualAmount) * 100 : 25;
-    return [`${QUARTER_COLORS[index]} ${start}%`, `${QUARTER_COLORS[index]} ${accumulatedPercentage}%`];
+    const percentage = annualAmount > 0 ? (quarter.totalGrossAmount / annualAmount) * 100 : 25;
+    accumulatedPercentage += percentage;
+    const midpointRadians = ((start + percentage / 2) / 100) * Math.PI * 2;
+    return {
+      quarter,
+      color: QUARTER_COLORS[index],
+      percentage: annualAmount > 0 ? percentage : 0,
+      start,
+      end: accumulatedPercentage,
+      hotspotStyle: {
+        left: `${50 + 36 * Math.sin(midpointRadians)}%`,
+        top: `${50 - 36 * Math.cos(midpointRadians)}%`,
+      } as CSSProperties,
+    };
   });
+  const pieStops = quarterMetrics.flatMap((metric) => [
+    `${metric.color} ${metric.start}%`,
+    `${metric.color} ${metric.end}%`,
+  ]);
   const pieStyle = { '--billing-history-pie': `conic-gradient(${pieStops.join(', ')})` } as CSSProperties;
 
   return (
@@ -109,8 +129,21 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
               const height = month.summary.totalGrossAmount > 0
                 ? Math.max((month.summary.totalGrossAmount / maximumMonthlyAmount) * 100, 4)
                 : 1;
+              const quarter = Math.ceil(month.month / 3);
+              const tooltipId = `billing-bar-tooltip-${year.year}-${month.month}`;
               return (
-                <div className="billing-history-bar-column" key={month.month}>
+                <div
+                  className="billing-history-bar-column"
+                  tabIndex={0}
+                  aria-describedby={tooltipId}
+                  aria-label={`${month.name} de ${year.year}, ${quarter}º trimestre, ${formatCurrency(month.summary.totalGrossAmount)}`}
+                  key={month.month}
+                >
+                  <span className="billing-history-chart-tooltip" id={tooltipId} role="tooltip">
+                    <strong>{month.name} de {year.year}</strong>
+                    <small>{quarter}º trimestre</small>
+                    <b>{formatCurrency(month.summary.totalGrossAmount)}</b>
+                  </span>
                   <span className="billing-history-bar-value">{formatCurrency(month.summary.totalGrossAmount)}</span>
                   <div className="billing-history-bar-track"><span style={{ height: `${height}%` }} /></div>
                   <strong>{month.name.slice(0, 3)}</strong>
@@ -123,14 +156,35 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
         <DataPanel className="billing-history-chart-panel billing-history-pie-panel">
           <div className="billing-history-chart-title"><PieChart size={21} /><div><h3>Participação por trimestre</h3><p>Distribuição do total anual</p></div></div>
           <div className="billing-history-pie-layout">
-            <div className="billing-history-pie" style={pieStyle} role="img" aria-label={`Gráfico circular do faturamento trimestral de ${year.year}`}>
+            <div className="billing-history-pie" style={pieStyle} role="group" aria-label={`Gráfico circular do faturamento trimestral de ${year.year}`}>
               <span><small>Total anual</small><strong>{formatCurrency(annualAmount)}</strong></span>
+              <div className="billing-history-pie-hotspots">
+                {quarterMetrics.map(({ quarter, percentage, hotspotStyle }) => {
+                  const monthsLabel = `${quarter.months[0].name} a ${quarter.months[2].name}`;
+                  const tooltipId = `billing-pie-tooltip-${year.year}-${quarter.quarter}`;
+                  return (
+                    <button
+                      type="button"
+                      style={hotspotStyle}
+                      aria-describedby={tooltipId}
+                      aria-label={`${quarter.quarter}º trimestre de ${year.year}, ${monthsLabel}, ${formatCurrency(quarter.totalGrossAmount)}, ${formatPercentage(percentage)} do total anual`}
+                      key={quarter.quarter}
+                    >
+                      <span className="billing-history-chart-tooltip is-pie" id={tooltipId} role="tooltip">
+                        <strong>{quarter.quarter}º trimestre de {year.year}</strong>
+                        <small>{monthsLabel}</small>
+                        <b>{formatCurrency(quarter.totalGrossAmount)} · {formatPercentage(percentage)}</b>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <ul className="billing-history-pie-legend">
-              {quarters.map((quarter, index) => (
-                <li key={quarter.quarter}>
-                  <i style={{ backgroundColor: QUARTER_COLORS[index] }} />
-                  <span><strong>{quarter.quarter}º trimestre</strong><small>{annualAmount > 0 ? `${((quarter.totalGrossAmount / annualAmount) * 100).toFixed(1)}%` : '0,0%'}</small></span>
+              {quarterMetrics.map(({ quarter, color, percentage }) => (
+                <li title={`${quarter.months[0].name} a ${quarter.months[2].name} de ${year.year}: ${formatCurrency(quarter.totalGrossAmount)}`} key={quarter.quarter}>
+                  <i style={{ backgroundColor: color }} />
+                  <span><strong>{quarter.quarter}º trimestre</strong><small>{formatPercentage(percentage)}</small></span>
                   <b>{formatCurrency(quarter.totalGrossAmount)}</b>
                 </li>
               ))}

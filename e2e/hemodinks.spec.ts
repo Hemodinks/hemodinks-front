@@ -685,7 +685,17 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
 
   await page.getByRole('tab', { name: 'Gráficos' }).click();
   await expect(page.getByRole('heading', { name: 'Faturamento por mês' })).toBeVisible();
-  await expect(page.getByRole('img', { name: /Gráfico circular do faturamento trimestral de 2026/i })).toBeVisible();
+  await expect(page.getByRole('group', { name: /Gráfico circular do faturamento trimestral de 2026/i })).toBeVisible();
+
+  const juneBar = page.getByLabel(/Junho de 2026, 2º trimestre/i);
+  await juneBar.hover();
+  await expect(juneBar.getByRole('tooltip')).toContainText('Junho de 2026');
+  await expect(juneBar.getByRole('tooltip')).toContainText('2º trimestre');
+
+  const secondQuarter = page.getByRole('button', { name: /2º trimestre de 2026, Abril a Junho/i });
+  await secondQuarter.focus();
+  await expect(secondQuarter.getByRole('tooltip')).toBeVisible();
+  await expect(secondQuarter.getByRole('tooltip')).toContainText('Abril a Junho');
   await expectNoGlobalHorizontalOverflow(page);
 });
 
