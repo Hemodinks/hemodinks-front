@@ -7,8 +7,7 @@ function loadStoredTheme(): Theme {
   const stored = localStorage.getItem(THEME_KEY) as Theme | null;
   if (stored) return stored;
 
-  // Fallback para a preferência do sistema
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 }
 
 function applyTheme(theme: Theme) {

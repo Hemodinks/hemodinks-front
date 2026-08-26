@@ -606,20 +606,21 @@ describe('App', () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    expect(document.documentElement).not.toHaveAttribute('data-theme');
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    expect(localStorage.getItem('hemodinks.theme')).toBe('dark');
 
     await user.click(screen.getByRole('button', { name: /abrir opções/i }));
     expect(await screen.findByRole('heading', { name: 'Opções', level: 1 })).toBeInTheDocument();
-
-    await user.click(screen.getByTitle('Usar tema escuro'));
-
-    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
-    expect(localStorage.getItem('hemodinks.theme')).toBe('dark');
 
     await user.click(screen.getByTitle('Usar tema claro'));
 
     expect(document.documentElement).not.toHaveAttribute('data-theme');
     expect(localStorage.getItem('hemodinks.theme')).toBe('light');
+
+    await user.click(screen.getByTitle('Usar tema escuro'));
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    expect(localStorage.getItem('hemodinks.theme')).toBe('dark');
   });
 
   it('remove a edicao da marca das configuracoes do sistema', async () => {
@@ -2151,13 +2152,14 @@ describe('App', () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
 
     await user.click(screen.getByRole('button', { name: /abrir opções/i }));
     expect(await screen.findByRole('heading', { name: 'Opções', level: 1 })).toBeInTheDocument();
 
-    await user.click(screen.getByTitle('Usar tema escuro'));
+    await user.click(screen.getByTitle('Usar tema claro'));
 
-    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
-    expect(screen.getByTitle('Usar tema claro')).toBeInTheDocument();
+    expect(document.documentElement).not.toHaveAttribute('data-theme');
+    expect(screen.getByTitle('Usar tema escuro')).toBeInTheDocument();
   });
 });

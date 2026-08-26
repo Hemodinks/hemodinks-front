@@ -621,6 +621,19 @@ describe('services api client', () => {
     await expect(getUsers('jwt-token')).rejects.toThrow('Email ja cadastrado');
   });
 
+  it('informa indisponibilidade temporaria quando a API esta inacessivel', async () => {
+    vi.spyOn(apiClient, 'request')
+      .mockRejectedValueOnce(new AxiosError('Network Error', 'ERR_NETWORK'))
+      .mockRejectedValueOnce(apiError(503));
+
+    await expect(getUsers('jwt-token')).rejects.toThrow(
+      'Sistema temporariamente indisponível. Tente novamente mais tarde.',
+    );
+    await expect(getUsers('jwt-token')).rejects.toThrow(
+      'Sistema temporariamente indisponível. Tente novamente mais tarde.',
+    );
+  });
+
   it('usa mensagem padrao para resposta 401', async () => {
     vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(401));
 

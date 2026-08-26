@@ -745,6 +745,217 @@
   background: rgba(15, 118, 110, 0.13);
 }
 
+.billing-history-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 0 22px;
+  border-top: 1px solid var(--line);
+}
+
+.billing-history-tabs button {
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.billing-history-tabs button:hover,
+.billing-history-tabs button.is-active {
+  color: var(--action-primary);
+}
+
+.billing-history-tabs button.is-active {
+  border-bottom-color: var(--action-primary);
+  background: color-mix(in srgb, var(--action-primary) 7%, transparent);
+}
+
+.billing-history-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.billing-history-section-header h3,
+.billing-history-section-header p {
+  margin: 0;
+}
+
+.billing-history-section-header h3 {
+  margin-top: 5px;
+  font-size: 1.15rem;
+}
+
+.billing-history-section-header p {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.billing-history-year-picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.billing-history-year-picker button {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--muted);
+  background: var(--input-bg);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.billing-history-year-picker button.is-active {
+  border-color: var(--action-primary);
+  color: #fff;
+  background: var(--action-primary);
+}
+
+.billing-history-quarter-dashboard,
+.billing-history-charts-heading,
+.billing-history-chart-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.billing-history-quarter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.billing-history-quarter-card {
+  min-width: 0;
+  display: grid;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--input-bg);
+}
+
+.billing-history-quarter-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.billing-history-quarter-title strong { color: var(--ink); }
+.billing-history-quarter-title span { color: var(--muted); font-size: 0.76rem; font-weight: 800; }
+
+.billing-history-quarter-highlight {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 4px 9px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.billing-history-quarter-highlight > span { min-width: 0; display: grid; gap: 2px; }
+.billing-history-quarter-highlight small { font-size: 0.68rem; font-weight: 800; }
+.billing-history-quarter-highlight b { grid-column: 2; font-size: 0.78rem; }
+
+.billing-history-quarter-highlight.is-highest {
+  border-color: #86efac;
+  color: #166534;
+  background: #dcfce7;
+}
+
+.billing-history-quarter-highlight.is-lowest {
+  border-color: #fca5a5;
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.billing-history-charts-view { display: grid; gap: 14px; }
+
+.billing-history-charts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
+  gap: 14px;
+}
+
+.billing-history-chart-panel { min-width: 0; }
+
+.billing-history-chart-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--action-primary);
+}
+
+.billing-history-chart-title h3,
+.billing-history-chart-title p { margin: 0; }
+.billing-history-chart-title h3 { color: var(--ink); font-size: 1.05rem; }
+.billing-history-chart-title p { margin-top: 3px; color: var(--muted); font-size: 0.8rem; font-weight: 700; }
+
+.billing-history-bar-panel { overflow-x: auto; }
+
+.billing-history-bar-chart {
+  min-width: 780px;
+  height: 330px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(48px, 1fr));
+  align-items: end;
+  gap: 8px;
+  padding: 18px 8px 0;
+  border-bottom: 1px solid var(--line);
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent 72px, color-mix(in srgb, var(--line) 65%, transparent) 73px);
+}
+
+.billing-history-bar-column {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 30px minmax(0, 1fr) 28px;
+  align-items: end;
+  gap: 5px;
+  text-align: center;
+}
+
+.billing-history-bar-value { align-self: center; color: var(--muted); font-size: 0.65rem; font-weight: 800; white-space: nowrap; }
+.billing-history-bar-track { height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.billing-history-bar-track span { width: min(36px, 78%); min-height: 2px; border-radius: 7px 7px 2px 2px; background: linear-gradient(180deg, #14b8a6, #0f766e); box-shadow: 0 5px 16px rgba(15, 118, 110, 0.2); }
+.billing-history-bar-column > strong { align-self: center; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; }
+
+.billing-history-pie-layout { display: grid; justify-items: center; gap: 22px; }
+
+.billing-history-pie {
+  width: min(240px, 72vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--billing-history-pie);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.billing-history-pie::before { content: ''; width: 54%; aspect-ratio: 1; grid-area: 1 / 1; border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 1px var(--line); }
+.billing-history-pie > span { z-index: 1; grid-area: 1 / 1; display: grid; gap: 4px; color: var(--ink); text-align: center; }
+.billing-history-pie small { color: var(--muted); font-size: 0.72rem; font-weight: 800; }
+
+.billing-history-pie-legend { width: 100%; display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.billing-history-pie-legend li { display: grid; grid-template-columns: 11px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px; border: 1px solid var(--line); border-radius: 7px; }
+.billing-history-pie-legend i { width: 11px; height: 11px; border-radius: 3px; }
+.billing-history-pie-legend span { display: grid; gap: 2px; }
+.billing-history-pie-legend small { color: var(--muted); font-weight: 800; }
+.billing-history-pie-legend b { color: var(--ink); font-size: 0.78rem; }
+
 .billing-history-years,
 .billing-history-months {
   display: grid;
@@ -820,6 +1031,25 @@
   background: var(--input-bg);
 }
 
+.billing-history-month.is-highest { border-color: #86efac; }
+.billing-history-month.is-lowest { border-color: #fca5a5; }
+
+.billing-history-month.is-highest > .billing-history-month-toggle {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.billing-history-month.is-lowest > .billing-history-month-toggle {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.billing-history-month.is-highest .billing-history-period small,
+.billing-history-month.is-highest .billing-history-month-value { color: #166534; }
+
+.billing-history-month.is-lowest .billing-history-period small,
+.billing-history-month.is-lowest .billing-history-month-value { color: #991b1b; }
+
 .billing-history-month-toggle {
   min-height: 66px;
   padding: 13px 16px;
@@ -834,6 +1064,48 @@
   border-top: 1px solid var(--line);
   background: var(--panel);
 }
+
+.billing-history-month-summary {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.billing-history-month-summary-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.billing-history-month-summary-heading h3 { margin: 4px 0 0; font-size: 1rem; }
+.billing-history-month-summary-heading > strong { color: #0f766e; font-size: 1.18rem; }
+
+.billing-history-month-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.billing-history-month-summary-grid article {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--input-bg);
+}
+
+.billing-history-month-summary-grid article > span { min-width: 0; display: grid; gap: 3px; }
+.billing-history-month-summary-grid small { color: var(--muted); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+.billing-history-month-summary-grid strong { color: var(--ink); font-size: 0.82rem; white-space: nowrap; }
+.billing-history-month-summary-grid .is-gross { color: #0f766e; background: color-mix(in srgb, #0f766e 8%, var(--input-bg)); }
+.billing-history-month-summary-grid .is-glosa { color: #b91c1c; background: color-mix(in srgb, #b91c1c 8%, var(--input-bg)); }
+.billing-history-month-summary-grid .is-net { color: #2563eb; background: color-mix(in srgb, #2563eb 8%, var(--input-bg)); }
 
 .billing-history-files {
   display: grid;
@@ -958,6 +1230,15 @@
     grid-column: 1 / -1;
   }
 
+  .billing-history-quarter-grid,
+  .billing-history-month-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .billing-history-charts-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .billing-checkbox,
   .billing-filter-actions {
     grid-column: 1 / -1;
@@ -1020,6 +1301,29 @@
   .billing-history-year-toggle,
   .billing-history-month-toggle {
     grid-template-columns: minmax(0, 1fr) 20px;
+  }
+
+  .billing-history-section-header,
+  .billing-history-month-summary-heading {
+    display: grid;
+  }
+
+  .billing-history-year-picker {
+    justify-content: flex-start;
+  }
+
+  .billing-history-quarter-grid,
+  .billing-history-month-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-history-tabs {
+    padding: 0 10px;
+  }
+
+  .billing-history-tabs button {
+    flex: 1;
+    justify-content: center;
   }
 
   .billing-history-totals,

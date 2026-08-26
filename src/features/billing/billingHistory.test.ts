@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BillingRecord } from './billingTypes';
-import { buildBillingHistory } from './billingHistory';
+import { buildBillingHistory, getBillingHistoryMonthTone, getBillingQuarterHighlights } from './billingHistory';
 
 function record(id: number, attendanceDate: string | null, paymentAmount: number): BillingRecord {
   return {
@@ -51,5 +51,29 @@ describe('histórico de faturamento', () => {
 
     expect(history.years).toHaveLength(0);
     expect(history.recordsWithoutAttendanceDate).toEqual([invalidRecord]);
+  });
+
+  it('identifica o maior e o menor faturamento de cada trimestre', () => {
+    const history = buildBillingHistory([
+      record(1, '2026-01-10T00:00:00Z', 100),
+      record(2, '2026-02-10T00:00:00Z', 300),
+      record(3, '2026-03-10T00:00:00Z', 200),
+      record(4, '2026-04-10T00:00:00Z', 50),
+    ]);
+    const highlights = getBillingQuarterHighlights(history.years[0]);
+
+    expect(highlights[0].highestMonth.name).toBe('Fevereiro');
+    expect(highlights[0].lowestMonth.name).toBe('Janeiro');
+    expect(highlights[0].totalGrossAmount).toBe(600);
+    expect(getBillingHistoryMonthTone(2, highlights)).toBe('highest');
+    expect(getBillingHistoryMonthTone(1, highlights)).toBe('lowest');
+    expect(getBillingHistoryMonthTone(3, highlights)).toBe('neutral');
+  });
+
+  it('mantém destaques distintos quando os valores do trimestre empatam', () => {
+    const history = buildBillingHistory([record(1, '2026-04-10T00:00:00Z', 50)]);
+    const highlights = getBillingQuarterHighlights(history.years[0]);
+
+    expect(highlights[0].highestMonth.month).not.toBe(highlights[0].lowestMonth.month);
   });
 });
