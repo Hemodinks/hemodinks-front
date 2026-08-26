@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { BarChart3, Building2, CalendarDays, ChevronDown, ClipboardList, FileText, LayoutDashboard, PlayCircle, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
+import { BarChart3, Building2, CalendarClock, CalendarDays, ChevronDown, ClipboardList, FileText, LayoutDashboard, PlayCircle, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -29,6 +29,7 @@ type SidebarProps = {
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
   onOpenBilling: () => void;
+  onOpenBillingHistory: () => void;
   onOpenReports: () => void;
   onOpenTutorials: () => void;
   onOpenMedicalGroups: () => void;
@@ -61,6 +62,7 @@ export function Sidebar({
   onOpenMyProfile,
   onOpenPatientsList,
   onOpenBilling,
+  onOpenBillingHistory,
   onOpenReports,
   onOpenTutorials,
   onOpenMedicalGroups,
@@ -69,7 +71,7 @@ export function Sidebar({
   onOpenClinics,
 }: SidebarProps) {
   const billingSubmenuId = useId();
-  const isBillingModuleActive = activeView === 'billing' || activeView === 'reports';
+  const isBillingModuleActive = activeView === 'billing' || activeView === 'billingHistory' || activeView === 'reports';
   const canAccessBillingModule = canAccessBilling;
   const [isBillingMenuOpen, setIsBillingMenuOpen] = useState(isBillingModuleActive);
 
@@ -205,6 +207,17 @@ export function Sidebar({
                   >
                     <BarChart3 size={16} />
                     <span>Relatórios</span>
+                  </button>
+                )}
+                {canAccessBilling && (
+                  <button
+                    type="button"
+                    className={`side-nav-billing-history side-nav-billing-subitem ${activeView === 'billingHistory' ? 'active' : ''}`}
+                    aria-current={activeView === 'billingHistory' ? 'page' : undefined}
+                    onClick={onOpenBillingHistory}
+                  >
+                    <CalendarClock size={16} />
+                    <span>Histórico</span>
                   </button>
                 )}
               </div>

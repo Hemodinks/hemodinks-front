@@ -30,6 +30,7 @@ function createProps(overrides: Partial<ComponentProps<typeof Sidebar>> = {}): C
     onOpenMyProfile: vi.fn(),
     onOpenPatientsList: vi.fn(),
     onOpenBilling: vi.fn(),
+    onOpenBillingHistory: vi.fn(),
     onOpenReports: vi.fn(),
     onOpenTutorials: vi.fn(),
     onOpenMedicalGroups: vi.fn(),
@@ -53,7 +54,11 @@ describe('menu lateral de faturamento', () => {
     await user.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('button', { name: 'Gestão de faturamento' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Histórico' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Relatórios' })).toBeVisible();
+    const reports = screen.getByRole('button', { name: 'Relatórios' });
+    const history = screen.getByRole('button', { name: 'Histórico' });
+    expect(reports.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     await user.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
@@ -83,6 +88,7 @@ describe('menu lateral de faturamento', () => {
 
     await user.click(screen.getByRole('button', { name: /^Faturamento/ }));
     expect(screen.getByRole('button', { name: 'Gestão de faturamento' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Histórico' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Relatórios' })).toBeVisible();
 
     rerender(<Sidebar {...createProps({ canAccessBilling: false })} />);

@@ -15,7 +15,7 @@ describe('guia contextual de fluxos', () => {
 
   it('possui conteúdo para todas as telas da aplicação', () => {
     const views = Object.keys(CONTEXTUAL_FLOWS) as AppView[];
-    expect(views).toHaveLength(11);
+    expect(views).toHaveLength(12);
     for (const view of views) {
       expect(CONTEXTUAL_FLOWS[view].flows.length).toBeGreaterThan(0);
       expect(CONTEXTUAL_FLOWS[view].flows.every((flow) => flow.steps.length > 0)).toBe(true);

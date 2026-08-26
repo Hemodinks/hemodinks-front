@@ -705,6 +705,232 @@
   text-align: center;
 }
 
+.billing-history-hero,
+.billing-history-year {
+  padding: 0;
+  overflow: hidden;
+}
+
+.billing-history-hero-copy {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px;
+}
+
+.billing-history-hero-copy h2,
+.billing-history-hero-copy p {
+  margin: 0;
+}
+
+.billing-history-hero-copy h2 {
+  margin-top: 4px;
+  font-size: 1.35rem;
+}
+
+.billing-history-hero-copy p {
+  margin-top: 7px;
+  color: var(--muted);
+}
+
+.billing-history-icon {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: #0f766e;
+  background: rgba(15, 118, 110, 0.13);
+}
+
+.billing-history-years,
+.billing-history-months {
+  display: grid;
+  gap: 12px;
+}
+
+.billing-history-year-toggle,
+.billing-history-month-toggle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto 20px;
+  align-items: center;
+  gap: 16px;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.billing-history-year-toggle {
+  min-height: 88px;
+  padding: 18px 22px;
+}
+
+.billing-history-period {
+  display: grid;
+  gap: 5px;
+}
+
+.billing-history-period strong {
+  font-size: 1.12rem;
+}
+
+.billing-history-period small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.billing-history-totals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px 18px;
+}
+
+.billing-history-totals span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.billing-history-chevron {
+  transition: transform 180ms ease;
+}
+
+.billing-history-year.is-open > .billing-history-year-toggle .billing-history-chevron,
+.billing-history-month.is-open > .billing-history-month-toggle .billing-history-chevron {
+  transform: rotate(180deg);
+}
+
+.billing-history-months {
+  padding: 0 18px 18px;
+}
+
+.billing-history-month {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.billing-history-month-toggle {
+  min-height: 66px;
+  padding: 13px 16px;
+}
+
+.billing-history-month-value {
+  color: #0f766e;
+  font-weight: 900;
+}
+
+.billing-history-month-content {
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.billing-history-files {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.billing-history-files-heading,
+.billing-history-file-list li,
+.billing-history-file-list li > span,
+.billing-history-file-actions {
+  display: flex;
+  align-items: center;
+}
+
+.billing-history-files-heading,
+.billing-history-file-list li {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.billing-history-files-heading > div,
+.billing-history-file-list li > span > span {
+  display: grid;
+  gap: 3px;
+}
+
+.billing-history-files-heading small,
+.billing-history-file-list small,
+.billing-history-files-empty {
+  color: var(--muted);
+}
+
+.billing-history-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 13px;
+  border-radius: 7px;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.billing-history-upload.is-busy {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.billing-history-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.billing-history-file-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.billing-history-file-list li {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--input-bg);
+}
+
+.billing-history-file-list li > span,
+.billing-history-file-actions {
+  gap: 9px;
+}
+
+.billing-history-files-empty {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.billing-history-empty {
+  margin: 0;
+  padding: 20px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.billing-history-table th,
+.billing-history-table td {
+  white-space: nowrap;
+}
+
 @media (max-width: 1120px) {
   .billing-filter-grid,
   .billing-summary-grid,
@@ -789,5 +1015,36 @@
 
   .billing-summary-main .billing-procedure-list {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-history-year-toggle,
+  .billing-history-month-toggle {
+    grid-template-columns: minmax(0, 1fr) 20px;
+  }
+
+  .billing-history-totals,
+  .billing-history-month-value {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+
+  .billing-history-chevron {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .billing-history-months {
+    padding: 0 10px 10px;
+  }
+
+  .billing-history-files-heading,
+  .billing-history-file-list li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .billing-history-upload {
+    justify-content: center;
   }
 }
