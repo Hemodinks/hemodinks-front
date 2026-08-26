@@ -38,6 +38,7 @@ export type BillingRecord = {
   hospitalName: string;
   convenioName: string;
   regime: 'convenio' | 'particular';
+  attendanceDate: string | null;
   surgeryDate: string | null;
   surgeryDateLabel: string;
   paymentDate: string | null;

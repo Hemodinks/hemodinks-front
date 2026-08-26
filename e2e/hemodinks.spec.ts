@@ -630,6 +630,7 @@ test('exibe o fluxo contextual correspondente para o SuperAdministrador', async 
     ['/usuarios', 'Usuários'],
     ['/pacientes', 'Pacientes - Cirurgias'],
     ['/faturamento-medico', 'Faturamento médico'],
+    ['/historico-faturamento', 'Histórico'],
     ['/relatorios', 'Relatórios'],
     ['/tutoriais-interativos', 'Tutoriais interativos'],
     ['/grupos-medicos', 'Grupos médicos'],
@@ -649,6 +650,25 @@ test('exibe o fluxo contextual correspondente para o SuperAdministrador', async 
     await expectNoGlobalHorizontalOverflow(page);
     await help.getByRole('button', { name: 'Fechar ajuda da tela' }).click();
   }
+});
+
+test('consulta o histórico de faturamento por ano e mês', async ({ page }) => {
+  await mockApi(page, superAdminSession);
+  await loginViaUi(page, '/historico-faturamento', superAdminSession);
+
+  await expect(page).toHaveURL(/\/historico-faturamento$/);
+  await expect(page.getByRole('heading', { name: 'Histórico', level: 2 })).toBeVisible();
+
+  const yearButton = page.getByRole('button', { name: /2026 1 faturamento/i });
+  await expect(yearButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('button', { name: /^Janeiro 0 faturamento/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Dezembro 0 faturamento/i })).toBeVisible();
+
+  const juneButton = page.getByRole('button', { name: /^Junho 1 faturamento/i });
+  await juneButton.click();
+  await expect(juneButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('cell', { name: 'Paciente Hemodinks Particular', exact: true })).toBeVisible();
+  await expectNoGlobalHorizontalOverflow(page);
 });
 
 test('mantem telas criticas sem overflow horizontal no mobile', async ({ page }) => {

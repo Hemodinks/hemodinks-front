@@ -164,6 +164,12 @@
   --side-nav-border: rgba(29, 78, 216, .32);
 }
 
+.side-nav-billing-history {
+  --side-nav-color: #0f766e;
+  --side-nav-soft: rgba(15, 118, 110, 0.12);
+  --side-nav-border: rgba(15, 118, 110, 0.32);
+}
+
 .side-nav-tutorials {
   --side-nav-color: #7c3aed;
   --side-nav-soft: rgba(124, 58, 237, 0.12);

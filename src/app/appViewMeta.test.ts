@@ -9,6 +9,7 @@ function handlers() {
     profile: vi.fn(),
     patients: vi.fn(),
     billing: vi.fn(),
+    billingHistory: vi.fn(),
     reports: vi.fn(),
     tutorials: vi.fn(),
     medicalGroups: vi.fn(),

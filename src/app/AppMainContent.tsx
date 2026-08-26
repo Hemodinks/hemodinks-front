@@ -8,6 +8,7 @@ import type { AuthSession, SelectClinicResponse } from '../types';
 import {
   AgendaPage,
   BillingPage,
+  BillingHistoryPage,
   ClinicsPage,
   MedicalGroupsPage,
   ModuleFallback,
@@ -33,6 +34,7 @@ type AccessState = {
   canManagePatientObservacoes: boolean;
   patientReadOnly: boolean;
   isAdmin: boolean;
+  isController: boolean;
   isSuperAdmin: boolean;
   isTeam: boolean;
   isMedical: boolean;
@@ -121,6 +123,7 @@ export function AppMainContent({
     canManagePatientObservacoes,
     patientReadOnly,
     isAdmin,
+    isController,
     isSuperAdmin,
     isTeam,
     isMedical,
@@ -291,6 +294,15 @@ export function AppMainContent({
           convenios={patientsDomain.convenios}
           isAdmin={isAdmin}
           isMedical={isMedical}
+        />
+      ) : activeView === 'billingHistory' ? (
+        <BillingHistoryPage
+          session={session}
+          medicalUsers={patientsDomain.medicalUsers}
+          convenios={patientsDomain.convenios}
+          isAdmin={isAdmin}
+          isMedical={isMedical}
+          canManageFiles={isAdmin || isController}
         />
       ) : activeView === 'reports' && canAccessReports ? (
         <ReportsPage session={session} companyName={companyName} isMedical={isMedical} />

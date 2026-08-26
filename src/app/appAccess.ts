@@ -11,6 +11,7 @@ import {
 export const MEDICAL_ALLOWED_ENTRY_PATHS = new Set([
   "/agenda",
   "/faturamento-medico",
+  "/historico-faturamento",
   "/relatorios",
   "/tutoriais-interativos",
   "/meu-cadastro",
@@ -95,6 +96,7 @@ export function getAppAccess(session: AuthSession | null) {
     canUseUsersRoute: canAccessUsers,
     canUseProfileRoute: canEditOwnUser,
     canUseBillingRoute: canAccessBilling,
+    canUseBillingHistoryRoute: canAccessBilling,
     canUseReportsRoute: canAccessReports,
     canUseTutorialsRoute: canAccessTutorials,
     canUseMedicalGroupsRoute: canAccessMedicalGroups,

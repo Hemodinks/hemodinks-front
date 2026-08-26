@@ -48,6 +48,7 @@ export function AppContent() {
   const {
     isAdmin,
     isSuperAdmin,
+    isController,
     isTeam,
     isMedical,
     canAccessDashboard,
@@ -71,6 +72,7 @@ export function AppContent() {
     canUseUsersRoute,
     canUseProfileRoute,
     canUseBillingRoute,
+    canUseBillingHistoryRoute,
     canUseReportsRoute,
     canUseTutorialsRoute,
     canUseMedicalGroupsRoute,
@@ -89,6 +91,7 @@ export function AppContent() {
     canUseUsersRoute,
     canUseProfileRoute,
     canUseBillingRoute,
+    canUseBillingHistoryRoute,
     canUseReportsRoute,
     canUseTutorialsRoute,
     canUseMedicalGroupsRoute,
@@ -259,18 +262,14 @@ export function AppContent() {
     medicalGroupsDomain.openMedicalGroupsList();
   };
 
-  const openBilling = () => {
+  const openBillingView = (view: 'billing' | 'billingHistory') => {
     resetProfileRouteState();
-
-    if (!canAccessBilling) {
-      openDashboard();
-      return;
-    }
-
-    navigateToViewFromInteraction("billing");
+    if (!canAccessBilling) return openDashboard();
+    navigateToViewFromInteraction(view);
     setModuleMode("list");
   };
-
+  const openBilling = () => openBillingView('billing');
+  const openBillingHistory = () => openBillingView('billingHistory');
   const openReports = () => {
     resetProfileRouteState();
     if (!canAccessReports) return openDashboard();
@@ -407,6 +406,7 @@ export function AppContent() {
       profile: usersDomain.openMyProfile,
       patients: patientsDomain.openPatientsList,
       billing: openBilling,
+      billingHistory: openBillingHistory,
       reports: openReports,
       tutorials: openTutorials,
       medicalGroups: openMedicalGroups,
@@ -455,6 +455,7 @@ export function AppContent() {
       onOpenMyProfile={usersDomain.openMyProfile}
       onOpenPatientsList={openPatientsListFromMenu}
       onOpenBilling={openBilling}
+      onOpenBillingHistory={openBillingHistory}
       onOpenReports={openReports}
       onOpenTutorials={openTutorials}
       onOpenMedicalGroups={openMedicalGroups}
@@ -504,6 +505,7 @@ export function AppContent() {
           patientReadOnly,
           isAdmin,
           isSuperAdmin,
+          isController,
           isTeam,
           isMedical,
           canAccessClinics,

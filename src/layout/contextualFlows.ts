@@ -66,6 +66,13 @@ export const CONTEXTUAL_FLOWS: Record<AppView, ViewFlows> = {
       { id: 'tutorials-watch', title: 'Assistir a um tutorial', steps: ['Escolha o tutorial desejado.', 'Use os controles do player para reproduzir, pausar ou ajustar o volume.', 'Acompanhe a narração e as legendas exibidas no vídeo.'] },
     ],
   },
+  billingHistory: {
+    title: 'Histórico',
+    description: 'Consulte o faturamento organizado por ano e mês de competência.',
+    flows: [
+      { id: 'billing-history-query', title: 'Consultar o histórico', steps: ['Abra o ano desejado.', 'Confira o total faturado no período.', 'Abra um mês para visualizar os faturamentos correspondentes.', 'Use a ação da linha para consultar os detalhes.'] },
+    ],
+  },
   medicalGroups: {
     title: 'Grupos médicos',
     description: 'Organize médicos em grupos utilizados pela agenda e pelas notificações.',
