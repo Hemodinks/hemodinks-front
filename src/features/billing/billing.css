@@ -980,9 +980,7 @@
 }
 
 .billing-history-bar-column:hover .billing-history-chart-tooltip,
-.billing-history-bar-column:focus .billing-history-chart-tooltip,
-.billing-history-pie-hotspots button:hover .billing-history-chart-tooltip,
-.billing-history-pie-hotspots button:focus .billing-history-chart-tooltip {
+.billing-history-bar-column:focus .billing-history-chart-tooltip {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
@@ -1001,52 +999,97 @@
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  background: var(--billing-history-pie);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
 }
 
-.billing-history-pie-hotspots {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  border-radius: 50%;
-  pointer-events: none;
+.billing-history-pie-svg {
+  width: 100%;
+  height: 100%;
+  grid-area: 1 / 1;
+  overflow: visible;
+  transform: rotate(-90deg);
 }
 
-.billing-history-pie-hotspots button {
-  position: absolute;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
+.billing-history-pie-track,
+.billing-history-pie-slice {
+  fill: none;
+  stroke-width: 42;
+}
+
+.billing-history-pie-track {
+  stroke: color-mix(in srgb, var(--line) 58%, transparent);
+}
+
+.billing-history-pie-slice {
   cursor: help;
-  pointer-events: auto;
-  transform: translate(-50%, -50%);
+  pointer-events: stroke;
+  transition: filter 160ms ease, opacity 160ms ease, stroke-width 160ms ease;
 }
 
-.billing-history-pie-hotspots button:focus-visible {
-  outline: 3px solid #fff;
-  outline-offset: 2px;
-  background: rgba(255, 255, 255, 0.16);
+.billing-history-pie-svg:has(.billing-history-pie-slice:hover) .billing-history-pie-slice:not(:hover),
+.billing-history-pie-svg:has(.billing-history-pie-slice:focus) .billing-history-pie-slice:not(:focus) {
+  opacity: 0.48;
+}
+
+.billing-history-pie-slice:hover,
+.billing-history-pie-slice:focus {
+  stroke-width: 48;
+  filter: brightness(1.08) drop-shadow(0 4px 6px rgba(15, 23, 42, 0.24));
+  outline: none;
 }
 
 .billing-history-chart-tooltip.is-pie {
   bottom: calc(100% + 8px);
 }
 
-.billing-history-pie::before { content: ''; width: 54%; aspect-ratio: 1; grid-area: 1 / 1; border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 1px var(--line); }
-.billing-history-pie > span { z-index: 1; grid-area: 1 / 1; display: grid; gap: 4px; color: var(--ink); text-align: center; }
-.billing-history-pie small { color: var(--muted); font-size: 0.72rem; font-weight: 800; }
+.billing-history-chart-tooltip.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.billing-history-chart-tooltip.is-pie strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.billing-history-chart-tooltip.is-pie strong i {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 3px;
+}
+
+.billing-history-pie-total {
+  z-index: 1;
+  grid-area: 1 / 1;
+  display: grid;
+  gap: 4px;
+  color: var(--ink);
+  text-align: center;
+  pointer-events: none;
+}
+
+.billing-history-pie-total small { color: var(--muted); font-size: 0.72rem; font-weight: 800; }
 
 .billing-history-pie-legend { width: 100%; display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
-.billing-history-pie-legend li { display: grid; grid-template-columns: 11px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px; border: 1px solid var(--line); border-radius: 7px; }
+.billing-history-pie-legend li { border: 1px solid var(--line); border-radius: 7px; transition: border-color 150ms ease, background 150ms ease; }
+.billing-history-pie-legend li.is-active { border-color: var(--action-primary); background: color-mix(in srgb, var(--action-primary) 8%, transparent); }
+.billing-history-pie-legend button { width: 100%; display: grid; grid-template-columns: 11px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px; border: 0; color: inherit; background: transparent; cursor: help; text-align: left; }
+.billing-history-pie-legend button:focus-visible { outline: 2px solid var(--action-primary); outline-offset: 2px; border-radius: 6px; }
 .billing-history-pie-legend i { width: 11px; height: 11px; border-radius: 3px; }
 .billing-history-pie-legend span { display: grid; gap: 2px; }
 .billing-history-pie-legend small { color: var(--muted); font-weight: 800; }
 .billing-history-pie-legend b { color: var(--ink); font-size: 0.78rem; }
+
+.billing-history-pie-note {
+  margin: -10px 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
 
 .billing-history-years,
 .billing-history-months {
