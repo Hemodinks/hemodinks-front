@@ -37,9 +37,9 @@
   --ink: #eef6ff;
   --muted: #b8c6d8;
   --line: rgba(104, 151, 205, 0.34);
-  --selection-accent: #fb7185;
-  --selection-accent-soft: rgba(251, 113, 133, 0.16);
-  --selection-accent-strong: rgba(251, 113, 133, 0.28);
+  --selection-accent: #e11d48;
+  --selection-accent-soft: rgba(225, 29, 72, 0.16);
+  --selection-accent-strong: rgba(225, 29, 72, 0.28);
   --panel: rgba(8, 22, 39, 0.78);
   --panel-strong: rgba(10, 25, 44, 0.94);
   --soft: rgba(93, 248, 234, 0.12);

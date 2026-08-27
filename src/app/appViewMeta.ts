@@ -15,10 +15,11 @@ export function getAppTitle(activeView: AppView) {
       : activeView === 'profile' ? 'Meu cadastro'
         : activeView === 'patients' ? 'Pacientes'
           : activeView === 'billing' ? 'Faturamento médico'
+            : activeView === 'billingHistory' ? 'Histórico'
             : activeView === 'reports' ? 'Relatórios'
               : activeView === 'tutorials' ? 'Tutoriais interativos'
             : activeView === 'medicalGroups' ? 'Grupos médicos'
-              : activeView === 'settings' ? 'Configuração do sistema'
+              : activeView === 'settings' ? 'Opções'
                 : activeView === 'clinics' ? 'Clínicas' : 'Agenda e notificações';
 }
 
@@ -28,10 +29,11 @@ export function getActiveModuleLabel(activeView: AppView) {
     : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? 'Pacientes'
         : activeView === 'billing' ? 'Faturamento médico'
+          : activeView === 'billingHistory' ? 'Histórico'
           : activeView === 'reports' ? 'Relatórios'
             : activeView === 'tutorials' ? 'Tutoriais interativos'
           : activeView === 'medicalGroups' ? 'Grupos médicos'
-            : activeView === 'settings' ? 'Configuração do sistema'
+            : activeView === 'settings' ? 'Opções'
               : activeView === 'clinics' ? 'Clínicas' : 'Agenda e notificações';
 }
 
@@ -47,7 +49,7 @@ export function getFormBreadcrumbLabel({
     : activeView === 'profile' ? 'Meu cadastro'
       : activeView === 'patients' ? editingPacienteId ? patientReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'
         : activeView === 'medicalGroups' ? editingGroupId ? 'Editar grupo médico' : 'Novo grupo médico'
-          : activeView === 'settings' ? 'Configuração do sistema'
+          : activeView === 'settings' ? 'Opções'
             : 'Agenda e notificações';
 }
 

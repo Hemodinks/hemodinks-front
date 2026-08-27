@@ -249,11 +249,11 @@ export function DashboardPage({
     ...(canAccessSettings
       ? [{
           id: 'settings' as const,
-          title: 'Configuração do sistema',
-          metric: 'Senha, tema e marca',
-          footerLabel: 'Ajustar preferências',
+          title: 'Opções',
+          metric: 'Configurações e monitoramento',
+          footerLabel: 'Gerenciar opções',
           className: 'module-card-settings',
-          ariaLabel: 'Abrir configuração do sistema',
+          ariaLabel: 'Abrir opções',
           icon: <Settings size={24} />,
           onOpen: onOpenSettings,
         }]

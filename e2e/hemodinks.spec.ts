@@ -77,6 +77,7 @@ const paciente = {
   id: 10,
   userId: 20,
   data: '2026-06-01T00:00:00Z',
+  dataAtendimento: '2026-06-01T00:00:00Z',
   nomePaciente: 'Paciente Hemodinks',
   hospitalId: 1,
   hospital: 'Santa Clara - Mater Dei',
@@ -257,7 +258,7 @@ async function loginViaUi(page: Page, initialRoute = '/', loginSession = session
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
 }
 
-async function mockApi(page: Page, loginSession = session, options: { sanitizedTutorial?: boolean } = {}) {
+async function mockApi(page: Page, loginSession = session, options: { sanitizedTutorial?: boolean; billingAmount?: string } = {}) {
   const sanitizedPatient = options.sanitizedTutorial ? {
     ...paciente,
     nomePaciente: 'Registro Fictício 001',
@@ -267,7 +268,7 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
     email: '',
     telefone: '',
     autorizacao: 'DEMO-001',
-  } : paciente;
+  } : { ...paciente, pagamento: options.billingAmount ?? paciente.pagamento };
   const state = {
     users: [user],
     pacientes: [sanitizedPatient],
@@ -426,6 +427,10 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
 
     if (path === '/api/faturamentos-medicos/') {
       return route.fulfill({ json: paged(state.pacientes) });
+    }
+
+    if (path === '/api/faturamentos-medicos/historico/arquivos') {
+      return route.fulfill({ json: [] });
     }
 
     if (path === '/api/grupos-medicos/') {
@@ -630,11 +635,12 @@ test('exibe o fluxo contextual correspondente para o SuperAdministrador', async 
     ['/usuarios', 'Usuários'],
     ['/pacientes', 'Pacientes - Cirurgias'],
     ['/faturamento-medico', 'Faturamento médico'],
+    ['/historico-faturamento', 'Histórico'],
     ['/relatorios', 'Relatórios'],
     ['/tutoriais-interativos', 'Tutoriais interativos'],
     ['/grupos-medicos', 'Grupos médicos'],
     ['/agenda', 'Agenda e notificações'],
-    ['/configuracoes', 'Configuração do sistema'],
+    ['/opcoes', 'Opções'],
     ['/clinicas', 'Clínicas'],
   ] as const;
 
@@ -649,6 +655,60 @@ test('exibe o fluxo contextual correspondente para o SuperAdministrador', async 
     await expectNoGlobalHorizontalOverflow(page);
     await help.getByRole('button', { name: 'Fechar ajuda da tela' }).click();
   }
+});
+
+test('consulta o histórico de faturamento por ano e mês', async ({ page }) => {
+  await mockApi(page, superAdminSession, { billingAmount: 'R$ 125,45' });
+  await loginViaUi(page, '/historico-faturamento', superAdminSession);
+
+  await expect(page).toHaveURL(/\/historico-faturamento$/);
+  await expect(page.getByRole('heading', { name: 'Histórico', level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Meses de maior e menor faturamento' })).toBeVisible();
+
+  const yearButton = page.getByRole('button', { name: /2026 1 atendimento/i });
+  await expect(yearButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('button', { name: /^Janeiro 0 atendimento/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Dezembro 0 atendimento/i })).toBeVisible();
+
+  const juneButton = page.getByRole('button', { name: /^Junho 1 atendimento/i });
+  await expect(juneButton.locator('..')).toHaveClass(/is-highest/);
+  await expect(page.getByRole('button', { name: /^Abril 0 atendimento/i }).locator('..')).toHaveClass(/is-lowest/);
+  await juneButton.click();
+  await expect(juneButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('heading', { name: 'Total faturado em Junho' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Paciente Hemodinks Particular', exact: true })).toBeVisible();
+
+  const mayButton = page.getByRole('button', { name: /^Maio 0 atendimento/i });
+  await mayButton.click();
+  await expect(mayButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(juneButton).toHaveAttribute('aria-expanded', 'false');
+
+  await page.getByRole('tab', { name: 'Gráficos' }).click();
+  await expect(page.getByRole('heading', { name: 'Faturamento por mês' })).toBeVisible();
+  await expect(page.getByRole('group', { name: /Gráfico circular do faturamento trimestral de 2026/i })).toBeVisible();
+
+  const juneBar = page.getByLabel(/Junho de 2026, 2º trimestre/i);
+  await juneBar.hover();
+  await expect(juneBar.getByRole('tooltip')).toContainText('Junho de 2026');
+  await expect(juneBar.getByRole('tooltip')).toContainText('2º trimestre');
+
+  const secondQuarterSlice = page.getByLabel(/^2º trimestre de 2026, Abril a Junho/i);
+  await expect(secondQuarterSlice).toHaveAttribute('stroke', '#2563eb');
+  const pieSvg = page.getByRole('group', { name: /Participação dos trimestres no faturamento de 2026/i });
+  const pieBox = await pieSvg.boundingBox();
+  expect(pieBox).not.toBeNull();
+  await page.mouse.move(pieBox!.x + pieBox!.width / 2, pieBox!.y + pieBox!.height * (32 / 240));
+  const pieTooltip = page.getByRole('group', { name: /Gráfico circular do faturamento trimestral de 2026/i }).getByRole('tooltip');
+  await expect(pieTooltip).toBeVisible();
+  await expect(pieTooltip).toContainText('2º trimestre de 2026');
+  await expect(pieTooltip).toContainText('Abril a Junho');
+
+  const fourthQuarterLegend = page.getByRole('button', { name: /Consultar 4º trimestre de 2026/i });
+  await fourthQuarterLegend.focus();
+  await expect(pieTooltip).toContainText('4º trimestre de 2026');
+  await expect(pieTooltip).toContainText('Sem participação no faturamento anual');
+  await expect(page.locator('.billing-history-pie-slice[stroke="#d97706"]')).toHaveCount(0);
+  await expectNoGlobalHorizontalOverflow(page);
 });
 
 test('mantem telas criticas sem overflow horizontal no mobile', async ({ page }) => {
