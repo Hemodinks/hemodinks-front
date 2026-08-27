@@ -139,6 +139,30 @@
   border: 1px solid #f2d68a;
 }
 
+.toast-message-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.toast-close {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  margin: -6px -6px -6px auto;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: currentColor;
+  background: transparent;
+  cursor: pointer;
+}
+
+.toast-close:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
 @media (max-width: 760px) {
   .primary-action,
   .ghost-button,

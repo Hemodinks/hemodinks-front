@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, CalendarClock, ChevronDown, Download, FileText, History, ReceiptText, Trash2, TriangleAlert, Upload, Wallet } from 'lucide-react';
-import { AlertMessage, DataPanel, IconButton } from '../../shared/components/ui';
+import { AlertMessage, DataPanel, IconButton, ToastMessage } from '../../shared/components/ui';
 import { deleteBillingHistoryFile, downloadBillingHistoryFile, getBillingHistoryFiles, uploadBillingHistoryFile } from '../../services';
 import { downloadBlob } from '../../shared/utils/downloadFile';
 import { formatCurrency } from '../../shared/utils/formatters';
@@ -163,7 +163,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
         </AlertMessage>
       )}
 
-      {fileMessage && <AlertMessage type={fileMessage.type}>{fileMessage.text}</AlertMessage>}
+      {fileMessage && <ToastMessage type={fileMessage.type}>{fileMessage.text}</ToastMessage>}
 
       {history.recordsWithoutAttendanceDate.length > 0 && (
         <AlertMessage type="warning" icon={<TriangleAlert size={17} />}>

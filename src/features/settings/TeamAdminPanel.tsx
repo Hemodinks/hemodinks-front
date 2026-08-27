@@ -25,7 +25,7 @@ import {
   getTeamIdentificationDescription,
   TEAM_IDENTIFICATION_OPTIONS,
 } from "../../shared/utils/teamIdentification";
-import { AlertMessage, Button } from "../../shared/components/ui";
+import { AlertMessage, Button, ToastMessage } from "../../shared/components/ui";
 
 type ClinicTeamsPanelProps = {
   session: AuthSession;
@@ -234,7 +234,7 @@ export function ClinicTeamsPanel({ session, clinicId, clinicName }: ClinicTeamsP
         </div>
       </div>
       {error && <AlertMessage type="error">{error}</AlertMessage>}
-      {message && <AlertMessage type="success">{message}</AlertMessage>}
+      {message && <ToastMessage type="success">{message}</ToastMessage>}
       <div className="team-list">
         {!loading && teams.length === 0 && (
           <p className="file-hint">
