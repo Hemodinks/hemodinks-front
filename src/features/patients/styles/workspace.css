@@ -48,21 +48,21 @@
 }
 
 .patient-export-actions .export-pdf-btn {
-  background: var(--action-accent);
-  border-color: color-mix(in srgb, var(--action-accent) 82%, black);
+  background: #6d28d9;
+  border-color: #5b21b6;
 }
 
 .patient-export-actions .export-pdf-btn:hover {
-  background: var(--action-accent-hover);
+  background: #5b21b6;
 }
 
 .patient-export-actions .export-xlsx-btn {
-  background: var(--action-success);
-  border-color: color-mix(in srgb, var(--action-success) 82%, black);
+  background: #15803d;
+  border-color: #166534;
 }
 
 .patient-export-actions .export-xlsx-btn:hover {
-  background: var(--action-success-hover);
+  background: #166534;
 }
 
 .export-scope-field {

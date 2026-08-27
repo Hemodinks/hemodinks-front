@@ -1,9 +1,10 @@
 import { HeartPulse } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 type LoadingOverlayProps = {
   active: boolean;
   className?: string;
-  message?: string;
+  message?: ReactNode;
 };
 
 export function LoadingOverlay({

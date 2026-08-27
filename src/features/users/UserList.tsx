@@ -1,6 +1,7 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Info, Mail, Pencil, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { User } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, SearchField, ToastMessage } from '../../shared/components/ui';
+import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import { formatPersonName, formatProfileName } from '../../shared/utils/formatters';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { UserAvatar } from './UserAvatar';
@@ -99,18 +100,8 @@ export function UserList({
           <table className="users-table">
             <thead>
               <tr>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('nome')} aria-sort={sortBy === 'nome' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Nome
-                    {sortBy === 'nome' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('perfil')} aria-sort={sortBy === 'perfil' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Perfil
-                    {sortBy === 'perfil' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
+                <SortableTableHeader field="nome" label="Nome" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
+                <SortableTableHeader field="perfil" label="Perfil" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
                 <th>Info</th>
                 <th>Contato</th>
                 {canManageUsers && <th aria-label="Ações" />}
