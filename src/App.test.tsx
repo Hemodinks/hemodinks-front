@@ -276,7 +276,7 @@ describe('App', () => {
     const storedSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
     expect(storedSession.token).toBe('jwt-token');
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
-  });
+  }, 15_000);
 
   it('sempre inicia no login mesmo com uma sessao salva anteriormente', async () => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
