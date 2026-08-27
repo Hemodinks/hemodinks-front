@@ -2,15 +2,21 @@ import { HeartPulse } from 'lucide-react';
 
 type LoadingOverlayProps = {
   active: boolean;
+  className?: string;
+  message?: string;
 };
 
-export function LoadingOverlay({ active }: LoadingOverlayProps) {
+export function LoadingOverlay({
+  active,
+  className,
+  message = 'Sincronizando dados...',
+}: LoadingOverlayProps) {
   if (!active) {
     return null;
   }
 
   return (
-    <div className="loading-overlay" aria-live="polite" aria-busy="true">
+    <div className={`loading-overlay${className ? ` ${className}` : ''}`} aria-live="polite" aria-busy="true">
       <div className="loading-overlay-panel" role="status">
         <div className="health-loader" aria-hidden="true">
           <span className="loader-ring" />
@@ -23,7 +29,7 @@ export function LoadingOverlay({ active }: LoadingOverlayProps) {
 
         <div className="loading-copy">
           <span className="loading-eyebrow">Processando</span>
-          <strong>Sincronizando dados...</strong>
+          <strong>{message}</strong>
         </div>
       </div>
     </div>

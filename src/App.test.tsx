@@ -289,6 +289,26 @@ describe('App', () => {
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
   });
 
+  it('exibe o loading de inicializacao no login enquanto carrega as clinicas', async () => {
+    let resolveClinics!: (clinics: Awaited<ReturnType<typeof api.listPublicClinics>>) => void;
+    vi.mocked(api.listPublicClinics).mockReturnValue(new Promise((resolve) => {
+      resolveClinics = resolve;
+    }));
+
+    render(<App />);
+
+    const loadingStatus = screen.getByRole('status');
+    expect(loadingStatus).toHaveTextContent(
+      'Aguarde um pouco... Indexando informações do Hemodinks.',
+    );
+    expect(loadingStatus.parentElement).toHaveClass('login-initial-loading');
+
+    resolveClinics([{ id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null }]);
+
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+    expect(screen.getByRole('option', { name: 'Hemodinks' })).toBeInTheDocument();
+  });
+
   it('restaura a sessao salva na aba ao recarregar a aplicacao', async () => {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
 
