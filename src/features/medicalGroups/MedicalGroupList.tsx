@@ -1,6 +1,7 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Pencil, Plus, RefreshCw, ShieldPlus, Trash2 } from 'lucide-react';
 import type { MedicalGroup } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, SearchField, ToastMessage } from '../../shared/components/ui';
+import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { formatPersonName } from '../../shared/utils/formatters';
 
@@ -88,30 +89,10 @@ export function MedicalGroupList({
           <table className="users-table medical-groups-table">
             <thead>
               <tr>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('nome')} aria-sort={sortBy === 'nome' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Grupo
-                    {sortBy === 'nome' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('membros')} aria-sort={sortBy === 'membros' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Médicos
-                    {sortBy === 'membros' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('ativo')} aria-sort={sortBy === 'ativo' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Status
-                    {sortBy === 'ativo' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('nomesmembros')} aria-sort={sortBy === 'nomesmembros' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Membros
-                    {sortBy === 'nomesmembros' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
+                <SortableTableHeader field="nome" label="Grupo" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
+                <SortableTableHeader field="membros" label="Médicos" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
+                <SortableTableHeader field="ativo" label="Status" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
+                <SortableTableHeader field="nomesmembros" label="Membros" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
                 <th aria-label="Ações" />
               </tr>
             </thead>

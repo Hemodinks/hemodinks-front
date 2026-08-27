@@ -6,27 +6,19 @@ import { useMedicalLicenseHydration, useSessionExpiration } from "../features/au
 import { useMedicalGroupsDomain } from "../features/medicalGroups/useMedicalGroupsDomain";
 import { usePatientsDomain } from "../features/patients/usePatientsDomain";
 import { useUsersDomain } from "../features/users/useUsersDomain";
-import { AppShell } from "../layout/AppShell";
 import type { AppView, ModuleMode } from "../appTypes";
 import { queryClient } from "../queryClient";
 import { useConfirmationDialog } from "../shared/components/ConfirmationDialog";
 import { useRouteView } from "../shared/hooks/useRouteView";
 import { useThemePreference } from "../shared/hooks/useThemePreference";
-import { formatProfileName, API_ASSET_BASE_URL } from "../shared/utils/formatters";
 import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from "./appAccess";
-import { AppMainContent } from "./AppMainContent";
-import { AppModals } from "./AppModals";
 import { AppPublicContent } from "./AppPublicContent";
 import { AppCredentialGate } from "./AppCredentialGate";
 import { buildSessionForSelectedClinic, getResetPasswordCompletedMessage } from "./appSession";
 import { createAppSortHandlers } from "./appSortHandlers";
-import {
-  buildBreadcrumbItems,
-  getAppTitle,
-} from "./appViewMeta";
 import { useAppChrome } from "./useAppChrome";
 import { TutorialProvider } from "../features/tutorials/TutorialProvider";
-import { getAllowedTutorialIds } from "../features/tutorials/tutorialAccess";
+import { AuthenticatedAppContent } from "./AuthenticatedAppContent";
 const SESSION_EXPIRED_MESSAGE =
   "Sua sessao expirou. Entre novamente para continuar.";
 export function AppContent() {
@@ -37,6 +29,7 @@ export function AppContent() {
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
   const [moduleMode, setModuleMode] = useState<ModuleMode>("list");
   const loginFlow = useLoginFlow({ session, persistSession });
+  const access = getAppAccess(session);
   const {
     loginLoading,
     resetPasswordLoading,
@@ -80,7 +73,7 @@ export function AppContent() {
     canUseSettingsRoute,
     canAccessClinics,
     canUseClinicsRoute,
-  } = getAppAccess(session);
+  } = access;
   const forceDashboardRoute =
     openDashboardAfterLogin &&
     Boolean(session && !session.user.precisaTrocarSenha);
@@ -359,193 +352,37 @@ export function AppContent() {
     );
   }
 
-  const currentUserProfile = formatProfileName(
-    session.user.perfilId,
-    session.user.perfilNome,
-  );
-  const activeUsersCount = appChrome.dashboardSummary?.activeUsersCount ?? 0;
-  const activePatientsCount =
-    appChrome.dashboardSummary?.activePatientsCount ??
-    patientsDomain.pacientesTotalItems;
-  const pendingPaymentsCount =
-    appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;
-  const patientFilesCount = appChrome.dashboardSummary?.patientFilesCount ?? 0;
-  const upcomingEventsCount =
-    appChrome.dashboardSummary?.upcomingEventsCount ?? 0;
-  const unreadObservationCount =
-    appChrome.dashboardSummary?.unreadObservationCount ?? 0;
-  const unreadAgendaNotificationCount =
-    appChrome.dashboardSummary?.unreadAgendaNotificationCount ?? 0;
-  const notificationCount =
-    appChrome.notificationsOpen && appChrome.notifications.length
-      ? appChrome.notifications.length
-      : pendingPaymentsCount +
-        upcomingEventsCount +
-        unreadObservationCount +
-        unreadAgendaNotificationCount;
-  const usersCount =
-    appChrome.dashboardSummary?.usersCount ?? usersDomain.usersTotalItems;
-  const pacientesCount =
-    appChrome.dashboardSummary?.pacientesCount ??
-    patientsDomain.pacientesTotalItems;
-  const currentClinicPhoto =
-    appChrome.systemSettings.fotoEmpresa && session.user.clinicaSlug
-      ? `${API_ASSET_BASE_URL}/api/public/clinicas/${session.user.clinicaSlug}/foto`
-      : null;
-  const breadcrumbItems = buildBreadcrumbItems({
-    activeView,
-    moduleMode,
-    editingId: usersDomain.editingId,
-    editingPacienteId: patientsDomain.editingPacienteId,
-    patientReadOnly,
-    editingGroupId: medicalGroupsDomain.editingGroupId,
-    openDashboard,
-    openModuleByView: {
-      dashboard: openDashboard,
-      users: usersDomain.openUsersList,
-      profile: usersDomain.openMyProfile,
-      patients: patientsDomain.openPatientsList,
-      billing: openBilling,
-      billingHistory: openBillingHistory,
-      reports: openReports,
-      tutorials: openTutorials,
-      medicalGroups: openMedicalGroups,
-      agenda: openAgenda,
-      settings: openSettings,
-      clinics: openClinics,
-    },
-  });
-  const allowedTutorialIds = getAllowedTutorialIds({ canAccessAgenda, canAccessBilling, canAccessClinics, canAccessPatients, canAccessReports, canAccessUsers });
-  return (
-    <TutorialProvider activeView={activeView} allowedTutorialIds={allowedTutorialIds}>
-    <AppShell
-      session={session}
-      isBusy={isBusy}
-      appTitle={getAppTitle(activeView)}
-      companyName={appChrome.companyName}
-      companyPhoto={currentClinicPhoto}
-      activeView={activeView}
-      breadcrumbItems={breadcrumbItems}
-      notificationsOpen={appChrome.notificationsOpen}
-      notificationCount={notificationCount}
-      theme={theme}
-      currentUserProfile={currentUserProfile}
-      canAccessDashboard={canAccessDashboard}
-      canAccessPatients={canAccessPatients}
-      canAccessUsers={canAccessUsers}
-      canEditOwnUser={canEditOwnUser}
-      canAccessBilling={canAccessBilling}
-      canAccessMedicalGroups={canAccessMedicalGroups}
-      canAccessSettings={canAccessSettings}
-      canAccessAgenda={canAccessAgenda}
-      canAccessClinics={canAccessClinics}
-      usersCount={usersCount}
-      pacientesCount={pacientesCount}
-      medicalGroupsCount={medicalGroupsDomain.medicalGroupsCount}
-      pendingPaymentsCount={pendingPaymentsCount}
-      unreadAgendaNotificationCount={unreadAgendaNotificationCount}
-      medicalUsers={patientsDomain.medicalUsers}
-      convenios={patientsDomain.convenios}
-      opmeFornecedores={patientsDomain.opmeFornecedores}
-      onToggleNotifications={() => void appChrome.handleToggleNotifications()}
-      onThemeToggle={toggleTheme}
-      onLogout={logout}
-      onOpenDashboard={openDashboard}
-      onOpenUsersList={usersDomain.openUsersList}
-      onOpenMyProfile={usersDomain.openMyProfile}
-      onOpenPatientsList={openPatientsListFromMenu}
-      onOpenBilling={openBilling}
-      onOpenBillingHistory={openBillingHistory}
-      onOpenReports={openReports}
-      onOpenTutorials={openTutorials}
-      onOpenMedicalGroups={openMedicalGroups}
-      onOpenAgenda={openAgenda}
-      onOpenSettings={openSettings}
-      onOpenClinics={openClinics}
-      modals={
-        <AppModals
-          session={session}
-          usersDomain={usersDomain}
-          patientsDomain={patientsDomain}
-          isAdmin={isAdmin}
-          notificationsOpen={appChrome.notificationsOpen}
-          notifications={appChrome.notifications}
-          notificationsLoading={appChrome.notificationsLoading}
-          notificationsError={appChrome.notificationsError}
-          notificationCount={notificationCount}
-          onCloseNotifications={() => appChrome.setNotificationsOpen(false)}
-          onOpenObservation={(pacienteId) => {
-            appChrome.setNotificationsOpen(false);
-            void patientsDomain.handleOpenPacienteObservacoesById(pacienteId);
-          }}
-          onCbhpmSortChange={handleCbhpmSortChange}
-          onPasswordChanged={usersDomain.handlePasswordChanged}
-          confirmationDialog={confirmationDialog}
-        />
-      }
-    >
-      <AppMainContent
-        session={session}
-        activeView={activeView}
-        moduleMode={moduleMode}
-        companyName={appChrome.companyName}
-        access={{
-          canAccessPatients,
-          canAccessUsers,
-          canEditOwnUser,
-          canAccessBilling,
-          canAccessReports,
-          canAccessMedicalGroups,
-          canAccessAgenda,
-          canAccessSettings,
-          canCreatePatients,
-          canEditPatients,
-          canDeletePatients,
-          canManagePatientObservacoes,
-          patientReadOnly,
-          isAdmin,
-          isSuperAdmin,
-          isController,
-          isTeam,
-          isMedical,
-          canAccessClinics,
-        }}
-        counts={{
-          usersCount,
-          pacientesCount,
-          activeUsersCount,
-          activePatientsCount,
-          pendingPaymentsCount,
-          patientFilesCount,
-          upcomingEventsCount,
-          unreadAgendaNotificationCount,
-        }}
-        usersDomain={usersDomain}
-        patientsDomain={patientsDomain}
-        medicalGroupsDomain={medicalGroupsDomain}
-        dashboardError={appChrome.dashboardError}
-        theme={theme}
-        navigation={{
-          openUsersList: usersDomain.openUsersList,
-          openMyProfile: usersDomain.openMyProfile,
-          openPatientsList: patientsDomain.openPatientsList,
-          openBilling,
-          openReports,
-          openTutorials,
-          openMedicalGroups,
-          openAgenda,
-          openSettings,
-          openClinics,
-        }}
-        sortHandlers={{
-          handleUserSortChange,
-          handlePacienteSortChange,
-          handleMedicalGroupSortChange,
-        }}
-        onThemeChange={setThemePreference}
-        onPasswordChanged={usersDomain.handlePasswordChanged}
-        onClinicSelected={handleClinicSelected}
-      />
-    </AppShell></TutorialProvider>
-  );
+  return <AuthenticatedAppContent
+    session={session}
+    activeView={activeView}
+    moduleMode={moduleMode}
+    isBusy={isBusy}
+    theme={theme}
+    access={access}
+    appChrome={appChrome}
+    usersDomain={usersDomain}
+    patientsDomain={patientsDomain}
+    medicalGroupsDomain={medicalGroupsDomain}
+    navigation={{
+      openDashboard,
+      openUsersList: usersDomain.openUsersList,
+      openMyProfile: usersDomain.openMyProfile,
+      openPatientsList: patientsDomain.openPatientsList,
+      openPatientsListFromMenu,
+      openBilling,
+      openBillingHistory,
+      openReports,
+      openTutorials,
+      openMedicalGroups,
+      openAgenda,
+      openSettings,
+      openClinics,
+    }}
+    sortHandlers={{ handleUserSortChange, handlePacienteSortChange, handleMedicalGroupSortChange, handleCbhpmSortChange }}
+    confirmationDialog={confirmationDialog}
+    onThemeToggle={toggleTheme}
+    onThemeChange={setThemePreference}
+    onLogout={logout}
+    onClinicSelected={handleClinicSelected}
+  />;
 }
