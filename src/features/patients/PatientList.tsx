@@ -16,7 +16,7 @@ import {
 import type { Convenio, MedicalUserOption, Paciente } from '../../types';
 import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
 import { DateInput } from '../../shared/components/DateInput';
-import { AlertMessage, Button, DataPanel, IconButton, MultiSelectComboboxField, SearchField, SelectField, TextField } from '../../shared/components/ui';
+import { AlertMessage, Button, DataPanel, IconButton, MultiSelectComboboxField, SearchField, SelectField, TextField, ToastMessage } from '../../shared/components/ui';
 import {
   formatPersonName,
   toDisplayDate,
@@ -249,7 +249,7 @@ export function PatientList({
         </div>
       </div>
 
-      {pacienteSuccessMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{pacienteSuccessMessage}</AlertMessage>}
+      {pacienteSuccessMessage && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{pacienteSuccessMessage}</ToastMessage>}
       {pacientesError && <AlertMessage type="error">{pacientesError}</AlertMessage>}
 
       <div className="carousel-shell">

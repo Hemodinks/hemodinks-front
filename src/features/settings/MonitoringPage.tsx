@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Database, Refre
 import { clearMonitoringErrors, getMonitoringErrors } from '../../services';
 import type { AuthSession, MonitoringErrorPage } from '../../types';
 import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
-import { AlertMessage, DataPanel } from '../../shared/components/ui';
+import { AlertMessage, DataPanel, ToastMessage } from '../../shared/components/ui';
 
 type MonitoringPageProps = {
   session: AuthSession;
@@ -92,7 +92,7 @@ export function MonitoringPage({ session }: MonitoringPageProps) {
       </DataPanel>
 
       {error && <AlertMessage type="error" icon={<AlertTriangle size={17} />}>{error}</AlertMessage>}
-      {success && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{success}</AlertMessage>}
+      {success && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{success}</ToastMessage>}
 
       {!loading && !error && result.items.length === 0 && (
         <DataPanel className="monitoring-empty">

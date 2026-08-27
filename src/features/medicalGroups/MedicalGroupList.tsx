@@ -1,6 +1,6 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Pencil, Plus, RefreshCw, ShieldPlus, Trash2 } from 'lucide-react';
 import type { MedicalGroup } from '../../types';
-import { AlertMessage, Button, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
+import { AlertMessage, Button, DataPanel, IconButton, SearchField, ToastMessage } from '../../shared/components/ui';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { formatPersonName } from '../../shared/utils/formatters';
 
@@ -71,7 +71,7 @@ export function MedicalGroupList({
         </div>
       </div>
 
-      {successMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</AlertMessage>}
+      {successMessage && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</ToastMessage>}
       {groupsError && <AlertMessage type="error">{groupsError}</AlertMessage>}
 
       <div className="carousel-shell">

@@ -15,6 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import './dashboard.css';
+import { ToastMessage } from '../../shared/components/ui';
 
 type DashboardPageProps = {
   companyName: string;
@@ -338,7 +339,7 @@ export function DashboardPage({
         </div>
       </div>
 
-      {successMessage && <p className="alert success"><CheckCircle2 size={17} />{successMessage}</p>}
+      {successMessage && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</ToastMessage>}
       {dashboardError && <p className="alert error">{dashboardError}</p>}
 
       <div className="module-grid">
