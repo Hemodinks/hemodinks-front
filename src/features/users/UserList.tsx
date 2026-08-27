@@ -1,6 +1,6 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Info, Mail, Pencil, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { User } from '../../types';
-import { AlertMessage, Button, DataPanel, IconButton, SearchField } from '../../shared/components/ui';
+import { AlertMessage, Button, DataPanel, IconButton, SearchField, ToastMessage } from '../../shared/components/ui';
 import { formatPersonName, formatProfileName } from '../../shared/utils/formatters';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { UserAvatar } from './UserAvatar';
@@ -82,7 +82,7 @@ export function UserList({
         </div>
       </div>
 
-      {successMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</AlertMessage>}
+      {successMessage && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</ToastMessage>}
       {usersError && <AlertMessage type="error">{usersError}</AlertMessage>}
 
       <div className="carousel-shell">

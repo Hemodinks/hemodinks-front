@@ -8,7 +8,7 @@ import {
   updatePlatformClinic,
 } from '../../services';
 import type { AuthSession, ClinicPayload, PlatformClinic, SelectClinicResponse, TeamIdentificationMode } from '../../types';
-import { AlertMessage, Button, DataPanel, IconButton, TextField } from '../../shared/components/ui';
+import { AlertMessage, Button, DataPanel, IconButton, TextField, ToastMessage } from '../../shared/components/ui';
 import { readProfilePhoto } from '../../shared/utils/files';
 import {
   ALLOWED_PROFILE_PHOTO_TYPES,
@@ -334,7 +334,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
           </div>
         </div>
 
-        {success && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{success}</AlertMessage>}
+        {success && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{success}</ToastMessage>}
         {error && <AlertMessage type="error">{error}</AlertMessage>}
 
         <div className="table-wrap" data-tour="clinics-switch">
