@@ -3,6 +3,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, Plus, RefreshCw, X } from 'luc
 import type { CbhpmGeral } from '../../types';
 import type { CbhpmFilters } from '../../appTypes';
 import { Modal } from '../../shared/components/Modal';
+import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import { AlertMessage, Button, IconButton, TextField } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
 import { normalizeCbhpmCodigo } from './patientUtils';
@@ -163,30 +164,10 @@ export const CbhpmLookupModal = memo(function CbhpmLookupModalContent({
           <table className="cbhpm-table">
             <thead>
               <tr>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('codigo')} aria-sort={sortBy === 'codigo' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Código
-                    {sortBy === 'codigo' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('procedimento')} aria-sort={sortBy === 'procedimento' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Procedimento
-                    {sortBy === 'procedimento' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('porte')} aria-sort={sortBy === 'porte' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Porte
-                    {sortBy === 'porte' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => onSortChange('valorreferencia')} aria-sort={sortBy === 'valorreferencia' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Valor referência
-                    {sortBy === 'valorreferencia' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
+                <SortableTableHeader field="codigo" label="Código" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
+                <SortableTableHeader field="procedimento" label="Procedimento" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
+                <SortableTableHeader field="porte" label="Porte" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
+                <SortableTableHeader field="valorreferencia" label="Valor referência" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
                 <th aria-label="Selecionar" />
               </tr>
             </thead>
