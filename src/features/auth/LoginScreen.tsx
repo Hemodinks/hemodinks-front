@@ -65,7 +65,7 @@ export function LoginScreen({
         active={isBusy || clinicsLoading}
         className={clinicsLoading ? 'login-initial-loading' : undefined}
         message={clinicsLoading
-          ? 'Aguarde um pouco... Indexando informações do Hemodinks.'
+          ? 'Seja bem vindo ao Hemodinks! Aguarde um instante, é rapidinho... Estamos indexando informações do Sistema.'
           : undefined}
       />
       <TechCredit />
