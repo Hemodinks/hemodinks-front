@@ -7,6 +7,7 @@ import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
+import { ToastMessage } from '../../shared/components/ui';
 import {
   MAX_EMAIL_LENGTH,
   MAX_PASSWORD_LENGTH,
@@ -123,7 +124,7 @@ export function LoginScreen({
           /></div>
 
           {loginError && <p className="alert error">{loginError}</p>}
-          {loginInfo && <p className="alert success">{loginInfo}</p>}
+          {loginInfo && <ToastMessage type="success">{loginInfo}</ToastMessage>}
 
           <div className="button-row login-actions">
             <button type="button" className="ghost-button" onClick={onResetPassword} disabled={resetPasswordLoading}>

@@ -6,6 +6,7 @@ import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
+import { ToastMessage } from '../../shared/components/ui';
 import {
   getErrorMessage,
   getPasswordStrength,
@@ -123,7 +124,7 @@ export function ResetPasswordScreen({
           />
 
           {error && <p className="alert error">{error}</p>}
-          {success && <p className="alert success">{success}</p>}
+          {success && <ToastMessage type="success">{success}</ToastMessage>}
 
           <div className="button-row reset-password-actions">
             <button type="button" className="ghost-button" onClick={onBackToLogin}>

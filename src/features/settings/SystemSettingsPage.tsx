@@ -3,7 +3,7 @@ import { CheckCircle2, KeyRound, Moon, Palette, Sun } from "lucide-react";
 import type { Theme } from "../../appTypes";
 import type { AuthSession } from "../../types";
 import { PasswordForm } from "../../shared/components/PasswordForm";
-import { AlertMessage, DataPanel } from "../../shared/components/ui";
+import { DataPanel, ToastMessage } from "../../shared/components/ui";
 import "./settings.css";
 
 type SystemSettingsPageProps = {
@@ -79,9 +79,9 @@ export function SystemSettingsPage({
             </div>
           </div>
           {passwordSuccess && (
-            <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>
+            <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>
               {passwordSuccess}
-            </AlertMessage>
+            </ToastMessage>
           )}
           <PasswordForm
             session={session}

@@ -26,7 +26,7 @@ import type {
 } from '../../types';
 import { getErrorMessage } from '../../shared/utils/formatters';
 import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
-import { AlertMessage, Button, DataPanel, IconButton } from '../../shared/components/ui';
+import { AlertMessage, Button, DataPanel, IconButton, ToastMessage } from '../../shared/components/ui';
 import { AgendaCalendarSection } from './AgendaCalendarSection';
 import { AgendaEventForm } from './AgendaEventForm';
 import {
@@ -416,7 +416,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
           </div>
         </div>
 
-        {successMessage && <AlertMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</AlertMessage>}
+        {successMessage && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</ToastMessage>}
         {error && <AlertMessage type="error">{error}</AlertMessage>}
         {holidayError && <AlertMessage type="warning">{holidayError}</AlertMessage>}
 
