@@ -1,6 +1,7 @@
 import { Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import type { PlatformClinic } from '../../types';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
+import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import { IconButton } from '../../shared/components/ui';
 import { API_ASSET_BASE_URL } from '../../shared/utils/formatters';
 import type { ClinicSortField } from './clinicFormModel';
@@ -18,16 +19,13 @@ type Props = {
 };
 
 export function ClinicsTable({ clinics, loading, currentClinicId, sortBy, sortDirection, onSortChange, onEdit, onDeactivate, onSwitch }: Props) {
-  const sortHeader = (field: ClinicSortField, label: string) => (
-    <button type="button" className="sort-header-button" onClick={() => onSortChange(field)} aria-sort={sortBy === field ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-      {label}{sortBy === field && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-    </button>
-  );
+  const sortHeader = (field: ClinicSortField, label: string) => <SortableTableHeader field={field} label={label}
+    activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />;
 
   return (
     <div className="table-wrap" data-tour="clinics-switch">
       <table className="users-table clinics-table">
-        <thead><tr><th>{sortHeader('nome', 'Clinica')}</th><th>{sortHeader('plano', 'Plano')}</th><th>{sortHeader('assinatura', 'Assinatura')}</th><th>{sortHeader('usuarios', 'Usuarios')}</th><th>{sortHeader('status', 'Status')}</th><th aria-label="Acoes" /></tr></thead>
+        <thead><tr>{sortHeader('nome', 'Clinica')}{sortHeader('plano', 'Plano')}{sortHeader('assinatura', 'Assinatura')}{sortHeader('usuarios', 'Usuarios')}{sortHeader('status', 'Status')}<th aria-label="Acoes" /></tr></thead>
         <tbody>
           {loading ? <tr><td colSpan={6} className="empty-row">Carregando clinicas...</td></tr> : clinics.map((clinic) => (
             <tr key={clinic.id}>

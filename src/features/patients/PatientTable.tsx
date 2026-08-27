@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, Eye, FileText, Info, MessageSquareText, Pencil, Trash2 } from 'lucide-react';
 import { IconButton } from '../../shared/components/ui';
+import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { formatPersonName, toDisplayDate } from '../../shared/utils/formatters';
 import { UserAvatar } from '../users/UserAvatar';
@@ -11,21 +12,10 @@ type PatientTableProps = Pick<PatientListProps,
   | 'onDeletePaciente' | 'onOpenPacienteFiles' | 'onOpenPacienteObservacoes' | 'onSelectPatientInfo'
 >;
 
-function SortableColumnHeader({ field, label, sortBy, sortDirection, onSortChange }: {
-  field: string; label: string; sortBy: string; sortDirection: 'asc' | 'desc'; onSortChange: (field: string) => void;
-}) {
-  const active = sortBy === field;
-  return <th aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-    <button type="button" className="sort-header-button" onClick={() => onSortChange(field)}>
-      {label}{active && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-    </button>
-  </th>;
-}
-
 export function PatientTable(props: PatientTableProps) {
   const patientActionLabel = props.patientReadOnly || !props.canEditPatients ? 'Visualizar' : 'Editar';
-  const sortHeader = (field: string, label: string) => <SortableColumnHeader field={field} label={label} sortBy={props.sortBy}
-    sortDirection={props.sortDirection} onSortChange={props.onSortChange} />;
+  const sortHeader = (field: string, label: string) => <SortableTableHeader field={field} label={label} activeField={props.sortBy}
+    direction={props.sortDirection} onSortChange={props.onSortChange} />;
   return <div className="carousel-shell">
     <button type="button" className="carousel-nav carousel-nav-left" onClick={(event) => scrollListCarousel(event, 'previous')}
       aria-label="Voltar no carrossel de pacientes" title="Voltar no carrossel"><ChevronLeft size={20} /></button>

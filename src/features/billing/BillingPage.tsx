@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertMessage, DataPanel, IconButton } from '../../shared/components/ui';
+import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import './billing.css';
 import { formatCurrency, formatPersonName } from '../../shared/utils/formatters';
 import { UserAvatar } from '../users/UserAvatar';
@@ -360,24 +361,9 @@ export function BillingPage({
           <table className="billing-table">
             <thead>
               <tr>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => changeSort('patient')} aria-sort={sortBy === 'patient' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Paciente
-                    {sortBy === 'patient' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => changeSort('doctor')} aria-sort={sortBy === 'doctor' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Cirurgião
-                    {sortBy === 'doctor' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
-                <th>
-                  <button type="button" className="sort-header-button" onClick={() => changeSort('status')} aria-sort={sortBy === 'status' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                    Status
-                    {sortBy === 'status' && <span className="sort-indicator">{sortDirection === 'asc' ? '▲' : '▼'}</span>}
-                  </button>
-                </th>
+                <SortableTableHeader field="patient" label="Paciente" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
+                <SortableTableHeader field="doctor" label="Cirurgião" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
+                <SortableTableHeader field="status" label="Status" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
                 <th>Data do pagamento</th>
                 <th>Resumo</th>
                 <th>Visualizar</th>
