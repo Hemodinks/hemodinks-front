@@ -10,6 +10,15 @@
   justify-items: center;
 }
 
+.loading-overlay.login-initial-loading {
+  background:
+    linear-gradient(135deg, rgba(4, 12, 25, 0.5), rgba(4, 35, 45, 0.5)),
+    linear-gradient(90deg, rgba(93, 248, 234, 0.06) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(93, 248, 234, 0.05) 1px, transparent 1px);
+  background-size: auto, 26px 26px, 26px 26px;
+  backdrop-filter: blur(4px);
+}
+
 .auth-panel {
   width: min(430px, 100%);
   padding: 30px;

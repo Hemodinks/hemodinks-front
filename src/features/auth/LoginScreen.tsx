@@ -60,7 +60,13 @@ export function LoginScreen({
 }: LoginScreenProps) {
   return (
     <main className="auth-screen">
-      <LoadingOverlay active={isBusy} />
+      <LoadingOverlay
+        active={isBusy || clinicsLoading}
+        className={clinicsLoading ? 'login-initial-loading' : undefined}
+        message={clinicsLoading
+          ? 'Aguarde um pouco... Indexando informações do Hemodinks.'
+          : undefined}
+      />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel" data-tour="login-overview">
