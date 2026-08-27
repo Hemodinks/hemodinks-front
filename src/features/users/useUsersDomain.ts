@@ -1,24 +1,12 @@
-import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  createUser,
-  deleteUser,
-  deleteUserArquivo,
-  getUser,
-  getUsers,
-  updateUser,
-  uploadUserArquivo,
-} from '../../services';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getUsers } from '../../services';
 import { queryClient } from '../../queryClient';
 import { queryKeys } from '../../shared/queryKeys';
 import {
-  DEFAULT_PROFILE_ID,
   formatProfileName,
   getErrorMessage,
-  MEDICAL_PROFILE_ID,
   PAGE_SIZE,
-  TEAM_PROFILE_ID,
-  SUPER_ADMIN_PROFILE_ID,
 } from '../../shared/utils/formatters';
 import {
   getPagedItems,
@@ -26,15 +14,12 @@ import {
   getPagedTotalPages,
   sortUsersForListing,
 } from '../../shared/utils/listing';
-import type { AuthSession, User, UserFormData, UserPayload } from '../../types';
-import {
-  toUserPayload,
-  validateUserForm,
-} from './userUtils';
+import type { User } from '../../types';
 import { useUserForm } from './useUserForm';
 import { useUserList } from './useUserList';
 import type { UseUsersDomainOptions } from './usersDomainTypes';
 import { useUserFileInputs } from './useUserFileInputs';
+import { useUserCrudActions } from './useUserCrudActions';
 
 const LIST_CACHE_TIME_MS = 20 * 1000;
 
@@ -127,20 +112,6 @@ export function useUsersDomain({
     enabled: usersQueryEnabled,
     staleTime: LIST_CACHE_TIME_MS,
   });
-  const saveUserMutation = useMutation({
-    mutationFn: ({ id, payload, token }: { id: number | null; payload: UserPayload; token: string }) => (
-      id ? updateUser(id, payload, token) : createUser(payload, token)
-    ),
-  });
-  const deleteUserMutation = useMutation({
-    mutationFn: ({ id, token }: { id: number; token: string }) => deleteUser(id, token),
-  });
-  const deleteUserArquivoMutation = useMutation({
-    mutationFn: ({ userId, arquivoId, token }: { userId: number; arquivoId: number; token: string }) => (
-      deleteUserArquivo(userId, arquivoId, token)
-    ),
-  });
-
   useEffect(() => {
     setUsersLoading(usersQuery.isFetching);
   }, [setUsersLoading, usersQuery.isFetching]);
@@ -173,6 +144,22 @@ export function useUsersDomain({
 
     await usersQuery.refetch();
   };
+  const userCrudActions = useUserCrudActions({
+    session,
+    canUseUserForm,
+    canAccessUsers,
+    isAdmin,
+    userList,
+    userForm,
+    userFormRequestRef,
+    setModuleMode,
+    navigateToView,
+    persistSession,
+    refreshUserList,
+    loadDashboardSummary,
+    onDeleteCurrentUser,
+    confirmAction,
+  });
 
   const cancelUserFormRequest = () => {
     userFormRequestRef.current += 1;
@@ -186,189 +173,6 @@ export function useUsersDomain({
     setSelectedContactUser(null);
     setShowPasswordModal(false);
     resetUserForm();
-  };
-
-  const handleEditUser = async (user: User) => {
-    if (!session) {
-      return;
-    }
-
-    const requestId = userFormRequestRef.current + 1;
-    userFormRequestRef.current = requestId;
-    applyUserToForm(user);
-    setEditingUserDetails(user);
-    setFormError('');
-    setSuccessMessage('');
-    setPendingUserFiles([]);
-    navigateToView(canAccessUsers ? 'users' : 'profile');
-    setModuleMode('form');
-
-    try {
-      setFormLoading(true);
-      const details = await getUser(user.id, session.token);
-      if (userFormRequestRef.current !== requestId) {
-        return;
-      }
-
-      setEditingUserDetails(details);
-      applyUserToForm(details);
-    } catch (error) {
-      if (userFormRequestRef.current !== requestId) {
-        return;
-      }
-
-      setFormError(getErrorMessage(error));
-    } finally {
-      if (userFormRequestRef.current === requestId) {
-        setFormLoading(false);
-      }
-    }
-  };
-
-  const handleDeleteUserArquivo = async (user: User, arquivoId: number) => {
-    if (!session) {
-      return;
-    }
-
-    setFormError('');
-
-    try {
-      await deleteUserArquivoMutation.mutateAsync({ userId: user.id, arquivoId, token: session.token });
-      const details = await getUser(user.id, session.token);
-      setEditingUserDetails(details);
-      applyUserToForm(details);
-    } catch (error) {
-      setFormError(getErrorMessage(error));
-    }
-  };
-
-  const handleSubmitUser = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!session) {
-      return;
-    }
-
-    if (!canUseUserForm && !isAdmin) {
-      setFormError('Sem permissao para editar este cadastro.');
-      return;
-    }
-
-    const validationError = validateUserForm(
-      formData,
-      editingUserDetails?.perfilId === TEAM_PROFILE_ID,
-      session.user.perfilId === SUPER_ADMIN_PROFILE_ID,
-    );
-
-    if (validationError) {
-      setFormError(validationError);
-      return;
-    }
-
-    const payload = toUserPayload(formData);
-
-    setFormLoading(true);
-    setFormError('');
-    setSuccessMessage('');
-
-    try {
-      let savedUser: User;
-
-      if (editingId) {
-        savedUser = await saveUserMutation.mutateAsync({ id: editingId, payload, token: session.token });
-        setSuccessMessage('Usuário atualizado.');
-      } else {
-        savedUser = await saveUserMutation.mutateAsync({ id: null, payload, token: session.token });
-        setSuccessMessage('Usuário cadastrado com senha temporária. Oriente a alteração no primeiro acesso.');
-      }
-
-      if (savedUser.perfilId === MEDICAL_PROFILE_ID) {
-        for (const file of pendingUserFiles) {
-          await uploadUserArquivo(savedUser.id, file, session.token);
-        }
-      }
-
-      setUsers((current) => sortUsersForListing(
-        editingId
-          ? current.map((user) => (user.id === savedUser.id ? savedUser : user))
-          : [savedUser, ...current],
-      ));
-
-      if (editingId && savedUser.id === session.user.id) {
-        persistSession({
-          ...session,
-          user: {
-            ...session.user,
-            nome: savedUser.nome,
-            email: savedUser.email,
-            cpf: savedUser.cpf ?? null,
-            crm: savedUser.crm ?? null,
-            crmUf: savedUser.crmUf ?? null,
-            fotoPerfil: savedUser.fotoPerfil ?? null,
-            perfilId: savedUser.perfilId || DEFAULT_PROFILE_ID,
-            perfilNome: formatProfileName(savedUser.perfilId || DEFAULT_PROFILE_ID, savedUser.perfilNome),
-          },
-        });
-      }
-
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(session.token) }),
-      ]);
-      resetUserForm();
-      setCurrentPage(1);
-      setModuleMode('list');
-      await refreshUserList(true);
-      if (!isAdmin) {
-        navigateToView('dashboard');
-      }
-      await loadDashboardSummary(session.token, true);
-    } catch (error) {
-      setFormError(getErrorMessage(error));
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const deleteSelectedUser = async (user: User) => {
-    if (!session) {
-      return;
-    }
-
-    setUsersError('');
-    setSuccessMessage('');
-
-    try {
-      await deleteUserMutation.mutateAsync({ id: user.id, token: session.token });
-
-      if (user.id === session.user.id) {
-        onDeleteCurrentUser();
-        return;
-      }
-
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(session.token) }),
-      ]);
-      setSuccessMessage('Usuário excluído.');
-      await refreshUserList(true);
-      await loadDashboardSummary(session.token, true);
-    } catch (error) {
-      setUsersError(getErrorMessage(error));
-    }
-  };
-
-  const handleDeleteUser = (user: User) => {
-    confirmAction({
-      tone: 'delete',
-      title: 'Excluir usuário?',
-      message: `Deseja excluir "${user.nome}"? Esta ação não poderá ser desfeita.`,
-      confirmLabel: 'Sim',
-      cancelLabel: 'Não',
-      onConfirm: () => deleteSelectedUser(user),
-    });
   };
 
   const handlePasswordChanged = (message: string) => {
@@ -439,7 +243,7 @@ export function useUsersDomain({
 
     skipProfileAutoOpenRef.current = false;
 
-    void handleEditUser({
+    void userCrudActions.handleEditUser({
       id: session.user.id,
       nome: session.user.nome,
       email: session.user.email,
@@ -495,10 +299,7 @@ export function useUsersDomain({
     setSelectedContactUser,
     canUseUserForm,
     resetUsersState,
-    handleEditUser,
-    handleDeleteUserArquivo,
-    handleSubmitUser,
-    handleDeleteUser,
+    ...userCrudActions,
     handlePasswordChanged,
     openUsersList,
     openNewUserForm,

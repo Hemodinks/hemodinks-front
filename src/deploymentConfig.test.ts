@@ -25,8 +25,13 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
       route: '/assets/*',
       headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
     });
-    expect(configuration.globalHeaders?.['Content-Security-Policy'])
+    const contentSecurityPolicy = configuration.globalHeaders?.['Content-Security-Policy'] ?? '';
+    expect(contentSecurityPolicy)
       .toContain('https://hemodinks-api-prod.politepond-d3524c51.brazilsouth.azurecontainerapps.io');
+    expect(contentSecurityPolicy).toContain("script-src 'self';");
+    expect(contentSecurityPolicy).toContain('https://date.nager.at');
+    expect(contentSecurityPolicy).not.toContain("'unsafe-eval'");
+    expect(contentSecurityPolicy).not.toContain('http://localhost:');
     expect(configuration.globalHeaders?.['X-Content-Type-Options']).toBe('nosniff');
   });
 
@@ -48,6 +53,10 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
       ?.flatMap((entry) => entry.headers)
       .find((header) => header.key === 'Content-Security-Policy');
     expect(contentSecurityPolicy?.value).toContain('https://hemodinks-api-confirmation.onrender.com');
+    expect(contentSecurityPolicy?.value).toContain("script-src 'self';");
+    expect(contentSecurityPolicy?.value).toContain('https://date.nager.at');
+    expect(contentSecurityPolicy?.value).not.toContain("'unsafe-eval'");
+    expect(contentSecurityPolicy?.value).not.toContain('http://localhost:');
   });
 
   it('mantém desabilitado o projeto Vercel legado de produção', () => {

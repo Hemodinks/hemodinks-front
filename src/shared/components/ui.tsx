@@ -1,12 +1,10 @@
 import {
   type ChangeEvent,
-  type HTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
   useId,
-  useEffect,
   useRef,
   useState,
 } from 'react';
@@ -14,6 +12,8 @@ import { Check, ChevronDown, X } from 'lucide-react';
 import { classNames as cx } from './ui/classNames';
 
 export { Button, IconButton, SearchField, TextField } from './ui/actions';
+export { AlertMessage, ToastMessage, TOAST_DURATION_MS } from './ui/feedback';
+export { DataPanel, FormPanel } from './ui/panels';
 
 function normalizeComboboxText(value: string) {
   return value
@@ -427,88 +427,5 @@ export function SelectField({ label, className, children, ...props }: SelectFiel
       {label}
       <select {...props}>{children}</select>
     </label>
-  );
-}
-
-type AlertMessageProps = {
-  type: 'success' | 'error' | 'warning';
-  icon?: ReactNode;
-  children: ReactNode;
-};
-
-export function AlertMessage({ type, icon, children }: AlertMessageProps) {
-  return (
-    <p className={`alert ${type}`}>
-      {icon}
-      {children}
-    </p>
-  );
-}
-
-export const TOAST_DURATION_MS = 10_000;
-
-type ToastMessageProps = AlertMessageProps & {
-  durationMs?: number;
-  onClose?: () => void;
-};
-
-export function ToastMessage({
-  type,
-  icon,
-  children,
-  durationMs = TOAST_DURATION_MS,
-  onClose,
-}: ToastMessageProps) {
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    setVisible(true);
-    const timeoutId = window.setTimeout(() => {
-      setVisible(false);
-      onClose?.();
-    }, durationMs);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [children, durationMs, onClose]);
-
-  if (!visible) return null;
-
-  const close = () => {
-    setVisible(false);
-    onClose?.();
-  };
-
-  return (
-    <div className={`alert ${type} toast-message`} role={type === 'error' ? 'alert' : 'status'}>
-      {icon}
-      <span className="toast-message-copy">{children}</span>
-      <button type="button" className="toast-close" aria-label="Fechar aviso" onClick={close}>
-        <X size={17} aria-hidden="true" />
-      </button>
-    </div>
-  );
-}
-
-type DataPanelProps = HTMLAttributes<HTMLElement> & {
-  children: ReactNode;
-};
-
-export function DataPanel({ className, children, ...props }: DataPanelProps) {
-  return (
-    <section {...props} className={cx('data-panel', className)}>
-      {children}
-    </section>
-  );
-}
-
-type FormPanelProps = HTMLAttributes<HTMLElement> & {
-  children: ReactNode;
-};
-
-export function FormPanel({ className, children, ...props }: FormPanelProps) {
-  return (
-    <aside {...props} className={cx('form-panel', className)}>
-      {children}
-    </aside>
   );
 }
