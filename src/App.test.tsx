@@ -299,7 +299,7 @@ describe('App', () => {
 
     const loadingStatus = screen.getByRole('status');
     expect(loadingStatus).toHaveTextContent(
-      'Aguarde um pouco... Indexando informações do Hemodinks.',
+      'Seja bem vindo ao Hemodinks! Aguarde um instante, é rapidinho... Estamos indexando informações do Sistema.',
     );
     expect(loadingStatus.parentElement).toHaveClass('login-initial-loading');
 
