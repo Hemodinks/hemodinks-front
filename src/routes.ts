@@ -6,16 +6,21 @@ export const VIEW_PATHS: Record<AppView, string> = {
   profile: '/meu-cadastro',
   patients: '/pacientes',
   billing: '/faturamento-medico',
+  billingHistory: '/historico-faturamento',
   reports: '/relatorios',
   tutorials: '/tutoriais-interativos',
   medicalGroups: '/grupos-medicos',
   agenda: '/agenda',
-  settings: '/configuracoes',
+  settings: '/opcoes',
   clinics: '/clinicas',
 };
 
 export function getViewFromPath(pathname: string): AppView | null {
   const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+
+  if (normalizedPath === '/configuracoes') {
+    return 'settings';
+  }
 
   if (normalizedPath === '/') {
     return 'dashboard';

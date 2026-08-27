@@ -66,6 +66,16 @@ export const CONTEXTUAL_FLOWS: Record<AppView, ViewFlows> = {
       { id: 'tutorials-watch', title: 'Assistir a um tutorial', steps: ['Escolha o tutorial desejado.', 'Use os controles do player para reproduzir, pausar ou ajustar o volume.', 'Acompanhe a narração e as legendas exibidas no vídeo.'] },
     ],
   },
+  billingHistory: {
+    title: 'Histórico',
+    description: 'Analise o faturamento por ano, mês e trimestre, em detalhes ou por meio de gráficos.',
+    flows: [
+      { id: 'billing-history-query', title: 'Consultar o histórico', steps: ['Selecione a aba “Histórico”.', 'Escolha o ano no dashboard de destaques trimestrais.', 'Abra o ano desejado para visualizar os meses agrupados pela data de atendimento.', 'Abra um mês para conferir o total faturado, as glosas, o total líquido, os atendimentos pagos e os pendentes.', 'Consulte os faturamentos na tabela e use a ação “Informações resumidas” para ver os detalhes do atendimento.'] },
+      { id: 'billing-history-highlights', title: 'Interpretar os destaques trimestrais', steps: ['Consulte os quatro cartões de trimestre na parte superior da tela.', 'O mês em verde claro representa o maior faturamento do trimestre.', 'O mês em vermelho claro representa o menor faturamento do trimestre.', 'Localize as mesmas cores nos accordions dos meses dentro de cada ano.', 'Ao abrir outro mês, o accordion anterior será fechado automaticamente.'] },
+      { id: 'billing-history-charts', title: 'Consultar os gráficos', steps: ['Selecione a aba “Gráficos”.', 'Escolha o ano que deseja analisar.', 'No gráfico de barras, compare o total faturado em cada mês.', 'No gráfico circular, confira a participação de cada trimestre no total anual.', 'Passe o cursor ou use o teclado sobre as barras e os setores do gráfico para consultar ano, trimestre, mês, valor e percentual.'] },
+      { id: 'billing-history-files', title: 'Gerenciar arquivos mensais', steps: ['Na aba “Histórico”, abra o ano e o mês desejados.', 'Consulte os documentos vinculados ao mês.', 'Se o seu perfil permitir, selecione “Anexar arquivos” para enviar novos documentos.', 'Use as ações do arquivo para baixar ou excluir o documento.'] },
+    ],
+  },
   medicalGroups: {
     title: 'Grupos médicos',
     description: 'Organize médicos em grupos utilizados pela agenda e pelas notificações.',
@@ -83,11 +93,13 @@ export const CONTEXTUAL_FLOWS: Record<AppView, ViewFlows> = {
     ],
   },
   settings: {
-    title: 'Configuração do sistema',
-    description: 'Ajuste a aparência da conta e suas credenciais de acesso.',
+    title: 'Opções',
+    description: 'Ajuste a aparência, as credenciais de acesso e acompanhe os registros técnicos da clínica.',
     flows: [
       { id: 'settings-theme', title: 'Alterar tema', steps: ['Encontre a seção “Tema”.', 'Selecione “Claro” ou “Escuro”.', 'A preferência é aplicada imediatamente.'] },
       { id: 'settings-password', title: 'Alterar senha', steps: ['Informe a senha atual.', 'Digite e confirme a nova senha.', 'Envie o formulário e aguarde a confirmação.'] },
+      { id: 'settings-monitoring', title: 'Consultar o monitoramento', steps: ['Selecione a aba “Monitoramento” no topo de Opções.', 'Confira os erros registrados e a data e hora de cada ocorrência.', 'Analise módulo, método, linha, usuário, operação e identificação da requisição.', 'Consulte a sequência do fluxo de classes para acompanhar a origem do erro.', 'Quando disponível, abra “Query” para visualizar o comando relacionado.', 'Use “Atualizar” para buscar os registros mais recentes e navegue pelas páginas quando houver mais resultados.'] },
+      { id: 'settings-monitoring-clear', title: 'Limpar os logs de erro', steps: ['Acesse a aba “Monitoramento”.', 'Selecione “Limpar logs”.', 'Leia o aviso e confirme em “Limpar logs”.', 'Os registros atuais serão removidos, mas novos erros continuarão sendo registrados automaticamente.'] },
     ],
   },
   clinics: {

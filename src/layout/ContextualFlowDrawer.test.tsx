@@ -15,7 +15,7 @@ describe('guia contextual de fluxos', () => {
 
   it('possui conteúdo para todas as telas da aplicação', () => {
     const views = Object.keys(CONTEXTUAL_FLOWS) as AppView[];
-    expect(views).toHaveLength(11);
+    expect(views).toHaveLength(12);
     for (const view of views) {
       expect(CONTEXTUAL_FLOWS[view].flows.length).toBeGreaterThan(0);
       expect(CONTEXTUAL_FLOWS[view].flows.every((flow) => flow.steps.length > 0)).toBe(true);
@@ -49,5 +49,17 @@ describe('guia contextual de fluxos', () => {
     expect(screen.getByRole('complementary', { name: 'Ajuda contextual' })).toHaveClass('view-patients');
     expect(screen.getByRole('heading', { name: 'Pacientes - Cirurgias' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Cadastrar paciente ou cirurgia' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('documenta histórico, gráficos e monitoramento nas ajudas correspondentes', () => {
+    expect(CONTEXTUAL_FLOWS.billingHistory.title).toBe('Histórico');
+    expect(CONTEXTUAL_FLOWS.billingHistory.flows.map((flow) => flow.title)).toEqual([
+      'Consultar o histórico',
+      'Interpretar os destaques trimestrais',
+      'Consultar os gráficos',
+      'Gerenciar arquivos mensais',
+    ]);
+    expect(CONTEXTUAL_FLOWS.settings.flows.map((flow) => flow.title)).toContain('Consultar o monitoramento');
+    expect(CONTEXTUAL_FLOWS.settings.flows.map((flow) => flow.title)).toContain('Limpar os logs de erro');
   });
 });

@@ -75,6 +75,11 @@ Responsabilidades:
 | `src/features/patients/usePatientFileActions.ts` | estado e ações de anexos isolados do domínio principal |
 | `src/features/billing/billingTypes.ts` | contratos puros do faturamento |
 | `src/features/billing/billingAnalytics.ts` | filtros, totais e agrupamentos financeiros puros |
+| `src/features/billing/billingHistory.ts` | agrupamento por ano/mes e destaques de maior/menor faturamento trimestral |
+| `src/features/billing/BillingHistoryPage.tsx` | consulta historica, accordions e arquivos vinculados aos meses |
+| `src/features/billing/BillingHistoryInsights.tsx` | dashboard trimestral, graficos e resumos financeiros mensais |
+| `src/features/settings/MonitoringPage.tsx` | consulta paginada e limpeza dos logs tecnicos da clinica |
+| `src/layout/contextualFlows.ts` | conteudo do menu contextual "Como usar" por tela |
 | `src/shared/utils/dateFormatters.ts` | conversões e validações de datas sem dependência visual |
 | `src/types/*` | contratos de domínio separados, reexportados por `src/types.ts` |
 | `src/shared/components/ErrorBoundary.tsx` | fallback visual para erros inesperados |
@@ -97,10 +102,11 @@ Rotas internas:
 | `/usuarios` | `users` | apenas administrador |
 | `/meu-cadastro` | `profile` | medico e paciente |
 | `/pacientes` | `patients` | todos os perfis autenticados; paciente entra em modo leitura |
-| `/faturamento-medico` | `billing` | administrador, medico e controller |
+| `/faturamento-medico` | `billing` | administrador, SuperAdministrador, medico, controller e equipe com modulo de faturamento |
+| `/historico-faturamento` | `billingHistory` | mesmos perfis e regras de modulo do faturamento |
 | `/grupos-medicos` | `medicalGroups` | apenas administrador |
 | `/agenda` | `agenda` | indisponivel para controller |
-| `/configuracoes` | `settings` | todos os perfis autenticados |
+| `/opcoes` | `settings` | administrador e SuperAdministrador; `/configuracoes` permanece como alias legado |
 
 `useRouteView` sincroniza URL, permissoes e view ativa. Se a rota nao for permitida para o perfil atual, a aplicacao redireciona para uma view valida.
 
@@ -152,6 +158,7 @@ Observacoes:
 - invalidacoes devem usar `queryKeys`, nunca arrays soltos
 - `useAppChrome` mantem `systemSettings` com `staleTime` de 5 minutos e leitura sem token
 - a tela de faturamento usa query propria (`billingRecords`) porque agrega todas as paginas de `GET /api/faturamentos-medicos`
+- o historico reutiliza os registros agregados de faturamento e mantem uma query separada (`billingHistoryFiles`) para documentos mensais, ambas com `staleTime` de 30 segundos
 
 ## Modulos
 
@@ -212,9 +219,14 @@ Responsabilidades:
 
 ### Faturamento medico
 
-Arquivo principal:
+Arquivos principais:
 
 - `src/features/billing/BillingPage.tsx`
+- `src/features/billing/BillingHistoryPage.tsx`
+- `src/features/billing/BillingHistoryInsights.tsx`
+- `src/features/billing/billingHistory.ts`
+- `src/features/billing/billingAnalytics.ts`
+- `src/services/billingService.ts`
 
 Responsabilidades:
 
@@ -222,6 +234,17 @@ Responsabilidades:
 - agregar todos os resultados por filtro
 - transformar dados de pacientes em indicadores financeiros
 - detalhar cirurgia, glosa, anexos, procedimento e checklist
+- organizar o historico por ano e pelos 12 meses da data de atendimento
+- manter somente um accordion mensal aberto por vez
+- exibir, no mes aberto, total bruto, glosas, liquido, atendimentos pagos e pendentes
+- calcular o maior e o menor faturamento de cada trimestre por ano; empates usam a quantidade de registros como criterio secundario
+- aplicar verde claro ao maior mes e vermelho claro ao menor mes do trimestre, tanto no dashboard quanto no accordion correspondente
+- alternar entre as abas `Historico` e `Graficos`, com selecao do ano analisado
+- apresentar grafico de barras com faturamento mensal e grafico circular com participacao trimestral no total anual
+- fornecer tooltips por mouse e teclado com ano, mes, trimestre, valor e percentual
+- listar, enviar, baixar e excluir arquivos associados ao ano/mes; envio e exclusao dependem de perfil administrativo ou controller
+
+Os graficos sao implementados sem biblioteca externa. As barras usam HTML/CSS e o grafico circular usa setores SVG com `strokeDasharray`, permitindo que toda a fatia seja interativa. Trimestres zerados permanecem consultaveis pela legenda, mas nao criam uma fatia invisivel. Os dados exibidos sao derivados dos mesmos `BillingRecord` usados pela tabela, evitando divergencia entre indicadores, graficos e detalhamento.
 
 ### Grupos medicos
 
@@ -250,18 +273,26 @@ Responsabilidades:
 - contadores de notificacao nao lida
 - marcacao de notificacoes da agenda como lidas
 
-### Configuracao do sistema
+### Opcoes, tema e monitoramento
 
-Arquivo principal:
+Arquivos principais:
 
+- `src/features/settings/OptionsPage.tsx`
 - `src/features/settings/SystemSettingsPage.tsx`
+- `src/features/settings/MonitoringPage.tsx`
+- `src/shared/hooks/useThemePreference.ts`
+- `src/services/monitoringService.ts`
 
 Responsabilidades:
 
-- nome da empresa
-- foto da empresa
-- tema claro/escuro
+- navegacao interna entre `Configuracoes` e `Monitoramento`
+- tema claro/escuro, com tema escuro como fallback inicial quando ainda nao existe `hemodinks.theme` no `localStorage`
+- persistencia da escolha explicita do usuario, inclusive do tema claro
 - troca de senha
+- consulta paginada dos erros tecnicos da clinica, com 25 registros por pagina
+- exibicao de modulo, descricao, timestamp, metodo, linha, usuario, operacao de banco, request ID e fluxo de classes
+- exibicao opcional da query relacionada dentro de `details`
+- atualizacao manual da listagem e limpeza confirmada dos logs atuais; novos erros continuam sendo registrados
 
 ## Observabilidade
 
@@ -319,6 +350,17 @@ Pontos acompanhados por teste:
 - agenda em mobile
 - modais principais
 - telas autenticadas mais criticas
+- contraste WCAG 2 AA no tema escuro, incluindo acoes globais e estados selecionados
+- tooltips dos graficos acessiveis por mouse, foco de teclado e rotulos para tecnologia assistiva
+- conteudo contextual de `Como usar` para Historico, Graficos e Monitoramento
+
+O tema escuro usa tons de acao mais fechados para manter contraste minimo de `4.5:1` em textos pequenos. Os setores do grafico circular possuem pontos focaveis, e as barras mensais tambem entram na ordem de tabulacao.
+
+### Ajuda contextual "Como usar"
+
+`src/layout/ContextualFlowDrawer.tsx` renderiza uma gaveta de ajuda conforme a `AppView` ativa. O conteudo declarativo fica em `src/layout/contextualFlows.ts`, separado dos componentes funcionais para permitir revisao e teste sem acoplar regras de interface.
+
+Na view `billingHistory`, a ajuda cobre consulta mensal, destaques trimestrais, graficos/tooltips e arquivos. Na view `settings`, cobre tema, senha, consulta do monitoramento e limpeza de logs. O drawer mantem somente um topico aberto por vez e pode apresentar missoes interativas quando a tela possui tutorial registrado.
 
 ## Contratos de API usados pelo front
 
@@ -363,6 +405,10 @@ Endpoints consumidos:
 | `POST` | `/api/pacientes/{id}/observacoes` | criar observacao |
 | `POST` | `/api/pacientes/{id}/observacoes/marcar-lidas` | marcar observacoes lidas |
 | `GET` | `/api/faturamentos-medicos/` | base do faturamento medico |
+| `GET` | `/api/faturamentos-medicos/historico/arquivos` | listar arquivos do historico, opcionalmente por ano e mes |
+| `POST` | `/api/faturamentos-medicos/historico/{ano}/{mes}/arquivos` | anexar arquivo ao mes do historico |
+| `GET` | `/api/faturamentos-medicos/historico/arquivos/{id}/download` | baixar arquivo mensal |
+| `DELETE` | `/api/faturamentos-medicos/historico/arquivos/{id}` | excluir arquivo mensal |
 | `GET` | `/api/grupos-medicos/` | listar grupos medicos |
 | `GET` | `/api/grupos-medicos/{id}` | detalhe do grupo |
 | `POST` | `/api/grupos-medicos/` | criar grupo |
@@ -384,6 +430,8 @@ Endpoints consumidos:
 | `GET` | `/api/configuracoes-sistema/current` | configuracao da empresa |
 | `GET` | `/api/configuracoes-sistema/current/foto-empresa` | logo/foto da empresa |
 | `PUT` | `/api/configuracoes-sistema/current` | atualizar configuracao da empresa |
+| `GET` | `/api/monitoramento/erros` | erros técnicos paginados e restritos à clínica do administrador |
+| `DELETE` | `/api/monitoramento/erros` | limpa o histórico técnico no escopo do administrador |
 
 ## Convencoes de manutencao
 

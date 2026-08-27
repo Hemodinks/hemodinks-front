@@ -353,6 +353,7 @@ export function buildBillingRecords(pacientes: Paciente[]) {
       hospitalName: paciente.hospital?.trim() || 'Não informado',
       convenioName: convenioName || 'Particular',
       regime: convenioName ? 'convenio' : 'particular',
+      attendanceDate: paciente.dataAtendimento ?? null,
       surgeryDate: paciente.dataAtendimento ?? paciente.data ?? null,
       surgeryDateLabel: paciente.dataAtendimento
         ? toDisplayDate(paciente.dataAtendimento)

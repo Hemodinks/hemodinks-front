@@ -15,7 +15,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginClinicValue, setLoginClinicValue] = useState('');
   const [publicClinics, setPublicClinics] = useState<PublicClinic[]>([]);
-  const [publicClinicsLoading, setPublicClinicsLoading] = useState(false);
+  const [publicClinicsLoading, setPublicClinicsLoading] = useState(!session);
   const [loginError, setLoginError] = useState('');
   const [loginInfo, setLoginInfo] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);

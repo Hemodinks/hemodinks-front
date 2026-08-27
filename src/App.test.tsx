@@ -60,6 +60,8 @@ vi.mock('./services', () => ({
   getHospitais: vi.fn(),
   getMedicalGroup: vi.fn(),
   getMedicalGroups: vi.fn(),
+  getMonitoringErrors: vi.fn(),
+  clearMonitoringErrors: vi.fn(),
   getScopedMedicalUsers: vi.fn(),
   getOpmeFornecedores: vi.fn(),
   getUsers: vi.fn(),
@@ -122,6 +124,16 @@ describe('App', () => {
       fotoEmpresa: null,
       dataCadastro: '2026-06-22T00:00:00Z',
       dataAtualizacao: null,
+    });
+    vi.mocked(api.getMonitoringErrors).mockResolvedValue({
+      items: [],
+      page: 1,
+      pageSize: 25,
+      totalItems: 0,
+      totalPages: 0,
+    });
+    vi.mocked(api.clearMonitoringErrors).mockResolvedValue({
+      clearedAt: '2026-08-25T22:00:00Z',
     });
     vi.mocked(api.updateSystemSettings).mockResolvedValue({
       id: 1,
@@ -277,6 +289,26 @@ describe('App', () => {
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
   });
 
+  it('exibe o loading de inicializacao no login enquanto carrega as clinicas', async () => {
+    let resolveClinics!: (clinics: Awaited<ReturnType<typeof api.listPublicClinics>>) => void;
+    vi.mocked(api.listPublicClinics).mockReturnValue(new Promise((resolve) => {
+      resolveClinics = resolve;
+    }));
+
+    render(<App />);
+
+    const loadingStatus = screen.getByRole('status');
+    expect(loadingStatus).toHaveTextContent(
+      'Aguarde um pouco... Indexando informações do Hemodinks.',
+    );
+    expect(loadingStatus.parentElement).toHaveClass('login-initial-loading');
+
+    resolveClinics([{ id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null }]);
+
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+    expect(screen.getByRole('option', { name: 'Hemodinks' })).toBeInTheDocument();
+  });
+
   it('restaura a sessao salva na aba ao recarregar a aplicacao', async () => {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
 
@@ -355,7 +387,7 @@ describe('App', () => {
     expect(clinicPassword).toHaveAttribute('type', 'text');
 
     const navigationButtons = within(within(sidebar).getByRole('navigation', { name: 'Navegação principal' })).getAllByRole('button');
-    expect(navigationButtons.at(-1)).toHaveTextContent('Configuração');
+    expect(navigationButtons.at(-1)).toHaveTextContent('Opções');
   });
 
   it('permite ao superadministrador editar o próprio perfil sem rebaixá-lo', async () => {
@@ -594,33 +626,75 @@ describe('App', () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    expect(document.documentElement).not.toHaveAttribute('data-theme');
-
-    await user.click(screen.getByRole('button', { name: /abrir configuração do sistema/i }));
-    expect(await screen.findByRole('heading', { name: 'Configuração do sistema', level: 1 })).toBeInTheDocument();
-
-    await user.click(screen.getByTitle('Usar tema escuro'));
-
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
     expect(localStorage.getItem('hemodinks.theme')).toBe('dark');
+
+    await user.click(screen.getByRole('button', { name: /abrir opções/i }));
+    expect(await screen.findByRole('heading', { name: 'Opções', level: 1 })).toBeInTheDocument();
 
     await user.click(screen.getByTitle('Usar tema claro'));
 
     expect(document.documentElement).not.toHaveAttribute('data-theme');
     expect(localStorage.getItem('hemodinks.theme')).toBe('light');
+
+    await user.click(screen.getByTitle('Usar tema escuro'));
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    expect(localStorage.getItem('hemodinks.theme')).toBe('dark');
   });
 
   it('remove a edicao da marca das configuracoes do sistema', async () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /abrir configuração do sistema/i }));
-    expect(await screen.findByRole('heading', { name: 'Configuração do sistema', level: 1 })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /abrir opções/i }));
+    expect(await screen.findByRole('heading', { name: 'Opções', level: 1 })).toBeInTheDocument();
 
     expect(screen.queryByLabelText('Nome exibido no sistema')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Foto da empresa')).not.toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Tema do sistema' })).toBeInTheDocument();
     expect(api.updateSystemSettings).not.toHaveBeenCalled();
+  });
+
+  it('abre o monitoramento dentro de opções e apresenta os campos técnicos do erro', async () => {
+    vi.mocked(api.getMonitoringErrors).mockResolvedValue({
+      items: [{
+        timestamp: '2026-08-25T18:45:00-03:00',
+        module: 'Pacientes',
+        classFlow: ['HemodinksAPI.Application.Features.Pacientes.GetPaciente', 'HemodinksAPI.Api.PacienteEndpointExtensions'],
+        method: 'Handle',
+        line: 57,
+        technicalDescription: 'System.InvalidOperationException: Falha técnica',
+        userName: 'George Marcone',
+        userEmail: 'george@example.com',
+        query: 'SELECT [p].[Id] FROM [Pacientes] AS [p]',
+        databaseOperation: 'SELECT',
+        requestId: 'request-123',
+      }],
+      page: 1,
+      pageSize: 25,
+      totalItems: 1,
+      totalPages: 1,
+    });
+    const { user } = await renderAuthenticatedApp();
+
+    await user.click(await screen.findByRole('button', { name: /abrir opções/i }));
+    await user.click(await screen.findByRole('button', { name: 'Monitoramento' }));
+
+    expect(await screen.findByText('System.InvalidOperationException: Falha técnica')).toBeInTheDocument();
+    expect(screen.getByText('Pacientes')).toBeInTheDocument();
+    expect(screen.getAllByText('George Marcone').length).toBeGreaterThan(0);
+    expect(screen.getByText('george@example.com')).toBeInTheDocument();
+    expect(screen.getByText('57')).toBeInTheDocument();
+    expect(api.getMonitoringErrors).toHaveBeenCalledWith('jwt-token', 1);
+
+    await user.click(screen.getByRole('button', { name: 'Limpar logs' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Limpar logs de erro?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Limpar logs' }));
+
+    await waitFor(() => expect(api.clearMonitoringErrors).toHaveBeenCalledWith('jwt-token'));
+    expect(await screen.findByText('Logs de erro limpos com sucesso.')).toBeInTheDocument();
+    expect(screen.queryByText('System.InvalidOperationException: Falha técnica')).not.toBeInTheDocument();
   });
 
   it('oculta configuracao para medico e bloqueia a rota direta', async () => {
@@ -630,7 +704,7 @@ describe('App', () => {
     });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /abrir configuração do sistema/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir opções/i })).not.toBeInTheDocument();
     await waitFor(() => {
       expect(window.location.pathname).toBe('/dashboard');
     });
@@ -1646,7 +1720,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /abrir usuários/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /abrir configuração do sistema/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /abrir opções/i })).not.toBeInTheDocument();
 
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
@@ -2098,13 +2172,14 @@ describe('App', () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /abrir configuração do sistema/i }));
-    expect(await screen.findByRole('heading', { name: 'Configuração do sistema', level: 1 })).toBeInTheDocument();
-
-    await user.click(screen.getByTitle('Usar tema escuro'));
-
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
-    expect(screen.getByTitle('Usar tema claro')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /abrir opções/i }));
+    expect(await screen.findByRole('heading', { name: 'Opções', level: 1 })).toBeInTheDocument();
+
+    await user.click(screen.getByTitle('Usar tema claro'));
+
+    expect(document.documentElement).not.toHaveAttribute('data-theme');
+    expect(screen.getByTitle('Usar tema escuro')).toBeInTheDocument();
   });
 });

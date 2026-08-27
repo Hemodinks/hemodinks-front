@@ -11,6 +11,7 @@ type UseRouteViewOptions = {
   canUseUsersRoute: boolean;
   canUseProfileRoute: boolean;
   canUseBillingRoute: boolean;
+  canUseBillingHistoryRoute: boolean;
   canUseReportsRoute: boolean;
   canUseTutorialsRoute: boolean;
   canUseMedicalGroupsRoute: boolean;
@@ -27,6 +28,7 @@ export function useRouteView({
   canUseUsersRoute,
   canUseProfileRoute,
   canUseBillingRoute,
+  canUseBillingHistoryRoute,
   canUseReportsRoute,
   canUseTutorialsRoute,
   canUseMedicalGroupsRoute,
@@ -45,6 +47,7 @@ export function useRouteView({
     || (routeView === 'users' && !canUseUsersRoute)
     || (routeView === 'profile' && !canUseProfileRoute)
     || (routeView === 'billing' && !canUseBillingRoute)
+    || (routeView === 'billingHistory' && !canUseBillingHistoryRoute)
     || (routeView === 'reports' && !canUseReportsRoute)
     || (routeView === 'tutorials' && !canUseTutorialsRoute)
     || (routeView === 'medicalGroups' && !canUseMedicalGroupsRoute)
