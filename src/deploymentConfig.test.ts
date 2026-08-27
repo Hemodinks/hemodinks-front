@@ -27,7 +27,7 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
     });
     const contentSecurityPolicy = configuration.globalHeaders?.['Content-Security-Policy'] ?? '';
     expect(contentSecurityPolicy)
-      .toContain('https://hemodinks-api-prod.politepond-d3524c51.brazilsouth.azurecontainerapps.io');
+      .toContain('https://hemodinks-api-prod.politepond-d8524c51.brazilsouth.azurecontainerapps.io');
     expect(contentSecurityPolicy).toContain("script-src 'self';");
     expect(contentSecurityPolicy).toContain('https://date.nager.at');
     expect(contentSecurityPolicy).not.toContain("'unsafe-eval'");
