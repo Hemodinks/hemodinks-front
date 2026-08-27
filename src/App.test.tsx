@@ -298,9 +298,10 @@ describe('App', () => {
     render(<App />);
 
     const loadingStatus = screen.getByRole('status');
-    expect(loadingStatus).toHaveTextContent(
-      'Seja bem vindo ao Hemodinks! Aguarde um instante, é rapidinho... Estamos indexando informações do Sistema.',
-    );
+    expect(loadingStatus).toHaveTextContent('Seja bem vindo ao Hemodinks!');
+    expect(loadingStatus).toHaveTextContent('Aguarde um instante, é rapidinho!');
+    expect(loadingStatus).toHaveTextContent('Estamos indexando informações do Sistema.');
+    expect(loadingStatus.querySelectorAll('br')).toHaveLength(3);
     expect(loadingStatus.parentElement).toHaveClass('login-initial-loading');
 
     resolveClinics([{ id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null }]);
