@@ -22,7 +22,7 @@ export function PatientTable(props: PatientTableProps) {
     <div className="table-wrap list-carousel-wrap patients-carousel-wrap"><table className="patients-table">
       <thead><tr>
         {sortHeader('nome', 'Paciente')}{sortHeader('data', 'Data da solicitação')}
-        {sortHeader('dataAtendimento', 'Data do atendimento')}<th>Info</th>{sortHeader('medico', 'Cirurgião')}
+        {sortHeader('dataAtendimento', 'Cirurgias Consolidadas')}<th>Info</th>{sortHeader('medico', 'Cirurgião')}
         {sortHeader('status', 'Status Pago')}{sortHeader('arquivos', 'Arquivos')}<th>Obs.</th><th aria-label="Ações" />
       </tr></thead>
       <tbody>{props.pacientesLoading
@@ -36,7 +36,7 @@ export function PatientTable(props: PatientTableProps) {
             <td data-label="Paciente"><div className="name-cell"><UserAvatar userId={paciente.userId} name={paciente.nomePaciente}
               photo={paciente.fotoPerfil} authToken={props.sessionToken} size="sm" /><span>{patientDisplayName}</span></div></td>
             <td data-label="Data da solicitação">{toDisplayDate(paciente.data) || '-'}</td>
-            <td data-label="Data do atendimento">{toDisplayDate(paciente.dataAtendimento || '') || '-'}</td>
+            <td data-label="Cirurgias Consolidadas">{toDisplayDate(paciente.dataAtendimento || '') || '-'}</td>
             <td data-label="Info"><button type="button" className="status-info-button" title="Ver informações adicionais"
               aria-label={`Informações adicionais de ${patientDisplayName}`} onClick={() => props.onSelectPatientInfo(paciente)}><Info size={18} /></button></td>
             <td data-label="Cirurgião">{formatPersonName(paciente.medico) || '-'}</td>

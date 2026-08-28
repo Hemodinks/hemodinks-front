@@ -82,7 +82,7 @@ function validateDateRange(startValue: string, endValue: string, periodName: str
 }
 
 export function validateReportDateRange(filters: ReportFilters) {
-  return validateDateRange(filters.startDate, filters.endDate, 'do atendimento')
+  return validateDateRange(filters.startDate, filters.endDate, 'de Cirurgias Consolidadas')
     || validateDateRange(filters.requestStartDate, filters.requestEndDate, 'da solicitação')
     || validateDateRange(filters.paymentStartDate, filters.paymentEndDate, 'do pagamento');
 }
