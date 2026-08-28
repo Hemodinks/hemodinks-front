@@ -21,9 +21,9 @@ export function PatientTable(props: PatientTableProps) {
       aria-label="Voltar no carrossel de pacientes" title="Voltar no carrossel"><ChevronLeft size={20} /></button>
     <div className="table-wrap list-carousel-wrap patients-carousel-wrap"><table className="patients-table">
       <thead><tr>
-        {sortHeader('nome', 'Paciente')}{sortHeader('data', 'Data da solicitação')}
+        {sortHeader('nome', 'Paciente')}<th>Ações</th>{sortHeader('data', 'Data da solicitação')}
         {sortHeader('dataAtendimento', 'Cirurgias Consolidadas')}<th>Info</th>{sortHeader('medico', 'Cirurgião')}
-        {sortHeader('status', 'Status Pago')}{sortHeader('arquivos', 'Arquivos')}<th>Obs.</th><th aria-label="Ações" />
+        {sortHeader('status', 'Status Pago')}{sortHeader('arquivos', 'Arquivos')}<th>Obs.</th>
       </tr></thead>
       <tbody>{props.pacientesLoading
         ? <tr><td colSpan={9} className="empty-row">Carregando pacientes...</td></tr>
@@ -35,6 +35,11 @@ export function PatientTable(props: PatientTableProps) {
           return <tr key={paciente.id}>
             <td data-label="Paciente"><div className="name-cell"><UserAvatar userId={paciente.userId} name={paciente.nomePaciente}
               photo={paciente.fotoPerfil} authToken={props.sessionToken} size="sm" /><span>{patientDisplayName}</span></div></td>
+            <td data-label="Ações"><div className="row-actions">
+              <IconButton label={`${patientActionLabel} ${patientDisplayName}`} tone="muted" onClick={() => void props.onEditPaciente(paciente)} title={patientActionLabel}>
+                {props.patientReadOnly || !props.canEditPatients ? <Eye size={17} /> : <Pencil size={17} />}</IconButton>
+              {props.canDeletePatients && <IconButton label={`Excluir ${patientDisplayName}`} tone="danger" onClick={() => void props.onDeletePaciente(paciente)} title="Excluir"><Trash2 size={17} /></IconButton>}
+            </div></td>
             <td data-label="Data da solicitação">{toDisplayDate(paciente.data) || '-'}</td>
             <td data-label="Cirurgias Consolidadas">{toDisplayDate(paciente.dataAtendimento || '') || '-'}</td>
             <td data-label="Info"><button type="button" className="status-info-button" title="Ver informações adicionais"
@@ -51,11 +56,6 @@ export function PatientTable(props: PatientTableProps) {
                 <MessageSquareText size={16} /><span className="patient-observation-count">{unreadObservations}</span></button>
               : <span className={`attachment-count patient-observation-count${hasUnreadObservations ? ' has-unread-observations' : ''}`}>
                 <MessageSquareText size={15} />{unreadObservations}</span>}</td>
-            <td data-label="Ações"><div className="row-actions">
-              <IconButton label={`${patientActionLabel} ${patientDisplayName}`} tone="muted" onClick={() => void props.onEditPaciente(paciente)} title={patientActionLabel}>
-                {props.patientReadOnly || !props.canEditPatients ? <Eye size={17} /> : <Pencil size={17} />}</IconButton>
-              {props.canDeletePatients && <IconButton label={`Excluir ${patientDisplayName}`} tone="danger" onClick={() => void props.onDeletePaciente(paciente)} title="Excluir"><Trash2 size={17} /></IconButton>}
-            </div></td>
           </tr>;
         }) : <tr><td colSpan={9} className="empty-row">Nenhum paciente encontrado.</td></tr>}
       </tbody>
