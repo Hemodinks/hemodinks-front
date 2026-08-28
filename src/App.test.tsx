@@ -1413,7 +1413,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
 
     await user.type(screen.getByLabelText('Data da Solicitação'), '04062026');
-    await user.type(screen.getByLabelText('Data do Atendimento'), '05062026');
+    await user.type(screen.getByLabelText('Cirurgias Consolidadas'), '05062026');
     await user.type(screen.getByLabelText('Paciente'), 'Novo Paciente');
     expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
@@ -1551,8 +1551,8 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Convênio'), 'Particular');
     await user.click(screen.getByRole('option', { name: 'Particular' }));
     await user.type(screen.getByLabelText('Procedimento'), 'Consulta');
-    await user.type(screen.getByLabelText('Data inicial do atendimento'), '01062026');
-    await user.type(screen.getByLabelText('Data final do atendimento'), '30062026');
+    await user.type(screen.getByLabelText('Cirurgias Consolidadas - inicial'), '01062026');
+    await user.type(screen.getByLabelText('Cirurgias Consolidadas - final'), '30062026');
     await user.type(screen.getByLabelText('Data inicial da solicitação'), '01052026');
     await user.type(screen.getByLabelText('Data final da solicitação'), '31052026');
 
@@ -1583,7 +1583,7 @@ describe('App', () => {
 
     await openPatientsModule(user);
     expect(await screen.findByText('15/06/2026')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /^data do atendimento$/i }));
+    await user.click(screen.getByRole('button', { name: /^cirurgias consolidadas$/i }));
 
     await waitFor(() => {
       expect(api.getPacientes).toHaveBeenLastCalledWith('jwt-token', {

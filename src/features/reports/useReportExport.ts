@@ -11,7 +11,7 @@ function describeFilters(filters: ReportFilters) {
     lines.push(`Período da solicitação: ${filters.requestStartDate || 'início'} a ${filters.requestEndDate || 'hoje'}`);
   }
   if (filters.startDate || filters.endDate) {
-    lines.push(`Período do atendimento: ${filters.startDate || 'início'} a ${filters.endDate || 'hoje'}`);
+    lines.push(`Cirurgias Consolidadas: ${filters.startDate || 'início'} a ${filters.endDate || 'hoje'}`);
   }
   if (filters.paymentStartDate || filters.paymentEndDate) {
     lines.push(`Período do pagamento: ${filters.paymentStartDate || 'início'} a ${filters.paymentEndDate || 'hoje'}`);

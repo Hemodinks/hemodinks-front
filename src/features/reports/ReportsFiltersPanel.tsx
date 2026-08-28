@@ -44,8 +44,8 @@ export function ReportsFiltersPanel(props: Props) {
             <DateInput id="report-request-start-date" label="Data inicial da solicitação" value={props.filters.requestStartDate} onChange={(requestStartDate) => props.setFilters((current) => ({ ...current, requestStartDate }))} />
             <DateInput id="report-request-end-date" label="Data final da solicitação" value={props.filters.requestEndDate} onChange={(requestEndDate) => props.setFilters((current) => ({ ...current, requestEndDate }))} />
             <div className="reports-period-tour-target" data-tour="reports-period">
-              <DateInput id="report-start-date" label="Data inicial do atendimento" value={props.filters.startDate} onChange={(startDate) => props.setFilters((current) => ({ ...current, startDate }))} />
-              <DateInput id="report-end-date" label="Data final do atendimento" value={props.filters.endDate} onChange={(endDate) => props.setFilters((current) => ({ ...current, endDate }))} />
+              <DateInput id="report-start-date" label="Cirurgias Consolidadas - inicial" value={props.filters.startDate} onChange={(startDate) => props.setFilters((current) => ({ ...current, startDate }))} />
+              <DateInput id="report-end-date" label="Cirurgias Consolidadas - final" value={props.filters.endDate} onChange={(endDate) => props.setFilters((current) => ({ ...current, endDate }))} />
             </div>
             <DateInput id="report-payment-start-date" label="Data inicial do pagamento" value={props.filters.paymentStartDate} max={props.filters.paymentEndDate || undefined} onChange={(paymentStartDate) => props.setFilters((current) => ({ ...current, paymentStartDate }))} />
             <DateInput id="report-payment-end-date" label="Data final do pagamento" value={props.filters.paymentEndDate} min={props.filters.paymentStartDate || undefined} onChange={(paymentEndDate) => props.setFilters((current) => ({ ...current, paymentEndDate }))} />
