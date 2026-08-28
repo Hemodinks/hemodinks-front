@@ -3,7 +3,6 @@ import { IconButton } from '../../shared/components/ui';
 import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { formatPersonName, toDisplayDate } from '../../shared/utils/formatters';
-import { UserAvatar } from '../users/UserAvatar';
 import type { PatientListProps } from './patientListTypes';
 
 type PatientTableProps = Pick<PatientListProps,
@@ -33,8 +32,7 @@ export function PatientTable(props: PatientTableProps) {
           const patientDisplayName = formatPersonName(paciente.nomePaciente);
           const fileCount = paciente.arquivosCount ?? paciente.arquivos.length;
           return <tr key={paciente.id}>
-            <td data-label="Paciente"><div className="name-cell"><UserAvatar userId={paciente.userId} name={paciente.nomePaciente}
-              photo={paciente.fotoPerfil} authToken={props.sessionToken} size="sm" /><span>{patientDisplayName}</span></div></td>
+            <td data-label="Paciente"><div className="name-cell"><span>{patientDisplayName}</span></div></td>
             <td data-label="Ações"><div className="row-actions">
               <IconButton label={`${patientActionLabel} ${patientDisplayName}`} tone="muted" onClick={() => void props.onEditPaciente(paciente)} title={patientActionLabel}>
                 {props.patientReadOnly || !props.canEditPatients ? <Eye size={17} /> : <Pencil size={17} />}</IconButton>
