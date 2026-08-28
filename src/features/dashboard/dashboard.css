@@ -84,6 +84,19 @@
   background:
     linear-gradient(135deg, var(--summary-soft, transparent), transparent 72%),
     var(--input-bg);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.info-summary-item:hover {
+  z-index: 1;
+  border-color: var(--summary-color, var(--teal));
+  box-shadow:
+    0 18px 30px color-mix(in srgb, var(--summary-color, var(--teal)) 22%, transparent),
+    0 5px 0 color-mix(in srgb, var(--summary-color, var(--teal)) 20%, var(--line));
+  transform: translateY(-4px) scale(1.025);
 }
 
 .info-summary-icon {
@@ -170,8 +183,13 @@
 }
 
 .module-card:hover {
+  z-index: 2;
   border-color: color-mix(in srgb, var(--module-color, var(--action-secondary)) 82%, black);
   background: linear-gradient(135deg, color-mix(in srgb, var(--module-color, var(--action-secondary)) 92%, white), color-mix(in srgb, var(--module-color, var(--action-secondary)) 70%, black));
+  box-shadow:
+    0 22px 38px color-mix(in srgb, var(--module-color, var(--action-secondary)) 34%, transparent),
+    0 6px 0 color-mix(in srgb, var(--module-color, var(--action-secondary)) 48%, black);
+  transform: translateY(-5px) scale(1.025);
 }
 
 .module-card.is-dragging {
@@ -566,5 +584,17 @@
 
   .module-card-foot span {
     font-size: 0.76rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .module-card,
+  .info-summary-item {
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+
+  .module-card:hover,
+  .info-summary-item:hover {
+    transform: none;
   }
 }
