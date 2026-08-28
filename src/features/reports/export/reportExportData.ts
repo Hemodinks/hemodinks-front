@@ -11,7 +11,7 @@ const numericValue = (record: ReportRecord, amount: number, raw: string, hasNume
 );
 
 export const reportColumns: readonly ReportColumn[] = [
-  { header: 'Data atendimento', getValue: (record) => record.surgeryDateLabel },
+  { header: 'Cirurgias Consolidadas', getValue: (record) => record.surgeryDateLabel },
   { header: 'Data do pagamento', getValue: (record) => record.paymentDateLabel },
   { header: 'Paciente', getValue: (record) => record.patientName },
   { header: 'Cirurgião', getValue: (record) => record.doctorName },

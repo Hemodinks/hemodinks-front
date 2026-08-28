@@ -25,7 +25,7 @@ test('relatórios — missão passiva', async ({ page }) => {
   await expect(mission).toContainText('Etapa 3 de 7');
   await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'finished', { timeout: 60_000 });
   await page.waitForTimeout(VISUAL_PAUSE);
-  await page.getByRole('textbox', { name: 'Data inicial do atendimento', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Cirurgias Consolidadas - inicial', exact: true }).click();
   await expect(mission).toContainText('Etapa 4 de 7');
   await expect(runtime).toHaveAttribute('data-tutorial-audio-state', 'finished', { timeout: 60_000 });
   await page.waitForTimeout(VISUAL_PAUSE);

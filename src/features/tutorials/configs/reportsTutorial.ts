@@ -38,9 +38,9 @@ export const reportsTutorial = {
       id: 'period',
       target: '[data-tour="reports-period"]',
       title: 'Defina o período',
-      objective: 'Clique em um dos campos de data do atendimento para avançar.',
+      objective: 'Clique em um dos campos de Cirurgias Consolidadas para avançar.',
       narration: {
-        text: 'Comece definindo o período dos atendimentos. Clique em um dos campos de data destacados. O tutorial avançará somente depois dessa ação.',
+        text: 'Comece definindo o período de Cirurgias Consolidadas. Clique em um dos campos de data destacados. O tutorial avançará somente depois dessa ação.',
         audio: '/tutorials/audio/reports/period.mp3',
       },
       action: 'click',

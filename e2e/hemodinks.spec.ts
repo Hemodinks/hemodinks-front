@@ -861,7 +861,7 @@ test('consulta e exporta relatórios com filtros múltiplos', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'Relatórios', level: 1 })).toBeVisible();
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
 
-  await page.getByRole('textbox', { name: 'Data inicial do atendimento', exact: true }).fill('01/06/2026');
+  await page.getByRole('textbox', { name: 'Cirurgias Consolidadas - inicial', exact: true }).fill('01/06/2026');
   const doctorsFilter = page.getByRole('combobox', { name: 'Médicos', exact: true });
   await doctorsFilter.fill('Dra. Ana');
   await doctorsFilter.press('Enter');
@@ -981,7 +981,7 @@ test('tutorial de relatórios usa somente alvos data-tour existentes e conclui a
 
   await page.waitForTimeout(250);
   await expect(mission).toContainText('Etapa 3 de 7');
-  await page.getByRole('textbox', { name: 'Data inicial do atendimento', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Cirurgias Consolidadas - inicial', exact: true }).click();
   await expect(mission).toContainText('Etapa 4 de 7');
   await expectActiveTourTarget(page, 'reports-combined-filters');
   await mission.getByRole('button', { name: 'Continuar tutorial' }).click();
@@ -1066,7 +1066,7 @@ test('tutorial valida MP3, preferência persistente e navegação por teclado', 
   await expect(mission).toContainText('Etapa 3 de 7');
   await page.keyboard.press('ArrowRight');
   await expect(mission).toContainText('Etapa 3 de 7');
-  await page.getByRole('textbox', { name: 'Data inicial do atendimento', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Cirurgias Consolidadas - inicial', exact: true }).click();
   await expect(mission).toContainText('Etapa 4 de 7');
   await page.keyboard.press('ArrowLeft');
   await expect(mission).toContainText('Etapa 3 de 7');
