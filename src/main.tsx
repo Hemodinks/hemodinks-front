@@ -4,6 +4,7 @@ import App from './App';
 import { initNewRelicBrowser } from './newRelic';
 import { initOpenTelemetryBrowser } from './otel';
 import { initObservability } from './observability';
+import '@fontsource-variable/comfortaa';
 import './styles.css';
 
 async function bootstrap() {
