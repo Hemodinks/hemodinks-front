@@ -38,6 +38,7 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "@fontsource-variable/comfortaa": "^5.3.0",
     "@newrelic/browser-agent": "^1.316.0",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/context-zone-peer-dep": "^2.8.0",

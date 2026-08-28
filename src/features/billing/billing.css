@@ -158,6 +158,19 @@
   background:
     linear-gradient(135deg, var(--billing-soft, transparent), transparent 72%),
     var(--panel);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.billing-summary-card:hover {
+  z-index: 1;
+  border-color: var(--billing-color, var(--teal));
+  box-shadow:
+    0 18px 30px color-mix(in srgb, var(--billing-color, var(--teal)) 24%, transparent),
+    0 5px 0 color-mix(in srgb, var(--billing-color, var(--teal)) 22%, var(--line));
+  transform: translateY(-4px) scale(1.025);
 }
 
 .billing-summary-icon {
@@ -843,6 +856,19 @@
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--input-bg);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.billing-history-quarter-card:hover {
+  z-index: 1;
+  border-color: var(--action-secondary);
+  box-shadow:
+    0 18px 30px color-mix(in srgb, var(--action-secondary) 24%, transparent),
+    0 5px 0 color-mix(in srgb, var(--action-secondary) 20%, var(--line));
+  transform: translateY(-4px) scale(1.025);
 }
 
 .billing-history-quarter-title {
@@ -1233,6 +1259,19 @@
   border-radius: 8px;
   color: var(--muted);
   background: var(--input-bg);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.billing-history-month-summary-grid article:hover {
+  z-index: 1;
+  border-color: currentColor;
+  box-shadow:
+    0 16px 26px color-mix(in srgb, currentColor 18%, transparent),
+    0 4px 0 color-mix(in srgb, currentColor 18%, var(--line));
+  transform: translateY(-3px) scale(1.025);
 }
 
 .billing-history-month-summary-grid article > span { min-width: 0; display: grid; gap: 3px; }
@@ -1485,5 +1524,19 @@
 
   .billing-history-upload {
     justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .billing-summary-card,
+  .billing-history-quarter-card,
+  .billing-history-month-summary-grid article {
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+
+  .billing-summary-card:hover,
+  .billing-history-quarter-card:hover,
+  .billing-history-month-summary-grid article:hover {
+    transform: none;
   }
 }
