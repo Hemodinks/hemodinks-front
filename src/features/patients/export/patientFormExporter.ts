@@ -92,7 +92,7 @@ export async function createPatientFormPdf(
   y += Math.max(lineHeight, patientLines.length * (lineHeight - 2));
 
   document.setFont('helvetica', 'bold');
-  document.text('Data do atendimento:', leftColX, y);
+  document.text('Cirurgias Consolidadas:', leftColX, y);
   document.setFont('helvetica', 'normal');
   document.text(normalizeReportValue(formData.dataAtendimento), leftColX + 120, y);
   y += lineHeight;

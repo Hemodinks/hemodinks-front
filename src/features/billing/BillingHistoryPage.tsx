@@ -138,7 +138,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
           <div>
             <span className="eyebrow">Faturamento médico</span>
             <h2>Histórico</h2>
-            <p>Consulte todos os atendimentos organizados pelo mês e ano da data de atendimento.</p>
+            <p>Consulte todas as cirurgias consolidadas organizadas por mês e ano.</p>
           </div>
         </div>
         <div className="billing-history-tabs" role="tablist" aria-label="Visualização do histórico">
@@ -167,7 +167,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
 
       {history.recordsWithoutAttendanceDate.length > 0 && (
         <AlertMessage type="warning" icon={<TriangleAlert size={17} />}>
-          {history.recordsWithoutAttendanceDate.length} atendimento(s) não possuem data de atendimento válida e não foram agrupados.
+          {history.recordsWithoutAttendanceDate.length} atendimento(s) não possuem uma data válida para Cirurgias Consolidadas e não foram agrupados.
         </AlertMessage>
       )}
 
@@ -277,13 +277,13 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
                               ) : (
                                 <div className="table-wrap">
                                   <table className="billing-table billing-history-table">
-                                    <thead><tr><th>Paciente</th><th>Cirurgião</th><th>Data do atendimento</th><th>Faturado</th><th>Glosa</th><th>Líquido</th><th>Status</th><th>Resumo</th></tr></thead>
+                                    <thead><tr><th>Paciente</th><th>Cirurgião</th><th>Cirurgias Consolidadas</th><th>Faturado</th><th>Glosa</th><th>Líquido</th><th>Status</th><th>Resumo</th></tr></thead>
                                     <tbody>
                                       {monthGroup.records.map((record) => (
                                         <tr key={record.id}>
                                           <td data-label="Paciente"><strong>{record.patientName}</strong><span>{record.convenioName}</span></td>
                                           <td data-label="Cirurgião">{record.doctorName}</td>
-                                          <td data-label="Data do atendimento">{record.surgeryDateLabel}</td>
+                                          <td data-label="Cirurgias Consolidadas">{record.surgeryDateLabel}</td>
                                           <td data-label="Faturado">{formatCurrency(record.paymentAmount)}</td>
                                           <td data-label="Glosa">{formatCurrency(record.glosaAmount)}</td>
                                           <td data-label="Líquido"><strong>{formatCurrency(record.netAmount)}</strong></td>

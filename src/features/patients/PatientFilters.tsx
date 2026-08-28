@@ -25,9 +25,9 @@ export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdm
         <TextField className="filter-field" label="Procedimento" type="search" value={pacienteFilters.procedimento}
           onValueChange={(value) => onFiltersChange((current) => ({ ...current, procedimento: value }))} placeholder="Procedimento" />
       </>}
-      <DateInput id="patient-attendance-start-date" className="filter-field" label="Data inicial do atendimento" value={pacienteFilters.dataInicio}
+      <DateInput id="patient-attendance-start-date" className="filter-field" label="Cirurgias Consolidadas - inicial" value={pacienteFilters.dataInicio}
         max={pacienteFilters.dataFinal || undefined} onChange={(value) => onFiltersChange((current) => ({ ...current, dataInicio: value }))} />
-      <DateInput id="patient-attendance-end-date" className="filter-field" label="Data final do atendimento" value={pacienteFilters.dataFinal}
+      <DateInput id="patient-attendance-end-date" className="filter-field" label="Cirurgias Consolidadas - final" value={pacienteFilters.dataFinal}
         min={pacienteFilters.dataInicio || undefined} onChange={(value) => onFiltersChange((current) => ({ ...current, dataFinal: value }))} />
       <DateInput id="patient-request-start-date" className="filter-field" label="Data inicial da solicitação" value={pacienteFilters.dataSolicitacaoInicio}
         max={pacienteFilters.dataSolicitacaoFinal || undefined} onChange={(value) => onFiltersChange((current) => ({ ...current, dataSolicitacaoInicio: value }))} />
