@@ -101,10 +101,10 @@ export function UserList({
             <thead>
               <tr>
                 <SortableTableHeader field="nome" label="Nome" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
+                {canManageUsers && <th>Ações</th>}
                 <SortableTableHeader field="perfil" label="Perfil" activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />
                 <th>Info</th>
                 <th>Contato</th>
-                {canManageUsers && <th aria-label="Ações" />}
               </tr>
             </thead>
             <tbody>
@@ -124,6 +124,18 @@ export function UserList({
                         <span>{displayName}</span>
                       </div>
                     </td>
+                    {canManageUsers && (
+                      <td data-label="Ações">
+                        <div className="row-actions">
+                          <IconButton label={`Editar ${displayName}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
+                            <Pencil size={17} />
+                          </IconButton>
+                          <IconButton label={`Excluir ${displayName}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
+                            <Trash2 size={17} />
+                          </IconButton>
+                        </div>
+                      </td>
+                    )}
                     <td data-label="Perfil">{formatProfileName(user.perfilId, user.perfilNome)}</td>
                     <td data-label="Info">
                       <button
@@ -149,18 +161,6 @@ export function UserList({
                         <Phone size={14} />
                       </button>
                     </td>
-                    {canManageUsers && (
-                      <td data-label="Ações">
-                        <div className="row-actions">
-                          <IconButton label={`Editar ${displayName}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
-                            <Pencil size={17} />
-                          </IconButton>
-                          <IconButton label={`Excluir ${displayName}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
-                            <Trash2 size={17} />
-                          </IconButton>
-                        </div>
-                      </td>
-                    )}
                   </tr>
                   );
                 })
