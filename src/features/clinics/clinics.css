@@ -56,7 +56,7 @@
 .clinic-modules-fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
 .clinic-modules-fieldset legend { color: var(--muted); font-weight: 800; padding: 0 6px; }
 .clinic-module-options { display: flex; flex-wrap: wrap; gap: 12px 20px; }
-.clinic-module-options label { display: flex; align-items: center; gap: 7px; font-weight: 700; }
+.clinic-module-options label { display: flex; align-items: center; gap: 7px; font-weight: 800; }
 .clinic-module-options input { min-height: auto; width: 18px; height: 18px; accent-color: var(--teal); }
 @media (max-width: 720px) { .clinic-form-grid { grid-template-columns: 1fr; } }
 @media (max-width: 720px) { .clinic-teams-panel .data-header, .clinic-teams-panel .team-member-list li { align-items: stretch; flex-direction: column; } }
