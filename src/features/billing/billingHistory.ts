@@ -132,8 +132,22 @@ export function getBillingHistoryMonthTone(
   highlights: BillingQuarterHighlight[],
 ): BillingHistoryMonthTone {
   const quarter = highlights.find((item) => item.months.some((itemMonth) => itemMonth.month === month));
-  if (quarter?.highestMonth.month === month) return 'highest';
-  if (quarter?.lowestMonth.month === month) return 'lowest';
+  if (!quarter) return 'neutral';
+
+  const selectedMonth = quarter.months.find((item) => item.month === month);
+  const amount = selectedMonth?.summary.totalGrossAmount ?? 0;
+  if (amount <= 0) return 'neutral';
+
+  const tiedMonths = quarter.months.filter((item) => item.summary.totalGrossAmount === amount);
+  if (tiedMonths.length > 1) return 'neutral';
+
+  const uniquePositiveMonths = quarter.months
+    .filter((item) => item.summary.totalGrossAmount > 0)
+    .filter((item, _index, months) => months.filter((candidate) => candidate.summary.totalGrossAmount === item.summary.totalGrossAmount).length === 1)
+    .sort((left, right) => right.summary.totalGrossAmount - left.summary.totalGrossAmount || left.month - right.month);
+
+  if (uniquePositiveMonths[0]?.month === month) return 'highest';
+  if (uniquePositiveMonths.length > 1 && uniquePositiveMonths.at(-1)?.month === month) return 'lowest';
   return 'neutral';
 }
 
@@ -141,7 +155,11 @@ export function getBillingQuarterPerformanceTone(
   quarter: number,
   highlights: BillingQuarterHighlight[],
 ): BillingQuarterPerformanceTone {
-  const rankedQuarters = [...highlights].sort((left, right) => {
+  const positiveQuarters = highlights.filter((item) => item.totalGrossAmount > 0);
+  const uniquePositiveQuarters = positiveQuarters.filter((item) => (
+    positiveQuarters.filter((candidate) => candidate.totalGrossAmount === item.totalGrossAmount).length === 1
+  ));
+  const rankedQuarters = uniquePositiveQuarters.sort((left, right) => {
     const grossDifference = right.totalGrossAmount - left.totalGrossAmount;
     if (grossDifference !== 0) return grossDifference;
 
@@ -149,8 +167,11 @@ export function getBillingQuarterPerformanceTone(
     const leftRecords = left.months.reduce((total, month) => total + month.summary.totalRecords, 0);
     return rightRecords - leftRecords || left.quarter - right.quarter;
   });
-  const twoMostProfitable = new Set(rankedQuarters.slice(0, 2).map((item) => item.quarter));
-  const twoLeastProfitable = new Set(rankedQuarters.slice(2, 4).map((item) => item.quarter));
+  const mostProfitableCount = Math.min(2, Math.ceil(rankedQuarters.length / 2));
+  const leastProfitableCount = Math.min(2, Math.floor(rankedQuarters.length / 2));
+  const twoMostProfitable = new Set(rankedQuarters.slice(0, mostProfitableCount).map((item) => item.quarter));
+  const leastProfitableQuarters = leastProfitableCount > 0 ? rankedQuarters.slice(-leastProfitableCount) : [];
+  const twoLeastProfitable = new Set(leastProfitableQuarters.map((item) => item.quarter));
 
   if (twoMostProfitable.has(quarter)) return 'most-profitable';
   if (twoLeastProfitable.has(quarter)) return 'least-profitable';
