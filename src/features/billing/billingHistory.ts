@@ -39,6 +39,7 @@ export type BillingQuarterHighlight = {
 };
 
 export type BillingHistoryMonthTone = 'highest' | 'lowest' | 'neutral';
+export type BillingQuarterPerformanceTone = 'most-profitable' | 'least-profitable' | 'neutral';
 
 export function getBillingHistoryDate(record: BillingRecord) {
   return record.attendanceDate;
@@ -133,5 +134,25 @@ export function getBillingHistoryMonthTone(
   const quarter = highlights.find((item) => item.months.some((itemMonth) => itemMonth.month === month));
   if (quarter?.highestMonth.month === month) return 'highest';
   if (quarter?.lowestMonth.month === month) return 'lowest';
+  return 'neutral';
+}
+
+export function getBillingQuarterPerformanceTone(
+  quarter: number,
+  highlights: BillingQuarterHighlight[],
+): BillingQuarterPerformanceTone {
+  const rankedQuarters = [...highlights].sort((left, right) => {
+    const grossDifference = right.totalGrossAmount - left.totalGrossAmount;
+    if (grossDifference !== 0) return grossDifference;
+
+    const rightRecords = right.months.reduce((total, month) => total + month.summary.totalRecords, 0);
+    const leftRecords = left.months.reduce((total, month) => total + month.summary.totalRecords, 0);
+    return rightRecords - leftRecords || left.quarter - right.quarter;
+  });
+  const twoMostProfitable = new Set(rankedQuarters.slice(0, 2).map((item) => item.quarter));
+  const twoLeastProfitable = new Set(rankedQuarters.slice(2, 4).map((item) => item.quarter));
+
+  if (twoMostProfitable.has(quarter)) return 'most-profitable';
+  if (twoLeastProfitable.has(quarter)) return 'least-profitable';
   return 'neutral';
 }
