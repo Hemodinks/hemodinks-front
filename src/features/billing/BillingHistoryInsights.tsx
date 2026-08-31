@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BarChart3, CircleDollarSign, PieChart, ReceiptText, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { DataPanel } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
-import { getBillingQuarterHighlights } from './billingHistory';
+import { getBillingQuarterHighlights, getBillingQuarterPerformanceTone } from './billingHistory';
 import type { BillingHistoryMonth, BillingHistoryYear } from './billingHistory';
 
 const QUARTER_COLORS = ['#0f766e', '#2563eb', '#7c3aed', '#d97706'];
@@ -54,7 +54,7 @@ export function QuarterlyDashboard({ year, years, selectedYear, onChange }: Quar
       </div>
       <div className="billing-history-quarter-grid">
         {quarters.map((quarter) => (
-          <article className="billing-history-quarter-card" key={quarter.quarter}>
+          <article className={`billing-history-quarter-card is-${getBillingQuarterPerformanceTone(quarter.quarter, quarters)}`} key={quarter.quarter}>
             <div className="billing-history-quarter-title">
               <strong>{quarter.quarter}º trimestre</strong>
               <span>{formatCurrency(quarter.totalGrossAmount)}</span>
