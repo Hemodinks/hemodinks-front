@@ -864,11 +864,51 @@
 
 .billing-history-quarter-card:hover {
   z-index: 1;
-  border-color: var(--action-secondary);
+  border-color: var(--quarter-card-tone, var(--action-secondary));
   box-shadow:
-    0 18px 30px color-mix(in srgb, var(--action-secondary) 24%, transparent),
-    0 5px 0 color-mix(in srgb, var(--action-secondary) 20%, var(--line));
+    0 18px 30px color-mix(in srgb, var(--quarter-card-tone, var(--action-secondary)) 24%, transparent),
+    0 5px 0 color-mix(in srgb, var(--quarter-card-tone, var(--action-secondary)) 20%, var(--line));
   transform: translateY(-4px) scale(1.025);
+}
+
+.billing-history-quarter-card.is-most-profitable {
+  --quarter-card-tone: #16a34a;
+  border-color: #86efac;
+  background: #dcfce7;
+}
+
+.billing-history-quarter-card.is-least-profitable {
+  --quarter-card-tone: #dc2626;
+  border-color: #fca5a5;
+  background: #fee2e2;
+}
+
+.billing-history-quarter-card.is-most-profitable .billing-history-quarter-title strong,
+.billing-history-quarter-card.is-most-profitable .billing-history-quarter-title span {
+  color: #166534;
+}
+
+.billing-history-quarter-card.is-least-profitable .billing-history-quarter-title strong,
+.billing-history-quarter-card.is-least-profitable .billing-history-quarter-title span {
+  color: #991b1b;
+}
+
+:root[data-theme="dark"] .billing-history-quarter-card.is-most-profitable {
+  background: color-mix(in srgb, #16a34a 22%, var(--input-bg));
+}
+
+:root[data-theme="dark"] .billing-history-quarter-card.is-least-profitable {
+  background: color-mix(in srgb, #dc2626 22%, var(--input-bg));
+}
+
+:root[data-theme="dark"] .billing-history-quarter-card.is-most-profitable .billing-history-quarter-title strong,
+:root[data-theme="dark"] .billing-history-quarter-card.is-most-profitable .billing-history-quarter-title span {
+  color: #bbf7d0;
+}
+
+:root[data-theme="dark"] .billing-history-quarter-card.is-least-profitable .billing-history-quarter-title strong,
+:root[data-theme="dark"] .billing-history-quarter-card.is-least-profitable .billing-history-quarter-title span {
+  color: #fecaca;
 }
 
 .billing-history-quarter-title {
