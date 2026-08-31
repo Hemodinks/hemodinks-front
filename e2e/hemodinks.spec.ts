@@ -686,6 +686,8 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   await page.getByRole('tab', { name: 'Gráficos' }).click();
   await expect(page.getByRole('heading', { name: 'Faturamento por mês' })).toBeVisible();
   await expect(page.getByRole('group', { name: /Gráfico circular do faturamento trimestral de 2026/i })).toBeVisible();
+  await expect(page.getByRole('region', { name: /Indicadores de faturamento de 2026/i })).toContainText('Faturamento anual');
+  await expect(page.getByRole('region', { name: /Indicadores de faturamento de 2026/i })).toContainText('Melhor mês');
 
   const juneBar = page.getByLabel(/Junho de 2026, 2º trimestre/i);
   await juneBar.hover();
@@ -703,12 +705,27 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   await expect(pieTooltip).toContainText('2º trimestre de 2026');
   await expect(pieTooltip).toContainText('Abril a Junho');
 
+  const secondQuarterLegend = page.getByRole('button', { name: /Consultar 2º trimestre de 2026/i });
+  await secondQuarterLegend.click();
+  await expect(secondQuarterLegend).toHaveAttribute('aria-pressed', 'true');
+  await expect(secondQuarterSlice).toHaveAttribute('aria-pressed', 'true');
+  await expect(juneBar).toHaveClass(/is-active/);
+  await expect(page.getByLabel(/Janeiro de 2026, 1º trimestre/i)).toHaveClass(/is-muted/);
+
   const fourthQuarterLegend = page.getByRole('button', { name: /Consultar 4º trimestre de 2026/i });
-  await fourthQuarterLegend.focus();
-  await expect(pieTooltip).toContainText('4º trimestre de 2026');
-  await expect(pieTooltip).toContainText('Sem participação no faturamento anual');
-  await expect(page.locator('.billing-history-pie-slice[stroke="#d97706"]')).toHaveCount(0);
+  await expect(fourthQuarterLegend).toBeDisabled();
+  await expect(fourthQuarterLegend.locator('..')).toHaveClass(/is-zero/);
+  await expect(pieSvg.getByRole('button', { name: /^4º trimestre de 2026/i })).toHaveCount(0);
+
+  const barChart = page.getByRole('group', { name: /Gráfico de barras do faturamento mensal de 2026/i });
+  const chartDimensions = await barChart.evaluate((element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }));
+  expect(chartDimensions.scrollWidth).toBeLessThanOrEqual(chartDimensions.clientWidth);
   await expectNoGlobalHorizontalOverflow(page);
+
+  await page.setViewportSize({ width: 360, height: 860 });
+  await expectNoGlobalHorizontalOverflow(page);
+  const mobileChartDimensions = await barChart.evaluate((element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }));
+  expect(mobileChartDimensions.scrollWidth).toBeLessThanOrEqual(mobileChartDimensions.clientWidth);
 });
 
 test('mantem telas criticas sem overflow horizontal no mobile', async ({ page }) => {
