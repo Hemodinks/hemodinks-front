@@ -1,14 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BarChart3, CircleDollarSign, PieChart, ReceiptText, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { DataPanel } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
 import { getBillingQuarterHighlights, getBillingQuarterPerformanceTone } from './billingHistory';
 import type { BillingHistoryMonth, BillingHistoryYear } from './billingHistory';
 
-const QUARTER_COLORS = ['#0f766e', '#2563eb', '#7c3aed', '#d97706'];
+const QUARTER_COLORS = ['#0f766e', '#2563eb', '#7c3aed', '#c2410c'];
 
 function formatPercentage(value: number) {
   return `${value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+}
+
+function getChartMaximum(value: number) {
+  if (value <= 0) return 1;
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  const normalized = value / magnitude;
+  const multiplier = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  return multiplier * magnitude;
+}
+
+function formatChartAxisValue(value: number) {
+  if (value === 0) return 'R$ 0';
+  if (value >= 1_000_000) return `R$ ${(value / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
+  if (value >= 1_000) return `R$ ${(value / 1_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+  return `R$ ${value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
 }
 
 type BillingHistoryYearPickerProps = {
@@ -112,10 +127,27 @@ type BillingHistoryChartsProps = BillingHistoryYearPickerProps & {
 };
 
 export function BillingHistoryCharts({ year, years, selectedYear, onChange }: BillingHistoryChartsProps) {
-  const [activeQuarter, setActiveQuarter] = useState<number | null>(null);
+  const [hoveredQuarter, setHoveredQuarter] = useState<number | null>(null);
+  const [selectedQuarter, setSelectedQuarter] = useState<number | null>(null);
+
+  useEffect(() => {
+    setHoveredQuarter(null);
+    setSelectedQuarter(null);
+  }, [year.year]);
+
   const quarters = getBillingQuarterHighlights(year);
-  const maximumMonthlyAmount = Math.max(...year.months.map((month) => month.summary.totalGrossAmount), 1);
+  const positiveMonths = year.months.filter((month) => month.summary.totalGrossAmount > 0);
+  const maximumMonthlyAmount = Math.max(...positiveMonths.map((month) => month.summary.totalGrossAmount), 0);
+  const chartMaximum = getChartMaximum(maximumMonthlyAmount);
+  const chartTicks = Array.from({ length: 5 }, (_, index) => chartMaximum - (chartMaximum / 4) * index);
   const annualAmount = year.summary.totalGrossAmount;
+  const averageMonthlyAmount = annualAmount / 12;
+  const highestMonth = positiveMonths.reduce<BillingHistoryMonth | null>((current, month) => (
+    !current || month.summary.totalGrossAmount > current.summary.totalGrossAmount ? month : current
+  ), null);
+  const lowestMonth = positiveMonths.reduce<BillingHistoryMonth | null>((current, month) => (
+    !current || month.summary.totalGrossAmount < current.summary.totalGrossAmount ? month : current
+  ), null);
   let accumulatedPercentage = 0;
   const quarterMetrics = quarters.map((quarter, index) => {
     const start = accumulatedPercentage;
@@ -128,7 +160,13 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
       start,
     };
   });
+  const largestQuarterAmount = Math.max(...quarters.map((quarter) => quarter.totalGrossAmount), 0);
+  const activeQuarter = hoveredQuarter ?? selectedQuarter;
   const activeQuarterMetric = quarterMetrics.find(({ quarter }) => quarter.quarter === activeQuarter) ?? null;
+  const toggleQuarter = (quarter: number, hasBilling: boolean) => {
+    if (!hasBilling) return;
+    setSelectedQuarter((current) => current === quarter ? null : quarter);
+  };
 
   return (
     <div className="billing-history-charts-view">
@@ -143,19 +181,30 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
         </div>
       </DataPanel>
 
+      <section className="billing-history-chart-kpis" aria-label={`Indicadores de faturamento de ${year.year}`}>
+        <article className="is-annual"><Wallet size={20} aria-hidden="true" /><span><small>Faturamento anual</small><strong>{formatCurrency(annualAmount)}</strong></span></article>
+        <article className="is-average"><CircleDollarSign size={20} aria-hidden="true" /><span><small>Média mensal · 12 meses</small><strong>{formatCurrency(averageMonthlyAmount)}</strong></span></article>
+        <article className="is-highest"><TrendingUp size={20} aria-hidden="true" /><span><small>Melhor mês</small><strong>{highestMonth ? highestMonth.name : 'Sem faturamento'}</strong>{highestMonth && <b>{formatCurrency(highestMonth.summary.totalGrossAmount)}</b>}</span></article>
+        <article className="is-lowest"><TrendingDown size={20} aria-hidden="true" /><span><small>Menor mês com faturamento</small><strong>{lowestMonth ? lowestMonth.name : 'Sem faturamento'}</strong>{lowestMonth && <b>{formatCurrency(lowestMonth.summary.totalGrossAmount)}</b>}</span></article>
+      </section>
+
       <div className="billing-history-charts-grid">
         <DataPanel className="billing-history-chart-panel billing-history-bar-panel">
           <div className="billing-history-chart-title"><BarChart3 size={21} /><div><h3>Faturamento por mês</h3><p>Total bruto mensal</p></div></div>
-          <div className="billing-history-bar-chart" aria-label={`Gráfico de barras do faturamento mensal de ${year.year}`}>
-            {year.months.map((month) => {
+          <div className="billing-history-bar-chart" role="group" aria-label={`Gráfico de barras do faturamento mensal de ${year.year}`}>
+            <div className="billing-history-bar-axis" aria-hidden="true">
+              {chartTicks.map((tick) => <span key={tick}>{formatChartAxisValue(tick)}</span>)}
+            </div>
+            <div className="billing-history-bar-plot">
+              {year.months.map((month) => {
               const height = month.summary.totalGrossAmount > 0
-                ? Math.max((month.summary.totalGrossAmount / maximumMonthlyAmount) * 100, 4)
-                : 1;
+                ? Math.max((month.summary.totalGrossAmount / chartMaximum) * 100, 3)
+                : 0;
               const quarter = Math.ceil(month.month / 3);
               const tooltipId = `billing-bar-tooltip-${year.year}-${month.month}`;
               return (
                 <div
-                  className="billing-history-bar-column"
+                  className={`billing-history-bar-column${activeQuarter === quarter ? ' is-active' : ''}${activeQuarter !== null && activeQuarter !== quarter ? ' is-muted' : ''}`}
                   tabIndex={0}
                   aria-describedby={tooltipId}
                   aria-label={`${month.name} de ${year.year}, ${quarter}º trimestre, ${formatCurrency(month.summary.totalGrossAmount)}`}
@@ -166,13 +215,15 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
                     <small>{quarter}º trimestre</small>
                     <b>{formatCurrency(month.summary.totalGrossAmount)}</b>
                   </span>
-                  <span className="billing-history-bar-value">{formatCurrency(month.summary.totalGrossAmount)}</span>
-                  <div className="billing-history-bar-track"><span style={{ height: `${height}%` }} /></div>
+                  <span className="billing-history-bar-value">{month.summary.totalGrossAmount > 0 ? formatCurrency(month.summary.totalGrossAmount) : ''}</span>
+                  <div className="billing-history-bar-track"><span className={height === 0 ? 'is-zero' : ''} style={{ height: `${height}%` }} /></div>
                   <strong>{month.name.slice(0, 3)}</strong>
                 </div>
               );
-            })}
+              })}
+            </div>
           </div>
+          <p className="billing-history-chart-help">Passe o mouse ou use o teclado para consultar o valor completo de cada mês.</p>
         </DataPanel>
 
         <DataPanel className="billing-history-chart-panel billing-history-pie-panel">
@@ -182,7 +233,7 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
               className="billing-history-pie"
               role="group"
               aria-label={`Gráfico circular do faturamento trimestral de ${year.year}`}
-              onMouseLeave={() => setActiveQuarter(null)}
+              onMouseLeave={() => setHoveredQuarter(null)}
             >
               <svg className="billing-history-pie-svg" viewBox="0 0 240 240" role="group" aria-label={`Participação dos trimestres no faturamento de ${year.year}`}>
                 <circle className="billing-history-pie-track" cx="120" cy="120" r="88" pathLength="100" />
@@ -190,7 +241,7 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
                   const monthsLabel = `${quarter.months[0].name} a ${quarter.months[2].name}`;
                   return (
                     <circle
-                      className="billing-history-pie-slice"
+                      className={`billing-history-pie-slice${quarter.totalGrossAmount === largestQuarterAmount ? ' is-largest' : ''}${activeQuarter === quarter.quarter ? ' is-active' : ''}${activeQuarter !== null && activeQuarter !== quarter.quarter ? ' is-muted' : ''}`}
                       cx="120"
                       cy="120"
                       r="88"
@@ -200,16 +251,28 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
                       strokeDasharray={`${percentage} ${100 - percentage}`}
                       strokeDashoffset={-start}
                       tabIndex={0}
+                      role="button"
+                      aria-pressed={selectedQuarter === quarter.quarter}
                       aria-label={`${quarter.quarter}º trimestre de ${year.year}, ${monthsLabel}, ${formatCurrency(quarter.totalGrossAmount)}, ${formatPercentage(percentage)} do total anual`}
-                      onMouseEnter={() => setActiveQuarter(quarter.quarter)}
-                      onFocus={() => setActiveQuarter(quarter.quarter)}
-                      onBlur={() => setActiveQuarter(null)}
+                      onMouseEnter={() => setHoveredQuarter(quarter.quarter)}
+                      onFocus={() => setHoveredQuarter(quarter.quarter)}
+                      onBlur={() => setHoveredQuarter(null)}
+                      onClick={() => toggleQuarter(quarter.quarter, true)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          toggleQuarter(quarter.quarter, true);
+                        }
+                      }}
                       key={quarter.quarter}
                     />
                   );
                 })}
               </svg>
-              <span className="billing-history-pie-total"><small>Total anual</small><strong>{formatCurrency(annualAmount)}</strong></span>
+              <span className="billing-history-pie-total">
+                <small>{activeQuarterMetric ? `${activeQuarterMetric.quarter.quarter}º trimestre` : 'Total anual'}</small>
+                <strong>{formatCurrency(activeQuarterMetric?.quarter.totalGrossAmount ?? annualAmount)}</strong>
+              </span>
               {activeQuarterMetric && (
                 <span className="billing-history-chart-tooltip is-pie is-visible" role="tooltip">
                   <strong><i style={{ backgroundColor: activeQuarterMetric.color }} />{activeQuarterMetric.quarter.quarter}º trimestre de {year.year}</strong>
@@ -220,24 +283,29 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
               )}
             </div>
             <ul className="billing-history-pie-legend">
-              {quarterMetrics.map(({ quarter, color, percentage }) => (
-                <li className={activeQuarter === quarter.quarter ? 'is-active' : ''} key={quarter.quarter}>
+              {quarterMetrics.map(({ quarter, color, percentage }) => {
+                const hasBilling = quarter.totalGrossAmount > 0;
+                const isLargest = hasBilling && quarter.totalGrossAmount === largestQuarterAmount;
+                return <li className={`${activeQuarter === quarter.quarter ? 'is-active ' : ''}${hasBilling ? '' : 'is-zero'}`} key={quarter.quarter}>
                   <button
                     type="button"
+                    disabled={!hasBilling}
+                    aria-pressed={selectedQuarter === quarter.quarter}
                     aria-label={`Consultar ${quarter.quarter}º trimestre de ${year.year}, ${quarter.months[0].name} a ${quarter.months[2].name}`}
-                    onMouseEnter={() => setActiveQuarter(quarter.quarter)}
-                    onMouseLeave={() => setActiveQuarter(null)}
-                    onFocus={() => setActiveQuarter(quarter.quarter)}
-                    onBlur={() => setActiveQuarter(null)}
+                    onMouseEnter={() => setHoveredQuarter(quarter.quarter)}
+                    onMouseLeave={() => setHoveredQuarter(null)}
+                    onFocus={() => setHoveredQuarter(quarter.quarter)}
+                    onBlur={() => setHoveredQuarter(null)}
+                    onClick={() => toggleQuarter(quarter.quarter, hasBilling)}
                   >
                     <i style={{ backgroundColor: color }} />
-                    <span><strong>{quarter.quarter}º trimestre</strong><small>{percentage > 0 ? formatPercentage(percentage) : 'Sem faturamento'}</small></span>
+                    <span><strong>{quarter.quarter}º trimestre</strong><small>{percentage > 0 ? formatPercentage(percentage) : 'Sem faturamento'}</small>{isLargest && <em>Maior participação</em>}</span>
                     <b>{formatCurrency(quarter.totalGrossAmount)}</b>
                   </button>
-                </li>
-              ))}
+                </li>;
+              })}
             </ul>
-            <p className="billing-history-pie-note">Trimestres sem faturamento permanecem na legenda, mas não ocupam uma fatia do gráfico.</p>
+            <p className="billing-history-pie-note">Selecione um trimestre para destacar seus meses. Períodos sem faturamento não ocupam uma fatia.</p>
           </div>
         </DataPanel>
       </div>
