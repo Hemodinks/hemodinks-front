@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BillingRecord } from './billingTypes';
-import { buildBillingHistory, getBillingHistoryMonthTone, getBillingQuarterHighlights } from './billingHistory';
+import { buildBillingHistory, getBillingHistoryMonthTone, getBillingQuarterHighlights, getBillingQuarterPerformanceTone } from './billingHistory';
 
 function record(id: number, attendanceDate: string | null, paymentAmount: number): BillingRecord {
   return {
@@ -75,5 +75,22 @@ describe('histórico de faturamento', () => {
     const highlights = getBillingQuarterHighlights(history.years[0]);
 
     expect(highlights[0].highestMonth.month).not.toBe(highlights[0].lowestMonth.month);
+  });
+
+  it('destaca os dois trimestres mais lucrativos e os dois menos lucrativos', () => {
+    const history = buildBillingHistory([
+      record(1, '2026-01-10T00:00:00Z', 100),
+      record(2, '2026-04-10T00:00:00Z', 400),
+      record(3, '2026-07-10T00:00:00Z', 300),
+      record(4, '2026-10-10T00:00:00Z', 200),
+    ]);
+    const highlights = getBillingQuarterHighlights(history.years[0]);
+
+    expect(highlights.map((quarter) => getBillingQuarterPerformanceTone(quarter.quarter, highlights))).toEqual([
+      'least-profitable',
+      'most-profitable',
+      'most-profitable',
+      'least-profitable',
+    ]);
   });
 });
