@@ -41,36 +41,67 @@ type QuarterlyDashboardProps = BillingHistoryYearPickerProps & {
 
 export function QuarterlyDashboard({ year, years, selectedYear, onChange }: QuarterlyDashboardProps) {
   const quarters = getBillingQuarterHighlights(year);
+  const annualGrossAmount = year.summary.totalGrossAmount;
 
   return (
     <DataPanel className="billing-history-quarter-dashboard">
       <div className="billing-history-section-header">
         <div>
           <span className="eyebrow">Destaques trimestrais</span>
-          <h3>Meses de maior e menor faturamento</h3>
-          <p>Os mesmos destaques de cor são aplicados aos meses nos accordions abaixo.</p>
+          <h3>Comparativo trimestral de faturamento</h3>
+          <p>Compare os maiores e menores faturamentos do ano. Empates e valores zerados permanecem neutros.</p>
         </div>
         <BillingHistoryYearPicker years={years} selectedYear={selectedYear} onChange={onChange} />
       </div>
+      <div className="billing-history-quarter-legend" aria-label="Legenda dos destaques trimestrais">
+        <span className="is-most-profitable"><i />Maior faturamento</span>
+        <span className="is-least-profitable"><i />Menor faturamento</span>
+        <span className="is-neutral"><i />Empate ou sem faturamento</span>
+      </div>
       <div className="billing-history-quarter-grid">
-        {quarters.map((quarter) => (
-          <article className={`billing-history-quarter-card is-${getBillingQuarterPerformanceTone(quarter.quarter, quarters)}`} key={quarter.quarter}>
+        {quarters.map((quarter) => {
+          const tone = getBillingQuarterPerformanceTone(quarter.quarter, quarters);
+          const participation = annualGrossAmount > 0 ? (quarter.totalGrossAmount / annualGrossAmount) * 100 : 0;
+          const monthsWithBilling = quarter.months.filter((month) => month.summary.totalGrossAmount > 0);
+          const highestAmount = Math.max(...monthsWithBilling.map((month) => month.summary.totalGrossAmount), 0);
+          const lowestAmount = monthsWithBilling.length
+            ? Math.min(...monthsWithBilling.map((month) => month.summary.totalGrossAmount))
+            : 0;
+          const highestMonths = monthsWithBilling.filter((month) => month.summary.totalGrossAmount === highestAmount);
+          const lowestMonths = monthsWithBilling.filter((month) => month.summary.totalGrossAmount === lowestAmount);
+          const toneLabel = tone === 'most-profitable'
+            ? 'Maior faturamento'
+            : tone === 'least-profitable'
+              ? 'Menor faturamento'
+              : quarter.totalGrossAmount === 0 ? 'Sem faturamento' : 'Empate';
+
+          return <article className={`billing-history-quarter-card is-${tone}`} key={quarter.quarter}>
             <div className="billing-history-quarter-title">
               <strong>{quarter.quarter}º trimestre</strong>
-              <span>{formatCurrency(quarter.totalGrossAmount)}</span>
+              <span className={`billing-history-quarter-badge is-${tone}`}>{toneLabel}</span>
             </div>
-            <div className="billing-history-quarter-highlight is-highest">
-              <TrendingUp size={18} aria-hidden="true" />
-              <span><small>Maior faturamento</small><strong>{quarter.highestMonth.name}</strong></span>
-              <b>{formatCurrency(quarter.highestMonth.summary.totalGrossAmount)}</b>
+            <div className="billing-history-quarter-total">
+              <strong>{formatCurrency(quarter.totalGrossAmount)}</strong>
+              <small>{formatPercentage(participation)} do faturamento anual</small>
             </div>
-            <div className="billing-history-quarter-highlight is-lowest">
-              <TrendingDown size={18} aria-hidden="true" />
-              <span><small>Menor faturamento</small><strong>{quarter.lowestMonth.name}</strong></span>
-              <b>{formatCurrency(quarter.lowestMonth.summary.totalGrossAmount)}</b>
-            </div>
-          </article>
-        ))}
+            {monthsWithBilling.length > 0 ? <>
+              <div className="billing-history-quarter-highlight">
+                <TrendingUp className="is-highest" size={18} aria-hidden="true" />
+                <span><small>{highestMonths.length > 1 ? 'Empate no maior mês' : 'Maior mês'}</small><strong>{highestMonths.map((month) => month.name).join(' e ')}</strong></span>
+                <b>{formatCurrency(highestAmount)}</b>
+              </div>
+              {monthsWithBilling.length > 1 && (
+                <div className="billing-history-quarter-highlight">
+                  <TrendingDown className="is-lowest" size={18} aria-hidden="true" />
+                  <span><small>{lowestMonths.length > 1 ? 'Empate no menor mês' : 'Menor mês'}</small><strong>{lowestMonths.map((month) => month.name).join(' e ')}</strong></span>
+                  <b>{formatCurrency(lowestAmount)}</b>
+                </div>
+              )}
+            </> : (
+              <div className="billing-history-quarter-empty"><ReceiptText size={18} aria-hidden="true" /><span><strong>Sem faturamento</strong><small>Nenhum mês possui valor informado.</small></span></div>
+            )}
+          </article>;
+        })}
       </div>
     </DataPanel>
   );

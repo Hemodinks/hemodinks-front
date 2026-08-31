@@ -93,4 +93,19 @@ describe('histórico de faturamento', () => {
       'least-profitable',
     ]);
   });
+
+  it('mantém trimestres e meses zerados ou empatados com destaque neutro', () => {
+    const history = buildBillingHistory([
+      record(1, '2026-07-10T00:00:00Z', 300),
+      record(2, '2026-08-10T00:00:00Z', 300),
+    ]);
+    const highlights = getBillingQuarterHighlights(history.years[0]);
+
+    expect(highlights.map((quarter) => getBillingQuarterPerformanceTone(quarter.quarter, highlights))).toEqual([
+      'neutral', 'neutral', 'most-profitable', 'neutral',
+    ]);
+    expect(getBillingHistoryMonthTone(7, highlights)).toBe('neutral');
+    expect(getBillingHistoryMonthTone(8, highlights)).toBe('neutral');
+    expect(getBillingHistoryMonthTone(9, highlights)).toBe('neutral');
+  });
 });

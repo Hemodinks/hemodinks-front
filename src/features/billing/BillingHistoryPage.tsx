@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, CalendarClock, ChevronDown, Download, FileText, History, ReceiptText, Trash2, TriangleAlert, Upload, Wallet } from 'lucide-react';
-import { AlertMessage, DataPanel, IconButton, ToastMessage } from '../../shared/components/ui';
+import { AlertMessage, Button, DataPanel, IconButton, ToastMessage } from '../../shared/components/ui';
 import { deleteBillingHistoryFile, downloadBillingHistoryFile, getBillingHistoryFiles, uploadBillingHistoryFile } from '../../services';
 import { downloadBlob } from '../../shared/utils/downloadFile';
-import { formatCurrency } from '../../shared/utils/formatters';
+import { formatCurrency, toDisplayDate } from '../../shared/utils/formatters';
 import { BillingSummaryModal } from './BillingPageComponents';
 import { BillingHistoryCharts, BillingHistoryMonthSummary, QuarterlyDashboard } from './BillingHistoryInsights';
 import { buildBillingHistory, getBillingHistoryMonthTone, getBillingQuarterHighlights } from './billingHistory';
@@ -27,6 +27,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
   const [activeTab, setActiveTab] = useState<'history' | 'charts'>('history');
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [summaryRecordId, setSummaryRecordId] = useState<number | null>(null);
+  const [showInvalidRecords, setShowInvalidRecords] = useState(false);
   const [busyFileKey, setBusyFileKey] = useState<string | null>(null);
   const [fileMessage, setFileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const billingQuery = useQuery({
@@ -167,8 +168,46 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
 
       {history.recordsWithoutAttendanceDate.length > 0 && (
         <AlertMessage type="warning" icon={<TriangleAlert size={17} />}>
-          {history.recordsWithoutAttendanceDate.length} atendimento(s) não possuem uma data válida para Cirurgias Consolidadas e não foram agrupados.
+          <span className="billing-history-invalid-alert-copy">
+            {history.recordsWithoutAttendanceDate.length} atendimento(s) não possuem uma data válida para Cirurgias Consolidadas e não foram agrupados.
+          </span>
+          <Button
+            className="billing-history-invalid-toggle"
+            aria-expanded={showInvalidRecords}
+            aria-controls="billing-history-invalid-records"
+            onClick={() => setShowInvalidRecords((current) => !current)}
+          >
+            {showInvalidRecords ? 'Ocultar atendimentos' : 'Ver atendimentos'}
+          </Button>
         </AlertMessage>
+      )}
+
+      {showInvalidRecords && history.recordsWithoutAttendanceDate.length > 0 && (
+        <DataPanel className="billing-history-invalid-records" id="billing-history-invalid-records">
+          <div className="billing-history-section-header">
+            <div>
+              <span className="eyebrow">Correção necessária</span>
+              <h3>Atendimentos sem data de Cirurgias Consolidadas</h3>
+              <p>Abra o resumo para identificar o cadastro que precisa ter a data informada.</p>
+            </div>
+          </div>
+          <div className="table-wrap billing-history-invalid-table-wrap">
+            <table className="billing-history-invalid-table">
+              <thead><tr><th>Paciente</th><th>Cirurgião</th><th>Data da solicitação</th><th>Cirurgias Consolidadas</th><th>Resumo</th></tr></thead>
+              <tbody>
+                {history.recordsWithoutAttendanceDate.map((record) => (
+                  <tr key={record.id}>
+                    <td data-label="Paciente"><strong>{record.patientName}</strong><span>{record.convenioName}</span></td>
+                    <td data-label="Cirurgião">{record.doctorName}</td>
+                    <td data-label="Data da solicitação">{toDisplayDate(record.paciente.data) || '-'}</td>
+                    <td data-label="Cirurgias Consolidadas"><span className="status-pill warning">Não informada</span></td>
+                    <td data-label="Resumo"><IconButton label={`Informações resumidas de ${record.patientName}`} title="Informações resumidas" onClick={() => setSummaryRecordId(record.id)}><FileText size={18} /></IconButton></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </DataPanel>
       )}
 
       {billingQuery.isPending ? (
