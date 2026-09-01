@@ -1,4 +1,4 @@
-import { type FormEvent } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { LogIn } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import type { PublicClinic } from '../../types';
@@ -37,6 +37,38 @@ type LoginScreenProps = {
   onStartTutorial: () => void;
 };
 
+const INITIAL_LOADING_STEPS = [
+  'Conectando com segurança…',
+  'Carregando os dados da clínica…',
+  'Preparando seu painel…',
+  'Tudo quase pronto…',
+];
+
+function LoginInitialLoadingMessage() {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setStepIndex((current) => (current + 1) % INITIAL_LOADING_STEPS.length);
+    }, 2600);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  return (
+    <div className="login-initial-loading-copy">
+      <strong>Preparando seu acesso</strong>
+      <span>Bem-vindo ao Hemodinks!</span>
+      <p>Estamos iniciando os serviços e carregando as informações da sua clínica.</p>
+      <span className="login-initial-loading-step" aria-atomic="true">
+        <i aria-hidden="true" />
+        {INITIAL_LOADING_STEPS[stepIndex]}
+      </span>
+      <small>Na primeira conexão, isso pode levar até 1 minuto. Você será direcionado automaticamente.</small>
+    </div>
+  );
+}
+
 export function LoginScreen({
   companyName,
   companyPhoto,
@@ -64,16 +96,8 @@ export function LoginScreen({
       <LoadingOverlay
         active={isBusy || clinicsLoading}
         className={clinicsLoading ? 'login-initial-loading' : undefined}
-        message={clinicsLoading
-          ? <>
-              Seja bem vindo ao Hemodinks!
-              <br />
-              <br />
-              Aguarde um instante, é rapidinho!
-              <br />
-              Estamos indexando informações do Sistema.
-            </>
-          : undefined}
+        eyebrow={clinicsLoading ? 'Iniciando o sistema' : undefined}
+        message={clinicsLoading ? <LoginInitialLoadingMessage /> : undefined}
       />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
