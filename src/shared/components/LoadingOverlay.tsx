@@ -4,12 +4,14 @@ import type { ReactNode } from 'react';
 type LoadingOverlayProps = {
   active: boolean;
   className?: string;
+  eyebrow?: string;
   message?: ReactNode;
 };
 
 export function LoadingOverlay({
   active,
   className,
+  eyebrow = 'Processando',
   message = 'Sincronizando dados...',
 }: LoadingOverlayProps) {
   if (!active) {
@@ -29,8 +31,8 @@ export function LoadingOverlay({
         </div>
 
         <div className="loading-copy">
-          <span className="loading-eyebrow">Processando</span>
-          <strong>{message}</strong>
+          <span className="loading-eyebrow">{eyebrow}</span>
+          {typeof message === 'string' ? <strong>{message}</strong> : message}
         </div>
       </div>
     </div>
