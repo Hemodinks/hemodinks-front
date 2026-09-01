@@ -19,6 +19,88 @@
   backdrop-filter: blur(4px);
 }
 
+.loading-overlay.login-initial-loading .loading-overlay-panel {
+  width: min(540px, 100%);
+}
+
+.login-initial-loading-copy {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.login-initial-loading-copy > strong {
+  color: #eef6ff;
+  font-size: 1.12rem;
+  line-height: 1.25;
+}
+
+.login-initial-loading-copy > span:not(.login-initial-loading-step) {
+  color: #dbeafe;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.login-initial-loading-copy p,
+.login-initial-loading-copy small {
+  margin: 0;
+  color: #b8c6d8;
+  line-height: 1.45;
+}
+
+.login-initial-loading-copy p {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.login-initial-loading-copy small {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.login-initial-loading-step {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  border: 1px solid rgba(93, 248, 234, 0.24);
+  border-radius: 6px;
+  color: #5df8ea;
+  background: rgba(93, 248, 234, 0.08);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.login-initial-loading-step i {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #5df8ea;
+  box-shadow: 0 0 10px rgba(93, 248, 234, 0.9);
+  animation: loginLoadingStepPulse 1.1s ease-in-out infinite;
+}
+
+.login-initial-loading-copy::after {
+  content: '';
+  height: 3px;
+  margin-top: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #5df8ea, #ff7a45, transparent);
+  background-size: 220% 100%;
+  animation: loginLoadingProgress 2.2s linear infinite;
+}
+
+@keyframes loginLoadingStepPulse {
+  50% { opacity: 0.4; transform: scale(0.72); }
+}
+
+@keyframes loginLoadingProgress {
+  from { background-position: 100% 0; }
+  to { background-position: -120% 0; }
+}
+
 .auth-panel {
   width: min(430px, 100%);
   padding: 30px;
@@ -130,6 +212,36 @@
     position: static;
     grid-area: theme;
     justify-self: end;
+  }
+}
+
+@media (max-width: 520px) {
+  .loading-overlay.login-initial-loading .loading-overlay-panel {
+    grid-template-columns: 62px minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px;
+  }
+
+  .loading-overlay.login-initial-loading .health-loader {
+    width: 62px;
+    height: 62px;
+  }
+
+  .loading-overlay.login-initial-loading .loader-core {
+    width: 44px;
+    height: 44px;
+  }
+
+  .loading-overlay.login-initial-loading .loader-core svg {
+    width: 27px;
+    height: 27px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-initial-loading-step i,
+  .login-initial-loading-copy::after {
+    animation: none;
   }
 }
 
