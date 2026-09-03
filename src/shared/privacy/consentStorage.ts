@@ -41,11 +41,14 @@ export function readConsent(): ConsentRecord | null {
   }
 }
 
-export function saveConsent(categories: OptionalConsentCategories): ConsentRecord {
+export function saveConsent(
+  categories: OptionalConsentCategories,
+  updatedAt = new Date().toISOString(),
+): ConsentRecord {
   const record: ConsentRecord = {
     necessary: true,
     version: PRIVACY_POLICY_VERSION,
-    updatedAt: new Date().toISOString(),
+    updatedAt,
     ...categories,
   };
   localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(record));

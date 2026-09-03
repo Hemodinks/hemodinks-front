@@ -4,6 +4,7 @@ import { useAuthSession } from "../features/auth/useAuthSession";
 import { useLoginFlow } from "../features/auth/useLoginFlow";
 import { useMedicalLicenseHydration, useSessionExpiration } from "../features/auth/useSessionLifecycle";
 import { useMedicalGroupsDomain } from "../features/medicalGroups/useMedicalGroupsDomain";
+import { usePrivacyPreferenceSession } from "../features/privacy/ConsentProvider";
 import { LegalAcceptanceGate } from "../features/legal/LegalAcceptanceGate";
 import { useLegalAcceptance } from "../features/legal/useLegalAcceptance";
 import { usePatientsDomain } from "../features/patients/usePatientsDomain";
@@ -27,6 +28,7 @@ export function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { session, persistSession, clearSession } = useAuthSession();
+  usePrivacyPreferenceSession(session);
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
   const [moduleMode, setModuleMode] = useState<ModuleMode>("list");
