@@ -88,6 +88,8 @@ vi.mock('./services', () => ({
   resetPassword: vi.fn(),
   getCurrentLegalAcceptance: vi.fn(),
   acceptCurrentLegalDocuments: vi.fn(),
+  getCurrentPrivacyPreference: vi.fn(),
+  updateCurrentPrivacyPreference: vi.fn(),
   updateSystemSettings: vi.fn(),
 }));
 
@@ -120,6 +122,16 @@ const pendingLegalAcceptance = {
   },
 };
 
+const currentPrivacyPreference = {
+  hasPreference: true,
+  currentDocumentVersion: '1.1',
+  documentVersion: '1.1',
+  preferencesEnabled: true,
+  analyticsEnabled: false,
+  acceptedAtUtc: '2026-09-03T15:30:00Z',
+  updatedAtUtc: '2026-09-03T15:30:00Z',
+};
+
 function createJwtToken(payload: Record<string, unknown>) {
   const encodedHeader = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const encodedPayload = btoa(JSON.stringify(payload));
@@ -142,6 +154,8 @@ describe('App', () => {
     vi.mocked(api.listPlatformClinics).mockResolvedValue([]);
     vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue(currentLegalAcceptance);
     vi.mocked(api.acceptCurrentLegalDocuments).mockResolvedValue(currentLegalAcceptance);
+    vi.mocked(api.getCurrentPrivacyPreference).mockResolvedValue(currentPrivacyPreference);
+    vi.mocked(api.updateCurrentPrivacyPreference).mockResolvedValue(currentPrivacyPreference);
     vi.mocked(api.getDashboardSummary).mockResolvedValue({
       usersCount: 1,
       activeUsersCount: 1,
@@ -293,7 +307,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /abrir usuários/i }));
     expect(window.location.pathname).toBe('/usuarios');
 
-    const userRow = (await screen.findByText('Ana Hemodinks')).closest('tr')!;
+    const userRow = (await screen.findByText('Ana Hemodinks', {}, { timeout: 5_000 })).closest('tr')!;
     expect(screen.getByAltText('Foto de Ana Hemodinks')).toBeInTheDocument();
     expect(screen.getByAltText('Foto de George Marcone')).toBeInTheDocument();
     expect(within(userRow).queryByText('+55 (81) 99999-9999')).not.toBeInTheDocument();
@@ -396,6 +410,65 @@ describe('App', () => {
 
     render(<App />);
     expect(screen.getByRole('heading', { name: 'Sua privacidade no HemoDinks' })).toBeVisible();
+  });
+
+  it('usa o backend vigente como fonte de verdade após o login e atualiza a cópia local', async () => {
+    vi.mocked(api.getCurrentPrivacyPreference).mockResolvedValue({
+      ...currentPrivacyPreference,
+      preferencesEnabled: false,
+      analyticsEnabled: false,
+      updatedAtUtc: '2026-09-03T16:00:00Z',
+    });
+
+    await renderAuthenticatedApp();
+
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) ?? '{}')).toMatchObject({
+      necessary: true,
+      version: '1.1',
+      preferences: false,
+      analytics: false,
+      updatedAt: '2026-09-03T16:00:00Z',
+    }));
+    expect(api.updateCurrentPrivacyPreference).not.toHaveBeenCalled();
+  });
+
+  it('envia a escolha local vigente quando o usuário ainda não possui preferência no backend', async () => {
+    vi.mocked(api.getCurrentPrivacyPreference).mockResolvedValue({
+      ...currentPrivacyPreference,
+      hasPreference: false,
+      documentVersion: null,
+      acceptedAtUtc: null,
+      updatedAtUtc: null,
+      preferencesEnabled: false,
+      analyticsEnabled: false,
+    });
+    saveConsent({ preferences: true, analytics: false });
+
+    await renderAuthenticatedApp();
+
+    await waitFor(() => expect(api.updateCurrentPrivacyPreference).toHaveBeenCalledWith(
+      'jwt-token',
+      '1.1',
+      true,
+      false,
+    ));
+  });
+
+  it('salva no backend uma alteração feita no modal durante a sessão autenticada', async () => {
+    const { user } = await renderAuthenticatedApp();
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+    await waitFor(() => expect(api.getCurrentPrivacyPreference).toHaveBeenCalledWith('jwt-token'));
+
+    await user.click(screen.getByRole('button', { name: 'Configurar cookies' }));
+    await user.click(screen.getByRole('checkbox', { name: /Preferências/ }));
+    await user.click(screen.getByRole('button', { name: 'Salvar preferências' }));
+
+    await waitFor(() => expect(api.updateCurrentPrivacyPreference).toHaveBeenCalledWith(
+      'jwt-token',
+      '1.1',
+      false,
+      false,
+    ));
   });
 
   it.each([
@@ -646,7 +719,7 @@ describe('App', () => {
       },
     });
 
-    const sidebar = screen.getByLabelText('Sessão ativa');
+    const sidebar = await screen.findByLabelText('Sessão ativa');
     expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /^faturamento/i })).toBeInTheDocument();

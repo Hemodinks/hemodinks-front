@@ -13,6 +13,7 @@ export * from "./medicalGroupsService";
 export * from "./monitoringService";
 export * from "./opmeService";
 export * from "./patientsService";
+export * from "./privacyPreferenceService";
 export * from "./publicHolidaysService";
 export * from "./systemSettingsService";
 export * from "./teamsService";

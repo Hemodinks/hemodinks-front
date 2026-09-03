@@ -269,7 +269,12 @@ async function loginViaUi(page: Page, initialRoute = '/', loginSession = session
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
 }
 
-async function mockApi(page: Page, loginSession = session, options: { sanitizedTutorial?: boolean; billingAmount?: string; legalAcceptanceRequired?: boolean } = {}) {
+async function mockApi(page: Page, loginSession = session, options: {
+  sanitizedTutorial?: boolean;
+  billingAmount?: string;
+  legalAcceptanceRequired?: boolean;
+  privacyPreference?: { preferences: boolean; analytics: boolean } | null;
+} = {}) {
   const sanitizedPatient = options.sanitizedTutorial ? {
     ...paciente,
     nomePaciente: 'Registro Fictício 001',
@@ -292,6 +297,10 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
     createdEventPayload: null as Payload | null,
     legalAccepted: !options.legalAcceptanceRequired,
     legalAcceptancePayload: null as Payload | null,
+    privacyPreference: options.privacyPreference === undefined
+      ? { preferences: true, analytics: false }
+      : options.privacyPreference,
+    privacyPreferencePayload: null as Payload | null,
   };
 
   await page.route('https://date.nager.at/**', (route) => route.fulfill({ json: [] }));
@@ -368,6 +377,29 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
             acceptedAtUtc: state.legalAccepted ? '2026-09-03T15:30:00Z' : null,
             isCurrent: state.legalAccepted,
           },
+        },
+      });
+    }
+
+    if (path === '/api/privacy-preferences/current') {
+      if (method === 'PUT') {
+        const payload = request.postDataJSON() as Payload;
+        state.privacyPreferencePayload = payload;
+        state.privacyPreference = {
+          preferences: Boolean(payload.preferencesEnabled),
+          analytics: Boolean(payload.analyticsEnabled),
+        };
+      }
+
+      return route.fulfill({
+        json: {
+          hasPreference: state.privacyPreference !== null,
+          currentDocumentVersion: '1.1',
+          documentVersion: state.privacyPreference ? '1.1' : null,
+          preferencesEnabled: state.privacyPreference?.preferences ?? false,
+          analyticsEnabled: state.privacyPreference?.analytics ?? false,
+          acceptedAtUtc: state.privacyPreference ? '2026-09-03T15:30:00Z' : null,
+          updatedAtUtc: state.privacyPreference ? '2026-09-03T15:30:00Z' : null,
         },
       });
     }
@@ -1072,6 +1104,46 @@ test('privacidade: oferece escolha real, persiste categorias e controla análise
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
     .toMatchObject({ preferences: false, analytics: false });
   await expect.poll(() => page.evaluate(() => localStorage.getItem('hemodinks.theme'))).toBeNull();
+});
+
+test('privacidade: sincroniza preferência autenticada com o backend e persiste alterações', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({
+      necessary: true,
+      version: '1.1',
+      updatedAt: '2026-09-03T12:00:00.000Z',
+      preferences: false,
+      analytics: false,
+    }));
+  });
+  const apiState = await mockApi(page, session, {
+    privacyPreference: { preferences: true, analytics: true },
+  });
+  let otelConfigRequests = 0;
+  await page.route('**/otel-runtime-config.json', async (route) => {
+    otelConfigRequests += 1;
+    await route.fulfill({ json: { enabled: false } });
+  });
+
+  await loginViaUi(page);
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
+    .toMatchObject({ necessary: true, version: '1.1', preferences: true, analytics: true });
+  await expect.poll(() => otelConfigRequests).toBe(1);
+
+  await page.getByRole('button', { name: 'Configurar cookies' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
+  await dialog.getByRole('checkbox', { name: /Preferências/ }).uncheck();
+  await dialog.getByRole('checkbox', { name: /Análise/ }).uncheck();
+  await dialog.getByRole('button', { name: 'Salvar preferências' }).click();
+
+  await expect.poll(() => apiState.privacyPreferencePayload).toEqual({
+    documentVersion: '1.1',
+    preferencesEnabled: false,
+    analyticsEnabled: false,
+  });
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
+    .toMatchObject({ preferences: false, analytics: false });
 });
 
 test('privacidade: mantém escolha personalizada no reload e pede nova decisão após mudança de versão', async ({ page }) => {
