@@ -36,6 +36,26 @@ export function Modal({ titleId, className = '', onClose, children }: ModalProps
       if (event.key === 'Escape') {
         event.preventDefault();
         onCloseRef.current();
+        return;
+      }
+
+      if (event.key === 'Tab' && panelRef.current) {
+        const focusable = [...panelRef.current.querySelectorAll<HTMLElement>(focusableSelector)]
+          .filter((element) => element.offsetParent !== null);
+        if (!focusable.length) {
+          event.preventDefault();
+          panelRef.current.focus();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable.at(-1)!;
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
 

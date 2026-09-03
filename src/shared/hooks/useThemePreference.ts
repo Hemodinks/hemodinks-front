@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Theme } from '../../appTypes';
+import { hasPreferenceConsent } from '../privacy/consentStorage';
 
 const THEME_KEY = 'hemodinks.theme';
 
 function loadStoredTheme(): Theme {
+  if (!hasPreferenceConsent()) return 'dark';
   const stored = localStorage.getItem(THEME_KEY) as Theme | null;
   if (stored) return stored;
 
@@ -26,7 +28,7 @@ export function useThemePreference() {
 
   useEffect(() => {
     applyTheme(theme);
-    localStorage.setItem(THEME_KEY, theme);
+    if (hasPreferenceConsent()) localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
   const toggleTheme = useCallback(() => {

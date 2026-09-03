@@ -22,6 +22,7 @@ import {
   openUsersModule,
   renderAuthenticatedApp,
 } from './test/appTestUi';
+import { CONSENT_STORAGE_KEY, saveConsent } from './shared/privacy/consentStorage';
 
 vi.mock('./services', () => ({
   AUTH_EXPIRED_EVENT: 'hemodinks:auth-expired',
@@ -97,6 +98,7 @@ function createJwtToken(payload: Record<string, unknown>) {
 describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
+    saveConsent({ preferences: true, analytics: false });
     sessionStorage.clear();
     queryClient.clear();
     window.history.pushState({}, '', '/');
@@ -286,6 +288,53 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
     expect(await screen.findByRole('option', { name: 'Hemodinks' })).toBeInTheDocument();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+  });
+
+  it('exibe links legais no login e permite rejeitar opcionais sem bloquear o acesso', async () => {
+    localStorage.removeItem(CONSENT_STORAGE_KEY);
+    render(<App />);
+
+    const loginFooter = screen.getByRole('contentinfo', { name: 'Links legais' });
+    expect(loginFooter.querySelector('a[href="/termos-de-uso"]')).toHaveTextContent('Termos de Uso');
+    expect(loginFooter.querySelector('a[href="/politica-de-privacidade"]')).toHaveTextContent('Política de Privacidade');
+    expect(screen.getByRole('heading', { name: 'Sua privacidade no HemoDinks' })).toBeVisible();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Rejeitar opcionais' }));
+    expect(screen.queryByRole('heading', { name: 'Sua privacidade no HemoDinks' })).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) ?? '{}')).toMatchObject({
+      preferences: false,
+      analytics: false,
+    });
+    expect(screen.getByRole('button', { name: 'Configurar cookies' })).toBeVisible();
+  });
+
+  it('abre e fecha as preferências por teclado com opcionais desmarcados no primeiro acesso', async () => {
+    localStorage.removeItem(CONSENT_STORAGE_KEY);
+    const user = userEvent.setup();
+    render(<App />);
+    const configureButton = screen.getByRole('button', { name: 'Configurar' });
+
+    await user.click(configureButton);
+    expect(screen.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' })).toBeVisible();
+    expect(screen.getByRole('checkbox', { name: /Preferências/ })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Análise/ })).not.toBeChecked();
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog', { name: 'Configurar cookies e armazenamentos' })).not.toBeInTheDocument();
+    expect(configureButton).toHaveFocus();
+  });
+
+  it.each([
+    ['/termos-de-uso', 'Termos de Uso', 'Versão 1.0'],
+    ['/politica-de-privacidade', 'Aviso de Privacidade do HemoDinks', 'Versão: 1.1'],
+  ])('abre a rota pública %s sem carregar dados da aplicação', async (path, title, version) => {
+    window.history.pushState({}, '', path);
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+    expect(screen.getByText(/Última atualização:/).closest('p')).toHaveTextContent(version);
+    expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
   });
 
