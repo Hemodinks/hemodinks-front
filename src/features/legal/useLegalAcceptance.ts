@@ -45,7 +45,7 @@ export function useLegalAcceptance(session: AuthSession | null) {
   }, [load]);
 
   const accept = useCallback(async () => {
-    if (!session) return;
+    if (!session) return false;
 
     setState((current) => ({ ...current, accepting: true, error: '' }));
     try {
@@ -55,8 +55,10 @@ export function useLegalAcceptance(session: AuthSession | null) {
         PRIVACY_NOTICE_VERSION,
       );
       setState({ scopeKey, status, loading: false, accepting: false, error: '' });
+      return true;
     } catch (error) {
       setState((current) => ({ ...current, accepting: false, error: getErrorMessage(error) }));
+      return false;
     }
   }, [scopeKey, session]);
 

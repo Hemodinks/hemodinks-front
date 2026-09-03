@@ -1,10 +1,10 @@
-import { type FormEvent, useState } from 'react';
 import { FileCheck2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Theme } from '../../appTypes';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
+import { LegalAcceptanceAction } from './LegalAcceptanceAction';
 import { TERMS_VERSION } from './legalVersions';
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
   accepting: boolean;
   error: string;
   onThemeToggle: () => void;
-  onAccept: () => Promise<void>;
+  onAccept: () => Promise<boolean>;
   onRetry: () => Promise<void>;
   onLogout: () => void;
 };
@@ -28,13 +28,6 @@ export function LegalAcceptanceGate({
   onRetry,
   onLogout,
 }: Props) {
-  const [acknowledged, setAcknowledged] = useState(false);
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (acknowledged) void onAccept();
-  };
-
   return (
     <main className="auth-screen compact">
       <LoadingOverlay active={loading || accepting} message={accepting ? 'Registrando seu aceite…' : 'Verificando os Termos de Uso…'} />
@@ -55,26 +48,13 @@ export function LegalAcceptanceGate({
           <Link to="/politica-de-privacidade">Ler o Aviso de Privacidade</Link>
         </p>
 
-        {error ? (
-          <div className="stack">
-            <p className="alert error">{error}</p>
-            <button type="button" className="ghost-button" onClick={() => void onRetry()}>Tentar novamente</button>
-          </div>
-        ) : (
-          <form className="stack" onSubmit={handleSubmit}>
-            <label className="legal-acceptance-check">
-              <input
-                type="checkbox"
-                checked={acknowledged}
-                onChange={(event) => setAcknowledged(event.target.checked)}
-              />
-              <span>Li e estou ciente dos Termos de Uso e do Aviso de Privacidade do HemoDinks.</span>
-            </label>
-            <button type="submit" className="primary-action" disabled={!acknowledged || loading || accepting}>
-              Aceitar e continuar
-            </button>
-          </form>
-        )}
+        <LegalAcceptanceAction
+          loading={loading}
+          accepting={accepting}
+          error={error}
+          onAccept={onAccept}
+          onRetry={onRetry}
+        />
 
         <button type="button" className="ghost-button" onClick={onLogout}>Sair</button>
       </section>

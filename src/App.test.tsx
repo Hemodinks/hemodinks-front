@@ -482,6 +482,29 @@ describe('App', () => {
     expect(screen.getByText(/Última atualização:/).closest('p')).toHaveTextContent(version);
     expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
+    expect(screen.queryByRole('checkbox', { name: /Li e estou ciente/ })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    '/termos-de-uso',
+    '/politica-de-privacidade',
+  ])('permite concluir o aceite pendente dentro da página jurídica %s', async (path) => {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
+    window.history.pushState({}, '', path);
+    vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue(pendingLegalAcceptance);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const checkbox = await screen.findByRole('checkbox', { name: /Li e estou ciente/ });
+    const submit = screen.getByRole('button', { name: 'Aceitar e continuar' });
+    expect(submit).toBeDisabled();
+
+    await user.click(checkbox);
+    await user.click(submit);
+
+    expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledWith('jwt-token', '1.1', '1.1');
+    await waitFor(() => expect(window.location.pathname).toBe('/'));
   });
 
   it('renderiza o conteúdo completo dos Termos 1.1 com links internos para privacidade', () => {
