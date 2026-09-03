@@ -71,6 +71,20 @@
 .legal-acceptance-links a { color: var(--teal); font-weight: 800; }
 .legal-acceptance-check { display: flex; align-items: flex-start; gap: 12px; line-height: 1.55; }
 .legal-acceptance-check input { width: 20px; height: 20px; flex: 0 0 auto; margin-top: 2px; accent-color: var(--teal); }
+.legal-acceptance-action {
+  display: grid;
+  gap: 16px;
+  margin-top: 34px;
+  padding: clamp(18px, 4vw, 28px);
+  border: 1px solid color-mix(in srgb, var(--teal) 45%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--teal) 7%, var(--panel));
+}
+.legal-acceptance-action h2,
+.legal-acceptance-action p { margin: 0; }
+.legal-acceptance-action > p { color: var(--muted); line-height: 1.65; }
+.legal-acceptance-action .primary-action { width: 100%; }
+.legal-acceptance-panel > .legal-acceptance-action { margin-top: 0; padding: 0; border: 0; background: transparent; }
 
 @media (max-width: 760px) {
   .legal-page { padding-top: 16px; }

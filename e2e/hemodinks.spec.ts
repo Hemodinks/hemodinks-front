@@ -640,7 +640,14 @@ test('exige aceite versionado uma única vez e mantém o acesso após novo login
   await expect(page.getByRole('button', { name: 'Aceitar e continuar' })).toBeDisabled();
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toHaveCount(0);
 
-  await page.getByRole('checkbox', { name: 'Li e estou ciente dos Termos de Uso e do Aviso de Privacidade do HemoDinks.' }).check();
+  await page.getByRole('link', { name: 'Ler os Termos de Uso' }).click();
+  await expect(page).toHaveURL(/\/termos-de-uso$/);
+  await expect(page.getByRole('heading', { name: 'Termos de Uso', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Aceite dos documentos' })).toBeVisible();
+  const acceptanceCheckbox = page.getByRole('checkbox', { name: 'Li e estou ciente dos Termos de Uso e do Aviso de Privacidade do HemoDinks.' });
+  await acceptanceCheckbox.focus();
+  await page.keyboard.press('Space');
+  await expect(acceptanceCheckbox).toBeChecked();
   await page.getByRole('button', { name: 'Aceitar e continuar' }).click();
 
   await expect(page).toHaveURL(/\/dashboard$/);
