@@ -1,5 +1,6 @@
 export const CONSENT_STORAGE_KEY = 'hemodinks.privacy-consent';
-export const CONSENT_POLICY_VERSION = '1.0';
+export const PRIVACY_POLICY_VERSION = '1.1';
+export const CONSENT_POLICY_VERSION = PRIVACY_POLICY_VERSION;
 
 export type OptionalConsentCategories = {
   preferences: boolean;
@@ -7,8 +8,9 @@ export type OptionalConsentCategories = {
 };
 
 export type ConsentRecord = OptionalConsentCategories & {
+  necessary: true;
   version: string;
-  decidedAt: string;
+  updatedAt: string;
 };
 
 const OPTIONAL_PREFERENCE_KEYS = [
@@ -22,8 +24,10 @@ const OPTIONAL_PREFERENCE_KEYS = [
 function isConsentRecord(value: unknown): value is ConsentRecord {
   if (!value || typeof value !== 'object') return false;
   const record = value as Partial<ConsentRecord>;
-  return record.version === CONSENT_POLICY_VERSION
-    && typeof record.decidedAt === 'string'
+  return record.version === PRIVACY_POLICY_VERSION
+    && record.necessary === true
+    && typeof record.updatedAt === 'string'
+    && !Number.isNaN(Date.parse(record.updatedAt))
     && typeof record.preferences === 'boolean'
     && typeof record.analytics === 'boolean';
 }
@@ -39,8 +43,9 @@ export function readConsent(): ConsentRecord | null {
 
 export function saveConsent(categories: OptionalConsentCategories): ConsentRecord {
   const record: ConsentRecord = {
-    version: CONSENT_POLICY_VERSION,
-    decidedAt: new Date().toISOString(),
+    necessary: true,
+    version: PRIVACY_POLICY_VERSION,
+    updatedAt: new Date().toISOString(),
     ...categories,
   };
   localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(record));

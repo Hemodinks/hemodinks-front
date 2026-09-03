@@ -19,8 +19,9 @@ describe('consentStorage', () => {
     saveConsent({ preferences: true, analytics: false });
 
     expect(readConsent()).toEqual({
+      necessary: true,
       version: CONSENT_POLICY_VERSION,
-      decidedAt: '2026-09-02T12:00:00.000Z',
+      updatedAt: '2026-09-02T12:00:00.000Z',
       preferences: true,
       analytics: false,
     });
@@ -29,7 +30,24 @@ describe('consentStorage', () => {
   });
 
   it('ignora registros inválidos ou de outra versão', () => {
-    localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify({ version: '0.9', preferences: true, analytics: true }));
+    localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify({
+      necessary: true,
+      version: '0.9',
+      updatedAt: '2026-09-02T12:00:00.000Z',
+      preferences: true,
+      analytics: true,
+    }));
+    expect(readConsent()).toBeNull();
+  });
+
+  it('não aceita um registro que desative os recursos necessários', () => {
+    localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify({
+      necessary: false,
+      version: CONSENT_POLICY_VERSION,
+      updatedAt: '2026-09-02T12:00:00.000Z',
+      preferences: true,
+      analytics: true,
+    }));
     expect(readConsent()).toBeNull();
   });
 

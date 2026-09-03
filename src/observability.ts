@@ -42,7 +42,7 @@ export function initObservability() {
   sentryEnabled = true;
 
   void loadSentryModule().then((Sentry) => {
-    if (!Sentry) {
+    if (!Sentry || !sentryEnabled) {
       sentryEnabled = false;
       return;
     }
@@ -68,4 +68,17 @@ export function captureException(error: unknown, extra?: Record<string, unknown>
       Sentry.captureException(error, { extra });
     }
   });
+}
+
+export function hasInitializedObservability() {
+  return sentryEnabled;
+}
+
+export async function disableObservability() {
+  sentryEnabled = false;
+
+  const loadedModule = sentryModule ?? await sentryModulePromise;
+  if (loadedModule) {
+    await loadedModule.close(2_000);
+  }
 }

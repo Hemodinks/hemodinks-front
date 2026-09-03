@@ -65,6 +65,13 @@
 .login-legal-footer { margin-top: 22px; }
 .app-legal-footer { width: min(var(--app-layout-max-width), calc(100% - var(--app-layout-gutter))); margin: 18px auto 0; }
 
+.legal-acceptance-panel { display: grid; gap: 18px; }
+.legal-acceptance-panel > p { margin: 0; color: var(--muted); line-height: 1.65; }
+.legal-acceptance-links { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.legal-acceptance-links a { color: var(--teal); font-weight: 800; }
+.legal-acceptance-check { display: flex; align-items: flex-start; gap: 12px; line-height: 1.55; }
+.legal-acceptance-check input { width: 20px; height: 20px; flex: 0 0 auto; margin-top: 2px; accent-color: var(--teal); }
+
 @media (max-width: 760px) {
   .legal-page { padding-top: 16px; }
   .legal-document { padding: 22px 18px; }

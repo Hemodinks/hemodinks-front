@@ -18,6 +18,9 @@
   box-shadow: var(--shadow);
 }
 
+.cookie-preferences-backdrop { z-index: 90; }
+.cookie-banner.cookie-banner-behind-modal { z-index: 10; pointer-events: none; }
+
 .cookie-banner h2,
 .cookie-category h3 {
   margin: 0;
@@ -28,6 +31,8 @@
 .cookie-category p,
 .cookie-preferences-intro { margin: 6px 0 0; color: var(--muted); line-height: 1.55; font-size: 0.84rem; }
 .cookie-banner a { color: var(--teal); font-weight: 800; }
+.cookie-preferences-more { margin: 8px 0 0; }
+.cookie-preferences-more a { color: var(--teal); font-size: 0.84rem; font-weight: 800; }
 
 .cookie-banner-actions,
 .cookie-modal-actions {
@@ -37,7 +42,7 @@
 }
 
 .cookie-banner-actions > button { flex: 1 1 auto; white-space: nowrap; }
-.cookie-preferences-modal { width: min(680px, 100%); }
+.cookie-preferences-modal { width: min(680px, 100%); max-height: min(90vh, 760px); overflow-y: auto; }
 .cookie-category-list { display: grid; gap: 10px; margin: 20px 0; }
 
 .cookie-category {
