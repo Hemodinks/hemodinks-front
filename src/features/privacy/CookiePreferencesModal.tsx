@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Modal } from '../../shared/components/Modal';
 import { IconButton } from '../../shared/components/ui';
 import type { OptionalConsentCategories } from '../../shared/privacy/consentStorage';
@@ -16,7 +17,13 @@ export function CookiePreferencesModal({ initialValue, onClose, onSave }: Props)
   useEffect(() => setValue(initialValue), [initialValue]);
 
   return (
-    <Modal titleId="cookie-preferences-title" className="cookie-preferences-modal" onClose={onClose}>
+    <Modal
+      titleId="cookie-preferences-title"
+      descriptionId="cookie-preferences-description"
+      className="cookie-preferences-modal"
+      backdropClassName="cookie-preferences-backdrop"
+      onClose={onClose}
+    >
       <header className="panel-title">
         <div>
           <span className="eyebrow">Privacidade</span>
@@ -25,15 +32,16 @@ export function CookiePreferencesModal({ initialValue, onClose, onSave }: Props)
         <IconButton label="Fechar configurações de cookies" onClick={onClose}><X size={18} /></IconButton>
       </header>
 
-      <p className="cookie-preferences-intro">
-        Escolha quais recursos opcionais podem ser usados neste navegador. Sua escolha pode ser alterada a qualquer momento.
+      <p id="cookie-preferences-description" className="cookie-preferences-intro">
+        Escolha quais recursos opcionais podem ser utilizados neste navegador. Os recursos necessários permanecem ativos para autenticação, segurança e funcionamento da plataforma. Você pode alterar essas opções a qualquer momento.
       </p>
+      <p className="cookie-preferences-more"><Link to="/politica-de-privacidade" onClick={onClose}>Saiba mais no Aviso de Privacidade</Link></p>
 
       <div className="cookie-category-list">
         <section className="cookie-category">
           <div>
             <h3>Necessários</h3>
-            <p>Mantêm autenticação, segurança, sessão e a sua própria escolha de privacidade.</p>
+            <p>Permitem autenticação, segurança, manutenção da sessão e armazenamento da sua escolha de privacidade.</p>
           </div>
           <span className="cookie-required-status" aria-label="Cookies necessários sempre ativos">Sempre ativos</span>
         </section>
@@ -41,7 +49,7 @@ export function CookiePreferencesModal({ initialValue, onClose, onSave }: Props)
         <label className="cookie-category">
           <div>
             <h3>Preferências</h3>
-            <p>Guardam tema, ordem do painel e opções dos tutoriais neste dispositivo.</p>
+            <p>Armazenam configurações como tema, organização do painel e opções dos tutoriais neste dispositivo.</p>
           </div>
           <input
             type="checkbox"
@@ -53,7 +61,7 @@ export function CookiePreferencesModal({ initialValue, onClose, onSave }: Props)
         <label className="cookie-category">
           <div>
             <h3>Análise</h3>
-            <p>Permitem diagnóstico técnico opcional por Sentry, New Relic Browser e OpenTelemetry.</p>
+            <p>Permitem o envio opcional de informações técnicas para diagnóstico de erros, desempenho e estabilidade por ferramentas como Sentry, New Relic Browser e OpenTelemetry.</p>
           </div>
           <input
             type="checkbox"
@@ -66,6 +74,9 @@ export function CookiePreferencesModal({ initialValue, onClose, onSave }: Props)
       <div className="button-row cookie-modal-actions">
         <button type="button" className="ghost-button" onClick={() => onSave({ preferences: false, analytics: false })}>
           Rejeitar opcionais
+        </button>
+        <button type="button" className="ghost-button" onClick={() => onSave({ preferences: true, analytics: true })}>
+          Aceitar opcionais
         </button>
         <button type="button" className="primary-action" onClick={() => onSave(value)}>
           Salvar preferências

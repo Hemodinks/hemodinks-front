@@ -22,7 +22,7 @@ import {
   openUsersModule,
   renderAuthenticatedApp,
 } from './test/appTestUi';
-import { CONSENT_STORAGE_KEY, saveConsent } from './shared/privacy/consentStorage';
+import { CONSENT_POLICY_VERSION, CONSENT_STORAGE_KEY, saveConsent } from './shared/privacy/consentStorage';
 
 vi.mock('./services', () => ({
   AUTH_EXPIRED_EVENT: 'hemodinks:auth-expired',
@@ -86,8 +86,39 @@ vi.mock('./services', () => ({
   changePassword: vi.fn(),
   confirmPasswordReset: vi.fn(),
   resetPassword: vi.fn(),
+  getCurrentLegalAcceptance: vi.fn(),
+  acceptCurrentLegalDocuments: vi.fn(),
   updateSystemSettings: vi.fn(),
 }));
+
+const currentLegalAcceptance = {
+  requiresAcceptance: false,
+  termsOfUse: {
+    documentType: 'TermsOfUse' as const,
+    currentVersion: '1.1',
+    acceptedVersion: '1.1',
+    acceptedAtUtc: '2026-09-03T15:30:00Z',
+    isCurrent: true,
+  },
+  privacyNotice: {
+    documentType: 'PrivacyNoticeAcknowledgement' as const,
+    currentVersion: '1.1',
+    acceptedVersion: '1.1',
+    acceptedAtUtc: '2026-09-03T15:30:00Z',
+    isCurrent: true,
+  },
+};
+
+const pendingLegalAcceptance = {
+  ...currentLegalAcceptance,
+  requiresAcceptance: true,
+  termsOfUse: {
+    ...currentLegalAcceptance.termsOfUse,
+    acceptedVersion: null,
+    acceptedAtUtc: null,
+    isCurrent: false,
+  },
+};
 
 function createJwtToken(payload: Record<string, unknown>) {
   const encodedHeader = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
@@ -109,6 +140,8 @@ describe('App', () => {
       { id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null },
     ]);
     vi.mocked(api.listPlatformClinics).mockResolvedValue([]);
+    vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue(currentLegalAcceptance);
+    vi.mocked(api.acceptCurrentLegalDocuments).mockResolvedValue(currentLegalAcceptance);
     vi.mocked(api.getDashboardSummary).mockResolvedValue({
       usersCount: 1,
       activeUsersCount: 1,
@@ -303,6 +336,8 @@ describe('App', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Rejeitar opcionais' }));
     expect(screen.queryByRole('heading', { name: 'Sua privacidade no HemoDinks' })).not.toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) ?? '{}')).toMatchObject({
+      necessary: true,
+      version: CONSENT_POLICY_VERSION,
       preferences: false,
       analytics: false,
     });
@@ -316,17 +351,55 @@ describe('App', () => {
     const configureButton = screen.getByRole('button', { name: 'Configurar' });
 
     await user.click(configureButton);
-    expect(screen.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' })).toBeVisible();
+    const dialog = screen.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
+    expect(dialog).toBeVisible();
+    expect(dialog).toHaveAccessibleDescription('Escolha quais recursos opcionais podem ser utilizados neste navegador. Os recursos necessários permanecem ativos para autenticação, segurança e funcionamento da plataforma. Você pode alterar essas opções a qualquer momento.');
+    expect(screen.getByRole('link', { name: 'Saiba mais no Aviso de Privacidade' })).toHaveAttribute('href', '/politica-de-privacidade');
+    expect(screen.getByText('Sempre ativos')).toHaveAccessibleName('Cookies necessários sempre ativos');
     expect(screen.getByRole('checkbox', { name: /Preferências/ })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: /Análise/ })).not.toBeChecked();
+    expect(within(dialog).getByRole('button', { name: 'Aceitar opcionais' })).toBeVisible();
     await user.keyboard('{Escape}');
 
     expect(screen.queryByRole('dialog', { name: 'Configurar cookies e armazenamentos' })).not.toBeInTheDocument();
-    expect(configureButton).toHaveFocus();
+    await waitFor(() => expect(configureButton).toHaveFocus());
+  });
+
+  it('salva uma configuração personalizada e a mantém em nova renderização', async () => {
+    localStorage.removeItem(CONSENT_STORAGE_KEY);
+    const user = userEvent.setup();
+    const firstRender = render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await user.click(screen.getByRole('checkbox', { name: /Preferências/ }));
+    await user.click(screen.getByRole('button', { name: 'Salvar preferências' }));
+
+    expect(JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) ?? '{}')).toMatchObject({
+      necessary: true,
+      version: CONSENT_POLICY_VERSION,
+      preferences: true,
+      analytics: false,
+    });
+    firstRender.unmount();
+    render(<App />);
+    expect(screen.queryByRole('heading', { name: 'Sua privacidade no HemoDinks' })).not.toBeInTheDocument();
+  });
+
+  it('solicita nova decisão quando a versão armazenada está desatualizada', () => {
+    localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify({
+      necessary: true,
+      version: '1.0',
+      updatedAt: '2026-09-02T12:00:00.000Z',
+      preferences: true,
+      analytics: true,
+    }));
+
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Sua privacidade no HemoDinks' })).toBeVisible();
   });
 
   it.each([
-    ['/termos-de-uso', 'Termos de Uso', 'Versão 1.0'],
+    ['/termos-de-uso', 'Termos de Uso', 'Versão: 1.1'],
     ['/politica-de-privacidade', 'Aviso de Privacidade do HemoDinks', 'Versão: 1.1'],
   ])('abre a rota pública %s sem carregar dados da aplicação', async (path, title, version) => {
     window.history.pushState({}, '', path);
@@ -336,6 +409,83 @@ describe('App', () => {
     expect(screen.getByText(/Última atualização:/).closest('p')).toHaveTextContent(version);
     expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
+  });
+
+  it('renderiza o conteúdo completo dos Termos 1.1 com links internos para privacidade', () => {
+    window.history.pushState({}, '', '/termos-de-uso');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: '1. Uso do sistema' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: '11. Dúvidas e suporte' })).toBeVisible();
+    expect(screen.getByText(/A plataforma não substitui avaliações/)).toBeVisible();
+    const privacyLinks = screen.getAllByRole('link', { name: /Aviso de Privacidade/ });
+    expect(privacyLinks.length).toBeGreaterThanOrEqual(2);
+    expect(privacyLinks.every((link) => link.getAttribute('href') === '/politica-de-privacidade')).toBe(true);
+  });
+
+  it('bloqueia os módulos até o usuário aceitar os documentos jurídicos vigentes', async () => {
+    vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue(pendingLegalAcceptance);
+    const { user } = await renderAuthenticatedApp();
+
+    expect(await screen.findByRole('heading', { name: 'Documentos jurídicos atualizados' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Ler os Termos de Uso' })).toHaveAttribute('href', '/termos-de-uso');
+    expect(screen.getByRole('link', { name: 'Ler o Aviso de Privacidade' })).toHaveAttribute('href', '/politica-de-privacidade');
+    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Aceitar e continuar' })).toBeDisabled();
+
+    await user.click(screen.getByRole('checkbox', {
+      name: 'Li e estou ciente dos Termos de Uso e do Aviso de Privacidade do HemoDinks.',
+    }));
+    await user.click(screen.getByRole('button', { name: 'Aceitar e continuar' }));
+
+    expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledWith('jwt-token', '1.1', '1.1');
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  });
+
+  it('não exibe o bloqueio quando a versão vigente já foi aceita', async () => {
+    await renderAuthenticatedApp();
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Documentos jurídicos atualizados' })).not.toBeInTheDocument();
+    expect(api.acceptCurrentLegalDocuments).not.toHaveBeenCalled();
+  });
+
+  it('exige novo aceite quando a versão registrada está desatualizada', async () => {
+    vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue({
+      ...pendingLegalAcceptance,
+      termsOfUse: {
+        ...pendingLegalAcceptance.termsOfUse,
+        acceptedVersion: '1.0',
+        acceptedAtUtc: '2026-09-02T12:00:00Z',
+      },
+    });
+
+    await renderAuthenticatedApp();
+
+    expect(await screen.findByRole('heading', { name: 'Documentos jurídicos atualizados' })).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Painel inicial' })).not.toBeInTheDocument();
+  });
+
+  it('mantém o aceite persistido pelo servidor após logout e novo login', async () => {
+    vi.mocked(api.getCurrentLegalAcceptance)
+      .mockResolvedValueOnce(pendingLegalAcceptance)
+      .mockResolvedValue(currentLegalAcceptance);
+    const { user } = await renderAuthenticatedApp();
+    await user.click(await screen.findByRole('checkbox', { name: /Li e estou ciente/ }));
+    await user.click(screen.getByRole('button', { name: 'Aceitar e continuar' }));
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /sair/i }));
+    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
+    await user.clear(screen.getByLabelText('Email'));
+    await user.type(screen.getByLabelText('Email'), mockSession().user.email);
+    await user.clear(screen.getByLabelText('Senha'));
+    await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+    expect(api.getCurrentLegalAcceptance).toHaveBeenCalledTimes(2);
+    expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledTimes(1);
   });
 
   it('exibe o loading de inicializacao no login enquanto carrega as clinicas', async () => {
@@ -407,7 +557,7 @@ describe('App', () => {
     });
     vi.mocked(api.listPlatformClinics).mockResolvedValue([]);
 
-    const sidebar = screen.getByLabelText('Sessão ativa');
+    const sidebar = await screen.findByLabelText('Sessão ativa');
     expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
     const billingMenu = within(sidebar).getByRole('button', { name: /^faturamento/i });

@@ -18,8 +18,9 @@ test.beforeEach(async ({ page }, testInfo) => {
   if (!testInfo.title.startsWith('privacidade:')) {
     await page.addInitScript(() => {
       localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({
-        version: '1.0',
-        decidedAt: '2026-09-02T12:00:00.000Z',
+        necessary: true,
+        version: '1.1',
+        updatedAt: '2026-09-03T12:00:00.000Z',
         preferences: true,
         analytics: false,
       }));
@@ -268,7 +269,7 @@ async function loginViaUi(page: Page, initialRoute = '/', loginSession = session
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
 }
 
-async function mockApi(page: Page, loginSession = session, options: { sanitizedTutorial?: boolean; billingAmount?: string } = {}) {
+async function mockApi(page: Page, loginSession = session, options: { sanitizedTutorial?: boolean; billingAmount?: string; legalAcceptanceRequired?: boolean } = {}) {
   const sanitizedPatient = options.sanitizedTutorial ? {
     ...paciente,
     nomePaciente: 'Registro Fictício 001',
@@ -289,6 +290,8 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
     createdPacientePayload: null as Payload | null,
     updatedPacientePayload: null as Payload | null,
     createdEventPayload: null as Payload | null,
+    legalAccepted: !options.legalAcceptanceRequired,
+    legalAcceptancePayload: null as Payload | null,
   };
 
   await page.route('https://date.nager.at/**', (route) => route.fulfill({ json: [] }));
@@ -338,6 +341,33 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
           precisaTrocarSenha: false,
           perfilId: loginSession.user.perfilId,
           perfilNome: loginSession.user.perfilNome,
+        },
+      });
+    }
+
+    if (path === '/api/legal-acceptances/current') {
+      if (method === 'POST') {
+        state.legalAcceptancePayload = request.postDataJSON() as Payload;
+        state.legalAccepted = true;
+      }
+
+      return route.fulfill({
+        json: {
+          requiresAcceptance: !state.legalAccepted,
+          termsOfUse: {
+            documentType: 'TermsOfUse',
+            currentVersion: '1.1',
+            acceptedVersion: state.legalAccepted ? '1.1' : null,
+            acceptedAtUtc: state.legalAccepted ? '2026-09-03T15:30:00Z' : null,
+            isCurrent: state.legalAccepted,
+          },
+          privacyNotice: {
+            documentType: 'PrivacyNoticeAcknowledgement',
+            currentVersion: '1.1',
+            acceptedVersion: state.legalAccepted ? '1.1' : null,
+            acceptedAtUtc: state.legalAccepted ? '2026-09-03T15:30:00Z' : null,
+            isCurrent: state.legalAccepted,
+          },
         },
       });
     }
@@ -568,6 +598,31 @@ test('faz login pelo formulario e abre o dashboard', async ({ page }) => {
     email: 'gmarcone@gmail.com',
     senha: LOGIN_PASSWORD,
   });
+});
+
+test('exige aceite versionado uma única vez e mantém o acesso após novo login', async ({ page }) => {
+  const apiState = await mockApi(page, session, { legalAcceptanceRequired: true });
+
+  await loginViaUi(page);
+  await expect(page.getByRole('heading', { name: 'Documentos jurídicos atualizados' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Aceitar e continuar' })).toBeDisabled();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toHaveCount(0);
+
+  await page.getByRole('checkbox', { name: 'Li e estou ciente dos Termos de Uso e do Aviso de Privacidade do HemoDinks.' }).check();
+  await page.getByRole('button', { name: 'Aceitar e continuar' }).click();
+
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  expect(apiState.legalAcceptancePayload).toEqual({
+    termsOfUseVersion: '1.1',
+    privacyNoticeVersion: '1.1',
+  });
+
+  await page.getByRole('button', { name: 'Sair', exact: true }).click();
+  await loginViaUi(page);
+
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Documentos jurídicos atualizados' })).toHaveCount(0);
 });
 
 test('navega pelos fluxos principais autenticados', async ({ page }) => {
@@ -1002,16 +1057,86 @@ test('privacidade: oferece escolha real, persiste categorias e controla análise
   await expect(banner).toHaveCount(0);
   await expect.poll(() => otelConfigRequests).toBe(1);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
-    .toMatchObject({ version: '1.0', preferences: true, analytics: true });
+    .toMatchObject({ necessary: true, version: '1.1', preferences: true, analytics: true });
 
   await page.getByRole('button', { name: 'Configurar cookies' }).click();
   await dialog.getByRole('checkbox', { name: /Preferências/ }).uncheck();
   await dialog.getByRole('checkbox', { name: /Análise/ }).uncheck();
+  const possibleRevocationReload = Promise.race([
+    page.waitForEvent('load').catch(() => null),
+    page.waitForTimeout(1_000),
+  ]);
   await dialog.getByRole('button', { name: 'Salvar preferências' }).click();
+  await possibleRevocationReload;
   await expect(page).toHaveURL(/\/$/);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
     .toMatchObject({ preferences: false, analytics: false });
   await expect.poll(() => page.evaluate(() => localStorage.getItem('hemodinks.theme'))).toBeNull();
+});
+
+test('privacidade: mantém escolha personalizada no reload e pede nova decisão após mudança de versão', async ({ page }) => {
+  await mockApi(page);
+  let otelConfigRequests = 0;
+  await page.route('**/otel-runtime-config.json', async (route) => {
+    otelConfigRequests += 1;
+    await route.fulfill({ json: { enabled: false } });
+  });
+
+  await page.goto('/');
+  await page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })
+    .getByRole('button', { name: 'Configurar', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
+  await dialog.getByRole('checkbox', { name: /Preferências/ }).check();
+  await dialog.getByRole('button', { name: 'Salvar preferências' }).click();
+  await expect.poll(() => otelConfigRequests).toBe(0);
+
+  await page.reload();
+  await expect(page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Configurar cookies' }).click();
+  await expect(dialog.getByRole('checkbox', { name: /Preferências/ })).toBeChecked();
+  await expect(dialog.getByRole('checkbox', { name: /Análise/ })).not.toBeChecked();
+  await dialog.getByRole('button', { name: 'Aceitar opcionais' }).click();
+  await expect.poll(() => otelConfigRequests).toBe(1);
+
+  await page.evaluate(() => {
+    const record = JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}');
+    localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({ ...record, version: '1.0' }));
+  });
+  await page.reload();
+  await expect(page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })).toBeVisible();
+});
+
+test('privacidade: modal permanece acessível e contido em desktop, notebook, tablet e smartphone', async ({ page }) => {
+  await mockApi(page);
+
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 1366, height: 768 },
+    { width: 768, height: 1024 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.evaluate(() => localStorage.removeItem('hemodinks.privacy-consent'));
+    await page.reload();
+    await page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })
+      .getByRole('button', { name: 'Configurar', exact: true }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
+    await expect(dialog).toBeVisible();
+    const saveButton = dialog.getByRole('button', { name: 'Salvar preferências' });
+    await saveButton.scrollIntoViewIfNeeded();
+    await expect(saveButton).toBeVisible();
+
+    const bounds = await dialog.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.y).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + 1);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 1);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+  }
 });
 
 test('privacidade: rejeitar opcionais mantém login e links no rodapé autenticado', async ({ page }) => {
@@ -1042,7 +1167,7 @@ test('privacidade: páginas jurídicas são públicas e responsivas', async ({ p
   await page.setViewportSize({ width: 390, height: 844 });
 
   for (const [path, title, version] of [
-    ['/termos-de-uso', 'Termos de Uso', 'Versão 1.0'],
+    ['/termos-de-uso', 'Termos de Uso', 'Versão: 1.1'],
     ['/politica-de-privacidade', 'Aviso de Privacidade do HemoDinks', 'Versão: 1.1'],
   ] as const) {
     await page.goto(path);

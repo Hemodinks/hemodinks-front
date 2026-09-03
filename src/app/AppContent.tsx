@@ -4,6 +4,8 @@ import { useAuthSession } from "../features/auth/useAuthSession";
 import { useLoginFlow } from "../features/auth/useLoginFlow";
 import { useMedicalLicenseHydration, useSessionExpiration } from "../features/auth/useSessionLifecycle";
 import { useMedicalGroupsDomain } from "../features/medicalGroups/useMedicalGroupsDomain";
+import { LegalAcceptanceGate } from "../features/legal/LegalAcceptanceGate";
+import { useLegalAcceptance } from "../features/legal/useLegalAcceptance";
 import { usePatientsDomain } from "../features/patients/usePatientsDomain";
 import { useUsersDomain } from "../features/users/useUsersDomain";
 import type { AppView, ModuleMode } from "../appTypes";
@@ -30,6 +32,14 @@ export function AppContent() {
   const [moduleMode, setModuleMode] = useState<ModuleMode>("list");
   const loginFlow = useLoginFlow({ session, persistSession });
   const access = getAppAccess(session);
+  const credentialGateActive = Boolean(
+    session && (session.user.precisaTrocarSenha || session.user.precisaTrocarPin),
+  );
+  const legalAcceptance = useLegalAcceptance(credentialGateActive ? null : session);
+  const legalGateActive = Boolean(
+    session && !credentialGateActive && !legalAcceptance.isCurrent,
+  );
+  const operationalSession = legalGateActive ? null : session;
   const {
     loginLoading,
     resetPasswordLoading,
@@ -76,9 +86,9 @@ export function AppContent() {
   } = access;
   const forceDashboardRoute =
     openDashboardAfterLogin &&
-    Boolean(session && !session.user.precisaTrocarSenha);
+    Boolean(operationalSession && !operationalSession.user.precisaTrocarSenha);
   const { activeView, navigateToView } = useRouteView({
-    session,
+    session: operationalSession,
     canUseDashboardRoute,
     canUsePatientsRoute,
     canUseUsersRoute,
@@ -93,7 +103,7 @@ export function AppContent() {
     canUseClinicsRoute,
     forceDashboardRoute,
   });
-  const appChrome = useAppChrome({ session });
+  const appChrome = useAppChrome({ session: operationalSession });
   const normalizedPath = location.pathname.replace(/\/+$/, "") || "/";
   const isResetPasswordRoute = normalizedPath === "/reset-password";
   const resetToken = isResetPasswordRoute
@@ -134,7 +144,7 @@ export function AppContent() {
     endSession();
   }
   const usersDomain = useUsersDomain({
-    session,
+    session: operationalSession,
     activeView,
     moduleMode,
     canAccessUsers,
@@ -148,7 +158,7 @@ export function AppContent() {
     confirmAction,
   });
   const patientsDomain = usePatientsDomain({
-    session,
+    session: operationalSession,
     activeView,
     moduleMode,
     companyName: appChrome.companyName,
@@ -166,7 +176,7 @@ export function AppContent() {
     confirmAction,
   });
   const medicalGroupsDomain = useMedicalGroupsDomain({
-    session,
+    session: operationalSession,
     activeView,
     moduleMode,
     canAccessMedicalGroups,
@@ -181,7 +191,7 @@ export function AppContent() {
     patientsDomain.pacienteFormLoading ||
     medicalGroupsDomain.formLoading;
   useSessionExpiration(session, () => endSession(SESSION_EXPIRED_MESSAGE));
-  useMedicalLicenseHydration(session, persistSession);
+  useMedicalLicenseHydration(operationalSession, persistSession);
   useLayoutEffect(() => {
     if (
       !openDashboardAfterLogin ||
@@ -347,6 +357,21 @@ export function AppContent() {
           token,
           user: { ...session.user, precisaTrocarPin: false },
         })}
+        onLogout={logout}
+      />
+    );
+  }
+
+  if (!legalAcceptance.isCurrent) {
+    return (
+      <LegalAcceptanceGate
+        theme={theme}
+        loading={legalAcceptance.loading}
+        accepting={legalAcceptance.accepting}
+        error={legalAcceptance.error}
+        onThemeToggle={toggleTheme}
+        onAccept={legalAcceptance.accept}
+        onRetry={legalAcceptance.retry}
         onLogout={logout}
       />
     );
