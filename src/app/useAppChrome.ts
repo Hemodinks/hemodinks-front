@@ -7,7 +7,6 @@ import {
   getSystemSettings,
   markAgendaNotificationsAsRead,
 } from '../services';
-import { setObservabilityUser } from '../observability';
 import { queryClient } from '../queryClient';
 import { queryKeys } from '../shared/queryKeys';
 import { getErrorMessage } from '../shared/utils/formatters';
@@ -56,14 +55,6 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
   const systemSettings = systemSettingsQuery.data ?? DEFAULT_SYSTEM_SETTINGS;
   const companyName = systemSettings.nomeEmpresa?.trim() || DEFAULT_SYSTEM_SETTINGS.nomeEmpresa;
   const systemSettingsError = systemSettingsQuery.error ? getErrorMessage(systemSettingsQuery.error) : '';
-
-  useEffect(() => {
-    setObservabilityUser(session ? {
-      id: session.user.id,
-      email: session.user.email,
-      nome: session.user.nome,
-    } : null);
-  }, [session?.user.email, session?.user.id, session?.user.nome]);
 
   useEffect(() => {
     if (dashboardSummaryQuery.data) {

@@ -13,6 +13,7 @@ import {
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { ContextualFlowDrawer } from './ContextualFlowDrawer';
+import { LegalFooter } from '../features/legal/LegalFooter';
 
 type AppShellProps = {
   children: ReactNode;
@@ -113,7 +114,7 @@ export function AppShell({
   const isSlowQuery = useDelayedLoading(activeQueries > 0);
 
   return (
-    <main className="app-shell">
+    <div className="app-shell">
       <LoadingOverlay active={isBusy || isSlowQuery} />
       <datalist id={MEDICAL_USERS_DATALIST_ID}>
         {medicalUsers.map((user) => (
@@ -186,7 +187,9 @@ export function AppShell({
 
       <ContextualFlowDrawer activeView={activeView} />
 
+      <LegalFooter className="app-legal-footer" />
+
       {modals}
-    </main>
+    </div>
   );
 }

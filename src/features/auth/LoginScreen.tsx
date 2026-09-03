@@ -8,6 +8,7 @@ import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import { ToastMessage } from '../../shared/components/ui';
+import { LegalFooter } from '../legal/LegalFooter';
 import {
   MAX_EMAIL_LENGTH,
   MAX_PASSWORD_LENGTH,
@@ -167,6 +168,7 @@ export function LoginScreen({
             </button>
           </div>
         </form>
+        <LegalFooter className="login-legal-footer" />
       </section>
     </main>
   );

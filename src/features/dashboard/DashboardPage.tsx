@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import './dashboard.css';
 import { ToastMessage } from '../../shared/components/ui';
+import { hasPreferenceConsent } from '../../shared/privacy/consentStorage';
 
 type DashboardPageProps = {
   companyName: string;
@@ -67,7 +68,7 @@ const DASHBOARD_MODULE_ORDER_KEY = 'hemodinks.dashboard.module-order';
 const DASHBOARD_DEFAULT_MODULE_ORDER: DashboardModuleId[] = ['users', 'profile', 'patients', 'billing', 'tutorials', 'medicalGroups', 'agenda', 'clinics', 'settings'];
 
 function readStoredDashboardModuleOrder() {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' || !hasPreferenceConsent()) {
     return [...DASHBOARD_DEFAULT_MODULE_ORDER];
   }
 
@@ -275,7 +276,7 @@ export function DashboardPage({
   }, [moduleOrder, normalizedModuleOrder, visibleModuleIdsKey]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || !hasPreferenceConsent()) {
       return;
     }
 
