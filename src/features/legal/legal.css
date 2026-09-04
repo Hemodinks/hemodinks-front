@@ -85,9 +85,11 @@
 .legal-acceptance-action > p { color: var(--muted); line-height: 1.65; }
 .legal-acceptance-action .primary-action { width: 100%; }
 .legal-acceptance-panel > .legal-acceptance-action { margin-top: 0; padding: 0; border: 0; background: transparent; }
+:root.privacy-consent-pending .legal-document .legal-acceptance-action { margin-bottom: 150px; }
 
 @media (max-width: 760px) {
   .legal-page { padding-top: 16px; }
   .legal-document { padding: 22px 18px; }
   .app-legal-footer { width: calc(100% - 24px); }
+  :root.privacy-consent-pending .legal-document .legal-acceptance-action { margin-bottom: 330px; }
 }

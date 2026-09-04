@@ -12,6 +12,9 @@ import {
   normalizePhoneForPayload,
 } from '../../shared/utils/formatters';
 import { clinicToForm, EMPTY_CLINIC_FORM, type ClinicFormData, type ClinicSortField } from './clinicFormModel';
+import { isValidCnpj, normalizeCnpj } from '../../shared/utils/cnpj';
+import { queryClient } from '../../queryClient';
+import { queryKeys } from '../../shared/queryKeys';
 
 type Options = { session: AuthSession; onClinicSelected: (result: SelectClinicResponse) => void };
 
@@ -115,6 +118,7 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!isValidCnpj(form.cnpj)) return setError('Informe um CNPJ válido.');
     if (form.plano === 'Parcial' && form.modulosLiberados.length === 0) return setError('Selecione ao menos um módulo para o plano Parcial.');
     if (form.criarEquipeInicial && form.limiteUsuarios && Number(form.limiteUsuarios) < 2) return setError('O limite deve permitir ao menos um administrador e uma equipe.');
     const administratorPhoneDigits = getLocalBrazilPhoneDigits(form.administradorTelefone);
@@ -130,7 +134,7 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
     const createsTeam = form.criarEquipeInicial;
     const currentEditing = editing;
     const payload: ClinicPayload = {
-      nome: form.nome.trim(), slug: form.slug.trim().toLowerCase(), plano: form.plano.trim(),
+      nome: form.nome.trim(), slug: form.slug.trim().toLowerCase(), cnpj: normalizeCnpj(form.cnpj), plano: form.plano.trim(),
       modulosLiberados: form.plano === 'Parcial' ? form.modulosLiberados : [], assinaturaStatus: form.assinaturaStatus,
       ativa: form.ativa, limiteUsuarios: form.limiteUsuarios ? Number(form.limiteUsuarios) : null,
       trialAte: form.plano === 'Trial' ? form.trialAte || null : null, assinaturaValidaAte: form.assinaturaValidaAte || null,
@@ -147,7 +151,8 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
 
     try {
       if (currentEditing) {
-        await updatePlatformClinic(currentEditing.id, payload, session.token);
+        const updatedClinic = await updatePlatformClinic(currentEditing.id, payload, session.token);
+        queryClient.setQueryData(queryKeys.currentClinic(session.token, currentEditing.id), updatedClinic);
         setSuccess(createsTeam ? 'Clinica atualizada e nova equipe adicionada com sucesso.' : 'Clinica atualizada com sucesso.');
       } else {
         await createPlatformClinic(payload, session.token);

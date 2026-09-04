@@ -13,6 +13,7 @@ import { getAppAccess } from './appAccess';
 import { AppMainContent } from './AppMainContent';
 import { AppModals } from './AppModals';
 import { buildBreadcrumbItems, getAppTitle } from './appViewMeta';
+import { ClinicCnpjWarning } from '../features/clinics/ClinicCnpjWarning';
 
 type AccessState = ReturnType<typeof getAppAccess>;
 type Navigation = {
@@ -20,6 +21,7 @@ type Navigation = {
   openPatientsList: () => void; openPatientsListFromMenu: () => void;
   openBilling: () => void; openBillingHistory: () => void; openReports: () => void; openTutorials: () => void;
   openMedicalGroups: () => void; openAgenda: () => void; openSettings: () => void; openClinics: () => void;
+  openCurrentClinic: () => void;
 };
 type SortHandlers = {
   handleUserSortChange: (field: string) => void;
@@ -86,6 +88,7 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
   return (
     <TutorialProvider activeView={activeView} allowedTutorialIds={allowedTutorialIds}>
       <AppShell
+        banner={<ClinicCnpjWarning session={session} onUpdateClinic={navigation.openCurrentClinic} />}
         session={session}
         isBusy={isBusy}
         appTitle={getAppTitle(activeView)}

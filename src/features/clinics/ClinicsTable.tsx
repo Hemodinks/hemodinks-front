@@ -10,6 +10,7 @@ type Props = {
   clinics: PlatformClinic[];
   loading: boolean;
   currentClinicId?: number | null;
+  canManagePlatformClinics: boolean;
   sortBy: ClinicSortField;
   sortDirection: 'asc' | 'desc';
   onSortChange: (field: ClinicSortField) => void;
@@ -18,7 +19,7 @@ type Props = {
   onSwitch: (clinic: PlatformClinic) => void | Promise<void>;
 };
 
-export function ClinicsTable({ clinics, loading, currentClinicId, sortBy, sortDirection, onSortChange, onEdit, onDeactivate, onSwitch }: Props) {
+export function ClinicsTable({ clinics, loading, currentClinicId, canManagePlatformClinics, sortBy, sortDirection, onSortChange, onEdit, onDeactivate, onSwitch }: Props) {
   const sortHeader = (field: ClinicSortField, label: string) => <SortableTableHeader field={field} label={label}
     activeField={sortBy} direction={sortDirection} onSortChange={onSortChange} />;
 
@@ -33,9 +34,9 @@ export function ClinicsTable({ clinics, loading, currentClinicId, sortBy, sortDi
               <td data-label="Plano">{clinic.plano}</td><td data-label="Assinatura">{clinic.assinaturaStatus}</td><td data-label="Usuarios">{clinic.usuarios ?? '-'}</td>
               <td data-label="Status"><span className={`status-pill ${clinic.ativa ? 'ok' : 'warning'}`}>{clinic.ativa ? 'Ativa' : 'Inativa'}</span></td>
               <td data-label="Acoes"><div className="row-actions">
-                {clinic.ativa && clinic.id !== currentClinicId && <IconButton label={`Acessar ${clinic.nome}`} onClick={() => void onSwitch(clinic)}><RotateCcw size={17} /></IconButton>}
+                {canManagePlatformClinics && clinic.ativa && clinic.id !== currentClinicId && <IconButton label={`Acessar ${clinic.nome}`} onClick={() => void onSwitch(clinic)}><RotateCcw size={17} /></IconButton>}
                 <IconButton label={`Editar ${clinic.nome}`} tone="muted" onClick={() => onEdit(clinic)}><Pencil size={17} /></IconButton>
-                {clinic.ativa && clinic.id !== currentClinicId && <IconButton label={`Desativar ${clinic.nome}`} tone="danger" onClick={() => void onDeactivate(clinic)}><Trash2 size={17} /></IconButton>}
+                {canManagePlatformClinics && clinic.ativa && clinic.id !== currentClinicId && <IconButton label={`Desativar ${clinic.nome}`} tone="danger" onClick={() => void onDeactivate(clinic)}><Trash2 size={17} /></IconButton>}
               </div></td>
             </tr>
           ))}

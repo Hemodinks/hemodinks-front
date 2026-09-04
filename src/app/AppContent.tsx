@@ -13,6 +13,7 @@ import type { AppView, ModuleMode } from "../appTypes";
 import { queryClient } from "../queryClient";
 import { useConfirmationDialog } from "../shared/components/ConfirmationDialog";
 import { useRouteView } from "../shared/hooks/useRouteView";
+import { useScrollToTopOnNavigation } from "../shared/hooks/useScrollToTopOnNavigation";
 import { useThemePreference } from "../shared/hooks/useThemePreference";
 import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from "./appAccess";
 import { AppPublicContent } from "./AppPublicContent";
@@ -27,6 +28,7 @@ const SESSION_EXPIRED_MESSAGE =
 export function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
+  useScrollToTopOnNavigation();
   const { session, persistSession, clearSession } = useAuthSession();
   usePrivacyPreferenceSession(session);
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
@@ -309,6 +311,15 @@ export function AppContent() {
     navigateToViewFromInteraction("clinics");
     setModuleMode("list");
   };
+  const openCurrentClinic = () => {
+    resetProfileRouteState();
+    if (!canAccessClinics || !session?.user.clinicaId) {
+      openDashboard();
+      return;
+    }
+    navigate(`/clinicas?editar=${session.user.clinicaId}`);
+    setModuleMode("list");
+  };
 
   const handleClinicSelected = (
     result: import("../types").SelectClinicResponse,
@@ -404,6 +415,7 @@ export function AppContent() {
       openAgenda,
       openSettings,
       openClinics,
+      openCurrentClinic,
     }}
     sortHandlers={{ handleUserSortChange, handlePacienteSortChange, handleMedicalGroupSortChange, handleCbhpmSortChange }}
     confirmationDialog={confirmationDialog}

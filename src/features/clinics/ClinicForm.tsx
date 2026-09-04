@@ -8,6 +8,7 @@ import { formatPhoneInput, MAX_EMAIL_LENGTH, MAX_NAME_LENGTH } from '../../share
 import { ClinicTeamsPanel } from '../settings/TeamAdminPanel';
 import { CLINIC_MODULE_OPTIONS, MAX_ADMIN_PASSWORD_LENGTH, MAX_BRAZIL_MOBILE_MASK_LENGTH, MAX_CLINIC_NAME_LENGTH, MAX_CLINIC_SLUG_LENGTH, MAX_USER_LIMIT, type ClinicFormData } from './clinicFormModel';
 import { ClinicFormTeamFields } from './ClinicFormTeamFields';
+import { CnpjField } from './CnpjField';
 
 type Props = {
   session: AuthSession;
@@ -23,10 +24,18 @@ type Props = {
 };
 
 export function ClinicForm({ session, editing, form, setForm, photoPreview, setPhotoPreview, saving, onPhotoChange, onSubmit, onClose }: Props) {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (!event.currentTarget.checkValidity()) {
+      event.preventDefault();
+      return;
+    }
+    void onSubmit(event);
+  };
+
   return (
     <DataPanel className="clinic-form-panel" data-tour="clinics-form">
       <div className="settings-section-heading"><span className="settings-section-icon"><Building2 size={19} /></span><div><span className="eyebrow">{editing ? 'Edicao' : 'Onboarding'}</span><h3>{editing ? `Editar ${editing.nome}` : 'Nova clinica'}</h3></div></div>
-      <form className="clinic-form" onSubmit={onSubmit}>
+      <form className="clinic-form" onSubmit={handleSubmit}>
         <div className="clinic-brand-editor">
           <CompanyLogo companyName={form.nome || 'Clinica'} photo={photoPreview} className="clinic-brand-photo" />
           <div className="clinic-brand-actions"><label className="ghost-button file-action" htmlFor="clinic-photo-input"><ImagePlus size={17} />Selecionar foto</label><input id="clinic-photo-input" className="sr-only" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => void onPhotoChange(event)} />{photoPreview && <Button variant="danger-ghost" onClick={() => { setForm((current) => ({ ...current, fotoClinica: '' })); setPhotoPreview(null); }}><Trash2 size={16} />Remover foto</Button>}</div>
@@ -34,6 +43,7 @@ export function ClinicForm({ session, editing, form, setForm, photoPreview, setP
         <div className="clinic-form-grid" data-tour="clinics-identity">
           <TextField label="Nome da clinica" value={form.nome} onValueChange={(nome) => setForm((current) => ({ ...current, nome: nome.slice(0, MAX_CLINIC_NAME_LENGTH) }))} maxLength={MAX_CLINIC_NAME_LENGTH} required />
           <TextField label="Slug" value={form.slug} onValueChange={(slug) => setForm((current) => ({ ...current, slug: slug.slice(0, MAX_CLINIC_SLUG_LENGTH) }))} maxLength={MAX_CLINIC_SLUG_LENGTH} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required />
+          <CnpjField value={form.cnpj} onValueChange={(cnpj) => setForm((current) => ({ ...current, cnpj }))} />
           <label>Plano<select value={form.plano} onChange={(event) => setForm((current) => ({ ...current, plano: event.target.value, trialAte: event.target.value === 'Trial' ? current.trialAte : '', assinaturaStatus: event.target.value === 'Trial' ? 'Trial' : current.assinaturaStatus === 'Trial' ? 'Ativa' : current.assinaturaStatus }))}><option value="Trial">Trial</option><option value="Parcial">Parcial</option><option value="Completa">Completa</option></select></label>
           <label>Status da assinatura<select value={form.assinaturaStatus} onChange={(event) => setForm((current) => ({ ...current, assinaturaStatus: event.target.value }))}><option>Trial</option><option>Ativa</option><option>Suspensa</option><option>Cancelada</option></select></label>
           <TextField label="Limite de usuarios" type="number" min={form.criarEquipeInicial ? 2 : 1} max={MAX_USER_LIMIT} value={form.limiteUsuarios} onValueChange={(limiteUsuarios) => setForm((current) => ({ ...current, limiteUsuarios }))} />

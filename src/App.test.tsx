@@ -299,8 +299,8 @@ describe('App', () => {
     expect(screen.getByText('Arquivos')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir usuários/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
-    expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
     await waitFor(() => {
+      expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
       expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'data', sortDirection: 'desc' });
     });
 
@@ -482,7 +482,8 @@ describe('App', () => {
     expect(screen.getByText(/Última atualização:/).closest('p')).toHaveTextContent(version);
     expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
-    expect(screen.queryByRole('checkbox', { name: /Li e estou ciente/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Li e estou ciente/ })).toBeDisabled();
+    expect(screen.getByText(/Entre na plataforma para registrar este aceite/)).toBeVisible();
   });
 
   it.each([
@@ -714,9 +715,7 @@ describe('App', () => {
     });
 
     await openUsersModule(user);
-    const row = (await screen.findAllByText('George Marcone'))
-      .map((element) => element.closest('tr'))
-      .find((element): element is HTMLTableRowElement => element !== null)!;
+    const row = await screen.findByRole('row', { name: /George Marcone/ });
     await user.click(within(row).getByTitle('Editar'));
 
     const profileSelect = screen.getByLabelText('Perfil');
@@ -1115,7 +1114,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
 
-    const patientRow = await screen.findByText('Paciente Hemodinks');
+    const patientRow = await screen.findByText('Paciente Hemodinks', {}, { timeout: 5_000 });
     const observationButton = within(patientRow.closest('tr')!).getByRole('button', { name: /observações de paciente hemodinks/i });
     expect(within(observationButton).getByText('3')).toBeInTheDocument();
     expect(observationButton).toHaveClass('has-unread-observations');

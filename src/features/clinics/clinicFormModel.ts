@@ -1,16 +1,17 @@
 import type { PlatformClinic, TeamIdentificationMode } from '../../types';
+import { formatCnpjInput } from '../../shared/utils/cnpj';
 
 export type ClinicSortField = 'nome' | 'plano' | 'assinatura' | 'usuarios' | 'status';
 
 export type ClinicFormData = {
-  nome: string; slug: string; plano: string; modulosLiberados: string[]; assinaturaStatus: string; ativa: boolean;
+  nome: string; slug: string; cnpj: string; plano: string; modulosLiberados: string[]; assinaturaStatus: string; ativa: boolean;
   limiteUsuarios: string; trialAte: string; assinaturaValidaAte: string; fotoClinica?: string | null;
   administradorNome: string; administradorEmail: string; administradorSenha: string; administradorNovaSenha: string; administradorTelefone: string;
   criarEquipeInicial: boolean; equipeNome: string; equipeEmail: string; equipeSenha: string; equipeTelefone: string; equipeModoIdentificacao: TeamIdentificationMode;
 };
 
 export const EMPTY_CLINIC_FORM: ClinicFormData = {
-  nome: '', slug: '', plano: 'Trial', modulosLiberados: [], assinaturaStatus: 'Trial', ativa: true,
+  nome: '', slug: '', cnpj: '', plano: 'Trial', modulosLiberados: [], assinaturaStatus: 'Trial', ativa: true,
   limiteUsuarios: '', trialAte: '', assinaturaValidaAte: '', fotoClinica: undefined,
   administradorNome: '', administradorEmail: '', administradorSenha: '', administradorNovaSenha: '', administradorTelefone: '',
   criarEquipeInicial: true, equipeNome: '', equipeEmail: '', equipeSenha: '', equipeTelefone: '', equipeModoIdentificacao: 'Pin',
@@ -35,6 +36,7 @@ export function clinicToForm(clinic: PlatformClinic): ClinicFormData {
     ...EMPTY_CLINIC_FORM,
     nome: clinic.nome,
     slug: clinic.slug,
+    cnpj: formatCnpjInput(clinic.cnpj),
     plano: clinic.plano,
     modulosLiberados: clinic.modulosLiberados ?? [],
     assinaturaStatus: clinic.assinaturaStatus,

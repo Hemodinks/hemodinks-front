@@ -17,6 +17,7 @@ import { LegalFooter } from '../features/legal/LegalFooter';
 
 type AppShellProps = {
   children: ReactNode;
+  banner?: ReactNode;
   modals?: ReactNode;
   session: AuthSession;
   isBusy: boolean;
@@ -65,6 +66,7 @@ type AppShellProps = {
 
 export function AppShell({
   children,
+  banner,
   modals,
   session,
   isBusy,
@@ -145,6 +147,8 @@ export function AppShell({
         onThemeToggle={onThemeToggle}
         onLogout={onLogout}
       />
+
+      {banner && <div className="app-banner-shell">{banner}</div>}
 
       <div className="app-layout">
         <Sidebar
