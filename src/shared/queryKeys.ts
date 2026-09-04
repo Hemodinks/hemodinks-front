@@ -1,6 +1,7 @@
 import type { CbhpmListQuery, PacienteListQuery } from '../types';
 
 export const queryKeys = {
+  currentClinic: (token: string, clinicId: number) => ['currentClinic', token, clinicId] as const,
   systemSettings: (token = '') => ['systemSettings', token] as const,
   dashboardSummary: (token: string) => ['dashboardSummary', token] as const,
   dashboardNotifications: (token: string) => ['dashboardNotifications', token] as const,

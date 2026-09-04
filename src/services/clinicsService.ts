@@ -10,6 +10,10 @@ export function listPlatformClinics(token: string) {
   return get<PlatformClinic[]>('/api/platform/clinicas', token);
 }
 
+export function getPlatformClinic(id: number, token: string) {
+  return get<PlatformClinic>(`/api/platform/clinicas/${id}`, token);
+}
+
 export function createPlatformClinic(payload: ClinicPayload, token: string) {
   return post<PlatformClinic>('/api/platform/clinicas', payload, token);
 }

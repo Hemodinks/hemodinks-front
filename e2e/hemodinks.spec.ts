@@ -32,6 +32,8 @@ const session = {
   token: 'jwt-token',
   user: {
     id: 99,
+    clinicaId: 1,
+    clinicaSlug: 'clinica-hemodinks',
     nome: 'George Marcone',
     email: 'gmarcone@gmail.com',
     cpf: '00000000191',
@@ -46,6 +48,8 @@ const superAdminSession = {
   token: 'super-admin-token',
   user: {
     id: 100,
+    clinicaId: 1,
+    clinicaSlug: 'clinica-hemodinks',
     nome: 'Super Administrador',
     email: 'superadmin@hemodinks.com',
     cpf: '39053344705',
@@ -60,6 +64,8 @@ const patientSession = {
   token: 'patient-token',
   user: {
     id: 20,
+    clinicaId: 1,
+    clinicaSlug: 'clinica-hemodinks',
     nome: 'Paciente Hemodinks',
     email: 'paciente@hemodinks.com',
     cpf: '11144477735',
@@ -74,6 +80,8 @@ const tutorialRecordingSession = {
   token: 'token-ficticio-da-gravacao',
   user: {
     id: 900,
+    clinicaId: 1,
+    clinicaSlug: 'clinica-hemodinks',
     nome: 'Usuário Fictício',
     email: 'tutorial@example.invalid',
     cpf: '00000000000',
@@ -274,6 +282,7 @@ async function mockApi(page: Page, loginSession = session, options: {
   billingAmount?: string;
   legalAcceptanceRequired?: boolean;
   privacyPreference?: { preferences: boolean; analytics: boolean } | null;
+  clinicCnpj?: string | null;
 } = {}) {
   const sanitizedPatient = options.sanitizedTutorial ? {
     ...paciente,
@@ -301,6 +310,23 @@ async function mockApi(page: Page, loginSession = session, options: {
       ? { preferences: true, analytics: false }
       : options.privacyPreference,
     privacyPreferencePayload: null as Payload | null,
+    clinic: {
+      id: 1,
+      nome: 'Clínica Hemodinks',
+      slug: 'clinica-hemodinks',
+      cnpj: options.clinicCnpj === undefined ? '11222333000181' : options.clinicCnpj,
+      fotoUrl: null,
+      ativa: true,
+      plano: 'Completa',
+      modulosLiberados: ['usuarios', 'pacientes', 'faturamento', 'grupos-medicos', 'agenda'],
+      assinaturaStatus: 'Ativa',
+      trialAte: null,
+      assinaturaValidaAte: '2027-06-01T00:00:00Z',
+      limiteUsuarios: 100,
+      usuarios: 2,
+      dataCadastro: '2026-01-01T00:00:00Z',
+      dataAtualizacao: null as string | null,
+    },
   };
 
   await page.route('https://date.nager.at/**', (route) => route.fulfill({ json: [] }));
@@ -317,24 +343,29 @@ async function mockApi(page: Page, loginSession = session, options: {
     }
 
     if (path === '/api/platform/clinicas') {
-      return route.fulfill({
-        json: [{
-          id: 1,
-          nome: 'Clínica Hemodinks',
-          slug: 'clinica-hemodinks',
-          fotoUrl: null,
-          ativa: true,
-          plano: 'Completo',
-          modulosLiberados: ['usuarios', 'pacientes', 'faturamento', 'grupos-medicos', 'agenda'],
-          assinaturaStatus: 'Ativa',
-          trialAte: null,
-          assinaturaValidaAte: '2027-06-01T00:00:00Z',
-          limiteUsuarios: 100,
-          usuarios: 2,
-          dataCadastro: '2026-01-01T00:00:00Z',
-          dataAtualizacao: null,
-        }],
-      });
+      return route.fulfill({ json: [state.clinic] });
+    }
+
+    if (path === '/api/platform/clinicas/1/equipes') {
+      return route.fulfill({ json: [] });
+    }
+
+    if (path === '/api/platform/clinicas/1/equipes/usuarios') {
+      return route.fulfill({ json: [] });
+    }
+
+    if (path === '/api/platform/clinicas/1') {
+      if (method === 'PUT') {
+        const payload = request.postDataJSON() as Payload;
+        state.clinic = {
+          ...state.clinic,
+          nome: String(payload.nome ?? state.clinic.nome),
+          slug: String(payload.slug ?? state.clinic.slug),
+          cnpj: String(payload.cnpj ?? state.clinic.cnpj),
+          dataAtualizacao: '2026-09-04T12:00:00Z',
+        };
+      }
+      return route.fulfill({ json: state.clinic });
     }
 
     if (path === '/api/users/authenticate' && method === 'POST') {
@@ -342,6 +373,8 @@ async function mockApi(page: Page, loginSession = session, options: {
       return route.fulfill({
         json: {
           id: loginSession.user.id,
+          clinicaId: loginSession.user.clinicaId,
+          clinicaSlug: loginSession.user.clinicaSlug,
           nome: loginSession.user.nome,
           email: loginSession.user.email,
           token: loginSession.token,
@@ -761,6 +794,57 @@ test('exibe o fluxo contextual correspondente para o SuperAdministrador', async 
   }
 });
 
+test('clínica legada: administrador cadastra CNPJ e o alerta permanente desaparece', async ({ page }) => {
+  await mockApi(page, session, { clinicCnpj: null });
+  await loginViaUi(page, '/dashboard');
+
+  const warning = page.getByRole('status').filter({ hasText: 'Cadastro da clínica incompleto' });
+  await expect(warning).toBeVisible();
+  const [warningBox, copyBox, actionBox] = await Promise.all([
+    warning.boundingBox(),
+    warning.locator('.clinic-cnpj-warning-copy').boundingBox(),
+    warning.getByRole('button', { name: 'Atualizar clínica' }).boundingBox(),
+  ]);
+  expect(warningBox).not.toBeNull();
+  expect(copyBox).not.toBeNull();
+  expect(actionBox).not.toBeNull();
+  expect(actionBox!.width).toBeLessThan(180);
+  expect(copyBox!.width).toBeGreaterThan(actionBox!.width);
+  await warning.getByRole('button', { name: 'Atualizar clínica' }).click();
+
+  await expect(page).toHaveURL(/\/clinicas\?editar=1$/);
+  const cnpj = page.getByRole('textbox', { name: 'CNPJ' });
+  await expect(cnpj).toBeVisible();
+  await expect(cnpj).toHaveAttribute('required', '');
+
+  await cnpj.fill('11.222.333/0001-82');
+  await page.getByRole('button', { name: 'Salvar clinica' }).click();
+  await expect(page.getByText('Informe um CNPJ válido.')).toBeVisible();
+
+  await cnpj.fill('11.222.333/0001-81');
+  await page.getByRole('button', { name: 'Salvar clinica' }).click();
+  await expect(page.getByText('Clinica atualizada com sucesso.')).toBeVisible();
+  await expect(warning).toHaveCount(0);
+});
+
+test('navegação pelo menu posiciona a nova tela no topo da aplicação', async ({ page }) => {
+  await mockApi(page, session);
+  await loginViaUi(page, '/dashboard');
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+
+  await page.evaluate(() => {
+    document.body.style.minHeight = '3000px';
+    window.scrollTo(0, 1800);
+  });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+
+  await page.evaluate(() => {
+    document.querySelector<HTMLButtonElement>('.side-nav-patients')?.click();
+  });
+  await expect(page).toHaveURL(/\/pacientes$/);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
 test('consulta o histórico de faturamento por ano e mês', async ({ page }) => {
   await mockApi(page, superAdminSession, { billingAmount: 'R$ 125,45' });
   await loginViaUi(page, '/historico-faturamento', superAdminSession);
@@ -1142,7 +1226,13 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
   const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
   await dialog.getByRole('checkbox', { name: /Preferências/ }).uncheck();
   await dialog.getByRole('checkbox', { name: /Análise/ }).uncheck();
+  const possibleRevocationReload = Promise.race([
+    page.waitForEvent('load').catch(() => null),
+    page.waitForTimeout(1_000),
+  ]);
   await dialog.getByRole('button', { name: 'Salvar preferências' }).click();
+  await possibleRevocationReload;
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
 
   await expect.poll(() => apiState.privacyPreferencePayload).toEqual({
     documentVersion: '1.1',
@@ -1252,6 +1342,23 @@ test('privacidade: páginas jurídicas são públicas e responsivas', async ({ p
     await page.goto(path);
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
     await expect(page.locator('.legal-document-meta')).toContainText(version);
+    const acceptance = page.getByRole('region', { name: 'Aceite dos documentos' });
+    await expect(acceptance).toHaveCount(1);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect(acceptance).toBeVisible();
+    const acknowledgement = acceptance.getByRole('checkbox', { name: /Li e estou ciente/ });
+    const continueButton = acceptance.getByRole('button', { name: 'Aceitar e continuar' });
+    await expect(acknowledgement).toBeVisible();
+    await expect(acknowledgement).toBeDisabled();
+    await expect(continueButton).toBeVisible();
+    await expect(continueButton).toBeDisabled();
+    const [acceptanceBox, bannerBox] = await Promise.all([
+      acceptance.boundingBox(),
+      page.locator('.cookie-banner').boundingBox(),
+    ]);
+    expect(acceptanceBox).not.toBeNull();
+    expect(bannerBox).not.toBeNull();
+    expect(acceptanceBox!.y + acceptanceBox!.height).toBeLessThanOrEqual(bannerBox!.y);
     await expectNoGlobalHorizontalOverflow(page);
   }
   expect(applicationApiRequests).toBe(0);

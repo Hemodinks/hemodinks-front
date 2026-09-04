@@ -19,6 +19,7 @@ export const HOSPITAIS_DATALIST_ID = "hemodinks-hospitais-options";
 export const OPME_FORNECEDORES_DATALIST_ID = "hemodinks-opme-fornecedores-options";
 export const MAX_PROFILE_PHOTO_BYTES = 2 * 1024 * 1024;
 export const MAX_PATIENT_FILE_BYTES = 10 * 1024 * 1024;
+export const ADMIN_PROFILE_ID = 1;
 export const MEDICAL_PROFILE_ID = 2;
 export const PATIENT_PROFILE_ID = 3;
 export const CONTROLLER_PROFILE_ID = 4;

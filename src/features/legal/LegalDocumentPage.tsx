@@ -34,16 +34,16 @@ export function LegalDocumentPage({ document }: { document: LegalDocument }) {
           ? <PrivacyPolicyContent />
           : <TermsOfUseContent />}
 
-        {canAccept && !legalAcceptance.isCurrent && (
-          <LegalAcceptanceAction
-            loading={legalAcceptance.loading}
-            accepting={legalAcceptance.accepting}
-            error={legalAcceptance.error}
-            onAccept={handleAccept}
-            onRetry={legalAcceptance.retry}
-            showHeading
-          />
-        )}
+        <LegalAcceptanceAction
+          authenticated={canAccept}
+          current={legalAcceptance.isCurrent}
+          loading={canAccept && legalAcceptance.loading}
+          accepting={legalAcceptance.accepting}
+          error={canAccept ? legalAcceptance.error : ''}
+          onAccept={handleAccept}
+          onRetry={legalAcceptance.retry}
+          showHeading
+        />
       </article>
       <LegalFooter />
     </main>

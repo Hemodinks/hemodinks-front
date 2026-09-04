@@ -38,6 +38,11 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
   }, [consent]);
 
   useEffect(() => {
+    document.documentElement.classList.toggle('privacy-consent-pending', !consent);
+    return () => document.documentElement.classList.remove('privacy-consent-pending');
+  }, [consent]);
+
+  useEffect(() => {
     if (consent?.analytics) void startOptionalAnalytics();
   }, [consent?.analytics]);
 
