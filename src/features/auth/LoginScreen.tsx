@@ -7,7 +7,8 @@ import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
-import { ToastMessage } from '../../shared/components/ui';
+import { AlertMessage, ToastMessage } from '../../shared/components/ui';
+import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import { LegalFooter } from '../legal/LegalFooter';
 import {
   MAX_EMAIL_LENGTH,
@@ -115,7 +116,7 @@ export function LoginScreen({
 
         <button type="button" className="ghost-button login-tutorial-button" onClick={onStartTutorial}>Tutorial de acesso</button>
 
-        <form className="stack" onSubmit={onSubmit}>
+        <form className="stack" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
           <label data-tour="login-clinic">
             Clínica
             <select
@@ -155,7 +156,7 @@ export function LoginScreen({
             required
           /></div>
 
-          {loginError && <p className="alert error">{loginError}</p>}
+          {loginError && <AlertMessage type="error">{loginError}</AlertMessage>}
           {loginInfo && <ToastMessage type="success">{loginInfo}</ToastMessage>}
 
           <div className="button-row login-actions">

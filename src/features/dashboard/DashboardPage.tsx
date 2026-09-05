@@ -15,7 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import './dashboard.css';
-import { ToastMessage } from '../../shared/components/ui';
+import { AlertMessage, ToastMessage } from '../../shared/components/ui';
 import { hasPreferenceConsent } from '../../shared/privacy/consentStorage';
 
 type DashboardPageProps = {
@@ -341,7 +341,7 @@ export function DashboardPage({
       </div>
 
       {successMessage && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{successMessage}</ToastMessage>}
-      {dashboardError && <p className="alert error">{dashboardError}</p>}
+      {dashboardError && <AlertMessage type="error">{dashboardError}</AlertMessage>}
 
       <div className="module-grid">
         {orderedModules.map((module) => (
