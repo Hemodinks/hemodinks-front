@@ -818,12 +818,28 @@ test('clínica legada: administrador cadastra CNPJ e o alerta permanente desapar
   await expect(cnpj).toHaveAttribute('required', '');
 
   await cnpj.fill('11.222.333/0001-82');
+  await page.evaluate(() => {
+    document.body.style.minHeight = '3000px';
+    window.scrollTo(0, 1800);
+  });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Salvar clinica' }).click();
-  await expect(page.getByText('Informe um CNPJ válido.')).toBeVisible();
+  const fieldValidation = page.locator('#clinic-cnpj-error');
+  await expect(fieldValidation).toBeVisible();
+  await expect(cnpj).toBeFocused();
+  await expect.poll(() => fieldValidation.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return bounds.top >= 0 && bounds.bottom <= window.innerHeight;
+  })).toBe(true);
 
   await cnpj.fill('11.222.333/0001-81');
+  await page.evaluate(() => window.scrollTo(0, 1800));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Salvar clinica' }).click();
-  await expect(page.getByText('Clinica atualizada com sucesso.')).toBeVisible();
+  const successToast = page.getByRole('status').filter({ hasText: 'Clinica atualizada com sucesso.' });
+  await expect(successToast).toBeVisible();
+  await expect(successToast).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await expect(warning).toHaveCount(0);
 });
 

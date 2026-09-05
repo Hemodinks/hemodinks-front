@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { formatCnpjInput, getCnpjValidationMessage, MAX_CNPJ_MASK_LENGTH } from '../../shared/utils/cnpj';
+import { focusInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 
 type Props = {
   value: string;
@@ -8,13 +9,22 @@ type Props = {
 
 export function CnpjField({ value, onValueChange }: Props) {
   const [touched, setTouched] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const error = getCnpjValidationMessage(value);
   const showError = touched && Boolean(error);
+
+  useLayoutEffect(() => {
+    inputRef.current?.setCustomValidity(error);
+  }, [error]);
+
+  useLayoutEffect(() => {
+    if (showError && inputRef.current) focusInvalidFormField(inputRef.current);
+  }, [showError]);
 
   return (
     <label>CNPJ
       <input
-        ref={(input) => input?.setCustomValidity(error)}
+        ref={inputRef}
         value={value}
         onChange={(event) => onValueChange(formatCnpjInput(event.target.value))}
         onBlur={() => setTouched(true)}

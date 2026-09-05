@@ -4,6 +4,7 @@ import type { User, UserFormData } from '../../types';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
 import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
+import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import { downloadUserArquivo } from '../../services';
 import {
   BRAZIL_UF_OPTIONS,
@@ -89,7 +90,7 @@ export function UserForm({
         </div>
       </div>
 
-      <form className="stack module-form-grid" onSubmit={onSubmit} aria-busy={isFormBusy}>
+      <form className="stack module-form-grid" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField} aria-busy={isFormBusy}>
         <div className="profile-photo-field">
           <label className="field-label" htmlFor="profile-photo-input">
             Foto do perfil

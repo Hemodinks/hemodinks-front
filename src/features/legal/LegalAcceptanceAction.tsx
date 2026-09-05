@@ -1,4 +1,6 @@
 import { type FormEvent, useId, useState } from 'react';
+import { AlertMessage } from '../../shared/components/ui';
+import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 
 type Props = {
   authenticated?: boolean;
@@ -47,13 +49,13 @@ export function LegalAcceptanceAction({
 
       {error ? (
         <div className="stack">
-          <p className="alert error">{error}</p>
+          <AlertMessage type="error">{error}</AlertMessage>
           <button type="button" className="ghost-button" onClick={() => void onRetry()}>
             Tentar novamente
           </button>
         </div>
       ) : (
-        <form className="stack" onSubmit={handleSubmit}>
+        <form className="stack" onSubmit={handleSubmit} onInvalid={focusFirstInvalidFormField}>
           <label className="legal-acceptance-check">
             <input
               type="checkbox"

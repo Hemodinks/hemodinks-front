@@ -8,6 +8,8 @@ import { LoadingOverlay } from "../../shared/components/LoadingOverlay";
 import { PasswordInput } from "../../shared/components/PasswordInput";
 import { TechCredit } from "../../shared/components/TechCredit";
 import { ThemeToggle } from "../../shared/components/ThemeToggle";
+import { AlertMessage } from "../../shared/components/ui";
+import { focusFirstInvalidFormField } from "../../shared/utils/focusInvalidFormField";
 import "./auth.css";
 
 type Props = {
@@ -71,7 +73,7 @@ export function TeamPinRequiredScreen({
           O PIN fornecido pelo administrador é temporário. Defina um PIN pessoal
           antes de continuar.
         </p>
-        <form className="stack" onSubmit={submit}>
+        <form className="stack" onSubmit={submit} onInvalid={focusFirstInvalidFormField}>
           <PasswordInput
             id="current-team-pin"
             label="PIN temporário"
@@ -102,7 +104,7 @@ export function TeamPinRequiredScreen({
             maxLength={6}
             required
           />
-          {error && <p className="alert error">{error}</p>}
+          {error && <AlertMessage type="error">{error}</AlertMessage>}
           <div className="button-row login-actions">
             <button type="button" className="ghost-button" onClick={onLogout}>
               Sair
