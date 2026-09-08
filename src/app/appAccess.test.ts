@@ -28,7 +28,7 @@ const cases: Array<[string, number, ExpectedAccess]> = [
     canAccessMedicalGroups: true,
     canAccessAgenda: true,
     canAccessSettings: true,
-    canAccessClinics: false,
+    canAccessClinics: true,
   }],
   ['Médicos', 2, {
     canAccessDashboard: true,

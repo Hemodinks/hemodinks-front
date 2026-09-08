@@ -3,6 +3,7 @@ import { Plus, Save, X } from 'lucide-react';
 import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
 import { AlertMessage, Button, FormPanel, IconButton } from '../../shared/components/ui';
 import { findMedicalUserByName, formatPersonName } from '../../shared/utils/formatters';
+import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import { getCalculatedGlosaValue } from './patientUtils';
 import { usePatientFormExport } from './usePatientFormExport';
 import { PatientIdentificationSection } from './form/PatientIdentificationSection';
@@ -118,7 +119,7 @@ export function PatientForm({
         </div>
       </div>
       {exportError && <AlertMessage type="error">{exportError}</AlertMessage>}
-      <form className="stack module-form-grid" onSubmit={onSubmit}>
+      <form className="stack module-form-grid" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
         <fieldset className="form-fieldset" disabled={formReadOnly} data-tour="patients-identification">
           <PatientIdentificationSection formData={pacienteFormData} setFormData={setPacienteFormData} />
           <PatientClinicalSection

@@ -8,19 +8,32 @@ import { TUTORIAL_MEDIA } from '../scripts/tutorials/library-config';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
   page.on('pageerror', (error) => {
     console.error(`[browser pageerror] ${error.stack ?? error.message}`);
   });
   page.on('console', (message) => {
     if (message.type() === 'error') console.error(`[browser console] ${message.text()}`);
   });
+  if (!testInfo.title.startsWith('privacidade:')) {
+    await page.addInitScript(() => {
+      localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({
+        necessary: true,
+        version: '1.1',
+        updatedAt: '2026-09-03T12:00:00.000Z',
+        preferences: true,
+        analytics: false,
+      }));
+    });
+  }
 });
 
 const session = {
   token: 'jwt-token',
   user: {
     id: 99,
+    clinicaId: 1,
+    clinicaSlug: 'clinica-hemodinks',
     nome: 'George Marcone',
     email: 'gmarcone@gmail.com',
     cpf: '00000000191',
@@ -35,6 +48,8 @@ const superAdminSession = {
   token: 'super-admin-token',
   user: {
     id: 100,
+    clinicaId: 1,
+    clinicaSlug: 'clinica-hemodinks',
     nome: 'Super Administrador',
     email: 'superadmin@hemodinks.com',
     cpf: '39053344705',
@@ -49,6 +64,8 @@ const patientSession = {
   token: 'patient-token',
   user: {
     id: 20,
+    clinicaId: 1,
+    clinicaSlug: 'clinica-hemodinks',
     nome: 'Paciente Hemodinks',
     email: 'paciente@hemodinks.com',
     cpf: '11144477735',
@@ -63,6 +80,8 @@ const tutorialRecordingSession = {
   token: 'token-ficticio-da-gravacao',
   user: {
     id: 900,
+    clinicaId: 1,
+    clinicaSlug: 'clinica-hemodinks',
     nome: 'Usuário Fictício',
     email: 'tutorial@example.invalid',
     cpf: '00000000000',
@@ -258,7 +277,13 @@ async function loginViaUi(page: Page, initialRoute = '/', loginSession = session
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
 }
 
-async function mockApi(page: Page, loginSession = session, options: { sanitizedTutorial?: boolean; billingAmount?: string } = {}) {
+async function mockApi(page: Page, loginSession = session, options: {
+  sanitizedTutorial?: boolean;
+  billingAmount?: string;
+  legalAcceptanceRequired?: boolean;
+  privacyPreference?: { preferences: boolean; analytics: boolean } | null;
+  clinicCnpj?: string | null;
+} = {}) {
   const sanitizedPatient = options.sanitizedTutorial ? {
     ...paciente,
     nomePaciente: 'Registro Fictício 001',
@@ -279,6 +304,29 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
     createdPacientePayload: null as Payload | null,
     updatedPacientePayload: null as Payload | null,
     createdEventPayload: null as Payload | null,
+    legalAccepted: !options.legalAcceptanceRequired,
+    legalAcceptancePayload: null as Payload | null,
+    privacyPreference: options.privacyPreference === undefined
+      ? { preferences: true, analytics: false }
+      : options.privacyPreference,
+    privacyPreferencePayload: null as Payload | null,
+    clinic: {
+      id: 1,
+      nome: 'Clínica Hemodinks',
+      slug: 'clinica-hemodinks',
+      cnpj: options.clinicCnpj === undefined ? '11222333000181' : options.clinicCnpj,
+      fotoUrl: null,
+      ativa: true,
+      plano: 'Completa',
+      modulosLiberados: ['usuarios', 'pacientes', 'faturamento', 'grupos-medicos', 'agenda'],
+      assinaturaStatus: 'Ativa',
+      trialAte: null,
+      assinaturaValidaAte: '2027-06-01T00:00:00Z',
+      limiteUsuarios: 100,
+      usuarios: 2,
+      dataCadastro: '2026-01-01T00:00:00Z',
+      dataAtualizacao: null as string | null,
+    },
   };
 
   await page.route('https://date.nager.at/**', (route) => route.fulfill({ json: [] }));
@@ -295,24 +343,29 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
     }
 
     if (path === '/api/platform/clinicas') {
-      return route.fulfill({
-        json: [{
-          id: 1,
-          nome: 'Clínica Hemodinks',
-          slug: 'clinica-hemodinks',
-          fotoUrl: null,
-          ativa: true,
-          plano: 'Completo',
-          modulosLiberados: ['usuarios', 'pacientes', 'faturamento', 'grupos-medicos', 'agenda'],
-          assinaturaStatus: 'Ativa',
-          trialAte: null,
-          assinaturaValidaAte: '2027-06-01T00:00:00Z',
-          limiteUsuarios: 100,
-          usuarios: 2,
-          dataCadastro: '2026-01-01T00:00:00Z',
-          dataAtualizacao: null,
-        }],
-      });
+      return route.fulfill({ json: [state.clinic] });
+    }
+
+    if (path === '/api/platform/clinicas/1/equipes') {
+      return route.fulfill({ json: [] });
+    }
+
+    if (path === '/api/platform/clinicas/1/equipes/usuarios') {
+      return route.fulfill({ json: [] });
+    }
+
+    if (path === '/api/platform/clinicas/1') {
+      if (method === 'PUT') {
+        const payload = request.postDataJSON() as Payload;
+        state.clinic = {
+          ...state.clinic,
+          nome: String(payload.nome ?? state.clinic.nome),
+          slug: String(payload.slug ?? state.clinic.slug),
+          cnpj: String(payload.cnpj ?? state.clinic.cnpj),
+          dataAtualizacao: '2026-09-04T12:00:00Z',
+        };
+      }
+      return route.fulfill({ json: state.clinic });
     }
 
     if (path === '/api/users/authenticate' && method === 'POST') {
@@ -320,6 +373,8 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
       return route.fulfill({
         json: {
           id: loginSession.user.id,
+          clinicaId: loginSession.user.clinicaId,
+          clinicaSlug: loginSession.user.clinicaSlug,
           nome: loginSession.user.nome,
           email: loginSession.user.email,
           token: loginSession.token,
@@ -328,6 +383,56 @@ async function mockApi(page: Page, loginSession = session, options: { sanitizedT
           precisaTrocarSenha: false,
           perfilId: loginSession.user.perfilId,
           perfilNome: loginSession.user.perfilNome,
+        },
+      });
+    }
+
+    if (path === '/api/legal-acceptances/current') {
+      if (method === 'POST') {
+        state.legalAcceptancePayload = request.postDataJSON() as Payload;
+        state.legalAccepted = true;
+      }
+
+      return route.fulfill({
+        json: {
+          requiresAcceptance: !state.legalAccepted,
+          termsOfUse: {
+            documentType: 'TermsOfUse',
+            currentVersion: '1.1',
+            acceptedVersion: state.legalAccepted ? '1.1' : null,
+            acceptedAtUtc: state.legalAccepted ? '2026-09-03T15:30:00Z' : null,
+            isCurrent: state.legalAccepted,
+          },
+          privacyNotice: {
+            documentType: 'PrivacyNoticeAcknowledgement',
+            currentVersion: '1.1',
+            acceptedVersion: state.legalAccepted ? '1.1' : null,
+            acceptedAtUtc: state.legalAccepted ? '2026-09-03T15:30:00Z' : null,
+            isCurrent: state.legalAccepted,
+          },
+        },
+      });
+    }
+
+    if (path === '/api/privacy-preferences/current') {
+      if (method === 'PUT') {
+        const payload = request.postDataJSON() as Payload;
+        state.privacyPreferencePayload = payload;
+        state.privacyPreference = {
+          preferences: Boolean(payload.preferencesEnabled),
+          analytics: Boolean(payload.analyticsEnabled),
+        };
+      }
+
+      return route.fulfill({
+        json: {
+          hasPreference: state.privacyPreference !== null,
+          currentDocumentVersion: '1.1',
+          documentVersion: state.privacyPreference ? '1.1' : null,
+          preferencesEnabled: state.privacyPreference?.preferences ?? false,
+          analyticsEnabled: state.privacyPreference?.analytics ?? false,
+          acceptedAtUtc: state.privacyPreference ? '2026-09-03T15:30:00Z' : null,
+          updatedAtUtc: state.privacyPreference ? '2026-09-03T15:30:00Z' : null,
         },
       });
     }
@@ -560,6 +665,38 @@ test('faz login pelo formulario e abre o dashboard', async ({ page }) => {
   });
 });
 
+test('exige aceite versionado uma única vez e mantém o acesso após novo login', async ({ page }) => {
+  const apiState = await mockApi(page, session, { legalAcceptanceRequired: true });
+
+  await loginViaUi(page);
+  await expect(page.getByRole('heading', { name: 'Documentos jurídicos atualizados' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Aceitar e continuar' })).toBeDisabled();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'Ler os Termos de Uso' }).click();
+  await expect(page).toHaveURL(/\/termos-de-uso$/);
+  await expect(page.getByRole('heading', { name: 'Termos de Uso', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Aceite dos documentos' })).toBeVisible();
+  const acceptanceCheckbox = page.getByRole('checkbox', { name: 'Li e estou ciente dos Termos de Uso e do Aviso de Privacidade do HemoDinks.' });
+  await acceptanceCheckbox.focus();
+  await page.keyboard.press('Space');
+  await expect(acceptanceCheckbox).toBeChecked();
+  await page.getByRole('button', { name: 'Aceitar e continuar' }).click();
+
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  expect(apiState.legalAcceptancePayload).toEqual({
+    termsOfUseVersion: '1.1',
+    privacyNoticeVersion: '1.1',
+  });
+
+  await page.getByRole('button', { name: 'Sair', exact: true }).click();
+  await loginViaUi(page);
+
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Documentos jurídicos atualizados' })).toHaveCount(0);
+});
+
 test('navega pelos fluxos principais autenticados', async ({ page }) => {
   await mockApi(page);
   await loginViaUi(page, '/dashboard');
@@ -655,6 +792,73 @@ test('exibe o fluxo contextual correspondente para o SuperAdministrador', async 
     await expectNoGlobalHorizontalOverflow(page);
     await help.getByRole('button', { name: 'Fechar ajuda da tela' }).click();
   }
+});
+
+test('clínica legada: administrador cadastra CNPJ e o alerta permanente desaparece', async ({ page }) => {
+  await mockApi(page, session, { clinicCnpj: null });
+  await loginViaUi(page, '/dashboard');
+
+  const warning = page.getByRole('status').filter({ hasText: 'Cadastro da clínica incompleto' });
+  await expect(warning).toBeVisible();
+  const [warningBox, copyBox, actionBox] = await Promise.all([
+    warning.boundingBox(),
+    warning.locator('.clinic-cnpj-warning-copy').boundingBox(),
+    warning.getByRole('button', { name: 'Atualizar clínica' }).boundingBox(),
+  ]);
+  expect(warningBox).not.toBeNull();
+  expect(copyBox).not.toBeNull();
+  expect(actionBox).not.toBeNull();
+  expect(actionBox!.width).toBeLessThan(180);
+  expect(copyBox!.width).toBeGreaterThan(actionBox!.width);
+  await warning.getByRole('button', { name: 'Atualizar clínica' }).click();
+
+  await expect(page).toHaveURL(/\/clinicas\?editar=1$/);
+  const cnpj = page.getByRole('textbox', { name: 'CNPJ' });
+  await expect(cnpj).toBeVisible();
+  await expect(cnpj).toHaveAttribute('required', '');
+
+  await cnpj.fill('11.222.333/0001-82');
+  await page.evaluate(() => {
+    document.body.style.minHeight = '3000px';
+    window.scrollTo(0, 1800);
+  });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await page.getByRole('button', { name: 'Salvar clinica' }).click();
+  const fieldValidation = page.locator('#clinic-cnpj-error');
+  await expect(fieldValidation).toBeVisible();
+  await expect(cnpj).toBeFocused();
+  await expect.poll(() => fieldValidation.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return bounds.top >= 0 && bounds.bottom <= window.innerHeight;
+  })).toBe(true);
+
+  await cnpj.fill('11.222.333/0001-81');
+  await page.evaluate(() => window.scrollTo(0, 1800));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await page.getByRole('button', { name: 'Salvar clinica' }).click();
+  const successToast = page.getByRole('status').filter({ hasText: 'Clinica atualizada com sucesso.' });
+  await expect(successToast).toBeVisible();
+  await expect(successToast).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(warning).toHaveCount(0);
+});
+
+test('navegação pelo menu posiciona a nova tela no topo da aplicação', async ({ page }) => {
+  await mockApi(page, session);
+  await loginViaUi(page, '/dashboard');
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+
+  await page.evaluate(() => {
+    document.body.style.minHeight = '3000px';
+    window.scrollTo(0, 1800);
+  });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+
+  await page.evaluate(() => {
+    document.querySelector<HTMLButtonElement>('.side-nav-patients')?.click();
+  });
+  await expect(page).toHaveURL(/\/pacientes$/);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 });
 
 test('consulta o histórico de faturamento por ano e mês', async ({ page }) => {
@@ -963,6 +1167,218 @@ async function openReportsTutorial(page: Page) {
   await startButton.click();
   await expect(page.locator('.tutorial-mission-popover')).toBeVisible();
 }
+
+test('privacidade: oferece escolha real, persiste categorias e controla análise opcional', async ({ page }) => {
+  await mockApi(page);
+  let otelConfigRequests = 0;
+  await page.route('**/otel-runtime-config.json', async (route) => {
+    otelConfigRequests += 1;
+    await route.fulfill({ json: { enabled: false } });
+  });
+
+  await page.goto('/');
+  const banner = page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' });
+  await expect(banner).toBeVisible();
+  await expect.poll(() => otelConfigRequests).toBe(0);
+
+  const configureButton = banner.getByRole('button', { name: 'Configurar' });
+  await configureButton.focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('checkbox', { name: /Preferências/ })).not.toBeChecked();
+  await expect(dialog.getByRole('checkbox', { name: /Análise/ })).not.toBeChecked();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(configureButton).toBeFocused();
+
+  await banner.getByRole('button', { name: 'Aceitar opcionais' }).click();
+  await expect(banner).toHaveCount(0);
+  await expect.poll(() => otelConfigRequests).toBe(1);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
+    .toMatchObject({ necessary: true, version: '1.1', preferences: true, analytics: true });
+
+  await page.getByRole('button', { name: 'Configurar cookies' }).click();
+  await dialog.getByRole('checkbox', { name: /Preferências/ }).uncheck();
+  await dialog.getByRole('checkbox', { name: /Análise/ }).uncheck();
+  const possibleRevocationReload = Promise.race([
+    page.waitForEvent('load').catch(() => null),
+    page.waitForTimeout(1_000),
+  ]);
+  await dialog.getByRole('button', { name: 'Salvar preferências' }).click();
+  await possibleRevocationReload;
+  await expect(page).toHaveURL(/\/$/);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
+    .toMatchObject({ preferences: false, analytics: false });
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('hemodinks.theme'))).toBeNull();
+});
+
+test('privacidade: sincroniza preferência autenticada com o backend e persiste alterações', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({
+      necessary: true,
+      version: '1.1',
+      updatedAt: '2026-09-03T12:00:00.000Z',
+      preferences: false,
+      analytics: false,
+    }));
+  });
+  const apiState = await mockApi(page, session, {
+    privacyPreference: { preferences: true, analytics: true },
+  });
+  let otelConfigRequests = 0;
+  await page.route('**/otel-runtime-config.json', async (route) => {
+    otelConfigRequests += 1;
+    await route.fulfill({ json: { enabled: false } });
+  });
+
+  await loginViaUi(page);
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
+    .toMatchObject({ necessary: true, version: '1.1', preferences: true, analytics: true });
+  await expect.poll(() => otelConfigRequests).toBe(1);
+
+  await page.getByRole('button', { name: 'Configurar cookies' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
+  await dialog.getByRole('checkbox', { name: /Preferências/ }).uncheck();
+  await dialog.getByRole('checkbox', { name: /Análise/ }).uncheck();
+  const possibleRevocationReload = Promise.race([
+    page.waitForEvent('load').catch(() => null),
+    page.waitForTimeout(1_000),
+  ]);
+  await dialog.getByRole('button', { name: 'Salvar preferências' }).click();
+  await possibleRevocationReload;
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+
+  await expect.poll(() => apiState.privacyPreferencePayload).toEqual({
+    documentVersion: '1.1',
+    preferencesEnabled: false,
+    analyticsEnabled: false,
+  });
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
+    .toMatchObject({ preferences: false, analytics: false });
+});
+
+test('privacidade: mantém escolha personalizada no reload e pede nova decisão após mudança de versão', async ({ page }) => {
+  await mockApi(page);
+  let otelConfigRequests = 0;
+  await page.route('**/otel-runtime-config.json', async (route) => {
+    otelConfigRequests += 1;
+    await route.fulfill({ json: { enabled: false } });
+  });
+
+  await page.goto('/');
+  await page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })
+    .getByRole('button', { name: 'Configurar', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
+  await dialog.getByRole('checkbox', { name: /Preferências/ }).check();
+  await dialog.getByRole('button', { name: 'Salvar preferências' }).click();
+  await expect.poll(() => otelConfigRequests).toBe(0);
+
+  await page.reload();
+  await expect(page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Configurar cookies' }).click();
+  await expect(dialog.getByRole('checkbox', { name: /Preferências/ })).toBeChecked();
+  await expect(dialog.getByRole('checkbox', { name: /Análise/ })).not.toBeChecked();
+  await dialog.getByRole('button', { name: 'Aceitar opcionais' }).click();
+  await expect.poll(() => otelConfigRequests).toBe(1);
+
+  await page.evaluate(() => {
+    const record = JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}');
+    localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({ ...record, version: '1.0' }));
+  });
+  await page.reload();
+  await expect(page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })).toBeVisible();
+});
+
+test('privacidade: modal permanece acessível e contido em desktop, notebook, tablet e smartphone', async ({ page }) => {
+  await mockApi(page);
+
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 1366, height: 768 },
+    { width: 768, height: 1024 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.evaluate(() => localStorage.removeItem('hemodinks.privacy-consent'));
+    await page.reload();
+    await page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })
+      .getByRole('button', { name: 'Configurar', exact: true }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
+    await expect(dialog).toBeVisible();
+    const saveButton = dialog.getByRole('button', { name: 'Salvar preferências' });
+    await saveButton.scrollIntoViewIfNeeded();
+    await expect(saveButton).toBeVisible();
+
+    const bounds = await dialog.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.y).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + 1);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 1);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+  }
+});
+
+test('privacidade: rejeitar opcionais mantém login e links no rodapé autenticado', async ({ page }) => {
+  await mockApi(page);
+  await page.goto('/');
+  await page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })
+    .getByRole('button', { name: 'Rejeitar opcionais' }).click();
+
+  await page.getByLabel('Clínica').selectOption('1');
+  await page.getByLabel('Email').fill('gmarcone@gmail.com');
+  await page.locator('#login-password').fill(LOGIN_PASSWORD);
+  await page.getByRole('button', { name: /entrar/i }).click();
+
+  await expect(page).toHaveURL(/\/dashboard$/);
+  const footer = page.getByRole('contentinfo', { name: 'Links legais' });
+  await expect(footer.getByRole('link', { name: 'Termos de Uso' })).toBeVisible();
+  await expect(footer.getByRole('link', { name: 'Política de Privacidade' })).toBeVisible();
+  await expect(footer.getByRole('button', { name: 'Configurar cookies' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('hemodinks.session'))).not.toBeNull();
+});
+
+test('privacidade: páginas jurídicas são públicas e responsivas', async ({ page }) => {
+  let applicationApiRequests = 0;
+  await page.route('**/api/**', async (route) => {
+    applicationApiRequests += 1;
+    await route.abort();
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  for (const [path, title, version] of [
+    ['/termos-de-uso', 'Termos de Uso', 'Versão: 1.1'],
+    ['/politica-de-privacidade', 'Aviso de Privacidade do HemoDinks', 'Versão: 1.1'],
+  ] as const) {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+    await expect(page.locator('.legal-document-meta')).toContainText(version);
+    const acceptance = page.getByRole('region', { name: 'Aceite dos documentos' });
+    await expect(acceptance).toHaveCount(1);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect(acceptance).toBeVisible();
+    const acknowledgement = acceptance.getByRole('checkbox', { name: /Li e estou ciente/ });
+    const continueButton = acceptance.getByRole('button', { name: 'Aceitar e continuar' });
+    await expect(acknowledgement).toBeVisible();
+    await expect(acknowledgement).toBeDisabled();
+    await expect(continueButton).toBeVisible();
+    await expect(continueButton).toBeDisabled();
+    const [acceptanceBox, bannerBox] = await Promise.all([
+      acceptance.boundingBox(),
+      page.locator('.cookie-banner').boundingBox(),
+    ]);
+    expect(acceptanceBox).not.toBeNull();
+    expect(bannerBox).not.toBeNull();
+    expect(acceptanceBox!.y + acceptanceBox!.height).toBeLessThanOrEqual(bannerBox!.y);
+    await expectNoGlobalHorizontalOverflow(page);
+  }
+  expect(applicationApiRequests).toBe(0);
+});
 
 async function expectActiveTourTarget(page: Page, target: string) {
   await expect(page.locator(`[data-tour="${target}"]`)).toHaveClass(/driver-active-element/);

@@ -6,7 +6,8 @@ import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
-import { ToastMessage } from '../../shared/components/ui';
+import { AlertMessage, ToastMessage } from '../../shared/components/ui';
+import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import {
   getErrorMessage,
   getPasswordStrength,
@@ -89,7 +90,7 @@ export function ResetPasswordScreen({
           </div>
         </div>
 
-        <form className="stack" onSubmit={handleSubmit}>
+        <form className="stack" onSubmit={handleSubmit} onInvalid={focusFirstInvalidFormField}>
           <p className="muted-text">
             Informe sua nova senha para concluir a redefinicao de acesso.
           </p>
@@ -123,7 +124,7 @@ export function ResetPasswordScreen({
             required
           />
 
-          {error && <p className="alert error">{error}</p>}
+          {error && <AlertMessage type="error">{error}</AlertMessage>}
           {success && <ToastMessage type="success">{success}</ToastMessage>}
 
           <div className="button-row reset-password-actions">

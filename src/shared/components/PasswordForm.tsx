@@ -8,6 +8,8 @@ import {
   MAX_PASSWORD_LENGTH,
 } from '../utils/formatters';
 import { PasswordInput } from './PasswordInput';
+import { AlertMessage } from './ui';
+import { focusFirstInvalidFormField } from '../utils/focusInvalidFormField';
 
 type PasswordFormProps = {
   session: AuthSession;
@@ -46,7 +48,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
   };
 
   return (
-    <form className="stack" onSubmit={handleSubmit}>
+    <form className="stack" onSubmit={handleSubmit} onInvalid={focusFirstInvalidFormField}>
       {forced && (
         <p className="alert warning">
           A senha temporária precisa ser alterada para liberar o acesso.
@@ -92,7 +94,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
         required
       />
 
-      {error && <p className="alert error">{error}</p>}
+      {error && <AlertMessage type="error">{error}</AlertMessage>}
 
       <div className="button-row">
         {onCancel && (

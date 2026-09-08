@@ -3,6 +3,7 @@ import { Plus, Save, ShieldPlus, X } from 'lucide-react';
 import type { MedicalGroupFormData, MedicalUserOption } from '../../types';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, TextField } from '../../shared/components/ui';
 import { formatPersonName, MAX_NAME_LENGTH } from '../../shared/utils/formatters';
+import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 
 type MedicalGroupFormProps = {
   editingGroupId: number | null;
@@ -48,7 +49,7 @@ export function MedicalGroupForm({
         </div>
       </div>
 
-      <form className="stack module-form-grid" onSubmit={onSubmit}>
+      <form className="stack module-form-grid" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
         <fieldset className="form-fieldset" disabled={formLoading}>
           <TextField
             label="Nome do grupo"

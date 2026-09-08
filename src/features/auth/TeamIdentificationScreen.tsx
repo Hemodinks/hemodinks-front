@@ -6,6 +6,8 @@ import { LoadingOverlay } from "../../shared/components/LoadingOverlay";
 import { PasswordInput } from "../../shared/components/PasswordInput";
 import { TechCredit } from "../../shared/components/TechCredit";
 import { ThemeToggle } from "../../shared/components/ThemeToggle";
+import { AlertMessage } from "../../shared/components/ui";
+import { focusFirstInvalidFormField } from "../../shared/utils/focusInvalidFormField";
 import "./auth.css";
 
 type TeamIdentificationScreenProps = {
@@ -54,7 +56,7 @@ export function TeamIdentificationScreen({
             <h1>{challenge.equipeNome}</h1>
           </div>
         </div>
-        <form className="stack" onSubmit={onSubmit}>
+        <form className="stack" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
           <label>
             Membro da Equipe
             <select
@@ -90,7 +92,7 @@ export function TeamIdentificationScreen({
               sem um PIN individual.
             </p>
           )}
-          {error && <p className="alert error">{error}</p>}
+          {error && <AlertMessage type="error">{error}</AlertMessage>}
           <div className="button-row login-actions">
             <button type="button" className="ghost-button" onClick={onBack}>
               Voltar

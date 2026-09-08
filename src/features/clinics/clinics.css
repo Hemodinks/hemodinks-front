@@ -63,3 +63,15 @@
 @media (max-width: 980px) { .team-association-controls { grid-template-columns: 1fr; } .team-member-multiselect { grid-column: 1; grid-row: 1; } .team-association-actions { grid-column: 1; grid-row: 2; flex-wrap: wrap; justify-content: flex-start; } .new-team-users-editor { grid-column: 1; grid-row: 3; } }
 @media (max-width: 720px) { .new-team-user-row { grid-template-columns: 1fr; } .new-team-user-row > button { width: 100%; } .team-association-actions { align-items: stretch; flex-direction: column; } .team-association-actions .primary-action { width: 100%; } }
 @media (max-width: 520px) { .clinic-brand-photo { width: 128px; height: 128px; } .clinic-brand-actions, .clinic-brand-actions .ghost-button, .clinic-brand-actions .file-action { width: 100%; } }
+.clinic-form .field-error {
+  display: block;
+  margin-top: 5px;
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.clinic-form input[aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 18%, transparent);
+}

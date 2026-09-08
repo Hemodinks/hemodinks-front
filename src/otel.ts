@@ -24,6 +24,8 @@ type OTelRuntimeConfig = {
 
 let initialized = false;
 let initializationPromise: Promise<void> | null = null;
+let activeTracerProvider: WebTracerProvider | null = null;
+let unregisterInstrumentations: (() => void) | null = null;
 
 function getApiBaseUrl() {
   return (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
@@ -135,7 +137,7 @@ export async function initOpenTelemetryBrowser() {
         contextManager: new ZoneContextManager(),
       });
 
-      registerInstrumentations({
+      unregisterInstrumentations = registerInstrumentations({
         instrumentations: [
           new DocumentLoadInstrumentation(),
           new UserInteractionInstrumentation(),
@@ -149,6 +151,7 @@ export async function initOpenTelemetryBrowser() {
         ],
       });
 
+      activeTracerProvider = tracerProvider;
       initialized = true;
     })().catch((error) => {
       if (import.meta.env.DEV) {
@@ -158,4 +161,21 @@ export async function initOpenTelemetryBrowser() {
   }
 
   await initializationPromise;
+}
+
+export function hasInitializedOpenTelemetryBrowser() {
+  return initialized;
+}
+
+export async function shutdownOpenTelemetryBrowser() {
+  unregisterInstrumentations?.();
+  unregisterInstrumentations = null;
+
+  if (activeTracerProvider) {
+    await activeTracerProvider.shutdown();
+  }
+
+  activeTracerProvider = null;
+  initialized = false;
+  initializationPromise = null;
 }

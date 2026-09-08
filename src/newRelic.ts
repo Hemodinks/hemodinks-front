@@ -110,3 +110,7 @@ export function initNewRelicBrowser() {
     },
   })
 }
+
+export function hasInitializedNewRelicBrowser() {
+  return newRelicEnabled
+}

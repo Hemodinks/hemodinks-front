@@ -367,6 +367,7 @@ export type PlatformClinic = {
   id: number;
   nome: string;
   slug: string;
+  cnpj?: string | null;
   fotoUrl?: string | null;
   ativa: boolean;
   plano: string;
@@ -426,6 +427,7 @@ export type CreateTeamPayload = {
 export type ClinicPayload = {
   nome: string;
   slug: string;
+  cnpj: string;
   ativa?: boolean;
   plano?: string;
   modulosLiberados?: string[];

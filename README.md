@@ -135,6 +135,8 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | --- | --- |
 | `/` | login ou redirecionamento para dashboard quando a sessao existe |
 | `/reset-password?token=...` | confirmacao de reset de senha por token |
+| `/termos-de-uso` | documento público de Termos de Uso |
+| `/politica-de-privacidade` | documento público de Política de Privacidade |
 | `/dashboard` | painel inicial |
 | `/usuarios` | listagem e cadastro de usuarios |
 | `/meu-cadastro` | autoatendimento do medico ou paciente |
@@ -180,6 +182,7 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 - monitoramento técnico paginado com inspeção de fluxo, query e limpeza confirmada dos logs
 - Error Boundary com fallback visual
 - observabilidade opcional via Sentry, New Relic Browser e OTLP
+- consentimento versionado para preferências locais e observabilidade opcional, sem bloquear a sessão necessária
 
 ## Arquitetura resumida
 

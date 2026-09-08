@@ -139,6 +139,11 @@
   border: 1px solid #f2d68a;
 }
 
+.alert:focus-visible {
+  outline: 3px solid var(--selection-accent);
+  outline-offset: 3px;
+}
+
 .toast-message-copy {
   min-width: 0;
   flex: 1;

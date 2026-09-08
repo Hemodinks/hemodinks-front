@@ -2,6 +2,7 @@ import type { AuthSession } from "../types";
 import { LICENSE_FEATURES, hasSessionFeature } from "../shared/utils/license";
 import {
   CONTROLLER_PROFILE_ID,
+  ADMIN_PROFILE_ID,
   MEDICAL_PROFILE_ID,
   PATIENT_PROFILE_ID,
   SUPER_ADMIN_PROFILE_ID,
@@ -29,7 +30,7 @@ export const CLINIC_MODULES = {
 export function getAppAccess(session: AuthSession | null) {
   const currentPerfilId = session?.user.perfilId ?? 0;
   const isSuperAdmin = currentPerfilId === SUPER_ADMIN_PROFILE_ID;
-  const isAdmin = currentPerfilId === 1 || isSuperAdmin;
+  const isAdmin = currentPerfilId === ADMIN_PROFILE_ID || isSuperAdmin;
   const isMedical = currentPerfilId === MEDICAL_PROFILE_ID;
   const isController = currentPerfilId === CONTROLLER_PROFILE_ID;
   const isTeam = currentPerfilId === TEAM_PROFILE_ID;
@@ -102,7 +103,7 @@ export function getAppAccess(session: AuthSession | null) {
     canUseMedicalGroupsRoute: canAccessMedicalGroups,
     canUseAgendaRoute: canAccessAgenda,
     canUseSettingsRoute: canAccessSettings,
-    canAccessClinics: isSuperAdmin,
-    canUseClinicsRoute: isSuperAdmin,
+    canAccessClinics: isAdmin,
+    canUseClinicsRoute: isAdmin,
   };
 }
