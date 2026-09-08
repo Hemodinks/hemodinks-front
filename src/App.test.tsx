@@ -614,8 +614,8 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await waitFor(() => expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token'));
     expect(api.authenticate).not.toHaveBeenCalled();
-    expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
   });
 
   it('exige e envia a clinica escolhida no login pesquisavel', async () => {
