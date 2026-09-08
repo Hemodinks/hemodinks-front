@@ -8,6 +8,7 @@ import {
 import type { AgendaMedicalUser, AgendaNotificationRecipientOptions } from '../../types';
 import { formatPersonName, formatProfileName } from '../../shared/utils/formatters';
 import { Button, CheckboxField, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
+import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import type { AgendaFormData } from './agendaUtils';
 
 type AgendaEventFormProps = {
@@ -61,7 +62,7 @@ export function AgendaEventForm({
         </div>
       </div>
 
-      <form className="stack agenda-form" onSubmit={onSubmit}>
+      <form className="stack agenda-form" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
         <div className="agenda-form-section" data-tour="agenda-details">
           <TextField
             label="Título"

@@ -2,7 +2,9 @@ import { type ReactNode, useEffect, useRef } from 'react';
 
 type ModalProps = {
   titleId: string;
+  descriptionId?: string;
   className?: string;
+  backdropClassName?: string;
   onClose: () => void;
   children: ReactNode;
 };
@@ -16,7 +18,7 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-export function Modal({ titleId, className = '', onClose, children }: ModalProps) {
+export function Modal({ titleId, descriptionId, className = '', backdropClassName = '', onClose, children }: ModalProps) {
   const panelRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
 
@@ -36,6 +38,26 @@ export function Modal({ titleId, className = '', onClose, children }: ModalProps
       if (event.key === 'Escape') {
         event.preventDefault();
         onCloseRef.current();
+        return;
+      }
+
+      if (event.key === 'Tab' && panelRef.current) {
+        const focusable = [...panelRef.current.querySelectorAll<HTMLElement>(focusableSelector)]
+          .filter((element) => element.offsetParent !== null);
+        if (!focusable.length) {
+          event.preventDefault();
+          panelRef.current.focus();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable.at(-1)!;
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
 
@@ -43,13 +65,15 @@ export function Modal({ titleId, className = '', onClose, children }: ModalProps
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      previouslyFocused?.focus();
+      window.requestAnimationFrame(() => {
+        if (previouslyFocused?.isConnected) previouslyFocused.focus();
+      });
     };
   }, []);
 
   return (
     <div
-      className="modal-backdrop"
+      className={`modal-backdrop ${backdropClassName}`.trim()}
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
@@ -63,6 +87,7 @@ export function Modal({ titleId, className = '', onClose, children }: ModalProps
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={descriptionId}
         tabIndex={-1}
       >
         {children}

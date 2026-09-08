@@ -4,12 +4,16 @@ import { useAuthSession } from "../features/auth/useAuthSession";
 import { useLoginFlow } from "../features/auth/useLoginFlow";
 import { useMedicalLicenseHydration, useSessionExpiration } from "../features/auth/useSessionLifecycle";
 import { useMedicalGroupsDomain } from "../features/medicalGroups/useMedicalGroupsDomain";
+import { usePrivacyPreferenceSession } from "../features/privacy/ConsentProvider";
+import { LegalAcceptanceGate } from "../features/legal/LegalAcceptanceGate";
+import { useLegalAcceptance } from "../features/legal/useLegalAcceptance";
 import { usePatientsDomain } from "../features/patients/usePatientsDomain";
 import { useUsersDomain } from "../features/users/useUsersDomain";
 import type { AppView, ModuleMode } from "../appTypes";
 import { queryClient } from "../queryClient";
 import { useConfirmationDialog } from "../shared/components/ConfirmationDialog";
 import { useRouteView } from "../shared/hooks/useRouteView";
+import { useScrollToTopOnNavigation } from "../shared/hooks/useScrollToTopOnNavigation";
 import { useThemePreference } from "../shared/hooks/useThemePreference";
 import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from "./appAccess";
 import { AppPublicContent } from "./AppPublicContent";
@@ -24,12 +28,22 @@ const SESSION_EXPIRED_MESSAGE =
 export function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
+  useScrollToTopOnNavigation();
   const { session, persistSession, clearSession } = useAuthSession();
+  usePrivacyPreferenceSession(session);
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
   const [moduleMode, setModuleMode] = useState<ModuleMode>("list");
   const loginFlow = useLoginFlow({ session, persistSession });
   const access = getAppAccess(session);
+  const credentialGateActive = Boolean(
+    session && (session.user.precisaTrocarSenha || session.user.precisaTrocarPin),
+  );
+  const legalAcceptance = useLegalAcceptance(credentialGateActive ? null : session);
+  const legalGateActive = Boolean(
+    session && !credentialGateActive && !legalAcceptance.isCurrent,
+  );
+  const operationalSession = legalGateActive ? null : session;
   const {
     loginLoading,
     resetPasswordLoading,
@@ -76,9 +90,9 @@ export function AppContent() {
   } = access;
   const forceDashboardRoute =
     openDashboardAfterLogin &&
-    Boolean(session && !session.user.precisaTrocarSenha);
+    Boolean(operationalSession && !operationalSession.user.precisaTrocarSenha);
   const { activeView, navigateToView } = useRouteView({
-    session,
+    session: operationalSession,
     canUseDashboardRoute,
     canUsePatientsRoute,
     canUseUsersRoute,
@@ -93,7 +107,7 @@ export function AppContent() {
     canUseClinicsRoute,
     forceDashboardRoute,
   });
-  const appChrome = useAppChrome({ session });
+  const appChrome = useAppChrome({ session: operationalSession });
   const normalizedPath = location.pathname.replace(/\/+$/, "") || "/";
   const isResetPasswordRoute = normalizedPath === "/reset-password";
   const resetToken = isResetPasswordRoute
@@ -134,7 +148,7 @@ export function AppContent() {
     endSession();
   }
   const usersDomain = useUsersDomain({
-    session,
+    session: operationalSession,
     activeView,
     moduleMode,
     canAccessUsers,
@@ -148,7 +162,7 @@ export function AppContent() {
     confirmAction,
   });
   const patientsDomain = usePatientsDomain({
-    session,
+    session: operationalSession,
     activeView,
     moduleMode,
     companyName: appChrome.companyName,
@@ -166,7 +180,7 @@ export function AppContent() {
     confirmAction,
   });
   const medicalGroupsDomain = useMedicalGroupsDomain({
-    session,
+    session: operationalSession,
     activeView,
     moduleMode,
     canAccessMedicalGroups,
@@ -181,7 +195,7 @@ export function AppContent() {
     patientsDomain.pacienteFormLoading ||
     medicalGroupsDomain.formLoading;
   useSessionExpiration(session, () => endSession(SESSION_EXPIRED_MESSAGE));
-  useMedicalLicenseHydration(session, persistSession);
+  useMedicalLicenseHydration(operationalSession, persistSession);
   useLayoutEffect(() => {
     if (
       !openDashboardAfterLogin ||
@@ -297,6 +311,15 @@ export function AppContent() {
     navigateToViewFromInteraction("clinics");
     setModuleMode("list");
   };
+  const openCurrentClinic = () => {
+    resetProfileRouteState();
+    if (!canAccessClinics || !session?.user.clinicaId) {
+      openDashboard();
+      return;
+    }
+    navigate(`/clinicas?editar=${session.user.clinicaId}`);
+    setModuleMode("list");
+  };
 
   const handleClinicSelected = (
     result: import("../types").SelectClinicResponse,
@@ -352,6 +375,21 @@ export function AppContent() {
     );
   }
 
+  if (!legalAcceptance.isCurrent) {
+    return (
+      <LegalAcceptanceGate
+        theme={theme}
+        loading={legalAcceptance.loading}
+        accepting={legalAcceptance.accepting}
+        error={legalAcceptance.error}
+        onThemeToggle={toggleTheme}
+        onAccept={legalAcceptance.accept}
+        onRetry={legalAcceptance.retry}
+        onLogout={logout}
+      />
+    );
+  }
+
   return <AuthenticatedAppContent
     session={session}
     activeView={activeView}
@@ -377,6 +415,7 @@ export function AppContent() {
       openAgenda,
       openSettings,
       openClinics,
+      openCurrentClinic,
     }}
     sortHandlers={{ handleUserSortChange, handlePacienteSortChange, handleMedicalGroupSortChange, handleCbhpmSortChange }}
     confirmationDialog={confirmationDialog}

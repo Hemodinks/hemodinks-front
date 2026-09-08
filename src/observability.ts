@@ -42,7 +42,7 @@ export function initObservability() {
   sentryEnabled = true;
 
   void loadSentryModule().then((Sentry) => {
-    if (!Sentry) {
+    if (!Sentry || !sentryEnabled) {
       sentryEnabled = false;
       return;
     }
@@ -58,32 +58,27 @@ export function initObservability() {
 }
 
 export function captureException(error: unknown, extra?: Record<string, unknown>) {
-  void loadSentryModule().then((Sentry) => {
-    if (sentryEnabled && Sentry) {
-      Sentry.captureException(error, { extra });
-      return;
-    }
-
-    if (import.meta.env.DEV) {
-      console.error('[observability]', error, extra);
-    }
-  });
-}
-
-export function setObservabilityUser(user: { id: number; email?: string | null; nome?: string | null } | null) {
   if (!sentryEnabled) {
+    if (import.meta.env.DEV) console.error('[observability]', error, extra);
     return;
   }
 
   void loadSentryModule().then((Sentry) => {
-    if (!Sentry) {
-      return;
+    if (sentryEnabled && Sentry) {
+      Sentry.captureException(error, { extra });
     }
-
-    Sentry.setUser(user ? {
-      id: String(user.id),
-      email: user.email ?? undefined,
-      username: user.nome ?? undefined,
-    } : null);
   });
+}
+
+export function hasInitializedObservability() {
+  return sentryEnabled;
+}
+
+export async function disableObservability() {
+  sentryEnabled = false;
+
+  const loadedModule = sentryModule ?? await sentryModulePromise;
+  if (loadedModule) {
+    await loadedModule.close(2_000);
+  }
 }

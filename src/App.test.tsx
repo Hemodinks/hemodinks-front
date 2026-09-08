@@ -22,6 +22,7 @@ import {
   openUsersModule,
   renderAuthenticatedApp,
 } from './test/appTestUi';
+import { CONSENT_POLICY_VERSION, CONSENT_STORAGE_KEY, saveConsent } from './shared/privacy/consentStorage';
 
 vi.mock('./services', () => ({
   AUTH_EXPIRED_EVENT: 'hemodinks:auth-expired',
@@ -85,8 +86,51 @@ vi.mock('./services', () => ({
   changePassword: vi.fn(),
   confirmPasswordReset: vi.fn(),
   resetPassword: vi.fn(),
+  getCurrentLegalAcceptance: vi.fn(),
+  acceptCurrentLegalDocuments: vi.fn(),
+  getCurrentPrivacyPreference: vi.fn(),
+  updateCurrentPrivacyPreference: vi.fn(),
   updateSystemSettings: vi.fn(),
 }));
+
+const currentLegalAcceptance = {
+  requiresAcceptance: false,
+  termsOfUse: {
+    documentType: 'TermsOfUse' as const,
+    currentVersion: '1.1',
+    acceptedVersion: '1.1',
+    acceptedAtUtc: '2026-09-03T15:30:00Z',
+    isCurrent: true,
+  },
+  privacyNotice: {
+    documentType: 'PrivacyNoticeAcknowledgement' as const,
+    currentVersion: '1.1',
+    acceptedVersion: '1.1',
+    acceptedAtUtc: '2026-09-03T15:30:00Z',
+    isCurrent: true,
+  },
+};
+
+const pendingLegalAcceptance = {
+  ...currentLegalAcceptance,
+  requiresAcceptance: true,
+  termsOfUse: {
+    ...currentLegalAcceptance.termsOfUse,
+    acceptedVersion: null,
+    acceptedAtUtc: null,
+    isCurrent: false,
+  },
+};
+
+const currentPrivacyPreference = {
+  hasPreference: true,
+  currentDocumentVersion: '1.1',
+  documentVersion: '1.1',
+  preferencesEnabled: true,
+  analyticsEnabled: false,
+  acceptedAtUtc: '2026-09-03T15:30:00Z',
+  updatedAtUtc: '2026-09-03T15:30:00Z',
+};
 
 function createJwtToken(payload: Record<string, unknown>) {
   const encodedHeader = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
@@ -97,6 +141,7 @@ function createJwtToken(payload: Record<string, unknown>) {
 describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
+    saveConsent({ preferences: true, analytics: false });
     sessionStorage.clear();
     queryClient.clear();
     window.history.pushState({}, '', '/');
@@ -107,6 +152,10 @@ describe('App', () => {
       { id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null },
     ]);
     vi.mocked(api.listPlatformClinics).mockResolvedValue([]);
+    vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue(currentLegalAcceptance);
+    vi.mocked(api.acceptCurrentLegalDocuments).mockResolvedValue(currentLegalAcceptance);
+    vi.mocked(api.getCurrentPrivacyPreference).mockResolvedValue(currentPrivacyPreference);
+    vi.mocked(api.updateCurrentPrivacyPreference).mockResolvedValue(currentPrivacyPreference);
     vi.mocked(api.getDashboardSummary).mockResolvedValue({
       usersCount: 1,
       activeUsersCount: 1,
@@ -250,15 +299,15 @@ describe('App', () => {
     expect(screen.getByText('Arquivos')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir usuários/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
-    expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
     await waitFor(() => {
+      expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
       expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'data', sortDirection: 'desc' });
     });
 
     await user.click(screen.getByRole('button', { name: /abrir usuários/i }));
     expect(window.location.pathname).toBe('/usuarios');
 
-    const userRow = (await screen.findByText('Ana Hemodinks')).closest('tr')!;
+    const userRow = (await screen.findByText('Ana Hemodinks', {}, { timeout: 5_000 })).closest('tr')!;
     expect(screen.getByAltText('Foto de Ana Hemodinks')).toBeInTheDocument();
     expect(screen.getByAltText('Foto de George Marcone')).toBeInTheDocument();
     expect(within(userRow).queryByText('+55 (81) 99999-9999')).not.toBeInTheDocument();
@@ -287,6 +336,253 @@ describe('App', () => {
     expect(await screen.findByRole('option', { name: 'Hemodinks' })).toBeInTheDocument();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
+  });
+
+  it('exibe links legais no login e permite rejeitar opcionais sem bloquear o acesso', async () => {
+    localStorage.removeItem(CONSENT_STORAGE_KEY);
+    render(<App />);
+
+    const loginFooter = screen.getByRole('contentinfo', { name: 'Links legais' });
+    expect(loginFooter.querySelector('a[href="/termos-de-uso"]')).toHaveTextContent('Termos de Uso');
+    expect(loginFooter.querySelector('a[href="/politica-de-privacidade"]')).toHaveTextContent('Política de Privacidade');
+    expect(screen.getByRole('heading', { name: 'Sua privacidade no HemoDinks' })).toBeVisible();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Rejeitar opcionais' }));
+    expect(screen.queryByRole('heading', { name: 'Sua privacidade no HemoDinks' })).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) ?? '{}')).toMatchObject({
+      necessary: true,
+      version: CONSENT_POLICY_VERSION,
+      preferences: false,
+      analytics: false,
+    });
+    expect(screen.getByRole('button', { name: 'Configurar cookies' })).toBeVisible();
+  });
+
+  it('abre e fecha as preferências por teclado com opcionais desmarcados no primeiro acesso', async () => {
+    localStorage.removeItem(CONSENT_STORAGE_KEY);
+    const user = userEvent.setup();
+    render(<App />);
+    const configureButton = screen.getByRole('button', { name: 'Configurar' });
+
+    await user.click(configureButton);
+    const dialog = screen.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
+    expect(dialog).toBeVisible();
+    expect(dialog).toHaveAccessibleDescription('Escolha quais recursos opcionais podem ser utilizados neste navegador. Os recursos necessários permanecem ativos para autenticação, segurança e funcionamento da plataforma. Você pode alterar essas opções a qualquer momento.');
+    expect(screen.getByRole('link', { name: 'Saiba mais no Aviso de Privacidade' })).toHaveAttribute('href', '/politica-de-privacidade');
+    expect(screen.getByText('Sempre ativos')).toHaveAccessibleName('Cookies necessários sempre ativos');
+    expect(screen.getByRole('checkbox', { name: /Preferências/ })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Análise/ })).not.toBeChecked();
+    expect(within(dialog).getByRole('button', { name: 'Aceitar opcionais' })).toBeVisible();
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog', { name: 'Configurar cookies e armazenamentos' })).not.toBeInTheDocument();
+    await waitFor(() => expect(configureButton).toHaveFocus());
+  });
+
+  it('salva uma configuração personalizada e a mantém em nova renderização', async () => {
+    localStorage.removeItem(CONSENT_STORAGE_KEY);
+    const user = userEvent.setup();
+    const firstRender = render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await user.click(screen.getByRole('checkbox', { name: /Preferências/ }));
+    await user.click(screen.getByRole('button', { name: 'Salvar preferências' }));
+
+    expect(JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) ?? '{}')).toMatchObject({
+      necessary: true,
+      version: CONSENT_POLICY_VERSION,
+      preferences: true,
+      analytics: false,
+    });
+    firstRender.unmount();
+    render(<App />);
+    expect(screen.queryByRole('heading', { name: 'Sua privacidade no HemoDinks' })).not.toBeInTheDocument();
+  });
+
+  it('solicita nova decisão quando a versão armazenada está desatualizada', () => {
+    localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify({
+      necessary: true,
+      version: '1.0',
+      updatedAt: '2026-09-02T12:00:00.000Z',
+      preferences: true,
+      analytics: true,
+    }));
+
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Sua privacidade no HemoDinks' })).toBeVisible();
+  });
+
+  it('usa o backend vigente como fonte de verdade após o login e atualiza a cópia local', async () => {
+    vi.mocked(api.getCurrentPrivacyPreference).mockResolvedValue({
+      ...currentPrivacyPreference,
+      preferencesEnabled: false,
+      analyticsEnabled: false,
+      updatedAtUtc: '2026-09-03T16:00:00Z',
+    });
+
+    await renderAuthenticatedApp();
+
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) ?? '{}')).toMatchObject({
+      necessary: true,
+      version: '1.1',
+      preferences: false,
+      analytics: false,
+      updatedAt: '2026-09-03T16:00:00Z',
+    }));
+    expect(api.updateCurrentPrivacyPreference).not.toHaveBeenCalled();
+  });
+
+  it('envia a escolha local vigente quando o usuário ainda não possui preferência no backend', async () => {
+    vi.mocked(api.getCurrentPrivacyPreference).mockResolvedValue({
+      ...currentPrivacyPreference,
+      hasPreference: false,
+      documentVersion: null,
+      acceptedAtUtc: null,
+      updatedAtUtc: null,
+      preferencesEnabled: false,
+      analyticsEnabled: false,
+    });
+    saveConsent({ preferences: true, analytics: false });
+
+    await renderAuthenticatedApp();
+
+    await waitFor(() => expect(api.updateCurrentPrivacyPreference).toHaveBeenCalledWith(
+      'jwt-token',
+      '1.1',
+      true,
+      false,
+    ));
+  });
+
+  it('salva no backend uma alteração feita no modal durante a sessão autenticada', async () => {
+    const { user } = await renderAuthenticatedApp();
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+    await waitFor(() => expect(api.getCurrentPrivacyPreference).toHaveBeenCalledWith('jwt-token'));
+
+    await user.click(screen.getByRole('button', { name: 'Configurar cookies' }));
+    await user.click(screen.getByRole('checkbox', { name: /Preferências/ }));
+    await user.click(screen.getByRole('button', { name: 'Salvar preferências' }));
+
+    await waitFor(() => expect(api.updateCurrentPrivacyPreference).toHaveBeenCalledWith(
+      'jwt-token',
+      '1.1',
+      false,
+      false,
+    ));
+  });
+
+  it.each([
+    ['/termos-de-uso', 'Termos de Uso', 'Versão: 1.1'],
+    ['/politica-de-privacidade', 'Aviso de Privacidade do HemoDinks', 'Versão: 1.1'],
+  ])('abre a rota pública %s sem carregar dados da aplicação', async (path, title, version) => {
+    window.history.pushState({}, '', path);
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+    expect(screen.getByText(/Última atualização:/).closest('p')).toHaveTextContent(version);
+    expect(api.listPublicClinics).not.toHaveBeenCalled();
+    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+    expect(screen.getByRole('checkbox', { name: /Li e estou ciente/ })).toBeDisabled();
+    expect(screen.getByText(/Entre na plataforma para registrar este aceite/)).toBeVisible();
+  });
+
+  it.each([
+    '/termos-de-uso',
+    '/politica-de-privacidade',
+  ])('permite concluir o aceite pendente dentro da página jurídica %s', async (path) => {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
+    window.history.pushState({}, '', path);
+    vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue(pendingLegalAcceptance);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const checkbox = await screen.findByRole('checkbox', { name: /Li e estou ciente/ });
+    const submit = screen.getByRole('button', { name: 'Aceitar e continuar' });
+    expect(submit).toBeDisabled();
+
+    await user.click(checkbox);
+    await user.click(submit);
+
+    expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledWith('jwt-token', '1.1', '1.1');
+    await waitFor(() => expect(window.location.pathname).toBe('/'));
+  });
+
+  it('renderiza o conteúdo completo dos Termos 1.1 com links internos para privacidade', () => {
+    window.history.pushState({}, '', '/termos-de-uso');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: '1. Uso do sistema' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: '11. Dúvidas e suporte' })).toBeVisible();
+    expect(screen.getByText(/A plataforma não substitui avaliações/)).toBeVisible();
+    const privacyLinks = screen.getAllByRole('link', { name: /Aviso de Privacidade/ });
+    expect(privacyLinks.length).toBeGreaterThanOrEqual(2);
+    expect(privacyLinks.every((link) => link.getAttribute('href') === '/politica-de-privacidade')).toBe(true);
+  });
+
+  it('bloqueia os módulos até o usuário aceitar os documentos jurídicos vigentes', async () => {
+    vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue(pendingLegalAcceptance);
+    const { user } = await renderAuthenticatedApp();
+
+    expect(await screen.findByRole('heading', { name: 'Documentos jurídicos atualizados' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Ler os Termos de Uso' })).toHaveAttribute('href', '/termos-de-uso');
+    expect(screen.getByRole('link', { name: 'Ler o Aviso de Privacidade' })).toHaveAttribute('href', '/politica-de-privacidade');
+    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Aceitar e continuar' })).toBeDisabled();
+
+    await user.click(screen.getByRole('checkbox', {
+      name: 'Li e estou ciente dos Termos de Uso e do Aviso de Privacidade do HemoDinks.',
+    }));
+    await user.click(screen.getByRole('button', { name: 'Aceitar e continuar' }));
+
+    expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledWith('jwt-token', '1.1', '1.1');
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  });
+
+  it('não exibe o bloqueio quando a versão vigente já foi aceita', async () => {
+    await renderAuthenticatedApp();
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Documentos jurídicos atualizados' })).not.toBeInTheDocument();
+    expect(api.acceptCurrentLegalDocuments).not.toHaveBeenCalled();
+  });
+
+  it('exige novo aceite quando a versão registrada está desatualizada', async () => {
+    vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue({
+      ...pendingLegalAcceptance,
+      termsOfUse: {
+        ...pendingLegalAcceptance.termsOfUse,
+        acceptedVersion: '1.0',
+        acceptedAtUtc: '2026-09-02T12:00:00Z',
+      },
+    });
+
+    await renderAuthenticatedApp();
+
+    expect(await screen.findByRole('heading', { name: 'Documentos jurídicos atualizados' })).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Painel inicial' })).not.toBeInTheDocument();
+  });
+
+  it('mantém o aceite persistido pelo servidor após logout e novo login', async () => {
+    vi.mocked(api.getCurrentLegalAcceptance)
+      .mockResolvedValueOnce(pendingLegalAcceptance)
+      .mockResolvedValue(currentLegalAcceptance);
+    const { user } = await renderAuthenticatedApp();
+    await user.click(await screen.findByRole('checkbox', { name: /Li e estou ciente/ }));
+    await user.click(screen.getByRole('button', { name: 'Aceitar e continuar' }));
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /sair/i }));
+    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
+    await user.clear(screen.getByLabelText('Email'));
+    await user.type(screen.getByLabelText('Email'), mockSession().user.email);
+    await user.clear(screen.getByLabelText('Senha'));
+    await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+    expect(api.getCurrentLegalAcceptance).toHaveBeenCalledTimes(2);
+    expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledTimes(1);
   });
 
   it('exibe o loading de inicializacao no login enquanto carrega as clinicas', async () => {
@@ -318,8 +614,8 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await waitFor(() => expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token'));
     expect(api.authenticate).not.toHaveBeenCalled();
-    expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
   });
 
   it('exige e envia a clinica escolhida no login pesquisavel', async () => {
@@ -358,7 +654,7 @@ describe('App', () => {
     });
     vi.mocked(api.listPlatformClinics).mockResolvedValue([]);
 
-    const sidebar = screen.getByLabelText('Sessão ativa');
+    const sidebar = await screen.findByLabelText('Sessão ativa');
     expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
     const billingMenu = within(sidebar).getByRole('button', { name: /^faturamento/i });
@@ -419,9 +715,7 @@ describe('App', () => {
     });
 
     await openUsersModule(user);
-    const row = (await screen.findAllByText('George Marcone'))
-      .map((element) => element.closest('tr'))
-      .find((element): element is HTMLTableRowElement => element !== null)!;
+    const row = await screen.findByRole('row', { name: /George Marcone/ });
     await user.click(within(row).getByTitle('Editar'));
 
     const profileSelect = screen.getByLabelText('Perfil');
@@ -447,7 +741,7 @@ describe('App', () => {
       },
     });
 
-    const sidebar = screen.getByLabelText('Sessão ativa');
+    const sidebar = await screen.findByLabelText('Sessão ativa');
     expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /^faturamento/i })).toBeInTheDocument();
@@ -820,7 +1114,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
 
-    const patientRow = await screen.findByText('Paciente Hemodinks');
+    const patientRow = await screen.findByText('Paciente Hemodinks', {}, { timeout: 5_000 });
     const observationButton = within(patientRow.closest('tr')!).getByRole('button', { name: /observações de paciente hemodinks/i });
     expect(within(observationButton).getByText('3')).toBeInTheDocument();
     expect(observationButton).toHaveClass('has-unread-observations');
