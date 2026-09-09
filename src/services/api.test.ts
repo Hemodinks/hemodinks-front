@@ -65,6 +65,7 @@ describe('services api client', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
   });
@@ -621,17 +622,23 @@ describe('services api client', () => {
     await expect(getUsers('jwt-token')).rejects.toThrow('Email ja cadastrado');
   });
 
-  it('informa indisponibilidade temporaria quando a API esta inacessivel', async () => {
+  it.each([
+    [0, 0, 0, 'Sistema temporariamente indisponível das 00:00 às 06:59 para manutenção dos dados.'],
+    [6, 59, 59, 'Sistema temporariamente indisponível das 00:00 às 06:59 para manutenção dos dados.'],
+    [7, 0, 0, 'Sistema temporariamente indisponível. Tente novamente mais tarde.'],
+    [23, 59, 59, 'Sistema temporariamente indisponível. Tente novamente mais tarde.'],
+  ])('informa indisponibilidade conforme o horario local %i:%i:%i', async (hour, minute, second, message) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 9, hour, minute, second));
     vi.spyOn(apiClient, 'request')
       .mockRejectedValueOnce(new AxiosError('Network Error', 'ERR_NETWORK'))
-      .mockRejectedValueOnce(apiError(503));
+      .mockRejectedValueOnce(apiError(502))
+      .mockRejectedValueOnce(apiError(503))
+      .mockRejectedValueOnce(apiError(504));
 
-    await expect(getUsers('jwt-token')).rejects.toThrow(
-      'Sistema temporariamente indisponível. Tente novamente mais tarde.',
-    );
-    await expect(getUsers('jwt-token')).rejects.toThrow(
-      'Sistema temporariamente indisponível. Tente novamente mais tarde.',
-    );
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await expect(getUsers('jwt-token')).rejects.toThrow(message);
+    }
   });
 
   it('usa mensagem padrao para resposta 401', async () => {

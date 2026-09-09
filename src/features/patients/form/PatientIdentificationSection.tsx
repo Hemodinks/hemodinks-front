@@ -25,6 +25,7 @@ export function PatientIdentificationSection({ formData, setFormData }: Props) {
       <DateInput
         id="patient-appointment-date"
         label="Cirurgias Consolidadas"
+        max=""
         value={formData.dataAtendimento || ''}
         onChange={(value) => setFormData((current) => ({ ...current, dataAtendimento: value }))}
       />
