@@ -7,6 +7,7 @@ import {
   formatPhoneInput,
   getLocalBrazilPhoneDigits,
   isValidBirthDate,
+  isValidDate,
   normalizeCpfForPayload,
   normalizePhoneForPayload,
   parseDisplayDate,
@@ -187,6 +188,9 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
 }
 
 export function validatePacienteForm(data: PacienteFormData) {
+  if (data.dataAtendimento && !isValidDate(data.dataAtendimento)) {
+    return 'Informe uma data válida para Cirurgias Consolidadas.';
+  }
   if (!data.nomePaciente.trim()) {
     return 'Informe o nome do paciente.';
   }
@@ -251,7 +255,7 @@ export function toPacientePayload(data: PacienteFormData): PacientePayload {
 
   return {
     data: data.data && isValidBirthDate(data.data) ? toApiDate(data.data) : null,
-    dataAtendimento: data.dataAtendimento && isValidBirthDate(data.dataAtendimento)
+    dataAtendimento: data.dataAtendimento && isValidDate(data.dataAtendimento)
       ? toApiDate(data.dataAtendimento)
       : null,
     nomePaciente: data.nomePaciente.trim(),

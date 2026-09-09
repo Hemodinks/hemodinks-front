@@ -47,19 +47,19 @@ export function getTodayPickerValue() {
   return `${year}-${month}-${day}`;
 }
 
-export function isValidBirthDate(value: string) {
+export function isValidDate(value: string) {
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return false;
   const { day: dayText, month: monthText, year: yearText } = parseDisplayDate(value);
   const day = Number(dayText);
   const month = Number(monthText);
   const year = Number(yearText);
   const date = new Date(year, month - 1, day);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   return year >= 1900
     && date.getFullYear() === year
     && date.getMonth() === month - 1
-    && date.getDate() === day
-    && date <= today;
+    && date.getDate() === day;
+}
+
+export function isValidBirthDate(value: string) {
+  return isValidDate(value) && toDatePickerValue(value) <= getTodayPickerValue();
 }
