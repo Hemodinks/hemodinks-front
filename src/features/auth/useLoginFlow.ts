@@ -74,6 +74,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     setLoginLoading(true);
     try {
       const result = await authenticate(loginEmail.trim(), loginPassword, selectedLoginClinic.slug);
+      setLoginPassword('');
       if (result.equipeDesafio) {
         setTeamChallenge(result.equipeDesafio);
         setTeamOperatorId('');

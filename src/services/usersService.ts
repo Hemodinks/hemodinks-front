@@ -45,3 +45,13 @@ export function downloadUserArquivo(id: number, arquivoId: number, token: string
 export function changePassword(id: number, payload: ChangePasswordPayload, token: string) {
   return put<{ id: number; precisaTrocarSenha: boolean; message: string }>(`/api/users/${id}/password`, payload, token);
 }
+
+export type TemporaryPasswordResponse = { id: number; senhaTemporaria: string; expiresAtUtc: string; message: string };
+
+export function generateTemporaryPassword(id: number, token: string) {
+  return put<TemporaryPasswordResponse>(`/api/users/${id}/password/reset`, {}, token);
+}
+
+export function completeTemporaryPassword(novaSenha: string, confirmacao: string, token: string) {
+  return post<{ message: string }>('/api/users/password/temporary/complete', { novaSenha, confirmacao }, token);
+}

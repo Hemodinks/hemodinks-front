@@ -11,6 +11,10 @@ function clearStoredSession() {
 }
 
 export function normalizeTeamPinRequirement(session: AuthSession) {
+  const claims = decodeJwtPayload(session.token);
+  if (claims?.temporary_password === 'true' && !session.user.precisaTrocarSenha) {
+    session = { ...session, user: { ...session.user, precisaTrocarSenha: true } };
+  }
   if (session.user.perfilId !== TEAM_PROFILE_ID || !session.user.precisaTrocarPin) {
     return session;
   }
