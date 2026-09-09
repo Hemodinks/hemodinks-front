@@ -33,8 +33,8 @@ export function PasswordRequiredScreen({
         <div className="brand-block">
           <KeyRound size={36} strokeWidth={1.8} />
           <div>
-            <span className="eyebrow">Primeiro acesso</span>
-            <h1>Troque sua senha</h1>
+            <span className="eyebrow">Segurança da conta</span>
+            <h1>Definir nova senha</h1>
           </div>
         </div>
 

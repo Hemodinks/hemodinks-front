@@ -138,6 +138,7 @@ export function UsersPage({
           sortDirection={sortDirection}
           sessionToken={sessionToken}
           canManageUsers={canManageUsers}
+          isSuperAdmin={isSuperAdmin}
           onSearchChange={setSearchTerm}
           onPageChange={setCurrentPage}
           onSortChange={onSortChange}
