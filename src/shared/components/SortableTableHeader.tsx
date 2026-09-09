@@ -21,7 +21,7 @@ export function SortableTableHeader<Field extends string>({
     <th aria-sort={active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
       <button type="button" className="sort-header-button" onClick={() => onSortChange(field)}>
         {label}
-        {active && <span className="sort-indicator">{direction === 'asc' ? '▲' : '▼'}</span>}
+        {active && <span className="sort-indicator" aria-hidden="true">{direction === 'asc' ? '▲' : '▼'}</span>}
       </button>
     </th>
   );

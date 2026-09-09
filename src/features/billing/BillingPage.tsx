@@ -200,7 +200,9 @@ export function BillingPage({
 
   const changeSort = (field: BillingSortField) => {
     setCurrentPage(1);
-    setSortDirection((currentDirection) => sortBy === field && currentDirection === 'asc' ? 'desc' : 'asc');
+    setSortDirection((currentDirection) => sortBy === field
+      ? currentDirection === 'asc' ? 'desc' : 'asc'
+      : field === 'paymentDate' ? 'desc' : 'asc');
     setSortBy(field);
   };
 
@@ -364,7 +366,7 @@ export function BillingPage({
                 <SortableTableHeader field="patient" label="Paciente" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
                 <SortableTableHeader field="doctor" label="Cirurgião" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
                 <SortableTableHeader field="status" label="Status" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
-                <th>Data do pagamento</th>
+                <SortableTableHeader field="paymentDate" label="Data do pagamento" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
                 <th>Resumo</th>
                 <th>Visualizar</th>
               </tr>

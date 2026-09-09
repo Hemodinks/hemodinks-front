@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
 import { getPacientes } from '../../services';
 import { getErrorMessage, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
-import { getPagedItems, getPagedTotalPages, sortPacientesForListing } from '../../shared/utils/listing';
+import { getPagedItems, getPagedTotalPages } from '../../shared/utils/listing';
 import type { AuthSession, Paciente } from '../../types';
 import { exportPatientList } from './export/patientListExporter';
 import { getPacienteFilterQuery } from './patientUtils';
@@ -12,6 +12,8 @@ type UsePatientExportOptions = {
   companyName: string;
   paginatedPacientes: Paciente[];
   pacienteFilters: PacienteFilters;
+  sortBy: string;
+  sortDirection: 'asc' | 'desc';
   setPacientesError: (message: string) => void;
 };
 
@@ -20,6 +22,8 @@ export function usePatientExport({
   companyName,
   paginatedPacientes,
   pacienteFilters,
+  sortBy,
+  sortDirection,
   setPacientesError,
 }: UsePatientExportOptions) {
   const [pacienteExportLoading, setPacienteExportLoading] = useState<PacienteExportFormat | null>(null);
@@ -33,6 +37,8 @@ export function usePatientExport({
     const firstResult = await getPacientes(session.token, {
       page: 1,
       pageSize: PATIENT_EXPORT_PAGE_SIZE,
+      sortBy: sortBy || 'data',
+      sortDirection,
       ...query,
     });
 
@@ -44,11 +50,13 @@ export function usePatientExport({
         ...query,
         page,
         pageSize: PATIENT_EXPORT_PAGE_SIZE,
+        sortBy: sortBy || 'data',
+        sortDirection,
       });
       items.push(...getPagedItems(result));
     }
 
-    return sortPacientesForListing(items);
+    return items;
   };
 
   const loadPacientesForExport = async (scope: PacienteExportScope) => {

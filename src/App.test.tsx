@@ -1506,7 +1506,7 @@ describe('App', () => {
     expect(screen.queryByText('Ana Hemodinks')).not.toBeInTheDocument();
   });
 
-  it('ordena usuarios por registro recente e nome', async () => {
+  it('preserva a ordem dos usuarios recebida da API mesmo com datas de atualizacao diferentes', async () => {
     vi.mocked(api.getUsers).mockResolvedValue(paged([
       {
         ...baseUser,
@@ -1538,7 +1538,7 @@ describe('App', () => {
 
     await openUsersModule(user);
     expect(await screen.findByText('Ana Recente')).toBeInTheDocument();
-    expect(getVisibleFirstColumnValues()).toEqual(['Ana Recente', 'Bruno Recente', 'Carlos Antigo']);
+    expect(getVisibleFirstColumnValues()).toEqual(['Carlos Antigo', 'Bruno Recente', 'Ana Recente']);
   });
 
   it('permite cadastrar procedimento manual no modal CBHPM', async () => {
@@ -1910,26 +1910,31 @@ describe('App', () => {
     });
   });
 
-  it('exibe e ordena pacientes pela data do atendimento', async () => {
-    vi.mocked(api.getPacientes).mockResolvedValue(paged([{
-      ...basePaciente,
-      dataAtendimento: '2026-06-15T00:00:00Z',
-    }]));
+  it.each([
+    ['data', 'Data da solicitação'],
+    ['dataAtendimento', 'Cirurgias Consolidadas'],
+  ])('ordena pacientes por %s em ordem descendente e ascendente ao clicar', async (field, label) => {
+    const newer = { ...basePaciente, id: 11, nomePaciente: 'Cirurgia Futura', data: '2030-12-01', dataAtendimento: '2030-12-01', dataAtualizacao: '2025-01-01' };
+    const older = { ...basePaciente, id: 12, nomePaciente: 'Cirurgia Anterior', data: '2026-12-31', dataAtendimento: '2026-12-31', dataAtualizacao: '2026-09-01' };
+    vi.mocked(api.getPacientes).mockImplementation(async (_token, query) =>
+      paged(query?.sortDirection === 'asc' ? [older, newer] : [newer, older]));
     const { user } = await renderAuthenticatedApp();
 
     await openPatientsModule(user);
-    expect(await screen.findByText('15/06/2026')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /^cirurgias consolidadas$/i }));
-
-    await waitFor(() => {
-      expect(api.getPacientes).toHaveBeenLastCalledWith('jwt-token', {
-        page: 1,
-        pageSize: 10,
-        search: '',
-        sortBy: 'dataAtendimento',
-        sortDirection: 'asc',
+    expect(await screen.findByText('Cirurgia Futura')).toBeInTheDocument();
+    for (const direction of ['desc', 'asc', 'desc'] as const) {
+      await user.click(screen.getByRole('button', { name: new RegExp(`^${label}$`, 'i') }));
+      await waitFor(() => {
+        // Returning to a previously selected order can reuse its cached page.
+        expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', {
+          page: 1, pageSize: 10, search: '', sortBy: field, sortDirection: direction,
+        });
+        expect(getVisibleFirstColumnValues()).toEqual(direction === 'desc'
+          ? ['Cirurgia Futura', 'Cirurgia Anterior'] : ['Cirurgia Anterior', 'Cirurgia Futura']);
       });
-    });
+      expect(screen.getByRole('columnheader', { name: new RegExp(label, 'i') }))
+        .toHaveAttribute('aria-sort', direction === 'desc' ? 'descending' : 'ascending');
+    }
   });
 
   it('permite ordenar usuarios pelos cabeçalhos da tabela', async () => {
@@ -2372,7 +2377,7 @@ describe('App', () => {
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
   });
 
-  it('ordena pacientes por registro recente e nome', async () => {
+  it('preserva a ordem dos pacientes recebida da API mesmo com datas de atualizacao diferentes', async () => {
     vi.mocked(api.getUsers).mockResolvedValue(paged([baseUser]));
     vi.mocked(api.getPacientes).mockResolvedValue(paged([
       {
@@ -2408,7 +2413,7 @@ describe('App', () => {
 
     await openPatientsModule(user);
     expect(await screen.findByText('Ana Recente')).toBeInTheDocument();
-    expect(getVisibleFirstColumnValues()).toEqual(['Ana Recente', 'Bruno Recente', 'Zelia Antiga']);
+    expect(getVisibleFirstColumnValues()).toEqual(['Zelia Antiga', 'Bruno Recente', 'Ana Recente']);
   });
 
   it('abre popup de informacoes, preenche o formulario ao editar e exclui usuario', async () => {

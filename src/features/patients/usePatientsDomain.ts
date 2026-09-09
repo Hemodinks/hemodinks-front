@@ -143,6 +143,8 @@ export function usePatientsDomain({
     companyName,
     paginatedPacientes,
     pacienteFilters,
+    sortBy,
+    sortDirection,
     setPacientesError,
   });
   const patientFileActions = usePatientFileActions({
