@@ -93,7 +93,7 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
       patientList.setPacientes((current) => sortPacientesForListing(patientForm.editingPacienteId
         ? current.map((item) => item.id === savedPaciente.id ? savedPaciente : item)
         : [savedPaciente, ...current]));
-      const baseMessage = patientForm.editingPacienteId ? 'Paciente atualizado.' : 'Paciente cadastrado com senha temporária. Oriente a alteração no primeiro acesso.';
+      const baseMessage = patientForm.editingPacienteId ? 'Paciente atualizado.' : 'Paciente cadastrado com sucesso.';
       patientList.setPacienteSuccessMessage(warningMessage ? `${baseMessage} Paciente salvo, mas a observação não foi enviada.`
         : observationText ? `${baseMessage} Observação enviada.` : baseMessage);
       await Promise.all([

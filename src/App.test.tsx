@@ -648,6 +648,38 @@ describe('App', () => {
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'test-password', 'clinica-beta');
   });
 
+  it.each(['pacientes', 'usuários'])('descarta %s da clinica anterior enquanto a nova consulta esta pendente', async (module) => {
+    const { user } = await renderAuthenticatedApp({
+      sessionOverrides: { perfilId: 5, perfilNome: 'SuperAdministrador' },
+    });
+    if (module === 'pacientes') await openPatientsModule(user);
+    else await openUsersModule(user);
+    const previousName = module === 'pacientes' ? basePaciente.nomePaciente : baseUser.nome;
+    expect(await screen.findByText(previousName)).toBeInTheDocument();
+
+    vi.mocked(api.listPlatformClinics).mockResolvedValue([{
+      id: 2, nome: 'Clinica Beta', slug: 'beta', ativa: true, plano: 'Completa',
+      assinaturaStatus: 'Ativa', modulosLiberados: [], dataCadastro: '2026-01-01',
+    }]);
+    vi.mocked(api.selectSessionClinic).mockResolvedValue({
+      token: 'token-clinica-beta', usuarioGlobalId: 1,
+      clinica: {
+        clinicaId: 2, nome: 'Clinica Beta', slug: 'beta', userId: 101,
+        perfilId: 5, perfil: 'SuperAdministrador', modulosLiberados: [],
+        clinicaPadrao: false, usuarioClinicaId: 102,
+      },
+    });
+    vi.mocked(api.getPacientes).mockImplementation(() => new Promise(() => {}));
+    vi.mocked(api.getUsers).mockImplementation(() => new Promise(() => {}));
+    await user.click(within(screen.getByLabelText('Sessão ativa')).getByRole('button', { name: /^clínicas$/i }));
+    await user.click(await screen.findByRole('button', { name: 'Acessar Clinica Beta' }));
+    if (module === 'pacientes') await openPatientsModule(user);
+    else await openUsersModule(user);
+    await waitFor(() => expect(module === 'pacientes' ? api.getPacientes : api.getUsers)
+      .toHaveBeenCalledWith('token-clinica-beta', expect.anything()));
+    expect(screen.queryByText(previousName)).not.toBeInTheDocument();
+  });
+
   it('libera menu administrativo completo e CRUD de clinicas para superadministrador', async () => {
     const { user } = await renderAuthenticatedApp({
       sessionOverrides: { perfilId: 5, perfilNome: 'SuperAdministrador' },
@@ -1709,7 +1741,8 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
 
     await user.type(screen.getByLabelText('Data da Solicitação'), '04062026');
-    await user.type(screen.getByLabelText('Cirurgias Consolidadas'), '05062026');
+    expect(screen.getByLabelText('Selecionar cirurgias consolidadas')).not.toHaveAttribute('max');
+    await user.type(screen.getByLabelText('Cirurgias Consolidadas'), '01122030');
     await user.type(screen.getByLabelText('Paciente'), 'Novo Paciente');
     expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
@@ -1784,7 +1817,7 @@ describe('App', () => {
 
     expect(api.createPaciente).toHaveBeenCalledWith({
       data: '2026-06-04',
-      dataAtendimento: '2026-06-05',
+      dataAtendimento: '2030-12-01',
       nomePaciente: 'Novo Paciente',
       diagnostico: '',
       tratamentoMedico: '',
@@ -1829,7 +1862,7 @@ describe('App', () => {
       dataPagamento: null,
       ativo: true,
     }, 'jwt-token');
-    expect(await screen.findByText('Paciente cadastrado com senha temporária. Oriente a alteração no primeiro acesso.')).toBeInTheDocument();
+    expect(await screen.findByText('Paciente cadastrado com sucesso.')).toBeInTheDocument();
   }, 15000);
 
   it('permite ao administrador filtrar pacientes por cirurgiao, convenio e procedimento', async () => {

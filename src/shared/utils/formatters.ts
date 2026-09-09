@@ -23,6 +23,7 @@ export {
   fromDatePickerValue,
   getTodayPickerValue,
   isValidBirthDate,
+  isValidDate,
   parseDisplayDate,
   toDatePickerValue,
   toDisplayDate,

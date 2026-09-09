@@ -26,15 +26,27 @@ import { AuthenticatedAppContent } from "./AuthenticatedAppContent";
 const SESSION_EXPIRED_MESSAGE =
   "Sua sessao expirou. Entre novamente para continuar.";
 export function AppContent() {
+  const auth = useAuthSession();
+  const loginFlow = useLoginFlow({ session: auth.session, persistSession: auth.persistSession });
+  // A clinic/session change must discard forms, lists and pending UI callbacks.
+  const scopeKey = auth.session
+    ? `${auth.session.user.clinicaId ?? ''}:${auth.session.user.id}:${auth.session.token}`
+    : 'anonymous';
+  return <AppSessionContent key={scopeKey} auth={auth} loginFlow={loginFlow} />;
+}
+
+function AppSessionContent({ auth, loginFlow }: {
+  auth: ReturnType<typeof useAuthSession>;
+  loginFlow: ReturnType<typeof useLoginFlow>;
+}) {
   const location = useLocation();
   const navigate = useNavigate();
   useScrollToTopOnNavigation();
-  const { session, persistSession, clearSession } = useAuthSession();
+  const { session, persistSession, clearSession } = auth;
   usePrivacyPreferenceSession(session);
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
   const [moduleMode, setModuleMode] = useState<ModuleMode>("list");
-  const loginFlow = useLoginFlow({ session, persistSession });
   const access = getAppAccess(session);
   const credentialGateActive = Boolean(
     session && (session.user.precisaTrocarSenha || session.user.precisaTrocarPin),
