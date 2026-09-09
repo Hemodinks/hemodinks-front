@@ -5,7 +5,6 @@ import { queryClient } from '../../queryClient';
 import { queryKeys } from '../../shared/queryKeys';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { DEFAULT_PROFILE_ID, formatProfileName, getErrorMessage, MEDICAL_PROFILE_ID, SUPER_ADMIN_PROFILE_ID, TEAM_PROFILE_ID } from '../../shared/utils/formatters';
-import { sortUsersForListing } from '../../shared/utils/listing';
 import type { AuthSession, User, UserPayload } from '../../types';
 import type { ModuleMode } from '../../appTypes';
 import { toUserPayload, validateUserForm } from './userUtils';
@@ -93,9 +92,6 @@ export function useUserCrudActions(options: UseUserCrudActionsOptions) {
       if (savedUser.perfilId === MEDICAL_PROFILE_ID) {
         for (const file of userForm.pendingUserFiles) await uploadUserArquivo(savedUser.id, file, session.token);
       }
-      userList.setUsers((current) => sortUsersForListing(userForm.editingId
-        ? current.map((item) => item.id === savedUser.id ? savedUser : item)
-        : [savedUser, ...current]));
       if (userForm.editingId && savedUser.id === session.user.id) {
         persistSession({ ...session, user: { ...session.user, nome: savedUser.nome, email: savedUser.email,
           cpf: savedUser.cpf ?? null, crm: savedUser.crm ?? null, crmUf: savedUser.crmUf ?? null,
