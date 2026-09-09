@@ -5,7 +5,6 @@ import { queryClient } from '../../queryClient';
 import { queryKeys } from '../../shared/queryKeys';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { getErrorMessage } from '../../shared/utils/formatters';
-import { sortPacientesForListing } from '../../shared/utils/listing';
 import type { AuthSession, Paciente, PacientePayload } from '../../types';
 import type { ModuleMode } from '../../appTypes';
 import { preparePatientPayload } from './patientDomainHelpers';
@@ -90,9 +89,6 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
         try { await createObservationMutation.mutateAsync({ pacienteId: savedPaciente.id, texto: observationText, token: session.token }); }
         catch (error) { warningMessage = getErrorMessage(error); }
       }
-      patientList.setPacientes((current) => sortPacientesForListing(patientForm.editingPacienteId
-        ? current.map((item) => item.id === savedPaciente.id ? savedPaciente : item)
-        : [savedPaciente, ...current]));
       const baseMessage = patientForm.editingPacienteId ? 'Paciente atualizado.' : 'Paciente cadastrado com sucesso.';
       patientList.setPacienteSuccessMessage(warningMessage ? `${baseMessage} Paciente salvo, mas a observação não foi enviada.`
         : observationText ? `${baseMessage} Observação enviada.` : baseMessage);

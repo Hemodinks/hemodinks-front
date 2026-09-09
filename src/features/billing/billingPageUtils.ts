@@ -2,8 +2,10 @@ import { getFaturamentosMedicos } from '../../services';
 import { normalizeDisplayText, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
 import type { Paciente } from '../../types';
 import type { BillingFilters, BillingRecord, BillingRegimeFilter, BillingStatusFilter } from './billingUtils';
+import { compareDateValues } from '../../shared/utils/dateSorting';
 
-export type BillingSortField = 'patient' | 'doctor' | 'status';
+export type BillingDateSortField = 'paymentDate' | 'requestDate' | 'attendanceDate';
+export type BillingSortField = 'patient' | 'doctor' | 'status' | BillingDateSortField;
 
 type BillingPageOptions = {
   currentPage: number;
@@ -12,8 +14,13 @@ type BillingPageOptions = {
   sortDirection: 'asc' | 'desc';
 };
 
-export function getBillingPage(records: BillingRecord[], options: BillingPageOptions) {
-  const sortedRecords = [...records].sort((left, right) => {
+export function sortBillingRecords(records: BillingRecord[], options: Pick<BillingPageOptions, 'sortBy' | 'sortDirection'>) {
+  return [...records].sort((left, right) => {
+    if (options.sortBy === 'paymentDate' || options.sortBy === 'requestDate' || options.sortBy === 'attendanceDate') {
+      const leftDate = options.sortBy === 'requestDate' ? left.paciente.data : left[options.sortBy];
+      const rightDate = options.sortBy === 'requestDate' ? right.paciente.data : right[options.sortBy];
+      return compareDateValues(leftDate, rightDate, options.sortDirection) || left.id - right.id;
+    }
     const leftValue = options.sortBy === 'patient'
       ? left.patientName
       : options.sortBy === 'doctor'
@@ -30,6 +37,10 @@ export function getBillingPage(records: BillingRecord[], options: BillingPageOpt
     });
     return options.sortDirection === 'asc' ? comparison : -comparison;
   });
+}
+
+export function getBillingPage(records: BillingRecord[], options: BillingPageOptions) {
+  const sortedRecords = sortBillingRecords(records, options);
   const totalPages = Math.max(1, Math.ceil(sortedRecords.length / options.pageSize));
   const visiblePage = Math.min(options.currentPage, totalPages);
   const visibleStart = sortedRecords.length ? ((visiblePage - 1) * options.pageSize) + 1 : 0;
