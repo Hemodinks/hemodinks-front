@@ -669,9 +669,16 @@ describe('App', () => {
         clinicaPadrao: false, usuarioClinicaId: 102,
       },
     });
-    vi.mocked(api.getPacientes).mockImplementation(() => new Promise(() => {}));
-    vi.mocked(api.getUsers).mockImplementation(() => new Promise(() => {}));
+    // Only the new clinic is pending; requests from the current session still finish.
+    vi.mocked(api.getPacientes).mockImplementation((token) => token === 'token-clinica-beta'
+      ? new Promise(() => {})
+      : Promise.resolve(paged([basePaciente])));
+    vi.mocked(api.getUsers).mockImplementation((token) => token === 'token-clinica-beta'
+      ? new Promise(() => {})
+      : Promise.resolve(paged([baseUser])));
     await user.click(within(screen.getByLabelText('Sessão ativa')).getByRole('button', { name: /^clínicas$/i }));
+    // The first visit imports the clinic module lazily, which can take longer on CI.
+    expect(await screen.findByRole('heading', { name: 'Clínicas', level: 1 }, { timeout: 5000 })).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Acessar Clinica Beta' }));
     if (module === 'pacientes') await openPatientsModule(user);
     else await openUsersModule(user);
