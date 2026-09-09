@@ -23,7 +23,7 @@ export function createAppSortHandlers(
       patients.setPacienteCurrentPage,
       patients.setSortBy,
       patients.setSortDirection,
-      field === 'recent' || field === 'data' ? 'desc' : 'asc',
+      field === 'recent' || field === 'data' || field === 'dataAtendimento' ? 'desc' : 'asc',
     ),
     handleCbhpmSortChange: (field: string) => updateSort(
       field,

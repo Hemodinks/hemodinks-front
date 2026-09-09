@@ -12,7 +12,6 @@ import {
   getPagedItems,
   getPagedTotal,
   getPagedTotalPages,
-  sortUsersForListing,
 } from '../../shared/utils/listing';
 import type { User } from '../../types';
 import { useUserForm } from './useUserForm';
@@ -121,7 +120,7 @@ export function useUsersDomain({
       return;
     }
 
-    setUsers(sortUsersForListing(getPagedItems(usersQuery.data)));
+    setUsers(getPagedItems(usersQuery.data));
     setUsersTotalItems(getPagedTotal(usersQuery.data));
     setUsersTotalPages(getPagedTotalPages(usersQuery.data));
     setUsersError('');
