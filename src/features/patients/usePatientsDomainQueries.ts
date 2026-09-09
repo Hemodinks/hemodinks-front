@@ -17,7 +17,6 @@ import {
   getPagedTotalPages,
   sortConveniosByDescription,
   sortOpmeFornecedoresByName,
-  sortPacientesForListing,
   sortUsersByName,
 } from '../../shared/utils/listing';
 import { queryKeys } from '../../shared/queryKeys';
@@ -96,7 +95,7 @@ export function usePatientsDomainQueries({
     pageSize: PAGE_SIZE,
     search: debouncedPacienteSearchTerm,
     ...getPacienteFilterQuery(debouncedPacienteFilters),
-    sortBy,
+    sortBy: sortBy || 'data',
     sortDirection,
   }), [debouncedPacienteFilters, debouncedPacienteSearchTerm, pacienteCurrentPage, sortBy, sortDirection]);
   const sessionReady = Boolean(session && !session.user.precisaTrocarSenha);
@@ -168,7 +167,7 @@ export function usePatientsDomainQueries({
       return;
     }
 
-    setPacientes(sortPacientesForListing(getPagedItems(pacientesQuery.data)));
+    setPacientes(getPagedItems(pacientesQuery.data));
     setPacientesTotalItems(getPagedTotal(pacientesQuery.data));
     setPacientesTotalPages(getPagedTotalPages(pacientesQuery.data));
     setPacientesError('');

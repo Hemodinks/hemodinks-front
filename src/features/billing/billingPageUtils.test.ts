@@ -1,12 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import type { BillingRecord } from './billingUtils';
-import { getBillingPage, parseBillingDetailId } from './billingPageUtils';
+import { getBillingPage, parseBillingDetailId, sortBillingRecords } from './billingPageUtils';
+import { basePaciente } from '../../test/appTestData';
 
 function record(id: number, patientName: string, doctorName: string, statusLabel: string) {
   return { id, patientName, doctorName, statusLabel } as BillingRecord;
 }
 
 describe('billingPageUtils', () => {
+  it.each(['paymentDate', 'attendanceDate', 'requestDate'] as const)('ordena %s cronologicamente antes de paginar, com datas vazias no fim', (sortBy) => {
+    const records = ['2030-12-01', null, '2026-12-31', '2027-01-02'].map((date, index) => ({
+      ...record(index + 1, `Paciente ${index}`, 'Medico', 'Pago'),
+      paymentDate: date, attendanceDate: date, paciente: { ...basePaciente, data: date },
+    }));
+    expect(sortBillingRecords(records, { sortBy, sortDirection: 'desc' }).map((item) => item.id)).toEqual([1, 4, 3, 2]);
+    expect(sortBillingRecords(records, { sortBy, sortDirection: 'asc' }).map((item) => item.id)).toEqual([3, 4, 1, 2]);
+    expect(getBillingPage(records, { sortBy, sortDirection: 'asc', currentPage: 2, pageSize: 2 }).records.map((item) => item.id)).toEqual([1, 2]);
+  });
+
   it('ordena antes de paginar e limita a pagina atual ao total disponível', () => {
     const result = getBillingPage([
       record(1, 'Carlos', 'Dra. Bia', 'Pendente'),
