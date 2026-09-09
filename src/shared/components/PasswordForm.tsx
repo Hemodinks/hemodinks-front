@@ -1,6 +1,8 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { KeyRound, X } from 'lucide-react';
 import { changePassword } from '../../services';
+import { completeTemporaryPassword } from '../../services/usersService';
+import { decodeJwtPayload } from '../utils/jwt';
 import type { AuthSession } from '../../types';
 import {
   getErrorMessage,
@@ -19,6 +21,7 @@ type PasswordFormProps = {
 };
 
 export function PasswordForm({ session, forced = false, onChanged, onCancel }: PasswordFormProps) {
+  const temporaryRecovery = decodeJwtPayload(session.token)?.temporary_password === 'true';
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
@@ -28,6 +31,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (loading) return;
     setError('');
 
     if (novaSenha !== confirmacao) {
@@ -38,6 +42,13 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
     setLoading(true);
 
     try {
+      if (temporaryRecovery) {
+        await completeTemporaryPassword(novaSenha, confirmacao, session.token);
+        setNovaSenha('');
+        setConfirmacao('');
+        onCancel?.();
+        return;
+      }
       const result = await changePassword(session.user.id, { senhaAtual, novaSenha }, session.token);
       onChanged(result.message);
     } catch (submitError) {
@@ -48,14 +59,14 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
   };
 
   return (
-    <form className="stack" onSubmit={handleSubmit} onInvalid={focusFirstInvalidFormField}>
+    <form data-private="true" className="stack sentry-block nr-block" onSubmit={handleSubmit} onInvalid={focusFirstInvalidFormField}>
       {forced && (
         <p className="alert warning">
           A senha temporária precisa ser alterada para liberar o acesso.
         </p>
       )}
 
-      <PasswordInput
+      {!temporaryRecovery && <PasswordInput
         id="current-password"
         label="Senha atual"
         value={senhaAtual}
@@ -63,7 +74,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
         autoComplete="current-password"
         maxLength={MAX_PASSWORD_LENGTH}
         required
-      />
+      />}
 
       <PasswordInput
         id="new-password"
@@ -95,6 +106,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
       />
 
       {error && <AlertMessage type="error">{error}</AlertMessage>}
+      {temporaryRecovery && <p>Após salvar, entre novamente com sua nova senha.</p>}
 
       <div className="button-row">
         {onCancel && (

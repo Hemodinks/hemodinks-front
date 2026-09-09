@@ -1360,7 +1360,10 @@ test('privacidade: páginas jurídicas são públicas e responsivas', async ({ p
     await expect(page.locator('.legal-document-meta')).toContainText(version);
     const acceptance = page.getByRole('region', { name: 'Aceite dos documentos' });
     await expect(acceptance).toHaveCount(1);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const legalDocument = page.locator('.legal-document');
+    await legalDocument.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
     await expect(acceptance).toBeVisible();
     const acknowledgement = acceptance.getByRole('checkbox', { name: /Li e estou ciente/ });
     const continueButton = acceptance.getByRole('button', { name: 'Aceitar e continuar' });
