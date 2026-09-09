@@ -4,6 +4,7 @@ import { resolveClinicaRequestHeaders } from './clinicaContext';
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 const DEFAULT_ERROR_MESSAGE = 'Nao foi possivel concluir a operacao.';
 const SERVICE_UNAVAILABLE_ERROR_MESSAGE = 'Sistema temporariamente indisponível. Tente novamente mais tarde.';
+const MAINTENANCE_ERROR_MESSAGE = 'Sistema temporariamente indisponível das 00:00 às 06:59 para manutenção dos dados.';
 const SERVICE_UNAVAILABLE_STATUS_CODES = new Set([502, 503, 504]);
 const UNAUTHORIZED_ERROR_MESSAGE = 'Credenciais invalidas ou sessao expirada.';
 const FORBIDDEN_ERROR_MESSAGE = 'Operação não permitida.';
@@ -45,7 +46,9 @@ function toApiError(error: unknown, notifyUnauthorized = false) {
     // Axios does not expose a response when the API is offline, unreachable or
     // the browser blocks the response at the network layer (for example, CORS).
     if (!error.response || SERVICE_UNAVAILABLE_STATUS_CODES.has(error.response.status)) {
-      return new Error(SERVICE_UNAVAILABLE_ERROR_MESSAGE);
+      return new Error(new Date().getHours() < 7
+        ? MAINTENANCE_ERROR_MESSAGE
+        : SERVICE_UNAVAILABLE_ERROR_MESSAGE);
     }
 
     if (error.response?.status === 401) {

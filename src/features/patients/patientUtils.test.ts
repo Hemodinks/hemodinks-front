@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Paciente } from '../../types';
+import { basePaciente } from '../../test/appTestData';
 import {
   emptyPacienteForm,
   getCalculatedGlosaValue,
@@ -9,10 +10,23 @@ import {
   normalizeCbhpmCodigo,
   normalizePacienteProcedimentos,
   toPacientePayload,
+  validatePacienteForm,
 } from './patientUtils';
 import { getPacienteFormExportRows } from './export/patientExportData';
 
 describe('patientUtils', () => {
+  it.each(['01/12/2030', '29/02/2032'])('preserva a cirurgia consolidada futura %s no payload e na edicao', (date) => {
+    const payload = toPacientePayload({ ...emptyPacienteForm, dataAtendimento: date });
+    expect(payload.dataAtendimento).toBe(date === '01/12/2030' ? '2030-12-01' : '2032-02-29');
+    expect(getPacienteFormData({ ...basePaciente, dataAtendimento: payload.dataAtendimento }).dataAtendimento).toBe(date);
+  });
+
+  it('rejeita datas inexistentes de cirurgias consolidadas', () => {
+    expect(validatePacienteForm({ ...emptyPacienteForm, dataAtendimento: '31/02/2030' }))
+      .toBe('Informe uma data válida para Cirurgias Consolidadas.');
+    expect(toPacientePayload({ ...emptyPacienteForm, dataAtendimento: '' }).dataAtendimento).toBeNull();
+  });
+
   it('remove pontuacao de codigos CBHPM', () => {
     expect(normalizeCbhpmCodigo('1.01.01.01-2')).toBe('10101012');
     expect(normalizeCbhpmCodigo(' 2.01.01.20-1 ')).toBe('20101201');
