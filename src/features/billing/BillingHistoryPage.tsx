@@ -8,9 +8,10 @@ import { formatCurrency, toDisplayDate } from '../../shared/utils/formatters';
 import { BillingSummaryModal } from './BillingPageComponents';
 import { BillingHistoryCharts, BillingHistoryMonthSummary, QuarterlyDashboard } from './BillingHistoryInsights';
 import { buildBillingHistory, getBillingHistoryMonthTone, getBillingQuarterHighlights } from './billingHistory';
-import { loadBillingPatients } from './billingPageUtils';
+import { loadBillingPatients, sortBillingRecords, type BillingDateSortField } from './billingPageUtils';
+import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import type { BillingPageProps } from './billingPageTypes';
-import { buildBillingRecords, createEmptyBillingFilters, filterBillingRecords } from './billingUtils';
+import { buildBillingRecords, createEmptyBillingFilters, filterBillingRecords, type BillingRecord } from './billingUtils';
 import './billing.css';
 
 type BillingHistoryPageProps = BillingPageProps & { canManageFiles: boolean };
@@ -22,6 +23,19 @@ function formatFileSize(bytes: number) {
 }
 
 export function BillingHistoryPage({ session, isMedical, canManageFiles }: BillingHistoryPageProps) {
+  const [tableSorts, setTableSorts] = useState<Record<string, { sortBy: BillingDateSortField; sortDirection: 'asc' | 'desc' }>>({});
+  const dateHeader = (table: string, field: BillingDateSortField, label: string) => (
+    <SortableTableHeader field={field} label={label} activeField={tableSorts[table]?.sortBy ?? ''}
+      direction={tableSorts[table]?.sortDirection ?? 'desc'} onSortChange={(sortBy) => {
+        setTableSorts((current) => ({
+          ...current,
+          [table]: { sortBy, sortDirection: current[table]?.sortBy === sortBy && current[table].sortDirection === 'desc' ? 'asc' : 'desc' },
+        }));
+      }} />
+  );
+  const sortedRecords = (items: BillingRecord[], table: string) => tableSorts[table]
+    ? sortBillingRecords(items, tableSorts[table])
+    : items;
   const [openYears, setOpenYears] = useState<Set<number>>(new Set());
   const [openMonth, setOpenMonth] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'history' | 'charts'>('history');
@@ -193,9 +207,9 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
           </div>
           <div className="table-wrap billing-history-invalid-table-wrap">
             <table className="billing-history-invalid-table">
-              <thead><tr><th>Paciente</th><th>Cirurgião</th><th>Data da solicitação</th><th>Cirurgias Consolidadas</th><th>Resumo</th></tr></thead>
+              <thead><tr><th>Paciente</th><th>Cirurgião</th>{dateHeader('invalid', 'requestDate', 'Data da solicitação')}{dateHeader('invalid', 'attendanceDate', 'Cirurgias Consolidadas')}<th>Resumo</th></tr></thead>
               <tbody>
-                {history.recordsWithoutAttendanceDate.map((record) => (
+                {sortedRecords(history.recordsWithoutAttendanceDate, 'invalid').map((record) => (
                   <tr key={record.id}>
                     <td data-label="Paciente"><strong>{record.patientName}</strong><span>{record.convenioName}</span></td>
                     <td data-label="Cirurgião">{record.doctorName}</td>
@@ -316,9 +330,9 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
                               ) : (
                                 <div className="table-wrap">
                                   <table className="billing-table billing-history-table">
-                                    <thead><tr><th>Paciente</th><th>Cirurgião</th><th>Cirurgias Consolidadas</th><th>Faturado</th><th>Glosa</th><th>Líquido</th><th>Status</th><th>Resumo</th></tr></thead>
+                                    <thead><tr><th>Paciente</th><th>Cirurgião</th>{dateHeader(`${yearGroup.year}-${monthGroup.month}`, 'attendanceDate', 'Cirurgias Consolidadas')}<th>Faturado</th><th>Glosa</th><th>Líquido</th><th>Status</th><th>Resumo</th></tr></thead>
                                     <tbody>
-                                      {monthGroup.records.map((record) => (
+                                      {sortedRecords(monthGroup.records, `${yearGroup.year}-${monthGroup.month}`).map((record) => (
                                         <tr key={record.id}>
                                           <td data-label="Paciente"><strong>{record.patientName}</strong><span>{record.convenioName}</span></td>
                                           <td data-label="Cirurgião">{record.doctorName}</td>

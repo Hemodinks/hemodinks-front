@@ -23,7 +23,8 @@ export function usePatientList() {
   const [pacienteSearchTerm, setPacienteSearchTerm] = useState('');
   const [pacienteFilters, setPacienteFilters] = useState<PacienteFilters>(emptyPacienteFilters);
   const [pacienteCurrentPage, setPacienteCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState('data');
+  // No column has been clicked yet; the query defaults to request date descending.
+  const [sortBy, setSortBy] = useState('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const resetPacientesPage = useCallback(() => setPacienteCurrentPage(1), []);
   const [debouncedPacienteSearchTerm] = useDebouncedValue(pacienteSearchTerm, { onCommit: resetPacientesPage });
@@ -51,7 +52,7 @@ export function usePatientList() {
     setPacienteCurrentPage(1);
     setPacientesTotalItems(0);
     setPacientesTotalPages(1);
-    setSortBy('data');
+    setSortBy('');
     setSortDirection('desc');
   };
 
