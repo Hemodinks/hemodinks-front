@@ -23,11 +23,11 @@ export function LegalDocumentPage({ document }: { document: LegalDocument }) {
 
   return (
     <main className="legal-page">
-      <article className="legal-document">
+      <article key={document.slug} className="legal-document" tabIndex={0} aria-labelledby="legal-document-title">
         <Link className="legal-back-link" to="/"><ArrowLeft size={17} />Voltar ao acesso</Link>
         <header className="legal-document-header">
           <span className="eyebrow">HemoDinks</span>
-          <h1>{document.title}</h1>
+          <h1 id="legal-document-title">{document.title}</h1>
         </header>
 
         {document.slug === 'politica-de-privacidade'

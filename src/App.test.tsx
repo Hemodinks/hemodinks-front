@@ -1313,7 +1313,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Senha'), 'temporary-test-password');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
-    expect(await screen.findByRole('heading', { name: 'Troque sua senha' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Definir nova senha' })).toBeInTheDocument();
     expect(api.getUsers).not.toHaveBeenCalled();
 
     await user.type(screen.getByLabelText('Senha atual'), 'temporary-test-password');

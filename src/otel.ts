@@ -140,7 +140,9 @@ export async function initOpenTelemetryBrowser() {
       unregisterInstrumentations = registerInstrumentations({
         instrumentations: [
           new DocumentLoadInstrumentation(),
-          new UserInteractionInstrumentation(),
+          new UserInteractionInstrumentation({
+            shouldPreventSpanCreation: (_eventType, element) => Boolean(element.closest('[data-private="true"]')),
+          }),
           new FetchInstrumentation({
             ignoreUrls: [
               /\/otel-runtime-config\.json$/i,

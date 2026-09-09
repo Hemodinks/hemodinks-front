@@ -5,6 +5,7 @@ import { SortableTableHeader } from '../../shared/components/SortableTableHeader
 import { formatPersonName, formatProfileName } from '../../shared/utils/formatters';
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { UserAvatar } from './UserAvatar';
+import { TemporaryPasswordAction } from './TemporaryPasswordAction';
 
 type UserListProps = {
   users: User[];
@@ -21,6 +22,7 @@ type UserListProps = {
   sortDirection: 'asc' | 'desc';
   sessionToken: string;
   canManageUsers: boolean;
+  isSuperAdmin?: boolean;
   onSearchChange: (value: string) => void;
   onPageChange: (page: number | ((current: number) => number)) => void;
   onSortChange: (field: string) => void;
@@ -47,6 +49,7 @@ export function UserList({
   sortDirection,
   sessionToken,
   canManageUsers,
+  isSuperAdmin = false,
   onSearchChange,
   onPageChange,
   onSortChange,
@@ -133,6 +136,7 @@ export function UserList({
                           <IconButton label={`Excluir ${displayName}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
                             <Trash2 size={17} />
                           </IconButton>
+                          <TemporaryPasswordAction user={user} token={sessionToken} canManage={canManageUsers} isSuperAdmin={isSuperAdmin} />
                         </div>
                       </td>
                     )}
