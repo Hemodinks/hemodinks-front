@@ -6,6 +6,7 @@ import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import { AlertMessage } from '../../shared/components/ui';
 import './auth.css';
+import './clinicSelection.css';
 
 type ClinicSelectionScreenProps = {
   clinics: LoginClinicOption[];
