@@ -3,7 +3,6 @@ import { LogIn } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import type { PublicClinic } from '../../types';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
-import { BootstrapLoading } from '../../shared/components/BootstrapLoading';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
@@ -11,10 +10,7 @@ import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import { AlertMessage, ToastMessage } from '../../shared/components/ui';
 import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import { LegalFooter } from '../legal/LegalFooter';
-import {
-  MAX_EMAIL_LENGTH,
-  MAX_PASSWORD_LENGTH,
-} from '../../shared/utils/formatters';
+import { MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from '../../shared/utils/formatters';
 import './auth.css';
 
 type LoginScreenProps = {
@@ -24,13 +20,8 @@ type LoginScreenProps = {
   theme: Theme;
   loginEmail: string;
   loginPassword: string;
-  loginClinicValue: string;
-  clinics: PublicClinic[];
-  clinicsLoading: boolean;
-  clinicsSlow: boolean;
-  clinicsCanRetry: boolean;
-  clinicsError: string;
-  onRetryClinics: () => Promise<void>;
+  recoveryClinics: PublicClinic[];
+  recoveryClinicValue: string;
   loginError: string;
   loginInfo: string;
   loginLoading: boolean;
@@ -38,7 +29,7 @@ type LoginScreenProps = {
   onThemeToggle: () => void;
   onLoginEmailChange: (value: string) => void;
   onLoginPasswordChange: (value: string) => void;
-  onLoginClinicChange: (value: string) => void;
+  onRecoveryClinicChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onResetPassword: () => void;
   onStartTutorial: () => void;
@@ -51,13 +42,8 @@ export function LoginScreen({
   theme,
   loginEmail,
   loginPassword,
-  loginClinicValue,
-  clinics,
-  clinicsLoading,
-  clinicsSlow,
-  clinicsCanRetry,
-  clinicsError,
-  onRetryClinics,
+  recoveryClinics,
+  recoveryClinicValue,
   loginError,
   loginInfo,
   loginLoading,
@@ -65,19 +51,17 @@ export function LoginScreen({
   onThemeToggle,
   onLoginEmailChange,
   onLoginPasswordChange,
-  onLoginClinicChange,
+  onRecoveryClinicChange,
   onSubmit,
   onResetPassword,
   onStartTutorial,
 }: LoginScreenProps) {
   return (
     <main className="auth-screen">
-      <BootstrapLoading active={clinicsLoading} slow={clinicsSlow} canRetry={clinicsCanRetry}
-        onRetry={onRetryClinics} stage="Carregando clínicas disponíveis…" />
-      <LoadingOverlay active={isBusy} message={loginLoading ? 'Validando suas credenciais e sua clínica…' : undefined} />
+      <LoadingOverlay active={isBusy} message={loginLoading ? 'Validando suas credenciais…' : undefined} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
-      <section className="auth-panel login-panel" data-tour="login-overview" inert={clinicsLoading || isBusy} aria-busy={loginLoading}>
+      <section className="auth-panel login-panel" data-tour="login-overview" inert={isBusy} aria-busy={loginLoading}>
         <div className="brand-block">
           <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
           <div>
@@ -87,23 +71,6 @@ export function LoginScreen({
         </div>
 
         <form className="stack" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
-          <label data-tour="login-clinic">
-            Clínica
-            <select
-              value={loginClinicValue}
-              onChange={(event) => onLoginClinicChange(event.target.value)}
-              disabled={clinicsLoading}
-              required
-            >
-              <option value="">
-                {clinicsLoading ? 'Carregando clínicas...' : 'Selecione uma clínica'}
-              </option>
-              {clinics.map((clinic) => (
-                <option key={clinic.id} value={String(clinic.id)}>{clinic.nome}</option>
-              ))}
-            </select>
-          </label>
-
           <label data-tour="login-email">
             Email
             <input
@@ -129,18 +96,31 @@ export function LoginScreen({
             required
           /></div>
 
-          {clinicsError && <AlertMessage type="error">{clinicsError}</AlertMessage>}
-          {clinicsError && <button type="button" className="ghost-button" onClick={() => void onRetryClinics()}>Tentar novamente</button>}
+          {recoveryClinics.length > 1 && (
+            <label data-tour="password-reset-clinic">
+              Clínica para recuperação de senha
+              <select
+                value={recoveryClinicValue}
+                onChange={(event) => onRecoveryClinicChange(event.target.value)}
+              >
+                <option value="">Selecione uma clínica</option>
+                {recoveryClinics.map((clinic) => (
+                  <option key={clinic.id} value={String(clinic.id)}>{clinic.nome}</option>
+                ))}
+              </select>
+            </label>
+          )}
+
           {loginError && <AlertMessage type="error">{loginError}</AlertMessage>}
           {loginInfo && <ToastMessage type="success">{loginInfo}</ToastMessage>}
 
           <div className="login-entry-actions">
-            <button className="primary-action" type="submit" disabled={loginLoading || resetPasswordLoading || clinicsLoading} data-tour="login-submit">
+            <button className="primary-action" type="submit" disabled={loginLoading || resetPasswordLoading} data-tour="login-submit">
               <LogIn size={18} />
               {loginLoading ? 'Entrando...' : 'Entrar'}
             </button>
             <button type="button" className="ghost-button login-help-link" onClick={onResetPassword} disabled={resetPasswordLoading || loginLoading}>
-              {resetPasswordLoading ? 'Enviando instruções...' : 'Esqueci minha senha'}
+              {resetPasswordLoading ? 'Enviando instruções...' : recoveryClinics.length > 1 ? 'Enviar instruções' : 'Esqueci minha senha'}
             </button>
           </div>
         </form>

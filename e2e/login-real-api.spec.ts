@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 
 async function loginForm(page: Page, team: Team | null = null) {
   await page.goto('/');
-  await page.getByRole('combobox', { name: 'Clínica', exact: true }).selectOption(String(team?.clinicId ?? fixture!.individual.clinicId));
+  await expect(page.getByRole('combobox', { name: 'Clínica', exact: true })).toHaveCount(0);
   await page.getByRole('textbox', { name: 'Email', exact: true }).fill(team?.email ?? fixture!.individual.email);
   await page.getByLabel('Senha', { exact: true }).fill(team ? fixture!.password : fixture!.individual.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
@@ -32,6 +32,15 @@ async function finishLegalAndReadSession(page: Page) {
 }
 
 async function apiLogin(request: APIRequestContext, team: Team) {
+  const contextResponse = await request.post(`${fixture!.apiUrl}/api/users/login-context`, {
+    data: { email: team.email, senha: fixture!.password },
+  });
+  expect(contextResponse.ok()).toBe(true);
+  const context = await contextResponse.json();
+  expect(context.clinicas).toEqual(expect.arrayContaining([
+    expect.objectContaining({ clinicaId: team.clinicId, slug: team.slug }),
+  ]));
+
   const response = await request.post(`${fixture!.apiUrl}/api/users/authenticate`, {
     headers: { 'X-Clinica-Slug': team.slug }, data: { email: team.email, senha: fixture!.password },
   });
@@ -164,13 +173,14 @@ test('case:cancel', async ({ page }) => {
   await page.getByRole('button', { name: 'Voltar', exact: true }).click();
   await expect(page.getByLabel('Senha', { exact: true })).toHaveValue('');
   await expect(page.getByLabel('PIN individual')).toHaveCount(0);
-  await page.getByRole('combobox', { name: 'Clínica', exact: true }).selectOption(String(fixture!.other.clinicId));
+  await expect(page.getByRole('combobox', { name: 'Clínica', exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => sessionStorage.getItem('hemodinks.session'))).toBeNull();
 });
 
 test('case:layout', async ({ page }, testInfo) => {
   await page.goto('/');
-  await expect(page.getByRole('combobox', { name: 'Clínica', exact: true })).toBeEnabled();
+  await expect(page.getByRole('combobox', { name: 'Clínica', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeEnabled();
   await expect.poll(() => page.locator('.brand-mark').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
   await page.screenshot({ path: testInfo.outputPath('login-desktop-dark.png'), fullPage: true });
   await page.getByRole('button', { name: 'Tema claro', exact: true }).click();
