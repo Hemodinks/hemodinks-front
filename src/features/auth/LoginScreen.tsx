@@ -1,8 +1,9 @@
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent } from 'react';
 import { LogIn } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import type { PublicClinic } from '../../types';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
+import { BootstrapLoading } from '../../shared/components/BootstrapLoading';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
@@ -26,6 +27,10 @@ type LoginScreenProps = {
   loginClinicValue: string;
   clinics: PublicClinic[];
   clinicsLoading: boolean;
+  clinicsSlow: boolean;
+  clinicsCanRetry: boolean;
+  clinicsError: string;
+  onRetryClinics: () => Promise<void>;
   loginError: string;
   loginInfo: string;
   loginLoading: boolean;
@@ -39,38 +44,6 @@ type LoginScreenProps = {
   onStartTutorial: () => void;
 };
 
-const INITIAL_LOADING_STEPS = [
-  'Conectando com segurança…',
-  'Carregando os dados da clínica…',
-  'Preparando seu painel…',
-  'Tudo quase pronto…',
-];
-
-function LoginInitialLoadingMessage() {
-  const [stepIndex, setStepIndex] = useState(0);
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setStepIndex((current) => (current + 1) % INITIAL_LOADING_STEPS.length);
-    }, 2600);
-
-    return () => window.clearInterval(intervalId);
-  }, []);
-
-  return (
-    <div className="login-initial-loading-copy">
-      <strong>Preparando seu acesso</strong>
-      <span>Bem-vindo ao Hemodinks!</span>
-      <p>Estamos iniciando os serviços e carregando as informações da sua clínica.</p>
-      <span className="login-initial-loading-step" aria-atomic="true">
-        <i aria-hidden="true" />
-        {INITIAL_LOADING_STEPS[stepIndex]}
-      </span>
-      <small>Na primeira conexão, isso pode levar até 1 minuto. Você será direcionado automaticamente.</small>
-    </div>
-  );
-}
-
 export function LoginScreen({
   companyName,
   companyPhoto,
@@ -81,6 +54,10 @@ export function LoginScreen({
   loginClinicValue,
   clinics,
   clinicsLoading,
+  clinicsSlow,
+  clinicsCanRetry,
+  clinicsError,
+  onRetryClinics,
   loginError,
   loginInfo,
   loginLoading,
@@ -95,15 +72,12 @@ export function LoginScreen({
 }: LoginScreenProps) {
   return (
     <main className="auth-screen">
-      <LoadingOverlay
-        active={isBusy || clinicsLoading}
-        className={clinicsLoading ? 'login-initial-loading' : undefined}
-        eyebrow={clinicsLoading ? 'Iniciando o sistema' : undefined}
-        message={clinicsLoading ? <LoginInitialLoadingMessage /> : undefined}
-      />
+      <BootstrapLoading active={clinicsLoading} slow={clinicsSlow} canRetry={clinicsCanRetry}
+        onRetry={onRetryClinics} stage="Carregando clínicas disponíveis…" />
+      <LoadingOverlay active={isBusy} message={loginLoading ? 'Validando suas credenciais e sua clínica…' : undefined} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
-      <section className="auth-panel" data-tour="login-overview">
+      <section className="auth-panel" data-tour="login-overview" inert={clinicsLoading || isBusy}>
         <div className="brand-block">
           {loginClinicValue
             ? <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
@@ -156,6 +130,8 @@ export function LoginScreen({
             required
           /></div>
 
+          {clinicsError && <AlertMessage type="error">{clinicsError}</AlertMessage>}
+          {clinicsError && <button type="button" className="ghost-button" onClick={() => void onRetryClinics()}>Tentar novamente</button>}
           {loginError && <AlertMessage type="error">{loginError}</AlertMessage>}
           {loginInfo && <ToastMessage type="success">{loginInfo}</ToastMessage>}
 

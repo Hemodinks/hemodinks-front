@@ -18,6 +18,7 @@ export function authenticate(
     { email, senha },
     undefined,
     {
+      timeout: 60_000,
       headers: clinicaSlug ? { "X-Clinica-Slug": clinicaSlug } : undefined,
     },
   );
@@ -34,6 +35,7 @@ export function identifyTeamOperator(
     { token, operadorId, pin },
     undefined,
     {
+      timeout: 60_000,
       headers: clinicaSlug ? { "X-Clinica-Slug": clinicaSlug } : undefined,
     },
   );
