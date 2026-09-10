@@ -8,6 +8,25 @@ export type ResetPasswordResponse = {
   mode?: string | null;
 };
 
+export type LoginClinicOption = {
+  clinicaId: number;
+  nome: string;
+  slug: string;
+};
+
+export type ResolveLoginClinicsResponse = {
+  clinicas: LoginClinicOption[];
+};
+
+export function resolveLoginClinics(email: string, senha: string) {
+  return post<ResolveLoginClinicsResponse>(
+    "/api/users/login-context",
+    { email, senha },
+    undefined,
+    { timeout: 60_000 },
+  );
+}
+
 export function authenticate(
   email: string,
   senha: string,
