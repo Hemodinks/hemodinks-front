@@ -595,11 +595,9 @@ describe('App', () => {
 
     const loadingStatus = screen.getByRole('status');
     expect(loadingStatus).toHaveTextContent('Iniciando o sistema');
-    expect(loadingStatus).toHaveTextContent('Preparando seu acesso');
-    expect(loadingStatus).toHaveTextContent('Bem-vindo ao Hemodinks!');
-    expect(loadingStatus).toHaveTextContent('Estamos iniciando os serviços e carregando as informações da sua clínica.');
-    expect(loadingStatus).toHaveTextContent('Conectando com segurança…');
-    expect(loadingStatus).toHaveTextContent('Na primeira conexão, isso pode levar até 1 minuto. Você será direcionado automaticamente.');
+    expect(loadingStatus).toHaveTextContent('Preparando seu ambiente');
+    expect(loadingStatus).toHaveTextContent('Carregando clínicas disponíveis…');
+    expect(loadingStatus).not.toHaveTextContent('1 minuto');
     expect(loadingStatus.parentElement).toHaveClass('login-initial-loading');
 
     resolveClinics([{ id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null }]);

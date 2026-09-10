@@ -117,7 +117,7 @@ export function AppShell({
 
   return (
     <div className="app-shell">
-      <LoadingOverlay active={isBusy || isSlowQuery} />
+      <LoadingOverlay active={isBusy || isSlowQuery} message={isBusy ? undefined : 'Carregando informações da clínica…'} />
       <datalist id={MEDICAL_USERS_DATALIST_ID}>
         {medicalUsers.map((user) => (
           <option key={user.id} value={formatPersonName(user.nome)} />

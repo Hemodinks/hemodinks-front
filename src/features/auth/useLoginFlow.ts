@@ -1,9 +1,11 @@
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { authenticate, identifyTeamOperator, listPublicClinics, resetPassword } from '../../services';
 import { queryClient } from '../../queryClient';
 import { getErrorMessage, isValidEmail } from '../../shared/utils/formatters';
-import type { AuthSession, PublicClinic, TeamLoginChallenge } from '../../types';
+import type { AuthSession, TeamLoginChallenge } from '../../types';
 import { buildSessionFromLogin, shouldOpenDashboardAfterLogin } from '../../app/appSession';
+
+import { useBootstrapRequest } from '../../shared/hooks/useBootstrapRequest';
 
 type UseLoginFlowOptions = {
   session: AuthSession | null;
@@ -14,8 +16,14 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginClinicValue, setLoginClinicValue] = useState('');
-  const [publicClinics, setPublicClinics] = useState<PublicClinic[]>([]);
-  const [publicClinicsLoading, setPublicClinicsLoading] = useState(!session);
+  const loadClinics = useCallback(async (signal: AbortSignal) => {
+    const clinics = await listPublicClinics('', signal);
+    if (!Array.isArray(clinics)) throw new Error('Invalid public clinics response');
+    return clinics;
+  }, []);
+  const clinicBootstrap = useBootstrapRequest(!session, loadClinics, 'public_clinics');
+  const publicClinics = clinicBootstrap.data ?? [];
+  const publicClinicsLoading = clinicBootstrap.loading;
   const [loginError, setLoginError] = useState('');
   const [loginInfo, setLoginInfo] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
@@ -30,32 +38,8 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   );
 
   useEffect(() => {
-    if (session) return;
-
-    let cancelled = false;
-    setPublicClinicsLoading(true);
-    void listPublicClinics()
-      .then((clinics) => {
-        if (cancelled) return;
-        if (!Array.isArray(clinics)) {
-          setPublicClinics([]);
-          setLoginError('Não foi possível carregar as clínicas cadastradas.');
-          return;
-        }
-        setPublicClinics(clinics);
-        setLoginClinicValue('');
-      })
-      .catch((error) => {
-        if (!cancelled) setLoginError(getErrorMessage(error));
-      })
-      .finally(() => {
-        if (!cancelled) setPublicClinicsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [session]);
+    setLoginClinicValue('');
+  }, [clinicBootstrap.data]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -171,6 +155,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     loginClinicValue,
     publicClinics,
     publicClinicsLoading,
+    clinicBootstrap,
     loginError,
     loginInfo,
     loginLoading,

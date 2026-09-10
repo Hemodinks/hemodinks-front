@@ -1735,3 +1735,178 @@ for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
     await writeFile(testInfo.outputPath('timeline.json'), `${JSON.stringify(timeline, null, 2)}\n`, 'utf8');
   });
 }
+
+test('bootstrap: API lenta informa a operação real e retry cancela a tentativa anterior', async ({ page }) => {
+  await mockApi(page);
+  await page.clock.install();
+  let calls = 0;
+  let recovering = false;
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/public/clinicas', async route => {
+    calls++;
+    if (!recovering) {
+      await pending;
+      await route.fulfill({ json: [{ id: 2, nome: 'Resposta antiga', slug: 'antiga' }] }).catch(() => {});
+    } else await route.fallback();
+  });
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('Carregando clínicas disponíveis');
+  await expect(page.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow');
+  await page.clock.fastForward(12_000);
+  await expect(page.getByText(/mais de tempo/)).toBeVisible();
+  const initialCalls = calls;
+  expect(initialCalls).toBeLessThanOrEqual(2);
+  await page.clock.fastForward(23_000);
+  await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeFocused();
+  recovering = true;
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('option', { name: 'Clínica Hemodinks' })).toBeAttached();
+  release();
+  await expect(page.getByRole('option', { name: 'Resposta antiga' })).toHaveCount(0);
+  expect(calls).toBe(initialCalls + 1);
+});
+
+test('bootstrap: timeout termina o loading e permite recuperação', async ({ page }) => {
+  await mockApi(page);
+  await page.clock.install();
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/public/clinicas', async route => { await pending; await route.abort().catch(() => {}); });
+  await page.goto('/');
+  await expect(page.getByRole('progressbar')).toBeVisible();
+  await page.clock.fastForward(60_000);
+  await expect(page.getByRole('progressbar')).toHaveCount(0);
+  await expect(page.getByText('A conexão demorou demais. Tente novamente.')).toBeVisible();
+  release();
+  await page.unroute('**/api/public/clinicas');
+  await page.getByRole('button', { name: 'Tentar novamente' }).click();
+  await expect(page.getByRole('option', { name: 'Clínica Hemodinks' })).toBeAttached();
+});
+
+for (const status of [503, 500]) {
+  test(`bootstrap: falha ${status} não expõe detalhes e permite retry`, async ({ page }) => {
+    await mockApi(page);
+    await page.route('**/api/public/clinicas', route => route.fulfill({ status, json: { message: 'STACK token tenant-secret' } }));
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
+    await expect(page.getByText('STACK token tenant-secret')).toHaveCount(0);
+    await page.unroute('**/api/public/clinicas');
+    await page.getByRole('button', { name: 'Tentar novamente' }).click();
+    await expect(page.getByRole('option', { name: 'Clínica Hemodinks' })).toBeAttached();
+  });
+}
+
+for (const status of [401, 403, 400]) {
+  test(`bootstrap: validação ${status} bloqueia dados operacionais e preserva contexto`, async ({ page }) => {
+    await mockApi(page);
+    const operational: string[] = [];
+    page.on('request', request => {
+      if (/\/api\/(dashboard|pacientes|configuracoes-sistema)/.test(request.url())) operational.push(request.url());
+    });
+    await page.route('**/api/legal-acceptances/current', route => route.fulfill({ status, json: { message: 'internal clinic-id' } }));
+    const validationResponse = page.waitForResponse(response => response.url().endsWith('/api/legal-acceptances/current') && response.status() === status);
+    await loginViaUi(page);
+    await validationResponse;
+    if (status === 401) {
+      await expect(page.getByText('Sua sessao expirou. Entre novamente para continuar.')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Acesso ao sistema' })).toBeVisible();
+      await expect(page).toHaveURL(/\/$/);
+      expect(await page.evaluate(() => sessionStorage.getItem('hemodinks.session'))).toBeNull();
+    } else {
+      await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
+      expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('hemodinks.session')!).user.clinicaId)).toBe(1);
+    }
+    await expect(page.getByRole('heading', { name: 'Painel inicial' })).toHaveCount(0);
+    expect(operational).toEqual([]);
+    await expect(page.getByText('internal clinic-id')).toHaveCount(0);
+  });
+}
+
+test('bootstrap: clínica autorizada só carrega dados após validação e mantém tenant', async ({ page }) => {
+  const scopedSession = { ...session, token: `test.${Buffer.from(JSON.stringify({ clinicaSlug: 'clinica-hemodinks', clinicaId: '1' })).toString('base64url')}.signature` };
+  await mockApi(page, scopedSession);
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  const headers: Record<string, string>[] = [];
+  await page.route('**/api/legal-acceptances/current', async route => { await pending; await route.fallback(); });
+  page.on('request', request => {
+    if (/\/api\/(dashboard|configuracoes-sistema)/.test(request.url())) headers.push(request.headers());
+  });
+  await loginViaUi(page, '/', scopedSession);
+  await expect(page.getByRole('status')).toContainText('Validando sua sessão, clínica e Termos de Uso');
+  expect(headers).toEqual([]);
+  release();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  await expect.poll(() => headers.length).toBeGreaterThan(0);
+  for (const header of headers) {
+    expect(header.authorization).toBe(`Bearer ${scopedSession.token}`);
+    expect(header['x-clinica-slug']).toBe('clinica-hemodinks');
+    expect(header['x-clinica-id']).toBe('1');
+  }
+});
+
+for (const profile of [session, superAdminSession, patientSession,
+  ...[{ perfilId: 2, perfilNome: 'Medicos' }, { perfilId: 4, perfilNome: 'Controller' }, { perfilId: 6, perfilNome: 'Equipe' }]
+    .map(role => ({ ...session, user: { ...session.user, ...role } })),
+]) {
+  test(`bootstrap: preserva rotas e permissões de ${profile.user.perfilNome}`, async ({ page }) => {
+    await mockApi(page, profile);
+    await loginViaUi(page, '/', profile);
+    await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+    await page.goto('/usuarios');
+    if ([2, 3, 4].includes(profile.user.perfilId)) {
+      await expect(page).toHaveURL(/\/dashboard$/);
+      await expect(page.getByRole('heading', { name: 'Usuários', exact: true })).toHaveCount(0);
+    } else await expect(page).toHaveURL(/\/usuarios$/);
+  });
+}
+
+for (const variant of [{ width: 390, theme: 'light' }, { width: 1280, theme: 'dark' }]) {
+  test(`bootstrap: acessibilidade do loading em ${variant.width}px e tema ${variant.theme}`, async ({ page }, testInfo) => {
+    await mockApi(page);
+    await page.addInitScript(theme => localStorage.setItem('hemodinks.theme', theme), variant.theme);
+    await page.setViewportSize({ width: variant.width, height: 850 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    let release!: () => void;
+    const pending = new Promise<void>(resolve => { release = resolve; });
+    await page.route('**/api/public/clinicas', async route => { await pending; await route.fallback(); });
+    await page.goto('/');
+    await expect(page.getByRole('progressbar')).toBeVisible();
+    await expect(page.locator('.auth-panel')).toHaveAttribute('inert', '');
+    expect(await page.locator('.loader-ring').evaluate(element => getComputedStyle(element).animationName)).toBe('none');
+    expect((await new AxeBuilder({ page }).include('.loading-overlay').analyze()).violations).toEqual([]);
+    await expectNoGlobalHorizontalOverflow(page);
+    await page.screenshot({ path: testInfo.outputPath('bootstrap.png') });
+    release();
+    await expect(page.getByRole('progressbar')).toHaveCount(0);
+  });
+}
+
+test('bootstrap: nova sessão sem acesso não reutiliza dados da clínica anterior', async ({ page }) => {
+  await mockApi(page);
+  await loginViaUi(page);
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  await page.goto('/pacientes');
+  await expect(page.getByRole('cell', { name: paciente.nomePaciente, exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /sair/i }).click();
+  await expect(page.getByRole('heading', { name: 'Acesso ao sistema' })).toBeVisible();
+  await page.route('**/api/public/clinicas', route => route.fulfill({ json: [{ id: 2, nome: 'Clínica Beta', slug: 'beta' }] }));
+  await page.route('**/api/users/authenticate', route => route.fulfill({ json: {
+    ...session.user, id: 199, clinicaId: 2, clinicaSlug: 'beta', token: 'beta-token',
+  } }));
+  await page.route('**/api/legal-acceptances/current', route => route.fulfill({ status: 403, json: {} }));
+  const operational: string[] = [];
+  page.on('request', request => {
+    if (/\/api\/(dashboard|pacientes|configuracoes-sistema)/.test(request.url())) operational.push(request.url());
+  });
+  await page.reload();
+  await page.getByLabel('Clínica').selectOption('2');
+  await page.getByLabel('Email').fill(session.user.email);
+  await page.locator('#login-password').fill(LOGIN_PASSWORD);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page.getByText('Operação não permitida.')).toBeVisible();
+  await expect(page.getByText(paciente.nomePaciente, { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toHaveCount(0);
+  expect(operational).toEqual([]);
+});
