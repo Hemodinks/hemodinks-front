@@ -1,11 +1,16 @@
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { authenticate, identifyTeamOperator, listPublicClinics, resetPassword } from '../../services';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
+import {
+  authenticate,
+  identifyTeamOperator,
+  listPublicClinics,
+  resetPassword,
+  resolveLoginClinics,
+  type LoginClinicOption,
+} from '../../services';
 import { queryClient } from '../../queryClient';
 import { getErrorMessage, isValidEmail } from '../../shared/utils/formatters';
-import type { AuthSession, TeamLoginChallenge } from '../../types';
+import type { AuthSession, PublicClinic, TeamLoginChallenge } from '../../types';
 import { buildSessionFromLogin, shouldOpenDashboardAfterLogin } from '../../app/appSession';
-
-import { useBootstrapRequest } from '../../shared/hooks/useBootstrapRequest';
 
 type UseLoginFlowOptions = {
   session: AuthSession | null;
@@ -15,15 +20,10 @@ type UseLoginFlowOptions = {
 export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   const [loginEmail, updateLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [loginClinicValue, updateLoginClinicValue] = useState('');
-  const loadClinics = useCallback(async (signal: AbortSignal) => {
-    const clinics = await listPublicClinics('', signal);
-    if (!Array.isArray(clinics)) throw new Error('Invalid public clinics response');
-    return clinics;
-  }, []);
-  const clinicBootstrap = useBootstrapRequest(!session, loadClinics, 'public_clinics');
-  const publicClinics = clinicBootstrap.data ?? [];
-  const publicClinicsLoading = clinicBootstrap.loading;
+  const [loginClinicOptions, setLoginClinicOptions] = useState<LoginClinicOption[]>([]);
+  const [activeLoginClinic, setActiveLoginClinic] = useState<LoginClinicOption | null>(null);
+  const [recoveryClinics, setRecoveryClinics] = useState<PublicClinic[]>([]);
+  const [recoveryClinicValue, setRecoveryClinicValue] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginInfo, setLoginInfo] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
@@ -42,27 +42,34 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     setTeamPin('');
     challengeClinic.current = '';
   };
+
+  const clearClinicSelection = () => {
+    setLoginClinicOptions([]);
+    setActiveLoginClinic(null);
+  };
+
+  const clearRecoveryState = () => {
+    setRecoveryClinics([]);
+    setRecoveryClinicValue('');
+  };
+
   const invalidateRequest = () => {
     requestVersion.current++;
     pending.current = false;
     setLoginLoading(false);
     setResetPasswordLoading(false);
   };
+
   const setLoginEmail = (value: string) => {
     invalidateRequest();
     clearTeamState();
+    clearClinicSelection();
+    clearRecoveryState();
     setLoginError('');
     setLoginInfo('');
     updateLoginEmail(value);
   };
-  const setLoginClinicValue = (value: string) => {
-    invalidateRequest();
-    clearTeamState();
-    setLoginPassword('');
-    setLoginError('');
-    setLoginInfo('');
-    updateLoginClinicValue(value);
-  };
+
   const setTeamOperatorId = (value: string) => {
     if (pending.current) return;
     updateTeamOperatorId(value);
@@ -70,23 +77,14 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     setLoginError('');
   };
 
-  const selectedLoginClinic = publicClinics.find(
-    (clinic) => String(clinic.id) === loginClinicValue,
-  );
-
-  useEffect(() => {
-    invalidateRequest();
-    clearTeamState();
-    updateLoginClinicValue('');
-    setLoginPassword('');
-  }, [clinicBootstrap.data]);
-
   useEffect(() => {
     if (!teamChallenge) return;
     const remaining = new Date(teamChallenge.expiraEm).getTime() - Date.now();
     const timer = window.setTimeout(() => {
       invalidateRequest();
       clearTeamState();
+      clearClinicSelection();
+      setLoginPassword('');
       setLoginError('O prazo para identificar o funcionário terminou. Entre novamente.');
     }, Math.max(0, remaining));
     return () => window.clearTimeout(timer);
@@ -94,58 +92,130 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
 
   useEffect(() => () => { requestVersion.current++; }, []);
 
+  const completeAuthentication = async (clinic: LoginClinicOption, version: number) => {
+    const result = await authenticate(loginEmail.trim(), loginPassword, clinic.slug);
+    if (version !== requestVersion.current) return;
+
+    setActiveLoginClinic(clinic);
+    setLoginClinicOptions([]);
+    setLoginPassword('');
+
+    if (result.equipeDesafio) {
+      setTeamChallenge(result.equipeDesafio);
+      challengeClinic.current = clinic.slug;
+      updateTeamOperatorId('');
+      setTeamPin('');
+      return;
+    }
+
+    const nextSession = buildSessionFromLogin(result);
+    queryClient.clear();
+    setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin(nextSession.user.perfilId));
+    persistSession(nextSession);
+  };
+
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (pending.current) return;
     setLoginError('');
     setLoginInfo('');
+    clearTeamState();
+    clearClinicSelection();
+    clearRecoveryState();
 
     if (!isValidEmail(loginEmail)) {
       setLoginError('Informe um email valido.');
       return;
     }
-    if (!selectedLoginClinic) {
-      setLoginError('Selecione uma clinica cadastrada.');
+
+    if (!loginPassword) {
+      setLoginError('Informe a senha.');
       return;
     }
 
-    clearTeamState();
     pending.current = true;
     const version = ++requestVersion.current;
     setLoginLoading(true);
+
     try {
-      const result = await authenticate(loginEmail.trim(), loginPassword, selectedLoginClinic.slug);
+      const context = await resolveLoginClinics(loginEmail.trim(), loginPassword);
       if (version !== requestVersion.current) return;
-      setLoginPassword('');
-      if (result.equipeDesafio) {
-        setTeamChallenge(result.equipeDesafio);
-        challengeClinic.current = selectedLoginClinic.slug;
-        updateTeamOperatorId('');
-        setTeamPin('');
+
+      const clinics = Array.isArray(context.clinicas) ? context.clinicas : [];
+      if (clinics.length === 0) {
+        throw new Error('Credenciais invalidas.');
+      }
+
+      if (clinics.length === 1) {
+        await completeAuthentication(clinics[0], version);
         return;
       }
-      const nextSession = buildSessionFromLogin(result);
-      queryClient.clear();
-      setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin(nextSession.user.perfilId));
-      persistSession(nextSession);
+
+      setLoginClinicOptions(clinics);
+      setActiveLoginClinic(null);
+      // A senha permanece apenas em memória até a escolha da clínica.
+      // Não é persistida em localStorage/sessionStorage.
     } catch (error) {
-      if (version === requestVersion.current) setLoginError(getErrorMessage(error));
+      if (version === requestVersion.current) {
+        setLoginPassword('');
+        setLoginError(getErrorMessage(error));
+      }
     } finally {
       if (version === requestVersion.current) {
         pending.current = false;
-        setLoginPassword('');
         setLoginLoading(false);
       }
     }
   };
 
+  const selectLoginClinic = async (clinicaId: number) => {
+    if (pending.current || loginClinicOptions.length < 2) return;
+    const clinic = loginClinicOptions.find(candidate => candidate.clinicaId === clinicaId);
+    if (!clinic || !loginPassword) {
+      setLoginError('Sua autenticação expirou. Entre novamente.');
+      setLoginPassword('');
+      clearClinicSelection();
+      return;
+    }
+
+    pending.current = true;
+    const version = ++requestVersion.current;
+    setLoginLoading(true);
+    setLoginError('');
+    try {
+      // A escolha do browser nunca é tratada como autorização: o endpoint
+      // tenant-scoped existente autentica novamente a mesma credencial.
+      await completeAuthentication(clinic, version);
+    } catch (error) {
+      if (version === requestVersion.current) {
+        setLoginPassword('');
+        clearClinicSelection();
+        setLoginError(getErrorMessage(error));
+      }
+    } finally {
+      if (version === requestVersion.current) {
+        pending.current = false;
+        setLoginLoading(false);
+      }
+    }
+  };
+
+  const cancelClinicSelection = () => {
+    invalidateRequest();
+    clearClinicSelection();
+    clearTeamState();
+    setLoginPassword('');
+    setLoginError('');
+  };
+
   const handleTeamIdentification = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (pending.current || !teamChallenge || !selectedLoginClinic || !teamOperatorId) return;
+    if (pending.current || !teamChallenge || !teamOperatorId || !challengeClinic.current) return;
     const operator = teamChallenge.operadores.find(candidate => String(candidate.id) === teamOperatorId);
-    if (!operator || challengeClinic.current !== selectedLoginClinic.slug) return;
+    if (!operator) return;
     if (new Date(teamChallenge.expiraEm).getTime() <= Date.now()) {
       clearTeamState();
+      clearClinicSelection();
       setLoginError('O prazo para identificar o funcionário terminou. Entre novamente.');
       return;
     }
@@ -162,7 +232,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
       const result = await identifyTeamOperator(
         teamChallenge.token,
         Number(teamOperatorId),
-        operator?.exigePin ? teamPin : null,
+        operator.exigePin ? teamPin : null,
         challengeClinic.current,
       );
       if (version !== requestVersion.current) return;
@@ -170,6 +240,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
       queryClient.clear();
       persistSession(nextSession);
       clearTeamState();
+      clearClinicSelection();
     } catch (error) {
       if (version === requestVersion.current) setLoginError(getErrorMessage(error));
     } finally {
@@ -179,6 +250,18 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
         setLoginLoading(false);
       }
     }
+  };
+
+  const executePasswordReset = async (clinic: PublicClinic, version: number) => {
+    const result = await resetPassword(loginEmail.trim(), clinic.slug);
+    if (version !== requestVersion.current) return;
+    clearRecoveryState();
+    setLoginPassword('');
+    if (result.mode === 'default-password') {
+      setLoginInfo('A senha foi redefinida. Use a credencial temporária fornecida pela clínica e altere-a após entrar.');
+      return;
+    }
+    setLoginInfo(result.message || 'Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.');
   };
 
   const handleResetPassword = async () => {
@@ -195,23 +278,30 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     const version = ++requestVersion.current;
     setResetPasswordLoading(true);
     try {
-      if (!selectedLoginClinic) {
-        setLoginError('Selecione a clinica para redefinir a senha.');
+      if (recoveryClinics.length > 1) {
+        const selected = recoveryClinics.find(item => String(item.id) === recoveryClinicValue);
+        if (!selected) {
+          setLoginError('Selecione a clínica para redefinir a senha.');
+          return;
+        }
+        await executePasswordReset(selected, version);
         return;
       }
-      const result = await resetPassword(loginEmail.trim(), selectedLoginClinic.slug);
+
+      const clinics = await listPublicClinics();
       if (version !== requestVersion.current) return;
-      if (result.mode === 'default-password') {
-        setLoginPassword('');
-        setLoginInfo(
-          'A senha foi redefinida. Use a credencial temporária fornecida pela clínica e altere-a após entrar.',
-        );
+      if (clinics.length === 1) {
+        await executePasswordReset(clinics[0], version);
         return;
       }
-      setLoginPassword('');
-      setLoginInfo(
-        result.message || 'Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.',
-      );
+      if (clinics.length > 1) {
+        setRecoveryClinics(clinics);
+        setRecoveryClinicValue('');
+        return;
+      }
+
+      // Mantém resposta não enumerável quando não há contexto recuperável.
+      setLoginInfo('Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.');
     } catch (error) {
       if (version === requestVersion.current) setLoginError(getErrorMessage(error));
     } finally {
@@ -225,8 +315,9 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   const resetLoginState = (infoMessage = '') => {
     invalidateRequest();
     clearTeamState();
+    clearClinicSelection();
+    clearRecoveryState();
     updateLoginEmail('');
-    updateLoginClinicValue('');
     setLoginError('');
     setLoginInfo(infoMessage);
     setLoginPassword('');
@@ -235,16 +326,17 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   const cancelTeamIdentification = () => {
     invalidateRequest();
     clearTeamState();
+    clearClinicSelection();
     setLoginError('');
   };
 
   return {
     loginEmail,
     loginPassword,
-    loginClinicValue,
-    publicClinics,
-    publicClinicsLoading,
-    clinicBootstrap,
+    loginClinicOptions,
+    activeLoginClinic,
+    recoveryClinics,
+    recoveryClinicValue,
     loginError,
     loginInfo,
     loginLoading,
@@ -253,15 +345,16 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     teamChallenge,
     teamOperatorId,
     teamPin,
-    selectedLoginClinic,
     setLoginEmail,
     setLoginPassword,
-    setLoginClinicValue,
+    setRecoveryClinicValue,
     setLoginError,
     setOpenDashboardAfterLogin,
     setTeamOperatorId,
     setTeamPin,
     handleLogin,
+    selectLoginClinic,
+    cancelClinicSelection,
     handleTeamIdentification,
     handleResetPassword,
     resetLoginState,
