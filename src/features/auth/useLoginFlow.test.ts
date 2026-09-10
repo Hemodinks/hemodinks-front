@@ -64,7 +64,7 @@ describe('login state isolation', () => {
   });
 
   it('invalidates an in-flight login when the email changes and blocks duplicate submissions', async () => {
-    let resolve!: (value: { clinicas: typeof clinicA[] }) => void;
+    let resolve!: (value: { clinicas: Array<typeof clinicA> }) => void;
     vi.mocked(resolveLoginClinics).mockReturnValue(new Promise(done => { resolve = done; }));
     const { result, persistSession } = setup();
     let pending!: Promise<void>;
