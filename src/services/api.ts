@@ -9,8 +9,16 @@ const SERVICE_UNAVAILABLE_STATUS_CODES = new Set([502, 503, 504]);
 const UNAUTHORIZED_ERROR_MESSAGE = 'Credenciais invalidas ou sessao expirada.';
 const FORBIDDEN_ERROR_MESSAGE = 'Operação não permitida.';
 export const AUTH_EXPIRED_EVENT = 'hemodinks:auth-expired';
+export const API_READ_TIMEOUT_MS = 60_000;
 
 type RequestConfig = Omit<AxiosRequestConfig, 'data' | 'method' | 'url'>;
+
+export class ApiError extends Error {
+  constructor(message: string, readonly status?: number, readonly code?: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -42,7 +50,17 @@ function notifyAuthExpired() {
 }
 
 function toApiError(error: unknown, notifyUnauthorized = false) {
+  const mapped = mapApiError(error, notifyUnauthorized);
+  return axios.isAxiosError(error)
+    ? new ApiError(mapped.message, error.response?.status, error.code)
+    : mapped;
+}
+
+function mapApiError(error: unknown, notifyUnauthorized = false) {
   if (axios.isAxiosError(error)) {
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      return new Error('A conexão demorou demais. Tente novamente.');
+    }
     // Axios does not expose a response when the API is offline, unreachable or
     // the browser blocks the response at the network layer (for example, CORS).
     if (!error.response || SERVICE_UNAVAILABLE_STATUS_CODES.has(error.response.status)) {
@@ -61,6 +79,10 @@ function toApiError(error: unknown, notifyUnauthorized = false) {
 
     if (error.response?.status === 403) {
       return new Error(FORBIDDEN_ERROR_MESSAGE);
+    }
+
+    if (error.response.status >= 500) {
+      return new Error(DEFAULT_ERROR_MESSAGE);
     }
 
     const data = error.response?.data;
@@ -107,6 +129,7 @@ export function get<T>(path: string, token?: string, config: RequestConfig = {})
   return executeRequest<T>(apiClient, {
     url: path,
     method: 'GET',
+    timeout: API_READ_TIMEOUT_MS,
     ...config,
     headers: buildJsonHeaders(token, config.headers),
   }, Boolean(token));

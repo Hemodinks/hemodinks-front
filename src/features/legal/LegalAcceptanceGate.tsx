@@ -1,6 +1,7 @@
 import { FileCheck2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Theme } from '../../appTypes';
+import { BootstrapLoading } from '../../shared/components/BootstrapLoading';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
@@ -10,6 +11,8 @@ import { TERMS_VERSION } from './legalVersions';
 type Props = {
   theme: Theme;
   loading: boolean;
+  slow: boolean;
+  canRetry: boolean;
   accepting: boolean;
   error: string;
   onThemeToggle: () => void;
@@ -21,6 +24,8 @@ type Props = {
 export function LegalAcceptanceGate({
   theme,
   loading,
+  slow,
+  canRetry,
   accepting,
   error,
   onThemeToggle,
@@ -30,10 +35,11 @@ export function LegalAcceptanceGate({
 }: Props) {
   return (
     <main className="auth-screen compact">
-      <LoadingOverlay active={loading || accepting} message={accepting ? 'Registrando seu aceite…' : 'Verificando os Termos de Uso…'} />
+      <BootstrapLoading active={loading} slow={slow} canRetry={canRetry} onRetry={onRetry} stage="Validando sua sessão, clínica e Termos de Uso…" />
+      <LoadingOverlay active={accepting} message="Registrando seu aceite…" />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
-      <section className="auth-panel legal-acceptance-panel" aria-labelledby="legal-acceptance-title">
+      <section className="auth-panel legal-acceptance-panel" aria-labelledby="legal-acceptance-title" inert={loading || accepting}>
         <div className="brand-block">
           <FileCheck2 size={36} strokeWidth={1.8} />
           <div>

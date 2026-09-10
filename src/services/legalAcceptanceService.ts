@@ -1,8 +1,8 @@
 import type { LegalAcceptanceStatus } from '../types/legalAcceptance';
 import { get, post } from './api';
 
-export function getCurrentLegalAcceptance(token: string) {
-  return get<LegalAcceptanceStatus>('/api/legal-acceptances/current', token);
+export function getCurrentLegalAcceptance(token: string, signal?: AbortSignal) {
+  return get<LegalAcceptanceStatus>('/api/legal-acceptances/current', token, { signal });
 }
 
 export function acceptCurrentLegalDocuments(
@@ -14,5 +14,6 @@ export function acceptCurrentLegalDocuments(
     '/api/legal-acceptances/current',
     { termsOfUseVersion, privacyNoticeVersion },
     token,
+    { timeout: 60_000 },
   );
 }

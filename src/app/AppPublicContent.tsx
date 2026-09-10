@@ -77,6 +77,10 @@ export function AppPublicContent({
       loginClinicValue={loginFlow.loginClinicValue}
       clinics={loginFlow.publicClinics}
       clinicsLoading={loginFlow.publicClinicsLoading}
+      clinicsSlow={loginFlow.clinicBootstrap.slow}
+      clinicsCanRetry={loginFlow.clinicBootstrap.canRetry}
+      clinicsError={loginFlow.clinicBootstrap.error}
+      onRetryClinics={loginFlow.clinicBootstrap.retry}
       loginError={loginFlow.loginError}
       loginInfo={loginFlow.loginInfo}
       loginLoading={loginFlow.loginLoading}
