@@ -392,6 +392,8 @@ function AppSessionContent({ auth, loginFlow }: {
       <LegalAcceptanceGate
         theme={theme}
         loading={legalAcceptance.loading}
+        slow={legalAcceptance.slow}
+        canRetry={legalAcceptance.canRetry}
         accepting={legalAcceptance.accepting}
         error={legalAcceptance.error}
         onThemeToggle={toggleTheme}

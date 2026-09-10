@@ -19,8 +19,8 @@ export function LoadingOverlay({
   }
 
   return (
-    <div className={`loading-overlay${className ? ` ${className}` : ''}`} aria-live="polite" aria-busy="true">
-      <div className="loading-overlay-panel" role="status">
+    <div className={`loading-overlay${className ? ` ${className}` : ''}`}>
+      <div className="loading-overlay-panel" role="status" aria-live="polite" aria-atomic="true">
         <div className="health-loader" aria-hidden="true">
           <span className="loader-ring" />
           <span className="loader-orbit orbit-one" />
