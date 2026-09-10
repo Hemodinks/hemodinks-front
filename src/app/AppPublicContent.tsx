@@ -1,9 +1,9 @@
 import type { Theme } from '../appTypes';
+import { ClinicSelectionScreen } from '../features/auth/ClinicSelectionScreen';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
 import { TeamIdentificationScreen } from '../features/auth/TeamIdentificationScreen';
 import type { LoginFlowState } from '../features/auth/useLoginFlow';
-import { API_ASSET_BASE_URL } from '../shared/utils/formatters';
 import { useTutorials } from '../features/tutorials/TutorialProvider';
 
 type AppPublicContentProps = {
@@ -32,6 +32,7 @@ export function AppPublicContent({
   onResetCompleted,
 }: AppPublicContentProps) {
   const { startTutorial } = useTutorials();
+
   if (isResetPasswordRoute) {
     return (
       <ResetPasswordScreen
@@ -42,6 +43,20 @@ export function AppPublicContent({
         onThemeToggle={onThemeToggle}
         onBackToLogin={onBackToLogin}
         onResetCompleted={onResetCompleted}
+      />
+    );
+  }
+
+  if (loginFlow.loginClinicOptions.length > 1) {
+    return (
+      <ClinicSelectionScreen
+        clinics={loginFlow.loginClinicOptions}
+        loading={loginFlow.loginLoading}
+        error={loginFlow.loginError}
+        theme={theme}
+        onSelect={(clinicaId) => void loginFlow.selectLoginClinic(clinicaId)}
+        onBack={loginFlow.cancelClinicSelection}
+        onThemeToggle={onThemeToggle}
       />
     );
   }
@@ -66,21 +81,14 @@ export function AppPublicContent({
 
   return (
     <LoginScreen
-      companyName={loginFlow.selectedLoginClinic?.nome ?? companyName}
-      companyPhoto={loginFlow.selectedLoginClinic?.fotoUrl
-        ? `${API_ASSET_BASE_URL}${loginFlow.selectedLoginClinic.fotoUrl}`
-        : null}
+      companyName={companyName}
+      companyPhoto={companyPhoto}
       isBusy={isBusy}
       theme={theme}
       loginEmail={loginFlow.loginEmail}
       loginPassword={loginFlow.loginPassword}
-      loginClinicValue={loginFlow.loginClinicValue}
-      clinics={loginFlow.publicClinics}
-      clinicsLoading={loginFlow.publicClinicsLoading}
-      clinicsSlow={loginFlow.clinicBootstrap.slow}
-      clinicsCanRetry={loginFlow.clinicBootstrap.canRetry}
-      clinicsError={loginFlow.clinicBootstrap.error}
-      onRetryClinics={loginFlow.clinicBootstrap.retry}
+      recoveryClinics={loginFlow.recoveryClinics}
+      recoveryClinicValue={loginFlow.recoveryClinicValue}
       loginError={loginFlow.loginError}
       loginInfo={loginFlow.loginInfo}
       loginLoading={loginFlow.loginLoading}
@@ -88,10 +96,10 @@ export function AppPublicContent({
       onThemeToggle={onThemeToggle}
       onLoginEmailChange={loginFlow.setLoginEmail}
       onLoginPasswordChange={loginFlow.setLoginPassword}
-      onLoginClinicChange={loginFlow.setLoginClinicValue}
+      onRecoveryClinicChange={loginFlow.setRecoveryClinicValue}
       onSubmit={loginFlow.handleLogin}
       onResetPassword={() => void loginFlow.handleResetPassword()}
-      onStartTutorial={() => startTutorial('login-clinic')}
+      onStartTutorial={() => startTutorial('login-email')}
     />
   );
 }
