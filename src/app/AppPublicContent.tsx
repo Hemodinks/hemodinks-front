@@ -99,7 +99,7 @@ export function AppPublicContent({
       onRecoveryClinicChange={loginFlow.setRecoveryClinicValue}
       onSubmit={loginFlow.handleLogin}
       onResetPassword={() => void loginFlow.handleResetPassword()}
-      onStartTutorial={() => startTutorial('login-email')}
+      onStartTutorial={() => startTutorial('login-clinic')}
     />
   );
 }
