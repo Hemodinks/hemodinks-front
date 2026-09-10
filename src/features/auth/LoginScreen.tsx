@@ -77,18 +77,14 @@ export function LoginScreen({
       <LoadingOverlay active={isBusy} message={loginLoading ? 'Validando suas credenciais e sua clínica…' : undefined} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
-      <section className="auth-panel" data-tour="login-overview" inert={clinicsLoading || isBusy}>
+      <section className="auth-panel login-panel" data-tour="login-overview" inert={clinicsLoading || isBusy} aria-busy={loginLoading}>
         <div className="brand-block">
-          {loginClinicValue
-            ? <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
-            : <span className="brand-mark login-brand-placeholder" aria-hidden="true" />}
+          <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
           <div>
             <span className="eyebrow">{companyName}</span>
             <h1>Acesso ao sistema</h1>
           </div>
         </div>
-
-        <button type="button" className="ghost-button login-tutorial-button" onClick={onStartTutorial}>Tutorial de acesso</button>
 
         <form className="stack" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
           <label data-tour="login-clinic">
@@ -115,6 +111,9 @@ export function LoginScreen({
               value={loginEmail}
               onChange={(event) => onLoginEmailChange(event.target.value.slice(0, MAX_EMAIL_LENGTH))}
               autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              name="email"
               maxLength={MAX_EMAIL_LENGTH}
               required
             />
@@ -135,16 +134,17 @@ export function LoginScreen({
           {loginError && <AlertMessage type="error">{loginError}</AlertMessage>}
           {loginInfo && <ToastMessage type="success">{loginInfo}</ToastMessage>}
 
-          <div className="button-row login-actions">
-            <button type="button" className="ghost-button" onClick={onResetPassword} disabled={resetPasswordLoading}>
-              {resetPasswordLoading ? 'Resetando...' : 'Esqueci minha senha'}
-            </button>
-            <button className="primary-action" type="submit" disabled={loginLoading} data-tour="login-submit">
+          <div className="login-entry-actions">
+            <button className="primary-action" type="submit" disabled={loginLoading || resetPasswordLoading || clinicsLoading} data-tour="login-submit">
               <LogIn size={18} />
               {loginLoading ? 'Entrando...' : 'Entrar'}
             </button>
+            <button type="button" className="ghost-button login-help-link" onClick={onResetPassword} disabled={resetPasswordLoading || loginLoading}>
+              {resetPasswordLoading ? 'Enviando instruções...' : 'Esqueci minha senha'}
+            </button>
           </div>
         </form>
+        <p className="login-help">Primeiro acesso? <button type="button" className="ghost-button login-help-link" onClick={onStartTutorial}>Tutorial de acesso</button></p>
         <LegalFooter className="login-legal-footer" />
       </section>
     </main>
