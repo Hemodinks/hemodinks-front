@@ -6,6 +6,7 @@ import { formatPersonName } from '../shared/utils/formatters';
 import { CompanyLogo } from '../shared/components/CompanyLogo';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
 import { ThemeToggle } from '../shared/components/ThemeToggle';
+import { isAnonymousTeamSession } from '../features/auth/teamSession';
 
 type TopbarProps = {
   appTitle: string;
@@ -45,6 +46,7 @@ export function Topbar({
               <span className="product-name">{companyName}</span>
             </div>
             <h1>{appTitle}</h1>
+            {isAnonymousTeamSession(session) && <span className="eyebrow">Acesso somente leitura</span>}
             <Breadcrumbs items={breadcrumbItems} />
           </div>
         </div>

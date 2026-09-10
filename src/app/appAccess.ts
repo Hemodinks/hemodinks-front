@@ -1,4 +1,5 @@
 import type { AuthSession } from "../types";
+import { isAnonymousTeamSession } from '../features/auth/teamSession';
 import { LICENSE_FEATURES, hasSessionFeature } from "../shared/utils/license";
 import {
   CONTROLLER_PROFILE_ID,
@@ -34,6 +35,7 @@ export function getAppAccess(session: AuthSession | null) {
   const isMedical = currentPerfilId === MEDICAL_PROFILE_ID;
   const isController = currentPerfilId === CONTROLLER_PROFILE_ID;
   const isTeam = currentPerfilId === TEAM_PROFILE_ID;
+  const anonymousTeam = isAnonymousTeamSession(session);
   const isPatient = currentPerfilId === PATIENT_PROFILE_ID;
   const contractedModules = session?.user.modulosLiberados;
   const hasClinicModule = (module: string) =>
@@ -46,6 +48,7 @@ export function getAppAccess(session: AuthSession | null) {
       isMedical) &&
     hasClinicModule(CLINIC_MODULES.patients);
   const canManagePatients =
+    !anonymousTeam &&
     (hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar) ||
       isMedical) &&
     hasClinicModule(CLINIC_MODULES.patients);
@@ -91,7 +94,7 @@ export function getAppAccess(session: AuthSession | null) {
     canEditPatients: canManagePatients,
     canDeletePatients: isAdmin && hasClinicModule(CLINIC_MODULES.patients),
     canManagePatientObservacoes: canManagePatients,
-    patientReadOnly: isPatient,
+    patientReadOnly: isPatient || anonymousTeam,
     canUseDashboardRoute: canAccessDashboard,
     canUsePatientsRoute: canAccessPatients,
     canUseUsersRoute: canAccessUsers,
