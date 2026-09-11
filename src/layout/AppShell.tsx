@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { useIsFetching } from '@tanstack/react-query';
 import type { AppView, BreadcrumbItem, Theme } from '../appTypes';
 import type { AuthSession, Convenio, MedicalUserOption, OpmeFornecedor } from '../types';
@@ -11,6 +11,7 @@ import {
   OPME_FORNECEDORES_DATALIST_ID,
 } from '../shared/utils/formatters';
 import { Sidebar } from './Sidebar';
+import { NavigationDrawer } from './NavigationDrawer';
 import { Topbar } from './Topbar';
 import { ContextualFlowDrawer } from './ContextualFlowDrawer';
 import { LegalFooter } from '../features/legal/LegalFooter';
@@ -115,42 +116,9 @@ export function AppShell({
   const activeQueries = useIsFetching();
   const isSlowQuery = useDelayedLoading(activeQueries > 0);
 
-  return (
-    <div className="app-shell">
-      <LoadingOverlay active={isBusy || isSlowQuery} message={isBusy ? undefined : 'Carregando informações da clínica…'} />
-      <datalist id={MEDICAL_USERS_DATALIST_ID}>
-        {medicalUsers.map((user) => (
-          <option key={user.id} value={formatPersonName(user.nome)} />
-        ))}
-      </datalist>
-      <datalist id={CONVENIOS_DATALIST_ID}>
-        {convenios.map((convenio) => (
-          <option key={convenio.idConvenio} value={convenio.descricaoConvenio} />
-        ))}
-      </datalist>
-      <datalist id={OPME_FORNECEDORES_DATALIST_ID}>
-        {opmeFornecedores.map((fornecedor) => (
-          <option key={fornecedor.idFornecedor} value={fornecedor.fornecedor} />
-        ))}
-      </datalist>
-
-      <Topbar
-        appTitle={appTitle}
-        companyName={companyName}
-        companyPhoto={companyPhoto}
-        session={session}
-        breadcrumbItems={breadcrumbItems}
-        notificationsOpen={notificationsOpen}
-        notificationCount={notificationCount}
-        theme={theme}
-        onToggleNotifications={onToggleNotifications}
-        onThemeToggle={onThemeToggle}
-        onLogout={onLogout}
-      />
-
-      {banner && <div className="app-banner-shell">{banner}</div>}
-
-      <div className="app-layout">
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const closeNavigation = useCallback(() => setNavigationOpen(false), []);
+  const sidebar = (
         <Sidebar
           session={session}
           activeView={activeView}
@@ -183,15 +151,59 @@ export function AppShell({
           onOpenSettings={onOpenSettings}
           onOpenClinics={onOpenClinics}
         />
+  );
 
-        <div className={`app-content ${activeView === 'dashboard' ? 'dashboard-content' : ''}`}>
+  return (
+    <div className="app-shell">
+      <LoadingOverlay active={isBusy || isSlowQuery} message={isBusy ? undefined : 'Carregando informações da clínica…'} />
+      <datalist id={MEDICAL_USERS_DATALIST_ID}>
+        {medicalUsers.map((user) => (
+          <option key={user.id} value={formatPersonName(user.nome)} />
+        ))}
+      </datalist>
+      <datalist id={CONVENIOS_DATALIST_ID}>
+        {convenios.map((convenio) => (
+          <option key={convenio.idConvenio} value={convenio.descricaoConvenio} />
+        ))}
+      </datalist>
+      <datalist id={OPME_FORNECEDORES_DATALIST_ID}>
+        {opmeFornecedores.map((fornecedor) => (
+          <option key={fornecedor.idFornecedor} value={fornecedor.fornecedor} />
+        ))}
+      </datalist>
+
+      <div className="app-frame" inert={navigationOpen || undefined}>
+      <Topbar
+        onOpenNavigation={() => setNavigationOpen(true)}
+        navigationOpen={navigationOpen}
+        appTitle={appTitle}
+        companyName={companyName}
+        companyPhoto={companyPhoto}
+        session={session}
+        breadcrumbItems={breadcrumbItems}
+        notificationsOpen={notificationsOpen}
+        notificationCount={notificationCount}
+        theme={theme}
+        onToggleNotifications={onToggleNotifications}
+        onThemeToggle={onThemeToggle}
+        onLogout={onLogout}
+      />
+
+      {banner && <div className="app-banner-shell">{banner}</div>}
+
+      <div className="app-layout">
+        <div className="app-navigation-slot">{!navigationOpen && sidebar}</div>
+
+        <main id="main-content" className={`app-content ${activeView === 'dashboard' ? 'dashboard-content' : ''}`}>
           {children}
-        </div>
+        </main>
       </div>
 
       <ContextualFlowDrawer activeView={activeView} />
 
       <LegalFooter className="app-legal-footer" />
+      </div>
+      {navigationOpen && <NavigationDrawer onClose={closeNavigation}>{sidebar}</NavigationDrawer>}
 
       {modals}
     </div>

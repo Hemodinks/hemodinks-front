@@ -1,4 +1,4 @@
-import { Bell, LogOut } from 'lucide-react';
+import { Bell, LogOut, Menu } from 'lucide-react';
 import type { BreadcrumbItem, Theme } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -9,6 +9,8 @@ import { ThemeToggle } from '../shared/components/ThemeToggle';
 import { isAnonymousTeamSession } from '../features/auth/teamSession';
 
 type TopbarProps = {
+  onOpenNavigation?: () => void;
+  navigationOpen?: boolean;
   appTitle: string;
   companyName: string;
   companyPhoto?: string | null;
@@ -23,6 +25,8 @@ type TopbarProps = {
 };
 
 export function Topbar({
+  onOpenNavigation,
+  navigationOpen = false,
   appTitle,
   companyName,
   companyPhoto,
@@ -38,6 +42,7 @@ export function Topbar({
   return (
     <header className="topbar">
       <div className="topbar-left">
+        {onOpenNavigation && <button type="button" className="ghost-button navigation-toggle" onClick={onOpenNavigation} aria-label="Abrir menu" aria-expanded={navigationOpen} aria-haspopup="dialog"><Menu size={22} /></button>}
         <div className="topbar-brand">
           <CompanyLogo companyName={companyName} photo={companyPhoto} className="topbar-logo" decorative />
           <div>
@@ -46,6 +51,7 @@ export function Topbar({
               <span className="product-name">{companyName}</span>
             </div>
             <h1>{appTitle}</h1>
+            {appTitle === 'Painel inicial' && <p className="topbar-subtitle">Visão geral da clínica</p>}
             {isAnonymousTeamSession(session) && <span className="eyebrow">Acesso somente leitura</span>}
             <Breadcrumbs items={breadcrumbItems} />
           </div>
