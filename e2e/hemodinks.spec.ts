@@ -268,10 +268,7 @@ function buildAgendaEventFromPayload(id: number, payload: Payload) {
 
 async function loginViaUi(page: Page, initialRoute = '/', loginSession = session) {
   await page.goto(initialRoute);
-  const clinicField = page.getByRole('combobox', { name: 'Clínica', exact: true });
-  if (await clinicField.count() === 0) return;
-
-  await clinicField.selectOption('1');
+  if (await page.locator('#login-password').count() === 0) return;
   await page.getByLabel('Email').fill(loginSession.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
@@ -335,6 +332,14 @@ async function mockApi(page: Page, loginSession = session, options: {
     const url = new URL(request.url());
     const path = url.pathname;
     const method = request.method();
+
+    if (path === '/api/users/login-context' && method === 'POST') {
+      return route.fulfill({ json: { clinicas: [{
+        clinicaId: loginSession.user.clinicaId,
+        nome: 'Clínica Hemodinks',
+        slug: loginSession.user.clinicaSlug,
+      }] } });
+    }
 
     if (path === '/api/public/clinicas') {
       return route.fulfill({
@@ -652,7 +657,6 @@ test('faz login pelo formulario e abre o dashboard', async ({ page }) => {
   const apiState = await mockApi(page);
 
   await page.goto('/');
-  await page.getByLabel('Clínica').selectOption('1');
   await page.getByLabel('Email').fill('gmarcone@gmail.com');
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: /entrar/i }).click();
@@ -1330,7 +1334,6 @@ test('privacidade: rejeitar opcionais mantém login e links no rodapé autentica
   await page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })
     .getByRole('button', { name: 'Rejeitar opcionais' }).click();
 
-  await page.getByLabel('Clínica').selectOption('1');
   await page.getByLabel('Email').fill('gmarcone@gmail.com');
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: /entrar/i }).click();
@@ -1696,7 +1699,6 @@ for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
     const route = libraryRecordingRoutes[tutorialId]!;
     if (tutorialId === 'login-clinic') {
       await page.goto('/');
-      await page.getByLabel('Clínica').selectOption('1');
       await page.getByLabel('Email').fill('tutorial@example.invalid');
       await page.locator('#login-password').fill('credencial-ficticia');
     } else {
@@ -1743,15 +1745,15 @@ test('bootstrap: API lenta informa a operação real e retry cancela a tentativa
   let recovering = false;
   let release!: () => void;
   const pending = new Promise<void>(resolve => { release = resolve; });
-  await page.route('**/api/public/clinicas', async route => {
+  await page.route('**/api/legal-acceptances/current', async route => {
     calls++;
     if (!recovering) {
       await pending;
-      await route.fulfill({ json: [{ id: 2, nome: 'Resposta antiga', slug: 'antiga' }] }).catch(() => {});
+      await route.fulfill({ json: { requiresAcceptance: true } }).catch(() => {});
     } else await route.fallback();
   });
-  await page.goto('/');
-  await expect(page.getByRole('status')).toContainText('Carregando clínicas disponíveis');
+  await loginViaUi(page);
+  await expect(page.getByRole('status')).toContainText('Validando sua sessão, clínica e Termos de Uso');
   await expect(page.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow');
   await page.clock.fastForward(12_000);
   await expect(page.getByText(/mais de tempo/)).toBeVisible();
@@ -1761,9 +1763,9 @@ test('bootstrap: API lenta informa a operação real e retry cancela a tentativa
   await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeFocused();
   recovering = true;
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('option', { name: 'Clínica Hemodinks' })).toBeAttached();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   release();
-  await expect(page.getByRole('option', { name: 'Resposta antiga' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Documentos jurídicos atualizados' })).toHaveCount(0);
   expect(calls).toBe(initialCalls + 1);
 });
 
@@ -1772,28 +1774,28 @@ test('bootstrap: timeout termina o loading e permite recuperação', async ({ pa
   await page.clock.install();
   let release!: () => void;
   const pending = new Promise<void>(resolve => { release = resolve; });
-  await page.route('**/api/public/clinicas', async route => { await pending; await route.abort().catch(() => {}); });
-  await page.goto('/');
+  await page.route('**/api/legal-acceptances/current', async route => { await pending; await route.abort().catch(() => {}); });
+  await loginViaUi(page);
   await expect(page.getByRole('progressbar')).toBeVisible();
   await page.clock.fastForward(60_000);
   await expect(page.getByRole('progressbar')).toHaveCount(0);
   await expect(page.getByText('A conexão demorou demais. Tente novamente.')).toBeVisible();
   release();
-  await page.unroute('**/api/public/clinicas');
+  await page.unroute('**/api/legal-acceptances/current');
   await page.getByRole('button', { name: 'Tentar novamente' }).click();
-  await expect(page.getByRole('option', { name: 'Clínica Hemodinks' })).toBeAttached();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
 });
 
 for (const status of [503, 500]) {
   test(`bootstrap: falha ${status} não expõe detalhes e permite retry`, async ({ page }) => {
     await mockApi(page);
-    await page.route('**/api/public/clinicas', route => route.fulfill({ status, json: { message: 'STACK token tenant-secret' } }));
-    await page.goto('/');
+    await page.route('**/api/legal-acceptances/current', route => route.fulfill({ status, json: { message: 'STACK token tenant-secret' } }));
+    await loginViaUi(page);
     await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
     await expect(page.getByText('STACK token tenant-secret')).toHaveCount(0);
-    await page.unroute('**/api/public/clinicas');
+    await page.unroute('**/api/legal-acceptances/current');
     await page.getByRole('button', { name: 'Tentar novamente' }).click();
-    await expect(page.getByRole('option', { name: 'Clínica Hemodinks' })).toBeAttached();
+    await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   });
 }
 
@@ -1870,8 +1872,8 @@ for (const variant of [{ width: 390, theme: 'light' }, { width: 1280, theme: 'da
     await page.emulateMedia({ reducedMotion: 'reduce' });
     let release!: () => void;
     const pending = new Promise<void>(resolve => { release = resolve; });
-    await page.route('**/api/public/clinicas', async route => { await pending; await route.fallback(); });
-    await page.goto('/');
+    await page.route('**/api/legal-acceptances/current', async route => { await pending; await route.fallback(); });
+    await loginViaUi(page);
     await expect(page.getByRole('progressbar')).toBeVisible();
     await expect(page.locator('.auth-panel')).toHaveAttribute('inert', '');
     expect(await page.locator('.loader-ring').evaluate(element => getComputedStyle(element).animationName)).toBe('none');
@@ -1891,7 +1893,7 @@ test('bootstrap: nova sessão sem acesso não reutiliza dados da clínica anteri
   await expect(page.getByRole('cell', { name: paciente.nomePaciente, exact: true })).toBeVisible();
   await page.getByRole('button', { name: /sair/i }).click();
   await expect(page.getByRole('heading', { name: 'Acesso ao sistema' })).toBeVisible();
-  await page.route('**/api/public/clinicas', route => route.fulfill({ json: [{ id: 2, nome: 'Clínica Beta', slug: 'beta' }] }));
+  await page.route('**/api/users/login-context', route => route.fulfill({ json: { clinicas: [{ clinicaId: 2, nome: 'Clínica Beta', slug: 'beta' }] } }));
   await page.route('**/api/users/authenticate', route => route.fulfill({ json: {
     ...session.user, id: 199, clinicaId: 2, clinicaSlug: 'beta', token: 'beta-token',
   } }));
@@ -1901,7 +1903,6 @@ test('bootstrap: nova sessão sem acesso não reutiliza dados da clínica anteri
     if (/\/api\/(dashboard|pacientes|configuracoes-sistema)/.test(request.url())) operational.push(request.url());
   });
   await page.reload();
-  await page.getByLabel('Clínica').selectOption('2');
   await page.getByLabel('Email').fill(session.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
