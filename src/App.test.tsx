@@ -34,6 +34,7 @@ vi.mock('./services', () => ({
     dataAtualizacao: null,
   },
   authenticate: vi.fn(),
+  resolveLoginClinics: vi.fn(),
   listPublicClinics: vi.fn(),
   listPlatformClinics: vi.fn(),
   createPlatformClinic: vi.fn(),
@@ -148,6 +149,9 @@ describe('App', () => {
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
     vi.clearAllMocks();
+    vi.mocked(api.resolveLoginClinics).mockResolvedValue({
+      clinicas: [{ clinicaId: 1, nome: 'Hemodinks', slug: 'hemodinks' }],
+    });
     vi.mocked(api.listPublicClinics).mockResolvedValue([
       { id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null },
     ]);
@@ -282,7 +286,6 @@ describe('App', () => {
 
     expect(screen.getByText('GM Tech Solutions')).toBeInTheDocument();
 
-    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
@@ -333,7 +336,8 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
-    expect(await screen.findByRole('option', { name: 'Hemodinks' })).toBeInTheDocument();
+    expect(await screen.findByLabelText('Email')).toBeEnabled();
+    expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
   });
@@ -573,7 +577,6 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: /sair/i }));
-    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.clear(screen.getByLabelText('Email'));
     await user.type(screen.getByLabelText('Email'), mockSession().user.email);
     await user.clear(screen.getByLabelText('Senha'));
@@ -585,25 +588,15 @@ describe('App', () => {
     expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledTimes(1);
   });
 
-  it('exibe o loading de inicializacao no login enquanto carrega as clinicas', async () => {
-    let resolveClinics!: (clinics: Awaited<ReturnType<typeof api.listPublicClinics>>) => void;
-    vi.mocked(api.listPublicClinics).mockReturnValue(new Promise((resolve) => {
-      resolveClinics = resolve;
-    }));
-
+  it('disponibiliza o login sem carregar a lista pública de clínicas', () => {
     render(<App />);
 
-    const loadingStatus = screen.getByRole('status');
-    expect(loadingStatus).toHaveTextContent('Iniciando o sistema');
-    expect(loadingStatus).toHaveTextContent('Preparando seu ambiente');
-    expect(loadingStatus).toHaveTextContent('Carregando clínicas disponíveis…');
-    expect(loadingStatus).not.toHaveTextContent('1 minuto');
-    expect(loadingStatus.parentElement).toHaveClass('login-initial-loading');
-
-    resolveClinics([{ id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null }]);
-
-    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
-    expect(screen.getByRole('option', { name: 'Hemodinks' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toBeEnabled();
+    expect(screen.getByLabelText('Senha')).toBeEnabled();
+    expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(api.listPublicClinics).not.toHaveBeenCalled();
+    expect(api.resolveLoginClinics).not.toHaveBeenCalled();
   });
 
   it('restaura a sessao salva na aba ao recarregar a aplicacao', async () => {
@@ -616,12 +609,12 @@ describe('App', () => {
     expect(api.authenticate).not.toHaveBeenCalled();
   });
 
-  it('exige e envia a clinica escolhida no login pesquisavel', async () => {
+  it('solicita a clínica após validar credenciais com múltiplos vínculos', async () => {
     const user = userEvent.setup();
-    vi.mocked(api.listPublicClinics).mockResolvedValue([
-      { id: 1, nome: 'Clinica Alfa', slug: 'clinica-alfa', fotoUrl: null },
-      { id: 2, nome: 'Clinica Beta', slug: 'clinica-beta', fotoUrl: null },
-    ]);
+    vi.mocked(api.resolveLoginClinics).mockResolvedValue({ clinicas: [
+      { clinicaId: 1, nome: 'Clinica Alfa', slug: 'clinica-alfa' },
+      { clinicaId: 2, nome: 'Clinica Beta', slug: 'clinica-beta' },
+    ] });
     vi.mocked(api.authenticate).mockResolvedValue({
       id: 2,
       clinicaId: 2,
@@ -635,13 +628,15 @@ describe('App', () => {
     });
 
     render(<App />);
-    const clinicInput = await screen.findByLabelText('Clínica');
-    await user.selectOptions(clinicInput, '2');
-    expect(clinicInput).toHaveValue('2');
-    expect(screen.queryByText('clinica-beta')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'test-password');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Escolha onde deseja entrar' })).toBeVisible();
+    expect(api.resolveLoginClinics).toHaveBeenCalledWith('gmarcone@gmail.com', 'test-password');
+    expect(api.authenticate).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Clinica Beta' }));
 
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'test-password', 'clinica-beta');
   });
@@ -820,7 +815,6 @@ describe('App', () => {
 
     render(<App />);
 
-    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
@@ -854,19 +848,12 @@ describe('App', () => {
     expect(screen.queryByText(/request failed with status code 403/i)).not.toBeInTheDocument();
   });
 
-  it('usa a foto publica da clinica selecionada na tela de login', async () => {
-    const user = userEvent.setup();
-    vi.mocked(api.listPublicClinics).mockResolvedValue([
-      { id: 1, nome: 'Clinica Alfa', slug: 'clinica-alfa', fotoUrl: '/api/public/clinicas/clinica-alfa/foto' },
-    ]);
-
+  it('mantém a marca do sistema antes de autenticar', () => {
     render(<App />);
 
-    expect(screen.queryByAltText('Clinica Alfa')).not.toBeInTheDocument();
-    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
-    await waitFor(() => {
-      expect(screen.getByAltText('Clinica Alfa')).toHaveAttribute('src', 'http://localhost:5000/api/public/clinicas/clinica-alfa/foto');
-    });
+    expect(screen.getByAltText('Hemodinks')).toHaveAttribute('src', '/imagem%20hemodinks%20github.jpg');
+    expect(api.listPublicClinics).not.toHaveBeenCalled();
+    expect(api.getSystemSettingsCompanyPhoto).not.toHaveBeenCalled();
   });
 
   it('abre a agenda por URL direta', async () => {
@@ -1222,21 +1209,20 @@ describe('App', () => {
     expect(screen.getByLabelText('Sem foto de George Marcone')).toBeInTheDocument();
   });
 
-  it('carrega diretamente a foto publica da clinica', async () => {
+  it('mantém o login sem criar sessão quando a consulta de vínculos falha', async () => {
     const user = userEvent.setup();
-    vi.mocked(api.listPublicClinics).mockResolvedValue([
-      { id: 1, nome: 'Clinica Alfa', slug: 'clinica-alfa', fotoUrl: '/api/public/clinicas/clinica-alfa/foto' },
-    ]);
-
+    vi.mocked(api.resolveLoginClinics).mockRejectedValueOnce(new Error('Credenciais invalidas.'));
     render(<App />);
 
-    expect(screen.queryByAltText('Clinica Alfa')).not.toBeInTheDocument();
-    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
-    const brandMark = await screen.findByAltText('Clinica Alfa');
-    await waitFor(() => {
-      expect(brandMark).toHaveAttribute('src', 'http://localhost:5000/api/public/clinicas/clinica-alfa/foto');
-      expect(api.getSystemSettingsCompanyPhoto).not.toHaveBeenCalled();
-    });
+    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(screen.getByLabelText('Senha'), 'senha-incorreta');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
+
+    expect(await screen.findByText('Credenciais invalidas.')).toBeVisible();
+    expect(screen.getByLabelText('Senha')).toHaveValue('');
+    expect(api.authenticate).not.toHaveBeenCalled();
+    expect(api.listPublicClinics).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
   });
 
   it('não revela nem preenche a credencial temporária após o reset de contingência', async () => {
@@ -1249,7 +1235,6 @@ describe('App', () => {
     });
     render(<App />);
 
-    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
 
@@ -1271,7 +1256,6 @@ describe('App', () => {
 
     render(<App />);
 
-    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
 
@@ -1345,7 +1329,6 @@ describe('App', () => {
 
     render(<App />);
 
-    await user.selectOptions(await screen.findByLabelText('Clínica'), '1');
     await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'temporary-test-password');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
