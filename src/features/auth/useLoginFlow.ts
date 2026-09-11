@@ -11,6 +11,7 @@ import { queryClient } from '../../queryClient';
 import { getErrorMessage, isValidEmail } from '../../shared/utils/formatters';
 import type { AuthSession, PublicClinic, TeamLoginChallenge } from '../../types';
 import { buildSessionFromLogin, shouldOpenDashboardAfterLogin } from '../../app/appSession';
+import { getLoginErrorMessage } from './loginFeedback';
 
 type UseLoginFlowOptions = {
   session: AuthSession | null;
@@ -35,6 +36,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   const requestVersion = useRef(0);
   const pending = useRef(false);
   const challengeClinic = useRef('');
+  const activeRequest = useRef<AbortController | null>(null);
 
   const clearTeamState = () => {
     setTeamChallenge(null);
@@ -54,6 +56,8 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   };
 
   const invalidateRequest = () => {
+    activeRequest.current?.abort();
+    activeRequest.current = null;
     requestVersion.current++;
     pending.current = false;
     setLoginLoading(false);
@@ -90,10 +94,10 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     return () => window.clearTimeout(timer);
   }, [teamChallenge]);
 
-  useEffect(() => () => { requestVersion.current++; }, []);
+  useEffect(() => () => { requestVersion.current++; activeRequest.current?.abort(); }, []);
 
-  const completeAuthentication = async (clinic: LoginClinicOption, version: number) => {
-    const result = await authenticate(loginEmail.trim(), loginPassword, clinic.slug);
+  const completeAuthentication = async (clinic: LoginClinicOption, version: number, signal: AbortSignal) => {
+    const result = await authenticate(loginEmail.trim(), loginPassword, clinic.slug, signal);
     if (version !== requestVersion.current) return;
 
     setActiveLoginClinic(clinic);
@@ -137,8 +141,10 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     const version = ++requestVersion.current;
     setLoginLoading(true);
 
+    const controller = new AbortController();
+    activeRequest.current = controller;
     try {
-      const context = await resolveLoginClinics(loginEmail.trim(), loginPassword);
+      const context = await resolveLoginClinics(loginEmail.trim(), loginPassword, controller.signal);
       if (version !== requestVersion.current) return;
 
       const clinics = Array.isArray(context.clinicas) ? context.clinicas : [];
@@ -147,7 +153,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
       }
 
       if (clinics.length === 1) {
-        await completeAuthentication(clinics[0], version);
+        await completeAuthentication(clinics[0], version, controller.signal);
         return;
       }
 
@@ -158,10 +164,11 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     } catch (error) {
       if (version === requestVersion.current) {
         setLoginPassword('');
-        setLoginError(getErrorMessage(error));
+        setLoginError(getLoginErrorMessage(error));
       }
     } finally {
       if (version === requestVersion.current) {
+        activeRequest.current = null;
         pending.current = false;
         setLoginLoading(false);
       }
@@ -182,18 +189,21 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     const version = ++requestVersion.current;
     setLoginLoading(true);
     setLoginError('');
+    const controller = new AbortController();
+    activeRequest.current = controller;
     try {
       // A escolha do browser nunca é tratada como autorização: o endpoint
       // tenant-scoped existente autentica novamente a mesma credencial.
-      await completeAuthentication(clinic, version);
+      await completeAuthentication(clinic, version, controller.signal);
     } catch (error) {
       if (version === requestVersion.current) {
         setLoginPassword('');
         clearClinicSelection();
-        setLoginError(getErrorMessage(error));
+        setLoginError(getLoginErrorMessage(error));
       }
     } finally {
       if (version === requestVersion.current) {
+        activeRequest.current = null;
         pending.current = false;
         setLoginLoading(false);
       }
@@ -206,6 +216,11 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     clearTeamState();
     setLoginPassword('');
     setLoginError('');
+  };
+
+  const cancelPendingLogin = () => {
+    cancelClinicSelection();
+    setLoginInfo('Tentativa de acesso cancelada. Você pode entrar novamente quando quiser.');
   };
 
   const handleTeamIdentification = async (event: FormEvent<HTMLFormElement>) => {
@@ -228,12 +243,15 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     const version = ++requestVersion.current;
     setLoginLoading(true);
     setLoginError('');
+    const controller = new AbortController();
+    activeRequest.current = controller;
     try {
       const result = await identifyTeamOperator(
         teamChallenge.token,
         Number(teamOperatorId),
         operator.exigePin ? teamPin : null,
         challengeClinic.current,
+        controller.signal,
       );
       if (version !== requestVersion.current) return;
       const nextSession = buildSessionFromLogin(result);
@@ -242,9 +260,10 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
       clearTeamState();
       clearClinicSelection();
     } catch (error) {
-      if (version === requestVersion.current) setLoginError(getErrorMessage(error));
+      if (version === requestVersion.current) setLoginError(getLoginErrorMessage(error));
     } finally {
       if (version === requestVersion.current) {
+        activeRequest.current = null;
         pending.current = false;
         setTeamPin('');
         setLoginLoading(false);
@@ -355,6 +374,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     handleLogin,
     selectLoginClinic,
     cancelClinicSelection,
+    cancelPendingLogin,
     handleTeamIdentification,
     handleResetPassword,
     resetLoginState,

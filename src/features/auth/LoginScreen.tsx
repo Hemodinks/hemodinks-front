@@ -12,6 +12,9 @@ import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormF
 import { LegalFooter } from '../legal/LegalFooter';
 import { MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from '../../shared/utils/formatters';
 import './auth.css';
+import { LoginLoadingOverlay } from './LoginLoadingOverlay';
+import { LoginPreparation } from './LoginPreparation';
+import { useLoginPreparation } from './useLoginPreparation';
 
 type LoginScreenProps = {
   companyName: string;
@@ -33,6 +36,7 @@ type LoginScreenProps = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onResetPassword: () => void;
   onStartTutorial: () => void;
+  onCancelLogin: () => void;
 };
 
 export function LoginScreen({
@@ -55,10 +59,20 @@ export function LoginScreen({
   onSubmit,
   onResetPassword,
   onStartTutorial,
+  onCancelLogin,
 }: LoginScreenProps) {
+  const preparation = useLoginPreparation();
+  if (!preparation.ready) {
+    return <main className="auth-screen">
+      <TechCredit />
+      <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
+      <LoginPreparation waiting={preparation.waiting} empty={preparation.empty} onRetry={preparation.retry} />
+    </main>;
+  }
   return (
     <main className="auth-screen">
-      <LoadingOverlay active={isBusy} message={loginLoading ? 'Validando suas credenciais…' : undefined} />
+      <LoginLoadingOverlay active={loginLoading} onCancel={onCancelLogin} />
+      <LoadingOverlay active={isBusy && !loginLoading} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel login-panel" data-tour="login-overview" inert={isBusy} aria-busy={loginLoading}>

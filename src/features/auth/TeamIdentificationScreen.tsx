@@ -2,7 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { LogIn, Users } from "lucide-react";
 import type { Theme } from "../../appTypes";
 import type { TeamLoginChallenge } from "../../types";
-import { LoadingOverlay } from "../../shared/components/LoadingOverlay";
+import { LoginLoadingOverlay } from './LoginLoadingOverlay';
 import { TechCredit } from "../../shared/components/TechCredit";
 import { ThemeToggle } from "../../shared/components/ThemeToggle";
 import { AlertMessage } from "../../shared/components/ui";
@@ -20,6 +20,7 @@ type TeamIdentificationScreenProps = {
   onPinChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onBack: () => void;
+  onCancelLogin: () => void;
   onThemeToggle: () => void;
 };
 
@@ -34,6 +35,7 @@ export function TeamIdentificationScreen({
   onPinChange,
   onSubmit,
   onBack,
+  onCancelLogin,
   onThemeToggle,
 }: TeamIdentificationScreenProps) {
   const selectedOperator = challenge.operadores.find(
@@ -49,7 +51,7 @@ export function TeamIdentificationScreen({
   }, [operatorId, requiresPin, loading]);
   return (
     <main className="auth-screen">
-      <LoadingOverlay active={loading} />
+      <LoginLoadingOverlay active={loading} stage="Concluindo o acesso à equipe…" onCancel={onCancelLogin} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel" aria-busy={loading}>
