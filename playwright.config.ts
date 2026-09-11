@@ -7,6 +7,8 @@ export default defineConfig({
   expect: {
     timeout: 8_000,
   },
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
   use: {
     baseURL: 'http://127.0.0.1:5174',
     trace: 'on-first-retry',
