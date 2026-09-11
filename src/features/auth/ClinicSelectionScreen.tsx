@@ -1,10 +1,12 @@
 import { Building2, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 import type { Theme } from '../../appTypes';
 import type { LoginClinicOption } from '../../services';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import { AlertMessage } from '../../shared/components/ui';
+import { API_ASSET_BASE_URL } from '../../shared/utils/formatters';
 import './auth.css';
 import './clinicSelection.css';
 
@@ -53,7 +55,7 @@ export function ClinicSelectionScreen({
                 onClick={() => onSelect(clinic.clinicaId)}
                 disabled={loading}
               >
-                <span className="clinic-option-icon" aria-hidden="true"><Building2 size={22} /></span>
+                <ClinicOptionLogo slug={clinic.slug} />
                 <span className="clinic-option-name">{clinic.nome}</span>
                 <ChevronRight className="clinic-option-arrow" size={18} aria-hidden="true" />
               </button>
@@ -66,5 +68,19 @@ export function ClinicSelectionScreen({
         </button>
       </section>
     </main>
+  );
+}
+
+function ClinicOptionLogo({ slug }: { slug: string }) {
+  const source = slug ? `${API_ASSET_BASE_URL}/api/public/clinicas/${encodeURIComponent(slug)}/foto` : '';
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const showLogo = Boolean(source && failedSource !== source);
+
+  return (
+    <span className={`clinic-option-icon${showLogo ? ' clinic-option-logo' : ''}`} aria-hidden="true">
+      {showLogo ? (
+        <img src={source} alt="" onError={() => setFailedSource(source)} />
+      ) : <Building2 size={22} />}
+    </span>
   );
 }
