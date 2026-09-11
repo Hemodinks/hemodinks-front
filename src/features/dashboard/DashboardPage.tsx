@@ -1,20 +1,15 @@
-import { type DragEvent, type ReactNode, useEffect, useState } from 'react';
+import { type CSSProperties, type DragEvent, useEffect, useState } from 'react';
 import {
   ArrowRight,
-  Building2,
-  CalendarDays,
   CheckCircle2,
   CircleCheck,
-  ClipboardList,
   FileText,
   GripVertical,
   Info,
-  PlayCircle,
-  Settings,
-  ShieldPlus,
   Users,
 } from 'lucide-react';
 import './dashboard.css';
+import { APP_MODULES } from '../../shared/navigation/appModules';
 import { AlertMessage, ToastMessage } from '../../shared/components/ui';
 import { hasPreferenceConsent } from '../../shared/privacy/consentStorage';
 
@@ -54,12 +49,10 @@ type DashboardModuleId = 'users' | 'profile' | 'patients' | 'billing' | 'tutoria
 
 type DashboardModule = {
   id: DashboardModuleId;
-  title: string;
   metric: string;
   footerLabel: string;
   className: string;
   ariaLabel: string;
-  icon: ReactNode;
   onOpen: () => void;
   badge?: string;
 };
@@ -156,82 +149,68 @@ export function DashboardPage({
     ...(canAccessUsers
       ? [{
           id: 'users' as const,
-          title: 'Usuários',
           metric: 'Gerenciar usuários',
           footerLabel: `${usersCount} cadastrados`,
           className: 'module-card-users',
           ariaLabel: 'Abrir usuários',
-          icon: <Users size={24} />,
           onOpen: onOpenUsersList,
         }]
       : []),
     ...(canEditOwnUser
       ? [{
           id: 'profile' as const,
-          title: 'Meu cadastro',
           metric: 'Dados e documentos',
           footerLabel: 'Editar registro',
           className: 'module-card-profile',
           ariaLabel: 'Abrir meu cadastro',
-          icon: <FileText size={24} />,
           onOpen: onOpenMyProfile,
         }]
       : []),
     ...(canAccessPatients
       ? [{
           id: 'patients' as const,
-          title: 'Pacientes',
           metric: patientReadOnly ? 'Visualizar cadastro' : 'Administrar atendimentos',
           footerLabel: `${pacientesCount} cadastrados`,
           className: 'module-card-patients',
           ariaLabel: 'Abrir pacientes',
-          icon: <ClipboardList size={24} />,
           onOpen: onOpenPatientsList,
         }]
       : []),
     ...(canAccessBilling
       ? [{
           id: 'billing' as const,
-          title: 'Faturamento médico',
           metric: 'Honorários, glosas e repasses',
           footerLabel: `${pendingPaymentsCount} pendências financeiras`,
           className: 'module-card-billing',
           ariaLabel: 'Abrir faturamento médico',
-          icon: <FileText size={24} />,
           onOpen: onOpenBilling,
         }]
       : []),
     {
       id: 'tutorials',
-      title: 'Tutoriais interativos',
       metric: 'Aprenda os fluxos do sistema',
       footerLabel: '12 tutoriais disponíveis',
       className: 'module-card-tutorials',
       ariaLabel: 'Abrir tutoriais interativos',
-      icon: <PlayCircle size={22} />,
       onOpen: onOpenTutorials,
     },
     ...(canAccessMedicalGroups
       ? [{
           id: 'medicalGroups' as const,
-          title: 'Grupos médicos',
           metric: 'Relacionar equipes e escopos',
           footerLabel: 'Definir compartilhamento',
           className: 'module-card-medical-groups',
           ariaLabel: 'Abrir grupos médicos',
-          icon: <ShieldPlus size={24} />,
           onOpen: onOpenMedicalGroups,
         }]
       : []),
     ...(canAccessAgenda
       ? [{
           id: 'agenda' as const,
-          title: 'Agenda e notificações',
           metric: 'Eventos, lembretes e avisos',
           footerLabel: `${upcomingEventsCount} próximos`,
           className: 'module-card-agenda',
           ariaLabel: 'Abrir agenda e notificações',
-          icon: <CalendarDays size={24} />,
           onOpen: onOpenAgenda,
           badge: unreadAgendaNotificationCount > 0 ? `${unreadAgendaNotificationCount} não lidas` : undefined,
         }]
@@ -239,24 +218,20 @@ export function DashboardPage({
     ...(canAccessClinics
       ? [{
           id: 'clinics' as const,
-          title: 'Clínicas',
           metric: 'Gestão da plataforma',
           footerLabel: 'Administrar clínicas',
           className: 'module-card-clinics',
           ariaLabel: 'Abrir clínicas',
-          icon: <Building2 size={24} />,
           onOpen: onOpenClinics,
         }]
       : []),
     ...(canAccessSettings
       ? [{
           id: 'settings' as const,
-          title: 'Opções',
           metric: 'Configurações e monitoramento',
           footerLabel: 'Gerenciar opções',
           className: 'module-card-settings',
           ariaLabel: 'Abrir opções',
-          icon: <Settings size={24} />,
           onOpen: onOpenSettings,
         }]
       : []),
@@ -335,8 +310,9 @@ export function DashboardPage({
     <section className="dashboard-workspace">
       <div className="dashboard-header">
         <div>
-          <span className="eyebrow">Modulos</span>
-          <h2>Cadastros {companyName}</h2>
+          <span className="eyebrow">Acesso rápido</span>
+          <h2>Módulos da clínica</h2>
+          <p>{companyName}</p>
         </div>
       </div>
 
@@ -349,6 +325,7 @@ export function DashboardPage({
             key={module.id}
             type="button"
             className={`module-card ${module.className}${draggedModuleId === module.id ? ' is-dragging' : ''}${dropTargetModuleId === module.id && draggedModuleId !== module.id ? ' is-drop-target' : ''}`}
+            style={{ '--module-color': APP_MODULES[module.id].color } as CSSProperties}
             onClick={module.onOpen}
             onDragEnter={handleDragEnter(module.id)}
             onDragOver={handleDragOver(module.id)}
@@ -367,8 +344,8 @@ export function DashboardPage({
             >
               <GripVertical size={20} />
             </span>
-            <span className="module-icon">{module.icon}</span>
-            <span className="module-title">{module.title}</span>
+            <span className="module-icon" aria-hidden="true">{(() => { const Icon = APP_MODULES[module.id].icon; return <Icon size={24} />; })()}</span>
+            <span className="module-title">{APP_MODULES[module.id].title}</span>
             <span className="module-metric">{module.metric}</span>
             <span className="module-card-foot">
               <span>{module.footerLabel}</span>

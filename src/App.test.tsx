@@ -293,7 +293,9 @@ describe('App', () => {
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123', 'hemodinks', expect.any(AbortSignal));
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/dashboard');
-    expect(screen.getByText('Administrador | gmarcone@gmail.com')).toBeInTheDocument();
+    const activeSession = screen.getByLabelText('Sessão ativa');
+    expect(activeSession).toHaveTextContent('Administrador');
+    expect(activeSession).toHaveTextContent('gmarcone@gmail.com');
     expect(screen.getByText('Painel informativo')).toBeInTheDocument();
     expect(screen.getByText('Resumo geral')).toBeInTheDocument();
     expect(screen.getByText('Usuários ativos')).toBeInTheDocument();
@@ -673,7 +675,6 @@ describe('App', () => {
         clinicaPadrao: false, usuarioClinicaId: 102,
       },
     });
-    // Only the new clinic is pending; requests from the current session still finish.
     vi.mocked(api.getPacientes).mockImplementation((token) => token === 'token-clinica-beta'
       ? new Promise(() => {})
       : Promise.resolve(paged([basePaciente])));
@@ -681,7 +682,6 @@ describe('App', () => {
       ? new Promise(() => {})
       : Promise.resolve(paged([baseUser])));
     await user.click(within(screen.getByLabelText('Sessão ativa')).getByRole('button', { name: /^clínicas$/i }));
-    // The first visit imports the clinic module lazily, which can take longer on CI.
     expect(await screen.findByRole('heading', { name: 'Clínicas', level: 1 }, { timeout: 5000 })).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Acessar Clinica Beta' }));
     if (module === 'pacientes') await openPatientsModule(user);
@@ -1913,7 +1913,6 @@ describe('App', () => {
     for (const direction of ['desc', 'asc', 'desc'] as const) {
       await user.click(screen.getByRole('button', { name: new RegExp(`^${label}$`, 'i') }));
       await waitFor(() => {
-        // Returning to a previously selected order can reuse its cached page.
         expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', {
           page: 1, pageSize: 10, search: '', sortBy: field, sortDirection: direction,
         });
