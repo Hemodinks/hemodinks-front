@@ -32,7 +32,7 @@ export function ClinicSelectionScreen({
       <LoadingOverlay active={loading} message="Entrando na clínica selecionada…" />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
-      <section className="auth-panel login-panel" aria-busy={loading}>
+      <section className="auth-panel login-panel clinic-selection-panel" aria-busy={loading}>
         <div className="brand-block">
           <div className="brand-mark clinic-selection-icon" aria-hidden="true"><Building2 size={28} /></div>
           <div>
@@ -44,20 +44,22 @@ export function ClinicSelectionScreen({
         <p className="team-login-description">Seu acesso está vinculado a mais de uma clínica. Selecione o ambiente desejado.</p>
         {error && <AlertMessage type="error">{error}</AlertMessage>}
 
-        <div className="clinic-selection-list" role="list" aria-label="Clínicas disponíveis">
+        <ul className="clinic-selection-list" aria-label="Clínicas disponíveis">
           {clinics.map((clinic) => (
-            <button
-              key={clinic.clinicaId}
-              type="button"
-              className="clinic-selection-option"
-              onClick={() => onSelect(clinic.clinicaId)}
-              disabled={loading}
-            >
-              <span>{clinic.nome}</span>
-              <ChevronRight size={18} aria-hidden="true" />
-            </button>
+            <li key={clinic.clinicaId}>
+              <button
+                type="button"
+                className="clinic-selection-option"
+                onClick={() => onSelect(clinic.clinicaId)}
+                disabled={loading}
+              >
+                <span className="clinic-option-icon" aria-hidden="true"><Building2 size={22} /></span>
+                <span className="clinic-option-name">{clinic.nome}</span>
+                <ChevronRight className="clinic-option-arrow" size={18} aria-hidden="true" />
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
 
         <button type="button" className="ghost-button login-help-link" onClick={onBack} disabled={loading}>
           Voltar ao login
