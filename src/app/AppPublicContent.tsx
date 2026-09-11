@@ -56,6 +56,7 @@ export function AppPublicContent({
         theme={theme}
         onSelect={(clinicaId) => void loginFlow.selectLoginClinic(clinicaId)}
         onBack={loginFlow.cancelClinicSelection}
+        onCancelLogin={loginFlow.cancelPendingLogin}
         onThemeToggle={onThemeToggle}
       />
     );
@@ -74,6 +75,7 @@ export function AppPublicContent({
         onPinChange={loginFlow.setTeamPin}
         onSubmit={loginFlow.handleTeamIdentification}
         onBack={loginFlow.cancelTeamIdentification}
+        onCancelLogin={loginFlow.cancelPendingLogin}
         onThemeToggle={onThemeToggle}
       />
     );
@@ -95,6 +97,7 @@ export function AppPublicContent({
       resetPasswordLoading={loginFlow.resetPasswordLoading}
       onThemeToggle={onThemeToggle}
       onLoginEmailChange={loginFlow.setLoginEmail}
+      onCancelLogin={loginFlow.cancelPendingLogin}
       onLoginPasswordChange={loginFlow.setLoginPassword}
       onRecoveryClinicChange={loginFlow.setRecoveryClinicValue}
       onSubmit={loginFlow.handleLogin}

@@ -33,6 +33,7 @@ import {
   uploadUserArquivo,
 } from './index';
 import { AUTH_EXPIRED_EVENT, ApiError, apiClient, publicApiClient, get } from './api';
+import { resolveLoginClinics } from './authService';
 import {
   extractClinicaContextFromToken,
   resolveClinicaSlugFromHostname,
@@ -59,6 +60,16 @@ function apiError(status: number, data?: unknown) {
 }
 
 describe('services api client', () => {
+  it('gives login context a bounded startup wait and forwards cancellation', async () => {
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(axiosResponse({ clinicas: [] }));
+    const controller = new AbortController();
+    await resolveLoginClinics('user@example.com', 'test-password', controller.signal);
+    expect(requestSpy).toHaveBeenCalledOnce();
+    expect(requestSpy).toHaveBeenCalledWith(expect.objectContaining({
+      url: '/api/users/login-context', timeout: 120_000, signal: controller.signal,
+    }));
+  });
+
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();

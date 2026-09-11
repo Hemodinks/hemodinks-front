@@ -1738,6 +1738,44 @@ for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
   });
 }
 
+test('login wait: explica demora e permite cancelar sem abrir sessão tardia', async ({ page }, testInfo) => {
+  await mockApi(page);
+  await page.clock.install();
+  let calls = 0;
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/users/login-context', async route => {
+    calls++;
+    await pending;
+    await route.fulfill({ json: { clinicas: [{ clinicaId: 1, nome: 'Clínica', slug: 'clinica-hemodinks' }] } }).catch(() => {});
+  });
+  await loginViaUi(page);
+  await expect(page.getByRole('status')).toContainText('Conectando ao serviço de acesso');
+  await page.clock.fastForward(12_000);
+  await expect(page.getByRole('status')).toContainText('primeiro acesso após');
+  await page.clock.fastForward(23_000);
+  await expect(page.getByRole('status')).toContainText('Ainda estamos aguardando');
+  await page.screenshot({ path: testInfo.outputPath('login-wait.png') });
+  await page.getByRole('button', { name: 'Cancelar tentativa' }).click();
+  await expect(page.getByText(/Tentativa de acesso cancelada/)).toBeVisible();
+  release();
+  await expect(page.locator('#login-password')).toHaveValue('');
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toHaveCount(0);
+  expect(calls).toBe(1);
+});
+
+test('login wait: indisponibilidade permite nova tentativa manual', async ({ page }) => {
+  await mockApi(page);
+  await page.route('**/api/users/login-context', route => route.fulfill({ status: 503, json: {} }));
+  await loginViaUi(page);
+  await expect(page.getByText(/Não foi possível conectar ao serviço de acesso agora/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancelar tentativa' })).toHaveCount(0);
+  await page.unroute('**/api/users/login-context');
+  await page.locator('#login-password').fill(LOGIN_PASSWORD);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+});
+
 test('bootstrap: API lenta informa a operação real e retry cancela a tentativa anterior', async ({ page }) => {
   await mockApi(page);
   await page.clock.install();
