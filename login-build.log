@@ -1,0 +1,105 @@
+
+> hemodinks-front@0.1.0 prebuild
+> node scripts/write-otel-runtime-config.mjs
+
+
+> hemodinks-front@0.1.0 build
+> tsc -b && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 3099 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) C:/George Marcone/GitHub/personal/HEMODINKS/hemodinks-front/src/observability.ts is dynamically imported by C:/George Marcone/GitHub/personal/HEMODINKS/hemodinks-front/src/features/privacy/analyticsConsent.ts, C:/George Marcone/GitHub/personal/HEMODINKS/hemodinks-front/src/features/privacy/analyticsConsent.ts but also statically imported by C:/George Marcone/GitHub/personal/HEMODINKS/hemodinks-front/src/shared/components/ErrorBoundary.tsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/index.html                                                  0.75 kB │ gzip:   0.36 kB
+dist/assets/comfortaa-vietnamese-wght-normal-BegpjMof.woff2      9.66 kB
+dist/assets/comfortaa-greek-wght-normal-C_9s1t5x.woff2          13.22 kB
+dist/assets/comfortaa-cyrillic-ext-wght-normal-Bbyo-ZHz.woff2   15.44 kB
+dist/assets/comfortaa-cyrillic-wght-normal-D14l-6cu.woff2       18.45 kB
+dist/assets/comfortaa-latin-ext-wght-normal-CYL25BRH.woff2      24.58 kB
+dist/assets/comfortaa-latin-wght-normal-CLB3k12Y.woff2          30.87 kB
+dist/assets/imagem hemodinks github-DAy_-9Tw.jpg                69.28 kB
+dist/assets/MedicalGroupsPage-CJzA6MFB.css                       1.42 kB │ gzip:   0.53 kB
+dist/assets/TutorialsPage-Cv_okHmh.css                           2.26 kB │ gzip:   0.75 kB
+dist/assets/ReportsPage-D9eexizi.css                             3.91 kB │ gzip:   1.00 kB
+dist/assets/UsersPage-BdD10PZc.css                               5.70 kB │ gzip:   1.47 kB
+dist/assets/tutorial-runtime-Cc8nMXTk.css                        5.85 kB │ gzip:   1.70 kB
+dist/assets/OptionsPage-iH-KsSoE.css                             6.49 kB │ gzip:   1.67 kB
+dist/assets/ClinicsPage-mMfWPXt1.css                             7.42 kB │ gzip:   1.84 kB
+dist/assets/AgendaPage-CsDVCsQl.css                             10.13 kB │ gzip:   2.19 kB
+dist/assets/patients-B94Kp1sV.css                               15.36 kB │ gzip:   3.05 kB
+dist/assets/billingUtils-BzKG89WP.css                           37.79 kB │ gzip:   6.60 kB
+dist/assets/index-D_E2gz1h.css                                  80.06 kB │ gzip:  15.78 kB
+dist/assets/iframe-PalxAwQ_.js                                   0.06 kB │ gzip:   0.08 kB
+dist/assets/type-check-BVQCr-HH.js                               0.07 kB │ gzip:   0.08 kB
+dist/assets/chevron-left-DgZ4YU_4.js                             0.13 kB │ gzip:   0.15 kB
+dist/assets/plus-DQUwKH0T.js                                     0.15 kB │ gzip:   0.15 kB
+dist/assets/clock-3-CKb25tlJ.js                                  0.17 kB │ gzip:   0.17 kB
+dist/assets/traverse-eGeoT8Mx.js                                 0.19 kB │ gzip:   0.17 kB
+dist/assets/carousel-CQ3wFu8G.js                                 0.21 kB │ gzip:   0.19 kB
+dist/assets/download-2ySCF1GE.js                                 0.23 kB │ gzip:   0.19 kB
+dist/assets/refresh-cw-D-vSJo-c.js                               0.32 kB │ gzip:   0.23 kB
+dist/assets/save-B3rfjwu8.js                                     0.33 kB │ gzip:   0.23 kB
+dist/assets/load-time-Cp1NeiHp.js                                0.33 kB │ gzip:   0.26 kB
+dist/assets/panels-Dr3pEoKP.js                                   0.33 kB │ gzip:   0.21 kB
+dist/assets/message-square-text-BlOgOnKl.js                      0.35 kB │ gzip:   0.25 kB
+dist/assets/file-up-e_xl9YFj.js                                  0.35 kB │ gzip:   0.25 kB
+dist/assets/image-plus-D5Gpz_4g.js                               0.36 kB │ gzip:   0.26 kB
+dist/assets/SortableTableHeader-DPH21dzm.js                      0.43 kB │ gzip:   0.31 kB
+dist/assets/timer--QM2LZfv.js                                    0.50 kB │ gzip:   0.27 kB
+dist/assets/event-origin-Bb7irpQQ.js                             0.53 kB │ gzip:   0.34 kB
+dist/assets/SecureFileDownloadButton-C4OTrn6Z.js                 0.53 kB │ gzip:   0.39 kB
+dist/assets/PasswordModal-Dz2nclLk.js                            0.67 kB │ gzip:   0.38 kB
+dist/assets/DateInput-Bx7wV95u.js                                0.86 kB │ gzip:   0.48 kB
+dist/assets/bel-serializer-B4hazcY3.js                           0.88 kB │ gzip:   0.54 kB
+dist/assets/nav-timing-CHjjxeJZ.js                               1.02 kB │ gzip:   0.54 kB
+dist/assets/stylesheet-evaluator-DkTFGyEw.js                     1.09 kB │ gzip:   0.51 kB
+dist/assets/event-buffer-BF9d1pwY.js                             1.24 kB │ gzip:   0.58 kB
+dist/assets/NotificationsModal-BlL2Ifro.js                       2.27 kB │ gzip:   0.93 kB
+dist/assets/index-DaSX8mNC.js                                    3.45 kB │ gzip:   1.52 kB
+dist/assets/index-hufAMjrz.js                                    4.05 kB │ gzip:   1.77 kB
+dist/assets/index-BPC4Ep3b.js                                    4.14 kB │ gzip:   1.90 kB
+dist/assets/PatientObservacoesModal-Bs_L-j9n.js                  4.19 kB │ gzip:   1.64 kB
+dist/assets/CbhpmLookupModal-DB0MDF2R.js                         4.47 kB │ gzip:   1.68 kB
+dist/assets/PatientModals-IGLhJ7xJ.js                            4.60 kB │ gzip:   1.33 kB
+dist/assets/TutorialsPage-Cao7RbpQ.js                            4.82 kB │ gzip:   1.86 kB
+dist/assets/patientFormExporter-Bb03r02K.js                      5.23 kB │ gzip:   2.07 kB
+dist/assets/ui-DejhThZz.js                                       5.39 kB │ gzip:   1.98 kB
+dist/assets/index-BCFQqkwX.js                                    5.78 kB │ gzip:   2.43 kB
+dist/assets/index-CObsgdwX.js                                    6.69 kB │ gzip:   2.91 kB
+dist/assets/agent-session-ClvxSebo.js                            6.84 kB │ gzip:   2.55 kB
+dist/assets/index-LPKJDG5n.js                                    7.02 kB │ gzip:   2.31 kB
+dist/assets/MedicalGroupsPage-D1lH3g3J.js                        7.53 kB │ gzip:   2.40 kB
+dist/assets/index-DUYP0q6b.js                                    7.73 kB │ gzip:   2.80 kB
+dist/assets/index-DE8vSWw_.js                                    8.18 kB │ gzip:   2.92 kB
+dist/assets/OptionsPage-N4OATEX5.js                              8.66 kB │ gzip:   2.86 kB
+dist/assets/index-A6Byl2PW.js                                    9.71 kB │ gzip:   3.56 kB
+dist/assets/index-DeV161yz.js                                   11.09 kB │ gzip:   3.63 kB
+dist/assets/aggregate-base-CXLGKjAS.js                          11.59 kB │ gzip:   4.62 kB
+dist/assets/webdriver-detection-C6GLwigg.js                     12.81 kB │ gzip:   4.62 kB
+dist/assets/BillingPage-BtJRkOz6.js                             17.39 kB │ gzip:   5.00 kB
+dist/assets/UsersPage-qzjns4wu.js                               18.01 kB │ gzip:   6.00 kB
+dist/assets/AgendaPage-D5wl0iY3.js                              18.14 kB │ gzip:   5.72 kB
+dist/assets/billingUtils-DDL0UtUq.js                            21.12 kB │ gzip:   5.97 kB
+dist/assets/ReportsPage-DhUAVPmF.js                             22.07 kB │ gzip:   7.31 kB
+dist/assets/PatientsPage-nRi9rKB5.js                            24.11 kB │ gzip:   6.61 kB
+dist/assets/BillingHistoryPage-B18bC-yI.js                      28.12 kB │ gzip:   7.84 kB
+dist/assets/purify.es-4eNOHKSq.js                               28.74 kB │ gzip:  11.02 kB
+dist/assets/ClinicsPage-B04CT3O8.js                             29.64 kB │ gzip:   9.13 kB
+dist/assets/jspdf.plugin.autotable-B0IxatYY.js                  31.04 kB │ gzip:   9.90 kB
+dist/assets/browser-CXh1ITwj.js                                 31.80 kB │ gzip:  12.20 kB
+dist/assets/query-vendor-BsxISGDY.js                            35.91 kB │ gzip:  10.61 kB
+dist/assets/tutorial-runtime-CVly72hC.js                        57.76 kB │ gzip:  17.34 kB
+dist/assets/newRelic-DjU0M_IF.js                                62.27 kB │ gzip:  22.51 kB
+dist/assets/otel-Bpb_DR1S.js                                    75.77 kB │ gzip:  24.41 kB
+dist/assets/index.es-ADv7ymYv.js                               158.94 kB │ gzip:  53.10 kB
+dist/assets/recorder-C5zDz2de.js                               185.56 kB │ gzip:  58.91 kB
+dist/assets/html2canvas.esm-DXEQVQnt.js                        201.04 kB │ gzip:  47.43 kB
+dist/assets/react-vendor-B8QIa9gj.js                           230.39 kB │ gzip:  73.94 kB
+dist/assets/index-D53eoLSF.js                                  280.14 kB │ gzip:  86.49 kB
+dist/assets/jspdf.es.min-BNCxxV6B.js                           386.16 kB │ gzip: 126.41 kB
+dist/assets/observability-BvyclaTa.js                          481.07 kB │ gzip: 159.52 kB
+✓ built in 18.70s

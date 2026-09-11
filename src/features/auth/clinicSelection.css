@@ -1,0 +1,37 @@
+.clinic-selection-icon {
+  display: grid;
+  place-items: center;
+}
+
+.clinic-selection-list {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.clinic-selection-option {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface, var(--panel));
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.clinic-selection-option:hover:not(:disabled),
+.clinic-selection-option:focus-visible {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.clinic-selection-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}

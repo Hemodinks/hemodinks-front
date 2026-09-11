@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent } from 'react';
 import { LogIn } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import type { PublicClinic } from '../../types';
@@ -10,10 +10,7 @@ import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import { AlertMessage, ToastMessage } from '../../shared/components/ui';
 import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import { LegalFooter } from '../legal/LegalFooter';
-import {
-  MAX_EMAIL_LENGTH,
-  MAX_PASSWORD_LENGTH,
-} from '../../shared/utils/formatters';
+import { MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from '../../shared/utils/formatters';
 import './auth.css';
 
 type LoginScreenProps = {
@@ -23,9 +20,8 @@ type LoginScreenProps = {
   theme: Theme;
   loginEmail: string;
   loginPassword: string;
-  loginClinicValue: string;
-  clinics: PublicClinic[];
-  clinicsLoading: boolean;
+  recoveryClinics: PublicClinic[];
+  recoveryClinicValue: string;
   loginError: string;
   loginInfo: string;
   loginLoading: boolean;
@@ -33,43 +29,11 @@ type LoginScreenProps = {
   onThemeToggle: () => void;
   onLoginEmailChange: (value: string) => void;
   onLoginPasswordChange: (value: string) => void;
-  onLoginClinicChange: (value: string) => void;
+  onRecoveryClinicChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onResetPassword: () => void;
   onStartTutorial: () => void;
 };
-
-const INITIAL_LOADING_STEPS = [
-  'Conectando com segurança…',
-  'Carregando os dados da clínica…',
-  'Preparando seu painel…',
-  'Tudo quase pronto…',
-];
-
-function LoginInitialLoadingMessage() {
-  const [stepIndex, setStepIndex] = useState(0);
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setStepIndex((current) => (current + 1) % INITIAL_LOADING_STEPS.length);
-    }, 2600);
-
-    return () => window.clearInterval(intervalId);
-  }, []);
-
-  return (
-    <div className="login-initial-loading-copy">
-      <strong>Preparando seu acesso</strong>
-      <span>Bem-vindo ao Hemodinks!</span>
-      <p>Estamos iniciando os serviços e carregando as informações da sua clínica.</p>
-      <span className="login-initial-loading-step" aria-atomic="true">
-        <i aria-hidden="true" />
-        {INITIAL_LOADING_STEPS[stepIndex]}
-      </span>
-      <small>Na primeira conexão, isso pode levar até 1 minuto. Você será direcionado automaticamente.</small>
-    </div>
-  );
-}
 
 export function LoginScreen({
   companyName,
@@ -78,9 +42,8 @@ export function LoginScreen({
   theme,
   loginEmail,
   loginPassword,
-  loginClinicValue,
-  clinics,
-  clinicsLoading,
+  recoveryClinics,
+  recoveryClinicValue,
   loginError,
   loginInfo,
   loginLoading,
@@ -88,52 +51,26 @@ export function LoginScreen({
   onThemeToggle,
   onLoginEmailChange,
   onLoginPasswordChange,
-  onLoginClinicChange,
+  onRecoveryClinicChange,
   onSubmit,
   onResetPassword,
   onStartTutorial,
 }: LoginScreenProps) {
   return (
     <main className="auth-screen">
-      <LoadingOverlay
-        active={isBusy || clinicsLoading}
-        className={clinicsLoading ? 'login-initial-loading' : undefined}
-        eyebrow={clinicsLoading ? 'Iniciando o sistema' : undefined}
-        message={clinicsLoading ? <LoginInitialLoadingMessage /> : undefined}
-      />
+      <LoadingOverlay active={isBusy} message={loginLoading ? 'Validando suas credenciais…' : undefined} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
-      <section className="auth-panel" data-tour="login-overview">
+      <section className="auth-panel login-panel" data-tour="login-overview" inert={isBusy} aria-busy={loginLoading}>
         <div className="brand-block">
-          {loginClinicValue
-            ? <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
-            : <span className="brand-mark login-brand-placeholder" aria-hidden="true" />}
+          <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
           <div>
             <span className="eyebrow">{companyName}</span>
             <h1>Acesso ao sistema</h1>
           </div>
         </div>
 
-        <button type="button" className="ghost-button login-tutorial-button" onClick={onStartTutorial}>Tutorial de acesso</button>
-
         <form className="stack" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
-          <label data-tour="login-clinic">
-            Clínica
-            <select
-              value={loginClinicValue}
-              onChange={(event) => onLoginClinicChange(event.target.value)}
-              disabled={clinicsLoading}
-              required
-            >
-              <option value="">
-                {clinicsLoading ? 'Carregando clínicas...' : 'Selecione uma clínica'}
-              </option>
-              {clinics.map((clinic) => (
-                <option key={clinic.id} value={String(clinic.id)}>{clinic.nome}</option>
-              ))}
-            </select>
-          </label>
-
           <label data-tour="login-email">
             Email
             <input
@@ -141,6 +78,9 @@ export function LoginScreen({
               value={loginEmail}
               onChange={(event) => onLoginEmailChange(event.target.value.slice(0, MAX_EMAIL_LENGTH))}
               autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              name="email"
               maxLength={MAX_EMAIL_LENGTH}
               required
             />
@@ -156,19 +96,35 @@ export function LoginScreen({
             required
           /></div>
 
+          {recoveryClinics.length > 1 && (
+            <label data-tour="password-reset-clinic">
+              Clínica para recuperação de senha
+              <select
+                value={recoveryClinicValue}
+                onChange={(event) => onRecoveryClinicChange(event.target.value)}
+              >
+                <option value="">Selecione uma clínica</option>
+                {recoveryClinics.map((clinic) => (
+                  <option key={clinic.id} value={String(clinic.id)}>{clinic.nome}</option>
+                ))}
+              </select>
+            </label>
+          )}
+
           {loginError && <AlertMessage type="error">{loginError}</AlertMessage>}
           {loginInfo && <ToastMessage type="success">{loginInfo}</ToastMessage>}
 
-          <div className="button-row login-actions">
-            <button type="button" className="ghost-button" onClick={onResetPassword} disabled={resetPasswordLoading}>
-              {resetPasswordLoading ? 'Resetando...' : 'Esqueci minha senha'}
-            </button>
-            <button className="primary-action" type="submit" disabled={loginLoading} data-tour="login-submit">
+          <div className="login-entry-actions">
+            <button className="primary-action" type="submit" disabled={loginLoading || resetPasswordLoading} data-tour="login-submit">
               <LogIn size={18} />
               {loginLoading ? 'Entrando...' : 'Entrar'}
             </button>
+            <button type="button" className="ghost-button login-help-link" onClick={onResetPassword} disabled={resetPasswordLoading || loginLoading}>
+              {resetPasswordLoading ? 'Enviando instruções...' : recoveryClinics.length > 1 ? 'Enviar instruções' : 'Esqueci minha senha'}
+            </button>
           </div>
         </form>
+        <p className="login-help">Primeiro acesso? <button type="button" className="ghost-button login-help-link" onClick={onStartTutorial}>Tutorial de acesso</button></p>
         <LegalFooter className="login-legal-footer" />
       </section>
     </main>
