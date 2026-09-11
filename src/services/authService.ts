@@ -18,12 +18,15 @@ export type ResolveLoginClinicsResponse = {
   clinicas: LoginClinicOption[];
 };
 
-export function resolveLoginClinics(email: string, senha: string) {
+// The first login request can include service startup; subsequent authentication steps keep their existing limit.
+export const LOGIN_CONTEXT_TIMEOUT_MS = 120_000;
+
+export function resolveLoginClinics(email: string, senha: string, signal?: AbortSignal) {
   return post<ResolveLoginClinicsResponse>(
     "/api/users/login-context",
     { email, senha },
     undefined,
-    { timeout: 60_000 },
+    { timeout: LOGIN_CONTEXT_TIMEOUT_MS, ...(signal ? { signal } : {}) },
   );
 }
 
@@ -31,6 +34,7 @@ export function authenticate(
   email: string,
   senha: string,
   clinicaSlug?: string,
+  signal?: AbortSignal,
 ) {
   return post<LoginResponse>(
     "/api/users/authenticate",
@@ -38,6 +42,7 @@ export function authenticate(
     undefined,
     {
       timeout: 60_000,
+      ...(signal ? { signal } : {}),
       headers: clinicaSlug ? { "X-Clinica-Slug": clinicaSlug } : undefined,
     },
   );
@@ -48,6 +53,7 @@ export function identifyTeamOperator(
   operadorId: number,
   pin: string | null,
   clinicaSlug?: string,
+  signal?: AbortSignal,
 ) {
   return post<LoginResponse>(
     "/api/equipe-auth/identificar",
@@ -55,6 +61,7 @@ export function identifyTeamOperator(
     undefined,
     {
       timeout: 60_000,
+      ...(signal ? { signal } : {}),
       headers: clinicaSlug ? { "X-Clinica-Slug": clinicaSlug } : undefined,
     },
   );
