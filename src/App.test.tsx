@@ -290,7 +290,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
-    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123', 'hemodinks');
+    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123', 'hemodinks', expect.any(AbortSignal));
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/dashboard');
     expect(screen.getByText('Administrador | gmarcone@gmail.com')).toBeInTheDocument();
@@ -634,11 +634,11 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(await screen.findByRole('heading', { name: 'Escolha onde deseja entrar' })).toBeVisible();
-    expect(api.resolveLoginClinics).toHaveBeenCalledWith('gmarcone@gmail.com', 'test-password');
+    expect(api.resolveLoginClinics).toHaveBeenCalledWith('gmarcone@gmail.com', 'test-password', expect.any(AbortSignal));
     expect(api.authenticate).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Clinica Beta' }));
 
-    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'test-password', 'clinica-beta');
+    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'test-password', 'clinica-beta', expect.any(AbortSignal));
   });
 
   it.each(['pacientes', 'usuários'])('descarta %s da clinica anterior enquanto a nova consulta esta pendente', async (module) => {
