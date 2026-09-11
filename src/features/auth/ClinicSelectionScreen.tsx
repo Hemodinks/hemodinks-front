@@ -2,7 +2,7 @@ import { Building2, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import type { Theme } from '../../appTypes';
 import type { LoginClinicOption } from '../../services';
-import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
+import { LoginLoadingOverlay } from './LoginLoadingOverlay';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import { AlertMessage } from '../../shared/components/ui';
@@ -17,6 +17,7 @@ type ClinicSelectionScreenProps = {
   theme: Theme;
   onSelect: (clinicaId: number) => void;
   onBack: () => void;
+  onCancelLogin: () => void;
   onThemeToggle: () => void;
 };
 
@@ -27,11 +28,12 @@ export function ClinicSelectionScreen({
   theme,
   onSelect,
   onBack,
+  onCancelLogin,
   onThemeToggle,
 }: ClinicSelectionScreenProps) {
   return (
     <main className="auth-screen">
-      <LoadingOverlay active={loading} message="Entrando na clínica selecionada…" />
+      <LoginLoadingOverlay active={loading} stage="Entrando na clínica selecionada…" onCancel={onCancelLogin} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel login-panel clinic-selection-panel" aria-busy={loading}>

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authenticate, identifyTeamOperator, listPublicClinics, resolveLoginClinics } from '../../services';
 import type { LoginResponse, PublicClinic } from '../../types';
 import { useLoginFlow } from './useLoginFlow';
+import { ApiError } from '../../services/api';
 
 vi.mock('../../services', () => ({
   authenticate: vi.fn(),
@@ -37,12 +38,41 @@ beforeEach(() => {
 });
 
 describe('login state isolation', () => {
+  it('aborts a slow request and ignores its late response after cancellation', async () => {
+    let resolve!: (value: { clinicas: Array<typeof clinicA> }) => void;
+    vi.mocked(resolveLoginClinics).mockReturnValue(new Promise(done => { resolve = done; }));
+    const { result, persistSession } = setup();
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.handleLogin(event); });
+    const signal = vi.mocked(resolveLoginClinics).mock.calls[0][2]!;
+    act(() => result.current.cancelPendingLogin());
+    expect(signal.aborted).toBe(true);
+    expect(result.current.loginLoading).toBe(false);
+    expect(result.current.loginPassword).toBe('');
+    expect(result.current.loginInfo).toContain('cancelada');
+    await act(async () => { resolve({ clinicas: [clinicA] }); await pending; });
+    expect(authenticate).not.toHaveBeenCalled();
+    expect(persistSession).not.toHaveBeenCalled();
+    expect(result.current.loginError).toBe('');
+  });
+
+  it('explains a timeout without automatically replaying credentials', async () => {
+    vi.mocked(resolveLoginClinics).mockRejectedValue(new ApiError('timeout', undefined, 'ECONNABORTED'));
+    const { result } = setup();
+    await act(() => result.current.handleLogin(event));
+    expect(result.current.loginError).toContain('Isso não significa');
+    expect(result.current.loginLoading).toBe(false);
+    expect(result.current.loginPassword).toBe('');
+    expect(resolveLoginClinics).toHaveBeenCalledTimes(1);
+    expect(authenticate).not.toHaveBeenCalled();
+  });
+
   it('enters directly when credentials have exactly one clinic', async () => {
     vi.mocked(authenticate).mockResolvedValue(login);
     const { result, persistSession } = setup();
     await act(() => result.current.handleLogin(event));
-    expect(resolveLoginClinics).toHaveBeenCalledWith('team@example.com', 'password');
-    expect(authenticate).toHaveBeenCalledWith('team@example.com', 'password', 'a');
+    expect(resolveLoginClinics).toHaveBeenCalledWith('team@example.com', 'password', expect.any(AbortSignal));
+    expect(authenticate).toHaveBeenCalledWith('team@example.com', 'password', 'a', expect.any(AbortSignal));
     expect(persistSession).toHaveBeenCalledTimes(1);
     expect(result.current.loginClinicOptions).toEqual([]);
     expect(result.current.loginPassword).toBe('');
@@ -58,7 +88,7 @@ describe('login state isolation', () => {
     expect(result.current.loginPassword).toBe('password');
 
     await act(() => result.current.selectLoginClinic(2));
-    expect(authenticate).toHaveBeenCalledWith('team@example.com', 'password', 'b');
+    expect(authenticate).toHaveBeenCalledWith('team@example.com', 'password', 'b', expect.any(AbortSignal));
     expect(persistSession).toHaveBeenCalledTimes(1);
     expect(result.current.loginPassword).toBe('');
   });

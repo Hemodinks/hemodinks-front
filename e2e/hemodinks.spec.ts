@@ -268,7 +268,8 @@ function buildAgendaEventFromPayload(id: number, payload: Payload) {
 
 async function loginViaUi(page: Page, initialRoute = '/', loginSession = session) {
   await page.goto(initialRoute);
-  if (await page.locator('#login-password').count() === 0) return;
+  if (await page.evaluate(() => Boolean(sessionStorage.getItem('hemodinks.session')))) return;
+  await expect(page.locator('#login-password')).toBeVisible();
   await page.getByLabel('Email').fill(loginSession.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
@@ -1737,6 +1738,92 @@ for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
     await writeFile(testInfo.outputPath('timeline.json'), `${JSON.stringify(timeline, null, 2)}\n`, 'utf8');
   });
 }
+
+test('login preparation: aguarda clínicas antes de pedir credenciais e recupera de falha transitória', async ({ page }, testInfo) => {
+  await mockApi(page);
+  await page.clock.install();
+  let calls = 0;
+  let recovering = false;
+  let credentialCalls = 0;
+  page.on('request', request => { if (request.url().includes('/api/users/login-context')) credentialCalls++; });
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/public/clinicas', async route => {
+    calls++;
+    if (!recovering) { await pending; await route.fulfill({ status: 503, json: {} }).catch(() => {}); }
+    else await route.fallback();
+  });
+  await page.goto('/');
+  await expect(page.getByText('Preparando o acesso ao sistema…')).toBeVisible();
+  await expect(page.locator('#login-password')).toHaveCount(0);
+  await page.clock.fastForward(130_000);
+  await expect(page.getByText(/Continuamos tentando conectar automaticamente/)).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('login-preparation.png') });
+  expect(credentialCalls).toBe(0);
+  const failed = page.waitForResponse(response => response.url().includes('/api/public/clinicas'));
+  recovering = true;
+  release();
+  await failed;
+  await page.clock.resume();
+  await expect(page.locator('#login-password')).toBeVisible({ timeout: 15_000 });
+  expect(calls).toBeGreaterThanOrEqual(2);
+  expect(calls).toBeLessThanOrEqual(3); // Development StrictMode can abort the first mount.
+  await page.getByLabel('Email').fill(session.user.email);
+  await page.locator('#login-password').fill(LOGIN_PASSWORD);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  expect(credentialCalls).toBe(1);
+});
+
+test('login preparation: falha mantém formulário fechado e permite tentar novamente', async ({ page }) => {
+  await mockApi(page);
+  // A definitive failure is not retried automatically.
+  await page.route('**/api/public/clinicas', route => route.fulfill({ status: 403, json: {} }));
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Tentar conectar novamente' })).toBeVisible();
+  await expect(page.locator('#login-password')).toHaveCount(0);
+  await page.unroute('**/api/public/clinicas');
+  await page.getByRole('button', { name: 'Tentar conectar novamente' }).click();
+  await expect(page.locator('#login-password')).toBeVisible();
+});
+
+test('login wait: explica demora e permite cancelar sem abrir sessão tardia', async ({ page }, testInfo) => {
+  await mockApi(page);
+  await page.clock.install();
+  let calls = 0;
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/users/login-context', async route => {
+    calls++;
+    await pending;
+    await route.fulfill({ json: { clinicas: [{ clinicaId: 1, nome: 'Clínica', slug: 'clinica-hemodinks' }] } }).catch(() => {});
+  });
+  await loginViaUi(page);
+  await expect(page.getByRole('status')).toContainText('Conectando ao serviço de acesso');
+  await page.clock.fastForward(12_000);
+  await expect(page.getByRole('status')).toContainText('primeiro acesso após');
+  await page.clock.fastForward(23_000);
+  await expect(page.getByRole('status')).toContainText('Ainda estamos aguardando');
+  await page.screenshot({ path: testInfo.outputPath('login-wait.png') });
+  await page.getByRole('button', { name: 'Cancelar tentativa' }).click();
+  await expect(page.getByText(/Tentativa de acesso cancelada/)).toBeVisible();
+  release();
+  await expect(page.locator('#login-password')).toHaveValue('');
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toHaveCount(0);
+  expect(calls).toBe(1);
+});
+
+test('login wait: indisponibilidade permite nova tentativa manual', async ({ page }) => {
+  await mockApi(page);
+  await page.route('**/api/users/login-context', route => route.fulfill({ status: 503, json: {} }));
+  await loginViaUi(page);
+  await expect(page.getByText(/Não foi possível conectar ao serviço de acesso agora/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancelar tentativa' })).toHaveCount(0);
+  await page.unroute('**/api/users/login-context');
+  await page.locator('#login-password').fill(LOGIN_PASSWORD);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+});
 
 test('bootstrap: API lenta informa a operação real e retry cancela a tentativa anterior', async ({ page }) => {
   await mockApi(page);
