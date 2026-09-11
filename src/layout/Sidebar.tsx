@@ -1,5 +1,7 @@
 import { useEffect, useId, useState } from 'react';
-import { BarChart3, Building2, CalendarClock, CalendarDays, ChevronDown, ClipboardList, FileText, LayoutDashboard, PlayCircle, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import type { CSSProperties } from 'react';
+import { APP_MODULES } from '../shared/navigation/appModules';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 import { UserAvatar } from '../features/users/UserAvatar';
@@ -106,7 +108,7 @@ export function Sidebar({
         <div className="session-card">
           <span className="session-label">Perfil</span>
           <strong>{currentUserProfile}</strong>
-          <span className="session-meta">{currentUserProfile} | {session.user.email}</span>
+          <span className="session-meta">{session.user.email}</span>
         </div>
 
         <nav className="side-nav" aria-label="Navegação principal">
@@ -114,31 +116,34 @@ export function Sidebar({
             <button
               type="button"
               className={`side-nav-dashboard ${activeView === 'dashboard' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.dashboard.color } as CSSProperties}
               aria-current={activeView === 'dashboard' ? 'page' : undefined}
               onClick={onOpenDashboard}
             >
-              <LayoutDashboard size={18} />
-              <span>Painel</span>
+              <APP_MODULES.dashboard.icon size={18} />
+              <span>{APP_MODULES.dashboard.navLabel}</span>
             </button>
           )}
           <button
             type="button"
             className={`side-nav-tutorials ${activeView === 'tutorials' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.tutorials.color } as CSSProperties}
             aria-current={activeView === 'tutorials' ? 'page' : undefined}
             onClick={onOpenTutorials}
           >
-            <PlayCircle size={18} />
-            <span>Tutoriais interativos</span>
+            <APP_MODULES.tutorials.icon size={18} />
+            <span>{APP_MODULES.tutorials.navLabel}</span>
           </button>
           {canAccessUsers && (
             <button
               type="button"
               className={`side-nav-users ${activeView === 'users' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.users.color } as CSSProperties}
               aria-current={activeView === 'users' ? 'page' : undefined}
               onClick={onOpenUsersList}
             >
-              <Users size={18} />
-              <span>Usuários</span>
+              <APP_MODULES.users.icon size={18} />
+              <span>{APP_MODULES.users.navLabel}</span>
               <span className="side-nav-count">{usersCount}</span>
             </button>
           )}
@@ -146,22 +151,24 @@ export function Sidebar({
             <button
               type="button"
               className={`side-nav-profile ${activeView === 'profile' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.profile.color } as CSSProperties}
               aria-current={activeView === 'profile' ? 'page' : undefined}
               onClick={onOpenMyProfile}
             >
-              <FileText size={18} />
-              <span>Meu cadastro</span>
+              <APP_MODULES.profile.icon size={18} />
+              <span>{APP_MODULES.profile.navLabel}</span>
             </button>
           )}
           {canAccessPatients && (
             <button
               type="button"
               className={`side-nav-patients ${activeView === 'patients' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.patients.color } as CSSProperties}
               aria-current={activeView === 'patients' ? 'page' : undefined}
               onClick={onOpenPatientsList}
             >
-              <ClipboardList size={18} />
-              <span>Pacientes - Cirurgias</span>
+              <APP_MODULES.patients.icon size={18} />
+              <span>{APP_MODULES.patients.navLabel}</span>
               <span className="side-nav-count">{pacientesCount}</span>
             </button>
           )}
@@ -170,12 +177,13 @@ export function Sidebar({
               <button
                 type="button"
                 className={`side-nav-billing side-nav-billing-toggle ${isBillingModuleActive ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.billing.color } as CSSProperties}
                 aria-expanded={isBillingMenuOpen}
                 aria-controls={billingSubmenuId}
                 onClick={() => setIsBillingMenuOpen((current) => !current)}
               >
-                <ReceiptText size={18} />
-                <span>Faturamento</span>
+                <APP_MODULES.billing.icon size={18} />
+                <span>{APP_MODULES.billing.navLabel}</span>
                 {pendingPaymentsCount > 0 && (
                   <span className="side-nav-count">{pendingPaymentsCount}</span>
                 )}
@@ -191,10 +199,11 @@ export function Sidebar({
                   <button
                     type="button"
                     className={`side-nav-billing side-nav-billing-subitem ${activeView === 'billing' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.billing.color } as CSSProperties}
                     aria-current={activeView === 'billing' ? 'page' : undefined}
                     onClick={onOpenBilling}
                   >
-                    <ReceiptText size={16} />
+                    <APP_MODULES.billing.icon size={16} />
                     <span>Gestão de faturamento</span>
                   </button>
                 )}
@@ -202,22 +211,24 @@ export function Sidebar({
                   <button
                     type="button"
                     className={`side-nav-reports side-nav-billing-subitem ${activeView === 'reports' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.reports.color } as CSSProperties}
                     aria-current={activeView === 'reports' ? 'page' : undefined}
                     onClick={onOpenReports}
                   >
-                    <BarChart3 size={16} />
-                    <span>Relatórios</span>
+                    <APP_MODULES.reports.icon size={16} />
+                    <span>{APP_MODULES.reports.navLabel}</span>
                   </button>
                 )}
                 {canAccessBilling && (
                   <button
                     type="button"
                     className={`side-nav-billing-history side-nav-billing-subitem ${activeView === 'billingHistory' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.billingHistory.color } as CSSProperties}
                     aria-current={activeView === 'billingHistory' ? 'page' : undefined}
                     onClick={onOpenBillingHistory}
                   >
-                    <CalendarClock size={16} />
-                    <span>Histórico</span>
+                    <APP_MODULES.billingHistory.icon size={16} />
+                    <span>{APP_MODULES.billingHistory.navLabel}</span>
                   </button>
                 )}
               </div>
@@ -227,11 +238,12 @@ export function Sidebar({
             <button
               type="button"
               className={`side-nav-medical-groups ${activeView === 'medicalGroups' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.medicalGroups.color } as CSSProperties}
               aria-current={activeView === 'medicalGroups' ? 'page' : undefined}
               onClick={onOpenMedicalGroups}
             >
-              <ShieldPlus size={18} />
-              <span>Grupos médicos</span>
+              <APP_MODULES.medicalGroups.icon size={18} />
+              <span>{APP_MODULES.medicalGroups.navLabel}</span>
               <span className="side-nav-count">{medicalGroupsCount}</span>
             </button>
           )}
@@ -239,11 +251,12 @@ export function Sidebar({
             <button
               type="button"
               className={`side-nav-agenda ${activeView === 'agenda' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.agenda.color } as CSSProperties}
               aria-current={activeView === 'agenda' ? 'page' : undefined}
               onClick={onOpenAgenda}
             >
-              <CalendarDays size={18} />
-              <span>Agenda e notificações</span>
+              <APP_MODULES.agenda.icon size={18} />
+              <span>{APP_MODULES.agenda.navLabel}</span>
               {unreadAgendaNotificationCount > 0 && (
                 <span className="side-nav-count">{unreadAgendaNotificationCount}</span>
               )}
@@ -253,22 +266,24 @@ export function Sidebar({
             <button
               type="button"
               className={`side-nav-clinics ${activeView === 'clinics' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.clinics.color } as CSSProperties}
               aria-current={activeView === 'clinics' ? 'page' : undefined}
               onClick={onOpenClinics}
             >
-              <Building2 size={18} />
-              <span>Clínicas</span>
+              <APP_MODULES.clinics.icon size={18} />
+              <span>{APP_MODULES.clinics.navLabel}</span>
             </button>
           )}
           {canAccessSettings && (
             <button
               type="button"
               className={`side-nav-settings ${activeView === 'settings' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.settings.color } as CSSProperties}
               aria-current={activeView === 'settings' ? 'page' : undefined}
               onClick={onOpenSettings}
             >
-              <Settings size={18} />
-              <span>Opções</span>
+              <APP_MODULES.settings.icon size={18} />
+              <span>{APP_MODULES.settings.navLabel}</span>
             </button>
           )}
         </nav>
