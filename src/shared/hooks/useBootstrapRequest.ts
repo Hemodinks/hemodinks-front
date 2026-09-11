@@ -2,8 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { API_READ_TIMEOUT_MS, ApiError } from '../../services/api';
 
-// Finish the application bootstrap slightly before the transport timeout so the UI owns cancellation deterministically.
-export const BOOTSTRAP_TIMEOUT_MS = API_READ_TIMEOUT_MS - 1_000;
+export const BOOTSTRAP_TIMEOUT_MS = API_READ_TIMEOUT_MS;
 const SLOW_MS = 12_000;
 const RETRY_MS = 35_000;
 
