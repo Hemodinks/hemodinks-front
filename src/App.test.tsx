@@ -286,7 +286,7 @@ describe('App', () => {
 
     expect(screen.getByText('GM Tech Solutions')).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
@@ -335,7 +335,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
     expect(await screen.findByLabelText('Email')).toBeEnabled();
     expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
@@ -346,7 +346,7 @@ describe('App', () => {
     localStorage.removeItem(CONSENT_STORAGE_KEY);
     render(<App />);
 
-    const loginFooter = screen.getByRole('contentinfo', { name: 'Links legais' });
+    const loginFooter = await screen.findByRole('contentinfo', { name: 'Links legais' });
     expect(loginFooter.querySelector('a[href="/termos-de-uso"]')).toHaveTextContent('Termos de Uso');
     expect(loginFooter.querySelector('a[href="/politica-de-privacidade"]')).toHaveTextContent('Política de Privacidade');
     expect(screen.getByRole('heading', { name: 'Sua privacidade no HemoDinks' })).toBeVisible();
@@ -577,8 +577,8 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: /sair/i }));
-    await user.clear(screen.getByLabelText('Email'));
-    await user.type(screen.getByLabelText('Email'), mockSession().user.email);
+    await user.clear(await screen.findByLabelText('Email'));
+    await user.type(await screen.findByLabelText('Email'), mockSession().user.email);
     await user.clear(screen.getByLabelText('Senha'));
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
@@ -588,14 +588,25 @@ describe('App', () => {
     expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledTimes(1);
   });
 
-  it('disponibiliza o login sem carregar a lista pública de clínicas', () => {
+  it('aguarda a preparação das clínicas antes de disponibilizar o login', async () => {
+    let resolveClinics!: (clinics: Awaited<ReturnType<typeof api.listPublicClinics>>) => void;
+    vi.mocked(api.listPublicClinics).mockReturnValueOnce(new Promise((resolve) => {
+      resolveClinics = resolve;
+    }));
     render(<App />);
 
-    expect(screen.getByLabelText('Email')).toBeEnabled();
+    expect(screen.getByRole('progressbar', { name: 'Preparando acesso e carregando clínicas' })).toBeVisible();
+    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument();
+    expect(api.resolveLoginClinics).not.toHaveBeenCalled();
+    expect(api.listPublicClinics).toHaveBeenCalledWith('', expect.any(AbortSignal));
+
+    resolveClinics([{ id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null }]);
+
+    expect(await screen.findByLabelText('Email')).toBeEnabled();
     expect(screen.getByLabelText('Senha')).toBeEnabled();
     expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(api.resolveLoginClinics).not.toHaveBeenCalled();
   });
 
@@ -629,7 +640,7 @@ describe('App', () => {
 
     render(<App />);
     expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'test-password');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
@@ -791,9 +802,7 @@ describe('App', () => {
 
     fireEvent(window, new Event(api.AUTH_EXPIRED_EVENT));
 
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
     expect(screen.getByText('Sua sessao expirou. Entre novamente para continuar.')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Painel inicial' })).not.toBeInTheDocument();
   });
@@ -815,13 +824,11 @@ describe('App', () => {
 
     render(<App />);
 
-    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
     expect(screen.getByText('Sua sessao expirou. Entre novamente para continuar.')).toBeInTheDocument();
   });
 
@@ -848,11 +855,11 @@ describe('App', () => {
     expect(screen.queryByText(/request failed with status code 403/i)).not.toBeInTheDocument();
   });
 
-  it('mantém a marca do sistema antes de autenticar', () => {
+  it('mantém a marca do sistema antes de autenticar', async () => {
     render(<App />);
 
-    expect(screen.getByAltText('Hemodinks')).toHaveAttribute('src', '/imagem%20hemodinks%20github.jpg');
-    expect(api.listPublicClinics).not.toHaveBeenCalled();
+    expect(await screen.findByAltText('Hemodinks')).toHaveAttribute('src', '/imagem%20hemodinks%20github.jpg');
+    expect(api.listPublicClinics).toHaveBeenCalledWith('', expect.any(AbortSignal));
     expect(api.getSystemSettingsCompanyPhoto).not.toHaveBeenCalled();
   });
 
@@ -1174,7 +1181,7 @@ describe('App', () => {
 
     render(<App />);
 
-    const passwordInput = screen.getByLabelText('Senha');
+    const passwordInput = await screen.findByLabelText('Senha');
     expect(passwordInput).toHaveAttribute('type', 'password');
 
     await user.type(passwordInput, 'test-password');
@@ -1214,14 +1221,14 @@ describe('App', () => {
     vi.mocked(api.resolveLoginClinics).mockRejectedValueOnce(new Error('Credenciais invalidas.'));
     render(<App />);
 
-    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'senha-incorreta');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(await screen.findByText('Credenciais invalidas.')).toBeVisible();
     expect(screen.getByLabelText('Senha')).toHaveValue('');
     expect(api.authenticate).not.toHaveBeenCalled();
-    expect(api.listPublicClinics).not.toHaveBeenCalled();
+    expect(api.listPublicClinics).toHaveBeenCalledWith('', expect.any(AbortSignal));
     expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
   });
 
@@ -1235,7 +1242,7 @@ describe('App', () => {
     });
     render(<App />);
 
-    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
 
     await waitFor(() => {
@@ -1256,7 +1263,7 @@ describe('App', () => {
 
     render(<App />);
 
-    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
 
     await waitFor(() => {
@@ -1329,7 +1336,7 @@ describe('App', () => {
 
     render(<App />);
 
-    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'temporary-test-password');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
@@ -1377,7 +1384,7 @@ describe('App', () => {
 
     expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Nome completo'), 'Bruno Hemodinks');
-    await user.type(screen.getByLabelText('Email'), 'bruno@hemodinks.com');
+    await user.type(await screen.findByLabelText('Email'), 'bruno@hemodinks.com');
     await user.type(screen.getByLabelText('Telefone'), '81988888888');
     await user.type(screen.getByLabelText('Data de nascimento'), '10051992');
     expect(screen.getByLabelText('Perfil')).toHaveValue('2');
@@ -1422,7 +1429,7 @@ describe('App', () => {
 
     expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Nome completo'), 'Clara Hemodinks');
-    await user.type(screen.getByLabelText('Email'), 'clara@hemodinks.com');
+    await user.type(await screen.findByLabelText('Email'), 'clara@hemodinks.com');
     await user.type(screen.getByLabelText('Telefone'), '81997777777');
     await user.type(screen.getByLabelText('CRM'), '98765');
     await user.selectOptions(screen.getByLabelText('UF do CRM'), 'SP');
