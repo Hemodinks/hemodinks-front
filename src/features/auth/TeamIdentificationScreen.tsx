@@ -1,9 +1,8 @@
-import { type FormEvent } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { LogIn, Users } from "lucide-react";
 import type { Theme } from "../../appTypes";
 import type { TeamLoginChallenge } from "../../types";
 import { LoadingOverlay } from "../../shared/components/LoadingOverlay";
-import { PasswordInput } from "../../shared/components/PasswordInput";
 import { TechCredit } from "../../shared/components/TechCredit";
 import { ThemeToggle } from "../../shared/components/ThemeToggle";
 import { AlertMessage } from "../../shared/components/ui";
@@ -41,12 +40,19 @@ export function TeamIdentificationScreen({
     (operator) => String(operator.id) === operatorId,
   );
   const requiresPin = selectedOperator?.exigePin ?? false;
+  const [search, setSearch] = useState('');
+  const pinInput = useRef<HTMLInputElement>(null);
+  const operators = challenge.operadores.filter(operator =>
+    String(operator.id) === operatorId || operator.nome.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+  useEffect(() => {
+    if (requiresPin && !loading) pinInput.current?.focus();
+  }, [operatorId, requiresPin, loading]);
   return (
     <main className="auth-screen">
       <LoadingOverlay active={loading} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
-      <section className="auth-panel">
+      <section className="auth-panel" aria-busy={loading}>
         <div className="brand-block">
           <span className="brand-mark">
             <Users size={38} />
@@ -56,16 +62,23 @@ export function TeamIdentificationScreen({
             <h1>{challenge.equipeNome}</h1>
           </div>
         </div>
+        <p className="team-login-description">Selecione seu nome para acessar a equipe.
+          {challenge.modoIdentificacao === 'Pin' ? ' Em seguida, informe seu PIN individual.' : ' Este acesso não solicita PIN.'}</p>
         <form className="stack" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
+          {challenge.operadores.length > 8 && <label>Buscar funcionário
+            <input type="search" value={search} onChange={event => setSearch(event.target.value)} disabled={loading} />
+          </label>}
+          {search && operators.length === 0 && <p role="status">Nenhum funcionário encontrado para esta busca.</p>}
           <label>
             Membro da Equipe
             <select
               value={operatorId}
               onChange={(event) => onOperatorChange(event.target.value)}
               required
+              disabled={loading}
             >
               <option value="">Selecione seu nome</option>
-              {challenge.operadores.map((operator) => (
+              {operators.map((operator) => (
                 <option key={operator.id} value={operator.id}>
                   {operator.nome}
                 </option>
@@ -73,33 +86,34 @@ export function TeamIdentificationScreen({
             </select>
           </label>
           {requiresPin && (
-            <PasswordInput
+            <label htmlFor="team-pin">PIN individual
+            <input
+              ref={pinInput}
               id="team-pin"
-              label="PIN individual"
+              type="password"
+              className="team-pin-input"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
               value={pin}
-              onChange={(value) =>
-                onPinChange(value.replace(/\D/g, "").slice(0, 6))
+              onChange={(event) =>
+                onPinChange(event.target.value.replace(/\D/g, "").slice(0, 6))
               }
-              autoComplete="one-time-code"
+              autoComplete="off"
               minLength={6}
               maxLength={6}
               required
-            />
+              disabled={loading}
+            /></label>
           )}
-          {selectedOperator && !requiresPin && (
-            <p className="alert">
-              A identificação é apenas nominal. Ações sensíveis ficam bloqueadas
-              sem um PIN individual.
-            </p>
-          )}
+          {challenge.operadores.length === 0 && <AlertMessage type="error">Nenhum funcionário disponível. Entre em contato com a administração da clínica.</AlertMessage>}
           {error && <AlertMessage type="error">{error}</AlertMessage>}
           <div className="button-row login-actions">
             <button type="button" className="ghost-button" onClick={onBack}>
               Voltar
             </button>
-            <button className="primary-action" type="submit" disabled={loading}>
+            <button className="primary-action" type="submit" disabled={loading || !selectedOperator}>
               <LogIn size={18} />
-              Continuar
+              {loading ? 'Entrando...' : 'Continuar'}
             </button>
           </div>
         </form>

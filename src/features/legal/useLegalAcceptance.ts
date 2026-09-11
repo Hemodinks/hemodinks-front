@@ -3,6 +3,7 @@ import { acceptCurrentLegalDocuments, getCurrentLegalAcceptance } from '../../se
 import type { AuthSession } from '../../types';
 import type { LegalAcceptanceStatus } from '../../types/legalAcceptance';
 import { getErrorMessage } from '../../shared/utils/formatters';
+import { useBootstrapRequest } from '../../shared/hooks/useBootstrapRequest';
 import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from './legalVersions';
 
 type AcceptanceState = {
@@ -25,24 +26,19 @@ export function useLegalAcceptance(session: AuthSession | null) {
   const scopeKey = session ? `${session.user.id}:${session.user.clinicaId ?? 0}:${session.token}` : '';
   const [state, setState] = useState<AcceptanceState>(EMPTY_STATE);
 
-  const load = useCallback(async () => {
-    if (!session) {
-      setState(EMPTY_STATE);
-      return;
+  const request = useCallback(async (signal: AbortSignal) => {
+    const status = await getCurrentLegalAcceptance(session!.token, signal);
+    if (!status?.termsOfUse || !status.privacyNotice || typeof status.requiresAcceptance !== 'boolean') {
+      throw new Error('Invalid legal acceptance response');
     }
-
-    setState({ scopeKey, status: null, loading: true, accepting: false, error: '' });
-    try {
-      const status = await getCurrentLegalAcceptance(session.token);
-      setState({ scopeKey, status, loading: false, accepting: false, error: '' });
-    } catch (error) {
-      setState({ scopeKey, status: null, loading: false, accepting: false, error: getErrorMessage(error) });
-    }
-  }, [scopeKey, session]);
+    return { scopeKey, status };
+  }, [scopeKey]);
+  const bootstrap = useBootstrapRequest(Boolean(session), request, 'session_clinic_legal');
+  const load = bootstrap.retry;
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    setState({ scopeKey: bootstrap.data?.scopeKey ?? scopeKey, status: bootstrap.data?.status ?? null, loading: bootstrap.loading, accepting: false, error: bootstrap.error });
+  }, [scopeKey, bootstrap.data, bootstrap.loading, bootstrap.error]);
 
   const accept = useCallback(async () => {
     if (!session) return false;
@@ -72,6 +68,8 @@ export function useLegalAcceptance(session: AuthSession | null) {
       && state.status.privacyNotice.isCurrent;
 
     return {
+      slow: bootstrap.slow,
+      canRetry: bootstrap.canRetry,
       status: resolvedForCurrentScope ? state.status : null,
       loading: Boolean(session) && (!resolvedForCurrentScope && !state.error || state.loading),
       accepting: state.accepting,
@@ -80,5 +78,5 @@ export function useLegalAcceptance(session: AuthSession | null) {
       accept,
       retry: load,
     };
-  }, [accept, load, scopeKey, session, state]);
+  }, [accept, load, scopeKey, session, state, bootstrap.slow, bootstrap.canRetry]);
 }

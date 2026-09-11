@@ -32,7 +32,7 @@ import {
   uploadPacienteArquivo,
   uploadUserArquivo,
 } from './index';
-import { AUTH_EXPIRED_EVENT, apiClient, publicApiClient } from './api';
+import { AUTH_EXPIRED_EVENT, ApiError, apiClient, publicApiClient, get } from './api';
 import {
   extractClinicaContextFromToken,
   resolveClinicaSlugFromHostname,
@@ -91,6 +91,7 @@ describe('services api client', () => {
 
     expect(result.token).toBe('jwt-token');
     expect(requestSpy).toHaveBeenCalledWith({
+      timeout: 60_000,
       url: '/api/users/authenticate',
       method: 'POST',
       data: { email: 'gmarcone@gmail.com', senha: 'test-password' },
@@ -113,6 +114,7 @@ describe('services api client', () => {
     await authenticate('gmarcone@gmail.com', 'test-password');
 
     expect(requestSpy).toHaveBeenCalledWith({
+      timeout: 60_000,
       url: '/api/users/authenticate',
       method: 'POST',
       data: { email: 'gmarcone@gmail.com', senha: 'test-password' },
@@ -132,6 +134,7 @@ describe('services api client', () => {
 
     expect(requestSpy).toHaveBeenCalledWith({
       url: '/api/users/',
+      timeout: 60_000,
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -190,6 +193,7 @@ describe('services api client', () => {
 
     expect(requestSpy).toHaveBeenCalledWith({
       url: '/api/dashboard/notifications',
+      timeout: 60_000,
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -208,6 +212,7 @@ describe('services api client', () => {
 
     expect(result?.featuresEfetivas).toEqual(['Pacientes.Visualizar']);
     expect(requestSpy).toHaveBeenCalledWith({
+      timeout: 60_000,
       url: '/api/licencas/current',
       method: 'GET',
       headers: {
@@ -285,6 +290,7 @@ describe('services api client', () => {
 
     expect(requestSpy).toHaveBeenNthCalledWith(1, {
       url: '/api/pacientes/',
+      timeout: 60_000,
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -293,6 +299,7 @@ describe('services api client', () => {
     });
     expect(requestSpy).toHaveBeenNthCalledWith(2, {
       url: '/api/hospitais/',
+      timeout: 60_000,
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -301,6 +308,7 @@ describe('services api client', () => {
     });
     expect(requestSpy).toHaveBeenNthCalledWith(3, {
       url: '/api/convenios/',
+      timeout: 60_000,
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -309,6 +317,7 @@ describe('services api client', () => {
     });
     expect(requestSpy).toHaveBeenNthCalledWith(4, {
       url: '/api/opme/',
+      timeout: 60_000,
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -523,6 +532,7 @@ describe('services api client', () => {
 
     expect(requestSpy).toHaveBeenNthCalledWith(1, {
       url: '/api/users/2',
+      timeout: 60_000,
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -580,6 +590,7 @@ describe('services api client', () => {
 
     expect(requestSpy).toHaveBeenNthCalledWith(1, {
       url: '/api/configuracoes-sistema/current',
+      timeout: 60_000,
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -712,6 +723,7 @@ describe('services api client', () => {
 
     expect(requestSpy).toHaveBeenCalledWith({
       url: '/api/pacientes/10/observacoes',
+      timeout: 60_000,
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -719,4 +731,25 @@ describe('services api client', () => {
       },
     });
   });
+  it('preserves timeout metadata and sanitizes unexpected server failures', async () => {
+    vi.spyOn(apiClient, 'request')
+      .mockRejectedValueOnce(new AxiosError('internal connection details', 'ECONNABORTED'))
+      .mockRejectedValueOnce(apiError(500, { message: 'internal stack trace' }));
+    await expect(get('/api/public/clinicas')).rejects.toMatchObject({
+      name: 'ApiError', code: 'ECONNABORTED',
+    });
+    const error = await get('/api/public/clinicas').catch(error => error);
+    expect(error).toBeInstanceOf(ApiError);
+    if (!(error instanceof ApiError)) throw error;
+    expect(error.status).toBe(500);
+    expect(error.message).not.toContain('stack trace');
+  });
+
+  it('forwards cancellation and allows explicit read timeout overrides', async () => {
+    const controller = new AbortController();
+    const requestSpy = vi.spyOn(apiClient, 'request').mockResolvedValue(axiosResponse([]));
+    await get('/api/public/clinicas', undefined, { signal: controller.signal, timeout: 10_000 });
+    expect(requestSpy).toHaveBeenCalledWith(expect.objectContaining({ signal: controller.signal, timeout: 10_000 }));
+  });
+
 });
