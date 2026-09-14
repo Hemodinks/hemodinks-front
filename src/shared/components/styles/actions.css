@@ -60,21 +60,21 @@
 
 .primary-action {
   width: 100%;
-  color: var(--action-text);
-  background: var(--action-primary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-primary) 82%, black);
   box-shadow: 0 8px 18px color-mix(in srgb, var(--action-primary) 28%, transparent);
   padding: 0 16px;
 }
 
 .primary-action:hover {
-  background: var(--action-primary-hover);
+  background: color-mix(in srgb, var(--action-primary-hover) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-primary-hover) 82%, black);
 }
 
 .ghost-button {
-  color: var(--action-text);
-  background: var(--action-secondary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-secondary) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
   box-shadow: 0 7px 16px color-mix(in srgb, var(--action-secondary) 20%, transparent);
   padding: 0 13px;
@@ -82,33 +82,33 @@
 
 .ghost-button:hover,
 .icon-button:hover {
-  background: var(--action-secondary-hover);
+  background: color-mix(in srgb, var(--action-secondary-hover) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-secondary-hover) 82%, black);
 }
 
 .icon-button {
   width: 40px;
-  color: var(--action-text);
-  background: var(--action-accent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-accent) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-accent) 82%, black);
   box-shadow: 0 7px 16px color-mix(in srgb, var(--action-accent) 18%, transparent);
 }
 
 .icon-button.muted {
-  color: var(--action-text);
-  background: var(--action-secondary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-secondary) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
 }
 
 .icon-button.danger {
-  color: var(--action-text);
-  background: var(--action-danger);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-danger) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-danger) 82%, black);
 }
 
 .danger-text {
-  color: var(--action-text);
-  background: var(--action-danger);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-danger) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-danger) 82%, black);
 }
 

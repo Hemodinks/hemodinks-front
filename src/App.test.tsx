@@ -856,7 +856,7 @@ describe('App', () => {
       expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'data', sortDirection: 'desc' });
     });
     expect(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^pacientes/i })).toHaveTextContent('1');
-    expect(screen.getAllByLabelText('Indicador indisponível').length).toBeGreaterThan(0);
+    expect((await screen.findAllByLabelText('Indicador indisponível')).length).toBeGreaterThan(0);
     expect(screen.queryByText(/request failed with status code 403/i)).not.toBeInTheDocument();
   });
 

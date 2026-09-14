@@ -22,3 +22,11 @@
 .side-nav-billing-submenu { padding-left: 16px; }
 .side-nav-billing-submenu[hidden] { display: none; }
 .side-nav .side-nav-billing-subitem { font-size: .75rem; }
+
+/* Use each module's established color without fading its text or icons. */
+.sidebar-clinic .eyebrow { color: var(--teal); }
+.side-nav button, .side-nav button.active, .side-nav button:hover { background: color-mix(in srgb, var(--side-nav-color) var(--navigation-color-opacity), transparent); color: var(--ink); }
+.side-nav button > svg, .side-nav button.active > svg { color: var(--ink); }
+.side-nav button.active { border-color: var(--ink); border-left-width: 3px; font-weight: 800; }
+.side-nav button:hover { border-color: var(--ink); }
+.side-nav-count { color: var(--ink); background: var(--panel); }

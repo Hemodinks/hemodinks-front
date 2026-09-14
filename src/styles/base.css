@@ -18,6 +18,9 @@
   --teal: #0f766e;
   --amber: #b7791f;
   --danger: #b42318;
+  --control-color-opacity: 40%;
+  --navigation-color-opacity: 30%;
+  --dashboard-color-opacity: 30%;
   --action-primary: #2563eb;
   --action-primary-hover: #1d4ed8;
   --action-secondary: #0f766e;
