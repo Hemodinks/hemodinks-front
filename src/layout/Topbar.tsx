@@ -1,8 +1,7 @@
-import { Bell, LogOut, Menu } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 import type { BreadcrumbItem, Theme } from '../appTypes';
 import type { AuthSession } from '../types';
-import { UserAvatar } from '../features/users/UserAvatar';
-import { formatPersonName } from '../shared/utils/formatters';
+import { UserMenu } from './UserMenu';
 import { CompanyLogo } from '../shared/components/CompanyLogo';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
 import { ThemeToggle } from '../shared/components/ThemeToggle';
@@ -46,30 +45,21 @@ export function Topbar({
         <div className="topbar-brand">
           <CompanyLogo companyName={companyName} photo={companyPhoto} className="topbar-logo" decorative />
           <div>
-            <div className="brand-kicker">
-              <span className="company-name">GM Tech Solutions</span>
-              <span className="product-name">{companyName}</span>
-            </div>
+            <span className="product-name">HemoDinks</span>
             <h1>{appTitle}</h1>
-            {appTitle === 'Painel inicial' && <p className="topbar-subtitle">Visão geral da clínica</p>}
             {isAnonymousTeamSession(session) && <span className="eyebrow">Acesso somente leitura</span>}
-            <Breadcrumbs items={breadcrumbItems} />
+            {breadcrumbItems.length > 1 && <Breadcrumbs items={breadcrumbItems} />}
           </div>
         </div>
-        <ThemeToggle theme={theme} onToggle={onThemeToggle} />
       </div>
 
       <div className="topbar-right">
-        <div className="current-user topbar-user" aria-label="Usuário logado">
-          <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" />
-          <span className="current-user-name">{formatPersonName(session.user.nome)}</span>
-        </div>
-
         <div className="topbar-actions topbar-primary-actions">
           <button
             type="button"
             className="topbar-info-panel notification-chip"
             onClick={onToggleNotifications}
+            aria-label={`Notificações: ${notificationCount}`}
             aria-expanded={notificationsOpen}
             aria-haspopup="dialog"
             data-tour="agenda-notification-center"
@@ -79,10 +69,8 @@ export function Topbar({
             <span className="notification-label notification-label-short">Avisos</span>
             <span className="notification-count">{notificationCount}</span>
           </button>
-          <button type="button" className="ghost-button logout-button" onClick={onLogout}>
-            <LogOut size={18} />
-            <span>Sair</span>
-          </button>
+          <ThemeToggle theme={theme} onToggle={onThemeToggle} />
+          <UserMenu session={session} companyName={companyName} onLogout={onLogout} />
         </div>
       </div>
     </header>

@@ -1,0 +1,210 @@
+
+> hemodinks-front@0.1.0 verify
+> npm run audit:architecture && npm test && npm run build
+
+
+> hemodinks-front@0.1.0 audit:architecture
+> node scripts/check-frontend-architecture.mjs
+
+[architecture] 266 arquivos verificados; nenhuma violação de camada ou tamanho máximo.
+
+> hemodinks-front@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.8 C:/George Marcone/GitHub/personal/HEMODINKS/hemodinks-front
+
+ ❯ src/App.test.tsx (78 tests | 1 failed) 105544ms
+     × nao exibe erro no dashboard quando o resumo retorna 403 para medico 822ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/App.test.tsx > App > nao exibe erro no dashboard quando o resumo retorna 403 para medico
+TestingLibraryElementError: Unable to find a label with the text of: Indicador indisponível
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell"
+    >
+      <datalist
+        id="hemodinks-medical-users-options"
+      />
+      <datalist
+        id="hemodinks-convenios-options"
+      >
+        <option
+          value="Amil"
+        />
+        <option
+          value="Bradesco Saude"
+        />
+        <option
+          value="Particular"
+        />
+      </datalist>
+      <datalist
+        id="hemodinks-opme-fornecedores-options"
+      >
+        <option
+          value="AVL"
+        />
+        <option
+          value="GE"
+        />
+        <option
+          value="Promedom"
+        />
+        <option
+          value="Spyner"
+        />
+      </datalist>
+      <div
+        class="app-frame"
+      >
+        <header
+          class="topbar"
+        >
+          <div
+            class="topbar-left"
+          >
+            <button
+              aria-expanded="false"
+              aria-haspopup="dialog"
+              aria-label="Abrir menu"
+              class="ghost-button navigation-toggle"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-menu"
+                fill="none"
+                height="22"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="22"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 5h16"
+                />
+                <path
+                  d="M4 12h16"
+                />
+                <path
+                  d="M4 19h16"
+                />
+              </svg>
+            </button>
+            <div
+              class="topbar-brand"
+            >
+              <img
+                alt=""
+                aria-hidden="true"
+                class="topbar-logo"
+                src="/imagem%20hemodinks%20github.jpg"
+              />
+              <div>
+                <span
+                  class="product-name"
+                >
+                  HemoDinks
+                </span>
+                <h1>
+                  Painel inicial
+                </h1>
+                <nav
+                  aria-label="Breadcrumbs"
+                  class="breadcrumbs"
+                >
+                  <ol>
+                    <li>
+                      <button
+                        class="breadcrumb-button"
+                        type="button"
+                      >
+                        Início
+                      </button>
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-chevron-right"
+                        fill="none"
+                        height="14"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="14"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="m9 18 6-6-6-6"
+                        />
+                      </svg>
+                    </li>
+                    <li>
+                      <span
+                        aria-current="page"
+                        class="breadcrumb-current"
+                      >
+                        Painel inicial
+                      </span>
+                    </li>
+                  </ol>
+                </nav>
+              </div>
+            </div>
+          </div>
+          <div
+            class="topbar-right"
+          >
+            <div
+              class="topbar-actions topbar-primary-actions"
+            >
+              <button
+                aria-expanded="false"
+                aria-haspopup="dialog"
+                aria-label="Notificações: 0"
+                class="topbar-info-panel notification-chip"
+                data-tour="agenda-notification-center"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-bell"
+                  fill="none"
+                  height="17"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="17"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:109:15
+ ❯ src/App.test.tsx:859:19
+    857|     });
+    858|     expect(within(screen.getByLabelText('Menu da clínica')).getByRole(…
+    859|     expect(screen.getAllByLabelText('Indicador indisponível').length).…
+       |                   ^
+    860|     expect(screen.queryByText(/request failed with status code 403/i))…
+    861|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 52 passed (53)
+      Tests  1 failed | 315 passed (316)
+   Start at  13:51:40
+   Duration  124.85s (transform 26.38s, setup 76.23s, import 33.42s, tests 127.98s, environment 168.95s)
+

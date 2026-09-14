@@ -63,7 +63,7 @@
 
 .tutorial-mission-popover .driver-popover-next-btn {
   color: white;
-  background: var(--action-primary);
+  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
   border-color: var(--action-primary);
 }
 

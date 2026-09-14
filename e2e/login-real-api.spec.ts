@@ -63,6 +63,7 @@ test('case:individual', async ({ page }) => {
   expect(session.user.perfilId).toBe(5);
   await page.goto('/pacientes');
   await expect(page.locator('.topbar')).toBeVisible();
+  await page.getByRole('button', { name: 'Menu do usuário', exact: true }).click();
   await page.getByRole('button', { name: 'Sair', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeVisible();
   expect(await page.evaluate(() => sessionStorage.getItem('hemodinks.session'))).toBeNull();

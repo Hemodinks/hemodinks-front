@@ -1,0 +1,21 @@
+
+> hemodinks-front@0.1.0 test:e2e
+> playwright test --workers=2 --grep acessibilidade|nova sessão sem acesso|dashboard operacional
+
+[WebServer] (node:32056) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 1 worker
+
+(node:6740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:6740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [chromium] › e2e\hemodinks.spec.ts:1125:1 › nao apresenta violacoes serias de acessibilidade nas rotas principais (21.5s)
+  ok 2 [chromium] › e2e\hemodinks.spec.ts:1956:3 › bootstrap: acessibilidade do loading em 390px e tema light (2.0s)
+  ok 3 [chromium] › e2e\hemodinks.spec.ts:1956:3 › bootstrap: acessibilidade do loading em 1280px e tema dark (2.2s)
+[browser console] Failed to load resource: the server responded with a status of 403 (Forbidden)
+  ok 4 [chromium] › e2e\hemodinks.spec.ts:1976:1 › bootstrap: nova sessão sem acesso não reutiliza dados da clínica anterior (3.6s)
+  ok 5 [chromium] › e2e\hemodinks.spec.ts:2005:1 › dashboard operacional preserva fundo, tema e navegação nas larguras solicitadas (10.2s)
+
+  5 passed (44.6s)

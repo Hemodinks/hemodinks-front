@@ -15,6 +15,7 @@ export function ThemeToggle({ theme, onToggle, floating = false }: ThemeTogglePr
       type="button"
       className={`ghost-button theme-toggle ${floating ? 'floating' : ''}`}
       onClick={onToggle}
+      aria-label={isDark ? 'Usar tema claro' : 'Usar tema escuro'}
       title={isDark ? 'Usar tema claro' : 'Usar tema escuro'}
     >
       {isDark ? <Sun size={17} /> : <Moon size={17} />}

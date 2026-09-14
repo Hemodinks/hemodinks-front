@@ -14,8 +14,8 @@
   display: grid;
   place-items: center;
   border-radius: 16px;
-  color: #fff;
-  background: var(--action-primary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
   box-shadow: 0 12px 28px rgba(15, 118, 110, 0.22);
 }
 

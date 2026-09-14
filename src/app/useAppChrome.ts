@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   DEFAULT_SYSTEM_SETTINGS,
@@ -11,7 +11,7 @@ import { ApiError } from '../services/api';
 import { queryClient } from '../queryClient';
 import { queryKeys } from '../shared/queryKeys';
 import { getErrorMessage } from '../shared/utils/formatters';
-import type { AuthSession, DashboardNotification, DashboardSummary } from '../types';
+import type { AuthSession } from '../types';
 
 const DASHBOARD_CACHE_TIME_MS = 30 * 1000;
 const NOTIFICATIONS_CACHE_TIME_MS = 15 * 1000;
@@ -25,12 +25,7 @@ type UseAppChromeOptions = {
 };
 
 export function useAppChrome({ session }: UseAppChromeOptions) {
-  const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
-  const [dashboardError, setDashboardError] = useState('');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [notificationsError, setNotificationsError] = useState('');
 
   const sessionReady = Boolean(session && !session.user.precisaTrocarSenha);
   const dashboardSummaryQuery = useQuery({
@@ -56,40 +51,15 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
   const companyName = systemSettings.nomeEmpresa?.trim() || DEFAULT_SYSTEM_SETTINGS.nomeEmpresa;
   const systemSettingsError = systemSettingsQuery.error ? getErrorMessage(systemSettingsQuery.error) : '';
 
-  useEffect(() => {
-    if (dashboardSummaryQuery.data) {
-      setDashboardSummary(dashboardSummaryQuery.data);
-      setDashboardError('');
-    }
-  }, [dashboardSummaryQuery.data]);
-
-  useEffect(() => {
-    if (dashboardSummaryQuery.error) {
-      if (isForbiddenError(dashboardSummaryQuery.error)) {
-        setDashboardError('');
-        return;
-      }
-
-      setDashboardError(getErrorMessage(dashboardSummaryQuery.error));
-    }
-  }, [dashboardSummaryQuery.error]);
-
-  useEffect(() => {
-    setNotificationsLoading(notificationsQuery.isFetching);
-  }, [notificationsQuery.isFetching]);
-
-  useEffect(() => {
-    if (notificationsQuery.data) {
-      setNotifications(notificationsQuery.data);
-      setNotificationsError('');
-    }
-  }, [notificationsQuery.data]);
-
-  useEffect(() => {
-    if (notificationsQuery.error) {
-      setNotificationsError(getErrorMessage(notificationsQuery.error));
-    }
-  }, [notificationsQuery.error]);
+  // Read directly from the session-keyed query: never retain a previous clinic's copy.
+  const dashboardSummary = sessionReady ? dashboardSummaryQuery.data ?? null : null;
+  const dashboardLoading = sessionReady && dashboardSummaryQuery.isPending;
+  const dashboardError = dashboardSummaryQuery.error && !isForbiddenError(dashboardSummaryQuery.error)
+    ? 'Não foi possível carregar os indicadores da clínica. Tente novamente mais tarde.' : '';
+  const notifications = session ? notificationsQuery.data ?? [] : [];
+  const notificationsLoading = notificationsQuery.isFetching;
+  const notificationsError = notificationsQuery.error
+    ? 'Não foi possível carregar as notificações. Tente novamente mais tarde.' : '';
 
   const loadDashboardSummary = async (token = session?.token, forceRefresh = false) => {
     if (!token) {
@@ -97,10 +67,13 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(token) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(token), refetchType: 'none' });
     }
-
-    await dashboardSummaryQuery.refetch();
+    await queryClient.fetchQuery({
+      queryKey: queryKeys.dashboardSummary(token),
+      queryFn: () => getDashboardSummary(token),
+      staleTime: DASHBOARD_CACHE_TIME_MS,
+    });
   };
 
   const handleToggleNotifications = async () => {
@@ -115,23 +88,22 @@ export function useAppChrome({ session }: UseAppChromeOptions) {
       return;
     }
 
-    await notificationsQuery.refetch();
-    await markAgendaNotificationsAsRead(session.token);
-    await notificationsQuery.refetch();
-    await loadDashboardSummary(session.token, true);
+    try {
+      await markAgendaNotificationsAsRead(session.token);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.dashboardNotifications(session.token) });
+      await loadDashboardSummary(session.token, true);
+    } catch {
+      // A failed acknowledgement must not prevent reading the notification center.
+    }
   };
 
   const resetAppChrome = () => {
-    setDashboardSummary(null);
-    setDashboardError('');
     setNotificationsOpen(false);
-    setNotifications([]);
-    setNotificationsError('');
-    setNotificationsLoading(false);
   };
 
   return {
     dashboardSummary,
+    dashboardLoading,
     dashboardError,
     notificationsOpen,
     setNotificationsOpen,

@@ -1,0 +1,13 @@
+
+> hemodinks-front@0.1.0 test
+> vitest run --maxWorkers=4 src/features/dashboard/DashboardPage.test.tsx src/layout/Sidebar.test.tsx
+
+
+ RUN  v4.1.8 C:/George Marcone/GitHub/personal/HEMODINKS/hemodinks-front
+
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  18:32:02
+   Duration  2.81s (transform 428ms, setup 926ms, import 702ms, tests 1.28s, environment 2.10s)
+
