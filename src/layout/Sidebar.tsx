@@ -4,8 +4,6 @@ import type { CSSProperties } from 'react';
 import { APP_MODULES } from '../shared/navigation/appModules';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
-import { UserAvatar } from '../features/users/UserAvatar';
-import { formatPersonName } from '../shared/utils/formatters';
 
 type SidebarProps = {
   session: AuthSession;
@@ -84,34 +82,16 @@ export function Sidebar({
   }, [activeView, isBillingModuleActive]);
 
   return (
-    <aside className="sidebar-panel" aria-label="Sessão ativa">
+    <aside className="sidebar-panel" aria-label="Menu da clínica">
       <div className="sidebar-card">
-        <div className="sidebar-heading">
-          <span className="eyebrow">Painel</span>
-          <h2>Sessão ativa</h2>
-        </div>
-
-        <div className="session-card">
-          <span className="session-label">Usuário</span>
-          <div className="session-user-row">
-            <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" decorative />
-            <strong>{formatPersonName(session.user.nome)}</strong>
-          </div>
-        </div>
-
-        <div className="session-card">
-          <span className="session-label">Clínica atual</span>
+        <div className="sidebar-clinic">
+          <span className="eyebrow">Clínica atual</span>
           <strong>{clinicName}</strong>
-          <span className="session-meta">{session.user.clinicaSlug}</span>
-        </div>
-
-        <div className="session-card">
-          <span className="session-label">Perfil</span>
-          <strong>{currentUserProfile}</strong>
-          <span className="session-meta">{session.user.email}</span>
+          <span>{session.user.clinicaSlug}</span>
         </div>
 
         <nav className="side-nav" aria-label="Navegação principal">
+          {(canAccessDashboard || canAccessPatients || canAccessBilling || canAccessMedicalGroups || canAccessAgenda) && <span className="side-nav-section">Operação</span>}
           {canAccessDashboard && (
             <button
               type="button"
@@ -122,41 +102,6 @@ export function Sidebar({
             >
               <APP_MODULES.dashboard.icon size={18} />
               <span>{APP_MODULES.dashboard.navLabel}</span>
-            </button>
-          )}
-          <button
-            type="button"
-            className={`side-nav-tutorials ${activeView === 'tutorials' ? 'active' : ''}`}
-              style={{ '--side-nav-color': APP_MODULES.tutorials.color } as CSSProperties}
-            aria-current={activeView === 'tutorials' ? 'page' : undefined}
-            onClick={onOpenTutorials}
-          >
-            <APP_MODULES.tutorials.icon size={18} />
-            <span>{APP_MODULES.tutorials.navLabel}</span>
-          </button>
-          {canAccessUsers && (
-            <button
-              type="button"
-              className={`side-nav-users ${activeView === 'users' ? 'active' : ''}`}
-              style={{ '--side-nav-color': APP_MODULES.users.color } as CSSProperties}
-              aria-current={activeView === 'users' ? 'page' : undefined}
-              onClick={onOpenUsersList}
-            >
-              <APP_MODULES.users.icon size={18} />
-              <span>{APP_MODULES.users.navLabel}</span>
-              <span className="side-nav-count">{usersCount}</span>
-            </button>
-          )}
-          {canEditOwnUser && (
-            <button
-              type="button"
-              className={`side-nav-profile ${activeView === 'profile' ? 'active' : ''}`}
-              style={{ '--side-nav-color': APP_MODULES.profile.color } as CSSProperties}
-              aria-current={activeView === 'profile' ? 'page' : undefined}
-              onClick={onOpenMyProfile}
-            >
-              <APP_MODULES.profile.icon size={18} />
-              <span>{APP_MODULES.profile.navLabel}</span>
             </button>
           )}
           {canAccessPatients && (
@@ -262,6 +207,32 @@ export function Sidebar({
               )}
             </button>
           )}
+          {(canAccessUsers || canEditOwnUser || canAccessClinics || canAccessSettings) && <span className="side-nav-section">Administração e conta</span>}
+          {canAccessUsers && (
+            <button
+              type="button"
+              className={`side-nav-users ${activeView === 'users' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.users.color } as CSSProperties}
+              aria-current={activeView === 'users' ? 'page' : undefined}
+              onClick={onOpenUsersList}
+            >
+              <APP_MODULES.users.icon size={18} />
+              <span>{APP_MODULES.users.navLabel}</span>
+              <span className="side-nav-count">{usersCount}</span>
+            </button>
+          )}
+          {canEditOwnUser && (
+            <button
+              type="button"
+              className={`side-nav-profile ${activeView === 'profile' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.profile.color } as CSSProperties}
+              aria-current={activeView === 'profile' ? 'page' : undefined}
+              onClick={onOpenMyProfile}
+            >
+              <APP_MODULES.profile.icon size={18} />
+              <span>{APP_MODULES.profile.navLabel}</span>
+            </button>
+          )}
           {canAccessClinics && (
             <button
               type="button"
@@ -286,6 +257,17 @@ export function Sidebar({
               <span>{APP_MODULES.settings.navLabel}</span>
             </button>
           )}
+          <span className="side-nav-section">Ajuda</span>
+          <button
+            type="button"
+            className={`side-nav-tutorials ${activeView === 'tutorials' ? 'active' : ''}`}
+              style={{ '--side-nav-color': APP_MODULES.tutorials.color } as CSSProperties}
+            aria-current={activeView === 'tutorials' ? 'page' : undefined}
+            onClick={onOpenTutorials}
+          >
+            <APP_MODULES.tutorials.icon size={18} />
+            <span>{APP_MODULES.tutorials.navLabel}</span>
+          </button>
         </nav>
       </div>
     </aside>

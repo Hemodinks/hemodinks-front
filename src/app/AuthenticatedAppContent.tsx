@@ -160,6 +160,8 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
           patientsDomain={patientsDomain}
           medicalGroupsDomain={medicalGroupsDomain}
           dashboardError={appChrome.dashboardError}
+          dashboardLoading={appChrome.dashboardLoading}
+          dashboardAvailable={Boolean(appChrome.dashboardSummary)}
           theme={theme}
           navigation={{
             openUsersList: navigation.openUsersList, openMyProfile: navigation.openMyProfile, openPatientsList: navigation.openPatientsList,
