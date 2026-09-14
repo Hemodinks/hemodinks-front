@@ -1,0 +1,13 @@
+
+> hemodinks-front@0.1.0 test
+> vitest run --maxWorkers=4
+
+
+ RUN  v4.1.8 C:/George Marcone/GitHub/personal/HEMODINKS/hemodinks-front
+
+
+ Test Files  53 passed (53)
+      Tests  316 passed (316)
+   Start at  18:15:12
+   Duration  115.16s (transform 5.81s, setup 31.22s, import 10.39s, tests 121.31s, environment 86.43s)
+

@@ -22,12 +22,12 @@
 
 .manual-procedure-action {
   min-height: 36px;
-  background: var(--action-warning);
+  background: color-mix(in srgb, var(--action-warning) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-warning) 82%, black);
 }
 
 .manual-procedure-action:hover {
-  background: var(--action-warning-hover);
+  background: color-mix(in srgb, var(--action-warning-hover) var(--control-color-opacity), transparent);
 }
 
 .cbhpm-table-wrap {
@@ -75,12 +75,12 @@
 .select-procedure-action {
   width: 138px;
   min-height: 36px;
-  background: var(--action-success);
+  background: color-mix(in srgb, var(--action-success) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-success) 82%, black);
 }
 
 .select-procedure-action:hover {
-  background: var(--action-success-hover);
+  background: color-mix(in srgb, var(--action-success-hover) var(--control-color-opacity), transparent);
 }
 
 .cbhpm-pagination {

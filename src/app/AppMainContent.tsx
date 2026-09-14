@@ -82,6 +82,8 @@ type AppMainContentProps = {
   patientsDomain: PatientsDomainState;
   medicalGroupsDomain: MedicalGroupsDomainState;
   dashboardError: string;
+  dashboardLoading?: boolean;
+  dashboardAvailable?: boolean;
   theme: Theme;
   navigation: NavigationActions;
   sortHandlers: SortHandlers;
@@ -101,6 +103,8 @@ export function AppMainContent({
   patientsDomain,
   medicalGroupsDomain,
   dashboardError,
+  dashboardLoading,
+  dashboardAvailable,
   theme,
   navigation,
   sortHandlers,
@@ -144,6 +148,11 @@ export function AppMainContent({
     <Suspense fallback={<ModuleFallback />}>
       {activeView === 'dashboard' ? (
         <DashboardPage
+          userName={session.user.nome}
+          loading={dashboardLoading}
+          summaryAvailable={dashboardAvailable}
+          canCreatePatients={canCreatePatients}
+          onNewPatient={patientsDomain.openNewPacienteForm}
           companyName={companyName}
           canAccessPatients={canAccessPatients}
           canAccessUsers={canAccessUsers}
