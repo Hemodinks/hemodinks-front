@@ -2,7 +2,7 @@ import { BarChart3, Building2, CalendarClock, CalendarDays, ClipboardList, FileT
 
 // Presentation only. Access remains derived from getAppAccess and session features.
 export const APP_MODULES = {
-  dashboard: { title: 'Painel', navLabel: 'Painel', icon: LayoutDashboard, color: '#0f766e' },
+  dashboard: { title: 'Painel', navLabel: 'Painel', icon: LayoutDashboard, color: '#dc2626' },
   users: { title: 'Usuários', navLabel: 'Usuários', icon: Users, color: '#0f766e' },
   profile: { title: 'Meu cadastro', navLabel: 'Meu cadastro', icon: FileText, color: '#7c3aed' },
   patients: { title: 'Pacientes', navLabel: 'Pacientes - Cirurgias', icon: ClipboardList, color: '#2563eb' },

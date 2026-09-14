@@ -38,8 +38,8 @@
   padding: 0 16px;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--action-primary) 82%, black);
-  background: var(--action-primary);
-  color: var(--action-text);
+  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
+  color: var(--ink);
   box-shadow: 0 8px 18px color-mix(in srgb, var(--action-primary) 28%, transparent);
   font-size: 0.9rem;
   font-weight: 900;
@@ -114,20 +114,20 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: var(--action-text);
+  color: var(--ink);
   font-size: 0.9rem;
   font-weight: 900;
   line-height: 1;
 }
 
 .billing-clear-filters {
-  background: var(--action-secondary);
+  background: color-mix(in srgb, var(--action-secondary) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-secondary) 82%, black);
   box-shadow: 0 7px 16px color-mix(in srgb, var(--action-secondary) 20%, transparent);
 }
 
 .billing-clear-filters:hover {
-  background: var(--action-secondary-hover);
+  background: color-mix(in srgb, var(--action-secondary-hover) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-secondary-hover) 82%, black);
 }
 
@@ -810,14 +810,14 @@
 .billing-history-invalid-toggle {
   min-height: 32px;
   padding: 6px 10px;
-  color: #fff;
-  background: #b7791f;
+  color: var(--ink);
+  background: color-mix(in srgb, #b7791f var(--control-color-opacity), transparent);
   border-color: #925f19;
   box-shadow: none;
 }
 
 .billing-history-invalid-toggle:hover {
-  background: #925f19;
+  background: color-mix(in srgb, #925f19 var(--control-color-opacity), transparent);
   border-color: #784b14;
 }
 
@@ -875,8 +875,8 @@
 
 .billing-history-year-picker button.is-active {
   border-color: var(--action-primary);
-  color: #fff;
-  background: var(--action-primary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
 }
 
 .billing-history-quarter-dashboard,
@@ -1594,8 +1594,8 @@
   min-height: 38px;
   padding: 8px 13px;
   border-radius: 7px;
-  background: var(--primary);
-  color: #fff;
+  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
+  color: var(--ink);
   cursor: pointer;
   font-weight: 800;
 }
