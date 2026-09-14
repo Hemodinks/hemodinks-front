@@ -36,12 +36,12 @@ export async function renderAuthenticatedApp(options?: {
 
 export async function openUsersModule(user: ReturnType<typeof userEvent.setup>) {
   expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: /abrir usuários/i }));
+  await user.click(screen.getByRole('button', { name: /^usuários/i }));
   expect(window.location.pathname).toBe('/usuarios');
 }
 
 export async function openPatientsModule(user: ReturnType<typeof userEvent.setup>) {
   expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
+  await user.click(screen.getByRole('button', { name: /^pacientes/i }));
   expect(window.location.pathname).toBe('/pacientes');
 }

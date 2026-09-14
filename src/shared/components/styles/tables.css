@@ -156,42 +156,42 @@ tbody tr:last-child td {
   gap: 3px;
   border: 1px solid color-mix(in srgb, var(--action-secondary) 82%, black);
   border-radius: 8px;
-  color: var(--action-text);
-  background: var(--action-secondary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-secondary) var(--control-color-opacity), transparent);
 }
 
 .status-info-button.active {
-  color: var(--action-text);
-  background: var(--action-success);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-success) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-success) 82%, black);
 }
 
 .status-info-button.inactive {
-  color: var(--action-text);
-  background: var(--action-danger);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-danger) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-danger) 82%, black);
 }
 
 .status-info-button.contact {
-  color: var(--action-text);
-  background: var(--action-accent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-accent) var(--control-color-opacity), transparent);
   border-color: color-mix(in srgb, var(--action-accent) 82%, black);
 }
 
 .status-info-button:hover {
-  background: var(--action-secondary-hover);
+  background: color-mix(in srgb, var(--action-secondary-hover) var(--control-color-opacity), transparent);
 }
 
 .status-info-button.active:hover {
-  background: var(--action-success-hover);
+  background: color-mix(in srgb, var(--action-success-hover) var(--control-color-opacity), transparent);
 }
 
 .status-info-button.inactive:hover {
-  background: var(--action-danger-hover);
+  background: color-mix(in srgb, var(--action-danger-hover) var(--control-color-opacity), transparent);
 }
 
 .status-info-button.contact:hover {
-  background: var(--action-accent-hover);
+  background: color-mix(in srgb, var(--action-accent-hover) var(--control-color-opacity), transparent);
 }
 
 .row-actions {
@@ -326,20 +326,20 @@ tbody tr:last-child td {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--action-text);
-    background: var(--action-accent);
+    color: var(--ink);
+    background: color-mix(in srgb, var(--action-accent) var(--control-color-opacity), transparent);
     box-shadow: 0 8px 20px color-mix(in srgb, var(--action-accent) 24%, transparent);
     transform: translateY(-50%);
   }
 
   :root[data-theme="dark"] .carousel-nav {
-    background: var(--action-accent);
+    background: color-mix(in srgb, var(--action-accent) var(--control-color-opacity), transparent);
   }
 
   .carousel-nav:hover,
   .carousel-nav:focus-visible {
-    color: #fff;
-    background: var(--action-accent-hover);
+    color: var(--ink);
+    background: color-mix(in srgb, var(--action-accent-hover) var(--control-color-opacity), transparent);
   }
 
   .carousel-nav-left {

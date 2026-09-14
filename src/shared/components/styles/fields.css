@@ -64,14 +64,14 @@ textarea::placeholder {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--action-text);
-  background: var(--action-accent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-accent) var(--control-color-opacity), transparent);
   transform: translateY(-50%);
   box-shadow: 0 7px 16px color-mix(in srgb, var(--action-accent) 18%, transparent);
 }
 
 .combobox-toggle:hover {
-  background: var(--action-accent-hover);
+  background: color-mix(in srgb, var(--action-accent-hover) var(--control-color-opacity), transparent);
 }
 
 .combobox-listbox {
@@ -265,14 +265,14 @@ textarea::placeholder {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--action-text);
-  background: var(--action-accent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-accent) var(--control-color-opacity), transparent);
   transform: translateY(-50%);
 }
 
 .password-visibility-button:hover {
-  color: var(--action-text);
-  background: var(--action-accent-hover);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-accent-hover) var(--control-color-opacity), transparent);
 }
 
 .date-picker-button {
@@ -287,13 +287,13 @@ textarea::placeholder {
   transform: translateY(-50%);
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--action-accent) 82%, black);
-  color: var(--action-text);
-  background: var(--action-accent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-accent) var(--control-color-opacity), transparent);
   box-shadow: 0 7px 16px color-mix(in srgb, var(--action-accent) 18%, transparent);
 }
 
 .date-picker-button:hover {
-  background: var(--action-accent-hover);
+  background: color-mix(in srgb, var(--action-accent-hover) var(--control-color-opacity), transparent);
 }
 
 .date-picker-button input[type="date"] {

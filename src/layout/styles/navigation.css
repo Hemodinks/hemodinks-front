@@ -52,13 +52,26 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: var(--action-text);
-  background: var(--action-secondary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-secondary) var(--control-color-opacity), transparent);
   padding: 0 10px;
   font-weight: 900;
 }
 
 .view-switch button.active {
-  color: #fff;
-  background: var(--action-primary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
+}
+
+/* The drawer reuses the desktop navigation and Modal focus management. */
+.topbar .navigation-toggle { display: none; }
+.navigation-backdrop { place-items: stretch start; padding: 0; }
+.navigation-drawer.modal-panel { width: min(340px, calc(100vw - 24px)); max-height: 100dvh; height: 100dvh; margin: 0; padding: 16px; border-radius: 0 12px 12px 0; background: var(--panel-strong); }
+.navigation-drawer-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
+.navigation-drawer-heading h2 { margin: 0; font-size: 1rem; }
+.navigation-drawer-heading button { min-width: 44px; min-height: 44px; }
+.navigation-drawer .sidebar-card { padding: 8px; border: 0; background: transparent; }
+@media (max-width: 980px) {
+  .app-navigation-slot { display: none; }
+  .topbar .navigation-toggle { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; padding: 0; background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
 }

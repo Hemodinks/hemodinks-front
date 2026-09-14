@@ -73,8 +73,8 @@
   border: 1px solid color-mix(in srgb, var(--contextual-flow-color) 78%, black);
   border-right: 0;
   border-radius: 8px 0 0 8px;
-  color: #fff;
-  background: var(--contextual-flow-color);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--contextual-flow-color) var(--control-color-opacity), transparent);
   box-shadow: -8px 10px 24px color-mix(in srgb, var(--contextual-flow-color) 28%, transparent);
   font-weight: 900;
   writing-mode: vertical-rl;
@@ -93,7 +93,7 @@
 
 .contextual-flow-trigger:hover,
 .contextual-flow-trigger:focus-visible {
-  background: color-mix(in srgb, var(--contextual-flow-color) 86%, black);
+  background: color-mix(in srgb, var(--contextual-flow-color) var(--control-color-opacity), transparent);
   box-shadow:
     -10px 12px 28px color-mix(in srgb, var(--contextual-flow-color) 38%, transparent),
     0 0 0 3px color-mix(in srgb, var(--contextual-flow-color) 22%, transparent);
@@ -189,8 +189,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: var(--action-text);
-  background: var(--action-primary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
   border: 1px solid var(--action-primary-hover);
   border-radius: 8px;
   font-weight: 850;

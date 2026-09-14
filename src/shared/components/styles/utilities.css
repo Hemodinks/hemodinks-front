@@ -19,12 +19,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--action-text);
-  background: var(--action-accent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-accent) var(--control-color-opacity), transparent);
 }
 
 .copy-button:hover {
-  background: var(--action-accent-hover);
+  background: color-mix(in srgb, var(--action-accent-hover) var(--control-color-opacity), transparent);
 }
 
 .copied-label {
