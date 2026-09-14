@@ -158,3 +158,27 @@
   min-height: 36px;
 }
 
+
+/* Preserve the original KPI palette with 70% transparent backgrounds. */
+.dashboard-header .eyebrow { color: var(--teal); }
+.dashboard-stat { position: relative; background: color-mix(in srgb, var(--stat-color) var(--dashboard-color-opacity), transparent); border-color: color-mix(in srgb, var(--stat-color) 50%, var(--line)); }
+.dashboard-stat > svg, .dashboard-stat > span:not(.dashboard-skeleton) { color: var(--ink); }
+.dashboard-stat, .dashboard-actions button { transition: transform 220ms cubic-bezier(.22, 1, .36, 1), box-shadow 220ms ease, border-color 220ms ease; }
+.dashboard-actions button { position: relative; background: color-mix(in srgb, var(--action-color) var(--dashboard-color-opacity), transparent); border-color: color-mix(in srgb, var(--action-color) 40%, var(--line)); }
+.dashboard-actions button:hover { background: color-mix(in srgb, var(--action-color) var(--dashboard-color-opacity), transparent); }
+.dashboard-actions button svg { color: var(--ink); }
+@media (hover: hover) and (pointer: fine) {
+  .dashboard-stat:hover, .dashboard-actions button:hover { z-index: 1; transform: translateY(-4px) scale(1.025); border-color: var(--teal); box-shadow: 0 12px 24px color-mix(in srgb, var(--stat-color, var(--action-color, var(--teal))) 24%, transparent); }
+}
+.dashboard-actions button:focus-visible { border-color: var(--teal); box-shadow: 0 0 0 2px var(--soft); }
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-stat, .dashboard-actions button { transition: none; }
+  .dashboard-stat:hover, .dashboard-actions button:hover { transform: none; }
+}
+
+.dashboard-pending-section h3 { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; }
+.dashboard-pending-section h3 svg { flex-shrink: 0; color: var(--amber); }
+.dashboard-pending { border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); border-left: 4px solid var(--amber); background: color-mix(in srgb, var(--amber) var(--dashboard-color-opacity), transparent); }
+.dashboard-pending button { font-weight: 600; }
+.dashboard-pending button:hover { background: color-mix(in srgb, var(--amber) var(--dashboard-color-opacity), transparent); }
+.dashboard-pending button svg { color: var(--ink); }

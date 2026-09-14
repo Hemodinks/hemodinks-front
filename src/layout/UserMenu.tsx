@@ -24,7 +24,7 @@ export function UserMenu({ session, companyName, onLogout }: { session: AuthSess
       <UserAvatar userId={session.user.id} name={session.user.nome} photo={session.user.fotoPerfil} authToken={session.token} size="sm" />
       <span>{formatPersonName(session.user.nome)}</span><ChevronDown size={16} aria-hidden="true" />
     </button>
-    {open && <div id={id} className="user-menu-panel" aria-label="Dados da sessão">
+    {open && <div id={id} className="user-menu-panel" role="group" aria-label="Dados da sessão">
       <strong>{formatPersonName(session.user.nome)}</strong>
       <span>{formatProfileName(session.user.perfilId, session.user.perfilNome)}</span>
       <span>{companyName}</span><span>{session.user.email}</span>

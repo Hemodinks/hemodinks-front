@@ -11,8 +11,8 @@ export function DashboardPendingItems(props: Props) {
     ...(props.canAccessAgenda && props.upcomingEventsCount > 0 ? [{ label: `${props.upcomingEventsCount.toLocaleString('pt-BR')} evento(s) próximo(s)`, icon: CalendarDays, onOpen: props.onOpenAgenda }] : []),
     ...(props.canAccessAgenda && props.unreadAgendaNotificationCount > 0 ? [{ label: `${props.unreadAgendaNotificationCount.toLocaleString('pt-BR')} aviso(s) não lido(s) na agenda`, icon: Bell, onOpen: props.onOpenAgenda }] : []),
   ];
-  return <section className="dashboard-section" aria-labelledby="dashboard-pending-title" aria-busy={props.loading}>
-    <h3 id="dashboard-pending-title">Pendências e próximos eventos</h3>
+  return <section className="dashboard-section dashboard-pending-section" aria-labelledby="dashboard-pending-title" aria-busy={props.loading}>
+    <h3 id="dashboard-pending-title"><Bell size={21} aria-hidden="true" />Pendências e próximos eventos</h3>
     <div className="dashboard-pending">
       {props.loading ? <div className="dashboard-pending-state" role="status">Carregando pendências…</div>
         : !props.available ? <p className="dashboard-pending-state">Não foi possível consultar as pendências. Você ainda pode acessar os módulos pelo menu.</p>

@@ -1979,6 +1979,7 @@ test('bootstrap: nova sessão sem acesso não reutiliza dados da clínica anteri
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   await page.goto('/pacientes');
   await expect(page.getByRole('cell', { name: paciente.nomePaciente, exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Menu do usuário', exact: true }).click();
   await page.getByRole('button', { name: /sair/i }).click();
   await expect(page.getByRole('heading', { name: 'Acesso ao sistema' })).toBeVisible();
   await page.route('**/api/users/login-context', route => route.fulfill({ json: { clinicas: [{ clinicaId: 2, nome: 'Clínica Beta', slug: 'beta' }] } }));
@@ -2006,14 +2007,30 @@ test('dashboard operacional preserva fundo, tema e navegação nas larguras soli
   await mockApi(page);
   await loginViaUi(page, '/dashboard');
   await expect(page.getByRole('heading', { name: 'Olá, George' })).toBeVisible();
+  await expect(page.locator('.dashboard-skeleton')).toHaveCount(0);
+  if (await page.getByRole('button', { name: 'Usar tema claro', exact: true }).count()) await page.getByRole('button', { name: 'Usar tema claro', exact: true }).click();
   const background = await page.locator('.app-shell').evaluate(el => {
     const style = getComputedStyle(el);
     return { image: style.backgroundImage, size: style.backgroundSize, position: style.backgroundPosition, attachment: style.backgroundAttachment };
   });
   expect(background.image).toContain('plano-de-fundo.jpg');
-  expect(background.size).toBe('cover');
-  expect(background.position).toBe('50% 50%');
-  expect(background.attachment).toBe('fixed');
+  expect(background.size.split(', ').every(value => value === 'cover')).toBe(true);
+  expect(background.position.split(', ').every(value => value === '50% 50%')).toBe(true);
+  expect(background.attachment.split(', ').every(value => value === 'fixed')).toBe(true);
+  for (const selector of ['.dashboard-stat', '.side-nav-patients', '.dashboard-actions button', '.dashboard-pending']) {
+    const style = await page.locator(selector).first().evaluate(el => ({ background: getComputedStyle(el).backgroundColor, opacity: getComputedStyle(el).opacity }));
+    expect(style.background).toMatch(/(?:0\.3|30%)/);
+    expect(style.opacity).toBe('1');
+  }
+  for (const selector of ['.dashboard-stat', '.dashboard-actions button']) {
+    const card = page.locator(selector).first();
+    await card.hover();
+    await expect.poll(() => card.evaluate(el => getComputedStyle(el).transform)).toContain('1.025');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect.poll(() => card.evaluate(el => getComputedStyle(el).transform)).toBe('none');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.mouse.move(0, 0);
+  }
   for (const width of [1440, 1366, 1280, 1024, 768, 430, 390, 360]) {
     await page.setViewportSize({ width, height: width === 768 ? 430 : 900 });
     await expectNoGlobalHorizontalOverflow(page);
@@ -2033,8 +2050,42 @@ test('dashboard operacional preserva fundo, tema e navegação nas larguras soli
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expectNoGlobalHorizontalOverflow(page);
     await page.screenshot({ path: testInfo.outputPath(`dashboard-dark-${width}.png`), fullPage: true });
+    if (width === 1440 || width === 390) {
+      const audit = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+      expect(audit.violations.filter(item => item.impact === 'serious' || item.impact === 'critical')).toEqual([]);
+    }
     await page.getByRole('button', { name: 'Usar tema claro', exact: true }).click();
   }
   await page.getByRole('button', { name: 'Novo paciente', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Novo paciente', exact: true })).toBeVisible();
+});
+
+
+test('transparência é consistente entre módulos e controles de ação', async ({ page }, testInfo) => {
+  await mockApi(page);
+  await loginViaUi(page, '/dashboard');
+  async function expectAlpha(selector: string, alpha: string) {
+    const elements = page.locator(selector);
+    await expect(elements.first()).toBeVisible();
+    for (const element of await elements.all()) {
+      if (!await element.isVisible()) continue;
+      const style = await element.evaluate(el => ({ background: getComputedStyle(el).backgroundColor, opacity: getComputedStyle(el).opacity }));
+      expect(style.background).toContain(`/ ${alpha})`);
+      expect(style.opacity).toBe('1');
+    }
+  }
+  await expectAlpha('.side-nav button', '0.3');
+  await page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('button', { name: /^Usuários/ }).click();
+  await expect(page.getByRole('heading', { name: 'Usuários', exact: true })).toBeVisible();
+  await expect(page.locator('.row-actions .icon-button').first()).toBeVisible();
+  await expectAlpha('.side-nav button', '0.3');
+  await expectAlpha('.row-actions .icon-button, .status-info-button', '0.4');
+  await page.locator('.row-actions .icon-button.danger').first().hover();
+  await expectAlpha('.row-actions .icon-button.danger', '0.4');
+  await page.screenshot({ path: testInfo.outputPath('usuarios-transparencia.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Novo usuário', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Novo usuário', exact: true })).toBeVisible();
+  await expectAlpha('.date-picker-button, .form-panel .primary-action', '0.4');
+  await expectAlpha('.side-nav button', '0.3');
+  await page.screenshot({ path: testInfo.outputPath('formulario-transparencia.png'), fullPage: true });
 });

@@ -149,13 +149,13 @@
   border: 1px solid color-mix(in srgb, var(--action-secondary) 82%, black);
   border-radius: 8px;
   padding: 6px 9px;
-  background: var(--action-secondary);
-  color: var(--action-text);
+  background: color-mix(in srgb, var(--action-secondary) var(--control-color-opacity), transparent);
+  color: var(--ink);
   cursor: pointer;
 }
 
 .attachment-button:hover {
-  background: var(--action-secondary-hover);
+  background: color-mix(in srgb, var(--action-secondary-hover) var(--control-color-opacity), transparent);
 }
 
 .patient-observation-button {
@@ -166,16 +166,16 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--action-accent);
-  color: var(--action-text);
+  background: color-mix(in srgb, var(--action-accent) var(--control-color-opacity), transparent);
+  color: var(--ink);
   font-weight: 900;
   cursor: pointer;
 }
 
 .patient-observation-button.has-unread-observations {
   border-color: color-mix(in srgb, var(--blood) 80%, black);
-  background: linear-gradient(135deg, var(--blood), color-mix(in srgb, var(--blood) 85%, black));
-  color: #fff;
+  background: color-mix(in srgb, var(--blood) var(--control-color-opacity), transparent);
+  color: var(--ink);
 }
 
 .patient-observation-button.has-unread-observations .patient-observation-count {
@@ -184,11 +184,11 @@
 }
 
 .patient-observation-button:hover {
-  background: var(--action-accent-hover);
+  background: color-mix(in srgb, var(--action-accent-hover) var(--control-color-opacity), transparent);
 }
 
 .patient-observation-button.has-unread-observations:hover {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--blood) 94%, white), var(--blood-dark));
+  background: color-mix(in srgb, var(--blood-dark) var(--control-color-opacity), transparent);
 }
 
 .patient-observation-summary {
