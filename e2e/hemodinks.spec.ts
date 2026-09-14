@@ -695,6 +695,7 @@ test('exige aceite versionado uma única vez e mantém o acesso após novo login
     privacyNoticeVersion: '1.1',
   });
 
+  await page.getByRole('button', { name: 'Menu do usuário', exact: true }).click();
   await page.getByRole('button', { name: 'Sair', exact: true }).click();
   await loginViaUi(page);
 
@@ -706,14 +707,14 @@ test('navega pelos fluxos principais autenticados', async ({ page }) => {
   await mockApi(page);
   await loginViaUi(page, '/dashboard');
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /abrir pacientes/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^pacientes/i })).toBeVisible();
 
-  await page.getByRole('button', { name: /abrir pacientes/i }).click();
+  await page.getByRole('button', { name: /^pacientes/i }).click();
   await expect(page).toHaveURL(/\/pacientes$/);
   await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible();
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
 
-  await page.getByLabel('Sessão ativa').getByRole('button', { name: /agenda/i }).click();
+  await page.getByLabel('Menu da clínica').getByRole('button', { name: /agenda/i }).click();
   await expect(page).toHaveURL(/\/agenda$/);
   await expect(page.getByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeVisible();
   const openNewEventButton = page.locator('.agenda-tools').getByRole('button', { name: 'Novo evento' });
@@ -726,7 +727,7 @@ test('abre o módulo de tutoriais interativos e carrega o vídeo de Relatórios'
   await mockApi(page);
   await loginViaUi(page, '/dashboard');
 
-  await page.getByLabel('Sessão ativa').getByRole('button', { name: 'Tutoriais interativos' }).click();
+  await page.getByLabel('Menu da clínica').getByRole('button', { name: 'Tutoriais interativos' }).click();
   await expect(page).toHaveURL(/\/tutoriais-interativos$/);
   await expect(page.getByRole('heading', { name: 'Tutoriais interativos', level: 2 })).toBeVisible();
   await expect(page.getByText('12', { exact: true })).toBeVisible();
@@ -1111,14 +1112,14 @@ test('bloqueia rota de usuarios para perfil paciente', async ({ page }) => {
   await loginViaUi(page, '/usuarios', patientSession);
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /abrir usuários/i })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^usuários/i })).toHaveCount(0);
 });
 
 test('protege relatórios com a autorização provisória do faturamento', async ({ page }) => {
   await mockApi(page, patientSession);
   await loginViaUi(page, '/relatorios', patientSession);
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByLabel('Sessão ativa').getByRole('button', { name: 'Relatórios' })).toHaveCount(0);
+  await expect(page.getByLabel('Menu da clínica').getByRole('button', { name: 'Relatórios' })).toHaveCount(0);
 });
 
 test('nao apresenta violacoes serias de acessibilidade nas rotas principais', async ({ page }) => {
@@ -1997,4 +1998,43 @@ test('bootstrap: nova sessão sem acesso não reutiliza dados da clínica anteri
   await expect(page.getByText(paciente.nomePaciente, { exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toHaveCount(0);
   expect(operational).toEqual([]);
+});
+
+
+test('dashboard operacional preserva fundo, tema e navegação nas larguras solicitadas', async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await mockApi(page);
+  await loginViaUi(page, '/dashboard');
+  await expect(page.getByRole('heading', { name: 'Olá, George' })).toBeVisible();
+  const background = await page.locator('.app-shell').evaluate(el => {
+    const style = getComputedStyle(el);
+    return { image: style.backgroundImage, size: style.backgroundSize, position: style.backgroundPosition, attachment: style.backgroundAttachment };
+  });
+  expect(background.image).toContain('plano-de-fundo.jpg');
+  expect(background.size).toBe('cover');
+  expect(background.position).toBe('50% 50%');
+  expect(background.attachment).toBe('fixed');
+  for (const width of [1440, 1366, 1280, 1024, 768, 430, 390, 360]) {
+    await page.setViewportSize({ width, height: width === 768 ? 430 : 900 });
+    await expectNoGlobalHorizontalOverflow(page);
+    await page.getByRole('button', { name: 'Menu do usuário', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Sair', exact: true })).toBeVisible();
+    const menu = await page.locator('.user-menu-panel').boundingBox();
+    expect(menu!.x).toBeGreaterThanOrEqual(0);
+    expect(menu!.x + menu!.width).toBeLessThanOrEqual(width);
+    await page.keyboard.press('Escape');
+    if (width <= 980) {
+      await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();
+      await expect(page.getByRole('dialog', { name: 'Menu do sistema' })).toBeVisible();
+      await page.keyboard.press('Escape');
+    }
+    await page.screenshot({ path: testInfo.outputPath(`dashboard-light-${width}.png`), fullPage: true });
+    await page.getByRole('button', { name: 'Usar tema escuro', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expectNoGlobalHorizontalOverflow(page);
+    await page.screenshot({ path: testInfo.outputPath(`dashboard-dark-${width}.png`), fullPage: true });
+    await page.getByRole('button', { name: 'Usar tema claro', exact: true }).click();
+  }
+  await page.getByRole('button', { name: 'Novo paciente', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Novo paciente', exact: true })).toBeVisible();
 });

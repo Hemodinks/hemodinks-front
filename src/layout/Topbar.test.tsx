@@ -5,7 +5,7 @@ import { mockSession } from '../test/appTestData';
 import { Topbar } from './Topbar';
 
 describe('ações do cabeçalho', () => {
-  it('posiciona o tema no bloco esquerdo e permite alterná-lo', async () => {
+  it('permite alternar o tema e acessar os dados da sessão pelo menu', async () => {
     const onThemeToggle = vi.fn();
     const { container } = render(
       <Topbar
@@ -23,12 +23,14 @@ describe('ações do cabeçalho', () => {
     );
 
     const actions = container.querySelector('.topbar-actions');
-    const left = container.querySelector('.topbar-left');
     expect(actions).toContainElement(screen.getByRole('button', { name: /notificações/i }));
-    expect(actions).toContainElement(screen.getByRole('button', { name: 'Sair' }));
-    expect(left?.lastElementChild).toBe(screen.getByTitle('Usar tema escuro'));
-    expect(actions).not.toContainElement(screen.getByTitle('Usar tema escuro'));
-
+    expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Menu do usuário' }));
+    expect(screen.getByRole('button', { name: 'Sair' })).toBeVisible();
+    expect(screen.getByLabelText('Dados da sessão')).toHaveTextContent('Administrador');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Menu do usuário' })).toHaveFocus();
     await userEvent.click(screen.getByTitle('Usar tema escuro'));
     expect(onThemeToggle).toHaveBeenCalledOnce();
   });

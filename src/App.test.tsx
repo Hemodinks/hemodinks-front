@@ -293,23 +293,26 @@ describe('App', () => {
     expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123', 'hemodinks', expect.any(AbortSignal));
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/dashboard');
-    const activeSession = screen.getByLabelText('Sessão ativa');
-    expect(activeSession).toHaveTextContent('Administrador');
-    expect(activeSession).toHaveTextContent('gmarcone@gmail.com');
-    expect(screen.getByText('Painel informativo')).toBeInTheDocument();
-    expect(screen.getByText('Resumo geral')).toBeInTheDocument();
+    const activeSession = screen.getByLabelText('Menu da clínica');
+    expect(activeSession).toHaveTextContent('Clínica atual');
+    await user.click(screen.getByRole('button', { name: 'Menu do usuário' }));
+    expect(screen.getByLabelText('Dados da sessão')).toHaveTextContent('Administrador');
+    expect(screen.getByLabelText('Dados da sessão')).toHaveTextContent('gmarcone@gmail.com');
+    await user.keyboard('{Escape}');
+    expect(screen.getByLabelText('Indicadores da clínica')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Ações rápidas' })).toBeInTheDocument();
     expect(screen.getByText('Usuários ativos')).toBeInTheDocument();
     expect(screen.getByText('Pacientes ativos')).toBeInTheDocument();
-    expect(screen.getByText('Pendencias')).toBeInTheDocument();
+    expect(screen.getByText('Pendências financeiras')).toBeInTheDocument();
     expect(screen.getByText('Arquivos')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /abrir usuários/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^usuários/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^pacientes/i })).toBeInTheDocument();
     await waitFor(() => {
       expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
       expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'data', sortDirection: 'desc' });
     });
 
-    await user.click(screen.getByRole('button', { name: /abrir usuários/i }));
+    await user.click(screen.getByRole('button', { name: /^usuários/i }));
     expect(window.location.pathname).toBe('/usuarios');
 
     const userRow = (await screen.findByText('Ana Hemodinks', {}, { timeout: 5_000 })).closest('tr')!;
@@ -578,6 +581,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Aceitar e continuar' }));
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
 
+    await user.click(screen.getByRole('button', { name: 'Menu do usuário' }));
     await user.click(screen.getByRole('button', { name: /sair/i }));
     await user.clear(await screen.findByLabelText('Email'));
     await user.type(await screen.findByLabelText('Email'), mockSession().user.email);
@@ -681,7 +685,7 @@ describe('App', () => {
     vi.mocked(api.getUsers).mockImplementation((token) => token === 'token-clinica-beta'
       ? new Promise(() => {})
       : Promise.resolve(paged([baseUser])));
-    await user.click(within(screen.getByLabelText('Sessão ativa')).getByRole('button', { name: /^clínicas$/i }));
+    await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^clínicas$/i }));
     expect(await screen.findByRole('heading', { name: 'Clínicas', level: 1 }, { timeout: 5000 })).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Acessar Clinica Beta' }));
     if (module === 'pacientes') await openPatientsModule(user);
@@ -697,7 +701,7 @@ describe('App', () => {
     });
     vi.mocked(api.listPlatformClinics).mockResolvedValue([]);
 
-    const sidebar = await screen.findByLabelText('Sessão ativa');
+    const sidebar = await screen.findByLabelText('Menu da clínica');
     expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
     const billingMenu = within(sidebar).getByRole('button', { name: /^faturamento/i });
@@ -729,7 +733,7 @@ describe('App', () => {
     expect(clinicPassword).toHaveAttribute('type', 'text');
 
     const navigationButtons = within(within(sidebar).getByRole('navigation', { name: 'Navegação principal' })).getAllByRole('button');
-    expect(navigationButtons.at(-1)).toHaveTextContent('Opções');
+    expect(navigationButtons.at(-1)).toHaveTextContent('Tutoriais interativos');
   });
 
   it('permite ao superadministrador editar o próprio perfil sem rebaixá-lo', async () => {
@@ -784,15 +788,15 @@ describe('App', () => {
       },
     });
 
-    const sidebar = await screen.findByLabelText('Sessão ativa');
+    const sidebar = await screen.findByLabelText('Menu da clínica');
     expect(within(sidebar).getByRole('button', { name: /pacientes/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /usuários/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /^faturamento/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /agenda e notificações/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /^clínicas$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /abrir usuários/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /abrir agenda/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^pacientes/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^usuários/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^agenda e notificações/i })).toBeInTheDocument();
   });
 
   it('encerra a sessao quando a API sinaliza token expirado', async () => {
@@ -851,7 +855,8 @@ describe('App', () => {
     await waitFor(() => {
       expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'data', sortDirection: 'desc' });
     });
-    expect(await screen.findByText('1 cadastrados')).toBeInTheDocument();
+    expect(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^pacientes/i })).toHaveTextContent('1');
+    expect(screen.getAllByLabelText('Indicador indisponível').length).toBeGreaterThan(0);
     expect(screen.queryByText(/request failed with status code 403/i)).not.toBeInTheDocument();
   });
 
@@ -932,7 +937,7 @@ describe('App', () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(within(screen.getByLabelText('Sessão ativa')).getByRole('button', { name: /agenda e notificações/i }));
+    await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /agenda e notificações/i }));
     expect(await screen.findByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeInTheDocument();
     expect(await screen.findByText('Evento A')).toBeInTheDocument();
     const eventCard = screen.getByText('Evento A').closest('article');
@@ -957,7 +962,7 @@ describe('App', () => {
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
     expect(localStorage.getItem('hemodinks.theme')).toBe('dark');
 
-    await user.click(screen.getByRole('button', { name: /abrir opções/i }));
+    await user.click(screen.getByRole('button', { name: /^opções$/i }));
     expect(await screen.findByRole('heading', { name: 'Opções', level: 1 })).toBeInTheDocument();
 
     await user.click(screen.getByTitle('Usar tema claro'));
@@ -975,7 +980,7 @@ describe('App', () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /abrir opções/i }));
+    await user.click(screen.getByRole('button', { name: /^opções$/i }));
     expect(await screen.findByRole('heading', { name: 'Opções', level: 1 })).toBeInTheDocument();
 
     expect(screen.queryByLabelText('Nome exibido no sistema')).not.toBeInTheDocument();
@@ -1006,7 +1011,7 @@ describe('App', () => {
     });
     const { user } = await renderAuthenticatedApp();
 
-    await user.click(await screen.findByRole('button', { name: /abrir opções/i }));
+    await user.click(await screen.findByRole('button', { name: /^opções$/i }));
     await user.click(await screen.findByRole('button', { name: 'Monitoramento' }));
 
     expect(await screen.findByText('System.InvalidOperationException: Falha técnica')).toBeInTheDocument();
@@ -1032,7 +1037,7 @@ describe('App', () => {
     });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /abrir opções/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^opções$/i })).not.toBeInTheDocument();
     await waitFor(() => {
       expect(window.location.pathname).toBe('/dashboard');
     });
@@ -1081,7 +1086,7 @@ describe('App', () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /avisos/i }));
+    await user.click(screen.getByRole('button', { name: /^notificações/i }));
 
     expect(api.getDashboardNotifications).toHaveBeenCalledWith('jwt-token');
 
@@ -1143,7 +1148,7 @@ describe('App', () => {
     const { user } = await renderAuthenticatedApp();
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
+    await user.click(screen.getByRole('button', { name: /^pacientes/i }));
 
     const patientRow = await screen.findByText('Paciente Hemodinks', {}, { timeout: 5_000 });
     const observationButton = within(patientRow.closest('tr')!).getByRole('button', { name: /observações de paciente hemodinks/i });
@@ -1356,7 +1361,7 @@ describe('App', () => {
     expect(await screen.findByText('Senha alterada com sucesso')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /abrir usuários/i }));
+    await user.click(screen.getByRole('button', { name: /^usuários/i }));
 
     expect(await screen.findByText('Ana Hemodinks')).toBeInTheDocument();
   });
@@ -1953,8 +1958,8 @@ describe('App', () => {
     });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /abrir usuários/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /abrir meu cadastro/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^usuários/i })).not.toBeInTheDocument();
+    expect(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^meu cadastro$/i })).toBeInTheDocument();
 
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
@@ -2047,9 +2052,9 @@ describe('App', () => {
     });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /abrir pacientes/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /abrir usuários/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /abrir opções/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^pacientes/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^usuários/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^opções$/i })).not.toBeInTheDocument();
 
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
@@ -2171,9 +2176,9 @@ describe('App', () => {
     });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /abrir meu cadastro/i })).toBeInTheDocument();
+    expect(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^meu cadastro$/i })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^meu cadastro$/i }));
 
     expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/meu-cadastro');
@@ -2206,7 +2211,7 @@ describe('App', () => {
     });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    const sidebar = screen.getByLabelText('Sessão ativa');
+    const sidebar = screen.getByLabelText('Menu da clínica');
     expect(within(sidebar).getByRole('button', { name: /^usuários/i })).toBeInTheDocument();
     expect(within(sidebar).getByRole('button', { name: /pacientes - cirurgias/i })).toBeInTheDocument();
     expect(within(sidebar).queryByRole('button', { name: /grupos médicos/i })).not.toBeInTheDocument();
@@ -2249,7 +2254,7 @@ describe('App', () => {
     });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^meu cadastro$/i }));
 
     expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/meu-cadastro');
@@ -2264,7 +2269,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Meu cadastro', level: 1 })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^meu cadastro$/i }));
     expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /pacientes/i }));
 
@@ -2290,10 +2295,10 @@ describe('App', () => {
     });
 
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^meu cadastro$/i }));
     expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
 
-    const sidebar = screen.getByLabelText('Sessão ativa');
+    const sidebar = screen.getByLabelText('Menu da clínica');
     await user.click(within(sidebar).getByRole('button', { name: /^painel$/i }));
 
     await waitFor(() => {
@@ -2314,14 +2319,14 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Meu cadastro', level: 1 })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /abrir meu cadastro/i }));
+    await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^meu cadastro$/i }));
     expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
     await user.click(within(sidebar).getByRole('button', { name: /pacientes/i }));
     expect(await screen.findByRole('heading', { name: /pacientes/i })).toBeInTheDocument();
 
-    await user.click(within(screen.getByLabelText('Sessão ativa')).getByRole('button', { name: /^meu cadastro$/i }));
+    await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /^meu cadastro$/i }));
     expect(await screen.findByRole('heading', { name: 'Meu cadastro', level: 1 })).toBeInTheDocument();
-    await user.click(within(screen.getByLabelText('Sessão ativa')).getByRole('button', { name: /agenda e notificações/i }));
+    await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /agenda e notificações/i }));
     expect(await screen.findByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeInTheDocument();
   });
 
@@ -2338,10 +2343,10 @@ describe('App', () => {
     await waitFor(() => {
       expect(window.location.pathname).toBe('/dashboard');
     });
-    expect(screen.queryByRole('button', { name: /abrir usuários/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^usuários/i })).not.toBeInTheDocument();
     expect(api.getDashboardSummary).toHaveBeenCalledWith('jwt-token');
 
-    await user.click(screen.getByRole('button', { name: /abrir pacientes/i }));
+    await user.click(screen.getByRole('button', { name: /^pacientes/i }));
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar planilha/i })).toBeInTheDocument();
@@ -2503,7 +2508,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
 
-    await user.click(screen.getByRole('button', { name: /abrir opções/i }));
+    await user.click(screen.getByRole('button', { name: /^opções$/i }));
     expect(await screen.findByRole('heading', { name: 'Opções', level: 1 })).toBeInTheDocument();
 
     await user.click(screen.getByTitle('Usar tema claro'));
