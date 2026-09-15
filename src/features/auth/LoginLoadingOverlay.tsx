@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 
 type Props = { active: boolean; onCancel: () => void; stage?: string };
@@ -21,7 +22,7 @@ export function LoginLoadingOverlay({ active, onCancel, stage = 'Conectando ao s
         : 'O primeiro acesso após um período sem uso pode levar mais tempo enquanto o serviço inicia.'}</p>
       {waitStage === 2 && <small>Ainda estamos aguardando uma resposta. Você pode continuar esperando ou cancelar e tentar novamente em instantes.</small>}
       <div className="bootstrap-progress" role="progressbar" aria-label="Aguardando resposta do serviço de acesso" aria-busy="true" />
-      <button type="button" className="ghost-button" onClick={onCancel}>Cancelar tentativa</button>
+      <button type="button" className="ghost-button login-cancel-attempt" onClick={onCancel}><X size={18} aria-hidden="true" />Cancelar tentativa</button>
     </div>}
   />;
 }
