@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import { resolveClinicaRequestHeaders } from './clinicaContext';
+import { isJwtExpired } from '../shared/utils/jwt';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 const DEFAULT_ERROR_MESSAGE = 'Nao foi possivel concluir a operacao.';
@@ -12,6 +13,13 @@ export const AUTH_EXPIRED_EVENT = 'hemodinks:auth-expired';
 export const API_READ_TIMEOUT_MS = 60_000;
 
 type RequestConfig = Omit<AxiosRequestConfig, 'data' | 'method' | 'url'>;
+
+type SessionTokenResolver = (token: string, force: boolean) => Promise<string>;
+let sessionTokenResolver: SessionTokenResolver | null = null;
+export function registerSessionTokenResolver(resolver: SessionTokenResolver) {
+  sessionTokenResolver = resolver;
+  return () => { if (sessionTokenResolver === resolver) sessionTokenResolver = null; };
+}
 
 export class ApiError extends Error {
   constructor(message: string, readonly status?: number, readonly code?: string) {
@@ -43,20 +51,20 @@ function buildAuthHeaders(token?: string, headers?: AxiosRequestConfig['headers'
   };
 }
 
-function notifyAuthExpired() {
+function notifyAuthExpired(token?: string) {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+    window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, { detail: { token } }));
   }
 }
 
-function toApiError(error: unknown, notifyUnauthorized = false) {
-  const mapped = mapApiError(error, notifyUnauthorized);
+function toApiError(error: unknown, notifyUnauthorized = false, token?: string) {
+  const mapped = mapApiError(error, notifyUnauthorized, token);
   return axios.isAxiosError(error)
     ? new ApiError(mapped.message, error.response?.status, error.code)
     : mapped;
 }
 
-function mapApiError(error: unknown, notifyUnauthorized = false) {
+function mapApiError(error: unknown, notifyUnauthorized = false, token?: string) {
   if (axios.isAxiosError(error)) {
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
       return new Error('A conexão demorou demais. Tente novamente.');
@@ -71,7 +79,7 @@ function mapApiError(error: unknown, notifyUnauthorized = false) {
 
     if (error.response?.status === 401) {
       if (notifyUnauthorized) {
-        notifyAuthExpired();
+        notifyAuthExpired(token);
       }
 
       return new Error(UNAUTHORIZED_ERROR_MESSAGE);
@@ -112,6 +120,15 @@ function mapApiError(error: unknown, notifyUnauthorized = false) {
 }
 
 async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConfig, notifyUnauthorized = false): Promise<T> {
+  const headers = axios.AxiosHeaders.from(config.headers as Parameters<typeof axios.AxiosHeaders.from>[0]);
+  const authorization = headers.get('Authorization');
+  const originalToken = typeof authorization === 'string' && authorization.startsWith('Bearer ')
+    ? authorization.slice(7) : null;
+  const resolver = client === apiClient && originalToken ? sessionTokenResolver : null;
+  if (resolver && originalToken) {
+    headers.set('Authorization', `Bearer ${await resolver(originalToken, false)}`);
+    config = { ...config, headers };
+  }
   try {
     const response = await client.request<T>(config);
 
@@ -121,7 +138,17 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
 
     return response.data;
   } catch (error) {
-    throw toApiError(error, notifyUnauthorized);
+    const sentToken = String(headers.get('Authorization') ?? '').replace(/^Bearer /, '');
+    if (resolver && originalToken && isJwtExpired(sentToken) && axios.isAxiosError(error) && error.response?.status === 401) {
+      const token = await resolver(originalToken, true);
+      headers.set('Authorization', `Bearer ${token}`);
+      try {
+        return (await client.request<T>({ ...config, headers })).data;
+      } catch (retryError) {
+        throw toApiError(retryError, notifyUnauthorized, token);
+      }
+    }
+    throw toApiError(error, notifyUnauthorized, sentToken || undefined);
   }
 }
 

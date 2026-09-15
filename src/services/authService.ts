@@ -42,6 +42,7 @@ export function authenticate(
     undefined,
     {
       timeout: 60_000,
+      withCredentials: true,
       ...(signal ? { signal } : {}),
       headers: clinicaSlug ? { "X-Clinica-Slug": clinicaSlug } : undefined,
     },
