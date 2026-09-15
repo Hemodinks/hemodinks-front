@@ -298,3 +298,35 @@
 @media (prefers-reduced-motion: reduce) {
   .loading-overlay *, .bootstrap-progress { animation: none !important; }
 }
+
+/* The loading panel is dark in both themes: use its own action palette. */
+.login-initial-loading .login-cancel-attempt {
+  min-height: 44px;
+  margin-top: 5px;
+  padding: 10px 16px;
+  color: #fff3cf;
+  background: color-mix(in srgb, #b7791f var(--control-color-opacity), transparent);
+  border: 1px solid #ffc861;
+  font-weight: 800;
+  white-space: normal;
+  box-shadow: none;
+}
+
+.login-initial-loading .login-cancel-attempt:hover {
+  color: #fff;
+  background: color-mix(in srgb, #925f19 var(--control-color-opacity), transparent);
+  border-color: #ffe0a3;
+  box-shadow: 0 0 0 2px rgba(255, 200, 97, 0.18);
+}
+
+.login-initial-loading .login-cancel-attempt:focus-visible {
+  outline: 3px solid #fff3cf;
+  outline-offset: 3px;
+  border-color: #ffc861;
+  box-shadow: none;
+}
+
+.login-initial-loading .login-cancel-attempt:active {
+  background: color-mix(in srgb, #784b12 var(--control-color-opacity), transparent);
+  border-color: #ffe0a3;
+}
