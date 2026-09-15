@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import type { AuthSession } from '../../types';
 import { TEAM_PROFILE_ID } from '../../shared/utils/formatters';
 import { decodeJwtPayload } from '../../shared/utils/jwt';
+import { revokeSession } from '../../services/sessionService';
 
 const SESSION_KEY = 'hemodinks.session';
 
@@ -66,6 +67,10 @@ export function useAuthSession() {
   }, []);
 
   const clearSession = useCallback(() => {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? 'null') as AuthSession | null;
+      if (stored?.token) void revokeSession(stored.token).catch(() => {});
+    } catch { /* Local logout must remain available when storage is invalid. */ }
     clearStoredSession();
     setSession(null);
   }, []);
