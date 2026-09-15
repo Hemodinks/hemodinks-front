@@ -104,6 +104,7 @@ describe('services api client', () => {
     expect(requestSpy).toHaveBeenCalledWith({
       timeout: 60_000,
       url: '/api/users/authenticate',
+      withCredentials: true,
       method: 'POST',
       data: { email: 'gmarcone@gmail.com', senha: 'test-password' },
       headers: { 'Content-Type': 'application/json' },
@@ -127,6 +128,7 @@ describe('services api client', () => {
     expect(requestSpy).toHaveBeenCalledWith({
       timeout: 60_000,
       url: '/api/users/authenticate',
+      withCredentials: true,
       method: 'POST',
       data: { email: 'gmarcone@gmail.com', senha: 'test-password' },
       headers: {

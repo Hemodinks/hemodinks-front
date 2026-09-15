@@ -206,7 +206,7 @@ function AppSessionContent({ auth, loginFlow }: {
     usersDomain.formLoading ||
     patientsDomain.pacienteFormLoading ||
     medicalGroupsDomain.formLoading;
-  useSessionExpiration(session, () => endSession(SESSION_EXPIRED_MESSAGE));
+  useSessionExpiration(session, () => endSession(SESSION_EXPIRED_MESSAGE), persistSession);
   useMedicalLicenseHydration(operationalSession, persistSession);
   useLayoutEffect(() => {
     if (
