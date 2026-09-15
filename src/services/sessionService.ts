@@ -20,7 +20,7 @@ export async function revokeSession(token: string) {
   if (!claims?.sid) return;
   const perform = () => apiClient.post('/api/session/sair', {
     sessionId: claims.sid, membershipId: Number(claims.usuarioClinicaId), active: false,
-  }, { withCredentials: true, timeout: 10_000, headers: { 'X-Session-Refresh': '1' } });
+  }, { withCredentials: true, timeout: 10_000, headers: { 'X-Session-Refresh': '1', Authorization: `Bearer ${token}` } });
   if (navigator.locks) await navigator.locks.request('hemodinks-session-refresh', perform);
   else await perform();
 }
