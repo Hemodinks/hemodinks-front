@@ -1805,6 +1805,17 @@ test('login wait: explica demora e permite cancelar sem abrir sessão tardia', a
   await expect(page.getByRole('status')).toContainText('primeiro acesso após');
   await page.clock.fastForward(23_000);
   await expect(page.getByRole('status')).toContainText('Ainda estamos aguardando');
+  const cancel = page.getByRole('button', { name: 'Cancelar tentativa' });
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
+    await expect(cancel).toBeVisible();
+    const audit = await new AxeBuilder({ page }).include('.login-cancel-attempt').withTags(['wcag2a', 'wcag2aa']).analyze();
+    expect(audit.violations).toEqual([]);
+    await page.keyboard.press('Tab');
+    await cancel.focus();
+    await expect(cancel).toHaveCSS('outline-style', 'solid');
+    await page.screenshot({ path: testInfo.outputPath(`login-cancel-${theme}.png`) });
+  }
   await page.screenshot({ path: testInfo.outputPath('login-wait.png') });
   await page.getByRole('button', { name: 'Cancelar tentativa' }).click();
   await expect(page.getByText(/Tentativa de acesso cancelada/)).toBeVisible();
