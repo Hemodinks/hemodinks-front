@@ -594,26 +594,17 @@ describe('App', () => {
     expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledTimes(1);
   });
 
-  it('aguarda a preparação das clínicas antes de disponibilizar o login', async () => {
-    let resolveClinics!: (clinics: Awaited<ReturnType<typeof api.listPublicClinics>>) => void;
-    vi.mocked(api.listPublicClinics).mockReturnValueOnce(new Promise((resolve) => {
-      resolveClinics = resolve;
-    }));
+  it('mostra o login imediatamente sem consultar clínicas nem preparar a API', async () => {
+    vi.mocked(api.listPublicClinics).mockReturnValue(new Promise(() => {}));
     render(<App />);
 
-    expect(screen.getByRole('progressbar', { name: 'Preparando acesso e carregando clínicas' })).toBeVisible();
-    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument();
-    expect(api.resolveLoginClinics).not.toHaveBeenCalled();
-    expect(api.listPublicClinics).toHaveBeenCalledWith('', expect.any(AbortSignal));
-
-    resolveClinics([{ id: 1, nome: 'Hemodinks', slug: 'hemodinks', fotoUrl: null }]);
-
-    expect(await screen.findByLabelText('Email')).toBeEnabled();
+    expect(screen.getByLabelText('Email')).toBeEnabled();
     expect(screen.getByLabelText('Senha')).toBeEnabled();
     expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(api.resolveLoginClinics).not.toHaveBeenCalled();
+    expect(api.listPublicClinics).not.toHaveBeenCalled();
+    expect(api.authenticate).not.toHaveBeenCalled();
   });
 
   it('restaura a sessao salva na aba ao recarregar a aplicacao', async () => {
@@ -864,7 +855,7 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByAltText('Hemodinks')).toHaveAttribute('src', '/imagem%20hemodinks%20github.jpg');
-    expect(api.listPublicClinics).toHaveBeenCalledWith('', expect.any(AbortSignal));
+    expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(api.getSystemSettingsCompanyPhoto).not.toHaveBeenCalled();
   });
 
@@ -1233,7 +1224,7 @@ describe('App', () => {
     expect(await screen.findByText('Credenciais invalidas.')).toBeVisible();
     expect(screen.getByLabelText('Senha')).toHaveValue('');
     expect(api.authenticate).not.toHaveBeenCalled();
-    expect(api.listPublicClinics).toHaveBeenCalledWith('', expect.any(AbortSignal));
+    expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
   });
 
