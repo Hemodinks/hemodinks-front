@@ -13,8 +13,6 @@ import { LegalFooter } from '../legal/LegalFooter';
 import { MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from '../../shared/utils/formatters';
 import './auth.css';
 import { LoginLoadingOverlay } from './LoginLoadingOverlay';
-import { LoginPreparation } from './LoginPreparation';
-import { useLoginPreparation } from './useLoginPreparation';
 
 type LoginScreenProps = {
   companyName: string;
@@ -61,14 +59,6 @@ export function LoginScreen({
   onStartTutorial,
   onCancelLogin,
 }: LoginScreenProps) {
-  const preparation = useLoginPreparation();
-  if (!preparation.ready) {
-    return <main className="auth-screen">
-      <TechCredit />
-      <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
-      <LoginPreparation waiting={preparation.waiting} empty={preparation.empty} onRetry={preparation.retry} />
-    </main>;
-  }
   return (
     <main className="auth-screen">
       <LoginLoadingOverlay active={loginLoading} onCancel={onCancelLogin} />
