@@ -184,7 +184,7 @@ test('case:layout', async ({ page }, testInfo) => {
   await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeEnabled();
   await expect.poll(() => page.locator('.brand-mark').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
   await page.screenshot({ path: testInfo.outputPath('login-desktop-dark.png'), fullPage: true });
-  await page.getByRole('button', { name: 'Tema claro', exact: true }).click();
+  await page.getByRole('button', { name: 'Usar tema claro', exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('login-mobile-light.png'), fullPage: true });

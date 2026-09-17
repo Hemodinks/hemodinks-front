@@ -38,6 +38,33 @@ beforeEach(() => {
 });
 
 describe('login state isolation', () => {
+  it('does not contact the API before the user submits credentials', () => {
+    setup();
+    expect(listPublicClinics).not.toHaveBeenCalled();
+    expect(resolveLoginClinics).not.toHaveBeenCalled();
+    expect(authenticate).not.toHaveBeenCalled();
+  });
+
+  it('allows a manual retry after a timeout without persisting or replaying the password', async () => {
+    vi.mocked(resolveLoginClinics)
+      .mockRejectedValueOnce(new ApiError('timeout', undefined, 'ECONNABORTED'))
+      .mockResolvedValueOnce({ clinicas: [clinicA] });
+    vi.mocked(authenticate).mockResolvedValue(login);
+    const { result, persistSession } = setup();
+    await act(() => result.current.handleLogin(event));
+    expect(resolveLoginClinics).toHaveBeenCalledTimes(1);
+    expect(persistSession).not.toHaveBeenCalled();
+    expect(result.current.loginPassword).toBe('');
+    expect(result.current.loginEmail).toBe('team@example.com');
+    act(() => result.current.setLoginPassword('password'));
+    await act(() => result.current.handleLogin(event));
+    expect(resolveLoginClinics).toHaveBeenCalledTimes(2);
+    expect(persistSession).toHaveBeenCalledOnce();
+    expect(result.current.loginError).toBe('');
+    expect(result.current.loginLoading).toBe(false);
+    expect(result.current.loginPassword).toBe('');
+  });
+
   it('aborts a slow request and ignores its late response after cancellation', async () => {
     let resolve!: (value: { clinicas: Array<typeof clinicA> }) => void;
     vi.mocked(resolveLoginClinics).mockReturnValue(new Promise(done => { resolve = done; }));
