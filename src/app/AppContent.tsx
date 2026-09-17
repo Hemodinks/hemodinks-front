@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useLayoutEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthSession } from "../features/auth/useAuthSession";
 import { useLoginFlow } from "../features/auth/useLoginFlow";
@@ -22,7 +22,10 @@ import { buildSessionForSelectedClinic, getResetPasswordCompletedMessage } from 
 import { createAppSortHandlers } from "./appSortHandlers";
 import { useAppChrome } from "./useAppChrome";
 import { TutorialProvider } from "../features/tutorials/TutorialProvider";
-import { AuthenticatedAppContent } from "./AuthenticatedAppContent";
+import { LoadingOverlay } from "../shared/components/LoadingOverlay";
+
+const AuthenticatedAppContent = lazy(() => import("./AuthenticatedAppContent")
+  .then(module => ({ default: module.AuthenticatedAppContent })));
 const SESSION_EXPIRED_MESSAGE =
   "Sua sessao expirou. Entre novamente para continuar.";
 export function AppContent() {
@@ -404,7 +407,7 @@ function AppSessionContent({ auth, loginFlow }: {
     );
   }
 
-  return <AuthenticatedAppContent
+  return <Suspense fallback={<LoadingOverlay active message="Carregando a interface…" />}><AuthenticatedAppContent
     session={session}
     activeView={activeView}
     moduleMode={moduleMode}
@@ -437,5 +440,5 @@ function AppSessionContent({ auth, loginFlow }: {
     onThemeChange={setThemePreference}
     onLogout={logout}
     onClinicSelected={handleClinicSelected}
-  />;
+  /></Suspense>;
 }
