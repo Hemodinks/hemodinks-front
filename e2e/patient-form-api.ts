@@ -14,6 +14,9 @@ export async function mockPatientFormApi(page: Page, initialPatient: RecordData)
     uploads: [] as string[],
     failUpload: false,
     failSave: false,
+    failDelete: false,
+    deleteDelay: 0,
+    deleteRequests: 0,
   };
   const paged = (items: RecordData[]) => ({ items, page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 });
   const resolveLookup = (items: RecordData[], idKey: string, nameKey: string, value: string) => {
@@ -64,14 +67,22 @@ export async function mockPatientFormApi(page: Page, initialPatient: RecordData)
       return route.fulfill({ json: saved });
     }
     if (method === 'DELETE') {
+      state.deleteRequests += 1;
+      if (state.deleteDelay) await new Promise((resolve) => setTimeout(resolve, state.deleteDelay));
+      if (state.failDelete) return route.fulfill({ status: 400, json: { message: 'Não foi possível excluir o paciente de teste.' } });
       state.patients = state.patients.filter((item) => item.id !== id);
       return route.fulfill({ status: 204, body: '' });
     }
     if (id) return route.fulfill({ json: state.patients.find((item) => item.id === id) });
     state.queries.push(url.searchParams);
     const procedure = url.searchParams.get('procedimento')?.toLowerCase();
-    const items = state.patients.filter((item) => !procedure || String(item.procedimento).toLowerCase().includes(procedure));
-    return route.fulfill({ json: paged(items) });
+    const search = url.searchParams.get('search')?.toLowerCase();
+    const items = state.patients.filter((item) => (!procedure || String(item.procedimento).toLowerCase().includes(procedure))
+      && (!search || String(item.nomePaciente).toLowerCase().includes(search)));
+    const currentPage = Number(url.searchParams.get('page') || 1);
+    const pageSize = Number(url.searchParams.get('pageSize') || 10);
+    return route.fulfill({ json: { ...paged(items.slice((currentPage - 1) * pageSize, currentPage * pageSize)),
+      page: currentPage, pageSize, totalItems: items.length, totalPages: Math.max(1, Math.ceil(items.length / pageSize)) } });
   });
   return state;
 }
