@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { TUTORIALS, type TutorialId } from '../src/features/tutorials/tutorialRegistry';
 import { getTutorialNarration } from '../src/features/tutorials/tutorialNarration';
 import { TUTORIAL_MEDIA } from '../scripts/tutorials/library-config';
+import { registerPatientFormTests } from './patient-form-cases';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
@@ -629,6 +630,8 @@ async function mockApi(page: Page, loginSession = session, options: {
   return state;
 }
 
+registerPatientFormTests({ setup: mockApi, login: loginViaUi });
+
 async function expectNoGlobalHorizontalOverflow(page: Page) {
   await expect(page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).resolves.toBe(true);
 }
@@ -1027,7 +1030,7 @@ test('cadastra e edita paciente usando o fluxo real do formulario', async ({ pag
   await page.locator('tr', { hasText: 'Paciente Novo' }).getByTitle('Editar').click();
   await expect(page.getByRole('heading', { name: 'Editar paciente' })).toBeVisible();
   await page.getByLabel('Paciente', { exact: true }).fill('Paciente Editado');
-  await page.getByRole('button', { name: 'Salvar paciente' }).click();
+  await page.getByRole('button', { name: 'Salvar alterações' }).click();
   await expect(page.getByText('Paciente atualizado.')).toBeVisible();
   await expectTableRowVisible(page, '.patients-table', 'Paciente Editado', 'Carregando pacientes...');
   expect(apiState.updatedPacientePayload).toMatchObject({

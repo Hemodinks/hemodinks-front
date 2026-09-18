@@ -1,23 +1,11 @@
-.patient-form-clinical-grid {
-  display: grid;
-  grid-column: 1 / -1;
-  gap: 16px;
-}
-
-.patient-form-clinical-column {
-  display: grid;
-  gap: 12px;
-  align-content: start;
-}
-
 .patient-form-slot {
   display: grid;
   gap: 8px;
   min-width: 0;
 }
 
-.module-form-grid .patient-observation-field,
-.module-form-grid .procedure-field {
+.patient-form-panel .patient-observation-field,
+.patient-form-panel .procedure-field {
   grid-column: 1 / -1;
 }
 
@@ -115,12 +103,6 @@
   line-height: 1.45;
 }
 
-@media (min-width: 761px) {
-  .patient-form-clinical-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 520px) {
   .selected-procedure {
     align-items: flex-start;
@@ -131,4 +113,79 @@
     width: 100%;
     justify-content: space-between;
   }
+}
+
+.patient-form-panel {
+  container-type: inline-size;
+  padding: clamp(16px, 2.5vw, 28px);
+  box-shadow: none;
+}
+
+.patient-form-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.patient-form-header > div { min-width: 0; }
+.patient-form-header .eyebrow { color: var(--teal); }
+.patient-form-header h2 { margin: 6px 0 0; font-size: clamp(1.25rem, 2vw, 1.65rem); }
+.patient-form-patient-name { margin: 8px 0 0; color: var(--muted); overflow-wrap: anywhere; line-height: 1.5; }
+.patient-form-header .panel-title-actions { align-items: flex-start; margin-left: auto; max-width: 100%; }
+.patient-form-exports { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.patient-form-exports .ghost-button { min-width: 0; min-height: 44px; padding: 8px 12px; font-size: .78rem; white-space: normal; background: var(--panel); color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+.patient-form-exports svg { flex-shrink: 0; }
+.patient-form-exports .export-pdf-btn { background: color-mix(in srgb, #6d28d9 var(--control-color-opacity), transparent); border-color: #5b21b6; }
+.patient-form-exports .export-pdf-btn:hover:not(:disabled) { background: color-mix(in srgb, #5b21b6 var(--control-color-opacity), transparent); }
+.patient-form-exports .export-xlsx-btn { background: color-mix(in srgb, #15803d var(--control-color-opacity), transparent); border-color: #166534; }
+.patient-form-exports .export-xlsx-btn:hover:not(:disabled) { background: color-mix(in srgb, #166534 var(--control-color-opacity), transparent); }
+.patient-form-guidance { margin: 0 0 24px; color: var(--muted); font-size: .82rem; line-height: 1.6; }
+.patient-form-layout { gap: 24px; min-width: 0; }
+.patient-form-fields { display: grid; gap: 24px; min-width: 0; }
+.patient-form-section { min-width: 0; padding-top: 24px; border-top: 1px solid var(--line); }
+.patient-form-section:first-of-type { border-top: 0; padding-top: 0; }
+.patient-form-section-heading { margin-bottom: 16px; }
+.patient-form-section-heading h3 { margin: 0; font-size: 1rem; line-height: 1.5; }
+.patient-form-section-heading p { margin: 6px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.6; }
+.patient-form-section-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; align-items: start; }
+.patient-form-section-fields > * { min-width: 0; }
+.patient-form-full-width,
+.patient-form-section-fields > .two-column-fields,
+.patient-form-section-fields > .profile-photo-field,
+.patient-form-section-fields > .toggle-row { grid-column: 1 / -1; }
+.patient-form-panel .two-column-fields { gap: 16px 20px; align-items: end; }
+.patient-form-panel label { line-height: 1.5; }
+.patient-form-panel :is(input:not([type="checkbox"]):not([type="file"]), select, textarea) { min-width: 0; width: 100%; font-size: 1rem; }
+.patient-form-panel :is(input:not([type="checkbox"]):not([type="file"]), select) { min-height: 44px; }
+.patient-form-panel textarea { resize: vertical; min-height: 100px; }
+.patient-form-panel .toggle-row { min-height: 44px; align-items: center; }
+.patient-form-panel :is(.combobox-toggle, .date-picker-button) { width: 44px; min-height: 44px; right: 0; box-shadow: none; }
+.patient-form-panel .date-picker-button:focus-within { outline: 2px solid var(--teal); outline-offset: 3px; }
+.patient-form-panel :is(.combobox-input, .date-input-control > input) { padding-right: 52px; }
+.patient-form-panel .combobox-listbox { max-height: min(260px, 32dvh); overscroll-behavior: contain; }
+.patient-form-panel .combobox-option { min-height: 44px; padding-block: 8px; overflow-wrap: anywhere; }
+.patient-form-panel :is(.procedure-select-button, .file-action) { width: auto; justify-self: start; min-height: 44px; box-shadow: none; background: var(--soft); color: var(--ink); border-color: var(--line); }
+.patient-form-panel :is(.icon-button, .icon-button.mini, .patient-observation-action) { min-width: 44px; min-height: 44px; }
+.patient-form-panel .patient-observation-header { flex-wrap: wrap; }
+.patient-form-panel .file-list { min-width: 0; }
+.patient-form-panel .file-list li { min-width: 0; display: flex; align-items: center; gap: 10px; }
+.patient-form-panel .file-list :is(span, .download-link) { min-width: 0; flex: 1; overflow-wrap: anywhere; white-space: normal; }
+.patient-form-panel .file-list :is(svg, .icon-button) { flex-shrink: 0; }
+.patient-form-panel .profile-photo-field:has(input[type="file"]:focus-visible) .file-action { outline: 2px solid var(--teal); outline-offset: 3px; }
+.patient-form-panel :is(button, a, input, textarea):focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.patient-form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid var(--line); }
+.patient-form-actions button { min-height: 44px; box-shadow: none; }
+.patient-form-actions .primary-action { width: auto; }
+
+@container (max-width: 600px) {
+  .patient-form-section-fields,
+  .patient-form-panel .two-column-fields { grid-template-columns: minmax(0, 1fr); }
+  .patient-form-header .panel-title-actions { width: 100%; margin-left: 0; justify-content: space-between; }
+  .patient-form-exports { flex: 1; }
+  .patient-form-exports .ghost-button { width: 100%; }
+  .patient-form-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .patient-form-actions .primary-action { grid-row: 1; }
+  .patient-form-panel :is(.procedure-select-button, .file-action) { width: 100%; }
 }
