@@ -1,7 +1,8 @@
 import { useEffect, useId, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Mail } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { APP_MODULES } from '../shared/navigation/appModules';
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '../shared/support';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
 
@@ -268,6 +269,18 @@ export function Sidebar({
             <APP_MODULES.tutorials.icon size={18} />
             <span>{APP_MODULES.tutorials.navLabel}</span>
           </button>
+          <a
+            className="side-nav-support"
+            style={{ '--side-nav-color': APP_MODULES.tutorials.color } as CSSProperties}
+            href={SUPPORT_MAILTO}
+            title={SUPPORT_EMAIL}
+          >
+            <Mail size={18} aria-hidden="true" />
+            <span className="side-nav-support-copy">
+              <span>Falar com o suporte</span>
+              <small>{SUPPORT_EMAIL}</small>
+            </span>
+          </a>
         </nav>
       </div>
     </aside>
