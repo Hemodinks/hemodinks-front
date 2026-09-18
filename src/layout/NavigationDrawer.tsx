@@ -24,8 +24,8 @@ export function NavigationDrawer({ children, onClose }: { children: ReactNode; o
       <button type="button" className="ghost-button" aria-label="Fechar menu" onClick={onClose}><X size={22} /></button>
     </div>
     <div onClick={(event) => {
-      const button = (event.target as HTMLElement).closest('.side-nav button');
-      if (button && !button.hasAttribute('aria-expanded')) onClose();
+      const item = (event.target as Element).closest('.side-nav button, .side-nav a');
+      if (item && !item.hasAttribute('aria-expanded')) onClose();
     }}>{children}</div>
   </Modal>;
 }
