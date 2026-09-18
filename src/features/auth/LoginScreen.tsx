@@ -1,5 +1,5 @@
 import { type FormEvent } from 'react';
-import { LogIn } from 'lucide-react';
+import { LogIn, Mail } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import type { PublicClinic } from '../../types';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
@@ -8,6 +8,7 @@ import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
 import { ThemeToggle } from '../../shared/components/ThemeToggle';
 import { AlertMessage, ToastMessage } from '../../shared/components/ui';
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '../../shared/support';
 import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import { LegalFooter } from '../legal/LegalFooter';
 import { MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from '../../shared/utils/formatters';
@@ -129,6 +130,16 @@ export function LoginScreen({
           </div>
         </form>
         <p className="login-help">Primeiro acesso? <button type="button" className="ghost-button login-help-link" onClick={onStartTutorial}>Tutorial de acesso</button></p>
+        <p className="login-help login-support">
+          Precisa de ajuda?{' '}
+          <a className="login-help-link" href={SUPPORT_MAILTO} title={SUPPORT_EMAIL}>
+            <span className="login-support-label">
+              <Mail size={16} aria-hidden="true" />
+              Fale com o suporte
+            </span>
+            <small>{SUPPORT_EMAIL}</small>
+          </a>
+        </p>
         <LegalFooter className="login-legal-footer" />
       </section>
     </main>

@@ -116,7 +116,8 @@
 .login-entry-actions { display: grid; gap: 8px; }
 .login-entry-actions > .primary-action { width: 100%; justify-content: center; min-height: 48px; }
 .login-help { margin: 12px 0 0; text-align: center; font-size: 0.9rem; }
-.ghost-button.login-help-link {
+.ghost-button.login-help-link,
+a.login-help-link {
   display: inline-flex;
   justify-content: center;
   padding: 8px 4px;
@@ -128,6 +129,31 @@
   text-underline-offset: 3px;
 }
 .login-help-link:hover { opacity: 0.8; }
+.login-help-link:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.login-support {
+  margin-top: 12px;
+  padding: 12px 10px 8px;
+  border: 1px solid color-mix(in srgb, var(--teal) 20%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--teal) 5%, var(--panel));
+  line-height: 1.5;
+}
+.login-support .login-help-link {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  min-height: 44px;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.login-support-label { display: inline-flex; align-items: center; gap: 6px; color: var(--teal); text-decoration: underline; text-underline-offset: 3px; }
+.login-support .login-help-link small { max-width: 100%; font-size: .78rem; font-weight: 400; overflow-wrap: anywhere; }
+.login-support .login-help-link svg { flex: 0 0 auto; }
 .team-login-description { line-height: 1.5; }
 .team-pin-input { text-align: center; letter-spacing: 0.45em; font-size: 1.25rem; }
 

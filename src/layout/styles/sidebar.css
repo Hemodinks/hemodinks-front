@@ -6,13 +6,16 @@
 .side-nav { display: grid; gap: 4px; min-width: 0; }
 .side-nav-section { padding: 18px 12px 8px; font-size: .65rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
 .side-nav-section:first-child { padding-top: 4px; }
-.side-nav button { min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); box-shadow: none; text-align: left; font-size: .82rem; font-weight: 600; }
-.side-nav button > svg { flex-shrink: 0; color: var(--muted); }
-.side-nav button > span { overflow-wrap: anywhere; }
+.side-nav button, .side-nav a { min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); box-shadow: none; text-align: left; font-size: .82rem; font-weight: 600; }
+.side-nav a { text-decoration: none; }
+.side-nav-support-copy { display: grid; gap: 4px; min-width: 0; }
+.side-nav-support-copy small { font-size: .72rem; font-weight: 400; line-height: 1.5; overflow-wrap: anywhere; }
+.side-nav button > svg, .side-nav a > svg { flex-shrink: 0; color: var(--muted); }
+.side-nav button > span, .side-nav a > span { overflow-wrap: anywhere; }
 .side-nav button.active { background: var(--soft); color: var(--teal); border-left: 3px solid var(--teal); }
 .side-nav button.active > svg { color: var(--teal); }
-.side-nav button:hover { background: var(--soft); }
-.side-nav button:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+.side-nav button:hover, .side-nav a:hover { background: var(--soft); }
+.side-nav button:focus-visible, .side-nav a:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
 .side-nav button:disabled { opacity: .55; cursor: not-allowed; }
 .side-nav-count { margin-left: auto; flex-shrink: 0; padding: 2px 6px; border-radius: 6px; background: var(--soft); color: var(--teal); font-size: .72rem; }
 .side-nav-billing-group, .side-nav-billing-submenu { display: grid; min-width: 0; gap: 4px; }
@@ -25,8 +28,8 @@
 
 /* Use each module's established color without fading its text or icons. */
 .sidebar-clinic .eyebrow { color: var(--teal); }
-.side-nav button, .side-nav button.active, .side-nav button:hover { background: color-mix(in srgb, var(--side-nav-color) var(--navigation-color-opacity), transparent); color: var(--ink); }
-.side-nav button > svg, .side-nav button.active > svg { color: var(--ink); }
+.side-nav button, .side-nav button.active, .side-nav button:hover, .side-nav a, .side-nav a:hover { background: color-mix(in srgb, var(--side-nav-color) var(--navigation-color-opacity), transparent); color: var(--ink); }
+.side-nav button > svg, .side-nav button.active > svg, .side-nav a > svg { color: var(--ink); }
 .side-nav button.active { border-color: var(--ink); border-left-width: 3px; font-weight: 800; }
-.side-nav button:hover { border-color: var(--ink); }
+.side-nav button:hover, .side-nav a:hover { border-color: var(--ink); }
 .side-nav-count { color: var(--ink); background: var(--panel); }
