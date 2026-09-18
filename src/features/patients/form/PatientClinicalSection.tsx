@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { Convenio, Hospital, OpmeFornecedor, PacienteFormData } from '../../../types';
 import { AlertMessage, ComboboxField } from '../../../shared/components/ui';
+import { PatientFormSection } from './PatientFormSection';
 import {
   findConvenioByDescription,
   findHospitalByName,
@@ -41,8 +42,8 @@ export function PatientClinicalSection({
   updateMedicalTeamMember,
 }: Props) {
   return (
-    <div className="patient-form-clinical-grid">
-      <div className="patient-form-clinical-column">
+    <>
+      <PatientFormSection title="Dados da cirurgia" description="Selecione uma opção ou digite um novo hospital, convênio ou fornecedor para cadastrar ao salvar.">
         <div className="patient-form-slot">
           <ComboboxField
             label="Convênio"
@@ -94,8 +95,8 @@ export function PatientClinicalSection({
           />
           {opmeFornecedoresError && <AlertMessage type="error">{opmeFornecedoresError}</AlertMessage>}
         </div>
-      </div>
-      <div className="patient-form-clinical-column">
+      </PatientFormSection>
+      <PatientFormSection title="Equipe médica" description="Selecione os profissionais já cadastrados para cada função.">
         <div className="patient-form-slot">
           <ComboboxField
             label="Cirurgião"
@@ -126,7 +127,7 @@ export function PatientClinicalSection({
             placeholder={medicalUsersAvailable ? 'Digite para buscar um médico auxiliar' : 'Nenhum médico cadastrado'}
           />
         </div>
-      </div>
-    </div>
+      </PatientFormSection>
+    </>
   );
 }

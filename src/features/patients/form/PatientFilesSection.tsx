@@ -20,7 +20,6 @@ type Props = {
 export function PatientFilesSection({ formReadOnly, canEditPatients, editingPaciente, pendingFiles, inputKey, sessionToken, onFilesChange, onRemovePending, onDelete }: Props) {
   return (
     <div className="profile-photo-field">
-      <label className="field-label" htmlFor="patient-file-input">Arquivos</label>
       {!formReadOnly && canEditPatients && (
         <>
           <label className="ghost-button file-action full-width" htmlFor="patient-file-input"><FileUp size={17} />Selecionar arquivos</label>
@@ -45,6 +44,7 @@ export function PatientFilesSection({ formReadOnly, canEditPatients, editingPaci
           ))}
         </ul>
       ) : null}
+      {!pendingFiles.length && !editingPaciente?.arquivos.length && <span className="file-hint">Nenhum arquivo anexado.</span>}
     </div>
   );
 }
