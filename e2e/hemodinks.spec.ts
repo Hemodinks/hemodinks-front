@@ -6,6 +6,7 @@ import { TUTORIALS, type TutorialId } from '../src/features/tutorials/tutorialRe
 import { getTutorialNarration } from '../src/features/tutorials/tutorialNarration';
 import { TUTORIAL_MEDIA } from '../scripts/tutorials/library-config';
 import { registerPatientFormTests } from './patient-form-cases';
+import { registerPatientListTests } from './patient-list-cases';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
@@ -631,6 +632,14 @@ async function mockApi(page: Page, loginSession = session, options: {
 }
 
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
+registerPatientListTests({ setup: mockApi, login: loginViaUi });
+
+test('listagem paciente sem permissão de gestão oferece somente visualização', async ({ page }) => {
+  await mockApi(page, patientSession);
+  await loginViaUi(page, '/pacientes', patientSession);
+  await expect(page.getByRole('button', { name: 'Visualizar Paciente Hemodinks', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^(Novo paciente|Editar Paciente|Excluir Paciente)/ })).toHaveCount(0);
+});
 
 async function expectNoGlobalHorizontalOverflow(page: Page) {
   await expect(page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).resolves.toBe(true);
@@ -1881,9 +1890,14 @@ test('bootstrap: timeout termina o loading e permite recuperação', async ({ pa
   let release!: () => void;
   const pending = new Promise<void>(resolve => { release = resolve; });
   await page.route('**/api/legal-acceptances/current', async route => { await pending; await route.abort().catch(() => {}); });
+  // The login overlay also has a progressbar. Wait until the legal bootstrap
+  // request has started (and its deadline is armed) before advancing time.
+  const validationStarted = page.waitForRequest(request => new URL(request.url()).pathname === '/api/legal-acceptances/current');
   await loginViaUi(page);
+  await validationStarted;
+  await expect(page.getByRole('status')).toContainText('Validando sua sessão, clínica e Termos de Uso');
   await expect(page.getByRole('progressbar')).toBeVisible();
-  await page.clock.fastForward(60_000);
+  await page.clock.fastForward(60_001);
   await expect(page.getByRole('progressbar')).toHaveCount(0);
   await expect(page.getByText('A conexão demorou demais. Tente novamente.')).toBeVisible();
   release();
