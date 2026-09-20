@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
 import { getPacientes } from '../../services';
 import { getErrorMessage, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
@@ -28,6 +28,7 @@ export function usePatientExport({
 }: UsePatientExportOptions) {
   const [pacienteExportLoading, setPacienteExportLoading] = useState<PacienteExportFormat | null>(null);
   const [pacienteExportScope, setPacienteExportScope] = useState<PacienteExportScope>('visible');
+  const exportInFlight = useRef(false);
 
   const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>) => {
     if (!session) {
@@ -77,10 +78,11 @@ export function usePatientExport({
   };
 
   const handleExportPacientes = async (format: PacienteExportFormat) => {
-    if (!session || pacienteExportLoading) {
+    if (!session || exportInFlight.current) {
       return;
     }
 
+    exportInFlight.current = true;
     setPacienteExportLoading(format);
     setPacientesError('');
 
@@ -100,6 +102,7 @@ export function usePatientExport({
     } catch (error) {
       setPacientesError(getErrorMessage(error));
     } finally {
+      exportInFlight.current = false;
       setPacienteExportLoading(null);
     }
   };

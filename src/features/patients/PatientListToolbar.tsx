@@ -6,7 +6,7 @@ import type { PatientListProps } from './patientListTypes';
 
 type PatientListToolbarProps = Pick<PatientListProps,
   | 'pacientesTotalItems' | 'canCreatePatients' | 'pacienteSearchTerm' | 'pacienteExportScope'
-  | 'pacienteExportLoading' | 'isAdmin' | 'isTeam' | 'onOpenNewPacienteForm' | 'onSearchChange'
+  | 'pacienteExportLoading' | 'pacientesLoading' | 'isAdmin' | 'isTeam' | 'onOpenNewPacienteForm' | 'onSearchChange'
   | 'onRefresh' | 'onExportScopeChange' | 'onExportPacientes'
 > & { children?: ReactNode };
 
@@ -24,11 +24,13 @@ export function PatientListToolbar(props: PatientListToolbarProps) {
         <div data-tour="patients-search">
           <SearchField label="Buscar pacientes" value={props.pacienteSearchTerm} onValueChange={props.onSearchChange} />
         </div>
-        <IconButton label="Atualizar lista de pacientes" onClick={props.onRefresh} title="Atualizar lista"><RefreshCw size={18} /></IconButton>
-        <div className="patient-export-actions" aria-label="Exportacoes de pacientes">
+        <IconButton label="Atualizar lista de pacientes" onClick={props.onRefresh} disabled={props.pacientesLoading} title="Atualizar lista"><RefreshCw size={18} /></IconButton>
+        {props.children}
+        <div className="patient-export-actions" role="group" aria-label="Exportações da listagem">
           <SelectField
             className="export-scope-field"
             label="Exportar"
+            disabled={props.pacienteExportLoading !== null || props.pacientesLoading}
             value={props.pacienteExportScope}
             onChange={(event) => props.onExportScopeChange(event.target.value as PacienteExportScope)}
           >
@@ -36,14 +38,16 @@ export function PatientListToolbar(props: PatientListToolbarProps) {
             {(props.isAdmin || props.isTeam) && <option value="doctor">Cirurgiões selecionados</option>}
             <option value="visible">Dados da tela</option>
           </SelectField>
-          <Button className="export-pdf-btn" onClick={() => void props.onExportPacientes('pdf')} disabled={props.pacienteExportLoading !== null}>
+          <Button className="export-pdf-btn" onClick={() => void props.onExportPacientes('pdf')} disabled={props.pacienteExportLoading !== null || props.pacientesLoading}>
             <FileText size={17} />{props.pacienteExportLoading === 'pdf' ? 'Gerando...' : 'Exportar PDF'}
           </Button>
-          <Button className="export-xlsx-btn" onClick={() => void props.onExportPacientes('xlsx')} disabled={props.pacienteExportLoading !== null}>
+          <Button className="export-xlsx-btn" onClick={() => void props.onExportPacientes('xlsx')} disabled={props.pacienteExportLoading !== null || props.pacientesLoading}>
             <Download size={17} />{props.pacienteExportLoading === 'xlsx' ? 'Gerando...' : 'Exportar Planilha'}
           </Button>
+          <span className="patient-export-feedback" role="status">{props.pacienteExportLoading
+            ? `Gerando ${props.pacienteExportLoading === 'pdf' ? 'PDF' : 'planilha Excel'} da listagem…`
+            : 'Exporte a listagem conforme o escopo selecionado.'}</span>
         </div>
-        {props.children}
       </div>
     </div>
   );
