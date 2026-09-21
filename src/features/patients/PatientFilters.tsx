@@ -10,7 +10,7 @@ type PatientFiltersProps = Pick<PatientListProps,
 export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdmin, isTeam, onFiltersChange, onClearFilters }: PatientFiltersProps) {
   const canUseExtendedFilters = isAdmin || isTeam;
   return (
-    <div className="patient-filter-grid" aria-label="Filtros de pacientes e cirurgias">
+    <div className="patient-filter-grid" role="group" aria-label="Filtros de pacientes e cirurgias">
       {canUseExtendedFilters && <>
         <MultiSelectComboboxField className="filter-field" label="Cirurgião" values={pacienteFilters.medicoUserIds.map(String)}
           options={medicalUsers.map((user) => ({ value: String(user.id), label: user.nome }))}

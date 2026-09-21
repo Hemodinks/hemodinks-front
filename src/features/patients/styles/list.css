@@ -1,0 +1,65 @@
+.patient-list-panel { container: patient-list / inline-size; }
+.patient-list-panel .table-tools { grid-template-columns: auto minmax(0, 1fr) auto; }
+.patient-list-panel .table-tools > [data-tour="patients-search"] { max-width: none; min-width: 0; }
+.patient-list-panel .search-box { min-width: 0; }
+.patient-list-panel .search-box input { min-width: 0; width: 100%; }
+.patient-list-panel .table-tools:not(:has([data-tour="patients-new"])) { grid-template-columns: minmax(0, 1fr) auto; }
+.patient-list-panel .patient-filter-grid { padding-top: 16px; border-top: 1px solid var(--line); gap: 14px; }
+.patient-list-panel .patient-export-actions { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); grid-template-columns: minmax(0, 1fr) auto auto; }
+.patient-list-panel .export-scope-field { min-width: 0; }
+.patient-export-feedback { grid-column: 1 / -1; color: var(--muted); font-size: .78rem; line-height: 1.5; }
+.patient-list-panel :is(input:not([type="checkbox"]), select) { min-width: 0; min-height: 44px; font-size: 1rem; }
+.patient-list-panel :is(.ghost-button, .icon-button, .status-info-button, .attachment-button, .patient-observation-button) { min-height: 44px; }
+.patient-list-panel :is(.icon-button, .status-info-button, .attachment-button, .patient-observation-button) { min-width: 44px; }
+.patient-list-panel :is(.date-picker-button, .combobox-toggle) { width: 44px; min-height: 44px; }
+.patient-list-panel .date-input-control > input { padding-right: 52px; }
+.patient-list-panel :is(button, input, select):focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.patient-list-panel .date-picker-button:focus-within { outline: 2px solid var(--teal); outline-offset: 3px; }
+.patient-list-panel .row-actions { justify-content: flex-start; }
+.patients-table-wrap { border-color: var(--line); background: var(--panel); }
+.patients-table :is(th, td) { padding: 10px; border-color: var(--line); }
+.patients-table th { color: var(--muted); }
+.patients-table .sort-header-button { min-height: 44px; }
+.patients-table .name-cell { min-width: 150px; max-width: 260px; overflow-wrap: anywhere; }
+.patients-table td:nth-child(2) { width: 108px; }
+.patient-list-panel .pagination-bar { flex-wrap: wrap; gap: 12px; }
+.patient-list-panel .pagination-actions { flex-wrap: wrap; }
+
+@container patient-list (max-width: 800px) {
+  .patient-list-panel .patient-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .patient-list-panel .patient-export-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .patient-list-panel .export-scope-field { grid-column: 1 / -1; }
+  .patient-list-panel .patient-export-actions .ghost-button { min-width: 0; width: 100%; white-space: normal; }
+}
+
+/* Cards use the same rows and callbacks; name and actions stay first. */
+@container patient-list (max-width: 700px) {
+  .patients-table-wrap { overflow: visible; border: 0; background: transparent; }
+  .patients-table { display: block; min-width: 0; width: 100%; }
+  .patients-table thead { display: block; margin-bottom: 12px; }
+  .patients-table thead tr { display: flex; flex-wrap: wrap; gap: 8px; }
+  .patients-table thead th { display: block; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; max-width: 100%; }
+  .patients-table thead th:not(:has(button)) { display: none; }
+  .patients-table tbody { display: grid; gap: 16px; width: 100%; }
+  .patients-table tbody tr { display: grid; min-width: 0; width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow: hidden; }
+  .patients-table tbody td { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); align-items: center; gap: 12px; width: auto; padding: 12px; min-width: 0; overflow-wrap: anywhere; }
+  .patients-table tbody td::before { content: attr(data-label); color: var(--muted); font-size: .75rem; font-weight: 700; }
+  .patients-table tbody td:first-child { display: block; padding-bottom: 6px; border-bottom: 0; font-size: 1rem; }
+  .patients-table tbody td:first-child::before { display: none; }
+  .patients-table .name-cell { min-width: 0; max-width: none; }
+  .patients-table tbody td:nth-child(2) { display: block; padding-top: 6px; }
+  .patients-table tbody td:nth-child(2)::before { display: none; }
+  .patients-table tbody tr:last-child td:not(:last-child):not(:first-child) { border-bottom: 1px solid var(--line); }
+  .patients-table tbody td.empty-row { display: block; padding: 28px 16px; text-align: center; }
+  .patients-table tbody td.empty-row::before { display: none; }
+  .patients-table tbody td > :is(button, .status-pill, .attachment-count) { justify-self: start; }
+}
+
+@container patient-list (max-width: 480px) {
+  .patient-list-panel .table-tools { grid-template-columns: minmax(0, 1fr) auto; }
+  .patient-list-panel [data-tour="patients-new"] { grid-column: 1 / -1; width: 100%; }
+  .patient-list-panel .patient-filter-grid,
+  .patient-list-panel .patient-export-actions { grid-template-columns: minmax(0, 1fr); }
+  .patient-list-panel .pagination-bar { justify-content: center; text-align: center; }
+  .patient-list-panel .pagination-actions { justify-content: center; gap: 8px; }
+}

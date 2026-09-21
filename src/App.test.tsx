@@ -1968,7 +1968,7 @@ describe('App', () => {
     expect(screen.getByLabelText('Cirurgião')).toBeInTheDocument();
     expect(screen.getByLabelText('Médico auxiliar 1')).toBeInTheDocument();
     expect(screen.getByLabelText('Médico auxiliar 2')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /salvar alterações/i })).toBeInTheDocument();
   });
 
   it('carrega a licenca atual do medico quando ela nao vem no login e libera pacientes', async () => {
@@ -2024,7 +2024,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
 
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /salvar alterações/i })).toBeInTheDocument();
     expect(screen.getByText('Selecionar arquivos')).toBeInTheDocument();
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
   });
@@ -2138,7 +2138,7 @@ describe('App', () => {
     expect(screen.getByLabelText('Data do Pagamento')).toBeEnabled();
     expect(screen.getByLabelText('Data do Pagamento')).toHaveValue('');
 
-    await user.click(screen.getByRole('button', { name: /salvar paciente/i }));
+    await user.click(screen.getByRole('button', { name: /salvar alterações/i }));
 
     await waitFor(() => {
       expect(api.updatePaciente).toHaveBeenCalledWith(10, expect.objectContaining({
@@ -2355,7 +2355,7 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
     expect(await screen.findByRole('heading', { name: 'Editar paciente' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /salvar paciente/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /salvar alterações/i })).toBeInTheDocument();
     expect(screen.getByText('Selecionar arquivos')).toBeInTheDocument();
     expect(screen.queryByLabelText('Foto do paciente')).not.toBeInTheDocument();
   });

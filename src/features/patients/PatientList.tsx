@@ -7,7 +7,7 @@ import { PatientTable } from './PatientTable';
 import type { PatientListProps } from './patientListTypes';
 
 export function PatientList(props: PatientListProps) {
-  return <DataPanel data-tour="patients-list">
+  return <DataPanel className="patient-list-panel" data-tour="patients-list">
     <PatientListToolbar {...props}><PatientFilters {...props} /></PatientListToolbar>
     {props.pacienteSuccessMessage && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{props.pacienteSuccessMessage}</ToastMessage>}
     {props.pacientesError && <AlertMessage type="error">{props.pacientesError}</AlertMessage>}

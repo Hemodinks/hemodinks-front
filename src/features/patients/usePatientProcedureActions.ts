@@ -45,6 +45,9 @@ export function usePatientProcedureActions({
   const handleRemovePacienteProcedimento = (indexToRemove: number) => {
     setFormData((current) => withPrimaryProcedimento({
       ...current,
+      cbhpmCodigo: '',
+      cbhpmPorte: '',
+      procedimento: '',
       procedimentos: current.procedimentos.filter((_, index) => index !== indexToRemove),
     }));
   };
