@@ -18,6 +18,8 @@ export function registerPatientListTests({ setup, login }: Dependencies) {
         await login(page, '/pacientes');
         const panel = page.locator('.patient-list-panel');
         await expect(panel.locator('tbody tr')).toHaveCount(2);
+        await expect(panel.locator('.patient-filters-accordion')).not.toHaveAttribute('open', '');
+        await panel.locator('.patient-filters-accordion > summary').click();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
         const overflow = await panel.locator('button, input:not(.sr-only), select').evaluateAll((elements) => elements.filter((el) => {
           const rect = el.getBoundingClientRect();
@@ -59,6 +61,7 @@ export function registerPatientListTests({ setup, login }: Dependencies) {
       await expect(page.getByText('Página 2 de 2', { exact: true })).toBeVisible();
       await expect(page.locator('.patients-table tbody tr')).toHaveCount(3);
       await page.getByLabel('Buscar pacientes', { exact: true }).fill('Hemodinks');
+      await page.locator('.patient-filters-accordion > summary').click();
       await page.getByLabel('Procedimento', { exact: true }).fill('Consulta');
       await expect(page.locator('.patients-table tbody tr')).toHaveCount(1);
       await expect.poll(() => api.queries.some((q) => q.get('search') === 'Hemodinks' && q.get('procedimento') === 'Consulta' && q.get('page') === '1')).toBe(true);

@@ -55,13 +55,14 @@ O teste de integração existente em `src/App.test.tsx` cobre o descarte de paci
 | `npm run audit:architecture` | 268 arquivos, nenhuma violação. |
 | `npm run budget` | Aprovado: entrada JS 228,73 kB; gzip 73,08 kB; CSS 5,77 kB. |
 | E2E específico da listagem | 8 aprovados. |
-| `npm run test:e2e` completo | Resultado final a registrar após conclusão da execução. |
+| `npm run test:e2e` completo | 74 aprovados, 23 ignorados condicionalmente, nenhuma falha. Confirmado localmente e no GitHub Actions. Os casos ignorados são 11 de API real sem fixture e 12 de gravação de tutoriais. |
+| GitHub Actions | CI do commit `99ac047` aprovado: 339 testes unitários/integração e 74 E2E. CI e deploy da integração `b05449c` também aprovados. |
 | Lint | O projeto não possui script de lint nem etapa de lint no GitHub Actions; não foi declarado como executado. |
 | `git diff --check` | Aprovado. |
 
 O Playwright cobre 320, 390, 768, 1024 e 1440 px, ausência de overflow horizontal, ações diretamente após o nome, áreas de toque, cores, edição e retorno, busca e procedimento combinados, limpeza, paginação, estado vazio, confirmação bloqueada durante exclusão e falha de exclusão. Os testes existentes de ficha/listagem validam downloads PDF/Excel, conteúdo filtrado da planilha e exclusão bem-sucedida. A auditoria Axe da listagem passa em 390 e 1440 px nos temas claro e escuro.
 
-Os comandos de build, budget e E2E são os mesmos de `.github/workflows/ci.yml`. A suíte Vitest usa o comando do CI com dois workers para limitar recursos locais. Nenhum workflow remoto ou deploy foi acionado. O aviso preexistente do Vite sobre imports estático/dinâmico de `observability.ts` permanece não bloqueante.
+Os comandos de build, budget e E2E são os mesmos de `.github/workflows/ci.yml`. A suíte Vitest local usa o comando do CI com dois workers para limitar recursos. Os resultados remotos foram consultados em 21/09/2026, após o envio e a integração das alterações. O agente não acionou workflow remoto ou deploy. O aviso preexistente do Vite sobre imports estático/dinâmico de `observability.ts` permanece não bloqueante.
 
 ## Falha do GitHub Actions investigada em 20/09/2026
 
@@ -69,9 +70,11 @@ Execução: [CI 35402873407](https://github.com/Hemodinks/hemodinks-front/action
 
 O CI registrou cinco falhas, 69 testes aprovados e 23 ignorados. As cinco falhas são os testes responsivos de 320, 390, 768, 1024 e 1440 px: `locator('.patient-list-panel').locator('tbody tr')` esperava dois registros e encontrava zero.
 
-O commit continha os novos testes, mas não os componentes e estilos correspondentes. Conferido com `git show HEAD:src/features/patients/PatientList.tsx`: a versão enviada não define `className="patient-list-panel"`, enquanto o workspace já contém essa classe e as demais melhorias exigidas pelos testes. Os arquivos de implementação ainda estavam modificados/não rastreados localmente.
+O commit `cd164ce` continha os novos testes, mas não os componentes e estilos correspondentes. A versão de `PatientList.tsx` naquele commit não definia `className="patient-list-panel"`, enquanto o workspace já continha essa classe e as demais melhorias exigidas pelos testes. Os arquivos de implementação ainda estavam modificados/não rastreados localmente.
 
-A correção é entregar o conjunto completo de implementação e testes listado acima, incluindo `styles/list.css` e sua importação. Não é necessário aumentar timeout, remover asserções ou ignorar os testes. O status remoto dessa execução permanece falho até que um novo commit com a implementação completa seja enviado e validado pelo CI.
+A correção foi entregue no commit `99ac047`, incluindo o conjunto completo de implementação, `styles/list.css` e sua importação. Não foi necessário aumentar timeout, remover asserções ou ignorar testes. O [CI da correção](https://github.com/Hemodinks/hemodinks-front/actions/runs/35545967865) passou com 339 testes unitários/integração e 74 E2E aprovados, além de build e budget.
+
+A integração `b05449c` mantém os mesmos arquivos da correção (comparação sem diferenças de conteúdo) e tem [CI aprovado](https://github.com/Hemodinks/hemodinks-front/actions/runs/35547073441) e [deploy aprovado](https://github.com/Hemodinks/hemodinks-front/actions/runs/35547073445). A execução antiga permanece como registro histórico da falha já corrigida.
 
 ## Evidências
 

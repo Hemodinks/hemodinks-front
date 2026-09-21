@@ -1,65 +1,10 @@
+@import '../../shared/components/styles/filter-accordion.css';
+
 .billing-workspace {
   gap: 16px;
   font-variant-numeric: tabular-nums lining-nums;
   --billing-filter-button-width: 150px;
   --billing-filter-button-height: 50px;
-}
-
-.billing-filters-accordion {
-  display: grid;
-  gap: 14px;
-}
-
-.billing-filters-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  cursor: pointer;
-  list-style: none;
-}
-
-.billing-filters-summary::-webkit-details-marker {
-  display: none;
-}
-
-.billing-filters-summary h2 {
-  margin: 4px 0 0;
-  font-size: 1.2rem;
-}
-
-.billing-filters-toggle {
-  width: var(--billing-filter-button-width);
-  min-height: var(--billing-filter-button-height);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 0 16px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--action-primary) 82%, black);
-  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
-  color: var(--ink);
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--action-primary) 28%, transparent);
-  font-size: 0.9rem;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.billing-filters-toggle::after {
-  content: "▾";
-  font-size: 0.84rem;
-  transition: transform 180ms ease;
-}
-
-.billing-filters-accordion[open] .billing-filters-toggle::after {
-  transform: rotate(180deg);
-}
-
-.billing-filters-content {
-  display: grid;
-  gap: 14px;
-  padding-top: 4px;
 }
 
 .billing-toolbar {
@@ -1722,7 +1667,6 @@
     justify-content: stretch;
   }
 
-  .billing-filters-toggle,
   .billing-apply-filters,
   .billing-clear-filters {
     width: 100%;

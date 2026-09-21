@@ -62,6 +62,7 @@ describe('listagem de pacientes', () => {
     render(<PatientList {...state} />);
     await userEvent.type(screen.getByLabelText('Buscar pacientes'), 'A');
     expect(state.onSearchChange).toHaveBeenCalledWith('A');
+    await userEvent.click(screen.getByLabelText('Filtros de pacientes', { selector: 'summary' }));
     await userEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
     expect(state.onClearFilters).toHaveBeenCalledOnce();
     await userEvent.click(screen.getByRole('button', { name: 'Exportar PDF' }));

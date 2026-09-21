@@ -634,6 +634,24 @@ async function mockApi(page: Page, loginSession = session, options: {
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
 registerPatientListTests({ setup: mockApi, login: loginViaUi });
 
+test('accordions de filtros iniciam fechados e abrem por teclado em todas as telas', async ({ page }) => {
+  await mockApi(page);
+  for (const route of ['/pacientes', '/faturamento-medico', '/relatorios']) {
+    await loginViaUi(page, route);
+    const accordion = page.locator('details.billing-filters-accordion');
+    await expect(accordion).toBeVisible();
+    await expect(accordion).not.toHaveAttribute('open');
+    const summary = accordion.locator('summary');
+    await summary.focus();
+    await summary.press('Enter');
+    await expect(accordion).toHaveAttribute('open');
+    await expect(accordion.locator('.billing-filters-content')).toBeVisible();
+    await summary.press('Enter');
+    await expect(accordion).not.toHaveAttribute('open');
+    await expect(accordion.locator('.billing-filters-content')).not.toBeVisible();
+  }
+});
+
 test('listagem paciente sem permissão de gestão oferece somente visualização', async ({ page }) => {
   await mockApi(page, patientSession);
   await loginViaUi(page, '/pacientes', patientSession);
@@ -1099,6 +1117,7 @@ test('consulta e exporta relatórios com filtros múltiplos', async ({ page }) =
   await expect(page).toHaveURL(/\/relatorios$/);
   await expect(page.getByRole('heading', { name: 'Relatórios', level: 1 })).toBeVisible();
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
+  await page.locator('.billing-filters-summary').click();
 
   await page.getByRole('textbox', { name: 'Cirurgias Consolidadas - inicial', exact: true }).fill('01/06/2026');
   const doctorsFilter = page.getByRole('combobox', { name: 'Médicos', exact: true });

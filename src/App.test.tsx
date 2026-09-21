@@ -1865,6 +1865,7 @@ describe('App', () => {
 
     await openPatientsModule(user);
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Filtros de pacientes', { selector: 'summary' }));
 
     await user.type(screen.getByLabelText('Cirurgião'), 'Ana Hemodinks');
     await user.click(screen.getByRole('option', { name: 'Ana Hemodinks' }));
