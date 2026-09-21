@@ -243,6 +243,12 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
           window.setTimeout(() => options.driver.destroy(), 0);
           return;
         }
+        // Reveal filter fields only when their tutorial step is explicitly reached.
+        let filters = element.closest<HTMLDetailsElement>('details.billing-filters-accordion');
+        while (filters) {
+          filters.open = true;
+          filters = filters.parentElement?.closest<HTMLDetailsElement>('details.billing-filters-accordion') ?? null;
+        }
         if (step.action === 'click') element.classList.add('tutorial-target-action');
         playStepNarration(step, tutorial);
       },

@@ -34,7 +34,7 @@ const fields: Array<{ key: keyof Options; label: string; all: string }> = [
 export function ReportsFiltersPanel(props: Props) {
   return (
     <DataPanel className="billing-filter-panel reports-filter-panel" data-tour="reports-filters">
-      <details className="billing-filters-accordion" open>
+      <details className="billing-filters-accordion">
         <summary className="billing-filters-summary">
           <div><span className="eyebrow">Consulta analítica</span><h2>{props.resultCount} atendimento(s) encontrados</h2></div>
           <span className="billing-filters-toggle">Filtros</span>
