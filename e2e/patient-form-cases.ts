@@ -123,6 +123,7 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
       const api = await mockPatientFormApi(page, base.pacientes[0]);
       api.patients.push({ ...api.patients[0], id: 22, nomePaciente: 'Paciente Outro', procedimento: 'Outro procedimento' });
       await login(page, '/pacientes');
+      await page.locator('.patient-filters-accordion > summary').click();
       await page.getByLabel('Procedimento', { exact: true }).fill('Consulta');
       await expect(page.locator('.patients-table tbody tr')).toHaveCount(1);
       expect(api.queries.some((query) => query.get('procedimento') === 'Consulta')).toBe(true);

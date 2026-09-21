@@ -1,4 +1,6 @@
 .patient-list-panel { container: patient-list / inline-size; }
+.patient-filters-accordion { grid-column: 1 / -1; min-width: 0; }
+.patient-filters-accordion > summary { justify-content: flex-end; }
 .patient-list-panel .table-tools { grid-template-columns: auto minmax(0, 1fr) auto; }
 .patient-list-panel .table-tools > [data-tour="patients-search"] { max-width: none; min-width: 0; }
 .patient-list-panel .search-box { min-width: 0; }

@@ -17,7 +17,6 @@ import { AlertMessage, DataPanel, IconButton } from '../../shared/components/ui'
 import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import './billing.css';
 import { formatCurrency, formatPersonName } from '../../shared/utils/formatters';
-import { UserAvatar } from '../users/UserAvatar';
 import {
   BillingRankingPanel,
   BillingSummaryCard,
@@ -381,13 +380,6 @@ export function BillingPage({
                   <tr key={record.id}>
                     <td data-label="Paciente">
                       <div className="billing-patient-cell">
-                        <UserAvatar
-                          userId={record.paciente.userId}
-                          name={record.patientName}
-                          photo={record.paciente.fotoPerfil}
-                          authToken={session.token}
-                          size="sm"
-                        />
                         <div>
                           <strong>{record.patientName}</strong>
                           <span>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendência(s)</span>
