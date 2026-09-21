@@ -148,15 +148,6 @@
     grid-template-columns: 1fr;
   }
 
-  .patients-carousel-wrap tbody tr {
-    flex-basis: min(88vw, 430px);
-    width: min(88vw, 430px);
-  }
-
-  .patients-carousel-wrap td {
-    grid-template-columns: minmax(96px, 0.36fr) minmax(0, 1fr);
-  }
-
   .patients-workspace .table-tools {
     grid-template-columns: minmax(0, 1fr) auto;
     justify-content: flex-start;
@@ -184,12 +175,5 @@
 
   .patient-export-actions {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 520px) {
-  .patients-carousel-wrap tbody tr:only-child {
-    flex-basis: min(100%, 430px);
-    width: min(100%, 430px);
   }
 }

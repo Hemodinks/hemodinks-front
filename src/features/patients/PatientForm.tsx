@@ -1,5 +1,5 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect } from 'react';
-import { Plus, Save, X } from 'lucide-react';
+import { FileDown, Plus, Save, X } from 'lucide-react';
 import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
 import { AlertMessage, Button, FormPanel, IconButton } from '../../shared/components/ui';
 import { findMedicalUserByName, formatPersonName } from '../../shared/utils/formatters';
@@ -10,7 +10,8 @@ import { PatientIdentificationSection } from './form/PatientIdentificationSectio
 import { PatientClinicalSection, type MedicalTeamField } from './form/PatientClinicalSection';
 import { PatientProceduresSection } from './form/PatientProceduresSection';
 import { PatientFinancialSection } from './form/PatientFinancialSection';
-import { PatientObservationsSection } from './form/PatientObservationsSection';
+import { PatientAdditionalInfoSection } from './form/PatientAdditionalInfoSection';
+import { PatientFormSection } from './form/PatientFormSection';
 import { PatientFilesSection } from './form/PatientFilesSection';
 
 type PatientFormProps = {
@@ -106,22 +107,29 @@ export function PatientForm({
   }, [estimatedValue, pacienteFormData.pagamento, setPacienteFormData]);
 
   return (
-    <FormPanel className="module-form-panel" data-tour="patients-form">
-      <div className="panel-title">
+    <FormPanel className="module-form-panel patient-form-panel" data-tour="patients-form" role="region" aria-label="Ficha do paciente">
+      <div className="panel-title patient-form-header">
         <div>
-          <span className="eyebrow">{editingPacienteId ? formReadOnly ? 'Visualizacao' : 'Edicao' : 'Cadastro'}</span>
+          <span className="eyebrow">{editingPacienteId ? formReadOnly ? 'Visualização · Ficha do paciente' : 'Edição · Ficha do paciente' : 'Cadastro · Ficha do paciente'}</span>
           <h2>{editingPacienteId ? formReadOnly ? 'Visualizar paciente' : 'Editar paciente' : 'Novo paciente'}</h2>
+          {editingPaciente && <p className="patient-form-patient-name">{formatPersonName(editingPaciente.nomePaciente)}</p>}
         </div>
         <div className="panel-title-actions">
-          <Button variant="ghost" className="patient-export-actions-button export-pdf-btn" disabled={!canExportForm || exportLoading != null} onClick={() => void handleExport('pdf')}>{exportLoading === 'pdf' ? 'Gerando PDF...' : 'Exportar PDF'}</Button>
-          <Button variant="ghost" className="patient-export-actions-button export-xlsx-btn" disabled={!canExportForm || exportLoading != null} onClick={() => void handleExport('xlsx')}>{exportLoading === 'xlsx' ? 'Gerando planilha...' : 'Exportar Planilha'}</Button>
-          <IconButton label="Voltar para lista" tone="muted" onClick={onClose}><X size={18} /></IconButton>
+          <div className="patient-form-exports" role="group" aria-label="Exportar ficha individual">
+            <Button variant="ghost" className="export-pdf-btn" disabled={!canExportForm || exportLoading != null} onClick={() => void handleExport('pdf')}><FileDown size={16} aria-hidden="true" />{exportLoading === 'pdf' ? 'Gerando PDF...' : 'Exportar ficha PDF'}</Button>
+            <Button variant="ghost" className="export-xlsx-btn" disabled={!canExportForm || exportLoading != null} onClick={() => void handleExport('xlsx')}><FileDown size={16} aria-hidden="true" />{exportLoading === 'xlsx' ? 'Gerando planilha...' : 'Exportar ficha Excel'}</Button>
+          </div>
+          <IconButton label="Voltar para lista" tone="muted" onClick={onClose} disabled={pacienteFormLoading}><X size={18} /></IconButton>
         </div>
       </div>
       {exportError && <AlertMessage type="error">{exportError}</AlertMessage>}
-      <form className="stack module-form-grid" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
-        <fieldset className="form-fieldset" disabled={formReadOnly} data-tour="patients-identification">
-          <PatientIdentificationSection formData={pacienteFormData} setFormData={setPacienteFormData} />
+      <p className="patient-form-guidance">{formReadOnly ? 'Ficha disponível somente para consulta.' : 'Preencha o paciente, o hospital e pelo menos um procedimento. Os demais campos são opcionais.'}</p>
+      <form className="stack patient-form-layout" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField} aria-busy={pacienteFormLoading}>
+        <fieldset className="form-fieldset patient-form-fields" disabled={formReadOnly || pacienteFormLoading} data-tour="patients-identification">
+          <legend className="sr-only">Dados da ficha do paciente</legend>
+          <PatientFormSection title="Dados principais">
+            <PatientIdentificationSection formData={pacienteFormData} setFormData={setPacienteFormData} />
+          </PatientFormSection>
           <PatientClinicalSection
             formData={pacienteFormData}
             setFormData={setPacienteFormData}
@@ -136,23 +144,34 @@ export function PatientForm({
             getMedicalOptions={getMedicalOptions}
             updateMedicalTeamMember={updateMedicalTeamMember}
           />
-          <PatientProceduresSection procedimentos={pacienteFormData.procedimentos} formReadOnly={formReadOnly} onOpen={onOpenCbhpmModal} onRemove={onRemovePacienteProcedimento} />
-          <PatientFinancialSection formData={pacienteFormData} setFormData={setPacienteFormData} estimatedValue={estimatedValue} />
-          <PatientObservationsSection editingPacienteId={editingPacienteId} formData={pacienteFormData} setFormData={setPacienteFormData} onOpen={onOpenPacienteObservacoes} />
-          <PatientFilesSection
-            formReadOnly={formReadOnly}
-            canEditPatients={canEditPatients}
-            editingPaciente={editingPaciente}
-            pendingFiles={pendingPatientFiles}
-            inputKey={patientFileInputKey}
-            sessionToken={sessionToken}
-            onFilesChange={onPacienteFilesChange}
-            onRemovePending={onRemovePendingPatientFile}
-            onDelete={onDeletePacienteArquivo}
-          />
+          <PatientFormSection title="Procedimentos">
+            <PatientProceduresSection procedimentos={pacienteFormData.procedimentos} formReadOnly={formReadOnly} onOpen={onOpenCbhpmModal} onRemove={onRemovePacienteProcedimento} />
+          </PatientFormSection>
+          <PatientFormSection title="Financeiro">
+            <PatientFinancialSection formData={pacienteFormData} setFormData={setPacienteFormData} estimatedValue={estimatedValue} />
+          </PatientFormSection>
+          <PatientFormSection title="Informações complementares">
+            <PatientAdditionalInfoSection editingPacienteId={editingPacienteId} formData={pacienteFormData} setFormData={setPacienteFormData} onOpen={onOpenPacienteObservacoes} />
+          </PatientFormSection>
+          <PatientFormSection title="Arquivos" description="Anexe documentos de até 10 MB cada. Os arquivos selecionados são enviados ao salvar o paciente.">
+            <PatientFilesSection
+              formReadOnly={formReadOnly}
+              canEditPatients={canEditPatients}
+              editingPaciente={editingPaciente}
+              pendingFiles={pendingPatientFiles}
+              inputKey={patientFileInputKey}
+              sessionToken={sessionToken}
+              onFilesChange={onPacienteFilesChange}
+              onRemovePending={onRemovePendingPatientFile}
+              onDelete={onDeletePacienteArquivo}
+            />
+          </PatientFormSection>
         </fieldset>
         {pacienteFormError && <AlertMessage type="error">{pacienteFormError}</AlertMessage>}
-        {canSubmitForm && <Button variant="primary" type="submit" disabled={pacienteFormLoading} data-tour="patients-save">{editingPacienteId ? <Save size={18} /> : <Plus size={18} />}{pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar paciente' : 'Cadastrar paciente'}</Button>}
+        <div className="patient-form-actions">
+          <Button onClick={onClose} disabled={pacienteFormLoading}>{formReadOnly ? 'Voltar à listagem' : 'Cancelar'}</Button>
+          {canSubmitForm && <Button variant="primary" type="submit" disabled={pacienteFormLoading} data-tour="patients-save">{editingPacienteId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}{pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar alterações' : 'Cadastrar paciente'}</Button>}
+        </div>
       </form>
     </FormPanel>
   );

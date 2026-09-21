@@ -21,15 +21,19 @@ const focusableSelector = [
 export function Modal({ titleId, descriptionId, className = '', backdropClassName = '', onClose, children }: ModalProps) {
   const panelRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const restoreFocusFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
   useEffect(() => {
-    const previouslyFocused = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    if (restoreFocusFrameRef.current !== null) window.cancelAnimationFrame(restoreFocusFrameRef.current);
+    // Keep the original opener across StrictMode's setup/cleanup replay.
+    if (previousFocusRef.current === null && document.activeElement instanceof HTMLElement) {
+      previousFocusRef.current = document.activeElement;
+    }
 
     const focusTarget = panelRef.current?.querySelector<HTMLElement>(focusableSelector) ?? panelRef.current;
     focusTarget?.focus();
@@ -65,7 +69,8 @@ export function Modal({ titleId, descriptionId, className = '', backdropClassNam
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      window.requestAnimationFrame(() => {
+      restoreFocusFrameRef.current = window.requestAnimationFrame(() => {
+        const previouslyFocused = previousFocusRef.current;
         if (previouslyFocused?.isConnected) previouslyFocused.focus();
       });
     };
