@@ -7,14 +7,17 @@ import {
 } from 'lucide-react';
 import type { AgendaMedicalUser, AgendaNotificationRecipientOptions } from '../../types';
 import { formatPersonName, formatProfileName } from '../../shared/utils/formatters';
-import { Button, CheckboxField, FormPanel, IconButton, SelectField, TextField, TextareaField } from '../../shared/components/ui';
-import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
+import { Button, CheckboxField, FormPanel, IconButton, SelectField, TextareaField } from '../../shared/components/ui';
+import { AgendaScheduleFields } from './AgendaScheduleFields';
+import type { AgendaFieldErrors, AgendaScheduleField } from './agendaDateTime';
 import type { AgendaFormData } from './agendaUtils';
 
 type AgendaEventFormProps = {
   editingEventId: number | null;
   formData: AgendaFormData;
   formLoading: boolean;
+  fieldErrors: AgendaFieldErrors;
+  onScheduleChange: (field: AgendaScheduleField, value: string) => void;
   medicalUsers: AgendaMedicalUser[];
   notificationRecipientOptions: AgendaNotificationRecipientOptions | null;
   notificationRecipientsLoading: boolean;
@@ -31,6 +34,8 @@ export function AgendaEventForm({
   editingEventId,
   formData,
   formLoading,
+  fieldErrors,
+  onScheduleChange,
   medicalUsers,
   notificationRecipientOptions,
   notificationRecipientsLoading,
@@ -62,58 +67,10 @@ export function AgendaEventForm({
         </div>
       </div>
 
-      <form className="stack agenda-form" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
+      <form className="stack agenda-form" onSubmit={onSubmit} noValidate>
         <div className="agenda-form-section" data-tour="agenda-details">
-          <TextField
-            label="Título"
-            type="text"
-            value={formData.title}
-            onValueChange={(value) => setFormData((current) => ({ ...current, title: value.slice(0, 255) }))}
-            maxLength={255}
-            required
-          />
-
-          <TextField
-            label="Descrição"
-            type="text"
-            value={formData.description}
-            onValueChange={(value) => setFormData((current) => ({ ...current, description: value.slice(0, 2000) }))}
-            maxLength={2000}
-          />
-
-          <div className="two-column-fields">
-            <TextField
-              label="Início"
-              type="date"
-              value={formData.startDate}
-              onValueChange={(value) => setFormData((current) => ({ ...current, startDate: value }))}
-              required
-            />
-            <TextField
-              label="Hora"
-              type="time"
-              value={formData.startTime}
-              onValueChange={(value) => setFormData((current) => ({ ...current, startTime: value }))}
-              required
-            />
-          </div>
-
-          <div className="two-column-fields">
-            <TextField
-              label="Término"
-              type="date"
-              value={formData.endDate}
-              onValueChange={(value) => setFormData((current) => ({ ...current, endDate: value }))}
-              required
-            />
-            <TextField
-              label="Hora"
-              type="time"
-              value={formData.endTime}
-              onValueChange={(value) => setFormData((current) => ({ ...current, endTime: value }))}
-              required
-            />
-          </div>
+          <AgendaScheduleFields formData={formData} errors={fieldErrors} onChange={onScheduleChange}
+            onDescriptionChange={value => setFormData(current => ({ ...current, description: value }))} />
 
           <CheckboxField
             label="Notificar perfil médico"

@@ -1,3 +1,4 @@
+import { parseAgendaDateTime } from './agendaDateTime';
 import type { AgendaEvent, PublicHoliday } from '../../types';
 
 export type AgendaFormData = {
@@ -109,7 +110,7 @@ export function mergeAgendaEvent(currentEvents: AgendaEvent[], agendaEvent: Agen
 }
 
 export function composeDateTime(dateKey: string, timeValue: string) {
-  return new Date(`${dateKey}T${timeValue || '00:00'}:00`);
+  return parseAgendaDateTime(dateKey, timeValue) ?? new Date(Number.NaN);
 }
 
 export function getHolidayTitle(holiday?: PublicHoliday) {

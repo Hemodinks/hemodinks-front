@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   completeAgendaEvent, createAgendaEvent, deleteAgendaEvent, getAgendaEvents, getAgendaMedicalUsers,
   getAgendaNotificationRecipientOptions, getBrazilPublicHolidays, updateAgendaEvent,
@@ -10,6 +10,8 @@ import {
   type AgendaFormData, type AgendaSection, buildEmptyForm, composeDateTime, defaultReminderMinutes,
   eventTouchesDate, fromDateKey, mergeAgendaEvent, monthGrid, toDateKey, toTimeInput,
 } from './agendaUtils';
+
+import { agendaServerFieldErrors, suggestAgendaEnd, validateAgendaSchedule, type AgendaFieldErrors, type AgendaScheduleField } from './agendaDateTime';
 
 type UseAgendaControllerOptions = { session: AuthSession; isMedical: boolean };
 
@@ -33,6 +35,20 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
   const [successMessage, setSuccessMessage] = useState('');
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [formData, setFormData] = useState<AgendaFormData>(() => buildEmptyForm(todayKey, isMedical, session.user.id));
+
+  const manualEnd = useRef(false);
+  const [validationAttempted, setValidationAttempted] = useState(false);
+  const [serverFieldErrors, setServerFieldErrors] = useState<AgendaFieldErrors>({});
+  const fieldErrors = { ...(validationAttempted ? validateAgendaSchedule(formData) : {}), ...serverFieldErrors };
+  const changeScheduleField = (field: AgendaScheduleField, value: string) => {
+    if (field === 'endDate' || field === 'endTime') manualEnd.current = true;
+    setServerFieldErrors({});
+    const canSuggest = !editingEventId && !manualEnd.current && (field === 'startDate' || field === 'startTime');
+    setFormData(current => {
+      const next = { ...current, [field]: value };
+      return canSuggest ? { ...next, ...suggestAgendaEnd(next.startDate, next.startTime) } : next;
+    });
+  };
 
   const days = useMemo(() => monthGrid(visibleMonth), [visibleMonth]);
   const firstGridDate = days[0];
@@ -70,12 +86,12 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     }).finally(() => setNotificationRecipientsLoading(false));
   }, [session.token]);
 
-  const resetForm = (dateKey = selectedDate) => { setEditingEventId(null); setFormData(buildEmptyForm(dateKey, isMedical, session.user.id)); };
+  const resetForm = (dateKey = selectedDate) => { manualEnd.current = false; setValidationAttempted(false); setServerFieldErrors({}); setEditingEventId(null); setFormData(buildEmptyForm(dateKey, isMedical, session.user.id)); };
   const openCalendarSection = () => setActiveSection('calendario');
   const openCadastroSection = () => setActiveSection('cadastro');
   const handleSelectDate = (date: Date) => {
     const dateKey = toDateKey(date); setSelectedDate(dateKey);
-    if (!editingEventId) setFormData((current) => ({ ...current, startDate: dateKey, endDate: dateKey }));
+    if (!editingEventId) changeScheduleField('startDate', dateKey);
   };
   const handlePreviousMonth = () => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
   const handleNextMonth = () => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1));
@@ -104,9 +120,11 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setError(''); setSuccessMessage('');
-    if (!formData.title.trim()) { setError('Informe o titulo do evento.'); return; }
-    if (composeDateTime(formData.endDate, formData.endTime) <= composeDateTime(formData.startDate, formData.startTime)) {
-      setError('A data final deve ser maior que a inicial.'); return;
+    setValidationAttempted(true); setServerFieldErrors({});
+    if (Object.keys(validateAgendaSchedule(formData)).length > 0) {
+      const form = event.currentTarget;
+      requestAnimationFrame(() => form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+      return;
     }
     const hasNotificationMessage = formData.notificationMessage.trim().length > 0;
     const hasNotificationRecipients = formData.notifyAllAllowedRecipients || formData.notificationUserIds.length > 0 || formData.notificationGroupIds.length > 0;
@@ -119,10 +137,15 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
       const savedDate = new Date(savedEvent.start); const savedDateKey = toDateKey(savedDate);
       setSelectedDate(savedDateKey); setVisibleMonth(new Date(savedDate.getFullYear(), savedDate.getMonth(), 1)); resetForm(savedDateKey);
       setActiveSection('calendario'); void loadEvents();
-    } catch (caughtError) { setError(getErrorMessage(caughtError)); }
+    } catch (caughtError) {
+      const errors = agendaServerFieldErrors(caughtError);
+      if (Object.keys(errors).length) setServerFieldErrors(errors);
+      else setError(getErrorMessage(caughtError));
+    }
     finally { setFormLoading(false); }
   };
   const handleEdit = (agendaEvent: AgendaEvent) => {
+    manualEnd.current = true; setValidationAttempted(false); setServerFieldErrors({});
     const start = new Date(agendaEvent.start); const end = new Date(agendaEvent.end); const startDate = toDateKey(start);
     setActiveSection('cadastro'); setSelectedDate(startDate); setVisibleMonth(new Date(start.getFullYear(), start.getMonth(), 1)); setEditingEventId(agendaEvent.id);
     setFormData({ title: agendaEvent.title, description: agendaEvent.description ?? '', startDate, startTime: toTimeInput(start), endDate: toDateKey(end),
@@ -149,7 +172,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
 
   return { todayKey, visibleMonth, selectedDate, activeSection, events, medicalUsers, notificationRecipientOptions,
     notificationRecipientsLoading, notificationRecipientsError, loading, holidayLoading, formLoading, error, holidayError,
-    successMessage, editingEventId, formData, setFormData, days, holidayByDate, selectedHoliday, selectedEvents, pendingEventsCount,
+    successMessage, editingEventId, formData, setFormData, fieldErrors, changeScheduleField, days, holidayByDate, selectedHoliday, selectedEvents, pendingEventsCount,
     loadEvents, openCalendarSection, openCadastroSection, handleSelectDate, handlePreviousMonth, handleNextMonth, handleToday,
     resetForm, toggleNotificationUser, toggleNotificationGroup, openDraftForSelectedDate, handleSubmit, handleEdit, handleComplete,
     handleDelete, confirmationDialog };
