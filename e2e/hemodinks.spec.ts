@@ -334,6 +334,7 @@ async function mockApi(page: Page, loginSession = session, options: {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname;
+    if (path === '/api/warmup') return route.fulfill({ status: 204 });
     const method = request.method();
 
     if (path === '/api/users/login-context' && method === 'POST') {
@@ -1381,8 +1382,10 @@ test('privacidade: rejeitar opcionais mantém login e links no rodapé autentica
 
 test('privacidade: páginas jurídicas são públicas e responsivas', async ({ page }) => {
   let applicationApiRequests = 0;
+  let warmupRequests = 0;
   await page.route('**/api/**', async (route) => {
-    applicationApiRequests += 1;
+    if (new URL(route.request().url()).pathname === '/api/warmup') warmupRequests += 1;
+    else applicationApiRequests += 1;
     await route.abort();
   });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -1417,6 +1420,7 @@ test('privacidade: páginas jurídicas são públicas e responsivas', async ({ p
     await expectNoGlobalHorizontalOverflow(page);
   }
   expect(applicationApiRequests).toBe(0);
+  expect(warmupRequests).toBe(1);
 });
 
 async function expectActiveTourTarget(page: Page, target: string) {
@@ -1771,7 +1775,7 @@ for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
   });
 }
 
-test('login imediato: API indisponível não bloqueia campos nem recebe aquecimento', async ({ page }) => {
+test('login imediato: API indisponível não bloqueia campos durante warm-up best effort', async ({ page }) => {
   await mockApi(page);
   await page.clock.install();
   const apiCalls: string[] = [];
@@ -1785,12 +1789,13 @@ test('login imediato: API indisponível não bloqueia campos nem recebe aquecime
   await page.getByLabel('Email', { exact: true }).fill(session.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.clock.fastForward(180_000);
-  expect(apiCalls).toEqual([]);
+  await expect.poll(() => apiCalls.length).toBe(1);
+  expect(new URL(apiCalls[0]).pathname).toBe('/api/warmup');
   await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page.getByText(/Não foi possível conectar ao serviço de acesso agora/)).toBeVisible();
-  expect(apiCalls).toHaveLength(1);
-  expect(apiCalls[0]).toContain('/api/users/login-context');
+  expect(apiCalls).toHaveLength(2);
+  expect(apiCalls[1]).toContain('/api/users/login-context');
   await expect(page.locator('#login-password')).toHaveValue('');
 });
 
@@ -2139,4 +2144,39 @@ test('transparência é consistente entre módulos e controles de ação', async
   await expectAlpha('.date-picker-button, .form-panel .primary-action', '0.4');
   await expectAlpha('.side-nav button', '0.3');
   await page.screenshot({ path: testInfo.outputPath('formulario-transparencia.png'), fullPage: true });
+});
+
+
+test('warmup: pending request leaves login usable and reload does not repeat it', async ({ page }) => {
+  await mockApi(page);
+  let calls = 0;
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/warmup', async route => {
+    calls++;
+    expect(route.request().headers()['authorization']).toBeUndefined();
+    expect(route.request().headers()['x-clinica-slug']).toBeUndefined();
+    await pending;
+    await route.fulfill({ status: 204 }).catch(() => {});
+  });
+  await page.goto('/');
+  await expect.poll(() => calls).toBe(1);
+  await loginViaUi(page);
+  await expect(page.getByRole('heading', { name: 'Painel inicial', exact: true })).toBeVisible();
+  release();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Painel inicial', exact: true })).toBeVisible();
+  expect(calls).toBe(1);
+});
+
+test('warmup: failure does not prevent the existing login flow', async ({ page }) => {
+  await mockApi(page);
+  let calls = 0;
+  await page.route('**/api/warmup', route => { calls++; return route.fulfill({ status: 503 }); });
+  await page.goto('/');
+  await expect.poll(() => calls).toBe(1);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await loginViaUi(page);
+  await expect(page.getByRole('heading', { name: 'Painel inicial', exact: true })).toBeVisible();
+  expect(calls).toBe(1);
 });
