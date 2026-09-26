@@ -648,3 +648,9 @@
     height: 22px;
   }
 }
+
+.agenda-field-error {
+  display: block;
+  color: var(--danger, #b42318);
+  margin-top: 0.25rem;
+}

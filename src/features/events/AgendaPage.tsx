@@ -39,6 +39,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
         editingEventId={agenda.editingEventId} formData={agenda.formData} formLoading={agenda.formLoading}
         medicalUsers={agenda.medicalUsers} notificationRecipientOptions={agenda.notificationRecipientOptions}
         notificationRecipientsLoading={agenda.notificationRecipientsLoading} notificationRecipientsError={agenda.notificationRecipientsError}
+        fieldErrors={agenda.fieldErrors} onScheduleChange={agenda.changeScheduleField}
         setFormData={agenda.setFormData} onSubmit={agenda.handleSubmit} onOpenCalendarSection={agenda.openCalendarSection}
         onResetForm={() => agenda.resetForm()} onToggleNotificationUser={agenda.toggleNotificationUser}
         onToggleNotificationGroup={agenda.toggleNotificationGroup}
