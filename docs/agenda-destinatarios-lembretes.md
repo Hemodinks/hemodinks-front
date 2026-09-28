@@ -97,4 +97,23 @@ introduzidos novos filtros de autorização ou consolidados com a mensagem imedi
 - A fixture E2E foi alinhada ao DTO real para devolver medicalUserId e período nulo
   quando desativado; esses comportamentos foram validados também com API real.
 
-Resultados finais registrados após o encerramento das verificações.
+Resultados finais da execução concluída:
+- 74 testes de frontend aprovados: 42 da Agenda e 32 do serviço HTTP.
+- 34 testes da API aprovados, incluindo segurança, busca, paginação e lembretes;
+  o caso de integração foi reexecutado após incluir a verificação de “Todos” entre clínicas.
+- E2E completo da Agenda/cadastro: 9 aprovados, 0 falhas; 1 gravação opcional de tutorial ignorada.
+- Auditoria Axe da lista e do formulário sem violações sérias/críticas nos cenários executados.
+- Build de produção e auditoria de arquitetura aprovados. Permanece o aviso
+  já existente do Vite sobre importação estática/dinâmica de observability.ts.
+- Sem alteração de banco/migration ou deploy realizado por esta tarefa.
+
+Na retomada, a implementação foi conferida nos commits `2a3b3c8` da API e
+`7f40a87` do frontend. Ambos os repositórios estavam sem alterações pendentes.
+O arquivo test-results/.last-run.json confirmou o último E2E aprovado, sem testes
+com falha. Apenas este relatório foi atualizado na retomada; as suítes não foram
+repetidas para uma alteração exclusivamente documental.
+
+Arquivos da API alterados: EventEndpointExtensions.Queries.cs,
+AgendaNotificationQueries.cs, AgendaNotificationQueryHandlers.cs, EventDtos.cs e
+novo AgendaRecipientQueryValidator.cs. Testes novos: AgendaRecipientQueryTests.cs
+e ApiEndpointAgendaRecipientsTests.cs.
