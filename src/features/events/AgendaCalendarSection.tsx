@@ -1,3 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
+import { AgendaMonthGrid } from './AgendaMonthGrid';
+import { eventTime } from './agendaMonth';
 import { AgendaMobileDatePicker } from './AgendaMobileDatePicker';
 import {
   Bell,
@@ -12,13 +15,11 @@ import {
 import type { AgendaEvent, PublicHoliday } from '../../types';
 import { Button, IconButton } from '../../shared/components/ui';
 import {
-  eventTouchesDate,
   formatDateTime,
   fromDateKey,
   getHolidayTitle,
-  monthTitle,
   toDateKey,
-  weekdayLabels,
+  monthTitle,
 } from './agendaUtils';
 
 type AgendaCalendarSectionProps = {
@@ -64,6 +65,19 @@ export function AgendaCalendarSection({
   onEdit,
   onDelete,
 }: AgendaCalendarSectionProps) {
+  const selectedPanel = useRef<HTMLDivElement>(null);
+  const [reveal, setReveal] = useState<{ id?: number } | null>(null);
+  useEffect(() => {
+    if (!reveal || loading) return;
+    const frame = requestAnimationFrame(() => {
+      const target = reveal.id ? document.getElementById(`agenda-event-${reveal.id}`) : selectedPanel.current;
+      if (!target) return;
+      target.focus({ preventScroll: true });
+      target.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+      setReveal(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [reveal, selectedDate, selectedEvents, loading]);
   return (
     <>
       <div className="agenda-monthbar">
@@ -77,47 +91,11 @@ export function AgendaCalendarSection({
       </div>
 
       <AgendaMobileDatePicker selectedDate={selectedDate} onSelectDate={onSelectDate} />
-      <div className="agenda-calendar" aria-busy={loading || holidayLoading}>
-        {weekdayLabels.map((label) => (
-          <span className="agenda-weekday" key={label}>{label}</span>
-        ))}
-        {days.map((date) => {
-          const dateKey = toDateKey(date);
-          const holiday = holidayByDate.get(dateKey);
-          const dayEvents = events.filter((agendaEvent) => eventTouchesDate(agendaEvent, dateKey));
-          const isCurrentMonth = date.getMonth() === visibleMonth.getMonth();
-          const isToday = dateKey === todayKey;
-          const isSelected = dateKey === selectedDate;
+      <AgendaMonthGrid days={days} visibleMonth={visibleMonth} events={events} selectedDate={selectedDate}
+        todayKey={todayKey} holidayByDate={holidayByDate} loading={loading || holidayLoading}
+        onSelectDate={onSelectDate} onReveal={(date, id) => { onSelectDate(date); setReveal({ id }); }} />
 
-          return (
-            <button
-              type="button"
-              key={dateKey}
-              className={[
-                'agenda-day',
-                isCurrentMonth ? '' : 'muted',
-                isToday ? 'today' : '',
-                isSelected ? 'selected' : '',
-                holiday ? 'holiday' : '',
-              ].filter(Boolean).join(' ')}
-              aria-label={new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' }).format(date)}
-              aria-pressed={isSelected}
-              onClick={() => onSelectDate(date)}
-              title={getHolidayTitle(holiday)}
-            >
-              <span className="agenda-day-number">{date.getDate()}</span>
-              {holiday && <span className="agenda-holiday-dot">{getHolidayTitle(holiday)}</span>}
-              {dayEvents.length > 0 && (
-                <span className="agenda-event-count">
-                  {dayEvents.length}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="agenda-selected">
+      <div className="agenda-selected" ref={selectedPanel} tabIndex={-1} role="region" aria-label="Eventos da data selecionada">
         <div className="agenda-selected-title">
           <span>{new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(fromDateKey(selectedDate))}</span>
           {selectedHoliday && <strong>{getHolidayTitle(selectedHoliday)}</strong>}
@@ -144,16 +122,16 @@ export function AgendaCalendarSection({
               const canManage = isAdmin || agendaEvent.userId === currentUserId;
 
               return (
-                <article className={`agenda-event-item ${agendaEvent.isCompleted ? 'completed' : ''}`} key={agendaEvent.id}>
+                <article className={`agenda-event-item ${agendaEvent.isCompleted ? 'completed' : ''}`} key={agendaEvent.id} id={`agenda-event-${agendaEvent.id}`} tabIndex={-1}>
                   <div className="agenda-event-main">
                     <span className="agenda-event-time">
                       <Clock size={15} />
-                      {formatDateTime(agendaEvent.start)} - {formatDateTime(agendaEvent.end)}
+                      {toDateKey(new Date(agendaEvent.start)) === toDateKey(new Date(agendaEvent.end)) ? `${eventTime(agendaEvent.start)} - ${eventTime(agendaEvent.end)}` : `${formatDateTime(agendaEvent.start)} - ${formatDateTime(agendaEvent.end)}`}
                     </span>
                     <strong>{agendaEvent.title}</strong>
                     {agendaEvent.description && <p>{agendaEvent.description}</p>}
                     <div className="agenda-event-meta">
-                      {agendaEvent.notifyUser && <span><Bell size={14} /> Usuario</span>}
+                      {!agendaEvent.isCompleted && (agendaEvent.notifyUser || agendaEvent.notifyMedicalProfile) && <span><Bell size={14} /> Lembrete ativo</span>}
                       {agendaEvent.notifyMedicalProfile && <span><Bell size={14} /> {agendaEvent.medicalUserName || 'Perfil médico'}</span>}
                       {agendaEvent.isCompleted && <span><Check size={14} /> Concluido</span>}
                     </div>

@@ -58,15 +58,30 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     .sort((first, second) => new Date(first.start).getTime() - new Date(second.start).getTime()), [events, selectedDate]);
   const pendingEventsCount = events.filter((event) => !event.isCompleted).length;
 
+  const eventsRequest = useRef(0);
+  const eventsInFlight = useRef<{ key: string; promise: Promise<AgendaEvent[]> } | null>(null);
   const loadEvents = async () => {
-    setLoading(true); setError('');
+    const requestId = ++eventsRequest.current;
+    setLoading(true); setError(''); setEvents([]);
+    const rangeEnd = new Date(lastGridDate); rangeEnd.setHours(23, 59, 59, 999);
+    const from = firstGridDate.toISOString(); const to = rangeEnd.toISOString();
+    const key = `${session.token}:${from}:${to}`;
+    let pending = eventsInFlight.current;
+    if (!pending || pending.key !== key) {
+      pending = { key, promise: getAgendaEvents(session.token, from, to) };
+      eventsInFlight.current = pending;
+    }
     try {
-      setEvents(await getAgendaEvents(session.token, firstGridDate.toISOString(), lastGridDate.toISOString()));
-    } catch (caughtError) { setError(getErrorMessage(caughtError)); }
-    finally { setLoading(false); }
+      const result = await pending.promise;
+      if (requestId === eventsRequest.current) setEvents(result);
+    } catch (caughtError) { if (requestId === eventsRequest.current) setError(getErrorMessage(caughtError)); }
+    finally {
+      if (eventsInFlight.current === pending) eventsInFlight.current = null;
+      if (requestId === eventsRequest.current) setLoading(false);
+    }
   };
 
-  useEffect(() => { void loadEvents(); }, [session.token, firstGridDate.toISOString(), lastGridDate.toISOString()]);
+  useEffect(() => { void loadEvents(); return () => { eventsRequest.current++; }; }, [session.token, firstGridDate.toISOString(), lastGridDate.toISOString()]);
   useEffect(() => {
     const years = Array.from(new Set(days.map((date) => date.getFullYear())));
     setHolidayLoading(true); setHolidayError('');
@@ -82,8 +97,12 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
       setVisibleMonth(new Date(date.getFullYear(), date.getMonth(), 1));
     if (!editingEventId) changeScheduleField('startDate', dateKey);
   };
-  const handlePreviousMonth = () => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
-  const handleNextMonth = () => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1));
+  const moveMonth = (offset: number) => {
+    const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + offset, 1);
+    setVisibleMonth(date); setSelectedDate(toDateKey(date));
+  };
+  const handlePreviousMonth = () => moveMonth(-1);
+  const handleNextMonth = () => moveMonth(1);
   const handleToday = () => {
     const today = fromDateKey(todayKey); setActiveSection('calendario'); setVisibleMonth(today); setSelectedDate(todayKey); resetForm(todayKey);
   };
