@@ -1,0 +1,27 @@
+.agenda-view-toolbar { display: grid; gap: 12px; margin: 16px 0; min-width: 0; }
+.agenda-view-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.agenda-view-options button { min-height: 44px; }
+.agenda-view-options .is-active { background: color-mix(in srgb, var(--selection-accent) var(--control-color-opacity), transparent); color: var(--ink); border-color: var(--selection-accent); }
+.agenda-view-filters { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; }
+.agenda-view-filters > *, .agenda-view-filters input, .agenda-view-filters select { min-width: 0; max-width: 100%; }
+.agenda-period-view, .agenda-week-day, .agenda-list-day { min-width: 0; }
+.agenda-period-hint { color: var(--muted); font-size: .8rem; }
+.agenda-week-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.agenda-week-day { display: grid; align-content: start; gap: 8px; }
+.agenda-period-day { width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--input-bg); color: var(--ink); text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.agenda-period-day[aria-pressed="true"] { background: color-mix(in srgb, var(--selection-accent) var(--control-color-opacity), transparent); color: var(--ink); border-color: var(--selection-accent); }
+.agenda-period-day[aria-current="date"] { outline: 2px solid var(--teal); outline-offset: 2px; }
+.agenda-week-day .agenda-event-item { grid-template-columns: minmax(0, 1fr); padding: 8px; gap: 8px; }
+.agenda-week-day .agenda-event-actions { flex-wrap: wrap; justify-content: flex-start; }
+.agenda-period-view .agenda-event-main { min-width: 0; overflow-wrap: anywhere; }
+.agenda-event-owner { color: var(--muted); font-size: .75rem; overflow-wrap: anywhere; }
+.agenda-list-groups, .agenda-list-day { display: grid; gap: 12px; }
+@media (max-width: 980px) { .agenda-week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .agenda-week-grid, .agenda-view-filters { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .agenda-periodbar { grid-template-columns: 44px minmax(0, 1fr) 44px; }
+  .agenda-periodbar .icon-button { display: inline-flex; }
+  .agenda-view-options button { flex: 1; }
+}

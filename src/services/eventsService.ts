@@ -6,7 +6,9 @@ import type {
 } from '../types';
 import { del, get, post, put } from './api';
 
-export function getAgendaEvents(token: string, from?: string, to?: string) {
+export type AgendaEventFilters = { search?: string; userId?: number; isCompleted?: boolean };
+
+export function getAgendaEvents(token: string, from?: string, to?: string, filters?: AgendaEventFilters) {
   const params = new URLSearchParams();
 
   if (from) {
@@ -16,6 +18,10 @@ export function getAgendaEvents(token: string, from?: string, to?: string) {
   if (to) {
     params.set('to', to);
   }
+
+  if (filters?.search) params.set('search', filters.search);
+  if (filters?.userId !== undefined) params.set('userId', String(filters.userId));
+  if (filters?.isCompleted !== undefined) params.set('isCompleted', String(filters.isCompleted));
 
   return get<AgendaEvent[]>('/api/events/', token, {
     params: params.toString() ? params : undefined,
