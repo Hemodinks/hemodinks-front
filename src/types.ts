@@ -215,6 +215,9 @@ export type AgendaNotificationRecipientGroup = {
 };
 
 export type AgendaNotificationRecipientOptions = {
+  totalUsers?: number;
+  page?: number;
+  pageSize?: number;
   canNotifyAllAllowedRecipients: boolean;
   allRecipientsLabel: string;
   users: AgendaNotificationRecipientUser[];

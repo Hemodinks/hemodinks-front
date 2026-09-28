@@ -23,7 +23,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [activeSection, setActiveSection] = useState<AgendaSection>('calendario');
   const [events, setEvents] = useState<AgendaEvent[]>([]);
-  const { medicalUsers, notificationRecipientOptions, notificationRecipientsLoading, notificationRecipientsError } = useAgendaRecipients(session);
+  const { medicalUsers, notificationRecipientOptions, notificationRecipientsLoading, notificationRecipientsError, recipientSearch } = useAgendaRecipients(session);
   const [holidays, setHolidays] = useState<PublicHoliday[]>([]);
   const [loading, setLoading] = useState(false);
   const [holidayLoading, setHolidayLoading] = useState(false);
@@ -179,7 +179,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     message: `Deseja excluir "${agendaEvent.title}"? Esta ação não poderá ser desfeita.`, confirmLabel: 'Sim', cancelLabel: 'Não', onConfirm: () => deleteSelectedEvent(agendaEvent) });
 
   return { todayKey, visibleMonth, selectedDate, activeSection, events, medicalUsers, notificationRecipientOptions,
-    notificationRecipientsLoading, notificationRecipientsError, loading, holidayLoading, formLoading, error, holidayError,
+    notificationRecipientsLoading, notificationRecipientsError, recipientSearch, loading, holidayLoading, formLoading, error, holidayError,
     successMessage, editingEventId, formData, setFormData, fieldErrors, changeScheduleField, days, holidayByDate, selectedHoliday, selectedEvents, pendingEventsCount,
     loadEvents, openCalendarSection, openCadastroSection, handleSelectDate, handlePreviousMonth, handleNextMonth, handleToday,
     resetForm, toggleNotificationUser, toggleNotificationGroup, openDraftForSelectedDate, handleSubmit, handleEdit, handleComplete,

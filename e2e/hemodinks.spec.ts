@@ -1,3 +1,4 @@
+import { registerAgendaRecipientCases } from './agenda-recipient-cases';
 import { registerAgendaMonthCases } from './agenda-month-cases';
 import { registerAgendaResponsiveCases } from './agenda-responsive-cases';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
@@ -264,9 +265,10 @@ function buildAgendaEventFromPayload(id: number, payload: Payload) {
     description: typeof payload.description === 'string' ? payload.description : null,
     start: String(payload.start ?? agendaEvent.start),
     end: String(payload.end ?? agendaEvent.end),
+    medicalUserId: typeof payload.medicalUserId === 'number' ? payload.medicalUserId : null,
     notifyMedicalProfile: Boolean(payload.notifyMedicalProfile),
     notifyUser: Boolean(payload.notifyUser),
-    reminderPeriodMinutes: Number(payload.reminderPeriodMinutes ?? agendaEvent.reminderPeriodMinutes),
+    reminderPeriodMinutes: payload.reminderPeriodMinutes == null ? null : Number(payload.reminderPeriodMinutes),
   };
 }
 
@@ -2192,3 +2194,5 @@ test('warmup: failure does not prevent the existing login flow', async ({ page }
 registerAgendaResponsiveCases({ mockApi, loginViaUi });
 
 registerAgendaMonthCases({ mockApi, loginViaUi });
+
+registerAgendaRecipientCases({ mockApi, loginViaUi });
