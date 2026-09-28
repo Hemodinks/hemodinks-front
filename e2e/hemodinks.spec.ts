@@ -1,3 +1,4 @@
+import { registerAgendaMonthCases } from './agenda-month-cases';
 import { registerAgendaResponsiveCases } from './agenda-responsive-cases';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -1095,7 +1096,7 @@ test('cadastra evento na agenda', async ({ page }) => {
   await page.getByRole('button', { name: 'Criar evento' }).click();
 
   await expect(page.getByText('Evento cadastrado.')).toBeVisible();
-  await expect(page.getByText('Evento E2E')).toBeVisible();
+  await expect(page.locator('.agenda-event-list').getByText('Evento E2E', { exact: true })).toBeVisible();
   expect(apiState.createdEventPayload).toMatchObject({
     title: 'Evento E2E',
     description: 'Validação automatizada da agenda',
@@ -2189,3 +2190,5 @@ test('warmup: failure does not prevent the existing login flow', async ({ page }
 });
 
 registerAgendaResponsiveCases({ mockApi, loginViaUi });
+
+registerAgendaMonthCases({ mockApi, loginViaUi });

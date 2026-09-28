@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { FormEvent } from 'react';
+import { StrictMode, type FormEvent } from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import * as services from '../../services';
 import type { AgendaEvent, AuthSession } from '../../types';
@@ -80,4 +80,38 @@ it('maps final API validation to the end fields', async () => {
   vi.mocked(services.createAgendaEvent).mockRejectedValue(new Error('O término deve ser posterior ao início.'));
   await act(() => result.current.handleSubmit(submit()));
   expect(result.current.fieldErrors.endTime).toBe('O término deve ser posterior ao início.');
+});
+
+it('loads one complete grid interval and does not refetch on selection within a month', async () => {
+  const { result } = await setup();
+  const initial = vi.mocked(services.getAgendaEvents).mock.calls.length;
+  const [, from, to] = vi.mocked(services.getAgendaEvents).mock.lastCall!;
+  expect(new Date(from!).getHours()).toBe(0);
+  expect(new Date(to!).getHours()).toBe(23);
+  expect(new Date(to!).getMilliseconds()).toBe(999);
+  act(() => result.current.handleSelectDate(new Date(result.current.visibleMonth.getFullYear(), result.current.visibleMonth.getMonth(), 15)));
+  expect(services.getAgendaEvents).toHaveBeenCalledTimes(initial);
+  act(() => result.current.handleNextMonth());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(services.getAgendaEvents).toHaveBeenCalledTimes(initial + 1);
+  expect(result.current.selectedDate.endsWith('-01')).toBe(true);
+});
+it('ignores a previous month response that arrives after the current month', async () => {
+  const { result } = await setup();
+  let oldResponse!: (events: AgendaEvent[]) => void;
+  vi.mocked(services.getAgendaEvents).mockImplementationOnce(() => new Promise(resolve => { oldResponse = resolve; }));
+  act(() => result.current.handleNextMonth());
+  vi.mocked(services.getAgendaEvents).mockResolvedValueOnce([saved]);
+  act(() => result.current.handleNextMonth());
+  await waitFor(() => expect(result.current.events).toEqual([saved]));
+  await act(async () => oldResponse([]));
+  expect(result.current.events).toEqual([saved]);
+});
+
+it('shares the in-flight interval request during StrictMode effect replay', async () => {
+  const { result } = renderHook(() => useAgendaController({ session, isMedical: false }), {
+    wrapper: ({ children }) => <StrictMode>{children}</StrictMode>,
+  });
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(services.getAgendaEvents).toHaveBeenCalledTimes(1);
 });
