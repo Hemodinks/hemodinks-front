@@ -79,4 +79,17 @@ Outros arquivos:
   alterados esses testes, seus timeouts ou a autenticação para obter aprovação.
 - A execução E2E completa detectou a expectativa antiga de grade mensal mobile,
   ajustada para verificar a navegação diária solicitada, e depois detectou overflow
-  real em 320 px, corrigido na aplicação. Resultado final da nova execução pendente.
+  real em 320 px, corrigido na aplicação.
+- E2E completo final: **82 aprovados, 0 falhas, 23 ignorados**, em 4,3 minutos,
+  com `npm run test:e2e -- --fully-parallel --workers=2 --reporter=line`.
+  Os ignorados são 12 gravações opcionais de tutoriais e 11 cenários com fixture
+  de API real; esses 11 foram executados separadamente via LoginBrowserTests e passaram.
+- Revalidação direcionada final da Agenda: 33 testes de frontend aprovados.
+- E2E de criação validado em 1440, 820, 390 e 320 px, incluindo destinatários,
+  retorno à data selecionada, acessibilidade e ausência de overflow horizontal.
+- Build final aprovado; permanece o aviso existente do Vite sobre importação
+  estática/dinâmica de observability.ts, sem erro de compilação.
+
+A implementação está no commit `c8df531` do frontend. Na retomada foi confirmado
+que a execução E2E terminou com sucesso e este relatório foi atualizado. Não houve
+nova alteração funcional nem deploy nessa retomada.
