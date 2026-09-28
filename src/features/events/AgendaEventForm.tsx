@@ -1,13 +1,12 @@
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import {
   ChevronLeft,
-  Plus,
-  Save,
-  X,
 } from 'lucide-react';
 import type { AgendaMedicalUser, AgendaNotificationRecipientOptions } from '../../types';
-import { formatPersonName, formatProfileName } from '../../shared/utils/formatters';
-import { Button, CheckboxField, FormPanel, IconButton, SelectField, TextareaField } from '../../shared/components/ui';
+import { Button, FormPanel } from '../../shared/components/ui';
+import { AgendaReminderSettings } from './AgendaReminderSettings';
+import { AgendaRecipients } from './AgendaRecipients';
+import { AgendaFormActions } from './AgendaFormActions';
 import { AgendaScheduleFields } from './AgendaScheduleFields';
 import type { AgendaFieldErrors, AgendaScheduleField } from './agendaDateTime';
 import type { AgendaFormData } from './agendaUtils';
@@ -47,137 +46,24 @@ export function AgendaEventForm({
   onToggleNotificationUser,
   onToggleNotificationGroup,
 }: AgendaEventFormProps) {
-  return (
-    <FormPanel className="agenda-form-panel" data-tour="agenda-form">
-      <div className="panel-title">
-        <div>
-          <span className="eyebrow">{editingEventId ? 'Edição' : 'Cadastro'}</span>
-          <h2>{editingEventId ? 'Editar evento' : 'Novo evento'}</h2>
-        </div>
-        <div className="agenda-panel-actions">
-          <Button type="button" variant="ghost" onClick={onOpenCalendarSection}>
-            <ChevronLeft size={17} />
-            Calendário
-          </Button>
-          {editingEventId && (
-            <IconButton label="Cancelar edição" tone="muted" onClick={onResetForm}>
-              <X size={18} />
-            </IconButton>
-          )}
-        </div>
-      </div>
-
-      <form className="stack agenda-form" onSubmit={onSubmit} noValidate>
-        <div className="agenda-form-section" data-tour="agenda-details">
-          <AgendaScheduleFields formData={formData} errors={fieldErrors} onChange={onScheduleChange}
-            onDescriptionChange={value => setFormData(current => ({ ...current, description: value }))} />
-
-          <CheckboxField
-            label="Notificar perfil médico"
-            checked={formData.notifyMedicalProfile}
-            onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyMedicalProfile: checked }))}
-          />
-
-          {formData.notifyMedicalProfile && (
-            <SelectField
-              label="Médico"
-              value={formData.medicalUserId}
-              onChange={(event) => setFormData((current) => ({ ...current, medicalUserId: event.target.value }))}
-            >
-              <option value="">Perfil médico</option>
-              {medicalUsers.map((user) => (
-                <option key={user.id} value={user.id}>{formatPersonName(user.nome)}</option>
-              ))}
-            </SelectField>
-          )}
-
-          <CheckboxField
-            label="Receber lembretes"
-            checked={formData.notifyUser}
-            onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyUser: checked }))}
-          />
-
-          {(formData.notifyUser || formData.notifyMedicalProfile) && (
-            <SelectField
-              label="Intervalo de lembretes"
-              value={formData.reminderPeriodMinutes}
-              onChange={(event) => setFormData((current) => ({ ...current, reminderPeriodMinutes: event.target.value }))}
-            >
-              <option value="60">A cada 1 hora</option>
-              <option value="360">A cada 6 horas</option>
-              <option value="720">A cada 12 horas</option>
-              <option value="1440">A cada 1 dia</option>
-              <option value="2880">A cada 2 dias</option>
-            </SelectField>
-          )}
-        </div>
-
-        <div className="agenda-form-section agenda-notification-section" data-tour="agenda-notifications">
-          <TextareaField
-            label="Mensagem da notificação"
-            value={formData.notificationMessage}
-            onValueChange={(value) => setFormData((current) => ({ ...current, notificationMessage: value.slice(0, 500) }))}
-            maxLength={500}
-            placeholder="Explique a reunião, evento, auditoria ou videoconferência."
-            className="agenda-notification-message"
-          />
-
-          {notificationRecipientOptions ? (
-            <>
-              <CheckboxField
-                label={notificationRecipientOptions.allRecipientsLabel}
-                checked={formData.notifyAllAllowedRecipients}
-                onCheckedChange={(checked) => setFormData((current) => ({ ...current, notifyAllAllowedRecipients: checked }))}
-              />
-
-              {notificationRecipientOptions.users.length > 0 && (
-                <div className="agenda-recipient-group">
-                  <strong>Destinatários individuais</strong>
-                  <div className="agenda-recipient-list">
-                    {notificationRecipientOptions.users.map((user) => (
-                      <CheckboxField
-                        key={user.id}
-                        label={`${formatPersonName(user.nome)} (${formatProfileName(user.perfilId, user.perfilNome)})`}
-                        checked={formData.notificationUserIds.includes(user.id)}
-                        onCheckedChange={() => onToggleNotificationUser(user.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {notificationRecipientOptions.groups.length > 0 && (
-                <div className="agenda-recipient-group">
-                  <strong>Grupos médicos</strong>
-                  <div className="agenda-recipient-list">
-                    {notificationRecipientOptions.groups.map((group) => (
-                      <CheckboxField
-                        key={group.id}
-                        label={`${group.nome} (${group.membrosCount})`}
-                        checked={formData.notificationGroupIds.includes(group.id)}
-                        onCheckedChange={() => onToggleNotificationGroup(group.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : notificationRecipientsError ? (
-            <p className="agenda-empty agenda-empty-error">
-              Não foi possível carregar os destinatários. {notificationRecipientsError}
-            </p>
-          ) : notificationRecipientsLoading ? (
-            <p className="agenda-empty">Carregando destinatários disponíveis...</p>
-          ) : (
-            <p className="agenda-empty">Nenhum destinatário disponível.</p>
-          )}
-        </div>
-
-        <Button variant="primary" type="submit" disabled={formLoading} data-tour="agenda-save">
-          {editingEventId ? <Save size={18} /> : <Plus size={18} />}
-          {formLoading ? 'Salvando...' : editingEventId ? 'Salvar evento' : 'Cadastrar evento'}
-        </Button>
-      </form>
-    </FormPanel>
-  );
+  const cancel = () => { onResetForm(); onOpenCalendarSection(); };
+  return <FormPanel className="agenda-form-panel" data-tour="agenda-form">
+    <div className="panel-title">
+      <div><span className="eyebrow">{editingEventId ? 'Edição' : 'Cadastro'}</span>
+        <h2>{editingEventId ? 'Editar evento' : 'Novo evento'}</h2></div>
+      <Button type="button" variant="ghost" onClick={onOpenCalendarSection} disabled={formLoading}>
+        <ChevronLeft size={17} />Calendário
+      </Button>
+    </div>
+    <form className="stack agenda-form" onSubmit={onSubmit} noValidate aria-busy={formLoading}>
+      <AgendaScheduleFields formData={formData} errors={fieldErrors} onChange={onScheduleChange}
+        onDescriptionChange={value => setFormData(current => ({ ...current, description: value }))} />
+      <AgendaReminderSettings formData={formData} medicalUsers={medicalUsers} setFormData={setFormData} />
+      <AgendaRecipients formData={formData} setFormData={setFormData}
+        notificationRecipientOptions={notificationRecipientOptions} notificationRecipientsLoading={notificationRecipientsLoading}
+        notificationRecipientsError={notificationRecipientsError} onToggleNotificationUser={onToggleNotificationUser}
+        onToggleNotificationGroup={onToggleNotificationGroup} />
+      <AgendaFormActions editing={Boolean(editingEventId)} loading={formLoading} onCancel={cancel} />
+    </form>
+  </FormPanel>;
 }

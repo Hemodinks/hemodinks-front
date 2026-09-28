@@ -465,8 +465,8 @@
 .agenda-recipient-list {
   display: grid;
   gap: 8px;
-  max-height: 180px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   padding-right: 4px;
 }
 
@@ -540,12 +540,6 @@
   background:
     linear-gradient(135deg, rgba(251, 113, 133, 0.2), rgba(45, 212, 191, 0.08)),
     var(--input-bg);
-}
-
-@container (max-width: 340px) {
-  .agenda-form .two-column-fields {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 980px) {
@@ -627,30 +621,50 @@
   }
 }
 
-@media (max-width: 430px) {
-  .agenda-calendar {
-    gap: 4px;
-    padding: 6px;
-  }
-
-  .agenda-weekday {
-    min-height: 24px;
-    font-size: 0.66rem;
-  }
-
-  .agenda-day {
-    min-height: 60px;
-    padding: 4px;
-  }
-
-  .agenda-day-number {
-    width: 22px;
-    height: 22px;
-  }
-}
-
 .agenda-field-error {
   display: block;
   color: var(--danger, #b42318);
   margin-top: 0.25rem;
+}
+
+/* Use the shared form breakpoints (760px and 520px). */
+.agenda-form-section {
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.agenda-form-section legend { padding: 0 6px; color: var(--ink); font-weight: 900; }
+.agenda-form-section > *, .agenda-form .two-column-fields > * { min-width: 0; }
+.agenda-form input, .agenda-form select, .agenda-form textarea { max-width: 100%; min-width: 0; }
+.agenda-form .toggle-row { min-height: 44px; overflow-wrap: anywhere; }
+.agenda-form .toggle-row input { flex-shrink: 0; }
+.agenda-form-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; padding: 12px 0; }
+.agenda-form-actions button { min-height: 44px; }
+.agenda-mobile-date { display: none; }
+.agenda-event-time { flex-wrap: wrap; overflow-wrap: anywhere; }
+.agenda-event-meta span { overflow-wrap: anywhere; max-width: 100%; }
+.agenda-workspace button:focus-visible { outline: 3px solid var(--selection-accent); outline-offset: 3px; }
+.agenda-monthbar { grid-template-columns: 44px minmax(0, 1fr) 44px; }
+.agenda-monthbar .icon-button, .agenda-event-actions .icon-button { min-width: 44px; min-height: 44px; }
+@media (max-width: 760px) {
+  .agenda-form .two-column-fields { grid-template-columns: minmax(0, 1fr); }
+  .agenda-header, .agenda-form-panel .panel-title { flex-wrap: wrap; gap: 12px; }
+  .agenda-tools { min-width: 0; }
+  .agenda-form-section { padding: 12px; }
+  .agenda-form-actions button { flex: 1 1 140px; }
+}
+@media (max-width: 520px) {
+  .app-shell:has(.agenda-workspace) .topbar-right { flex-shrink: 0; }
+  .agenda-monthbar { grid-template-columns: minmax(0, 1fr); }
+  .agenda-monthbar .icon-button { display: none; }
+  .agenda-calendar { display: none; }
+  .agenda-mobile-date { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 8px; align-items: end; }
+  .agenda-mobile-date label, .agenda-mobile-date input { min-width: 0; max-width: 100%; }
+  .agenda-mobile-date .icon-button { min-width: 44px; min-height: 44px; }
+  .agenda-form-actions { flex-direction: column; }
+  .agenda-form-actions button { flex: auto; width: 100%; }
+  .agenda-tools .ghost-button { flex-basis: 120px; white-space: normal; }
+  .agenda-selected, .agenda-day-actions, .agenda-day-actions-copy { min-width: 0; overflow-wrap: anywhere; }
 }

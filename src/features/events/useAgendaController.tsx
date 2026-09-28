@@ -1,11 +1,12 @@
+import { useAgendaRecipients } from './useAgendaRecipients';
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  completeAgendaEvent, createAgendaEvent, deleteAgendaEvent, getAgendaEvents, getAgendaMedicalUsers,
-  getAgendaNotificationRecipientOptions, getBrazilPublicHolidays, updateAgendaEvent,
+  completeAgendaEvent, createAgendaEvent, deleteAgendaEvent, getAgendaEvents,
+  getBrazilPublicHolidays, updateAgendaEvent,
 } from '../../services';
 import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
 import { getErrorMessage } from '../../shared/utils/formatters';
-import type { AgendaEvent, AgendaEventPayload, AgendaMedicalUser, AgendaNotificationRecipientOptions, AuthSession, PublicHoliday } from '../../types';
+import type { AgendaEvent, AgendaEventPayload, AuthSession, PublicHoliday } from '../../types';
 import {
   type AgendaFormData, type AgendaSection, buildEmptyForm, composeDateTime, defaultReminderMinutes,
   eventTouchesDate, fromDateKey, mergeAgendaEvent, monthGrid, toDateKey, toTimeInput,
@@ -22,10 +23,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [activeSection, setActiveSection] = useState<AgendaSection>('calendario');
   const [events, setEvents] = useState<AgendaEvent[]>([]);
-  const [medicalUsers, setMedicalUsers] = useState<AgendaMedicalUser[]>([]);
-  const [notificationRecipientOptions, setNotificationRecipientOptions] = useState<AgendaNotificationRecipientOptions | null>(null);
-  const [notificationRecipientsLoading, setNotificationRecipientsLoading] = useState(false);
-  const [notificationRecipientsError, setNotificationRecipientsError] = useState('');
+  const { medicalUsers, notificationRecipientOptions, notificationRecipientsLoading, notificationRecipientsError } = useAgendaRecipients(session);
   const [holidays, setHolidays] = useState<PublicHoliday[]>([]);
   const [loading, setLoading] = useState(false);
   const [holidayLoading, setHolidayLoading] = useState(false);
@@ -75,22 +73,13 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     void Promise.all(years.map((year) => getBrazilPublicHolidays(year))).then((result) => setHolidays(result.flat()))
       .catch((caughtError) => setHolidayError(getErrorMessage(caughtError))).finally(() => setHolidayLoading(false));
   }, [days]);
-  useEffect(() => { void getAgendaMedicalUsers(session.token).then(setMedicalUsers).catch((caughtError) => setError(getErrorMessage(caughtError))); }, [session.token]);
-  useEffect(() => {
-    setNotificationRecipientsLoading(true); setNotificationRecipientsError('');
-    void getAgendaNotificationRecipientOptions(session.token).then((options) => {
-      setNotificationRecipientOptions(options); setNotificationRecipientsError('');
-    }).catch((caughtError) => {
-      const message = getErrorMessage(caughtError);
-      setNotificationRecipientOptions(null); setNotificationRecipientsError(message); setError(message);
-    }).finally(() => setNotificationRecipientsLoading(false));
-  }, [session.token]);
-
   const resetForm = (dateKey = selectedDate) => { manualEnd.current = false; setValidationAttempted(false); setServerFieldErrors({}); setEditingEventId(null); setFormData(buildEmptyForm(dateKey, isMedical, session.user.id)); };
   const openCalendarSection = () => setActiveSection('calendario');
   const openCadastroSection = () => setActiveSection('cadastro');
   const handleSelectDate = (date: Date) => {
     const dateKey = toDateKey(date); setSelectedDate(dateKey);
+    if (date.getMonth() !== visibleMonth.getMonth() || date.getFullYear() !== visibleMonth.getFullYear())
+      setVisibleMonth(new Date(date.getFullYear(), date.getMonth(), 1));
     if (!editingEventId) changeScheduleField('startDate', dateKey);
   };
   const handlePreviousMonth = () => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
@@ -136,7 +125,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
       setEvents((current) => mergeAgendaEvent(current, savedEvent)); setSuccessMessage(editingEventId ? 'Evento atualizado.' : 'Evento cadastrado.');
       const savedDate = new Date(savedEvent.start); const savedDateKey = toDateKey(savedDate);
       setSelectedDate(savedDateKey); setVisibleMonth(new Date(savedDate.getFullYear(), savedDate.getMonth(), 1)); resetForm(savedDateKey);
-      setActiveSection('calendario'); void loadEvents();
+      setActiveSection('calendario');
     } catch (caughtError) {
       const errors = agendaServerFieldErrors(caughtError);
       if (Object.keys(errors).length) setServerFieldErrors(errors);
