@@ -1,3 +1,4 @@
+import { registerAgendaResponsiveCases } from './agenda-responsive-cases';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -977,7 +978,13 @@ test('mantem telas criticas sem overflow horizontal no mobile', async ({ page })
 
     await loginViaUi(page, '/agenda');
     await expect(page.getByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeVisible();
-    await expect(page.locator('.agenda-calendar')).toBeVisible();
+    if (width <= 520) {
+      await expect(page.getByRole('group', { name: 'Navegação diária' })).toBeVisible();
+      await expect(page.getByLabel('Data da agenda')).toBeVisible();
+      await expect(page.locator('.agenda-calendar')).toBeHidden();
+    } else {
+      await expect(page.locator('.agenda-calendar')).toBeVisible();
+    }
     await expectNoGlobalHorizontalOverflow(page);
 
     await loginViaUi(page, '/pacientes');
@@ -1085,7 +1092,7 @@ test('cadastra evento na agenda', async ({ page }) => {
   await page.getByLabel('Hora').first().fill(toTimeInputValue(start));
   await page.getByLabel('Término').fill(toDateInputValue(end));
   await page.getByLabel('Hora').nth(1).fill(toTimeInputValue(end));
-  await page.getByRole('button', { name: 'Cadastrar evento' }).click();
+  await page.getByRole('button', { name: 'Criar evento' }).click();
 
   await expect(page.getByText('Evento cadastrado.')).toBeVisible();
   await expect(page.getByText('Evento E2E')).toBeVisible();
@@ -2180,3 +2187,5 @@ test('warmup: failure does not prevent the existing login flow', async ({ page }
   await expect(page.getByRole('heading', { name: 'Painel inicial', exact: true })).toBeVisible();
   expect(calls).toBe(1);
 });
+
+registerAgendaResponsiveCases({ mockApi, loginViaUi });

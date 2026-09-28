@@ -1,3 +1,4 @@
+import { AgendaMobileDatePicker } from './AgendaMobileDatePicker';
 import {
   Bell,
   Check,
@@ -75,6 +76,7 @@ export function AgendaCalendarSection({
         </IconButton>
       </div>
 
+      <AgendaMobileDatePicker selectedDate={selectedDate} onSelectDate={onSelectDate} />
       <div className="agenda-calendar" aria-busy={loading || holidayLoading}>
         {weekdayLabels.map((label) => (
           <span className="agenda-weekday" key={label}>{label}</span>
@@ -98,6 +100,8 @@ export function AgendaCalendarSection({
                 isSelected ? 'selected' : '',
                 holiday ? 'holiday' : '',
               ].filter(Boolean).join(' ')}
+              aria-label={new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' }).format(date)}
+              aria-pressed={isSelected}
               onClick={() => onSelectDate(date)}
               title={getHolidayTitle(holiday)}
             >

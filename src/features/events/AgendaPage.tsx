@@ -9,7 +9,11 @@ import './events.css';
 type AgendaPageProps = { session: AuthSession; isAdmin: boolean; isMedical: boolean };
 export { buildEmptyForm } from './agendaUtils';
 
-export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
+export function AgendaPage(props: AgendaPageProps) {
+  const { session } = props;
+  return <AgendaPageContent key={`${session.user.clinicaId}:${session.user.id}:${session.token}`} {...props} />;
+}
+function AgendaPageContent({ session, isAdmin, isMedical }: AgendaPageProps) {
   const agenda = useAgendaController({ session, isMedical });
   return <section className="workspace agenda-workspace" data-tour="agenda-overview">
     <DataPanel className="agenda-panel">
@@ -20,7 +24,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
           <Button type="button" variant="ghost" className={`agenda-section-tab ${agenda.activeSection === 'calendario' ? 'is-active' : ''}`}
             onClick={agenda.openCalendarSection} aria-pressed={agenda.activeSection === 'calendario'}><CalendarDays size={17} />Calendário</Button>
           <Button type="button" variant="ghost" className={`agenda-section-tab agenda-new-event-button ${agenda.activeSection === 'cadastro' ? 'is-active' : ''}`}
-            data-tour="agenda-new" onClick={agenda.openCadastroSection} aria-pressed={agenda.activeSection === 'cadastro'}><Plus size={17} />Novo evento</Button>
+            data-tour="agenda-new" onClick={agenda.openDraftForSelectedDate} aria-pressed={agenda.activeSection === 'cadastro'}><Plus size={17} />Novo evento</Button>
           <Button onClick={agenda.handleToday}><CalendarDays size={17} />Hoje</Button>
           <IconButton label="Atualizar agenda" onClick={() => void agenda.loadEvents()}><RefreshCw size={18} /></IconButton>
         </div>

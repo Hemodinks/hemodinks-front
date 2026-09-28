@@ -22,10 +22,15 @@ function ScheduleField({ field, error, ...props }: ComponentProps<typeof TextFie
 
 export function AgendaScheduleFields({ formData, errors, onChange, onDescriptionChange }: Props) {
   return <>
+    <fieldset className="agenda-form-section" data-tour="agenda-details">
+      <legend>Informações do evento</legend>
     <ScheduleField field="title" label="Título" value={formData.title} maxLength={255} required
       error={errors.title} onValueChange={value => onChange('title', value.slice(0, 255))} />
     <TextField label="Descrição" value={formData.description} maxLength={2000}
       onValueChange={value => onDescriptionChange(value.slice(0, 2000))} />
+    </fieldset>
+    <fieldset className="agenda-form-section">
+      <legend>Data e horário</legend>
     <div className="two-column-fields">
       <ScheduleField field="startDate" label="Início" type="date" value={formData.startDate} required
         error={errors.startDate} onValueChange={value => onChange('startDate', value)} />
@@ -38,5 +43,6 @@ export function AgendaScheduleFields({ formData, errors, onChange, onDescription
       <ScheduleField field="endTime" label="Hora" type="time" value={formData.endTime} required
         error={errors.endTime} onValueChange={value => onChange('endTime', value)} />
     </div>
+    </fieldset>
   </>;
 }
