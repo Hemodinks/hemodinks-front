@@ -101,11 +101,13 @@ it('ignores a previous month response that arrives after the current month', asy
   let oldResponse!: (events: AgendaEvent[]) => void;
   vi.mocked(services.getAgendaEvents).mockImplementationOnce(() => new Promise(resolve => { oldResponse = resolve; }));
   act(() => result.current.handleNextMonth());
-  vi.mocked(services.getAgendaEvents).mockResolvedValueOnce([saved]);
+  const nextMonth = new Date(result.current.visibleMonth.getFullYear(), result.current.visibleMonth.getMonth() + 1, 15, 12);
+  const currentEvent = { ...saved, start: nextMonth.toISOString(), end: new Date(nextMonth.getTime() + 3600000).toISOString() };
+  vi.mocked(services.getAgendaEvents).mockResolvedValueOnce([currentEvent]);
   act(() => result.current.handleNextMonth());
-  await waitFor(() => expect(result.current.events).toEqual([saved]));
+  await waitFor(() => expect(result.current.events).toEqual([currentEvent]));
   await act(async () => oldResponse([]));
-  expect(result.current.events).toEqual([saved]);
+  expect(result.current.events).toEqual([currentEvent]);
 });
 
 it('shares the in-flight interval request during StrictMode effect replay', async () => {

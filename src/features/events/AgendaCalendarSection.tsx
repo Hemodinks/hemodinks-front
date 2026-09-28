@@ -1,24 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { AgendaMonthGrid } from './AgendaMonthGrid';
-import { eventTime } from './agendaMonth';
+import { AgendaEventCard } from './AgendaEventCard';
 import { AgendaMobileDatePicker } from './AgendaMobileDatePicker';
 import {
-  Bell,
-  Check,
   ChevronLeft,
   ChevronRight,
-  Clock,
-  Pencil,
   Plus,
-  Trash2,
 } from 'lucide-react';
 import type { AgendaEvent, PublicHoliday } from '../../types';
 import { Button, IconButton } from '../../shared/components/ui';
 import {
-  formatDateTime,
   fromDateKey,
   getHolidayTitle,
-  toDateKey,
   monthTitle,
 } from './agendaUtils';
 
@@ -119,40 +112,8 @@ export function AgendaCalendarSection({
             <p className="agenda-empty">Carregando eventos...</p>
           ) : selectedEvents.length ? (
             selectedEvents.map((agendaEvent) => {
-              const canManage = isAdmin || agendaEvent.userId === currentUserId;
-
-              return (
-                <article className={`agenda-event-item ${agendaEvent.isCompleted ? 'completed' : ''}`} key={agendaEvent.id} id={`agenda-event-${agendaEvent.id}`} tabIndex={-1}>
-                  <div className="agenda-event-main">
-                    <span className="agenda-event-time">
-                      <Clock size={15} />
-                      {toDateKey(new Date(agendaEvent.start)) === toDateKey(new Date(agendaEvent.end)) ? `${eventTime(agendaEvent.start)} - ${eventTime(agendaEvent.end)}` : `${formatDateTime(agendaEvent.start)} - ${formatDateTime(agendaEvent.end)}`}
-                    </span>
-                    <strong>{agendaEvent.title}</strong>
-                    {agendaEvent.description && <p>{agendaEvent.description}</p>}
-                    <div className="agenda-event-meta">
-                      {!agendaEvent.isCompleted && (agendaEvent.notifyUser || agendaEvent.notifyMedicalProfile) && <span><Bell size={14} /> Lembrete ativo</span>}
-                      {agendaEvent.notifyMedicalProfile && <span><Bell size={14} /> {agendaEvent.medicalUserName || 'Perfil médico'}</span>}
-                      {agendaEvent.isCompleted && <span><Check size={14} /> Concluido</span>}
-                    </div>
-                  </div>
-                  {canManage && (
-                    <div className="agenda-event-actions">
-                      {!agendaEvent.isCompleted && (
-                        <IconButton label="Concluir" tone="muted" onClick={() => onComplete(agendaEvent)}>
-                          <Check size={17} />
-                        </IconButton>
-                      )}
-                      <IconButton label="Editar" tone="muted" onClick={() => onEdit(agendaEvent)}>
-                        <Pencil size={17} />
-                      </IconButton>
-                      <IconButton label="Excluir" tone="danger" onClick={() => onDelete(agendaEvent)}>
-                        <Trash2 size={17} />
-                      </IconButton>
-                    </div>
-                  )}
-                </article>
-              );
+              return <AgendaEventCard key={agendaEvent.id} agendaEvent={agendaEvent} isAdmin={isAdmin} currentUserId={currentUserId}
+                onComplete={onComplete} onEdit={onEdit} onDelete={onDelete} />;
             })
           ) : (
             <p className="agenda-empty">Nenhum evento nesta data.</p>

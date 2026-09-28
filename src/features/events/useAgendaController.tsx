@@ -1,7 +1,10 @@
+import { useAgendaEvents } from './useAgendaEvents';
+import { agendaRange, type AgendaView } from './agendaViews';
+import type { AgendaEventFilters } from '../../services/eventsService';
 import { useAgendaRecipients } from './useAgendaRecipients';
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  completeAgendaEvent, createAgendaEvent, deleteAgendaEvent, getAgendaEvents,
+  completeAgendaEvent, createAgendaEvent, deleteAgendaEvent,
   getBrazilPublicHolidays, updateAgendaEvent,
 } from '../../services';
 import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
@@ -9,7 +12,7 @@ import { getErrorMessage } from '../../shared/utils/formatters';
 import type { AgendaEvent, AgendaEventPayload, AuthSession, PublicHoliday } from '../../types';
 import {
   type AgendaFormData, type AgendaSection, buildEmptyForm, composeDateTime, defaultReminderMinutes,
-  eventTouchesDate, fromDateKey, mergeAgendaEvent, monthGrid, toDateKey, toTimeInput,
+  eventTouchesDate, fromDateKey, monthGrid, toDateKey, toTimeInput,
 } from './agendaUtils';
 
 import { agendaServerFieldErrors, suggestAgendaEnd, validateAgendaSchedule, type AgendaFieldErrors, type AgendaScheduleField } from './agendaDateTime';
@@ -22,10 +25,21 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
   const [visibleMonth, setVisibleMonth] = useState(() => fromDateKey(todayKey));
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [activeSection, setActiveSection] = useState<AgendaSection>('calendario');
-  const [events, setEvents] = useState<AgendaEvent[]>([]);
+  const [view, setView] = useState<AgendaView>('month');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [status, setStatus] = useState('all');
+  const [responsibility, setResponsibility] = useState('all');
+  useEffect(() => { const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300); return () => clearTimeout(timer); }, [search]);
+  const filters: AgendaEventFilters = {
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(status !== 'all' ? { isCompleted: status === 'completed' } : {}),
+    ...(responsibility === 'mine' ? { userId: session.user.id } : {}),
+  };
+  const range = agendaRange(view, visibleMonth, selectedDate);
+  const { events, loading, eventsError, loadEvents, invalidateEvents } = useAgendaEvents(session, range.from, range.to, filters);
   const { medicalUsers, notificationRecipientOptions, notificationRecipientsLoading, notificationRecipientsError, recipientSearch } = useAgendaRecipients(session);
   const [holidays, setHolidays] = useState<PublicHoliday[]>([]);
-  const [loading, setLoading] = useState(false);
   const [holidayLoading, setHolidayLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,8 +63,6 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
   };
 
   const days = useMemo(() => monthGrid(visibleMonth), [visibleMonth]);
-  const firstGridDate = days[0];
-  const lastGridDate = days[days.length - 1];
   const holidayByDate = useMemo(() => new Map(holidays.filter((holiday) => holiday.global || holiday.types?.includes('Public'))
     .map((holiday) => [holiday.date, holiday])), [holidays]);
   const selectedHoliday = holidayByDate.get(selectedDate);
@@ -58,30 +70,6 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     .sort((first, second) => new Date(first.start).getTime() - new Date(second.start).getTime()), [events, selectedDate]);
   const pendingEventsCount = events.filter((event) => !event.isCompleted).length;
 
-  const eventsRequest = useRef(0);
-  const eventsInFlight = useRef<{ key: string; promise: Promise<AgendaEvent[]> } | null>(null);
-  const loadEvents = async () => {
-    const requestId = ++eventsRequest.current;
-    setLoading(true); setError(''); setEvents([]);
-    const rangeEnd = new Date(lastGridDate); rangeEnd.setHours(23, 59, 59, 999);
-    const from = firstGridDate.toISOString(); const to = rangeEnd.toISOString();
-    const key = `${session.token}:${from}:${to}`;
-    let pending = eventsInFlight.current;
-    if (!pending || pending.key !== key) {
-      pending = { key, promise: getAgendaEvents(session.token, from, to) };
-      eventsInFlight.current = pending;
-    }
-    try {
-      const result = await pending.promise;
-      if (requestId === eventsRequest.current) setEvents(result);
-    } catch (caughtError) { if (requestId === eventsRequest.current) setError(getErrorMessage(caughtError)); }
-    finally {
-      if (eventsInFlight.current === pending) eventsInFlight.current = null;
-      if (requestId === eventsRequest.current) setLoading(false);
-    }
-  };
-
-  useEffect(() => { void loadEvents(); return () => { eventsRequest.current++; }; }, [session.token, firstGridDate.toISOString(), lastGridDate.toISOString()]);
   useEffect(() => {
     const years = Array.from(new Set(days.map((date) => date.getFullYear())));
     setHolidayLoading(true); setHolidayError('');
@@ -101,8 +89,12 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + offset, 1);
     setVisibleMonth(date); setSelectedDate(toDateKey(date));
   };
-  const handlePreviousMonth = () => moveMonth(-1);
-  const handleNextMonth = () => moveMonth(1);
+  const movePeriod = (offset: number) => {
+    if (view !== 'week') { moveMonth(offset); return; }
+    const date = fromDateKey(selectedDate); date.setDate(date.getDate() + offset * 7); handleSelectDate(date);
+  };
+  const handlePreviousMonth = () => movePeriod(-1);
+  const handleNextMonth = () => movePeriod(1);
   const handleToday = () => {
     const today = fromDateKey(todayKey); setActiveSection('calendario'); setVisibleMonth(today); setSelectedDate(todayKey); resetForm(todayKey);
   };
@@ -141,7 +133,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     setFormLoading(true);
     try {
       const savedEvent = editingEventId ? await updateAgendaEvent(editingEventId, buildPayload(), session.token) : await createAgendaEvent(buildPayload(), session.token);
-      setEvents((current) => mergeAgendaEvent(current, savedEvent)); setSuccessMessage(editingEventId ? 'Evento atualizado.' : 'Evento cadastrado.');
+      invalidateEvents(); setSuccessMessage(editingEventId ? 'Evento atualizado.' : 'Evento cadastrado.');
       const savedDate = new Date(savedEvent.start); const savedDateKey = toDateKey(savedDate);
       setSelectedDate(savedDateKey); setVisibleMonth(new Date(savedDate.getFullYear(), savedDate.getMonth(), 1)); resetForm(savedDateKey);
       setActiveSection('calendario');
@@ -171,15 +163,15 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     message: `Deseja marcar "${agendaEvent.title}" como concluido?`, confirmLabel: 'Sim', cancelLabel: 'Não', onConfirm: () => completeSelectedEvent(agendaEvent) });
   const deleteSelectedEvent = async (agendaEvent: AgendaEvent) => {
     const eventId = agendaEvent.id; setError(''); setSuccessMessage('');
-    try { await deleteAgendaEvent(eventId, session.token); setEvents((current) => current.filter((item) => item.id !== eventId));
+    try { await deleteAgendaEvent(eventId, session.token);
       setSuccessMessage('Evento excluido.'); if (editingEventId === eventId) resetForm(); await loadEvents(); }
     catch (caughtError) { setError(getErrorMessage(caughtError)); }
   };
   const handleDelete = (agendaEvent: AgendaEvent) => confirmAction({ tone: 'delete', title: 'Excluir evento?',
     message: `Deseja excluir "${agendaEvent.title}"? Esta ação não poderá ser desfeita.`, confirmLabel: 'Sim', cancelLabel: 'Não', onConfirm: () => deleteSelectedEvent(agendaEvent) });
 
-  return { todayKey, visibleMonth, selectedDate, activeSection, events, medicalUsers, notificationRecipientOptions,
-    notificationRecipientsLoading, notificationRecipientsError, recipientSearch, loading, holidayLoading, formLoading, error, holidayError,
+  return { view, setView, search, setSearch, status, setStatus, responsibility, setResponsibility, range, todayKey, visibleMonth, selectedDate, activeSection, events, medicalUsers, notificationRecipientOptions,
+    notificationRecipientsLoading, notificationRecipientsError, recipientSearch, loading, holidayLoading, formLoading, error: error || eventsError, holidayError,
     successMessage, editingEventId, formData, setFormData, fieldErrors, changeScheduleField, days, holidayByDate, selectedHoliday, selectedEvents, pendingEventsCount,
     loadEvents, openCalendarSection, openCadastroSection, handleSelectDate, handlePreviousMonth, handleNextMonth, handleToday,
     resetForm, toggleNotificationUser, toggleNotificationGroup, openDraftForSelectedDate, handleSubmit, handleEdit, handleComplete,
