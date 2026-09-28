@@ -42,8 +42,9 @@ export function getAgendaMedicalUsers(token: string) {
   return get<AgendaMedicalUser[]>('/api/events/medical-users', token);
 }
 
-export function getAgendaNotificationRecipientOptions(token: string) {
-  return get<AgendaNotificationRecipientOptions>('/api/events/notification-recipients', token);
+export function getAgendaNotificationRecipientOptions(token: string, query?: { search: string; profile: string; page: number }) {
+  const params = query ? new URLSearchParams({ search: query.search, profile: query.profile, page: String(query.page), pageSize: '20' }) : undefined;
+  return get<AgendaNotificationRecipientOptions>('/api/events/notification-recipients', token, { params });
 }
 
 export function markAgendaNotificationsAsRead(token: string) {

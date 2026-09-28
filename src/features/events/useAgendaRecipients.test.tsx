@@ -40,3 +40,16 @@ it('clears visible options immediately on clinic change and stays empty on failu
   expect(result.current.notificationRecipientOptions).toBeNull();
   expect(result.current.notificationRecipientsError).toBeTruthy();
 });
+
+it('sends search and profile to the scoped API and resets pagination on filtering', async () => {
+  const session = { token: 'scope-token', user: { id: 1, clinicaId: 1 } } as AuthSession;
+  vi.mocked(getAgendaMedicalUsers).mockResolvedValue([]);
+  vi.mocked(getAgendaNotificationRecipientOptions).mockResolvedValue({ users: [], groups: [], canNotifyAllAllowedRecipients: true, allRecipientsLabel: 'Todos' });
+  const { result } = renderHook(() => useAgendaRecipients(session));
+  await waitFor(() => expect(result.current.notificationRecipientsLoading).toBe(false));
+  act(() => result.current.recipientSearch.setPage(2));
+  await waitFor(() => expect(getAgendaNotificationRecipientOptions).toHaveBeenLastCalledWith('scope-token', { search: '', profile: 'all', page: 2 }));
+  act(() => result.current.recipientSearch.setSearch('Ana'));
+  act(() => result.current.recipientSearch.setProfile('medical'));
+  await waitFor(() => expect(getAgendaNotificationRecipientOptions).toHaveBeenLastCalledWith('scope-token', { search: 'Ana', profile: 'medical', page: 1 }));
+});

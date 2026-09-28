@@ -115,3 +115,15 @@ it('shares the in-flight interval request during StrictMode effect replay', asyn
   await waitFor(() => expect(result.current.loading).toBe(false));
   expect(services.getAgendaEvents).toHaveBeenCalledTimes(1);
 });
+
+it('persists the existing periodic reminder semantics through creation and editing', async () => {
+  const { result } = await setup();
+  act(() => result.current.setFormData({ ...buildEmptyForm('2026-09-26'), title: 'Reminder', notifyUser: false, notifyMedicalProfile: true, medicalUserId: '2', reminderPeriodMinutes: '15' }));
+  await act(() => result.current.handleSubmit(submit()));
+  expect(services.createAgendaEvent).toHaveBeenCalledWith(expect.objectContaining({ notifyUser: false, notifyMedicalProfile: true, medicalUserId: 2, reminderPeriodMinutes: 15 }), 'token');
+  act(() => result.current.handleEdit({ ...saved, notifyMedicalProfile: true, medicalUserId: 2, reminderPeriodMinutes: 90 }));
+  expect(result.current.formData).toMatchObject({ medicalUserId: '2', reminderPeriodMinutes: '90' });
+  act(() => result.current.setFormData(current => ({ ...current, notifyUser: false, notifyMedicalProfile: false })));
+  await act(() => result.current.handleSubmit(submit()));
+  expect(services.updateAgendaEvent).toHaveBeenCalledWith(1, expect.objectContaining({ notifyUser: false, notifyMedicalProfile: false, medicalUserId: null, reminderPeriodMinutes: null }), 'token');
+});

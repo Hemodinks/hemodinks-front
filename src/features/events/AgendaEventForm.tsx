@@ -1,3 +1,4 @@
+import type { AgendaRecipientSearch } from './useAgendaRecipients';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import {
   ChevronLeft,
@@ -21,6 +22,7 @@ type AgendaEventFormProps = {
   notificationRecipientOptions: AgendaNotificationRecipientOptions | null;
   notificationRecipientsLoading: boolean;
   notificationRecipientsError: string;
+  recipientSearch?: AgendaRecipientSearch;
   setFormData: Dispatch<SetStateAction<AgendaFormData>>;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onOpenCalendarSection: () => void;
@@ -39,6 +41,7 @@ export function AgendaEventForm({
   notificationRecipientOptions,
   notificationRecipientsLoading,
   notificationRecipientsError,
+  recipientSearch,
   setFormData,
   onSubmit,
   onOpenCalendarSection,
@@ -59,7 +62,7 @@ export function AgendaEventForm({
       <AgendaScheduleFields formData={formData} errors={fieldErrors} onChange={onScheduleChange}
         onDescriptionChange={value => setFormData(current => ({ ...current, description: value }))} />
       <AgendaReminderSettings formData={formData} medicalUsers={medicalUsers} setFormData={setFormData} />
-      <AgendaRecipients formData={formData} setFormData={setFormData}
+      <AgendaRecipients recipientSearch={recipientSearch} editing={Boolean(editingEventId)} formData={formData} setFormData={setFormData}
         notificationRecipientOptions={notificationRecipientOptions} notificationRecipientsLoading={notificationRecipientsLoading}
         notificationRecipientsError={notificationRecipientsError} onToggleNotificationUser={onToggleNotificationUser}
         onToggleNotificationGroup={onToggleNotificationGroup} />

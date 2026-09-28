@@ -42,7 +42,7 @@ function AgendaPageContent({ session, isAdmin, isMedical }: AgendaPageProps) {
       /> : <AgendaEventForm
         editingEventId={agenda.editingEventId} formData={agenda.formData} formLoading={agenda.formLoading}
         medicalUsers={agenda.medicalUsers} notificationRecipientOptions={agenda.notificationRecipientOptions}
-        notificationRecipientsLoading={agenda.notificationRecipientsLoading} notificationRecipientsError={agenda.notificationRecipientsError}
+        notificationRecipientsLoading={agenda.notificationRecipientsLoading} notificationRecipientsError={agenda.notificationRecipientsError} recipientSearch={agenda.recipientSearch}
         fieldErrors={agenda.fieldErrors} onScheduleChange={agenda.changeScheduleField}
         setFormData={agenda.setFormData} onSubmit={agenda.handleSubmit} onOpenCalendarSection={agenda.openCalendarSection}
         onResetForm={() => agenda.resetForm()} onToggleNotificationUser={agenda.toggleNotificationUser}

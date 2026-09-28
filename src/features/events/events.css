@@ -678,3 +678,10 @@
 .agenda-event-preview span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .agenda-more-events { font-size: .7rem; font-weight: 900; color: var(--teal); }
 .agenda-selected:focus, .agenda-event-item:focus { outline: 2px solid var(--teal); outline-offset: 3px; }
+
+.agenda-recipient-person { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; min-width: 0; }
+.agenda-recipient-person .toggle-row { border: 0; padding: 0; margin: 0; }
+.agenda-recipient-person small { display: block; padding-left: 28px; color: var(--muted); overflow-wrap: anywhere; }
+.agenda-recipient-pagination { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.agenda-recipient-pagination button { min-height: 44px; }
+.agenda-reminder-details p, .agenda-notification-section p { overflow-wrap: anywhere; }
