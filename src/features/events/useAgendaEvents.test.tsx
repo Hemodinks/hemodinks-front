@@ -1,0 +1,45 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, expect, it, vi } from 'vitest';
+import { getAgendaEvents } from '../../services';
+import type { AgendaEvent, AuthSession } from '../../types';
+import type { AgendaEventFilters } from '../../services/eventsService';
+import { useAgendaEvents } from './useAgendaEvents';
+vi.mock('../../services', () => ({ getAgendaEvents: vi.fn() }));
+const session = { token: 'alpha', user: { id: 1, clinicaId: 1 } } as AuthSession;
+const event = { id: 1, start: '2026-09-26T12:00:00Z', end: '2026-09-26T13:00:00Z' } as AgendaEvent;
+const month = { from: '2026-09-01T00:00:00Z', to: '2026-09-30T23:59:59Z', filters: {} as AgendaEventFilters, session };
+beforeEach(() => { vi.resetAllMocks(); vi.mocked(getAgendaEvents).mockResolvedValue([event]); });
+it('reuses a month for a contained week and back, and refresh explicitly reloads', async () => {
+  const hook = renderHook(props => useAgendaEvents(props.session, props.from, props.to, props.filters), { initialProps: month });
+  await waitFor(() => expect(hook.result.current.loading).toBe(false));
+  hook.rerender({ ...month, from: '2026-09-21T00:00:00Z', to: '2026-09-27T23:59:59Z' });
+  await waitFor(() => expect(hook.result.current.events).toEqual([event]));
+  hook.rerender(month);
+  await waitFor(() => expect(hook.result.current.loading).toBe(false));
+  expect(getAgendaEvents).toHaveBeenCalledTimes(1);
+  await act(() => hook.result.current.loadEvents());
+  expect(getAgendaEvents).toHaveBeenCalledTimes(2);
+});
+it('does not reuse filtered data or another clinic and ignores late responses', async () => {
+  let resolve!: (events: AgendaEvent[]) => void;
+  vi.mocked(getAgendaEvents).mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+  const hook = renderHook(props => useAgendaEvents(props.session, props.from, props.to, props.filters), { initialProps: month });
+  const filters = { search: 'auditoria', userId: 2, isCompleted: false };
+  const beta = { ...session, token: 'beta', user: { ...session.user, id: 2, clinicaId: 2 } };
+  vi.mocked(getAgendaEvents).mockResolvedValue([]);
+  hook.rerender({ ...month, session: beta, filters });
+  await waitFor(() => expect(hook.result.current.loading).toBe(false));
+  expect(getAgendaEvents).toHaveBeenLastCalledWith('beta', month.from, month.to, filters);
+  await act(async () => resolve([event]));
+  expect(hook.result.current.events).toEqual([]);
+});
+it('invalidates after mutation and loads a week outside the cached period', async () => {
+  const hook = renderHook(props => useAgendaEvents(session, props.from, props.to, {}), { initialProps: month });
+  await waitFor(() => expect(hook.result.current.loading).toBe(false));
+  act(() => hook.result.current.invalidateEvents());
+  await waitFor(() => expect(getAgendaEvents).toHaveBeenCalledTimes(2));
+  hook.rerender({ ...month, from: '2026-10-05T00:00:00Z', to: '2026-10-11T23:59:59Z' });
+  await waitFor(() => expect(hook.result.current.loading).toBe(false));
+  expect(hook.result.current.events).toEqual([]);
+  expect(getAgendaEvents).toHaveBeenCalledTimes(3);
+});

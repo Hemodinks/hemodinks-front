@@ -154,6 +154,8 @@ export type DashboardNotification = {
   procedimento?: string | null;
   autor?: string | null;
   data?: string | null;
+  allDayStartDate?: string | null;
+  allDayEndDate?: string | null;
   dataLeitura?: string | null;
 };
 
@@ -165,6 +167,10 @@ export type AgendaEvent = {
   medicalUserName?: string | null;
   title: string;
   description?: string | null;
+  isAllDay?: boolean;
+  allDayStartDate?: string | null;
+  allDayEndDate?: string | null;
+  timeZoneId?: string | null;
   start: string;
   end: string;
   notifyMedicalProfile: boolean;
@@ -183,8 +189,12 @@ export type AgendaEventPayload = {
   medicalUserId?: number | null;
   title: string;
   description?: string | null;
-  start: string;
-  end: string;
+  isAllDay?: boolean;
+  allDayStartDate?: string | null;
+  allDayEndDate?: string | null;
+  timeZoneId?: string | null;
+  start?: string;
+  end?: string;
   notifyMedicalProfile: boolean;
   notifyUser: boolean;
   reminderPeriodMinutes?: number | null;
@@ -215,6 +225,9 @@ export type AgendaNotificationRecipientGroup = {
 };
 
 export type AgendaNotificationRecipientOptions = {
+  totalUsers?: number;
+  page?: number;
+  pageSize?: number;
   canNotifyAllAllowedRecipients: boolean;
   allRecipientsLabel: string;
   users: AgendaNotificationRecipientUser[];
