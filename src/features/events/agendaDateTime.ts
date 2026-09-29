@@ -29,6 +29,12 @@ export function validateAgendaSchedule(form: AgendaFormData): AgendaFieldErrors 
   if (!form.title.trim()) errors.title = 'Título é obrigatório.';
   if (!isAgendaDateValid(form.startDate)) errors.startDate = 'Informe uma data válida.';
   if (!isAgendaDateValid(form.endDate)) errors.endDate = 'Informe uma data válida.';
+  if (form.isAllDay) {
+    if (form.endDate === '9999-12-31') errors.endDate = 'Informe uma data anterior a 31/12/9999.';
+    if (!errors.startDate && !errors.endDate && form.endDate < form.startDate)
+      errors.endDate = 'O término deve ser igual ou posterior ao início.';
+    return errors;
+  }
   if (!isAgendaTimeValid(form.startTime)) errors.startTime = 'Informe um horário válido.';
   if (!isAgendaTimeValid(form.endTime)) errors.endTime = 'Informe um horário válido.';
   const start = parseAgendaDateTime(form.startDate, form.startTime);
@@ -54,6 +60,7 @@ export function suggestAgendaEnd(dateValue: string, timeValue: string) {
 
 export function agendaServerFieldErrors(error: unknown): AgendaFieldErrors {
   const message = error instanceof Error ? error.message : '';
+  if (message === 'Informe datas válidas para o evento de dia inteiro, com término igual ou posterior ao início.') return { startDate: message, endDate: message };
   if (message === 'Título é obrigatório.') return { title: message };
   if (message === endAfterStartMessage) return { endDate: message, endTime: message };
   if (message === 'Informe uma data e um horário de início válidos.') return { startDate: message, startTime: message };

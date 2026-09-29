@@ -13,10 +13,12 @@ export function getAgendaEvents(token: string, from?: string, to?: string, filte
 
   if (from) {
     params.set('from', from);
+    if (to) params.set('fromDate', civilDate(from));
   }
 
   if (to) {
     params.set('to', to);
+    if (from) params.set('toDate', civilDate(to));
   }
 
   if (filters?.search) params.set('search', filters.search);
@@ -55,4 +57,9 @@ export function getAgendaNotificationRecipientOptions(token: string, query?: { s
 
 export function markAgendaNotificationsAsRead(token: string) {
   return post<{ updatedCount: number }>('/api/events/notifications/mark-read', undefined, token);
+}
+
+function civilDate(value: string) {
+  const date = new Date(value);
+  return `${String(date.getFullYear()).padStart(4, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }

@@ -63,3 +63,9 @@ export function isValidDate(value: string) {
 export function isValidBirthDate(value: string) {
   return isValidDate(value) && toDatePickerValue(value) <= getTodayPickerValue();
 }
+
+// Date-only values must never be converted through the viewer's timezone.
+export function formatAllDayDates(start: string, end: string) {
+  const format = (date: string) => date.split('-').reverse().join('/');
+  return start === end ? `Dia inteiro · ${format(start)}` : `Dia inteiro · ${format(start)} a ${format(end)}`;
+}

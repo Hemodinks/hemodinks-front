@@ -60,6 +60,7 @@ export function AgendaEventForm({
     </div>
     <form className="stack agenda-form" onSubmit={onSubmit} noValidate aria-busy={formLoading}>
       <AgendaScheduleFields formData={formData} errors={fieldErrors} onChange={onScheduleChange}
+        onAllDayChange={value => setFormData(current => ({ ...current, isAllDay: value }))}
         onDescriptionChange={value => setFormData(current => ({ ...current, description: value }))} />
       <AgendaReminderSettings formData={formData} medicalUsers={medicalUsers} setFormData={setFormData} />
       <AgendaRecipients recipientSearch={recipientSearch} editing={Boolean(editingEventId)} formData={formData} setFormData={setFormData}

@@ -9,5 +9,7 @@ it('serializes optional filters with the authenticated token, including false st
   expect(config.url).toBe('/api/events/');
   expect(config.headers).toMatchObject({ Authorization: 'Bearer token' });
   const params = new URLSearchParams(config.params);
-  expect(Object.fromEntries(params)).toEqual({ from: '2026-09-01T00:00:00Z', to: '2026-09-30T23:59:59Z', search: 'Reunião & auditoria', userId: '99', isCompleted: 'false' });
+  expect(params.get('fromDate')).toBe(new Date('2026-09-01T00:00:00Z').toLocaleDateString('en-CA'));
+  expect(params.get('toDate')).toBe(new Date('2026-09-30T23:59:59Z').toLocaleDateString('en-CA'));
+  expect(Object.fromEntries(params)).toMatchObject({ from: '2026-09-01T00:00:00Z', to: '2026-09-30T23:59:59Z', search: 'Reunião & auditoria', userId: '99', isCompleted: 'false' });
 });
