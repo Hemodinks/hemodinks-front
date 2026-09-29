@@ -1,3 +1,4 @@
+import { formatAllDayDates } from '../../shared/utils/dateFormatters';
 import { Bell, X } from 'lucide-react';
 import type { DashboardNotification } from '../../types';
 import { Modal } from '../../shared/components/Modal';
@@ -38,7 +39,8 @@ export function NotificationsModal({ notifications, loading, error, totalCount, 
         {notifications.length ? (
           <ul className="notifications-list">
             {notifications.map((notification) => {
-              const date = toNotificationDate(notification.data);
+              const date = notification.tipo === 'EventoAgenda' && notification.allDayStartDate && notification.allDayEndDate
+                ? formatAllDayDates(notification.allDayStartDate, notification.allDayEndDate) : toNotificationDate(notification.data);
 
               return (
                 <li key={`${notification.tipo}-${notification.id}`} className={notification.dataLeitura ? 'is-read' : 'is-unread'}>

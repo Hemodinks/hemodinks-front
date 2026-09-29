@@ -88,7 +88,7 @@ export const CONTEXTUAL_FLOWS: Record<AppView, ViewFlows> = {
     title: 'Agenda e notificações',
     description: 'Cadastre compromissos e controle seus lembretes e destinatários.',
     flows: [
-      { id: 'agenda-create', title: 'Cadastrar evento', steps: ['Selecione “Novo evento”.', 'Preencha título, início e término.', 'Defina lembrete e destinatários, se necessário.', 'Selecione “Cadastrar evento”.'] },
+      { id: 'agenda-create', title: 'Cadastrar evento', steps: ['Selecione “Novo evento”.', 'Preencha título, início e término.', 'Defina lembrete e destinatários, se necessário.', 'Selecione “Criar evento”.'] },
       { id: 'agenda-manage', title: 'Gerenciar evento', steps: ['Localize o evento no calendário ou na lista.', 'Abra o evento para editar seus dados.', 'Salve, marque como concluído ou exclua o evento.'] },
     ],
   },

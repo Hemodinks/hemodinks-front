@@ -1,3 +1,8 @@
+import { registerAgendaAllDayCases } from './agenda-all-day-cases';
+import { registerAgendaViewCases } from './agenda-view-cases';
+import { registerAgendaRecipientCases } from './agenda-recipient-cases';
+import { registerAgendaMonthCases } from './agenda-month-cases';
+import { registerAgendaResponsiveCases } from './agenda-responsive-cases';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -262,9 +267,10 @@ function buildAgendaEventFromPayload(id: number, payload: Payload) {
     description: typeof payload.description === 'string' ? payload.description : null,
     start: String(payload.start ?? agendaEvent.start),
     end: String(payload.end ?? agendaEvent.end),
+    medicalUserId: typeof payload.medicalUserId === 'number' ? payload.medicalUserId : null,
     notifyMedicalProfile: Boolean(payload.notifyMedicalProfile),
     notifyUser: Boolean(payload.notifyUser),
-    reminderPeriodMinutes: Number(payload.reminderPeriodMinutes ?? agendaEvent.reminderPeriodMinutes),
+    reminderPeriodMinutes: payload.reminderPeriodMinutes == null ? null : Number(payload.reminderPeriodMinutes),
   };
 }
 
@@ -977,7 +983,13 @@ test('mantem telas criticas sem overflow horizontal no mobile', async ({ page })
 
     await loginViaUi(page, '/agenda');
     await expect(page.getByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeVisible();
-    await expect(page.locator('.agenda-calendar')).toBeVisible();
+    if (width <= 520) {
+      await expect(page.getByRole('group', { name: 'Navegação diária' })).toBeVisible();
+      await expect(page.getByLabel('Data da agenda')).toBeVisible();
+      await expect(page.locator('.agenda-calendar')).toBeHidden();
+    } else {
+      await expect(page.locator('.agenda-calendar')).toBeVisible();
+    }
     await expectNoGlobalHorizontalOverflow(page);
 
     await loginViaUi(page, '/pacientes');
@@ -1085,10 +1097,10 @@ test('cadastra evento na agenda', async ({ page }) => {
   await page.getByLabel('Hora').first().fill(toTimeInputValue(start));
   await page.getByLabel('Término').fill(toDateInputValue(end));
   await page.getByLabel('Hora').nth(1).fill(toTimeInputValue(end));
-  await page.getByRole('button', { name: 'Cadastrar evento' }).click();
+  await page.getByRole('button', { name: 'Criar evento' }).click();
 
   await expect(page.getByText('Evento cadastrado.')).toBeVisible();
-  await expect(page.getByText('Evento E2E')).toBeVisible();
+  await expect(page.locator('.agenda-event-list').getByText('Evento E2E', { exact: true })).toBeVisible();
   expect(apiState.createdEventPayload).toMatchObject({
     title: 'Evento E2E',
     description: 'Validação automatizada da agenda',
@@ -2180,3 +2192,13 @@ test('warmup: failure does not prevent the existing login flow', async ({ page }
   await expect(page.getByRole('heading', { name: 'Painel inicial', exact: true })).toBeVisible();
   expect(calls).toBe(1);
 });
+
+registerAgendaResponsiveCases({ mockApi, loginViaUi });
+
+registerAgendaMonthCases({ mockApi, loginViaUi });
+
+registerAgendaRecipientCases({ mockApi, loginViaUi });
+
+registerAgendaViewCases({ mockApi, loginViaUi });
+
+registerAgendaAllDayCases({ mockApi, loginViaUi });

@@ -930,9 +930,11 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /agenda e notificações/i }));
     expect(await screen.findByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeInTheDocument();
-    expect(await screen.findByText('Evento A')).toBeInTheDocument();
-    const eventCard = screen.getByText('Evento A').closest('article');
-    expect(eventCard).not.toBeNull();
+    expect(await screen.findByRole('button', { name: /Evento A$/ })).toBeInTheDocument();
+    const eventCards = await screen.findAllByRole('article');
+    expect(eventCards).toHaveLength(2);
+    const eventCard = eventCards.find(card => within(card).queryByText('Evento A'));
+    expect(eventCard).toBeDefined();
 
     await user.click(within(eventCard as HTMLElement).getByLabelText('Excluir'));
 
@@ -943,6 +945,7 @@ describe('App', () => {
     await user.click(within(confirmDialog).getByRole('button', { name: 'Sim' }));
 
     await waitFor(() => expect(api.deleteAgendaEvent).toHaveBeenCalledWith(101, 'jwt-token'));
+    expect(api.deleteAgendaEvent).toHaveBeenCalledTimes(1);
     expect(api.deleteAgendaEvent).not.toHaveBeenCalledWith(202, 'jwt-token');
   });
 
@@ -2232,7 +2235,11 @@ describe('App', () => {
     await user.click(within(sidebar).getByRole('button', { name: /agenda e notificações/i }));
     expect(await screen.findByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeInTheDocument();
     expect(api.getAgendaEvents).toHaveBeenCalledWith('jwt-token', expect.any(String), expect.any(String));
-    expect(api.getAgendaNotificationRecipientOptions).toHaveBeenCalledWith('jwt-token');
+    expect(api.getAgendaNotificationRecipientOptions).toHaveBeenCalledWith('jwt-token', {
+      search: '',
+      profile: 'all',
+      page: 1,
+    });
     expect(window.location.pathname).toBe('/agenda');
   });
 

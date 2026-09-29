@@ -1,3 +1,5 @@
+import { AgendaViewToolbar } from './AgendaViewToolbar';
+import { AgendaPeriodView } from './AgendaPeriodView';
 import { CalendarDays, CheckCircle2, Plus, RefreshCw } from 'lucide-react';
 import type { AuthSession } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, ToastMessage } from '../../shared/components/ui';
@@ -5,11 +7,16 @@ import { AgendaCalendarSection } from './AgendaCalendarSection';
 import { AgendaEventForm } from './AgendaEventForm';
 import { useAgendaController } from './useAgendaController';
 import './events.css';
+import './agenda-views.css';
 
 type AgendaPageProps = { session: AuthSession; isAdmin: boolean; isMedical: boolean };
 export { buildEmptyForm } from './agendaUtils';
 
-export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
+export function AgendaPage(props: AgendaPageProps) {
+  const { session } = props;
+  return <AgendaPageContent key={`${session.user.clinicaId}:${session.user.id}:${session.token}`} {...props} />;
+}
+function AgendaPageContent({ session, isAdmin, isMedical }: AgendaPageProps) {
   const agenda = useAgendaController({ session, isMedical });
   return <section className="workspace agenda-workspace" data-tour="agenda-overview">
     <DataPanel className="agenda-panel">
@@ -20,7 +27,7 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
           <Button type="button" variant="ghost" className={`agenda-section-tab ${agenda.activeSection === 'calendario' ? 'is-active' : ''}`}
             onClick={agenda.openCalendarSection} aria-pressed={agenda.activeSection === 'calendario'}><CalendarDays size={17} />Calendário</Button>
           <Button type="button" variant="ghost" className={`agenda-section-tab agenda-new-event-button ${agenda.activeSection === 'cadastro' ? 'is-active' : ''}`}
-            data-tour="agenda-new" onClick={agenda.openCadastroSection} aria-pressed={agenda.activeSection === 'cadastro'}><Plus size={17} />Novo evento</Button>
+            data-tour="agenda-new" onClick={agenda.openDraftForSelectedDate} aria-pressed={agenda.activeSection === 'cadastro'}><Plus size={17} />Novo evento</Button>
           <Button onClick={agenda.handleToday}><CalendarDays size={17} />Hoje</Button>
           <IconButton label="Atualizar agenda" onClick={() => void agenda.loadEvents()}><RefreshCw size={18} /></IconButton>
         </div>
@@ -28,17 +35,24 @@ export function AgendaPage({ session, isAdmin, isMedical }: AgendaPageProps) {
       {agenda.successMessage && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{agenda.successMessage}</ToastMessage>}
       {agenda.error && <AlertMessage type="error">{agenda.error}</AlertMessage>}
       {agenda.holidayError && <AlertMessage type="warning">{agenda.holidayError}</AlertMessage>}
-      {agenda.activeSection === 'calendario' ? <AgendaCalendarSection
+      {agenda.activeSection === 'calendario' ? <>
+        <AgendaViewToolbar {...agenda} />
+        {agenda.view === 'month' ? <AgendaCalendarSection
         visibleMonth={agenda.visibleMonth} days={agenda.days} events={agenda.events} selectedDate={agenda.selectedDate}
         selectedEvents={agenda.selectedEvents} selectedHoliday={agenda.selectedHoliday} holidayByDate={agenda.holidayByDate}
         todayKey={agenda.todayKey} loading={agenda.loading} holidayLoading={agenda.holidayLoading} isAdmin={isAdmin}
         currentUserId={session.user.id} onPreviousMonth={agenda.handlePreviousMonth} onNextMonth={agenda.handleNextMonth}
         onSelectDate={agenda.handleSelectDate} onOpenDraftForSelectedDate={agenda.openDraftForSelectedDate}
         onComplete={agenda.handleComplete} onEdit={agenda.handleEdit} onDelete={agenda.handleDelete}
-      /> : <AgendaEventForm
+      /> : <AgendaPeriodView view={agenda.view} visibleMonth={agenda.visibleMonth} selectedDate={agenda.selectedDate}
+        todayKey={agenda.todayKey} events={agenda.events} loading={agenda.loading} isAdmin={isAdmin} currentUserId={session.user.id}
+        onSelectDate={agenda.handleSelectDate} onPrevious={agenda.handlePreviousMonth} onNext={agenda.handleNextMonth}
+        onComplete={agenda.handleComplete} onEdit={agenda.handleEdit} onDelete={agenda.handleDelete} />}
+      </> : <AgendaEventForm
         editingEventId={agenda.editingEventId} formData={agenda.formData} formLoading={agenda.formLoading}
         medicalUsers={agenda.medicalUsers} notificationRecipientOptions={agenda.notificationRecipientOptions}
-        notificationRecipientsLoading={agenda.notificationRecipientsLoading} notificationRecipientsError={agenda.notificationRecipientsError}
+        notificationRecipientsLoading={agenda.notificationRecipientsLoading} notificationRecipientsError={agenda.notificationRecipientsError} recipientSearch={agenda.recipientSearch}
+        fieldErrors={agenda.fieldErrors} onScheduleChange={agenda.changeScheduleField}
         setFormData={agenda.setFormData} onSubmit={agenda.handleSubmit} onOpenCalendarSection={agenda.openCalendarSection}
         onResetForm={() => agenda.resetForm()} onToggleNotificationUser={agenda.toggleNotificationUser}
         onToggleNotificationGroup={agenda.toggleNotificationGroup}
