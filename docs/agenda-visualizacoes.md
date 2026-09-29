@@ -30,4 +30,12 @@ Frontend: AgendaPage, AgendaCalendarSection, AgendaEventCard, AgendaPeriodView, 
 
 Novos testes de API cobrem filtros combinados, período, validações e isolamento por clínica/perfil. Frontend cobre agrupamento, virada de mês/ano, eventos entre dias, permissões, serialização, cache e respostas atrasadas. E2E cobre Mês/Semana/Lista, busca, filtros, contagem de requests, navegação, data do cadastro, acessibilidade e ausência de overflow em desktop/mobile.
 
-Resultados finais serão registrados após a execução completa.
+Resultados já concluídos:
+
+- `npm test -- --maxWorkers=1`: 398 testes aprovados em 69 arquivos.
+- `dotnet test HemodinksAPI.Tests/HemodinksAPI.Tests.csproj --filter FullyQualifiedName~Agenda --no-restore --verbosity quiet`: 39 aprovados.
+- API completa (`--no-build --no-restore`): 478 aprovados, 12 ignorados e 2 falhas de ambiente. `EventReminderProcessorConcurrencyTests` e `LegacyFinancialBackfillMigrationTests` falham durante `MigrateAsync`, pois a instância LocalDB não tem SQL Server Full-Text Search. Ambos foram repetidos isoladamente com a mesma causa. A exigência vem da migration existente `20260810185452_Schema_AddFullTextSearchIndexes`; a nova busca da Agenda não utiliza Full-Text Search. Reexecutar estes testes em SQL Server com o recurso instalado.
+- Build TypeScript/Vite e orçamento de bundles aprovados. Mantido o aviso preexistente de importação estática/dinâmica de `observability.ts`.
+- Auditoria de arquitetura: 284 arquivos, sem violações.
+- E2E das novas visões: 2 aprovados (1440 e 390 px), incluindo acessibilidade e contagem de requisições.
+- `npm run test:e2e -- --workers=2 --reporter=line`: 86 aprovados, 23 ignorados, nenhuma falha (7,3 minutos). Os ignorados dependem da fixture de API real ou das opções de gravação de tutoriais. Inclui cadastro desktop/tablet/mobile, calendário mensal, destinatários, novas visões, filtros, busca, navegação, acessibilidade e contagem de requests.
