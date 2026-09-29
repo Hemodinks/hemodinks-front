@@ -129,3 +129,22 @@ it('persists the existing periodic reminder semantics through creation and editi
   await act(() => result.current.handleSubmit(submit()));
   expect(services.updateAgendaEvent).toHaveBeenCalledWith(1, expect.objectContaining({ notifyUser: false, notifyMedicalProfile: false, medicalUserId: null, reminderPeriodMinutes: null }), 'token');
 });
+
+it('creates and edits all-day events with civil dates and the persisted timezone', async () => {
+  const { result } = await setup();
+  const allDay = { ...saved, isAllDay: true, allDayStartDate: '2026-09-26', allDayEndDate: '2026-09-28', timeZoneId: 'Pacific/Kiritimati', start: '2026-09-25T10:00:00Z', end: '2026-09-28T10:00:00Z' };
+  vi.mocked(services.createAgendaEvent).mockResolvedValue(allDay);
+  vi.mocked(services.updateAgendaEvent).mockResolvedValue(allDay);
+  act(() => result.current.setFormData({ ...buildEmptyForm('2026-09-26'), title: 'Evento', isAllDay: true, timeZoneId: 'Pacific/Kiritimati', endDate: '2026-09-28', startTime: '', endTime: '' }));
+  act(() => result.current.changeScheduleField('startDate', '2026-09-26'));
+  expect(result.current.formData.endDate).toBe('2026-09-28');
+  await act(() => result.current.handleSubmit(submit()));
+  const payload = vi.mocked(services.createAgendaEvent).mock.calls[0][0];
+  expect(payload).toMatchObject({ isAllDay: true, allDayStartDate: '2026-09-26', allDayEndDate: '2026-09-28', timeZoneId: 'Pacific/Kiritimati' });
+  expect(payload.start).toBeUndefined(); expect(payload.end).toBeUndefined();
+  expect(result.current.selectedDate).toBe('2026-09-26');
+  act(() => result.current.handleEdit(allDay));
+  expect(result.current.formData).toMatchObject({ isAllDay: true, startDate: '2026-09-26', endDate: '2026-09-28', timeZoneId: 'Pacific/Kiritimati' });
+  await act(() => result.current.handleSubmit(submit()));
+  expect(services.updateAgendaEvent).toHaveBeenCalledWith(1, expect.objectContaining({ isAllDay: true, allDayStartDate: '2026-09-26', allDayEndDate: '2026-09-28', timeZoneId: 'Pacific/Kiritimati' }), 'token');
+});

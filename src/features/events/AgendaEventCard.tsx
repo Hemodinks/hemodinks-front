@@ -2,7 +2,7 @@ import { Bell, Check, Clock, Pencil, Trash2 } from 'lucide-react';
 import type { AgendaEvent } from '../../types';
 import { IconButton } from '../../shared/components/ui';
 import { eventTime } from './agendaMonth';
-import { formatDateTime, toDateKey } from './agendaUtils';
+import { formatDateTime, toDateKey, allDayEventLabel } from './agendaUtils';
 
 export type AgendaEventActions = {
   isAdmin: boolean; currentUserId: number;
@@ -17,7 +17,7 @@ export function AgendaEventCard({ agendaEvent, isAdmin, currentUserId, onComplet
       <div className="agenda-event-main">
         <span className="agenda-event-time">
           <Clock size={15} />
-          {toDateKey(new Date(agendaEvent.start)) === toDateKey(new Date(agendaEvent.end)) ? `${eventTime(agendaEvent.start)} - ${eventTime(agendaEvent.end)}` : `${formatDateTime(agendaEvent.start)} - ${formatDateTime(agendaEvent.end)}`}
+          {agendaEvent.isAllDay ? allDayEventLabel(agendaEvent) : toDateKey(new Date(agendaEvent.start)) === toDateKey(new Date(agendaEvent.end)) ? `${eventTime(agendaEvent.start)} - ${eventTime(agendaEvent.end)}` : `${formatDateTime(agendaEvent.start)} - ${formatDateTime(agendaEvent.end)}`}
         </span>
         <strong>{agendaEvent.title}</strong>
         {agendaEvent.userName && <span className="agenda-event-owner">Responsável: {agendaEvent.userName}</span>}

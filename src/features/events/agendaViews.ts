@@ -1,5 +1,5 @@
 import type { AgendaEvent } from '../../types';
-import { fromDateKey, monthGrid, toDateKey } from './agendaUtils';
+import { fromDateKey, monthGrid, toDateKey, eventStartDate, eventEndDate } from './agendaUtils';
 
 export type AgendaView = 'month' | 'week' | 'list';
 export function weekDays(dateKey: string) {
@@ -16,14 +16,16 @@ export function agendaRange(view: AgendaView, month: Date, selectedDate: string)
   return { from: days[0].toISOString(), to: last.toISOString() };
 }
 export function eventsInRange(events: AgendaEvent[], from: string, to: string) {
-  return events.filter(event => Date.parse(event.end) >= Date.parse(from) && Date.parse(event.start) <= Date.parse(to));
+  return events.filter(event => event.isAllDay
+    ? eventEndDate(event) >= toDateKey(new Date(from)) && eventStartDate(event) <= toDateKey(new Date(to))
+    : Date.parse(event.end) >= Date.parse(from) && Date.parse(event.start) <= Date.parse(to));
 }
 export function listEventGroups(events: AgendaEvent[], firstDate: string, today: string) {
   const tomorrow = fromDateKey(today); tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowKey = toDateKey(tomorrow);
   const groups = new Map<string, AgendaEvent[]>();
   [...events].sort((a, b) => Date.parse(a.start) - Date.parse(b.start) || a.id - b.id).forEach(event => {
-    const start = toDateKey(new Date(event.start));
+    const start = eventStartDate(event);
     const day = start < firstDate ? firstDate : start;
     groups.set(day, [...(groups.get(day) ?? []), event]);
   });

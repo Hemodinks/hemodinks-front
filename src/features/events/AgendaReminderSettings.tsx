@@ -37,6 +37,7 @@ export function AgendaReminderSettings({ formData, medicalUsers, setFormData }: 
     {(formData.notifyUser || formData.notifyMedicalProfile) && (
       <div className="agenda-reminder-details">
       <p><strong>Início dos lembretes: 2 dias antes do evento.</strong> Se essa data já passou, o envio começa no próximo processamento. Os lembretes se repetem até o evento ser concluído.</p>
+      {formData.isAllDay && <p>Para dia inteiro, o início é o primeiro instante válido da data no fuso {formData.timeZoneId}. A antecedência continua sendo de 48 horas.</p>}
       {!formData.notifyUser && <p>Você não receberá lembretes. A repetição abaixo continua ativa para os médicos escolhidos.</p>}
       <SelectField
         label="Repetir lembrete"

@@ -1,7 +1,10 @@
+import { formatAllDayDates } from '../../shared/utils/dateFormatters';
 import { parseAgendaDateTime } from './agendaDateTime';
 import type { AgendaEvent, PublicHoliday } from '../../types';
 
 export type AgendaFormData = {
+  isAllDay: boolean;
+  timeZoneId: string;
   title: string;
   description: string;
   startDate: string;
@@ -69,6 +72,7 @@ export function buildEmptyForm(
   const end = new Date(start.getTime() + 60 * 60 * 1000);
 
   return {
+    isAllDay: false, timeZoneId: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     title: '',
     description: '',
     startDate: toDateKey(start),
@@ -99,8 +103,8 @@ export function monthGrid(monthDate: Date) {
 }
 
 export function eventTouchesDate(event: AgendaEvent, dateKey: string) {
-  const startKey = toDateKey(new Date(event.start));
-  const endKey = toDateKey(new Date(event.end));
+  const startKey = eventStartDate(event);
+  const endKey = eventEndDate(event);
   return startKey <= dateKey && endKey >= dateKey;
 }
 
@@ -119,4 +123,14 @@ export function getHolidayTitle(holiday?: PublicHoliday) {
   }
 
   return holiday.localName || holiday.name;
+}
+
+export function eventStartDate(event: AgendaEvent) {
+  return event.isAllDay && event.allDayStartDate ? event.allDayStartDate : toDateKey(new Date(event.start));
+}
+export function eventEndDate(event: AgendaEvent) {
+  return event.isAllDay && event.allDayEndDate ? event.allDayEndDate : toDateKey(new Date(event.end));
+}
+export function allDayEventLabel(event: AgendaEvent) {
+  return formatAllDayDates(eventStartDate(event), eventEndDate(event));
 }

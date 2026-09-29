@@ -1,3 +1,4 @@
+import { registerAgendaAllDayCases } from './agenda-all-day-cases';
 import { registerAgendaViewCases } from './agenda-view-cases';
 import { registerAgendaRecipientCases } from './agenda-recipient-cases';
 import { registerAgendaMonthCases } from './agenda-month-cases';
@@ -2199,3 +2200,5 @@ registerAgendaMonthCases({ mockApi, loginViaUi });
 registerAgendaRecipientCases({ mockApi, loginViaUi });
 
 registerAgendaViewCases({ mockApi, loginViaUi });
+
+registerAgendaAllDayCases({ mockApi, loginViaUi });

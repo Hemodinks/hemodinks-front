@@ -12,7 +12,7 @@ import { getErrorMessage } from '../../shared/utils/formatters';
 import type { AgendaEvent, AgendaEventPayload, AuthSession, PublicHoliday } from '../../types';
 import {
   type AgendaFormData, type AgendaSection, buildEmptyForm, composeDateTime, defaultReminderMinutes,
-  eventTouchesDate, fromDateKey, monthGrid, toDateKey, toTimeInput,
+  eventTouchesDate, eventStartDate, eventEndDate, fromDateKey, monthGrid, toDateKey, toTimeInput,
 } from './agendaUtils';
 
 import { agendaServerFieldErrors, suggestAgendaEnd, validateAgendaSchedule, type AgendaFieldErrors, type AgendaScheduleField } from './agendaDateTime';
@@ -58,7 +58,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     const canSuggest = !editingEventId && !manualEnd.current && (field === 'startDate' || field === 'startTime');
     setFormData(current => {
       const next = { ...current, [field]: value };
-      return canSuggest ? { ...next, ...suggestAgendaEnd(next.startDate, next.startTime) } : next;
+      return canSuggest && !current.isAllDay ? { ...next, ...suggestAgendaEnd(next.startDate, next.startTime) } : next;
     });
   };
 
@@ -104,7 +104,9 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     const reminderPeriod = formData.notifyUser || formData.notifyMedicalProfile ? Number(formData.reminderPeriodMinutes || defaultReminderMinutes) : null;
     return {
       medicalUserId: formData.notifyMedicalProfile && formData.medicalUserId ? Number(formData.medicalUserId) : null,
-      title: formData.title.trim(), description: formData.description.trim() || null, start: start.toISOString(), end: end.toISOString(),
+      title: formData.title.trim(), description: formData.description.trim() || null,
+      ...(formData.isAllDay ? { isAllDay: true, allDayStartDate: formData.startDate, allDayEndDate: formData.endDate, timeZoneId: formData.timeZoneId }
+        : { isAllDay: false, start: start.toISOString(), end: end.toISOString() }),
       notifyMedicalProfile: formData.notifyMedicalProfile, notifyUser: formData.notifyUser, reminderPeriodMinutes: reminderPeriod,
       notificationMessage: formData.notificationMessage.trim() || null, notifyAllAllowedRecipients: formData.notifyAllAllowedRecipients,
       notificationUserIds: formData.notificationUserIds, notificationGroupIds: formData.notificationGroupIds,
@@ -134,7 +136,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     try {
       const savedEvent = editingEventId ? await updateAgendaEvent(editingEventId, buildPayload(), session.token) : await createAgendaEvent(buildPayload(), session.token);
       invalidateEvents(); setSuccessMessage(editingEventId ? 'Evento atualizado.' : 'Evento cadastrado.');
-      const savedDate = new Date(savedEvent.start); const savedDateKey = toDateKey(savedDate);
+      const savedDateKey = eventStartDate(savedEvent); const savedDate = fromDateKey(savedDateKey);
       setSelectedDate(savedDateKey); setVisibleMonth(new Date(savedDate.getFullYear(), savedDate.getMonth(), 1)); resetForm(savedDateKey);
       setActiveSection('calendario');
     } catch (caughtError) {
@@ -146,10 +148,10 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
   };
   const handleEdit = (agendaEvent: AgendaEvent) => {
     manualEnd.current = true; setValidationAttempted(false); setServerFieldErrors({});
-    const start = new Date(agendaEvent.start); const end = new Date(agendaEvent.end); const startDate = toDateKey(start);
-    setActiveSection('cadastro'); setSelectedDate(startDate); setVisibleMonth(new Date(start.getFullYear(), start.getMonth(), 1)); setEditingEventId(agendaEvent.id);
-    setFormData({ title: agendaEvent.title, description: agendaEvent.description ?? '', startDate, startTime: toTimeInput(start), endDate: toDateKey(end),
-      endTime: toTimeInput(end), notifyMedicalProfile: agendaEvent.notifyMedicalProfile,
+    const start = new Date(agendaEvent.start); const end = new Date(agendaEvent.end); const startDate = eventStartDate(agendaEvent);
+    setActiveSection('cadastro'); setSelectedDate(startDate); setVisibleMonth(fromDateKey(startDate)); setEditingEventId(agendaEvent.id);
+    setFormData({ isAllDay: Boolean(agendaEvent.isAllDay), timeZoneId: agendaEvent.timeZoneId || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', title: agendaEvent.title, description: agendaEvent.description ?? '', startDate, startTime: agendaEvent.isAllDay ? '09:00' : toTimeInput(start), endDate: eventEndDate(agendaEvent),
+      endTime: agendaEvent.isAllDay ? '10:00' : toTimeInput(end), notifyMedicalProfile: agendaEvent.notifyMedicalProfile,
       medicalUserId: agendaEvent.medicalUserId ? String(agendaEvent.medicalUserId) : '', notifyUser: agendaEvent.notifyUser,
       reminderPeriodMinutes: String(agendaEvent.reminderPeriodMinutes ?? defaultReminderMinutes), notificationMessage: '',
       notifyAllAllowedRecipients: false, notificationUserIds: [], notificationGroupIds: [] });
