@@ -183,3 +183,25 @@ describe('login state isolation', () => {
     expect(result.current.loginError).toContain('prazo');
   });
 });
+
+
+describe('homologation login preparation', () => {
+  it('never sends credentials while warmup is pending and honors cancellation', async () => {
+    vi.stubEnv('VITE_LOGIN_PREPARATION_ENABLED', 'true');
+    const { apiClient } = await import('../../services/api');
+    let finish!: (value: unknown) => void;
+    const get = vi.spyOn(apiClient, 'get').mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    try {
+      const hook = setup();
+      let pending!: Promise<void>;
+      act(() => { pending = hook.result.current.handleLogin(event); });
+      expect(hook.result.current.loginPreparing).toBe(true);
+      expect(resolveLoginClinics).not.toHaveBeenCalled();
+      act(() => hook.result.current.cancelPendingLogin());
+      await act(async () => { finish({ status: 204 }); await pending; });
+      expect(resolveLoginClinics).not.toHaveBeenCalled();
+      expect(hook.persistSession).not.toHaveBeenCalled();
+      expect(hook.result.current.loginLoading).toBe(false);
+    } finally { get.mockRestore(); vi.unstubAllEnvs(); }
+  });
+});
