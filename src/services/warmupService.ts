@@ -1,11 +1,17 @@
 import { apiClient } from './api';
+import { isLoginPreparationEnabled, warmLoginApi } from './loginPreparationService';
 
 const SESSION_KEY = 'hemodinks-warmed';
 let attempted = false;
 
 /** One best-effort attempt per tab session, independent of auth and clinic context. */
 export async function warmupApi(): Promise<void> {
-  if (import.meta.env.VITE_WARMUP_ENABLED === 'false' || attempted) return;
+  if (import.meta.env.VITE_WARMUP_ENABLED === 'false') return;
+  if (isLoginPreparationEnabled()) {
+    try { await warmLoginApi(); } catch { /* Login offers bounded retry on demand. */ }
+    return;
+  }
+  if (attempted) return;
   attempted = true;
   try {
     if (sessionStorage.getItem(SESSION_KEY)) return;

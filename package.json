@@ -17,6 +17,7 @@
     "audit:lighthouse": "npm run build && lhci autorun --config=./lighthouserc.cjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:homologation": "playwright test --config=playwright.homologation.config.ts",
     "record:tutorials": "playwright test --config=playwright.tutorials.config.ts",
     "record:tutorials:reports": "playwright test --config=playwright.tutorials.config.ts --project=tutorial-reports",
     "record:tutorials:reports:local": "playwright test --config=playwright.tutorials.local.config.ts",

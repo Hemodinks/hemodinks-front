@@ -1,3 +1,4 @@
+import { isLoginPreparationEnabled, prepareLoginApi } from '../../services/loginPreparationService';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import {
   authenticate,
@@ -28,6 +29,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   const [loginError, setLoginError] = useState('');
   const [loginInfo, setLoginInfo] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [loginPreparing, setLoginPreparing] = useState(false);
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [openDashboardAfterLogin, setOpenDashboardAfterLogin] = useState(false);
   const [teamChallenge, setTeamChallenge] = useState<TeamLoginChallenge | null>(null);
@@ -60,6 +62,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     activeRequest.current = null;
     requestVersion.current++;
     pending.current = false;
+    setLoginPreparing(false);
     setLoginLoading(false);
     setResetPasswordLoading(false);
   };
@@ -144,6 +147,12 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     const controller = new AbortController();
     activeRequest.current = controller;
     try {
+      if (isLoginPreparationEnabled()) {
+        setLoginPreparing(true);
+        await prepareLoginApi(controller.signal);
+        if (version !== requestVersion.current || controller.signal.aborted) return;
+        setLoginPreparing(false);
+      }
       const context = await resolveLoginClinics(loginEmail.trim(), loginPassword, controller.signal);
       if (version !== requestVersion.current) return;
 
@@ -170,6 +179,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
       if (version === requestVersion.current) {
         activeRequest.current = null;
         pending.current = false;
+        setLoginPreparing(false);
         setLoginLoading(false);
       }
     }
@@ -205,6 +215,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
       if (version === requestVersion.current) {
         activeRequest.current = null;
         pending.current = false;
+        setLoginPreparing(false);
         setLoginLoading(false);
       }
     }
@@ -266,6 +277,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
         activeRequest.current = null;
         pending.current = false;
         setTeamPin('');
+        setLoginPreparing(false);
         setLoginLoading(false);
       }
     }
@@ -359,6 +371,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
     loginError,
     loginInfo,
     loginLoading,
+    loginPreparing,
     resetPasswordLoading,
     openDashboardAfterLogin,
     teamChallenge,

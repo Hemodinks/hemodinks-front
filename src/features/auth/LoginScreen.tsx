@@ -27,6 +27,7 @@ type LoginScreenProps = {
   loginError: string;
   loginInfo: string;
   loginLoading: boolean;
+  loginPreparing?: boolean;
   resetPasswordLoading: boolean;
   onThemeToggle: () => void;
   onLoginEmailChange: (value: string) => void;
@@ -50,6 +51,7 @@ export function LoginScreen({
   loginError,
   loginInfo,
   loginLoading,
+  loginPreparing = false,
   resetPasswordLoading,
   onThemeToggle,
   onLoginEmailChange,
@@ -62,7 +64,8 @@ export function LoginScreen({
 }: LoginScreenProps) {
   return (
     <main className="auth-screen">
-      <LoginLoadingOverlay active={loginLoading} onCancel={onCancelLogin} />
+      <LoginLoadingOverlay active={loginLoading} onCancel={onCancelLogin}
+        stage={loginPreparing ? "Preparando ambiente de homologação…" : undefined} />
       <LoadingOverlay active={isBusy && !loginLoading} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
