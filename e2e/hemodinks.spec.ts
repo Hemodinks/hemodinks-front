@@ -2202,3 +2202,45 @@ registerAgendaRecipientCases({ mockApi, loginViaUi });
 registerAgendaViewCases({ mockApi, loginViaUi });
 
 registerAgendaAllDayCases({ mockApi, loginViaUi });
+
+
+test('homologation preparation: waits before credentials and cancellation prevents login', async ({ page }) => {
+  test.skip(process.env.VITE_LOGIN_PREPARATION_ENABLED !== 'true');
+  await mockApi(page);
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/warmup', async route => { await held; await route.fulfill({ status: 204 }).catch(() => {}); });
+  let loginRequests = 0;
+  page.on('request', request => { if (request.url().includes('/login-context')) loginRequests++; });
+  await page.goto('/');
+  await page.getByLabel('Email', { exact: true }).fill(session.user.email);
+  await page.locator('#login-password').fill(LOGIN_PASSWORD);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page.getByText('Preparando ambiente de homologação…')).toBeVisible();
+  expect(loginRequests).toBe(0);
+  await page.getByRole('button', { name: 'Cancelar tentativa' }).click();
+  release();
+  await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeEnabled();
+  expect(loginRequests).toBe(0);
+  await expect(page.locator('#login-password')).toHaveValue('');
+});
+
+test('homologation preparation: failure allows a fresh attempt and successful login', async ({ page }) => {
+  test.skip(process.env.VITE_LOGIN_PREPARATION_ENABLED !== 'true');
+  await mockApi(page);
+  let available = false;
+  await page.route('**/api/warmup', route => route.fulfill({ status: available ? 204 : 403 }));
+  let loginRequests = 0;
+  page.on('request', request => { if (request.url().includes('/login-context')) loginRequests++; });
+  await page.goto('/');
+  await page.getByLabel('Email', { exact: true }).fill(session.user.email);
+  await page.locator('#login-password').fill(LOGIN_PASSWORD);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page.getByText(/Nenhuma credencial foi enviada/)).toBeVisible();
+  expect(loginRequests).toBe(0);
+  available = true;
+  await page.locator('#login-password').fill(LOGIN_PASSWORD);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect.poll(() => loginRequests).toBe(1);
+  await expect(page.getByRole('heading', { name: 'Acesso ao sistema' })).not.toBeVisible();
+});
