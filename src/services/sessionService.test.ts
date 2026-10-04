@@ -1,3 +1,4 @@
+import { restoreSession } from './sessionService';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from './api';
 import { renewSession } from './sessionService';
@@ -31,4 +32,31 @@ describe('refresh transport', () => {
     vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { token: token(99), idleTimeoutMinutes: 30 } });
     await expect(renewSession(token(), true)).rejects.toMatchObject({ status: 401 });
   });
+  it('does not retry the server absolute deadline as a cookie rotation conflict', async () => {
+    const post = vi.spyOn(apiClient, 'post').mockRejectedValue({ isAxiosError: true,
+      response: { status: 401, data: { code: 'session_absolute_expired' } } });
+    await expect(renewSession(token(), true)).rejects.toMatchObject({ status: 401,
+      code: 'session_absolute_expired', message: 'Sua sessão atingiu o tempo máximo. Entre novamente.' });
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+});
+
+it('keeps infrastructure failure separate from session expiration', async () => {
+  vi.spyOn(apiClient, 'post').mockRejectedValue({ isAxiosError: true,
+    response: { status: 503, data: { code: 'session_absolute_expired' } } });
+  await expect(renewSession(token(), true)).rejects.toMatchObject({ status: 503,
+    message: 'Não foi possível renovar a sessão.' });
+});
+
+it('does not loop on a network failure during restoration', async () => {
+  const post = vi.spyOn(apiClient, 'post').mockRejectedValue({ isAxiosError: true, code: 'ERR_NETWORK' });
+  await expect(restoreSession()).rejects.toMatchObject({ code: 'ERR_NETWORK' });
+  expect(post).toHaveBeenCalledTimes(1);
+});
+it('bounds restoration conflicts and never sends client identity', async () => {
+  const post = vi.spyOn(apiClient, 'post').mockRejectedValue({ isAxiosError: true, response: { status: 409 } });
+  await expect(restoreSession()).rejects.toBeDefined();
+  expect(post).toHaveBeenCalledTimes(3);
+  expect(post).toHaveBeenCalledWith('/api/session/restaurar', {}, expect.objectContaining({ withCredentials: true, headers: { 'X-Session-Refresh': '1' } }));
 });

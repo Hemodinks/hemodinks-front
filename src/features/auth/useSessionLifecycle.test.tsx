@@ -117,4 +117,55 @@ describe('active session renewal', () => {
     expect(hook.expired).toHaveBeenCalledTimes(1);
     hook.unmount();
   });
+  it('reports the absolute deadline once and stops renewal loops', async () => {
+    vi.mocked(renewSession).mockRejectedValue(new ApiError('Expired', 401, 'session_absolute_expired'));
+    const hook = mount(session(token(1)));
+    await act(async () => {});
+    expect(hook.expired).toHaveBeenCalledWith('Sua sessão atingiu o tempo máximo. Entre novamente.');
+    await act(async () => { await vi.advanceTimersByTimeAsync(180_000); fireEvent.keyDown(window, { key: 'a' }); });
+    expect(hook.expired).toHaveBeenCalledTimes(1);
+    expect(renewSession).toHaveBeenCalledTimes(1);
+    hook.unmount();
+  });
+
+  it('uses the normal expiry cleanup for an absolute rejection of a protected request', async () => {
+    const hook = mount();
+    await act(async () => {});
+    act(() => window.dispatchEvent(new CustomEvent('hemodinks:auth-expired', { detail: {
+      token: hook.result.current.token, code: 'session_absolute_expired' } })));
+    expect(hook.expired).toHaveBeenCalledWith('Sua sessão atingiu o tempo máximo. Entre novamente.');
+    hook.unmount();
+  });
+
+  it('does not describe an infrastructure failure as session expiration', async () => {
+    vi.mocked(renewSession).mockRejectedValue(new ApiError('Unavailable', 503));
+    const hook = mount(session(token(1)));
+    await act(async () => {});
+    expect(hook.expired).not.toHaveBeenCalled();
+    hook.unmount();
+  });
+
+  it('shares absolute expiry across clinics of the same session without clearing a newer session', async () => {
+    class Channel {
+      static instances: Channel[] = [];
+      onmessage: ((event: { data: unknown }) => void) | null = null;
+      postMessage = vi.fn(); close = vi.fn();
+      constructor() { Channel.instances.push(this); }
+    }
+    vi.stubGlobal('BroadcastChannel', Channel);
+    try {
+      const hook = mount();
+      await act(async () => {});
+      const channel = Channel.instances[0];
+      act(() => channel.onmessage?.({ data: { windowIdentity: JSON.stringify(['another-session', 1]),
+        expiredCode: 'session_absolute_expired' } }));
+      expect(hook.expired).not.toHaveBeenCalled();
+      act(() => channel.onmessage?.({ data: { windowIdentity: JSON.stringify(['session-a', 1]),
+        expiredCode: 'session_absolute_expired' } }));
+      expect(hook.expired).toHaveBeenCalledWith('Sua sessão atingiu o tempo máximo. Entre novamente.');
+      expect(channel.postMessage).not.toHaveBeenCalled();
+      hook.unmount();
+    } finally { vi.unstubAllGlobals(); }
+  });
+
 });

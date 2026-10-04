@@ -1,3 +1,6 @@
+import { restoreSession } from './services/sessionService';
+import { toLoginResponse } from './test/appTestData';
+vi.mock('./services/sessionService', async (importOriginal) => ({ ...(await importOriginal<object>()), restoreSession: vi.fn().mockResolvedValue(null) }));
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
@@ -149,6 +152,7 @@ describe('App', () => {
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
     vi.clearAllMocks();
+    vi.mocked(restoreSession).mockResolvedValue(null);
     vi.mocked(api.resolveLoginClinics).mockResolvedValue({
       clinicas: [{ clinicaId: 1, nome: 'Hemodinks', slug: 'hemodinks' }],
     });
@@ -263,7 +267,7 @@ describe('App', () => {
     });
   });
 
-  it('faz login, salva a sessao JWT e carrega usuarios', async () => {
+  it('faz login, mantém a sessão em memória e carrega usuários', async () => {
     const user = userEvent.setup();
     vi.mocked(api.authenticate).mockResolvedValue({
       id: 99,
@@ -284,7 +288,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('GM Tech Solutions')).toBeInTheDocument();
+    expect(await screen.findByText('GM Tech Solutions')).toBeInTheDocument();
 
     await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
@@ -330,8 +334,7 @@ describe('App', () => {
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ana Hemodinks' })).not.toBeInTheDocument());
 
-    const storedSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
-    expect(storedSession.token).toBe('jwt-token');
+    expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
   }, 15_000);
 
@@ -487,7 +490,7 @@ describe('App', () => {
     window.history.pushState({}, '', path);
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: title, level: 1 })).toBeVisible();
     expect(screen.getByText(/Última atualização:/).closest('p')).toHaveTextContent(version);
     expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
@@ -499,7 +502,7 @@ describe('App', () => {
     '/termos-de-uso',
     '/politica-de-privacidade',
   ])('permite concluir o aceite pendente dentro da página jurídica %s', async (path) => {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
+    vi.mocked(restoreSession).mockResolvedValue(toLoginResponse(mockSession()));
     window.history.pushState({}, '', path);
     vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue(pendingLegalAcceptance);
     const user = userEvent.setup();
@@ -510,7 +513,9 @@ describe('App', () => {
     const submit = screen.getByRole('button', { name: 'Aceitar e continuar' });
     expect(submit).toBeDisabled();
 
+    await waitFor(() => expect(checkbox).toBeEnabled());
     await user.click(checkbox);
+    await waitFor(() => expect(submit).toBeEnabled());
     await user.click(submit);
 
     expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledWith('jwt-token', '1.1', '1.1');
@@ -594,11 +599,11 @@ describe('App', () => {
     expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledTimes(1);
   });
 
-  it('mostra o login imediatamente sem consultar clínicas nem preparar a API', async () => {
+  it('mostra o login após verificar a sessão sem consultar clínicas nem preparar a API', async () => {
     vi.mocked(api.listPublicClinics).mockReturnValue(new Promise(() => {}));
     render(<App />);
 
-    expect(screen.getByLabelText('Email')).toBeEnabled();
+    expect(await screen.findByLabelText('Email')).toBeEnabled();
     expect(screen.getByLabelText('Senha')).toBeEnabled();
     expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -607,8 +612,8 @@ describe('App', () => {
     expect(api.authenticate).not.toHaveBeenCalled();
   });
 
-  it('restaura a sessao salva na aba ao recarregar a aplicacao', async () => {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
+  it('restaura a sessao validada pelo servidor ao recarregar a aplicacao', async () => {
+    vi.mocked(restoreSession).mockResolvedValue(toLoginResponse(mockSession()));
 
     render(<App />);
 
@@ -1286,7 +1291,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: 'Redefinir senha' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Redefinir senha' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument();
 
@@ -1306,7 +1311,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: 'Redefinir senha' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Redefinir senha' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /voltar ao login/i }));
 

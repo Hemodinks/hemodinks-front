@@ -1,3 +1,4 @@
+import { advanceSessionEpoch } from './sessionEpoch';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -107,7 +108,7 @@ describe('services api client', () => {
       withCredentials: true,
       method: 'POST',
       data: { email: 'gmarcone@gmail.com', senha: 'test-password' },
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'X-Session-Refresh': '1', 'Content-Type': 'application/json' },
     });
   });
 
@@ -132,7 +133,7 @@ describe('services api client', () => {
       method: 'POST',
       data: { email: 'gmarcone@gmail.com', senha: 'test-password' },
       headers: {
-        'Content-Type': 'application/json',
+        'X-Session-Refresh': '1', 'Content-Type': 'application/json',
         'X-Clinica-Slug': 'clinica-alfa',
       },
     });
@@ -765,4 +766,14 @@ describe('services api client', () => {
     expect(requestSpy).toHaveBeenCalledWith(expect.objectContaining({ signal: controller.signal, timeout: 10_000 }));
   });
 
+});
+
+it('discards private responses arriving after logout or a clinic change', async () => {
+  let complete!: (value: AxiosResponse<unknown>) => void;
+  vi.spyOn(apiClient, 'request').mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+  const pending = get('/api/pacientes', 'test-bearer');
+  const assertion = expect(pending).rejects.toMatchObject({ status: 409 });
+  advanceSessionEpoch();
+  complete(axiosResponse({ name: 'private patient' }));
+  await assertion;
 });
