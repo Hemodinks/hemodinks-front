@@ -1,3 +1,4 @@
+import { withSessionLock } from './sessionLock';
 import type { LoginResponse } from "../types";
 import { post } from "./api";
 
@@ -36,7 +37,7 @@ export function authenticate(
   clinicaSlug?: string,
   signal?: AbortSignal,
 ) {
-  return post<LoginResponse>(
+  return withSessionLock(() => post<LoginResponse>(
     "/api/users/authenticate",
     { email, senha },
     undefined,
@@ -44,9 +45,9 @@ export function authenticate(
       timeout: 60_000,
       withCredentials: true,
       ...(signal ? { signal } : {}),
-      headers: clinicaSlug ? { "X-Clinica-Slug": clinicaSlug } : undefined,
+      headers: { "X-Session-Refresh": "1", ...(clinicaSlug ? { "X-Clinica-Slug": clinicaSlug } : {}) },
     },
-  );
+  ));
 }
 
 export function identifyTeamOperator(
@@ -56,16 +57,17 @@ export function identifyTeamOperator(
   clinicaSlug?: string,
   signal?: AbortSignal,
 ) {
-  return post<LoginResponse>(
+  return withSessionLock(() => post<LoginResponse>(
     "/api/equipe-auth/identificar",
     { token, operadorId, pin },
     undefined,
     {
       timeout: 60_000,
+      withCredentials: true,
       ...(signal ? { signal } : {}),
-      headers: clinicaSlug ? { "X-Clinica-Slug": clinicaSlug } : undefined,
+      headers: { "X-Session-Refresh": "1", ...(clinicaSlug ? { "X-Clinica-Slug": clinicaSlug } : {}) },
     },
-  );
+  ));
 }
 
 export function resetPassword(email: string, clinicaSlug?: string) {

@@ -53,12 +53,7 @@ const traceExporterUrl = buildTraceExporterUrl();
 const runtimeConfig = {
   enabled: Boolean(traceExporterUrl),
   exporterEndpoint: traceExporterUrl,
-  exporterHeaders: getFirstNonEmpty(
-    process.env.VITE_OTEL_EXPORTER_OTLP_TRACES_HEADERS,
-    process.env.OTEL_EXPORTER_OTLP_TRACES_HEADERS,
-    process.env.VITE_OTEL_EXPORTER_OTLP_HEADERS,
-    process.env.OTEL_EXPORTER_OTLP_HEADERS,
-  ),
+  // Browser collectors must not require a secret embedded in public runtime configuration.
   serviceName: getFirstNonEmpty(process.env.VITE_OTEL_SERVICE_NAME) || 'hemodinks-front',
   serviceVersion: getFirstNonEmpty(process.env.VITE_APP_VERSION),
   environment: getFirstNonEmpty(process.env.VITE_APP_ENV, process.env.NODE_ENV),

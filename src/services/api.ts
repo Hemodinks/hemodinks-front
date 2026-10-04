@@ -1,3 +1,5 @@
+import { readSessionFailureCode, SESSION_ABSOLUTE_EXPIRED_CODE, SESSION_ABSOLUTE_EXPIRED_MESSAGE } from './sessionExpiration';
+import { sessionEpoch } from './sessionEpoch';
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import { resolveClinicaRequestHeaders } from './clinicaContext';
 import { isJwtExpired } from '../shared/utils/jwt';
@@ -51,16 +53,16 @@ function buildAuthHeaders(token?: string, headers?: AxiosRequestConfig['headers'
   };
 }
 
-function notifyAuthExpired(token?: string) {
+function notifyAuthExpired(token?: string, code?: string) {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, { detail: { token } }));
+    window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, { detail: { token, code } }));
   }
 }
 
 function toApiError(error: unknown, notifyUnauthorized = false, token?: string) {
   const mapped = mapApiError(error, notifyUnauthorized, token);
   return axios.isAxiosError(error)
-    ? new ApiError(mapped.message, error.response?.status, error.code)
+    ? new ApiError(mapped.message, error.response?.status, readSessionFailureCode(error.response?.data) ?? error.code)
     : mapped;
 }
 
@@ -79,10 +81,11 @@ function mapApiError(error: unknown, notifyUnauthorized = false, token?: string)
 
     if (error.response?.status === 401) {
       if (notifyUnauthorized) {
-        notifyAuthExpired(token);
+        notifyAuthExpired(token, readSessionFailureCode(error.response.data));
       }
 
-      return new Error(UNAUTHORIZED_ERROR_MESSAGE);
+      return new Error(readSessionFailureCode(error.response.data) === SESSION_ABSOLUTE_EXPIRED_CODE
+        ? SESSION_ABSOLUTE_EXPIRED_MESSAGE : UNAUTHORIZED_ERROR_MESSAGE);
     }
 
     if (error.response?.status === 403) {
@@ -130,7 +133,9 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
     config = { ...config, headers };
   }
   try {
+    const epoch = sessionEpoch();
     const response = await client.request<T>(config);
+    if (originalToken && epoch !== sessionEpoch()) throw new ApiError('A sessão foi alterada.', 409);
 
     if (response.status === 204) {
       return undefined as T;
@@ -139,11 +144,15 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
     return response.data;
   } catch (error) {
     const sentToken = String(headers.get('Authorization') ?? '').replace(/^Bearer /, '');
-    if (resolver && originalToken && isJwtExpired(sentToken) && axios.isAxiosError(error) && error.response?.status === 401) {
+    if (resolver && originalToken && isJwtExpired(sentToken) && axios.isAxiosError(error) && error.response?.status === 401
+      && readSessionFailureCode(error.response.data) !== SESSION_ABSOLUTE_EXPIRED_CODE) {
       const token = await resolver(originalToken, true);
       headers.set('Authorization', `Bearer ${token}`);
       try {
-        return (await client.request<T>({ ...config, headers })).data;
+        const epoch = sessionEpoch();
+        const response = await client.request<T>({ ...config, headers });
+        if (epoch !== sessionEpoch()) throw new ApiError('A sessão foi alterada.', 409);
+        return response.data;
       } catch (retryError) {
         throw toApiError(retryError, notifyUnauthorized, token);
       }

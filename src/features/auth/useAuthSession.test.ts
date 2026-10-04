@@ -41,3 +41,41 @@ describe('normalizeTeamPinRequirement', () => {
     expect(normalizeTeamPinRequirement(createTeamSession(true)).user.precisaTrocarPin).toBe(true);
   });
 });
+
+// Storage must not become a credential source, including during migration.
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { vi, afterEach } from 'vitest';
+import { useAuthSession } from './useAuthSession';
+import { restoreSession } from '../../services/sessionService';
+vi.mock('../../services/sessionService', () => ({
+  restoreSession: vi.fn().mockResolvedValue(null), revokeSession: vi.fn().mockResolvedValue(undefined),
+}));
+afterEach(() => { sessionStorage.clear(); localStorage.clear(); vi.clearAllMocks(); });
+
+it('keeps successful authentication only in memory', () => {
+  const { result } = renderHook(() => useAuthSession());
+  const session = createTeamSession(true);
+  act(() => result.current.persistSession(session));
+  expect(result.current.session?.token).toBe(session.token);
+  expect(sessionStorage.getItem('hemodinks.session')).toBeNull();
+  expect(localStorage.getItem('hemodinks.session')).toBeNull();
+});
+
+it('deletes legacy credentials and never trusts an injected stored profile', async () => {
+  const injected = createTeamSession(true);
+  sessionStorage.setItem('hemodinks.session', JSON.stringify(injected));
+  localStorage.setItem('hemodinks.session', JSON.stringify(injected));
+  const { result } = renderHook(() => useAuthSession());
+  await waitFor(() => expect(result.current.session).toBeNull());
+  expect(sessionStorage.getItem('hemodinks.session')).toBeNull();
+  expect(localStorage.getItem('hemodinks.session')).toBeNull();
+});
+
+it('does not restore a late bootstrap response after local logout', async () => {
+  let complete!: (value: import('../../types').LoginResponse) => void;
+  vi.mocked(restoreSession).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+  const { result } = renderHook(() => useAuthSession());
+  act(() => result.current.clearSession());
+  await act(async () => complete({ ...createTeamSession(true).user, token: createTeamSession(true).token }));
+  expect(result.current.session).toBeNull();
+});

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useLayoutEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { sessionEpoch } from '../services/sessionEpoch';
 import { useAuthSession } from "../features/auth/useAuthSession";
 import { useLoginFlow } from "../features/auth/useLoginFlow";
 import { useMedicalLicenseHydration, useSessionExpiration } from "../features/auth/useSessionLifecycle";
@@ -33,8 +34,9 @@ export function AppContent() {
   const loginFlow = useLoginFlow({ session: auth.session, persistSession: auth.persistSession });
   // A clinic/session change must discard forms, lists and pending UI callbacks.
   const scopeKey = auth.session
-    ? `${auth.session.user.clinicaId ?? ''}:${auth.session.user.id}:${auth.session.token}`
+    ? `${auth.session.user.clinicaId ?? ''}:${auth.session.user.id}:${sessionEpoch()}`
     : 'anonymous';
+  if (auth.restoring) return <div role="status">Verificando sessão…</div>;
   return <AppSessionContent key={scopeKey} auth={auth} loginFlow={loginFlow} />;
 }
 
@@ -209,7 +211,7 @@ function AppSessionContent({ auth, loginFlow }: {
     usersDomain.formLoading ||
     patientsDomain.pacienteFormLoading ||
     medicalGroupsDomain.formLoading;
-  useSessionExpiration(session, () => endSession(SESSION_EXPIRED_MESSAGE), persistSession);
+  useSessionExpiration(session, message => endSession(message ?? SESSION_EXPIRED_MESSAGE), persistSession);
   useMedicalLicenseHydration(operationalSession, persistSession);
   useLayoutEffect(() => {
     if (
