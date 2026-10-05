@@ -14,7 +14,7 @@ try {
   assert.equal(headers['x-content-type-options'], 'nosniff');
   assert.equal(headers['referrer-policy'], 'no-referrer');
   const asset = await page.locator('script[src]').first().getAttribute('src');
-  for (const path of ['/pacientes', '/assets/missing-security-test.js', asset]) {
+  for (const path of ['/pacientes', '/reset-password?token=PRIVATE_QUERY_SENTINEL', '/assets/missing-security-test.js', asset]) {
     const result = await page.request.get(new URL(path, base).href);
     assert.equal(result.headers()['content-security-policy'], headers['content-security-policy']);
   }

@@ -214,3 +214,26 @@ test('case:layout', async ({ page }, testInfo) => {
   const accessibility = await new AxeBuilder({ page }).include('.login-panel').withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(accessibility.violations).toEqual([]);
 });
+
+
+test('case:bootstrap-lock', async ({ page, context }) => {
+  const holder = await context.newPage();
+  await holder.goto('/');
+  await expect(holder.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible();
+  await holder.evaluate(async () => {
+    await new Promise<void>(resolve => {
+      void navigator.locks.request('hemodinks-session-refresh', () => {
+        resolve();
+        return new Promise<void>(() => {});
+      });
+    });
+  });
+  let restoreRequests = 0;
+  page.on('request', request => { if (request.url().endsWith('/api/session/restaurar')) restoreRequests++; });
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('Verificando sessão');
+  await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible({ timeout: 20_000 });
+  expect(restoreRequests).toBe(0); // Expiration must not bypass the other tab's lock.
+  await holder.close();
+  await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible();
+});

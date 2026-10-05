@@ -1,3 +1,4 @@
+import { createElement, StrictMode, type PropsWithChildren } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { AuthSession } from '../../types';
 import { TEAM_PROFILE_ID } from '../../shared/utils/formatters';
@@ -78,4 +79,28 @@ it('does not restore a late bootstrap response after local logout', async () => 
   act(() => result.current.clearSession());
   await act(async () => complete({ ...createTeamSession(true).user, token: createTeamSession(true).token }));
   expect(result.current.session).toBeNull();
+});
+
+it('restores once under StrictMode instead of queueing a second cookie rotation', async () => {
+  const wrapper = ({ children }: PropsWithChildren) => createElement(StrictMode, null, children);
+  const { result } = renderHook(() => useAuthSession(), { wrapper });
+  await waitFor(() => expect(result.current.restoring).toBe(false));
+  expect(restoreSession).toHaveBeenCalledTimes(1);
+});
+
+it('discards a bootstrap response when another tab logs out while restoration is pending', async () => {
+  let notify!: (event: { data: unknown }) => void;
+  class Channel {
+    set onmessage(handler: typeof notify) { notify = handler; }
+    postMessage() {} close() {}
+  }
+  vi.stubGlobal('BroadcastChannel', Channel);
+  let complete!: (value: import('../../types').LoginResponse) => void;
+  vi.mocked(restoreSession).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+  try {
+    const { result } = renderHook(() => useAuthSession());
+    act(() => notify({ data: { type: 'invalidate', context: '["revoked-session",1]' } }));
+    await act(async () => complete({ ...createTeamSession(true).user, token: createTeamSession(true).token }));
+    expect(result.current.session).toBeNull();
+  } finally { vi.unstubAllGlobals(); }
 });

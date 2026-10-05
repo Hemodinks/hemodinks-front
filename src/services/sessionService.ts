@@ -69,12 +69,15 @@ export async function renewSession(token: string, active: boolean): Promise<Sess
   return withSessionLock(perform);
 }
 
-export function restoreSession(): Promise<LoginResponse | null> {
-  return withSessionLock(async () => {
+export async function restoreSession(): Promise<LoginResponse | null> {
+  // The deadline includes waiting for another tab, not only the HTTP request.
+  const controller = new AbortController();
+  const deadline = setTimeout(() => controller.abort(new DOMException('Session restoration timed out', 'TimeoutError')), 15_000);
+  try { return await withSessionLock(async () => {
     for (let attempt = 0; ; attempt++) {
       try {
         return (await apiClient.post<LoginResponse>('/api/session/restaurar', {}, {
-          withCredentials: true, timeout: 15_000, headers: { 'X-Session-Refresh': '1' },
+          withCredentials: true, timeout: 15_000, signal: controller.signal, headers: { 'X-Session-Refresh': '1' },
         })).data;
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) return null;
@@ -82,5 +85,5 @@ export function restoreSession(): Promise<LoginResponse | null> {
         throw error;
       }
     }
-  });
+  }, controller.signal); } finally { clearTimeout(deadline); }
 }

@@ -40,6 +40,7 @@ export function useAuthSession() {
   const [restoring, setRestoring] = useState(true);
   const current = useRef<AuthSession | null>(null);
   const version = useRef(0);
+  const bootstrap = useRef<ReturnType<typeof restoreSession> | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
   const contextOf = (value: AuthSession) => { const claims = decodeJwtPayload(value.token); return JSON.stringify([claims?.sid, value.user.clinicaId]); };
 
@@ -48,7 +49,10 @@ export function useAuthSession() {
     const connection = new BroadcastChannel('hemodinks-session-lifecycle');
     channel.current = connection;
     connection.onmessage = event => {
-      if (event.data?.type !== 'invalidate' || !current.current || event.data.context !== contextOf(current.current)) return;
+      if (event.data?.type !== 'invalidate' || typeof event.data.context !== 'string') return;
+      // Before bootstrap completes we cannot identify its session yet. Invalidate the
+      // pending response; an old logout must never clear a different active session.
+      if (current.current && event.data.context !== contextOf(current.current)) return;
       version.current++; advanceSessionEpoch(); current.current = null;
       clearStoredSession(); queryClient.clear(); setSession(null); setRestoring(false);
     };
@@ -75,7 +79,8 @@ export function useAuthSession() {
     let active = true;
     const requestedVersion = version.current;
     const epoch = sessionEpoch();
-    void restoreSession().then(result => {
+    bootstrap.current ??= restoreSession();
+    void bootstrap.current.then(result => {
       if (active && requestedVersion === version.current && epoch === sessionEpoch() && result)
         persistSession(buildSessionFromLogin(result));
     }).catch(() => { /* A network failure never falls back to untrusted storage or retries endlessly. */ })

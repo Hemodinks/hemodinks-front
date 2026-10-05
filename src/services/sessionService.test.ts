@@ -60,3 +60,25 @@ it('bounds restoration conflicts and never sends client identity', async () => {
   expect(post).toHaveBeenCalledTimes(3);
   expect(post).toHaveBeenCalledWith('/api/session/restaurar', {}, expect.objectContaining({ withCredentials: true, headers: { 'X-Session-Refresh': '1' } }));
 });
+
+it('limits bootstrap waiting for a lock held by another tab and never bypasses that lock', async () => {
+  vi.useFakeTimers();
+  const action = vi.spyOn(apiClient, 'post');
+  const previous = Object.getOwnPropertyDescriptor(navigator, 'locks');
+  Object.defineProperty(navigator, 'locks', { configurable: true, value: {
+    request: vi.fn((_name, options) => new Promise((_resolve, reject) => {
+      options.signal?.addEventListener('abort', () => reject(options.signal.reason), { once: true });
+    })),
+  } });
+  try {
+    const pending = restoreSession();
+    const rejected = expect(pending).rejects.toBeDefined();
+    await vi.advanceTimersByTimeAsync(15_001);
+    await rejected;
+    expect(action).not.toHaveBeenCalled();
+  } finally {
+    vi.useRealTimers();
+    if (previous) Object.defineProperty(navigator, 'locks', previous);
+    else Reflect.deleteProperty(navigator, 'locks');
+  }
+});
