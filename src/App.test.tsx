@@ -1,7 +1,7 @@
 import { restoreSession } from './services/sessionService';
 import { toLoginResponse } from './test/appTestData';
 vi.mock('./services/sessionService', async (importOriginal) => ({ ...(await importOriginal<object>()), restoreSession: vi.fn().mockResolvedValue(null) }));
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -143,6 +143,8 @@ function createJwtToken(payload: Record<string, unknown>) {
 }
 
 describe('App', () => {
+  // Lazy route modules can take several seconds to load on cold CI workers.
+  configure({ asyncUtilTimeout: 5_000 });
   beforeEach(() => {
     localStorage.clear();
     saveConsent({ preferences: true, analytics: false });
@@ -1862,7 +1864,7 @@ describe('App', () => {
       ativo: true,
     }, 'jwt-token');
     expect(await screen.findByText('Paciente cadastrado com sucesso.')).toBeInTheDocument();
-  }, 15000);
+  }, 30_000);
 
   it('permite ao administrador filtrar pacientes por cirurgiao, convenio e procedimento', async () => {
     vi.mocked(api.getPacientes)
