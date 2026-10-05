@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { mockPatientFormApi } from './patient-form-api';
 
 type Dependencies = {
-  setup: (page: Page) => Promise<{ pacientes: Record<string, any>[] }>;
+  setup: (page: Page) => Promise<{ token: string; pacientes: Record<string, any>[] }>;
   login: (page: Page, route?: string) => Promise<void>;
 };
 
@@ -13,7 +13,7 @@ export function registerPatientListTests({ setup, login }: Dependencies) {
       test(`ações, cores, acessibilidade e responsividade em ${width}px`, async ({ page }, testInfo) => {
         await page.setViewportSize({ width, height: 900 });
         const base = await setup(page);
-        const api = await mockPatientFormApi(page, base.pacientes[0]);
+        const api = await mockPatientFormApi(page, base.pacientes[0], base.token);
         api.patients.push({ ...api.patients[0], id: 22, nomePaciente: 'Paciente Com Nome Muito Longo Para Validar Quebra De Linha' });
         await login(page, '/pacientes');
         const panel = page.locator('.patient-list-panel');
@@ -53,7 +53,7 @@ export function registerPatientListTests({ setup, login }: Dependencies) {
 
     test('combina busca e filtro, limpa, pagina e trata resultado vazio', async ({ page }) => {
       const base = await setup(page);
-      const api = await mockPatientFormApi(page, base.pacientes[0]);
+      const api = await mockPatientFormApi(page, base.pacientes[0], base.token);
       for (let i = 0; i < 12; i++) api.patients.push({ ...api.patients[0], id: 100 + i, nomePaciente: `Outro ${i}`, procedimento: 'Cirurgia' });
       await login(page, '/pacientes');
       await expect(page.locator('.patients-table tbody tr')).toHaveCount(10);
@@ -75,7 +75,7 @@ export function registerPatientListTests({ setup, login }: Dependencies) {
 
     test('bloqueia confirmação durante exclusão e preserva paciente quando a API falha', async ({ page }) => {
       const base = await setup(page);
-      const api = await mockPatientFormApi(page, base.pacientes[0]);
+      const api = await mockPatientFormApi(page, base.pacientes[0], base.token);
       api.failDelete = true;
       api.deleteDelay = 1000;
       await login(page, '/pacientes');

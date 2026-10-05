@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { mockPatientFormApi } from './patient-form-api';
 
 type Dependencies = {
-  setup: (page: Page) => Promise<{ pacientes: Record<string, any>[] }>;
+  setup: (page: Page) => Promise<{ token: string; pacientes: Record<string, any>[] }>;
   login: (page: Page, route?: string) => Promise<void>;
 };
 
@@ -46,7 +46,7 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
   test.describe('ficha paciente', () => {
     test('cadastra com novos vínculos, edita sem duplicar, exporta a ficha e envia arquivo', async ({ page }) => {
       const base = await setup(page);
-      const api = await mockPatientFormApi(page, base.pacientes[0]);
+      const api = await mockPatientFormApi(page, base.pacientes[0], base.token);
       await login(page, '/pacientes');
       await page.getByRole('button', { name: 'Novo paciente', exact: true }).click();
       await expect(page.getByRole('button', { name: 'Exportar ficha PDF' })).toBeDisabled();
@@ -120,7 +120,7 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
 
     test('mantém filtros, exportações da listagem e ações após o nome, com exclusão confirmada', async ({ page }) => {
       const base = await setup(page);
-      const api = await mockPatientFormApi(page, base.pacientes[0]);
+      const api = await mockPatientFormApi(page, base.pacientes[0], base.token);
       api.patients.push({ ...api.patients[0], id: 22, nomePaciente: 'Paciente Outro', procedimento: 'Outro procedimento' });
       await login(page, '/pacientes');
       await page.locator('.patient-filters-accordion > summary').click();
@@ -143,7 +143,7 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
 
     test('preserva os dados e mostra erro de salvamento e de upload', async ({ page }) => {
       const base = await setup(page);
-      const api = await mockPatientFormApi(page, base.pacientes[0]);
+      const api = await mockPatientFormApi(page, base.pacientes[0], base.token);
       await login(page, '/pacientes');
       await page.getByRole('button', { name: 'Editar Paciente Hemodinks', exact: true }).click();
       await page.getByLabel('Paciente', { exact: true }).fill('Paciente Com Erro');
