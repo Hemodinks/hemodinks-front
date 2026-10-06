@@ -707,6 +707,25 @@ describe('services api client', () => {
     window.removeEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
   });
 
+  it('preserva a sessão quando a validação sofre conflito temporário no banco', async () => {
+    const authExpiredHandler = vi.fn();
+    window.addEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
+    const request = vi.spyOn(apiClient, 'request')
+      .mockRejectedValueOnce(apiError(503, { code: 'session_validation_busy' }))
+      .mockResolvedValueOnce(axiosResponse({ items: [] }));
+    try {
+      await expect(get('/api/grupos-medicos/', 'jwt-token')).rejects.toMatchObject({
+        status: 503,
+      });
+      expect(authExpiredHandler).not.toHaveBeenCalled();
+      await expect(get('/api/grupos-medicos/', 'jwt-token')).resolves.toEqual({ items: [] });
+      expect(request).toHaveBeenCalledTimes(2);
+      expect(authExpiredHandler).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
+    }
+  });
+
   it('traduz respostas 403 para uma mensagem amigável em toda chamada da API', async () => {
     vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(403));
 

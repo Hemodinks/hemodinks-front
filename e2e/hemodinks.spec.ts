@@ -723,6 +723,22 @@ async function captureCurrentScreenshot(page: Page, testInfo: TestInfo, name: st
   await expectNoGlobalHorizontalOverflow(page);
 }
 
+test('conflito temporário de sessão ao carregar grupos não encerra o dashboard', async ({ page }) => {
+  await mockApi(page);
+  let logoutCalls = 0;
+  page.on('request', request => { if (new URL(request.url()).pathname === '/api/session/sair') logoutCalls++; });
+  await page.route(url => /\/api\/grupos-medicos\/?$/.test(url.pathname), route =>
+    route.fulfill({ status: 503, json: { code: 'session_validation_busy' }, headers: { 'Retry-After': '1', 'Cache-Control': 'no-store' } }));
+  const failedGroups = page.waitForResponse(response => /\/api\/grupos-medicos\/?$/.test(new URL(response.url()).pathname)
+    && response.status() === 503);
+  await loginViaUi(page, '/dashboard');
+  await failedGroups;
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  expect(logoutCalls).toBe(0);
+});
+
 test('faz login pelo formulario e abre o dashboard', async ({ page }) => {
   const apiState = await mockApi(page);
 
