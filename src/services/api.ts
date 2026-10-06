@@ -147,6 +147,11 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
     if (resolver && originalToken && isJwtExpired(sentToken) && axios.isAxiosError(error) && error.response?.status === 401
       && readSessionFailureCode(error.response.data) !== SESSION_ABSOLUTE_EXPIRED_CODE) {
       const token = await resolver(originalToken, true);
+      // A generic 401 does not prove a write had no effect. A header alone also
+      // cannot guarantee that the target endpoint implements idempotency.
+      if (!['GET', 'HEAD', 'OPTIONS'].includes((config.method ?? 'GET').toUpperCase()))
+        throw new ApiError('Sua sessão foi renovada. Confira se a alteração foi aplicada antes de tentar novamente.',
+          409, 'session_write_retry_required');
       headers.set('Authorization', `Bearer ${token}`);
       try {
         const epoch = sessionEpoch();
