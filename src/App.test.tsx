@@ -269,6 +269,50 @@ describe('App', () => {
     });
   });
 
+  it.each(['no-session', 'network-error'] as const)('keeps credentials editable during bootstrap and after %s', async outcome => {
+    let finish!: (value: Awaited<ReturnType<typeof restoreSession>>) => void;
+    let fail!: (reason: Error) => void;
+    vi.mocked(restoreSession).mockReturnValueOnce(new Promise((resolve, reject) => { finish = resolve; fail = reject; }));
+    render(<App />);
+    const email = screen.getByLabelText('Email');
+    const password = screen.getByLabelText('Senha');
+    const submit = screen.getByRole('button', { name: 'Entrar' });
+    fireEvent.change(email, { target: { value: 'person@example.com' } });
+    fireEvent.change(password, { target: { value: 'ExamplePassword123!' } });
+    expect(email).toBeEnabled();
+    expect(password).toBeEnabled();
+    expect(submit).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('Verificando sessão');
+    fireEvent.submit(email.closest('form')!);
+    expect(api.resolveLoginClinics).not.toHaveBeenCalled();
+    expect(api.authenticate).not.toHaveBeenCalled();
+    expect(api.getPacientes).not.toHaveBeenCalled();
+    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+    if (outcome === 'no-session') finish(null);
+    else fail(new Error('Network unavailable'));
+    await waitFor(() => expect(submit).toBeEnabled());
+    expect(email).toHaveValue('person@example.com');
+    expect(password).toHaveValue('ExamplePassword123!');
+    expect(screen.queryByText(/Verificando sessão/)).not.toBeInTheDocument();
+    expect(api.authenticate).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
+    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+  });
+
+  it('enters the restored session without submitting credentials typed during bootstrap', async () => {
+    let finish!: (value: Awaited<ReturnType<typeof restoreSession>>) => void;
+    vi.mocked(restoreSession).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    render(<App />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.com' } });
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'UnusedPassword123!' } });
+    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+    finish(toLoginResponse(mockSession()));
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Acesso ao sistema' })).not.toBeInTheDocument();
+    expect(api.resolveLoginClinics).not.toHaveBeenCalled();
+    expect(api.authenticate).not.toHaveBeenCalled();
+  });
+
   it('faz login, mantém a sessão em memória e carrega usuários', async () => {
     const user = userEvent.setup();
     vi.mocked(api.authenticate).mockResolvedValue({

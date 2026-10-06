@@ -28,6 +28,7 @@ type LoginScreenProps = {
   loginInfo: string;
   loginLoading: boolean;
   loginPreparing?: boolean;
+  sessionRestoring?: boolean;
   resetPasswordLoading: boolean;
   onThemeToggle: () => void;
   onLoginEmailChange: (value: string) => void;
@@ -52,6 +53,7 @@ export function LoginScreen({
   loginInfo,
   loginLoading,
   loginPreparing = false,
+  sessionRestoring = false,
   resetPasswordLoading,
   onThemeToggle,
   onLoginEmailChange,
@@ -122,8 +124,10 @@ export function LoginScreen({
           {loginError && <AlertMessage type="error">{loginError}</AlertMessage>}
           {loginInfo && <ToastMessage type="success">{loginInfo}</ToastMessage>}
 
+          {sessionRestoring && <p role="status">Verificando sessão… Você já pode preencher seus dados.</p>}
+
           <div className="login-entry-actions">
-            <button className="primary-action" type="submit" disabled={loginLoading || resetPasswordLoading} data-tour="login-submit">
+            <button className="primary-action" type="submit" disabled={sessionRestoring || loginLoading || resetPasswordLoading} data-tour="login-submit">
               <LogIn size={18} />
               {loginLoading ? 'Entrando...' : 'Entrar'}
             </button>

@@ -16,10 +16,11 @@ import { getLoginErrorMessage } from './loginFeedback';
 
 type UseLoginFlowOptions = {
   session: AuthSession | null;
+  sessionRestoring?: boolean;
   persistSession: (session: AuthSession) => void;
 };
 
-export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
+export function useLoginFlow({ session, persistSession, sessionRestoring = false }: UseLoginFlowOptions) {
   const [loginEmail, updateLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginClinicOptions, setLoginClinicOptions] = useState<LoginClinicOption[]>([]);
@@ -123,7 +124,8 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (pending.current) return;
+    // Also guard programmatic submission while bootstrap can still rotate the cookie.
+    if (sessionRestoring || session || pending.current) return;
     setLoginError('');
     setLoginInfo('');
     clearTeamState();
@@ -362,6 +364,7 @@ export function useLoginFlow({ session, persistSession }: UseLoginFlowOptions) {
   };
 
   return {
+    sessionRestoring,
     loginEmail,
     loginPassword,
     loginClinicOptions,

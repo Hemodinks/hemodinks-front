@@ -37,6 +37,8 @@ export function normalizeTeamPinRequirement(session: AuthSession) {
 
 export function useAuthSession() {
   const [session, setSession] = useState<AuthSession | null>(() => { clearStoredSession(); return null; });
+  // Only bootstrap settlement releases login; invalidation may discard its result
+  // but must not allow a new authentication while its cookie rotation is pending.
   const [restoring, setRestoring] = useState(true);
   const current = useRef<AuthSession | null>(null);
   const version = useRef(0);
@@ -54,7 +56,7 @@ export function useAuthSession() {
       // pending response; an old logout must never clear a different active session.
       if (current.current && event.data.context !== contextOf(current.current)) return;
       version.current++; advanceSessionEpoch(); current.current = null;
-      clearStoredSession(); queryClient.clear(); setSession(null); setRestoring(false);
+      clearStoredSession(); queryClient.clear(); setSession(null);
     };
     return () => { channel.current = null; connection.close(); };
   }, []);
@@ -72,7 +74,6 @@ export function useAuthSession() {
     clearStoredSession();
     current.current = normalized;
     setSession(normalized);
-    setRestoring(false);
   }, []);
 
   useEffect(() => {
@@ -97,7 +98,6 @@ export function useAuthSession() {
     clearStoredSession();
     queryClient.clear();
     setSession(null);
-    setRestoring(false);
     if (previous) void revokeSession(previous.token).catch(() => {});
   }, []);
 

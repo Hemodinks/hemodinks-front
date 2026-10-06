@@ -31,12 +31,11 @@ const SESSION_EXPIRED_MESSAGE =
   "Sua sessao expirou. Entre novamente para continuar.";
 export function AppContent() {
   const auth = useAuthSession();
-  const loginFlow = useLoginFlow({ session: auth.session, persistSession: auth.persistSession });
+  const loginFlow = useLoginFlow({ session: auth.session, persistSession: auth.persistSession, sessionRestoring: auth.restoring });
   // A clinic/session change must discard forms, lists and pending UI callbacks.
   const scopeKey = auth.session
     ? `${auth.session.user.clinicaId ?? ''}:${auth.session.user.id}:${sessionEpoch()}`
     : 'anonymous';
-  if (auth.restoring) return <div role="status">Verificando sessão…</div>;
   return <AppSessionContent key={scopeKey} auth={auth} loginFlow={loginFlow} />;
 }
 

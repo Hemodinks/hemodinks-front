@@ -81,6 +81,18 @@ it('does not restore a late bootstrap response after local logout', async () => 
   expect(result.current.session).toBeNull();
 });
 
+it('does not replace a newer session with a delayed bootstrap response', async () => {
+  let complete!: (value: import('../../types').LoginResponse) => void;
+  vi.mocked(restoreSession).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+  const { result } = renderHook(() => useAuthSession());
+  const newer = createTeamSession(true);
+  act(() => result.current.persistSession(newer));
+  expect(result.current.restoring).toBe(true);
+  await act(async () => complete({ ...createTeamSession(false).user, token: createTeamSession(false).token }));
+  expect(result.current.session).toEqual(newer);
+  expect(result.current.restoring).toBe(false);
+});
+
 it('restores once under StrictMode instead of queueing a second cookie rotation', async () => {
   const wrapper = ({ children }: PropsWithChildren) => createElement(StrictMode, null, children);
   const { result } = renderHook(() => useAuthSession(), { wrapper });
@@ -100,6 +112,7 @@ it('discards a bootstrap response when another tab logs out while restoration is
   try {
     const { result } = renderHook(() => useAuthSession());
     act(() => notify({ data: { type: 'invalidate', context: '["revoked-session",1]' } }));
+    expect(result.current.restoring).toBe(true);
     await act(async () => complete({ ...createTeamSession(true).user, token: createTeamSession(true).token }));
     expect(result.current.session).toBeNull();
   } finally { vi.unstubAllGlobals(); }
