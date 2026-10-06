@@ -654,7 +654,7 @@ describe('App', () => {
     expect(await screen.findByLabelText('Email')).toBeEnabled();
     expect(screen.getByLabelText('Senha')).toBeEnabled();
     expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Você já pode clicar em Entrar.');
     expect(api.resolveLoginClinics).not.toHaveBeenCalled();
     expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(api.authenticate).not.toHaveBeenCalled();
