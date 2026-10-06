@@ -95,6 +95,7 @@ export function AppPublicContent({
       loginInfo={loginFlow.loginInfo}
       loginLoading={loginFlow.loginLoading}
       loginPreparing={loginFlow.loginPreparing}
+      sessionRestoring={loginFlow.sessionRestoring}
       resetPasswordLoading={loginFlow.resetPasswordLoading}
       onThemeToggle={onThemeToggle}
       onLoginEmailChange={loginFlow.setLoginEmail}

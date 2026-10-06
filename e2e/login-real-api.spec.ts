@@ -232,8 +232,18 @@ test('case:bootstrap-lock', async ({ page, context }) => {
   page.on('request', request => { if (request.url().endsWith('/api/session/restaurar')) restoreRequests++; });
   await page.goto('/');
   await expect(page.getByRole('status')).toContainText('Verificando sessão');
-  await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible({ timeout: 20_000 });
+  const email = page.getByRole('textbox', { name: 'Email', exact: true });
+  const password = page.getByLabel('Senha', { exact: true });
+  const submit = page.getByRole('button', { name: 'Entrar', exact: true });
+  await expect(email).toBeVisible();
+  await email.fill(fixture!.individual.email);
+  await password.fill(fixture!.individual.password);
+  await expect(submit).toBeDisabled();
+  await expect(submit).toBeEnabled({ timeout: 20_000 });
+  await expect(email).toHaveValue(fixture!.individual.email);
+  await expect(password).toHaveValue(fixture!.individual.password);
   expect(restoreRequests).toBe(0); // Expiration must not bypass the other tab's lock.
   await holder.close();
-  await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible();
+  await submit.click();
+  await finishLegalAndReadSession(page);
 });

@@ -1825,6 +1825,38 @@ for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
   });
 }
 
+test('login imediato: permite digitar durante restauração e preserva dados após 401', async ({ page }) => {
+  const apiState = await mockApi(page);
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/session/restaurar', async route => {
+    await pending;
+    await route.fulfill({ status: 401 });
+  });
+  const loginRequests: string[] = [];
+  page.on('request', request => {
+    if (/\/api\/users\/(login-context|authenticate)$/.test(new URL(request.url()).pathname)) loginRequests.push(request.url());
+  });
+  await page.goto('/');
+  const email = page.getByLabel('Email', { exact: true });
+  const password = page.locator('#login-password');
+  const submit = page.getByRole('button', { name: 'Entrar', exact: true });
+  await expect(page.getByRole('status')).toContainText('Verificando sessão');
+  await email.fill('gmarcone@gmail.com');
+  await password.fill(LOGIN_PASSWORD);
+  await expect(submit).toBeDisabled();
+  await password.press('Enter');
+  expect(loginRequests).toEqual([]);
+  release();
+  await expect(submit).toBeEnabled();
+  await expect(email).toHaveValue('gmarcone@gmail.com');
+  await expect(password).toHaveValue(LOGIN_PASSWORD);
+  await submit.click();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  expect(apiState.loginPayload).toMatchObject({ email: 'gmarcone@gmail.com', senha: LOGIN_PASSWORD });
+  expect(loginRequests).toHaveLength(2);
+});
+
 test('login imediato: API indisponível não bloqueia campos durante warm-up best effort', async ({ page }) => {
   await mockApi(page);
   await page.clock.install();
