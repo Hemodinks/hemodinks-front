@@ -234,7 +234,7 @@ test('case:bootstrap-lock', async ({ page, context }) => {
   await expect(page.getByRole('status')).toContainText('Verificando sessão');
   const email = page.getByRole('textbox', { name: 'Email', exact: true });
   const password = page.getByLabel('Senha', { exact: true });
-  const submit = page.getByRole('button', { name: 'Entrar', exact: true });
+  const submit = page.locator('[data-tour="login-submit"]');
   await expect(email).toBeVisible();
   await email.fill(fixture!.individual.email);
   await password.fill(fixture!.individual.password);
