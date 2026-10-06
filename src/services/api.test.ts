@@ -33,7 +33,7 @@ import {
   uploadPacienteArquivo,
   uploadUserArquivo,
 } from './index';
-import { AUTH_EXPIRED_EVENT, ApiError, apiClient, publicApiClient, get } from './api';
+import { AUTH_EXPIRED_EVENT, ApiError, apiClient, publicApiClient, get, post, put, del, registerSessionTokenResolver } from './api';
 import { resolveLoginClinics } from './authService';
 import {
   extractClinicaContextFromToken,
@@ -795,4 +795,38 @@ it('discards private responses arriving after logout or a clinic change', async 
   advanceSessionEpoch();
   complete(axiosResponse({ name: 'private patient' }));
   await assertion;
+});
+
+function expiredAccessToken() {
+  return 'h.' + btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 60 })) + '.s';
+}
+
+it.each(['POST', 'PUT', 'DELETE'])('does not replay %s after renewing an expired token', async method => {
+  const token = expiredAccessToken();
+  const resolver = vi.fn(async (_token: string, force: boolean) => force ? 'renewed-token' : token);
+  const unregister = registerSessionTokenResolver(resolver);
+  const expired = vi.fn();
+  window.addEventListener(AUTH_EXPIRED_EVENT, expired);
+  const request = vi.spyOn(apiClient, 'request').mockReset().mockRejectedValueOnce(apiError(401));
+  try {
+    const config = { headers: { 'Idempotency-Key': 'not-proof-of-server-support' } };
+    const action = method === 'POST' ? post('/api/example', {}, token, config)
+      : method === 'PUT' ? put('/api/example', {}, token, config) : del('/api/example', token, config);
+    await expect(action).rejects.toMatchObject({ status: 409, code: 'session_write_retry_required' });
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(resolver).toHaveBeenLastCalledWith(token, true);
+    expect(expired).not.toHaveBeenCalled();
+  } finally { unregister(); window.removeEventListener(AUTH_EXPIRED_EVENT, expired); }
+});
+
+it('retries an expired authenticated GET only once after renewal', async () => {
+  const token = expiredAccessToken();
+  const unregister = registerSessionTokenResolver(async (_token, force) => force ? 'renewed-token' : token);
+  const request = vi.spyOn(apiClient, 'request').mockReset().mockRejectedValueOnce(apiError(401))
+    .mockResolvedValueOnce(axiosResponse({ ok: true }));
+  try {
+    await expect(get('/api/example', token)).resolves.toEqual({ ok: true });
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(String(request.mock.calls[1][0].headers)).toContain('Bearer renewed-token');
+  } finally { unregister(); }
 });
