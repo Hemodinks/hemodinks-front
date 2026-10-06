@@ -1,5 +1,5 @@
 import { type FormEvent } from 'react';
-import { LogIn, Mail } from 'lucide-react';
+import { LoaderCircle, LogIn, Mail } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import type { PublicClinic } from '../../types';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
@@ -124,12 +124,16 @@ export function LoginScreen({
           {loginError && <AlertMessage type="error">{loginError}</AlertMessage>}
           {loginInfo && <ToastMessage type="success">{loginInfo}</ToastMessage>}
 
-          {sessionRestoring && <p role="status">Verificando sessão… Você já pode preencher seus dados.</p>}
+          <p id="login-session-status" className="login-session-status" role="status" aria-live="polite" aria-atomic="true">
+            {sessionRestoring
+              ? 'Verificando sessão… O botão Entrar será liberado ao terminar. Você já pode preencher email e senha.'
+              : 'Você já pode clicar em Entrar.'}
+          </p>
 
           <div className="login-entry-actions">
-            <button className="primary-action" type="submit" disabled={sessionRestoring || loginLoading || resetPasswordLoading} data-tour="login-submit">
-              <LogIn size={18} />
-              {loginLoading ? 'Entrando...' : 'Entrar'}
+            <button className="primary-action" type="submit" disabled={sessionRestoring || loginLoading || resetPasswordLoading} aria-describedby="login-session-status" aria-busy={sessionRestoring || loginLoading} data-tour="login-submit">
+              {sessionRestoring ? <LoaderCircle className="login-session-spinner" size={18} aria-hidden="true" /> : <LogIn size={18} aria-hidden="true" />}
+              {sessionRestoring ? 'Verificando sessão…' : loginLoading ? 'Entrando...' : 'Entrar'}
             </button>
             <button type="button" className="ghost-button login-help-link" onClick={onResetPassword} disabled={resetPasswordLoading || loginLoading}>
               {resetPasswordLoading ? 'Enviando instruções...' : recoveryClinics.length > 1 ? 'Enviar instruções' : 'Esqueci minha senha'}

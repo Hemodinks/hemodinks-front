@@ -356,3 +356,22 @@ a.login-help-link {
   background: color-mix(in srgb, #784b12 var(--control-color-opacity), transparent);
   border-color: #ffe0a3;
 }
+
+.login-session-status {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.login-session-spinner {
+  flex-shrink: 0;
+  animation: login-session-spin 1s linear infinite;
+}
+
+@keyframes login-session-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-session-spinner { animation: none; }
+}

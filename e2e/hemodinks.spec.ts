@@ -1856,7 +1856,7 @@ test('login imediato: permite digitar durante restauração e preserva dados ap�
   await page.goto('/');
   const email = page.getByLabel('Email', { exact: true });
   const password = page.locator('#login-password');
-  const submit = page.getByRole('button', { name: 'Entrar', exact: true });
+  const submit = page.locator('[data-tour="login-submit"]');
   await expect(page.getByRole('status')).toContainText('Verificando sessão');
   await email.fill('gmarcone@gmail.com');
   await password.fill(LOGIN_PASSWORD);

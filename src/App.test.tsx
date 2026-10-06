@@ -276,7 +276,7 @@ describe('App', () => {
     render(<App />);
     const email = screen.getByLabelText('Email');
     const password = screen.getByLabelText('Senha');
-    const submit = screen.getByRole('button', { name: 'Entrar' });
+    const submit = screen.getByRole('button', { name: 'Verificando sessão…' });
     fireEvent.change(email, { target: { value: 'person@example.com' } });
     fireEvent.change(password, { target: { value: 'ExamplePassword123!' } });
     expect(email).toBeEnabled();
@@ -291,6 +291,8 @@ describe('App', () => {
     if (outcome === 'no-session') finish(null);
     else fail(new Error('Network unavailable'));
     await waitFor(() => expect(submit).toBeEnabled());
+    expect(submit).toHaveAccessibleName('Entrar');
+    expect(submit).toHaveAccessibleDescription('Você já pode clicar em Entrar.');
     expect(email).toHaveValue('person@example.com');
     expect(password).toHaveValue('ExamplePassword123!');
     expect(screen.queryByText(/Verificando sessão/)).not.toBeInTheDocument();
