@@ -1908,11 +1908,11 @@ test('login wait: explica demora e permite cancelar sem abrir sessão tardia', a
     await route.fulfill({ json: { clinicas: [{ clinicaId: 1, nome: 'Clínica', slug: 'clinica-hemodinks' }] } }).catch(() => {});
   });
   await loginViaUi(page);
-  await expect(page.getByRole('status')).toContainText('Conectando ao serviço de acesso');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Conectando ao serviço de acesso');
   await page.clock.fastForward(12_000);
-  await expect(page.getByRole('status')).toContainText('primeiro acesso após');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('primeiro acesso após');
   await page.clock.fastForward(23_000);
-  await expect(page.getByRole('status')).toContainText('Ainda estamos aguardando');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Ainda estamos aguardando');
   const cancel = page.getByRole('button', { name: 'Cancelar tentativa' });
   for (const theme of ['light', 'dark']) {
     await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
@@ -1989,7 +1989,7 @@ test('bootstrap: API lenta informa a operação real e retry cancela a tentativa
     } else await route.fallback();
   });
   await loginViaUi(page);
-  await expect(page.getByRole('status')).toContainText('Validando sua sessão, clínica e Termos de Uso');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Validando sua sessão, clínica e Termos de Uso');
   await expect(page.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow');
   await page.clock.fastForward(12_000);
   await expect(page.getByText(/mais de tempo/)).toBeVisible();
@@ -2016,7 +2016,7 @@ test('bootstrap: timeout termina o loading e permite recuperação', async ({ pa
   const validationStarted = page.waitForRequest(request => new URL(request.url()).pathname === '/api/legal-acceptances/current');
   await loginViaUi(page);
   await validationStarted;
-  await expect(page.getByRole('status')).toContainText('Validando sua sessão, clínica e Termos de Uso');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Validando sua sessão, clínica e Termos de Uso');
   await expect(page.getByRole('progressbar')).toBeVisible();
   await page.clock.fastForward(60_001);
   await expect(page.getByRole('progressbar')).toHaveCount(0);
@@ -2084,7 +2084,7 @@ test('bootstrap: clínica autorizada só carrega dados após validação e mant�
     if (/\/api\/(dashboard|configuracoes-sistema)/.test(request.url())) headers.push(request.headers());
   });
   await loginViaUi(page, '/', scopedSession);
-  await expect(page.getByRole('status')).toContainText('Validando sua sessão, clínica e Termos de Uso');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Validando sua sessão, clínica e Termos de Uso');
   expect(headers).toEqual([]);
   release();
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
