@@ -1,3 +1,4 @@
+import { readPasswordPolicyError } from './passwordPolicyError';
 import { readSessionFailureCode, SESSION_ABSOLUTE_EXPIRED_CODE, SESSION_ABSOLUTE_EXPIRED_MESSAGE } from './sessionExpiration';
 import { sessionEpoch } from './sessionEpoch';
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
@@ -62,7 +63,7 @@ function notifyAuthExpired(token?: string, code?: string) {
 function toApiError(error: unknown, notifyUnauthorized = false, token?: string) {
   const mapped = mapApiError(error, notifyUnauthorized, token);
   return axios.isAxiosError(error)
-    ? new ApiError(mapped.message, error.response?.status, readSessionFailureCode(error.response?.data) ?? error.code)
+    ? new ApiError(mapped.message, error.response?.status, readPasswordPolicyError(error.response?.data)?.code ?? readSessionFailureCode(error.response?.data) ?? error.code)
     : mapped;
 }
 
@@ -70,6 +71,10 @@ function mapApiError(error: unknown, notifyUnauthorized = false, token?: string)
   if (axios.isAxiosError(error)) {
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
       return new Error('A conexão demorou demais. Tente novamente.');
+    }
+    const policyError = readPasswordPolicyError(error.response?.data);
+    if (policyError && (error.response?.status === 400 || error.response?.status === 503)) {
+      return new Error(policyError.message);
     }
     // Axios does not expose a response when the API is offline, unreachable or
     // the browser blocks the response at the network layer (for example, CORS).
