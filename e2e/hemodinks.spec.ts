@@ -1,4 +1,5 @@
 import { registerPasswordPolicyCases } from './password-policy-cases';
+import { registerSecurityObservationCases } from './security-observation-cases';
 import { registerAgendaAllDayCases } from './agenda-all-day-cases';
 import { registerAgendaViewCases } from './agenda-view-cases';
 import { registerAgendaRecipientCases } from './agenda-recipient-cases';
@@ -672,6 +673,7 @@ async function mockApi(page: Page, loginSession = session, options: {
 }
 
 registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });
+registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session });
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
 registerPatientListTests({ setup: mockApi, login: loginViaUi });
 

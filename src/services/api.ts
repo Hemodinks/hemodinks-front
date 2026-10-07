@@ -127,12 +127,12 @@ function mapApiError(error: unknown, notifyUnauthorized = false, token?: string)
   return new Error(DEFAULT_ERROR_MESSAGE);
 }
 
-async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConfig, notifyUnauthorized = false): Promise<T> {
+async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConfig, notifyUnauthorized = false, manageSession = true): Promise<T> {
   const headers = axios.AxiosHeaders.from(config.headers as Parameters<typeof axios.AxiosHeaders.from>[0]);
   const authorization = headers.get('Authorization');
   const originalToken = typeof authorization === 'string' && authorization.startsWith('Bearer ')
     ? authorization.slice(7) : null;
-  const resolver = client === apiClient && originalToken ? sessionTokenResolver : null;
+  const resolver = manageSession && client === apiClient && originalToken ? sessionTokenResolver : null;
   if (resolver && originalToken) {
     headers.set('Authorization', `Bearer ${await resolver(originalToken, false)}`);
     config = { ...config, headers };
@@ -171,14 +171,15 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
   }
 }
 
-export function get<T>(path: string, token?: string, config: RequestConfig = {}) {
+export function get<T>(path: string, token?: string, config: RequestConfig & { manageSession?: boolean } = {}) {
+  const { manageSession = true, ...requestConfig } = config;
   return executeRequest<T>(apiClient, {
     url: path,
     method: 'GET',
     timeout: API_READ_TIMEOUT_MS,
-    ...config,
+    ...requestConfig,
     headers: buildJsonHeaders(token, config.headers),
-  }, Boolean(token));
+  }, Boolean(token) && manageSession, manageSession);
 }
 
 export function getBlob(path: string, token?: string, config: RequestConfig = {}) {

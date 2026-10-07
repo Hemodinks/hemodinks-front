@@ -11,6 +11,7 @@
 
 .options-navigation {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 6px;
   border: 1px solid var(--line);
@@ -74,6 +75,9 @@
   gap: 16px;
   border-left: 4px solid var(--danger, #c2413b);
 }
+
+.security-event-card { border-left-color: var(--action-primary); }
+.security-monitoring, .security-monitoring > * { min-width: 0; }
 
 .monitoring-error-card header {
   align-items: flex-start;
