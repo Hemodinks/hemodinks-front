@@ -1,758 +1,326 @@
 # AGENTS.md — HemoDinks Frontend
 
-## 1. Objetivo
+## Objetivo
 
-Este documento define as regras obrigatórias para agentes de IA que atuem no frontend do HemoDinks.
+Trabalhe no frontend do HemoDinks preservando segurança, isolamento multi-clínica,
+arquitetura existente, reutilização de componentes, responsividade e regras de
+negócio já funcionais.
 
-O objetivo é preservar:
-
-- segurança;
-- isolamento multi-clínica;
-- organização;
-- modularização;
-- componentização;
-- reutilização;
-- responsividade;
-- acessibilidade;
-- consistência visual;
-- regras de negócio existentes;
-- estabilidade dos testes;
-- eficiência no uso de contexto e tokens.
-
-Modificar somente o necessário para a atividade solicitada.
+Faça a menor alteração correta necessária para atender à tarefa.
 
 ---
 
-# 2. Princípio fundamental
+## Arquitetura e organização
 
-Antes de editar:
-
-1. identificar a tela ou fluxo;
-2. localizar os componentes atuais;
-3. localizar hooks/services/stores relacionados;
-4. localizar testes existentes;
-5. verificar regras de perfil e clínica;
-6. entender responsividade atual;
-7. somente então modificar.
-
-Não reconstruir uma tela inteira quando o problema puder ser corrigido de forma localizada.
+- Preserve a organização atual do frontend.
+- Mantenha separação entre páginas, componentes, hooks, services e estado.
+- Evite concentrar lógica complexa em componentes de tela.
+- Reutilize componentes existentes antes de criar novos.
+- Prefira composição e parametrização a duplicação.
+- Não crie abstrações sem benefício concreto.
+- Não mova regras de negócio críticas da API para o frontend.
 
 ---
 
-# 3. Arquitetura do frontend
+## Escopo
 
-Respeitar a arquitetura existente.
-
-Preservar:
-
-- separação de responsabilidades;
-- componentização;
-- modularização;
-- hooks;
-- services;
-- stores/contextos;
-- componentes compartilhados;
-- camada de acesso à API.
-
-Não concentrar funcionalidades complexas em componentes de página.
+- Modifique somente o necessário para a tarefa.
+- Não faça refatorações oportunistas.
+- Não redesenhe telas inteiras quando uma correção localizada for suficiente.
+- Não altere login, permissões, navegação, tenant ou componentes globais sem
+  necessidade para a atividade.
+- Se encontrar outro problema, reporte-o separadamente.
 
 ---
 
-# 4. Componentes
+## Componentes existentes
 
-Preferir componentes:
+Antes de substituir um componente, verifique seu comportamento atual.
 
-- pequenos;
-- coesos;
-- reutilizáveis;
-- testáveis;
-- com responsabilidade clara.
+Preserve funcionalidades existentes de componentes como:
 
-Evitar componentes gigantes.
-
-Quando um componente crescer excessivamente, considerar extração apenas quando houver ganho real de organização.
-
-Não fragmentar excessivamente a UI em componentes triviais sem benefício.
-
----
-
-# 5. Reutilização
-
-Antes de criar novo componente, procurar implementação existente.
-
-Prioridade:
-
-1. reutilizar;
-2. parametrizar;
-3. compor;
-4. criar novo.
-
-Preservar componentes consolidados.
-
-Especialmente:
-
-- datepickers;
-- dropdowns;
-- selects digitáveis;
-- modais;
+- datepicker;
+- dropdown digitável;
+- selects;
 - tabelas;
-- paginação;
 - filtros;
-- inputs;
-- mensagens;
-- botões;
-- componentes de exportação.
+- paginação;
+- modais;
+- formulários;
+- exportações;
+- componentes compartilhados.
 
-Não substituir componentes maduros por versões mais simples que removam funcionalidades existentes.
-
----
-
-# 6. Não alterar regras não relacionadas
-
-É proibido realizar refatorações oportunistas fora do escopo.
-
-Não alterar:
-
-- login;
-- perfil;
-- permissões;
-- navegação;
-- contexto da clínica;
-- componentes globais;
-- design system;
-
-quando não houver necessidade para a issue atual.
+Não substitua um componente mais completo por outro simplificado se isso remover
+funcionalidades existentes.
 
 ---
 
-# 7. Regra de negócio
+## Segurança
 
-Evitar colocar regras de negócio críticas no frontend.
+O frontend não é a autoridade final de segurança.
 
-O frontend pode:
-
-- apresentar;
-- validar formato;
-- controlar interação;
-- montar request;
-- interpretar response.
-
-Regras críticas devem permanecer na API.
-
-Nunca utilizar UI como mecanismo exclusivo de segurança.
+- Permissões visuais servem para UX.
+- A autorização efetiva deve permanecer na API.
+- Ocultar botão não equivale a autorizar ou negar operação.
+- Não armazene secrets no frontend.
+- Não registre tokens ou dados sensíveis no console.
+- Não introduza mecanismos alternativos de autenticação sem necessidade.
 
 ---
 
-# 8. Segurança
+## Multi-clínica
 
-Ocultar um botão não equivale a autorização.
+Nunca misture dados de clínicas diferentes.
 
-O frontend pode usar permissões para UX, mas deve assumir que a API aplica a autorização efetiva.
+Ao mudar o contexto da clínica:
 
-Não armazenar secrets no frontend.
+- não reutilize dados pertencentes à clínica anterior;
+- invalide ou recarregue estado dependente quando necessário;
+- evite cache stale;
+- preserve as regras existentes de seleção de clínica.
 
-Nunca incluir:
+Não utilize ClinicaId manipulado pelo frontend como mecanismo de segurança.
 
-- client secrets;
-- connection strings;
-- credenciais;
-- chaves privadas.
+Usuários de clínica única não devem visualizar clínicas às quais não possuem
+acesso.
 
----
-
-# 9. Tokens
-
-Utilizar somente os mecanismos existentes de autenticação.
-
-Não criar armazenamento alternativo de token sem necessidade.
-
-Evitar exposição de tokens em:
-
-- logs;
-- console;
-- query string;
-- erros;
-- analytics.
+SuperAdmin e usuários multi-clínica devem continuar respeitando o contexto
+selecionado e as regras existentes.
 
 ---
 
-# 10. Multi-clínica
+## Login e autenticação
 
-O HemoDinks possui isolamento por clínica.
+Alterações de login devem preservar os fluxos existentes, incluindo os modos de
+autenticação já suportados pelo sistema.
 
-O frontend nunca deve misturar dados entre clínicas.
+Não assuma que todos os usuários possuem o mesmo tipo de login.
 
-Ao mudar o contexto de clínica:
-
-- invalidar dados dependentes quando necessário;
-- buscar dados novamente;
-- não reutilizar cache incorreto;
-- não manter estado pertencente à clínica anterior.
+Não modifique autenticação, tokens, sessão ou seleção de clínica sem investigar o
+fluxo relacionado.
 
 ---
 
-# 11. Contexto da clínica
+## Responsividade
 
-Não confiar em ClinicaId manipulado manualmente pelo cliente para segurança.
-
-O frontend utiliza contexto para UX e requests.
-
-A segurança real deve ser aplicada pela API.
-
-Entretanto, o frontend deve evitar enviar contexto incorreto ou stale.
-
----
-
-# 12. SuperAdmin
-
-SuperAdmin pode possuir contexto multi-clínica.
-
-Não exibir clínicas para usuários que não tenham autorização para selecioná-las.
-
-Usuários de clínica única devem entrar diretamente no contexto permitido conforme regra existente.
-
-Não alterar esse comportamento sem requisito explícito.
-
----
-
-# 13. Login unificado
-
-Alterações na tela de login devem considerar o fluxo de login unificado já existente.
-
-Não assumir que cada usuário utiliza obrigatoriamente e-mail individual.
-
-Preservar compatibilidade com fluxos existentes.
-
----
-
-# 14. Responsividade
-
-Toda alteração visual deve considerar:
+Toda alteração visual relevante deve funcionar em:
 
 - desktop;
 - notebook;
 - tablet;
 - smartphone.
 
-Não considerar uma tela concluída somente porque funciona em 1920x1080.
+O usuário não deve precisar diminuir o zoom do navegador para utilizar a tela.
 
----
-
-# 15. Layout responsivo
-
-Evitar:
+Evite:
 
 - largura fixa desnecessária;
 - overflow horizontal;
-- tabelas impossíveis de operar em mobile;
-- modais maiores que viewport;
+- elementos sobrepostos;
 - botões inacessíveis;
-- conteúdo dependente de zoom reduzido.
+- modais maiores que a viewport.
 
-O usuário não deve precisar diminuir o zoom do navegador para operar a aplicação.
-
----
-
-# 16. Mobile
-
-Em telas pequenas:
-
-- preservar hierarquia;
-- priorizar conteúdo principal;
-- permitir scroll adequado;
-- manter ações acessíveis;
-- adaptar tabelas quando necessário;
-- evitar elementos sobrepostos.
-
-Não remover funcionalidades importantes simplesmente para fazer caber.
+Não remova funcionalidades importantes apenas para fazer o layout caber.
 
 ---
 
-# 17. Acessibilidade
+## Acessibilidade
 
-Preservar boas práticas de acessibilidade.
-
-Verificar:
+Preserve:
 
 - labels;
-- aria attributes;
+- roles;
 - foco;
-- teclado;
-- contraste;
+- navegação por teclado;
+- aria attributes válidos;
+- mensagens de erro;
 - estados disabled;
-- feedback de erro;
-- modais;
-- dropdowns.
+- semântica dos componentes.
 
-Alterações visuais não devem quebrar testes de acessibilidade existentes.
+Alterações de layout não devem quebrar acessibilidade ou testes existentes.
 
 ---
 
-# 18. Design existente
+## Estado e API
 
-Respeitar identidade visual existente.
-
-Não realizar redesign completo quando a solicitação for localizada.
-
-Preservar elementos explicitamente mantidos pelo produto.
-
-Não alterar plano de fundo, branding ou identidade visual sem requisito.
-
----
-
-# 19. Estados da interface
-
-Considerar:
-
-- loading;
-- sucesso;
-- erro;
-- vazio;
-- disabled;
-- permissões insuficientes.
-
-Não deixar interface sem feedback durante operações assíncronas importantes.
+- Mantenha estado no menor escopo necessário.
+- Não duplique a mesma informação em múltiplos stores sem necessidade.
+- Utilize a camada existente de acesso à API.
+- Evite chamadas HTTP diretamente em componentes quando houver service/client
+  apropriado.
+- Evite requests duplicados e loops de refetch.
+- Não introduza estado global para resolver problema local.
 
 ---
 
-# 20. Loading
+## Formulários
 
-Evitar loaders que bloqueiem toda a aplicação sem necessidade.
-
-Utilizar loading proporcional ao escopo da operação.
-
-Não fazer requests repetitivos desnecessários.
-
----
-
-# 21. API
-
-Centralizar acesso à API nos mecanismos existentes.
-
-Não espalhar chamadas HTTP diretamente por componentes quando existir camada de services/client.
-
-Preservar tratamento centralizado de autenticação e erros.
-
----
-
-# 22. Requests
-
-Evitar requests duplicados.
-
-Verificar:
-
-- dependências de effects;
-- invalidation;
-- refetch automático;
-- loops;
-- chamadas disparadas por múltiplos componentes.
-
----
-
-# 23. Estado
-
-Manter estado no menor escopo necessário.
-
-Não promover estado local para global sem justificativa.
-
-Não duplicar a mesma informação em múltiplos stores.
-
-Evitar estado derivado desnecessário.
-
----
-
-# 24. Performance
-
-Evitar otimização prematura.
-
-Porém verificar:
-
-- re-render excessivo;
-- request duplicado;
-- listas grandes;
-- componentes pesados;
-- cálculos repetidos.
-
-Usar memoização apenas quando houver motivo.
-
----
-
-# 25. Formulários
-
-Preservar:
+Preserve:
 
 - máscaras;
-- validators;
+- validações existentes;
 - mensagens;
-- comportamento existente;
-- componentes reutilizáveis.
-
-Não duplicar regra da API de maneira divergente.
-
-Validações do frontend são UX, não mecanismo de segurança.
-
----
-
-# 26. Dropdowns
-
-Dropdowns digitáveis e componentes com inclusão dinâmica devem manter suas funcionalidades existentes.
-
-Não substituir por `<select>` simples quando isso reduzir capacidade funcional.
-
----
-
-# 27. Datepicker
-
-Preservar componente de data existente quando possível.
-
-Não substituir por input nativo se isso gerar divergência visual ou funcional sem requisito.
-
----
-
-# 28. Tabelas e listagens
-
-Ao modificar listagens, considerar:
-
-- paginação;
-- filtros;
-- ordenação;
-- ações;
-- responsividade;
-- permissões;
-- exportações.
-
-Não remover funcionalidades existentes para simplificar layout.
-
----
-
-# 29. Exportações
-
-Alterações em telas que oferecem PDF/XLSX devem preservar seus fluxos.
-
-Não duplicar lógica de geração no frontend quando ela pertencer ao backend.
-
----
-
-# 30. Testes — estratégia
-
-Aplicar pirâmide de testes.
-
-Prioridade:
-
-1. testes unitários;
-2. testes de componentes;
-3. testes de integração;
-4. E2E.
-
-Não começar sempre pelo E2E.
-
----
-
-# 31. Testes após alteração
-
-Executar primeiro os testes diretamente relacionados.
-
-Depois ampliar proporcionalmente ao impacto.
-
----
-
-# 32. E2E
-
-E2E é obrigatório quando houver alteração relevante em:
-
-- fluxo;
-- navegação;
-- login;
-- permissões;
-- clínica;
-- formulário importante;
-- modal importante;
-- layout estrutural;
-- comportamento visível do usuário.
-
----
-
-# 33. Playwright
-
-Ao modificar telas cobertas pelo Playwright:
-
-- localizar testes existentes;
-- preservar seletores estáveis;
-- evitar seletores frágeis;
-- atualizar testes somente quando o comportamento esperado realmente mudou.
-
-Não "consertar" um E2E simplesmente removendo a asserção problemática.
-
----
-
-# 34. Seletores E2E
-
-Preferir seletores baseados em:
-
-- role;
-- label;
-- texto semântico;
-- identificador estável quando necessário.
-
-Evitar dependência excessiva de:
-
-- classes CSS;
-- posição no DOM;
-- nth-child.
-
----
-
-# 35. Falha de E2E
-
-Quando um E2E falhar após mudança visual:
-
-1. verificar se houve regressão;
-2. verificar acessibilidade;
-3. verificar seletor;
-4. verificar timing;
-5. somente então alterar o teste.
-
-Não assumir automaticamente que o teste está errado.
-
----
-
-# 36. Política de investigação eficiente
-
-Não varrer todo o frontend para uma alteração localizada.
-
-Começar por:
-
-1. rota;
-2. página;
-3. componente;
-4. hook/store;
-5. service;
-6. testes.
-
-Expandir somente se necessário.
-
----
-
-# 37. Uso eficiente de contexto
-
-Evitar:
-
-- abrir arquivos grandes sem necessidade;
-- reler módulos já compreendidos;
-- repetir buscas;
-- analisar telas sem relação;
-- gerar resumos excessivamente longos antes de editar.
-
----
-
-# 38. Política de complexidade
-
-Classificar mentalmente a atividade.
-
-## Baixa
-
-Exemplos:
-
-- texto;
-- espaçamento;
-- alinhamento;
-- pequena validação;
-- ajuste localizado.
-
-Estratégia:
-
-- alteração localizada;
-- teste relacionado.
-
-## Média
-
-Exemplos:
-
-- formulário;
-- componente;
-- tela;
-- service;
-- tabela;
-- filtro.
-
-Estratégia:
-
-- analisar fluxo;
 - componentes;
-- estado;
-- testes.
+- comportamento esperado.
 
-## Alta
+Validação no frontend melhora UX, mas não substitui validação e segurança da API.
 
-Exemplos:
-
-- autenticação;
-- permissões;
-- troca de clínica;
-- grandes alterações de layout;
-- fluxo multi-etapa.
-
-Estratégia:
-
-- mapear fluxo completo;
-- avaliar segurança;
-- avaliar estado;
-- revisar E2E.
-
-## Crítica
-
-Exemplos:
-
-- vazamento cross-tenant;
-- exposição indevida de dados;
-- bypass de autorização;
-- tokens;
-- login;
-- sessão.
-
-Estratégia:
-
-- análise completa do trust boundary;
-- menor alteração segura possível;
-- testes negativos;
-- E2E quando aplicável.
+Não implemente uma regra diferente da API para o mesmo requisito.
 
 ---
 
-# 39. Escalonamento
+## Eficiência de execução
 
-Não utilizar profundidade máxima para ajustes triviais.
+Antes de editar:
 
-Escalar investigação quando houver:
+1. localize a rota ou tela envolvida;
+2. identifique componentes diretamente relacionados;
+3. localize hooks, stores ou services usados por essa tela;
+4. localize os testes correspondentes;
+5. faça a menor alteração necessária.
 
-- comportamento inesperado;
-- bug difícil de reproduzir;
-- múltiplos estados envolvidos;
+Não varra o frontend inteiro para uma mudança localizada.
+
+Prefira busca direcionada por:
+
+- rota;
+- componente;
+- hook;
+- service;
+- store;
+- teste.
+
+Evite:
+
+- abrir arquivos não relacionados;
+- reler código já compreendido;
+- repetir buscas;
+- criar subagentes para tarefas simples;
+- gerar análises extensas antes de alterações triviais.
+
+Amplie a investigação somente quando houver dependência real.
+
+---
+
+## Planejamento proporcional ao risco
+
+Para alterações visuais pequenas, implemente diretamente após localizar o
+componente.
+
+Faça um plano curto antes de editar quando houver:
+
 - autenticação;
 - autorização;
-- tenant;
-- race condition;
-- regressão de E2E;
-- impacto transversal.
+- troca de clínica;
+- estado global;
+- fluxo multi-etapa;
+- mudança estrutural de tela;
+- integração com vários endpoints.
+
+Não crie planos extensos para CSS, texto ou pequenos ajustes de layout.
 
 ---
 
-# 40. Subagentes
+## Testes
 
-Não criar subagentes para tarefas triviais.
+Execute primeiro os testes diretamente relacionados.
 
-Subagentes só devem ser considerados quando houver tarefas realmente independentes.
+Amplie a suíte proporcionalmente ao impacto.
 
-Não dividir artificialmente uma alteração simples.
+Use E2E quando houver alteração relevante em:
+
+- login;
+- navegação;
+- permissões;
+- seleção de clínica;
+- fluxo de formulário;
+- comportamento importante para o usuário;
+- layout estrutural.
+
+Não rode E2E completo repetidamente sem alteração relevante.
 
 ---
 
-# 41. Anti-alucinação
+## Playwright
 
-Nunca assumir que existe:
+Ao alterar uma tela coberta por Playwright:
+
+- preserve seletores estáveis;
+- prefira role, label e semântica;
+- evite dependência de posição no DOM;
+- não remova assertions apenas para fazer o teste passar.
+
+Quando um E2E falhar após uma alteração:
+
+1. verifique regressão real;
+2. verifique acessibilidade;
+3. verifique seletor;
+4. verifique timing;
+5. somente então altere o teste.
+
+---
+
+## Anti-alucinação
+
+Nunca assuma que existe:
 
 - componente;
 - hook;
+- rota;
 - endpoint;
 - store;
-- rota;
 - função;
 - teste;
 
-sem verificar no repositório.
+sem localizar evidência no repositório.
 
-Quando houver dúvida, investigar.
+Não invente comportamento da API.
 
----
-
-# 42. Não inventar requisitos
-
-Não adicionar funcionalidade não solicitada.
-
-Se identificar melhoria adicional:
-
-- relatar;
-- não implementar automaticamente.
+Antes de alterar um contrato, verifique como ele é usado atualmente.
 
 ---
 
-# 43. Compatibilidade
+## Dependências
 
-Preservar contratos existentes com a API.
+Não adicione biblioteca nova quando a funcionalidade puder ser implementada com
+as dependências existentes.
 
-Não alterar nomes ou estruturas de payload sem verificar backend.
+Ao adicionar dependência, considere:
 
----
-
-# 44. Console
-
-Não deixar:
-
-- console.log;
-- debug;
-- informações sensíveis;
-- dumps;
-
-em código de produção sem justificativa.
+- necessidade;
+- manutenção;
+- segurança;
+- bundle;
+- compatibilidade.
 
 ---
 
-# 45. Dependências
-
-Não adicionar nova biblioteca quando a funcionalidade puder ser implementada adequadamente com as dependências existentes.
-
-Quando adicionar dependência:
-
-- justificar;
-- avaliar manutenção;
-- avaliar bundle;
-- avaliar segurança.
-
----
-
-# 46. Git
-
-Manter diff pequeno e relacionado à issue.
-
-Não alterar arquivos fora do escopo.
-
-Não realizar formatação global sem necessidade.
-
----
-
-# 47. Finalização
+## Finalização
 
 Antes de concluir:
 
-- revisar diff;
-- validar desktop;
-- validar mobile quando aplicável;
-- validar permissões;
-- validar contexto de clínica;
-- executar testes;
-- verificar console;
-- verificar regressões visíveis.
+- revise o diff;
+- confirme que o escopo foi respeitado;
+- valide o fluxo alterado;
+- valide permissões e contexto da clínica quando aplicável;
+- valide mobile quando houver alteração visual;
+- execute os testes relevantes;
+- verifique console e erros.
+
+Ao finalizar, informe apenas:
+
+1. o que foi alterado;
+2. principais componentes/arquivos afetados;
+3. testes executados e resultado;
+4. riscos ou pendências reais.
+
+Não gere documentação extensa sem necessidade.
 
 ---
 
-# 48. Relatório final
+## Prioridade
 
-Informar objetivamente:
+Em caso de conflito, priorize:
 
-- componentes alterados;
-- comportamento alterado;
-- testes executados;
-- resultado;
-- riscos ou pendências.
-
-Não produzir relatório excessivamente longo.
-
----
-
-# 49. Regra máxima
-
-No frontend do HemoDinks:
-
-SEGURANÇA > ISOLAMENTO > CORREÇÃO FUNCIONAL > UX > ACESSIBILIDADE > ARQUITETURA > TESTABILIDADE > PERFORMANCE > ESTÉTICA.
-
-Nunca sacrificar segurança ou isolamento de dados por conveniência visual.
+SEGURANÇA > ISOLAMENTO DE DADOS > CORREÇÃO FUNCIONAL > UX >
+ACESSIBILIDADE > ARQUITETURA > TESTABILIDADE > PERFORMANCE > ESTÉTICA.
