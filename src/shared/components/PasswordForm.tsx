@@ -1,3 +1,4 @@
+import { isPasswordPolicyError } from '../../services/passwordPolicyError';
 import { type FormEvent, useMemo, useState } from 'react';
 import { KeyRound, X } from 'lucide-react';
 import { changePassword } from '../../services';
@@ -26,6 +27,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
   const [loading, setLoading] = useState(false);
   const passwordStrength = useMemo(() => getPasswordStrength(novaSenha), [novaSenha]);
 
@@ -33,6 +35,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
     event.preventDefault();
     if (loading) return;
     setError('');
+    setPasswordError(false);
 
     if (novaSenha !== confirmacao) {
       setError('A confirmacao precisa ser igual a nova senha.');
@@ -52,6 +55,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
       const result = await changePassword(session.user.id, { senhaAtual, novaSenha }, session.token);
       onChanged(result.message);
     } catch (submitError) {
+      setPasswordError(isPasswordPolicyError(submitError));
       setError(getErrorMessage(submitError));
     } finally {
       setLoading(false);
@@ -80,7 +84,8 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
         id="new-password"
         label="Nova senha"
         value={novaSenha}
-        onChange={setNovaSenha}
+        onChange={(value) => { setNovaSenha(value); if (passwordError) { setError(''); setPasswordError(false); } }}
+        errorId={passwordError ? 'new-password-api-error' : undefined}
         autoComplete="new-password"
         minLength={8}
         maxLength={MAX_PASSWORD_LENGTH}
@@ -105,7 +110,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
         required
       />
 
-      {error && <AlertMessage type="error">{error}</AlertMessage>}
+      {error && <div id="new-password-api-error"><AlertMessage type="error">{error}</AlertMessage></div>}
       {temporaryRecovery && <p>Após salvar, entre novamente com sua nova senha.</p>}
 
       <div className="button-row">

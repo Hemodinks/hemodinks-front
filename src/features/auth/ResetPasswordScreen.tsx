@@ -1,3 +1,4 @@
+import { isPasswordPolicyError } from '../../services/passwordPolicyError';
 import { type FormEvent, useMemo, useState } from 'react';
 import { KeyRound } from 'lucide-react';
 import type { Theme } from '../../appTypes';
@@ -38,6 +39,7 @@ export function ResetPasswordScreen({
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const passwordStrength = useMemo(() => getPasswordStrength(novaSenha), [novaSenha]);
@@ -45,6 +47,7 @@ export function ResetPasswordScreen({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+    setPasswordError(false);
     setSuccess('');
     let successMessage = '';
 
@@ -67,6 +70,7 @@ export function ResetPasswordScreen({
       setNovaSenha('');
       setConfirmacao('');
     } catch (submitError) {
+      setPasswordError(isPasswordPolicyError(submitError));
       setError(getErrorMessage(submitError));
     } finally {
       setLoading(false);
@@ -99,7 +103,8 @@ export function ResetPasswordScreen({
             id="reset-new-password"
             label="Nova senha"
             value={novaSenha}
-            onChange={setNovaSenha}
+            onChange={(value) => { setNovaSenha(value); if (passwordError) { setError(''); setPasswordError(false); } }}
+            errorId={passwordError ? 'new-password-api-error' : undefined}
             autoComplete="new-password"
             minLength={8}
             maxLength={MAX_PASSWORD_LENGTH}
@@ -124,7 +129,7 @@ export function ResetPasswordScreen({
             required
           />
 
-          {error && <AlertMessage type="error">{error}</AlertMessage>}
+          {error && <div id="new-password-api-error"><AlertMessage type="error">{error}</AlertMessage></div>}
           {success && <ToastMessage type="success">{success}</ToastMessage>}
 
           <div className="button-row reset-password-actions">

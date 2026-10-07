@@ -39,7 +39,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
           </div>
         </div>
         {page.success && <ToastMessage type="success" icon={<CheckCircle2 size={17} />}>{page.success}</ToastMessage>}
-        {page.error && <AlertMessage type="error">{page.error}</AlertMessage>}
+        {page.error && <div id="clinic-password-api-error"><AlertMessage type="error">{page.error}</AlertMessage></div>}
         <ClinicsTable
           clinics={page.sortedClinics}
           loading={page.loading}
@@ -62,6 +62,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
           photoPreview={page.photoPreview}
           setPhotoPreview={page.setPhotoPreview}
           saving={page.saving}
+          passwordError={page.passwordError}
           onPhotoChange={page.handlePhotoChange}
           onSubmit={page.submit}
           onClose={page.closeForm}
