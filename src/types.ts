@@ -369,6 +369,21 @@ export type MonitoringError = {
 
 export type MonitoringErrorPage = PagedResult<MonitoringError>;
 
+// Safe presentation subset of SecurityObservation from API #148.
+export type SecurityObservation = {
+  timestamp: string;
+  kind: string;
+  operation: string;
+  reason: string;
+  clinicId: number | null;
+};
+
+export type SecurityObservationPage = {
+  items: SecurityObservation[];
+  page: number;
+  pageSize: number;
+};
+
 export type PublicClinic = {
   id: number;
   nome: string;
