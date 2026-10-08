@@ -1,3 +1,4 @@
+import { sanitizeTelemetryEvent, privateErrorSummary } from './telemetryPrivacy';
 let sentryEnabled = false;
 let sentryModule: typeof import('@sentry/react') | null = null;
 let sentryModulePromise: Promise<typeof import('@sentry/react') | null> | null = null;
@@ -53,19 +54,22 @@ export function initObservability() {
       release: import.meta.env.VITE_APP_VERSION,
       tracesSampleRate: getTraceSampleRate(),
       sendDefaultPii: false,
+      beforeSend: event => sanitizeTelemetryEvent(event),
+      beforeSendTransaction: () => null,
+      beforeBreadcrumb: () => null,
     });
   });
 }
 
-export function captureException(error: unknown, extra?: Record<string, unknown>) {
+export function captureException(error: unknown, _extra?: Record<string, unknown>) {
   if (!sentryEnabled) {
-    if (import.meta.env.DEV) console.error('[observability]', error, extra);
+    if (import.meta.env.DEV) console.error('[observability]', privateErrorSummary(error));
     return;
   }
 
   void loadSentryModule().then((Sentry) => {
     if (sentryEnabled && Sentry) {
-      Sentry.captureException(error, { extra });
+      Sentry.captureException(new Error(privateErrorSummary(error)));
     }
   });
 }

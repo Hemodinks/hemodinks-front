@@ -1,9 +1,9 @@
+import { sanitizeSpan } from './telemetryPrivacy';
+import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
-import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
-import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { BatchSpanProcessor, TraceIdRatioBasedSampler, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import {
@@ -15,7 +15,6 @@ import {
 type OTelRuntimeConfig = {
   enabled?: boolean;
   exporterEndpoint?: string;
-  exporterHeaders?: string;
   serviceName?: string;
   serviceVersion?: string;
   environment?: string;
@@ -26,43 +25,6 @@ let initialized = false;
 let initializationPromise: Promise<void> | null = null;
 let activeTracerProvider: WebTracerProvider | null = null;
 let unregisterInstrumentations: (() => void) | null = null;
-
-function getApiBaseUrl() {
-  return (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
-}
-
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function parseHeaders(rawHeaders?: string) {
-  if (!rawHeaders?.trim()) {
-    return undefined;
-  }
-
-  const headers = rawHeaders
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .reduce<Record<string, string>>((accumulator, entry) => {
-      const separatorIndex = entry.indexOf('=');
-
-      if (separatorIndex <= 0) {
-        return accumulator;
-      }
-
-      const key = entry.slice(0, separatorIndex).trim();
-      const value = entry.slice(separatorIndex + 1).trim();
-
-      if (key && value) {
-        accumulator[key] = value;
-      }
-
-      return accumulator;
-    }, {});
-
-  return Object.keys(headers).length > 0 ? headers : undefined;
-}
 
 function clampSampleRate(value?: number) {
   if (!Number.isFinite(value)) {
@@ -90,11 +52,6 @@ async function loadRuntimeConfig(): Promise<OTelRuntimeConfig | null> {
   }
 }
 
-function buildPropagateTraceHeaderCorsUrls() {
-  const apiBaseUrl = getApiBaseUrl();
-  return [new RegExp(`^${escapeRegex(apiBaseUrl)}`)];
-}
-
 export async function initOpenTelemetryBrowser() {
   if (initialized) {
     return;
@@ -120,15 +77,14 @@ export async function initOpenTelemetryBrowser() {
         resourceAttributes[ATTR_DEPLOYMENT_ENVIRONMENT_NAME] = runtimeConfig.environment.trim();
       }
 
+      const exporter = new OTLPTraceExporter({ url: runtimeConfig.exporterEndpoint });
       const tracerProvider = new WebTracerProvider({
         resource: resourceFromAttributes(resourceAttributes),
         sampler: new TraceIdRatioBasedSampler(clampSampleRate(runtimeConfig.tracesSampleRate)),
         spanProcessors: [
           new BatchSpanProcessor(
-            new OTLPTraceExporter({
-              url: runtimeConfig.exporterEndpoint,
-              headers: parseHeaders(runtimeConfig.exporterHeaders),
-            }),
+            { export: (spans, callback) => exporter.export(spans.map(sanitizeSpan), callback),
+              shutdown: () => exporter.shutdown(), forceFlush: () => exporter.forceFlush() },
           ),
         ],
       });
@@ -140,16 +96,7 @@ export async function initOpenTelemetryBrowser() {
       unregisterInstrumentations = registerInstrumentations({
         instrumentations: [
           new DocumentLoadInstrumentation(),
-          new UserInteractionInstrumentation({
-            shouldPreventSpanCreation: (_eventType, element) => Boolean(element.closest('[data-private="true"]')),
-          }),
-          new FetchInstrumentation({
-            ignoreUrls: [
-              /\/otel-runtime-config\.json$/i,
-              new RegExp(`^${escapeRegex(runtimeConfig.exporterEndpoint)}`),
-            ],
-            propagateTraceHeaderCorsUrls: buildPropagateTraceHeaderCorsUrls(),
-          }),
+          new FetchInstrumentation({ ignoreUrls: [runtimeConfig.exporterEndpoint], propagateTraceHeaderCorsUrls: [] }),
         ],
       });
 

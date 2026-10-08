@@ -10,6 +10,7 @@ type PasswordInputProps = {
   maxLength: number;
   minLength?: number;
   required?: boolean;
+  errorId?: string;
 };
 
 export function PasswordInput({
@@ -21,6 +22,7 @@ export function PasswordInput({
   maxLength,
   minLength,
   required = false,
+  errorId,
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
   const toggleLabel = visible ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`;
@@ -35,9 +37,13 @@ export function PasswordInput({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           autoComplete={autoComplete}
+          data-private={autoComplete === 'new-password' ? true : undefined}
+          className={autoComplete === 'new-password' ? 'sentry-mask nr-mask' : undefined}
           minLength={minLength}
           maxLength={maxLength}
           required={required}
+          aria-invalid={errorId ? true : undefined}
+          aria-describedby={errorId}
         />
         <button
           type="button"

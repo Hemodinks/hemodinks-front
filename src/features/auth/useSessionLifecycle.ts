@@ -1,3 +1,4 @@
+import { SESSION_ABSOLUTE_EXPIRED_CODE, SESSION_ABSOLUTE_EXPIRED_MESSAGE } from '../../services/sessionExpiration';
 import { useEffect, useRef } from 'react';
 import { AUTH_EXPIRED_EVENT, getCurrentLicenca } from '../../services';
 import { MEDICAL_PROFILE_ID } from '../../shared/utils/formatters';
@@ -6,7 +7,7 @@ import { ApiError, registerSessionTokenResolver } from '../../services/api';
 import { renewSession, recordSessionActivity, sessionIdentity } from '../../services/sessionService';
 import type { AuthSession } from '../../types';
 
-export function useSessionExpiration(session: AuthSession | null, onExpired: () => void,
+export function useSessionExpiration(session: AuthSession | null, onExpired: (message?: string) => void,
   persistSession: (session: AuthSession) => void) {
   const onExpiredRef = useRef(onExpired);
   onExpiredRef.current = onExpired;
@@ -26,20 +27,32 @@ export function useSessionExpiration(session: AuthSession | null, onExpired: () 
     let lastAttempt = 0;
     let idleMs = 30 * 60_000;
     let lastBroadcast = 0;
+    const originalClaims = decodeJwtPayload(session.token);
+    const windowIdentity = JSON.stringify([originalClaims?.sid ?? originalClaims?.auth_time, originalClaims?.usuarioGlobalId]);
     const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('hemodinks-session-activity');
     if (channel) channel.onmessage = event => {
-      const message = event.data as { identity?: string; at?: number } | null;
+      const message = event.data as { identity?: string; at?: number; windowIdentity?: string; expiredCode?: string } | null;
+      if (message?.windowIdentity === windowIdentity && message.expiredCode === SESSION_ABSOLUTE_EXPIRED_CODE) {
+        expireSession(SESSION_ABSOLUTE_EXPIRED_CODE, false);
+        return;
+      }
       if (!expired && message?.identity === identity && typeof message.at === 'number'
         && message.at <= Date.now() && message.at > lastActivity) lastActivity = message.at;
     };
     let inFlight: Promise<string> | null = null;
-    const expireSession = () => {
-      if (!disposed && !expired) { expired = true; onExpiredRef.current(); }
+    const expireSession = (code?: string, broadcast = true) => {
+      if (!disposed && !expired) {
+        expired = true;
+        if (code === SESSION_ABSOLUTE_EXPIRED_CODE && broadcast)
+          channel?.postMessage({ windowIdentity, expiredCode: code });
+        onExpiredRef.current(code === SESSION_ABSOLUTE_EXPIRED_CODE ? SESSION_ABSOLUTE_EXPIRED_MESSAGE : undefined);
+      }
     };
     const handleExpired = (event: Event) => {
-      const rejectedToken = (event as CustomEvent<{ token?: string }>).detail?.token;
+      const detail = (event as CustomEvent<{ token?: string; code?: string }>).detail;
+      const rejectedToken = detail?.token;
       if (rejectedToken && current.current?.token !== rejectedToken) return;
-      expireSession();
+      expireSession(detail?.code);
     };
     window.addEventListener(AUTH_EXPIRED_EVENT, handleExpired);
     const claims = decodeJwtPayload(session.token);
@@ -80,7 +93,7 @@ export function useSessionExpiration(session: AuthSession | null, onExpired: () 
         persist.current(updated);
         return result.token;
       }).catch(error => {
-        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) expireSession();
+        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) expireSession(error.code);
         throw error;
       }).finally(() => { inFlight = null; });
       return inFlight;
@@ -101,8 +114,10 @@ export function useSessionExpiration(session: AuthSession | null, onExpired: () 
           lastSentActivity = Math.max(lastSentActivity, sentActivity);
           idleMs = result.idleTimeoutMinutes * 60_000;
         }).catch(error => {
-          if (!disposed && !expired && error instanceof ApiError && (error.status === 401 || error.status === 403))
-            void resolveToken(token, true).catch(() => {});
+          if (!disposed && !expired && error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+            if (error.code === SESSION_ABSOLUTE_EXPIRED_CODE) expireSession(error.code);
+            else void resolveToken(token, true).catch(() => {});
+          }
         });
       }
     };

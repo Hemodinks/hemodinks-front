@@ -1,3 +1,6 @@
+import { registerPasswordPolicyCases } from './password-policy-cases';
+import { registerSecurityObservationCases } from './security-observation-cases';
+import { registerSensitiveIdentityCases } from './sensitive-identity-cases';
 import { registerAgendaAllDayCases } from './agenda-all-day-cases';
 import { registerAgendaViewCases } from './agenda-view-cases';
 import { registerAgendaRecipientCases } from './agenda-recipient-cases';
@@ -35,8 +38,14 @@ test.beforeEach(async ({ page }, testInfo) => {
   }
 });
 
+function mockSessionToken(id: number) {
+  const payload = { sid: `mock-session-${id}`, usuarioGlobalId: id, usuarioClinicaId: id,
+    clinicaId: 1, clinicaSlug: 'clinica-hemodinks', exp: Math.floor(Date.now() / 1000) + 3600 };
+  return `test.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.signature`;
+}
+
 const session = {
-  token: 'jwt-token',
+  token: mockSessionToken(99),
   user: {
     id: 99,
     clinicaId: 1,
@@ -52,7 +61,7 @@ const session = {
 };
 
 const superAdminSession = {
-  token: 'super-admin-token',
+  token: mockSessionToken(100),
   user: {
     id: 100,
     clinicaId: 1,
@@ -68,7 +77,7 @@ const superAdminSession = {
 };
 
 const patientSession = {
-  token: 'patient-token',
+  token: mockSessionToken(20),
   user: {
     id: 20,
     clinicaId: 1,
@@ -84,7 +93,7 @@ const patientSession = {
 };
 
 const tutorialRecordingSession = {
-  token: 'token-ficticio-da-gravacao',
+  token: mockSessionToken(900),
   user: {
     id: 900,
     clinicaId: 1,
@@ -275,8 +284,9 @@ function buildAgendaEventFromPayload(id: number, payload: Payload) {
 }
 
 async function loginViaUi(page: Page, initialRoute = '/', loginSession = session) {
+  const restored = page.waitForResponse(response => new URL(response.url()).pathname === '/api/session/restaurar');
   await page.goto(initialRoute);
-  if (await page.evaluate(() => Boolean(sessionStorage.getItem('hemodinks.session')))) return;
+  if ((await restored).ok()) return;
   await expect(page.locator('#login-password')).toBeVisible();
   await page.getByLabel('Email').fill(loginSession.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
@@ -301,6 +311,9 @@ async function mockApi(page: Page, loginSession = session, options: {
     autorizacao: 'DEMO-001',
   } : { ...paciente, pagamento: options.billingAmount ?? paciente.pagamento };
   const state = {
+    token: loginSession.token,
+    authenticated: false,
+    restorationCount: 0,
     users: [user],
     pacientes: [sanitizedPatient],
     events: [agendaEvent],
@@ -342,6 +355,27 @@ async function mockApi(page: Page, loginSession = session, options: {
     const path = url.pathname;
     if (path === '/api/warmup') return route.fulfill({ status: 204 });
     const method = request.method();
+
+    // This UI suite simulates server session state. Real cookies/rotation are covered
+    // by login-real-api.spec.ts against the isolated backend, not by this mock.
+    if (path === '/api/session/restaurar' && method === 'POST') {
+      state.restorationCount++;
+      expect(request.headers()['x-session-refresh']).toBe('1');
+      return state.authenticated
+        ? route.fulfill({ json: { ...loginSession.user, token: loginSession.token } })
+        : route.fulfill({ status: 401, json: {} });
+    }
+    if (path === '/api/session/sair' && method === 'POST') {
+      expect(request.headers()['x-session-refresh']).toBe('1');
+      if (request.headers().authorization === `Bearer ${loginSession.token}`) state.authenticated = false;
+      return route.fulfill({ status: 204 });
+    }
+    if (path === '/api/session/atividade' && method === 'POST')
+      return route.fulfill({ json: { idleTimeoutMinutes: 30 } });
+    if (path === '/api/session/renovar' && method === 'POST')
+      return state.authenticated
+        ? route.fulfill({ json: { token: loginSession.token, idleTimeoutMinutes: 30 } })
+        : route.fulfill({ status: 401, json: {} });
 
     if (path === '/api/users/login-context' && method === 'POST') {
       return route.fulfill({ json: { clinicas: [{
@@ -385,6 +419,7 @@ async function mockApi(page: Page, loginSession = session, options: {
 
     if (path === '/api/users/authenticate' && method === 'POST') {
       state.loginPayload = request.postDataJSON() as Payload;
+      state.authenticated = true;
       return route.fulfill({
         json: {
           id: loginSession.user.id,
@@ -638,6 +673,9 @@ async function mockApi(page: Page, loginSession = session, options: {
   return state;
 }
 
+registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });
+registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session });
+registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
 registerPatientListTests({ setup: mockApi, login: loginViaUi });
 
@@ -691,6 +729,22 @@ async function captureCurrentScreenshot(page: Page, testInfo: TestInfo, name: st
   await expectNoGlobalHorizontalOverflow(page);
 }
 
+test('conflito temporário de sessão ao carregar grupos não encerra o dashboard', async ({ page }) => {
+  await mockApi(page);
+  let logoutCalls = 0;
+  page.on('request', request => { if (new URL(request.url()).pathname === '/api/session/sair') logoutCalls++; });
+  await page.route(url => /\/api\/grupos-medicos\/?$/.test(url.pathname), route =>
+    route.fulfill({ status: 503, json: { code: 'session_validation_busy' }, headers: { 'Retry-After': '1', 'Cache-Control': 'no-store' } }));
+  const failedGroups = page.waitForResponse(response => /\/api\/grupos-medicos\/?$/.test(new URL(response.url()).pathname)
+    && response.status() === 503);
+  await loginViaUi(page, '/dashboard');
+  await failedGroups;
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  expect(logoutCalls).toBe(0);
+});
+
 test('faz login pelo formulario e abre o dashboard', async ({ page }) => {
   const apiState = await mockApi(page);
 
@@ -720,6 +774,7 @@ test('exige aceite versionado uma única vez e mantém o acesso após novo login
   await expect(page.getByRole('heading', { name: 'Termos de Uso', level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Aceite dos documentos' })).toBeVisible();
   const acceptanceCheckbox = page.getByRole('checkbox', { name: 'Li e estou ciente dos Termos de Uso e do Aviso de Privacidade do HemoDinks.' });
+  await expect(acceptanceCheckbox).toBeEnabled();
   await acceptanceCheckbox.focus();
   await page.keyboard.press('Space');
   await expect(acceptanceCheckbox).toBeChecked();
@@ -733,7 +788,10 @@ test('exige aceite versionado uma única vez e mantém o acesso após novo login
   });
 
   await page.getByRole('button', { name: 'Menu do usuário', exact: true }).click();
+  const logout = page.waitForResponse(response => new URL(response.url()).pathname === '/api/session/sair');
   await page.getByRole('button', { name: 'Sair', exact: true }).click();
+  expect((await logout).status()).toBe(204);
+  expect(apiState.authenticated).toBe(false);
   await loginViaUi(page);
 
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
@@ -1389,15 +1447,19 @@ test('privacidade: rejeitar opcionais mantém login e links no rodapé autentica
   await expect(footer.getByRole('link', { name: 'Termos de Uso' })).toBeVisible();
   await expect(footer.getByRole('link', { name: 'Política de Privacidade' })).toBeVisible();
   await expect(footer.getByRole('button', { name: 'Configurar cookies' })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('hemodinks.session'))).not.toBeNull();
+  expect(await page.evaluate(() => [localStorage.getItem('hemodinks.session'), sessionStorage.getItem('hemodinks.session')])).toEqual([null, null]);
 });
 
 test('privacidade: páginas jurídicas são públicas e responsivas', async ({ page }) => {
   let applicationApiRequests = 0;
+  let restorationRequests = 0;
   let warmupRequests = 0;
   await page.route('**/api/**', async (route) => {
     if (new URL(route.request().url()).pathname === '/api/warmup') warmupRequests += 1;
-    else applicationApiRequests += 1;
+    else if (new URL(route.request().url()).pathname === '/api/session/restaurar') {
+      restorationRequests++;
+      return route.fulfill({ status: 401, json: {} });
+    } else applicationApiRequests += 1;
     await route.abort();
   });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -1432,6 +1494,7 @@ test('privacidade: páginas jurídicas são públicas e responsivas', async ({ p
     await expectNoGlobalHorizontalOverflow(page);
   }
   expect(applicationApiRequests).toBe(0);
+  expect(restorationRequests).toBe(2);
   expect(warmupRequests).toBe(1);
 });
 
@@ -1679,10 +1742,7 @@ test('grava tutorial local de relatórios com dados sanitizados', async ({ page 
   const elapsed = () => Date.now() - recordingOriginEpochMs;
   const pause = (milliseconds: number) => page.waitForTimeout(milliseconds);
   await mockApi(page, tutorialRecordingSession, { sanitizedTutorial: true });
-  await page.addInitScript((storedSession) => {
-    sessionStorage.setItem('hemodinks.session', JSON.stringify(storedSession));
-  }, tutorialRecordingSession);
-  await page.goto('/relatorios');
+  await loginViaUi(page, '/relatorios', tutorialRecordingSession);
   await expect(page.getByText('Registro Fictício 001')).toBeVisible();
   await expect(page.getByLabel('Usuário logado').getByText('Usuário Fictício')).toBeVisible();
   await expect(page.getByText('tutorial@example.invalid')).toBeVisible();
@@ -1787,6 +1847,38 @@ for (const tutorialId of Object.keys(libraryRecordingRoutes) as TutorialId[]) {
   });
 }
 
+test('login imediato: permite digitar durante restauração e preserva dados após 401', async ({ page }) => {
+  const apiState = await mockApi(page);
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/session/restaurar', async route => {
+    await pending;
+    await route.fulfill({ status: 401 });
+  });
+  const loginRequests: string[] = [];
+  page.on('request', request => {
+    if (/\/api\/users\/(login-context|authenticate)$/.test(new URL(request.url()).pathname)) loginRequests.push(request.url());
+  });
+  await page.goto('/');
+  const email = page.getByLabel('Email', { exact: true });
+  const password = page.locator('#login-password');
+  const submit = page.locator('[data-tour="login-submit"]');
+  await expect(page.getByRole('status')).toContainText('Verificando sessão');
+  await email.fill('gmarcone@gmail.com');
+  await password.fill(LOGIN_PASSWORD);
+  await expect(submit).toBeDisabled();
+  await password.press('Enter');
+  expect(loginRequests).toEqual([]);
+  release();
+  await expect(submit).toBeEnabled();
+  await expect(email).toHaveValue('gmarcone@gmail.com');
+  await expect(password).toHaveValue(LOGIN_PASSWORD);
+  await submit.click();
+  await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+  expect(apiState.loginPayload).toMatchObject({ email: 'gmarcone@gmail.com', senha: LOGIN_PASSWORD });
+  expect(loginRequests).toHaveLength(2);
+});
+
 test('login imediato: API indisponível não bloqueia campos durante warm-up best effort', async ({ page }) => {
   await mockApi(page);
   await page.clock.install();
@@ -1801,13 +1893,12 @@ test('login imediato: API indisponível não bloqueia campos durante warm-up bes
   await page.getByLabel('Email', { exact: true }).fill(session.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.clock.fastForward(180_000);
-  await expect.poll(() => apiCalls.length).toBe(1);
-  expect(new URL(apiCalls[0]).pathname).toBe('/api/warmup');
+  await expect.poll(() => apiCalls.map(url => new URL(url).pathname).sort()).toEqual(['/api/session/restaurar', '/api/warmup']);
   await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page.getByText(/Não foi possível conectar ao serviço de acesso agora/)).toBeVisible();
-  expect(apiCalls).toHaveLength(2);
-  expect(apiCalls[1]).toContain('/api/users/login-context');
+  expect(apiCalls).toHaveLength(3);
+  expect(apiCalls[2]).toContain('/api/users/login-context');
   await expect(page.locator('#login-password')).toHaveValue('');
 });
 
@@ -1823,11 +1914,11 @@ test('login wait: explica demora e permite cancelar sem abrir sessão tardia', a
     await route.fulfill({ json: { clinicas: [{ clinicaId: 1, nome: 'Clínica', slug: 'clinica-hemodinks' }] } }).catch(() => {});
   });
   await loginViaUi(page);
-  await expect(page.getByRole('status')).toContainText('Conectando ao serviço de acesso');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Conectando ao serviço de acesso');
   await page.clock.fastForward(12_000);
-  await expect(page.getByRole('status')).toContainText('primeiro acesso após');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('primeiro acesso após');
   await page.clock.fastForward(23_000);
-  await expect(page.getByRole('status')).toContainText('Ainda estamos aguardando');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Ainda estamos aguardando');
   const cancel = page.getByRole('button', { name: 'Cancelar tentativa' });
   for (const theme of ['light', 'dark']) {
     await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
@@ -1904,7 +1995,7 @@ test('bootstrap: API lenta informa a operação real e retry cancela a tentativa
     } else await route.fallback();
   });
   await loginViaUi(page);
-  await expect(page.getByRole('status')).toContainText('Validando sua sessão, clínica e Termos de Uso');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Validando sua sessão, clínica e Termos de Uso');
   await expect(page.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow');
   await page.clock.fastForward(12_000);
   await expect(page.getByText(/mais de tempo/)).toBeVisible();
@@ -1931,7 +2022,7 @@ test('bootstrap: timeout termina o loading e permite recuperação', async ({ pa
   const validationStarted = page.waitForRequest(request => new URL(request.url()).pathname === '/api/legal-acceptances/current');
   await loginViaUi(page);
   await validationStarted;
-  await expect(page.getByRole('status')).toContainText('Validando sua sessão, clínica e Termos de Uso');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Validando sua sessão, clínica e Termos de Uso');
   await expect(page.getByRole('progressbar')).toBeVisible();
   await page.clock.fastForward(60_001);
   await expect(page.getByRole('progressbar')).toHaveCount(0);
@@ -1973,11 +2064,18 @@ for (const status of [401, 403, 400]) {
       expect(await page.evaluate(() => sessionStorage.getItem('hemodinks.session'))).toBeNull();
     } else {
       await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
-      expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('hemodinks.session')!).user.clinicaId)).toBe(1);
+      expect(await page.evaluate(() => sessionStorage.getItem('hemodinks.session'))).toBeNull();
     }
     await expect(page.getByRole('heading', { name: 'Painel inicial' })).toHaveCount(0);
     expect(operational).toEqual([]);
     await expect(page.getByText('internal clinic-id')).toHaveCount(0);
+    if (status !== 401) {
+      await page.unroute('**/api/legal-acceptances/current');
+      const retried = page.waitForRequest(request => new URL(request.url()).pathname === '/api/legal-acceptances/current');
+      await page.getByRole('button', { name: 'Tentar novamente' }).click();
+      expect((await retried).headers().authorization).toBe(`Bearer ${session.token}`);
+      await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+    }
   });
 }
 
@@ -1992,7 +2090,7 @@ test('bootstrap: clínica autorizada só carrega dados após validação e mant�
     if (/\/api\/(dashboard|configuracoes-sistema)/.test(request.url())) headers.push(request.headers());
   });
   await loginViaUi(page, '/', scopedSession);
-  await expect(page.getByRole('status')).toContainText('Validando sua sessão, clínica e Termos de Uso');
+  await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Validando sua sessão, clínica e Termos de Uso');
   expect(headers).toEqual([]);
   release();
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();

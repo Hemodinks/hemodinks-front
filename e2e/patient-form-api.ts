@@ -3,7 +3,7 @@ import { expect, type Page } from '@playwright/test';
 type RecordData = Record<string, any>;
 
 // Stateful API contract fixture. Creation of lookup records remains a backend responsibility.
-export async function mockPatientFormApi(page: Page, initialPatient: RecordData) {
+export async function mockPatientFormApi(page: Page, initialPatient: RecordData, expectedToken: string) {
   const state = {
     patients: [{ ...initialPatient, pagamento: '0', statusPago: false }],
     hospitals: [{ id: 1, nome: 'Santa Clara - Mater Dei' }],
@@ -34,7 +34,7 @@ export async function mockPatientFormApi(page: Page, initialPatient: RecordData)
   }
   await page.route('http://localhost:5000/api/pacientes/**', async (route) => {
     const request = route.request();
-    expect(request.headers().authorization).toBe('Bearer jwt-token');
+    expect(request.headers().authorization).toBe(`Bearer ${expectedToken}`);
     const url = new URL(request.url());
     const method = request.method();
     const idMatch = url.pathname.match(/\/pacientes\/(\d+)/);
