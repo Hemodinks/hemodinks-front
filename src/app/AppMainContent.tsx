@@ -185,6 +185,8 @@ export function AppMainContent({
         />
       ) : activeView === 'users' || activeView === 'profile' ? (
         <UsersPage
+          identitySession={session}
+          onIdentityChanged={onPasswordChanged}
           moduleMode={moduleMode}
           canAccessUsers={canAccessUsers}
           canManageUsers={isAdmin}

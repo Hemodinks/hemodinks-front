@@ -1406,7 +1406,14 @@ describe('App', () => {
       'jwt-token',
     );
     expect(await screen.findByText('Senha alterada com sucesso')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    // API #149 revokes sessions after a credential change, including first access.
+    expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(api.getUsers).not.toHaveBeenCalled();
+    vi.mocked(api.authenticate).mockResolvedValue(toLoginResponse(mockSession()));
+    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(screen.getByLabelText('Senha'), 'different-test-password');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /^usuários/i }));
 
