@@ -1,6 +1,7 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { FileText, FileUp, ImagePlus, Plus, Save, Trash2, X } from 'lucide-react';
-import type { User, UserFormData } from '../../types';
+import type { AuthSession, User, UserFormData } from '../../types';
+import { EmailChangeAction } from '../../shared/components/EmailChangeAction';
 import { DateInput } from '../../shared/components/DateInput';
 import { AlertMessage, Button, CheckboxField, FormPanel, IconButton, SelectField, TextField } from '../../shared/components/ui';
 import { SecureFileDownloadButton } from '../../shared/components/SecureFileDownloadButton';
@@ -24,6 +25,8 @@ import {
 import { UserAvatar } from './UserAvatar';
 
 type UserFormProps = {
+  identitySession: AuthSession;
+  onIdentityChanged: (message: string) => void;
   canAccessUsers: boolean;
   canUseUserForm: boolean;
   isSuperAdmin: boolean;
@@ -47,6 +50,8 @@ type UserFormProps = {
 };
 
 export function UserForm({
+  identitySession,
+  onIdentityChanged,
   canAccessUsers,
   canUseUserForm,
   isSuperAdmin,
@@ -172,12 +177,15 @@ export function UserForm({
             <TextField
               label="Email"
               type="email"
+              readOnly={editingId !== null}
+              aria-describedby={editingId !== null ? 'user-email-change-hint' : undefined}
               value={formData.email}
               onValueChange={(value) => setFormData((current) => ({ ...current, email: value.slice(0, MAX_EMAIL_LENGTH) }))}
               maxLength={MAX_EMAIL_LENGTH}
               disabled={isFormBusy || (!canAccessUsers && formData.perfilId === PATIENT_PROFILE_ID)}
               required
             />
+            {editingId !== null && <p id="user-email-change-hint">O email de autenticação só pode ser alterado pelo titular, com confirmação do novo endereço.</p>}
 
             <TextField
               label="Telefone"
@@ -292,6 +300,10 @@ export function UserForm({
           {formLoading ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Cadastrar usuário'}
         </Button>
       </form>
+      {editingId === identitySession.user.id && <section className="stack">
+        <h3>Alterar email de autenticação</h3>
+        <EmailChangeAction session={identitySession} onChanged={onIdentityChanged} />
+      </section>}
     </FormPanel>
   );
 }

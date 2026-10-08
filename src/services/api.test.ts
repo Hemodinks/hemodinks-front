@@ -1,3 +1,4 @@
+import { advanceSessionEpoch } from './sessionEpoch';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -32,7 +33,7 @@ import {
   uploadPacienteArquivo,
   uploadUserArquivo,
 } from './index';
-import { AUTH_EXPIRED_EVENT, ApiError, apiClient, publicApiClient, get } from './api';
+import { AUTH_EXPIRED_EVENT, ApiError, apiClient, publicApiClient, get, post, put, del, registerSessionTokenResolver } from './api';
 import { resolveLoginClinics } from './authService';
 import {
   extractClinicaContextFromToken,
@@ -107,7 +108,7 @@ describe('services api client', () => {
       withCredentials: true,
       method: 'POST',
       data: { email: 'gmarcone@gmail.com', senha: 'test-password' },
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'X-Session-Refresh': '1', 'Content-Type': 'application/json' },
     });
   });
 
@@ -132,7 +133,7 @@ describe('services api client', () => {
       method: 'POST',
       data: { email: 'gmarcone@gmail.com', senha: 'test-password' },
       headers: {
-        'Content-Type': 'application/json',
+        'X-Session-Refresh': '1', 'Content-Type': 'application/json',
         'X-Clinica-Slug': 'clinica-alfa',
       },
     });
@@ -706,6 +707,25 @@ describe('services api client', () => {
     window.removeEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
   });
 
+  it('preserva a sessão quando a validação sofre conflito temporário no banco', async () => {
+    const authExpiredHandler = vi.fn();
+    window.addEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
+    const request = vi.spyOn(apiClient, 'request')
+      .mockRejectedValueOnce(apiError(503, { code: 'session_validation_busy' }))
+      .mockResolvedValueOnce(axiosResponse({ items: [] }));
+    try {
+      await expect(get('/api/grupos-medicos/', 'jwt-token')).rejects.toMatchObject({
+        status: 503,
+      });
+      expect(authExpiredHandler).not.toHaveBeenCalled();
+      await expect(get('/api/grupos-medicos/', 'jwt-token')).resolves.toEqual({ items: [] });
+      expect(request).toHaveBeenCalledTimes(2);
+      expect(authExpiredHandler).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, authExpiredHandler);
+    }
+  });
+
   it('traduz respostas 403 para uma mensagem amigável em toda chamada da API', async () => {
     vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(403));
 
@@ -765,4 +785,48 @@ describe('services api client', () => {
     expect(requestSpy).toHaveBeenCalledWith(expect.objectContaining({ signal: controller.signal, timeout: 10_000 }));
   });
 
+});
+
+it('discards private responses arriving after logout or a clinic change', async () => {
+  let complete!: (value: AxiosResponse<unknown>) => void;
+  vi.spyOn(apiClient, 'request').mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+  const pending = get('/api/pacientes', 'test-bearer');
+  const assertion = expect(pending).rejects.toMatchObject({ status: 409 });
+  advanceSessionEpoch();
+  complete(axiosResponse({ name: 'private patient' }));
+  await assertion;
+});
+
+function expiredAccessToken() {
+  return 'h.' + btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 60 })) + '.s';
+}
+
+it.each(['POST', 'PUT', 'DELETE'])('does not replay %s after renewing an expired token', async method => {
+  const token = expiredAccessToken();
+  const resolver = vi.fn(async (_token: string, force: boolean) => force ? 'renewed-token' : token);
+  const unregister = registerSessionTokenResolver(resolver);
+  const expired = vi.fn();
+  window.addEventListener(AUTH_EXPIRED_EVENT, expired);
+  const request = vi.spyOn(apiClient, 'request').mockReset().mockRejectedValueOnce(apiError(401));
+  try {
+    const config = { headers: { 'Idempotency-Key': 'not-proof-of-server-support' } };
+    const action = method === 'POST' ? post('/api/example', {}, token, config)
+      : method === 'PUT' ? put('/api/example', {}, token, config) : del('/api/example', token, config);
+    await expect(action).rejects.toMatchObject({ status: 409, code: 'session_write_retry_required' });
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(resolver).toHaveBeenLastCalledWith(token, true);
+    expect(expired).not.toHaveBeenCalled();
+  } finally { unregister(); window.removeEventListener(AUTH_EXPIRED_EVENT, expired); }
+});
+
+it('retries an expired authenticated GET only once after renewal', async () => {
+  const token = expiredAccessToken();
+  const unregister = registerSessionTokenResolver(async (_token, force) => force ? 'renewed-token' : token);
+  const request = vi.spyOn(apiClient, 'request').mockReset().mockRejectedValueOnce(apiError(401))
+    .mockResolvedValueOnce(axiosResponse({ ok: true }));
+  try {
+    await expect(get('/api/example', token)).resolves.toEqual({ ok: true });
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(String(request.mock.calls[1][0].headers)).toContain('Bearer renewed-token');
+  } finally { unregister(); }
 });

@@ -3,6 +3,7 @@ import { CheckCircle2, KeyRound, Moon, Palette, Sun } from "lucide-react";
 import type { Theme } from "../../appTypes";
 import type { AuthSession } from "../../types";
 import { PasswordForm } from "../../shared/components/PasswordForm";
+import { EmailChangeAction } from "../../shared/components/EmailChangeAction";
 import { DataPanel, ToastMessage } from "../../shared/components/ui";
 import "./settings.css";
 
@@ -90,6 +91,10 @@ export function SystemSettingsPage({
               onPasswordChanged(message);
             }}
           />
+        </DataPanel>
+        <DataPanel className="system-settings-panel">
+          <h3>Alterar email de autenticação</h3>
+          <EmailChangeAction session={session} onChanged={onPasswordChanged} />
         </DataPanel>
       </div>
     </section>

@@ -1,4 +1,7 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { restoreSession } from './services/sessionService';
+import { toLoginResponse } from './test/appTestData';
+vi.mock('./services/sessionService', async (importOriginal) => ({ ...(await importOriginal<object>()), restoreSession: vi.fn().mockResolvedValue(null) }));
+import { configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -140,6 +143,8 @@ function createJwtToken(payload: Record<string, unknown>) {
 }
 
 describe('App', () => {
+  // Lazy route modules can take several seconds to load on cold CI workers.
+  configure({ asyncUtilTimeout: 5_000 });
   beforeEach(() => {
     localStorage.clear();
     saveConsent({ preferences: true, analytics: false });
@@ -149,6 +154,7 @@ describe('App', () => {
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.colorScheme = '';
     vi.clearAllMocks();
+    vi.mocked(restoreSession).mockResolvedValue(null);
     vi.mocked(api.resolveLoginClinics).mockResolvedValue({
       clinicas: [{ clinicaId: 1, nome: 'Hemodinks', slug: 'hemodinks' }],
     });
@@ -263,7 +269,53 @@ describe('App', () => {
     });
   });
 
-  it('faz login, salva a sessao JWT e carrega usuarios', async () => {
+  it.each(['no-session', 'network-error'] as const)('keeps credentials editable during bootstrap and after %s', async outcome => {
+    let finish!: (value: Awaited<ReturnType<typeof restoreSession>>) => void;
+    let fail!: (reason: Error) => void;
+    vi.mocked(restoreSession).mockReturnValueOnce(new Promise((resolve, reject) => { finish = resolve; fail = reject; }));
+    render(<App />);
+    const email = screen.getByLabelText('Email');
+    const password = screen.getByLabelText('Senha');
+    const submit = screen.getByRole('button', { name: 'Verificando sessão…' });
+    fireEvent.change(email, { target: { value: 'person@example.com' } });
+    fireEvent.change(password, { target: { value: 'ExamplePassword123!' } });
+    expect(email).toBeEnabled();
+    expect(password).toBeEnabled();
+    expect(submit).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('Verificando sessão');
+    fireEvent.submit(email.closest('form')!);
+    expect(api.resolveLoginClinics).not.toHaveBeenCalled();
+    expect(api.authenticate).not.toHaveBeenCalled();
+    expect(api.getPacientes).not.toHaveBeenCalled();
+    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+    if (outcome === 'no-session') finish(null);
+    else fail(new Error('Network unavailable'));
+    await waitFor(() => expect(submit).toBeEnabled());
+    expect(submit).toHaveAccessibleName('Entrar');
+    expect(submit).toHaveAccessibleDescription('Você já pode clicar em Entrar.');
+    expect(email).toHaveValue('person@example.com');
+    expect(password).toHaveValue('ExamplePassword123!');
+    expect(screen.queryByText(/Verificando sessão/)).not.toBeInTheDocument();
+    expect(api.authenticate).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
+    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+  });
+
+  it('enters the restored session without submitting credentials typed during bootstrap', async () => {
+    let finish!: (value: Awaited<ReturnType<typeof restoreSession>>) => void;
+    vi.mocked(restoreSession).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    render(<App />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.com' } });
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'UnusedPassword123!' } });
+    expect(api.getDashboardSummary).not.toHaveBeenCalled();
+    finish(toLoginResponse(mockSession()));
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Acesso ao sistema' })).not.toBeInTheDocument();
+    expect(api.resolveLoginClinics).not.toHaveBeenCalled();
+    expect(api.authenticate).not.toHaveBeenCalled();
+  });
+
+  it('faz login, mantém a sessão em memória e carrega usuários', async () => {
     const user = userEvent.setup();
     vi.mocked(api.authenticate).mockResolvedValue({
       id: 99,
@@ -284,7 +336,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('GM Tech Solutions')).toBeInTheDocument();
+    expect(await screen.findByText('GM Tech Solutions')).toBeInTheDocument();
 
     await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
@@ -330,8 +382,7 @@ describe('App', () => {
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ana Hemodinks' })).not.toBeInTheDocument());
 
-    const storedSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? '{}') as AuthSession;
-    expect(storedSession.token).toBe('jwt-token');
+    expect(sessionStorage.getItem(SESSION_KEY)).toBeNull();
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
   }, 15_000);
 
@@ -487,7 +538,7 @@ describe('App', () => {
     window.history.pushState({}, '', path);
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: title, level: 1 })).toBeVisible();
     expect(screen.getByText(/Última atualização:/).closest('p')).toHaveTextContent(version);
     expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(api.getDashboardSummary).not.toHaveBeenCalled();
@@ -499,7 +550,7 @@ describe('App', () => {
     '/termos-de-uso',
     '/politica-de-privacidade',
   ])('permite concluir o aceite pendente dentro da página jurídica %s', async (path) => {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
+    vi.mocked(restoreSession).mockResolvedValue(toLoginResponse(mockSession()));
     window.history.pushState({}, '', path);
     vi.mocked(api.getCurrentLegalAcceptance).mockResolvedValue(pendingLegalAcceptance);
     const user = userEvent.setup();
@@ -510,7 +561,9 @@ describe('App', () => {
     const submit = screen.getByRole('button', { name: 'Aceitar e continuar' });
     expect(submit).toBeDisabled();
 
+    await waitFor(() => expect(checkbox).toBeEnabled());
     await user.click(checkbox);
+    await waitFor(() => expect(submit).toBeEnabled());
     await user.click(submit);
 
     expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledWith('jwt-token', '1.1', '1.1');
@@ -594,21 +647,21 @@ describe('App', () => {
     expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledTimes(1);
   });
 
-  it('mostra o login imediatamente sem consultar clínicas nem preparar a API', async () => {
+  it('mostra o login após verificar a sessão sem consultar clínicas nem preparar a API', async () => {
     vi.mocked(api.listPublicClinics).mockReturnValue(new Promise(() => {}));
     render(<App />);
 
-    expect(screen.getByLabelText('Email')).toBeEnabled();
+    expect(await screen.findByLabelText('Email')).toBeEnabled();
     expect(screen.getByLabelText('Senha')).toBeEnabled();
     expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Você já pode clicar em Entrar.');
     expect(api.resolveLoginClinics).not.toHaveBeenCalled();
     expect(api.listPublicClinics).not.toHaveBeenCalled();
     expect(api.authenticate).not.toHaveBeenCalled();
   });
 
-  it('restaura a sessao salva na aba ao recarregar a aplicacao', async () => {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(mockSession()));
+  it('restaura a sessao validada pelo servidor ao recarregar a aplicacao', async () => {
+    vi.mocked(restoreSession).mockResolvedValue(toLoginResponse(mockSession()));
 
     render(<App />);
 
@@ -1286,7 +1339,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: 'Redefinir senha' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Redefinir senha' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument();
 
@@ -1306,7 +1359,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: 'Redefinir senha' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Redefinir senha' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /voltar ao login/i }));
 
@@ -1353,7 +1406,14 @@ describe('App', () => {
       'jwt-token',
     );
     expect(await screen.findByText('Senha alterada com sucesso')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    // API #149 revokes sessions after a credential change, including first access.
+    expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(api.getUsers).not.toHaveBeenCalled();
+    vi.mocked(api.authenticate).mockResolvedValue(toLoginResponse(mockSession()));
+    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(screen.getByLabelText('Senha'), 'different-test-password');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /^usuários/i }));
 
@@ -1857,7 +1917,7 @@ describe('App', () => {
       ativo: true,
     }, 'jwt-token');
     expect(await screen.findByText('Paciente cadastrado com sucesso.')).toBeInTheDocument();
-  }, 15000);
+  }, 30_000);
 
   it('permite ao administrador filtrar pacientes por cirurgiao, convenio e procedimento', async () => {
     vi.mocked(api.getPacientes)

@@ -8,7 +8,14 @@ type Fixture = { apiUrl: string; selection: Team; pin: Team; anonymous: Team; ot
 const fixture = process.env.HEMODINKS_LOGIN_FIXTURE ? JSON.parse(process.env.HEMODINKS_LOGIN_FIXTURE) as Fixture : null;
 test.skip(!fixture, 'Run from LoginBrowserTests to provision a fresh API/database per scenario.');
 
+const sessions = new WeakMap<Page, { token: string; user: Record<string, unknown> }>();
 test.beforeEach(async ({ page }) => {
+  page.on('response', async response => {
+    if (response.ok() && /\/api\/(users\/authenticate|equipe-auth\/identificar|session\/restaurar)$/.test(response.url())) {
+      const data = await response.json().catch(() => null);
+      if (data?.token) { const { token, ...user } = data; sessions.set(page, { token, user }); }
+    }
+  });
   await page.addInitScript(() => localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({
     necessary: true, version: '1.1', updatedAt: new Date().toISOString(), preferences: true, analytics: false,
   })));
@@ -23,12 +30,13 @@ async function loginForm(page: Page, team: Team | null = null) {
 }
 
 async function finishLegalAndReadSession(page: Page) {
-  await expect.poll(() => page.evaluate(() => Boolean(sessionStorage.getItem('hemodinks.session')))).toBe(true);
+  await expect.poll(() => Boolean(sessions.get(page))).toBe(true);
+  expect(await page.evaluate(() => [localStorage.getItem('hemodinks.session'), sessionStorage.getItem('hemodinks.session')])).toEqual([null, null]);
   // Consent remains a pre-existing, independent requirement for a fresh user.
   await page.getByRole('checkbox', { name: /Li e estou ciente/ }).check();
   await page.getByRole('button', { name: 'Aceitar e continuar' }).click();
   await expect(page.locator('.topbar')).toBeVisible();
-  return page.evaluate(() => JSON.parse(sessionStorage.getItem('hemodinks.session')!));
+  return sessions.get(page)!;
 }
 
 async function apiLogin(request: APIRequestContext, team: Team) {
@@ -56,15 +64,27 @@ async function identify(request: APIRequestContext, team: Team, token: string, o
   });
 }
 
-test('case:individual', async ({ page }) => {
+test('case:individual', async ({ page, request }) => {
   await loginForm(page);
   const session = await finishLegalAndReadSession(page);
   expect(session.user.clinicaId).toBe(fixture!.individual.clinicId);
   expect(session.user.perfilId).toBe(5);
+  const cookies = await page.context().cookies();
+  expect(cookies.find(c => c.name === 'hemodinks_refresh')).toMatchObject({ httpOnly: true, path: '/api/session', sameSite: 'Lax' });
+  expect(await page.evaluate(() => document.cookie)).not.toContain('hemodinks_refresh');
+  const secondTab = await page.context().newPage();
+  await secondTab.goto('/');
+  await expect(secondTab.locator('.topbar')).toBeVisible();
   await page.goto('/pacientes');
   await expect(page.locator('.topbar')).toBeVisible();
   await page.getByRole('button', { name: 'Menu do usuário', exact: true }).click();
+  const logout = page.waitForResponse(r => r.url().endsWith('/api/session/sair'));
   await page.getByRole('button', { name: 'Sair', exact: true }).click();
+  expect((await logout).status()).toBe(204);
+  await expect(secondTab.getByRole('button', { name: 'Entrar', exact: true })).toBeVisible();
+  await secondTab.close();
+  await page.reload();
+  expect((await request.get(`${fixture!.apiUrl}/api/events/`, { headers: { Authorization: `Bearer ${session.token}` } })).status()).toBe(401);
   await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeVisible();
   expect(await page.evaluate(() => sessionStorage.getItem('hemodinks.session'))).toBeNull();
 });
@@ -83,6 +103,9 @@ for (const mode of ['selection', 'pin'] as const) {
     } else await expect(page.getByLabel('PIN individual')).toHaveCount(0);
     await page.getByRole('button', { name: 'Continuar', exact: true }).click();
     const session = await finishLegalAndReadSession(page);
+    await page.reload();
+    await expect(page.locator('.topbar')).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Membro da Equipe' })).toHaveCount(0);
     expect(session.user.perfilId).toBe(6);
     expect(session.user.clinicaId).toBe(team.clinicId);
     expect(session.user.nome).toBe(`Funcionario ${team.mode}`);
@@ -190,4 +213,37 @@ test('case:layout', async ({ page }, testInfo) => {
   await page.screenshot({ path: testInfo.outputPath('login-mobile-light.png'), fullPage: true });
   const accessibility = await new AxeBuilder({ page }).include('.login-panel').withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(accessibility.violations).toEqual([]);
+});
+
+
+test('case:bootstrap-lock', async ({ page, context }) => {
+  const holder = await context.newPage();
+  await holder.goto('/');
+  await expect(holder.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible();
+  await holder.evaluate(async () => {
+    await new Promise<void>(resolve => {
+      void navigator.locks.request('hemodinks-session-refresh', () => {
+        resolve();
+        return new Promise<void>(() => {});
+      });
+    });
+  });
+  let restoreRequests = 0;
+  page.on('request', request => { if (request.url().endsWith('/api/session/restaurar')) restoreRequests++; });
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('Verificando sessão');
+  const email = page.getByRole('textbox', { name: 'Email', exact: true });
+  const password = page.getByLabel('Senha', { exact: true });
+  const submit = page.locator('[data-tour="login-submit"]');
+  await expect(email).toBeVisible();
+  await email.fill(fixture!.individual.email);
+  await password.fill(fixture!.individual.password);
+  await expect(submit).toBeDisabled();
+  await expect(submit).toBeEnabled({ timeout: 20_000 });
+  await expect(email).toHaveValue(fixture!.individual.email);
+  await expect(password).toHaveValue(fixture!.individual.password);
+  expect(restoreRequests).toBe(0); // Expiration must not bypass the other tab's lock.
+  await holder.close();
+  await submit.click();
+  await finishLegalAndReadSession(page);
 });

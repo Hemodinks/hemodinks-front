@@ -1,4 +1,5 @@
-import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { isPasswordPolicyError } from '../../services/passwordPolicyError';
+import { type ChangeEvent, type FormEvent, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AuthSession, ClinicPayload, PlatformClinic, SelectClinicResponse } from '../../types';
 import { createPlatformClinic, deactivatePlatformClinic, listPlatformClinics, selectSessionClinic, updatePlatformClinic } from '../../services';
 import { readProfilePhoto } from '../../shared/utils/files';
@@ -23,6 +24,7 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
   const [success, setSuccess] = useState('');
   const [editing, setEditing] = useState<PlatformClinic | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -57,6 +59,7 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
   const loadClinics = useCallback(async () => {
     const requestId = ++loadRequestId.current;
     setLoading(true);
+    setPasswordError(false);
     setError('');
     try {
       const result = await listPlatformClinics(session.token);
@@ -74,6 +77,7 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
   }, [loadClinics]);
 
   const clearSensitiveFormState = () => {
+    setPasswordError(false);
     photoRequestId.current += 1;
     setForm(EMPTY_CLINIC_FORM);
     setPhotoPreview(null);
@@ -90,6 +94,7 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
     setSuccess('');
   };
   const openEdit = (clinic: PlatformClinic) => {
+    setPasswordError(false);
     setEditing(clinic);
     setForm(clinicToForm(clinic));
     setPhotoPreview(clinic.fotoUrl ? `${API_ASSET_BASE_URL}${clinic.fotoUrl}` : null);
@@ -102,6 +107,7 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    setPasswordError(false);
     if (!ALLOWED_PROFILE_PHOTO_TYPES.has(file.type)) return setError('Use uma foto PNG, JPG ou WEBP.');
     if (file.size > MAX_PROFILE_PHOTO_BYTES) return setError('A foto deve ter no maximo 2 MB.');
     const requestId = ++photoRequestId.current;
@@ -118,6 +124,7 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setPasswordError(false);
     if (!isValidCnpj(form.cnpj)) return setError('Informe um CNPJ válido.');
     if (form.plano === 'Parcial' && form.modulosLiberados.length === 0) return setError('Selecione ao menos um módulo para o plano Parcial.');
     if (form.criarEquipeInicial && form.limiteUsuarios && Number(form.limiteUsuarios) < 2) return setError('O limite deve permitir ao menos um administrador e uma equipe.');
@@ -161,6 +168,7 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
       closeForm();
       await loadClinics();
     } catch (requestError) {
+      setPasswordError(isPasswordPolicyError(requestError));
       setError(getErrorMessage(requestError));
     } finally {
       saveInFlight.current = false;
@@ -170,18 +178,23 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
 
   const deactivate = async (clinic: PlatformClinic) => {
     if (!window.confirm(`Desativar a clinica ${clinic.nome}? Os dados serao preservados.`)) return;
+    setPasswordError(false);
     setError('');
     try { await deactivatePlatformClinic(clinic.id, session.token); setSuccess('Clinica desativada.'); await loadClinics(); }
     catch (requestError) { setError(getErrorMessage(requestError)); }
   };
   const switchClinic = async (clinic: PlatformClinic) => {
+    setPasswordError(false);
     setError('');
     try { onClinicSelected(await selectSessionClinic(clinic.id, session.token)); }
     catch (requestError) { setError(getErrorMessage(requestError)); }
   };
 
   return {
-    clinics, sortedClinics, loading, saving, error, success, editing, formOpen, form, photoPreview, sortBy, sortDirection,
-    setForm, setPhotoPreview, changeSort, loadClinics, openNew, openEdit, closeForm, handlePhotoChange, submit, deactivate, switchClinic,
+    clinics, sortedClinics, loading, saving, error, passwordError, success, editing, formOpen, form, photoPreview, sortBy, sortDirection,
+    setForm: (action: SetStateAction<ClinicFormData>) => {
+      setForm(action);
+      if (passwordError) { setPasswordError(false); setError(''); }
+    }, setPhotoPreview, changeSort, loadClinics, openNew, openEdit, closeForm, handlePhotoChange, submit, deactivate, switchClinic,
   };
 }

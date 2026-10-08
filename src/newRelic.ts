@@ -98,8 +98,18 @@ export function initNewRelicBrowser() {
       trustKey: config.trustKey,
     },
     init: {
+      session_replay: { enabled: false },
+      user_actions: { enabled: false },
+      jserrors: { enabled: false },
+      page_view_event: { enabled: true },
+      page_view_timing: { enabled: true },
+      session_trace: { enabled: false },
+      soft_navigations: { enabled: false },
+      generic_events: { enabled: false },
+      logging: { enabled: false },
+      obfuscate: [{ regex: /https?:\/\/[^\s"'<>]+/gi, replacement: "[url]" }],
       ajax: {
-        deny_list: [config.beacon],
+        deny_list: ['*'],
       },
       distributed_tracing: {
         enabled: true,

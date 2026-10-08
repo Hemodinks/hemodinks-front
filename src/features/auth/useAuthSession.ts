@@ -1,14 +1,17 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AuthSession } from '../../types';
 import { TEAM_PROFILE_ID } from '../../shared/utils/formatters';
 import { decodeJwtPayload } from '../../shared/utils/jwt';
-import { revokeSession } from '../../services/sessionService';
+import { revokeSession, restoreSession } from '../../services/sessionService';
+import { sessionEpoch, advanceSessionEpoch } from '../../services/sessionEpoch';
+import { buildSessionFromLogin } from '../../app/appSession';
+import { queryClient } from '../../queryClient';
 
 const SESSION_KEY = 'hemodinks.session';
 
 function clearStoredSession() {
-  localStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(SESSION_KEY);
+  try { localStorage.removeItem(SESSION_KEY); } catch { /* Storage can be disabled. */ }
+  try { sessionStorage.removeItem(SESSION_KEY); } catch { /* Credentials remain in memory only. */ }
 }
 
 export function normalizeTeamPinRequirement(session: AuthSession) {
@@ -32,52 +35,71 @@ export function normalizeTeamPinRequirement(session: AuthSession) {
   };
 }
 
-function readStoredSession() {
-  localStorage.removeItem(SESSION_KEY);
-
-  try {
-    const stored = sessionStorage.getItem(SESSION_KEY);
-    if (!stored) return null;
-
-    const parsed = JSON.parse(stored) as Partial<AuthSession>;
-    if (typeof parsed.token !== 'string' || !parsed.token || !parsed.user || typeof parsed.user.id !== 'number') {
-      sessionStorage.removeItem(SESSION_KEY);
-      return null;
-    }
-
-    const session = normalizeTeamPinRequirement(parsed as AuthSession);
-    if (session !== parsed) {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    }
-    return session;
-  } catch {
-    sessionStorage.removeItem(SESSION_KEY);
-    return null;
-  }
-}
-
 export function useAuthSession() {
-  const [session, setSession] = useState<AuthSession | null>(readStoredSession);
+  const [session, setSession] = useState<AuthSession | null>(() => { clearStoredSession(); return null; });
+  // Only bootstrap settlement releases login; invalidation may discard its result
+  // but must not allow a new authentication while its cookie rotation is pending.
+  const [restoring, setRestoring] = useState(true);
+  const current = useRef<AuthSession | null>(null);
+  const version = useRef(0);
+  const bootstrap = useRef<ReturnType<typeof restoreSession> | null>(null);
+  const channel = useRef<BroadcastChannel | null>(null);
+  const contextOf = (value: AuthSession) => { const claims = decodeJwtPayload(value.token); return JSON.stringify([claims?.sid, value.user.clinicaId]); };
+
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const connection = new BroadcastChannel('hemodinks-session-lifecycle');
+    channel.current = connection;
+    connection.onmessage = event => {
+      if (event.data?.type !== 'invalidate' || typeof event.data.context !== 'string') return;
+      // Before bootstrap completes we cannot identify its session yet. Invalidate the
+      // pending response; an old logout must never clear a different active session.
+      if (current.current && event.data.context !== contextOf(current.current)) return;
+      version.current++; advanceSessionEpoch(); current.current = null;
+      clearStoredSession(); queryClient.clear(); setSession(null);
+    };
+    return () => { channel.current = null; connection.close(); };
+  }, []);
 
   const persistSession = useCallback((nextSession: AuthSession) => {
-    const normalizedSession = normalizeTeamPinRequirement(nextSession);
-    localStorage.removeItem(SESSION_KEY);
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(normalizedSession));
-    setSession(normalizedSession);
+    version.current++;
+    const normalized = normalizeTeamPinRequirement(nextSession);
+    const old = current.current;
+    if (!old || old.user.id !== normalized.user.id || old.user.clinicaId !== normalized.user.clinicaId
+      || decodeJwtPayload(old.token)?.sid !== decodeJwtPayload(normalized.token)?.sid) {
+      if (old) channel.current?.postMessage({ type: 'invalidate', context: contextOf(old) });
+      advanceSessionEpoch();
+      queryClient.clear();
+    }
+    clearStoredSession();
+    current.current = normalized;
+    setSession(normalized);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const requestedVersion = version.current;
+    const epoch = sessionEpoch();
+    bootstrap.current ??= restoreSession();
+    void bootstrap.current.then(result => {
+      if (active && requestedVersion === version.current && epoch === sessionEpoch() && result)
+        persistSession(buildSessionFromLogin(result));
+    }).catch(() => { /* A network failure never falls back to untrusted storage or retries endlessly. */ })
+      .finally(() => { if (active) setRestoring(false); });
+    return () => { active = false; };
+  }, [persistSession]);
 
   const clearSession = useCallback(() => {
-    try {
-      const stored = JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? 'null') as AuthSession | null;
-      if (stored?.token) void revokeSession(stored.token).catch(() => {});
-    } catch { /* Local logout must remain available when storage is invalid. */ }
+    version.current++;
+    advanceSessionEpoch();
+    const previous = current.current;
+    if (previous) channel.current?.postMessage({ type: 'invalidate', context: contextOf(previous) });
+    current.current = null;
     clearStoredSession();
+    queryClient.clear();
     setSession(null);
+    if (previous) void revokeSession(previous.token).catch(() => {});
   }, []);
 
-  return {
-    session,
-    persistSession,
-    clearSession,
-  };
+  return { session, persistSession, clearSession, restoring };
 }

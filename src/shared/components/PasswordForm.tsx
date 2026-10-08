@@ -1,4 +1,6 @@
-import { type FormEvent, useMemo, useState } from 'react';
+import { isPasswordPolicyError } from '../../services/passwordPolicyError';
+import { readSensitiveIdentityError } from '../../services/sensitiveIdentityError';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { KeyRound, X } from 'lucide-react';
 import { changePassword } from '../../services';
 import { completeTemporaryPassword } from '../../services/usersService';
@@ -26,13 +28,19 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+  const [currentPasswordError, setCurrentPasswordError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const active = useRef(true);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const passwordStrength = useMemo(() => getPasswordStrength(novaSenha), [novaSenha]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (loading) return;
     setError('');
+    setPasswordError(false);
+    setCurrentPasswordError(false);
 
     if (novaSenha !== confirmacao) {
       setError('A confirmacao precisa ser igual a nova senha.');
@@ -50,11 +58,19 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
         return;
       }
       const result = await changePassword(session.user.id, { senhaAtual, novaSenha }, session.token);
+      if (!active.current) return;
+      setSenhaAtual(''); setNovaSenha(''); setConfirmacao('');
       onChanged(result.message);
     } catch (submitError) {
+      if (!active.current) return;
+      if (readSensitiveIdentityError(submitError)) {
+        setSenhaAtual(''); setNovaSenha(''); setConfirmacao('');
+        setCurrentPasswordError(true);
+      }
+      setPasswordError(isPasswordPolicyError(submitError));
       setError(getErrorMessage(submitError));
     } finally {
-      setLoading(false);
+      if (active.current) setLoading(false);
     }
   };
 
@@ -71,6 +87,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
         label="Senha atual"
         value={senhaAtual}
         onChange={setSenhaAtual}
+        errorId={currentPasswordError ? 'new-password-api-error' : undefined}
         autoComplete="current-password"
         maxLength={MAX_PASSWORD_LENGTH}
         required
@@ -80,7 +97,8 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
         id="new-password"
         label="Nova senha"
         value={novaSenha}
-        onChange={setNovaSenha}
+        onChange={(value) => { setNovaSenha(value); if (passwordError) { setError(''); setPasswordError(false); } }}
+        errorId={passwordError ? 'new-password-api-error' : undefined}
         autoComplete="new-password"
         minLength={8}
         maxLength={MAX_PASSWORD_LENGTH}
@@ -105,8 +123,8 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
         required
       />
 
-      {error && <AlertMessage type="error">{error}</AlertMessage>}
-      {temporaryRecovery && <p>Após salvar, entre novamente com sua nova senha.</p>}
+      {error && <div id="new-password-api-error"><AlertMessage type="error">{error}</AlertMessage></div>}
+      <p>Após salvar, entre novamente com sua nova senha.</p>
 
       <div className="button-row">
         {onCancel && (

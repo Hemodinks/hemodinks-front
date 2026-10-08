@@ -15,5 +15,6 @@ export type UseUsersDomainOptions = {
   persistSession: (nextSession: AuthSession) => void;
   loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
   onDeleteCurrentUser: () => void;
+  onIdentityChanged: (message: string) => void;
   confirmAction: ConfirmAction;
 };

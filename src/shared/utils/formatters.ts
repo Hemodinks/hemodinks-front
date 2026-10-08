@@ -240,13 +240,19 @@ export function resolveProfilePhotoSource(photo?: string | null) {
     return "";
   }
 
-  if (/^(data:image\/|blob:|https?:\/\/)/i.test(value)) {
-    return value;
+  // Raster data only. SVG/HTML and arbitrary URI schemes are never image sources.
+  if (/^data:image\/(png|jpeg|gif|webp);base64,[a-z0-9+/=\s]+$/i.test(value)) return value;
+  if (value.startsWith('blob:')) {
+    try { return new URL(value.slice(5)).origin === window.location.origin ? value : ''; } catch { return ''; }
   }
-
-  if (value.startsWith("//")) {
-    return `${window.location.protocol}${value}`;
+  if (/^https?:\/\//i.test(value) || value.startsWith('//')) {
+    try {
+      const url = new URL(value, window.location.origin);
+      if (url.username || url.password || (window.location.protocol === 'https:' && url.protocol !== 'https:')) return '';
+      return url.href;
+    } catch { return ''; }
   }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value) || /[\u0000-\u001f\u007f\\]/.test(value)) return '';
 
   const contentType = getBase64ImageContentType(value);
   if (contentType) {
