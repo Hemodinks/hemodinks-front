@@ -34,6 +34,7 @@ export function useUsersDomain({
   persistSession,
   loadDashboardSummary,
   onDeleteCurrentUser,
+  onIdentityChanged,
   confirmAction,
 }: UseUsersDomainOptions) {
   const userList = useUserList();
@@ -179,17 +180,8 @@ export function useUsersDomain({
       return;
     }
 
-    const nextSession = {
-      ...session,
-      user: {
-        ...session.user,
-        precisaTrocarSenha: false,
-      },
-    };
-
-    persistSession(nextSession);
     setShowPasswordModal(false);
-    setSuccessMessage(message);
+    onIdentityChanged(message);
   };
 
   const openUsersList = () => {

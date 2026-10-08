@@ -1,4 +1,5 @@
 import { readPasswordPolicyError } from './passwordPolicyError';
+import { readSensitiveIdentityError } from './sensitiveIdentityError';
 import { readSessionFailureCode, SESSION_ABSOLUTE_EXPIRED_CODE, SESSION_ABSOLUTE_EXPIRED_MESSAGE } from './sessionExpiration';
 import { sessionEpoch } from './sessionEpoch';
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
@@ -63,12 +64,16 @@ function notifyAuthExpired(token?: string, code?: string) {
 function toApiError(error: unknown, notifyUnauthorized = false, token?: string) {
   const mapped = mapApiError(error, notifyUnauthorized, token);
   return axios.isAxiosError(error)
-    ? new ApiError(mapped.message, error.response?.status, readPasswordPolicyError(error.response?.data)?.code ?? readSessionFailureCode(error.response?.data) ?? error.code)
+    ? new ApiError(mapped.message, error.response?.status, readSensitiveIdentityError(error.response?.data)?.code ?? readPasswordPolicyError(error.response?.data)?.code ?? readSessionFailureCode(error.response?.data) ?? error.code)
     : mapped;
 }
 
 function mapApiError(error: unknown, notifyUnauthorized = false, token?: string) {
   if (axios.isAxiosError(error)) {
+    const identityError = readSensitiveIdentityError(error.response?.data);
+    // A refusal for this action is not a session failure. Real HTTP 401s keep
+    // the existing session handling below.
+    if (identityError && error.response?.status !== 401) return new Error(identityError.message);
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
       return new Error('A conexão demorou demais. Tente novamente.');
     }

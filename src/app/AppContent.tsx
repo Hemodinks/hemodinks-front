@@ -175,6 +175,7 @@ function AppSessionContent({ auth, loginFlow }: {
     persistSession,
     loadDashboardSummary: appChrome.loadDashboardSummary,
     onDeleteCurrentUser: logout,
+    onIdentityChanged: endSession,
     confirmAction,
   });
   const patientsDomain = usePatientsDomain({

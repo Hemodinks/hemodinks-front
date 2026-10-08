@@ -1,10 +1,12 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import type { User, UserFormData } from '../../types';
+import type { AuthSession, User, UserFormData } from '../../types';
 import { UserForm } from './UserForm';
 import { UserList } from './UserList';
 import './users.css';
 
 type UsersPageProps = {
+  identitySession: AuthSession;
+  onIdentityChanged: (message: string) => void;
   moduleMode: 'list' | 'form';
   canAccessUsers: boolean;
   canManageUsers: boolean;
@@ -51,6 +53,8 @@ type UsersPageProps = {
 };
 
 export function UsersPage({
+  identitySession,
+  onIdentityChanged,
   moduleMode,
   canAccessUsers,
   canManageUsers,
@@ -101,6 +105,8 @@ export function UsersPage({
     <section className="workspace" data-tour="users-overview">
       {shouldShowUserForm ? (
         <UserForm
+          identitySession={identitySession}
+          onIdentityChanged={onIdentityChanged}
           canAccessUsers={canAccessUsers}
           canUseUserForm={canUseUserForm}
           isSuperAdmin={isSuperAdmin}
