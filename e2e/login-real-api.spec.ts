@@ -89,6 +89,51 @@ test('case:individual', async ({ page, request }) => {
   expect(await page.evaluate(() => sessionStorage.getItem('hemodinks.session'))).toBeNull();
 });
 
+// The existing backend runner selects case:individual and owns an isolated API
+// and in-memory database. Exercise the real limiter, without mocking HTTP 429.
+test('limite real: conta limitada preserva outra pessoa no mesmo IP — case:individual', async ({ page, request }, testInfo) => {
+  const email = 'rate-limited@example.invalid';
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const result = await request.post(`${fixture!.apiUrl}/api/users/login-context`, { data: { email, senha: 'invalid' } });
+    expect(result.status()).toBe(401);
+  }
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Senha', { exact: true }).fill('invalid');
+  const rejected = page.waitForResponse(response => response.url().endsWith('/api/users/login-context') && response.status() === 429);
+  const submit = page.getByRole('button', { name: 'Entrar', exact: true });
+  await submit.click();
+  const result = await rejected;
+  const seconds = Number(result.headers()['retry-after']);
+  expect(seconds).toBeGreaterThan(0);
+  expect((await result.json()).retryAfterSeconds).toBe(seconds);
+  await expect(page.getByRole('alert')).toHaveText('Muitas tentativas. Aguarde antes de tentar novamente.');
+  await expect(submit).toBeDisabled();
+  await expect(page.getByLabel('Senha', { exact: true })).toHaveValue('');
+  let replayed = 0;
+  page.on('request', request => { if (request.url().endsWith('/api/users/login-context')) replayed++; });
+  await page.clock.fastForward(seconds * 1000);
+  await expect(submit).toBeEnabled();
+  await expect(page.locator('#auth-wait-status')).toContainText('Espera encerrada');
+  expect(replayed).toBe(0);
+  await testInfo.attach('real-api-429-contract', { body: Buffer.from(JSON.stringify({ status: result.status(), retryAfterSeconds: seconds, automaticReplays: replayed })), contentType: 'application/json' });
+  // Browser time does not change the server window. A different identity must
+  // still be allowed immediately on this same loopback IP.
+  await page.getByLabel('Email', { exact: true }).fill(fixture!.individual.email);
+  await page.getByLabel('Senha', { exact: true }).fill(fixture!.individual.password);
+  await submit.click();
+  await expect.poll(() => Boolean(sessions.get(page))).toBe(true);
+  const terms = page.getByRole('checkbox', { name: /Li e estou ciente/ });
+  await expect(page.locator('.topbar').or(terms)).toBeVisible();
+  if (await terms.isVisible()) {
+    await terms.check();
+    await page.getByRole('button', { name: 'Aceitar e continuar' }).click();
+  }
+  await expect(page.locator('.topbar')).toBeVisible();
+  expect(sessions.get(page)!.user.clinicaId).toBe(fixture!.individual.clinicId);
+});
+
 for (const mode of ['selection', 'pin'] as const) {
   test(`case:${mode}`, async ({ page, request }) => {
     const team = fixture![mode];

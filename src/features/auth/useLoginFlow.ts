@@ -13,6 +13,7 @@ import { getErrorMessage, isValidEmail } from '../../shared/utils/formatters';
 import type { AuthSession, PublicClinic, TeamLoginChallenge } from '../../types';
 import { buildSessionFromLogin, shouldOpenDashboardAfterLogin } from '../../app/appSession';
 import { getLoginErrorMessage } from './loginFeedback';
+import { useAuthWait } from './useAuthWait';
 
 type UseLoginFlowOptions = {
   session: AuthSession | null;
@@ -40,6 +41,10 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
   const pending = useRef(false);
   const challengeClinic = useRef('');
   const activeRequest = useRef<AbortController | null>(null);
+  const identity = loginEmail.trim().toLowerCase();
+  const loginWait = useAuthWait(identity);
+  const recoveryWait = useAuthWait(identity);
+  const teamWait = useAuthWait(`${teamChallenge?.token ?? ''}:${teamOperatorId}`);
 
   const clearTeamState = () => {
     setTeamChallenge(null);
@@ -125,7 +130,7 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // Also guard programmatic submission while bootstrap can still rotate the cookie.
-    if (sessionRestoring || session || pending.current) return;
+    if (sessionRestoring || session || pending.current || loginWait.isWaiting()) return;
     setLoginError('');
     setLoginInfo('');
     clearTeamState();
@@ -175,6 +180,7 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
     } catch (error) {
       if (version === requestVersion.current) {
         setLoginPassword('');
+        loginWait.record(error);
         setLoginError(getLoginErrorMessage(error));
       }
     } finally {
@@ -188,7 +194,7 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
   };
 
   const selectLoginClinic = async (clinicaId: number) => {
-    if (pending.current || loginClinicOptions.length < 2) return;
+    if (pending.current || loginWait.isWaiting() || loginClinicOptions.length < 2) return;
     const clinic = loginClinicOptions.find(candidate => candidate.clinicaId === clinicaId);
     if (!clinic || !loginPassword) {
       setLoginError('Sua autenticação expirou. Entre novamente.');
@@ -211,6 +217,7 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
       if (version === requestVersion.current) {
         setLoginPassword('');
         clearClinicSelection();
+        loginWait.record(error);
         setLoginError(getLoginErrorMessage(error));
       }
     } finally {
@@ -238,7 +245,7 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
 
   const handleTeamIdentification = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (pending.current || !teamChallenge || !teamOperatorId || !challengeClinic.current) return;
+    if (sessionRestoring || session || pending.current || teamWait.isWaiting() || !teamChallenge || !teamOperatorId || !challengeClinic.current) return;
     const operator = teamChallenge.operadores.find(candidate => String(candidate.id) === teamOperatorId);
     if (!operator) return;
     if (new Date(teamChallenge.expiraEm).getTime() <= Date.now()) {
@@ -273,7 +280,10 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
       clearTeamState();
       clearClinicSelection();
     } catch (error) {
-      if (version === requestVersion.current) setLoginError(getLoginErrorMessage(error));
+      if (version === requestVersion.current) {
+        teamWait.record(error);
+        setLoginError(getLoginErrorMessage(error));
+      }
     } finally {
       if (version === requestVersion.current) {
         activeRequest.current = null;
@@ -298,7 +308,7 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
   };
 
   const handleResetPassword = async () => {
-    if (pending.current) return;
+    if (sessionRestoring || session || pending.current || recoveryWait.isWaiting()) return;
     setLoginError('');
     setLoginInfo('');
 
@@ -336,7 +346,10 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
       // Mantém resposta não enumerável quando não há contexto recuperável.
       setLoginInfo('Se o email estiver cadastrado, enviaremos as instrucoes para redefinir a senha.');
     } catch (error) {
-      if (version === requestVersion.current) setLoginError(getErrorMessage(error));
+      if (version === requestVersion.current) {
+        recoveryWait.record(error);
+        setLoginError(getErrorMessage(error));
+      }
     } finally {
       if (version === requestVersion.current) {
         pending.current = false;
@@ -365,6 +378,12 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
 
   return {
     sessionRestoring,
+    loginWaitSeconds: loginWait.seconds,
+    loginWaitMessage: loginWait.message,
+    recoveryWaitSeconds: recoveryWait.seconds,
+    recoveryWaitMessage: recoveryWait.message,
+    teamWaitSeconds: teamWait.seconds,
+    teamWaitMessage: teamWait.message,
     loginEmail,
     loginPassword,
     loginClinicOptions,

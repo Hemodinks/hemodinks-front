@@ -14,6 +14,7 @@ import { LegalFooter } from '../legal/LegalFooter';
 import { MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from '../../shared/utils/formatters';
 import './auth.css';
 import { LoginLoadingOverlay } from './LoginLoadingOverlay';
+import { AuthWaitMessage } from './AuthWaitMessage';
 
 type LoginScreenProps = {
   companyName: string;
@@ -29,6 +30,10 @@ type LoginScreenProps = {
   loginLoading: boolean;
   loginPreparing?: boolean;
   sessionRestoring?: boolean;
+  loginWaitSeconds?: number;
+  loginWaitMessage?: string;
+  recoveryWaitSeconds?: number;
+  recoveryWaitMessage?: string;
   resetPasswordLoading: boolean;
   onThemeToggle: () => void;
   onLoginEmailChange: (value: string) => void;
@@ -54,6 +59,10 @@ export function LoginScreen({
   loginLoading,
   loginPreparing = false,
   sessionRestoring = false,
+  loginWaitSeconds = 0,
+  loginWaitMessage = '',
+  recoveryWaitSeconds = 0,
+  recoveryWaitMessage = '',
   resetPasswordLoading,
   onThemeToggle,
   onLoginEmailChange,
@@ -127,15 +136,19 @@ export function LoginScreen({
           <p id="login-session-status" className="login-session-status" role="status" aria-live="polite" aria-atomic="true">
             {sessionRestoring
               ? 'Verificando sessão… O botão Entrar será liberado ao terminar. Você já pode preencher email e senha.'
-              : 'Você já pode clicar em Entrar.'}
+              : loginWaitSeconds > 0 ? 'Aguarde antes de entrar novamente.' : 'Você já pode clicar em Entrar.'}
           </p>
+          <AuthWaitMessage message={[
+            loginWaitMessage && `Acesso: ${loginWaitMessage}`,
+            recoveryWaitMessage && `Recuperação de senha: ${recoveryWaitMessage}`,
+          ].filter(Boolean).join(' ')} />
 
           <div className="login-entry-actions">
-            <button className="primary-action" type="submit" disabled={sessionRestoring || loginLoading || resetPasswordLoading} aria-describedby="login-session-status" aria-busy={sessionRestoring || loginLoading} data-tour="login-submit">
+            <button className="primary-action" type="submit" disabled={sessionRestoring || loginLoading || resetPasswordLoading || loginWaitSeconds > 0} aria-describedby={loginWaitMessage || recoveryWaitMessage ? 'login-session-status auth-wait-status' : 'login-session-status'} aria-busy={sessionRestoring || loginLoading} data-tour="login-submit">
               {sessionRestoring ? <LoaderCircle className="login-session-spinner" size={18} aria-hidden="true" /> : <LogIn size={18} aria-hidden="true" />}
               {sessionRestoring ? 'Verificando sessão…' : loginLoading ? 'Entrando...' : 'Entrar'}
             </button>
-            <button type="button" className="ghost-button login-help-link" onClick={onResetPassword} disabled={resetPasswordLoading || loginLoading}>
+            <button type="button" className="ghost-button login-help-link" onClick={onResetPassword} disabled={sessionRestoring || resetPasswordLoading || loginLoading || recoveryWaitSeconds > 0} aria-describedby={loginWaitMessage || recoveryWaitMessage ? 'auth-wait-status' : undefined}>
               {resetPasswordLoading ? 'Enviando instruções...' : recoveryClinics.length > 1 ? 'Enviar instruções' : 'Esqueci minha senha'}
             </button>
           </div>
