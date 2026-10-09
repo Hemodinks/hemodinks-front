@@ -1,5 +1,7 @@
 import { isPasswordPolicyError } from '../../services/passwordPolicyError';
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, useMemo, useRef, useState } from 'react';
+import { useAuthWait } from './useAuthWait';
+import { AuthWaitMessage } from './AuthWaitMessage';
 import { KeyRound } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
@@ -42,10 +44,13 @@ export function ResetPasswordScreen({
   const [passwordError, setPasswordError] = useState(false);
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const pending = useRef(false);
+  const wait = useAuthWait(token);
   const passwordStrength = useMemo(() => getPasswordStrength(novaSenha), [novaSenha]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (pending.current || success || wait.isWaiting()) return;
     setError('');
     setPasswordError(false);
     setSuccess('');
@@ -61,6 +66,7 @@ export function ResetPasswordScreen({
       return;
     }
 
+    pending.current = true;
     setLoading(true);
 
     try {
@@ -70,9 +76,11 @@ export function ResetPasswordScreen({
       setNovaSenha('');
       setConfirmacao('');
     } catch (submitError) {
+      wait.record(submitError);
       setPasswordError(isPasswordPolicyError(submitError));
       setError(getErrorMessage(submitError));
     } finally {
+      pending.current = false;
       setLoading(false);
       if (successMessage) {
         onResetCompleted(successMessage);
@@ -131,12 +139,13 @@ export function ResetPasswordScreen({
 
           {error && <div id="new-password-api-error"><AlertMessage type="error">{error}</AlertMessage></div>}
           {success && <ToastMessage type="success">{success}</ToastMessage>}
+          <AuthWaitMessage message={wait.message} />
 
           <div className="button-row reset-password-actions">
             <button type="button" className="ghost-button" onClick={onBackToLogin}>
               Voltar ao login
             </button>
-            <button className="primary-action" type="submit" disabled={loading || Boolean(success)}>
+            <button className="primary-action" type="submit" disabled={loading || wait.seconds > 0 || Boolean(success)} aria-describedby={wait.message ? 'auth-wait-status' : undefined}>
               <KeyRound size={18} />
               {loading ? 'Redefinindo...' : 'Redefinir senha'}
             </button>

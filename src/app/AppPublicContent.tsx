@@ -71,6 +71,8 @@ export function AppPublicContent({
         error={loginFlow.loginError}
         loading={loginFlow.loginLoading}
         theme={theme}
+        waitSeconds={loginFlow.teamWaitSeconds}
+        waitMessage={loginFlow.teamWaitMessage}
         onOperatorChange={loginFlow.setTeamOperatorId}
         onPinChange={loginFlow.setTeamPin}
         onSubmit={loginFlow.handleTeamIdentification}
@@ -96,6 +98,10 @@ export function AppPublicContent({
       loginLoading={loginFlow.loginLoading}
       loginPreparing={loginFlow.loginPreparing}
       sessionRestoring={loginFlow.sessionRestoring}
+      loginWaitSeconds={loginFlow.loginWaitSeconds}
+      loginWaitMessage={loginFlow.loginWaitMessage}
+      recoveryWaitSeconds={loginFlow.recoveryWaitSeconds}
+      recoveryWaitMessage={loginFlow.recoveryWaitMessage}
       resetPasswordLoading={loginFlow.resetPasswordLoading}
       onThemeToggle={onThemeToggle}
       onLoginEmailChange={loginFlow.setLoginEmail}
