@@ -5,6 +5,7 @@ import { sessionEpoch } from './sessionEpoch';
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import { resolveClinicaRequestHeaders } from './clinicaContext';
 import { isJwtExpired } from '../shared/utils/jwt';
+import { readRetryAfter } from './retryAfter';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 const DEFAULT_ERROR_MESSAGE = 'Nao foi possivel concluir a operacao.';
@@ -26,7 +27,7 @@ export function registerSessionTokenResolver(resolver: SessionTokenResolver) {
 }
 
 export class ApiError extends Error {
-  constructor(message: string, readonly status?: number, readonly code?: string) {
+  constructor(message: string, readonly status?: number, readonly code?: string, readonly retryAfterSeconds?: number) {
     super(message);
     this.name = 'ApiError';
   }
@@ -62,6 +63,10 @@ function notifyAuthExpired(token?: string, code?: string) {
 }
 
 function toApiError(error: unknown, notifyUnauthorized = false, token?: string) {
+  if (axios.isAxiosError(error) && error.response?.status === 429) {
+    return new ApiError('Muitas tentativas. Aguarde antes de tentar novamente.', 429, 'rate_limited',
+      readRetryAfter(axios.AxiosHeaders.from(error.response.headers as Parameters<typeof axios.AxiosHeaders.from>[0]).get('Retry-After'), error.response.data));
+  }
   const mapped = mapApiError(error, notifyUnauthorized, token);
   return axios.isAxiosError(error)
     ? new ApiError(mapped.message, error.response?.status, readSensitiveIdentityError(error.response?.data)?.code ?? readPasswordPolicyError(error.response?.data)?.code ?? readSessionFailureCode(error.response?.data) ?? error.code)

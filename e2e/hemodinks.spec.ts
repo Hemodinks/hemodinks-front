@@ -1,3 +1,4 @@
+import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
 import { registerPasswordPolicyCases } from './password-policy-cases';
 import { registerSecurityObservationCases } from './security-observation-cases';
 import { registerSensitiveIdentityCases } from './sensitive-identity-cases';
@@ -673,6 +674,7 @@ async function mockApi(page: Page, loginSession = session, options: {
   return state;
 }
 
+registerAuthRateLimitCases({ setup: mockApi, login: loginViaUi, session });
 registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });
 registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session });
 registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });

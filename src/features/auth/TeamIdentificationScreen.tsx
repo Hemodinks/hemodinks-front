@@ -3,6 +3,7 @@ import { LogIn, Users } from "lucide-react";
 import type { Theme } from "../../appTypes";
 import type { TeamLoginChallenge } from "../../types";
 import { LoginLoadingOverlay } from './LoginLoadingOverlay';
+import { AuthWaitMessage } from './AuthWaitMessage';
 import { TechCredit } from "../../shared/components/TechCredit";
 import { ThemeToggle } from "../../shared/components/ThemeToggle";
 import { AlertMessage } from "../../shared/components/ui";
@@ -15,6 +16,8 @@ type TeamIdentificationScreenProps = {
   pin: string;
   error: string;
   loading: boolean;
+  waitSeconds?: number;
+  waitMessage?: string;
   theme: Theme;
   onOperatorChange: (value: string) => void;
   onPinChange: (value: string) => void;
@@ -30,6 +33,8 @@ export function TeamIdentificationScreen({
   pin,
   error,
   loading,
+  waitSeconds = 0,
+  waitMessage = '',
   theme,
   onOperatorChange,
   onPinChange,
@@ -109,11 +114,12 @@ export function TeamIdentificationScreen({
           )}
           {challenge.operadores.length === 0 && <AlertMessage type="error">Nenhum funcionário disponível. Entre em contato com a administração da clínica.</AlertMessage>}
           {error && <AlertMessage type="error">{error}</AlertMessage>}
+          <AuthWaitMessage message={waitMessage} />
           <div className="button-row login-actions">
             <button type="button" className="ghost-button" onClick={onBack}>
               Voltar
             </button>
-            <button className="primary-action" type="submit" disabled={loading || !selectedOperator}>
+            <button className="primary-action" type="submit" disabled={loading || waitSeconds > 0 || !selectedOperator} aria-describedby={waitMessage ? 'auth-wait-status' : undefined}>
               <LogIn size={18} />
               {loading ? 'Entrando...' : 'Continuar'}
             </button>
