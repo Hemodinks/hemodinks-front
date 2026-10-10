@@ -39,6 +39,26 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('active session renewal', () => {
+  it('preserves session and clinic when renewal or activity is temporarily limited', async () => {
+    vi.mocked(recordSessionActivity).mockRejectedValue(new ApiError('Wait', 429, 'rate_limited', 2));
+    const activeSession = session();
+    const active = mount(activeSession);
+    await act(async () => {});
+    expect(recordSessionActivity).toHaveBeenCalledOnce();
+    expect(active.expired).not.toHaveBeenCalled();
+    expect(active.result.current).toEqual(activeSession);
+    active.unmount();
+
+    vi.mocked(renewSession).mockRejectedValue(new ApiError('Wait', 429, 'rate_limited', 2));
+    const nearingExpiry = session(token(1));
+    const renewing = mount(nearingExpiry);
+    await act(async () => {});
+    expect(renewSession).toHaveBeenCalledOnce();
+    expect(renewing.expired).not.toHaveBeenCalled();
+    expect(renewing.result.current).toEqual(nearingExpiry);
+    renewing.unmount();
+  });
+
   it('keeps a user typing in a form authenticated beyond the initial token lifetime', async () => {
     const hook = mount();
     await act(async () => {});
