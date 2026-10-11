@@ -1,0 +1,15 @@
+.app-update-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--panel);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+.app-update-notice > span { flex: 1 1 240px; overflow-wrap: anywhere; }
+.app-update-notice > button { flex-shrink: 0; }
+
+.app-update-dialog .modal-backdrop { z-index: 1000; }
