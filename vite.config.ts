@@ -1,9 +1,21 @@
+import { randomUUID } from 'node:crypto';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 
+const appBuildId = randomUUID();
+
 export default defineConfig(({ mode }) => ({
+  define: { __APP_BUILD_ID__: JSON.stringify(appBuildId) },
   plugins: [
+    {
+      name: 'app-build-version',
+      transformIndexHtml: () => [{
+        tag: 'meta',
+        attrs: { name: 'hemodinks-build-id', content: appBuildId },
+        injectTo: 'head',
+      }],
+    },
     react(),
     mode === 'analyze'
       ? visualizer({
