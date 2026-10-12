@@ -168,7 +168,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
       endTime: agendaEvent.isAllDay ? '10:00' : toTimeInput(end), notifyMedicalProfile: agendaEvent.notifyMedicalProfile,
       medicalUserId: agendaEvent.medicalUserId ? String(agendaEvent.medicalUserId) : '', notifyUser: agendaEvent.notifyUser,
       reminderPeriodMinutes: String(agendaEvent.reminderPeriodMinutes ?? defaultReminderMinutes), notificationMessage: '',
-      notifyAllAllowedRecipients: false, notificationUserIds: [], notificationGroupIds: [], sendEmailOnCreate: false, copyCreatorOnEmail: true });
+      notifyAllAllowedRecipients: false, notificationUserIds: [], notificationGroupIds: [], sendEmailOnCreate: false });
   };
   const completeSelectedEvent = async (agendaEvent: AgendaEvent) => {
     setError(''); setSuccessMessage('');
