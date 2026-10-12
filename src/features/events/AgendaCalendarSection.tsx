@@ -32,6 +32,7 @@ type AgendaCalendarSectionProps = {
   onNextMonth: () => void;
   onSelectDate: (date: Date) => void;
   onOpenDraftForSelectedDate: () => void;
+  onNotifyEmail?: (event: AgendaEvent) => void;
   onComplete: (agendaEvent: AgendaEvent) => void;
   onEdit: (agendaEvent: AgendaEvent) => void;
   onDelete: (agendaEvent: AgendaEvent) => void;
@@ -54,6 +55,7 @@ export function AgendaCalendarSection({
   onNextMonth,
   onSelectDate,
   onOpenDraftForSelectedDate,
+  onNotifyEmail,
   onComplete,
   onEdit,
   onDelete,
@@ -113,7 +115,7 @@ export function AgendaCalendarSection({
           ) : selectedEvents.length ? (
             selectedEvents.map((agendaEvent) => {
               return <AgendaEventCard key={agendaEvent.id} agendaEvent={agendaEvent} isAdmin={isAdmin} currentUserId={currentUserId}
-                onComplete={onComplete} onEdit={onEdit} onDelete={onDelete} />;
+                onNotifyEmail={onNotifyEmail} onComplete={onComplete} onEdit={onEdit} onDelete={onDelete} />;
             })
           ) : (
             <p className="agenda-empty">Nenhum evento nesta data.</p>

@@ -1,4 +1,4 @@
-import { Bell, Check, Clock, Pencil, Trash2 } from 'lucide-react';
+import { Bell, Check, Clock, Mail, Pencil, Trash2 } from 'lucide-react';
 import type { AgendaEvent } from '../../types';
 import { IconButton } from '../../shared/components/ui';
 import { eventTime } from './agendaMonth';
@@ -6,11 +6,12 @@ import { formatDateTime, toDateKey, allDayEventLabel } from './agendaUtils';
 
 export type AgendaEventActions = {
   isAdmin: boolean; currentUserId: number;
+  onNotifyEmail?: (event: AgendaEvent) => void;
   onComplete: (event: AgendaEvent) => void;
   onEdit: (event: AgendaEvent) => void;
   onDelete: (event: AgendaEvent) => void;
 };
-export function AgendaEventCard({ agendaEvent, isAdmin, currentUserId, onComplete, onEdit, onDelete, idSuffix }: AgendaEventActions & { agendaEvent: AgendaEvent; idSuffix?: string }) {
+export function AgendaEventCard({ agendaEvent, isAdmin, currentUserId, onComplete, onEdit, onDelete, onNotifyEmail, idSuffix }: AgendaEventActions & { agendaEvent: AgendaEvent; idSuffix?: string }) {
   const canManage = isAdmin || agendaEvent.userId === currentUserId;
   return (
     <article className={`agenda-event-item ${agendaEvent.isCompleted ? 'completed' : ''}`} key={agendaEvent.id} id={`agenda-event-${agendaEvent.id}${idSuffix ? `-${idSuffix}` : ''}`} tabIndex={-1}>
@@ -35,6 +36,9 @@ export function AgendaEventCard({ agendaEvent, isAdmin, currentUserId, onComplet
               <Check size={17} />
             </IconButton>
           )}
+          {!agendaEvent.isCompleted && onNotifyEmail && <IconButton label="Notificar por e-mail" onClick={() => onNotifyEmail(agendaEvent)}>
+            <Mail size={17} />
+          </IconButton>}
           <IconButton label="Editar" tone="muted" onClick={() => onEdit(agendaEvent)}>
             <Pencil size={17} />
           </IconButton>

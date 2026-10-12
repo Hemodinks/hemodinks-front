@@ -1,0 +1,18 @@
+import { expect, it, vi } from 'vitest';
+import { get, post } from './api';
+import { getEventEmailNotification, queueEventEmailNotification } from './eventEmailService';
+
+vi.mock('./api', () => ({ get: vi.fn(), post: vi.fn() }));
+
+it('requests server-scoped recipients and supports aborting the preview', () => {
+  const signal = new AbortController().signal;
+  getEventEmailNotification(12, 'session-token', signal);
+  expect(get).toHaveBeenCalledWith('/api/events/12/email-notification', 'session-token', { signal });
+});
+
+it('queues without recipient, email or clinic payload and retains the retry key', () => {
+  queueEventEmailNotification(12, 'session-token', 'retry-key');
+  expect(post).toHaveBeenCalledWith('/api/events/12/email-notification', undefined, 'session-token', {
+    headers: { 'Idempotency-Key': 'retry-key' }, timeout: 60_000,
+  });
+});
