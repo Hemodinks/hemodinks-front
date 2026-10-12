@@ -38,6 +38,15 @@ export function AgendaRecipients({ formData, setFormData, notificationRecipientO
           checked={formData.notificationGroupIds.includes(group.id)} onCheckedChange={() => onToggleNotificationGroup(group.id)} />)}
       </div>
     </div>}
+    {!editing && <div className="agenda-recipient-group">
+      <CheckboxField label="Notificar participantes por e-mail ao criar o evento" checked={formData.sendEmailOnCreate}
+        onCheckedChange={checked => setFormData(current => ({ ...current, sendEmailOnCreate: checked }))} />
+      {formData.sendEmailOnCreate && <>
+        <CheckboxField label="Enviar cópia ao criador do evento" checked={formData.copyCreatorOnEmail}
+          onCheckedChange={checked => setFormData(current => ({ ...current, copyCreatorOnEmail: checked }))} />
+        <p role="status">Os e-mails serão solicitados após salvar o evento, usando apenas destinatários autorizados. A confirmação da fila não garante entrega.</p>
+      </>}
+    </div>}
     {(formData.notificationUserIds.length > 0 || formData.notificationGroupIds.length > 0) &&
       <Button type="button" variant="ghost" onClick={() => setFormData(current => ({ ...current, notificationUserIds: [], notificationGroupIds: [] }))}>Limpar seleção individual e grupos</Button>}
   </fieldset>;
