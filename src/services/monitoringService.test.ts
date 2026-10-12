@@ -17,7 +17,10 @@ it('consome somente a paginação real e descarta campos que não serão apresen
   expect(request).toHaveBeenCalledOnce();
   const config = request.mock.calls[0][0];
   expect(config).toMatchObject({ url: '/api/monitoramento/seguranca', method: 'GET', signal: controller.signal });
-  expect(config.params.toString()).toBe('page=1&pageSize=25');
+  const params = config.params;
+  expect(params).toBeInstanceOf(URLSearchParams);
+  if (!(params instanceof URLSearchParams)) throw new Error('Parâmetros de monitoramento inválidos');
+  expect(params.toString()).toBe('page=1&pageSize=25');
 });
 
 it.each([401, 403, 500, 503])('falha %s não altera sessão nem revela a mensagem bruta', async status => {

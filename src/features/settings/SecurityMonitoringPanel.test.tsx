@@ -70,7 +70,10 @@ it('pagina sem inventar totais, apresenta vazio e permite voltar', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Próxima página de eventos' }));
   expect(await screen.findByText('Nenhum evento de segurança nesta página.')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Próxima página de eventos' })).toBeDisabled();
-  expect(request.mock.calls[1][0].params.toString()).toBe('page=2&pageSize=25');
+  const params = request.mock.calls[1][0].params;
+  expect(params).toBeInstanceOf(URLSearchParams);
+  if (!(params instanceof URLSearchParams)) throw new Error('Parâmetros de paginação inválidos');
+  expect(params.toString()).toBe('page=2&pageSize=25');
   fireEvent.click(screen.getByRole('button', { name: 'Página anterior de eventos' }));
   await screen.findByText('Página 1 · 1 evento(s) nesta página');
 });
