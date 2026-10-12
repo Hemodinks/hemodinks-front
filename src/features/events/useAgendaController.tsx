@@ -110,9 +110,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
         : { isAllDay: false, start: start.toISOString(), end: end.toISOString() }),
       notifyMedicalProfile: formData.notifyMedicalProfile, notifyUser: formData.notifyUser, reminderPeriodMinutes: reminderPeriod,
       notificationMessage: formData.notificationMessage.trim() || null, notifyAllAllowedRecipients: formData.notifyAllAllowedRecipients,
-      notificationUserIds: !editingEventId && formData.sendEmailOnCreate && formData.copyCreatorOnEmail
-        ? [...new Set([...formData.notificationUserIds, session.user.id])] : formData.notificationUserIds,
-      notificationGroupIds: formData.notificationGroupIds,
+      notificationUserIds: formData.notificationUserIds, notificationGroupIds: formData.notificationGroupIds,
     };
   };
   const toggleNotificationUser = (userId: number) => setFormData((current) => ({ ...current,
@@ -132,8 +130,8 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
       return;
     }
     const hasNotificationMessage = formData.notificationMessage.trim().length > 0;
-    const hasNotificationRecipients = formData.notifyAllAllowedRecipients || formData.notificationUserIds.length > 0 || formData.notificationGroupIds.length > 0 || (!editingEventId && formData.sendEmailOnCreate && formData.copyCreatorOnEmail);
-    if (!editingEventId && formData.sendEmailOnCreate && !hasNotificationRecipients) { setError('Selecione destinatários ou a cópia ao criador para enviar o e-mail.'); return; }
+    const hasNotificationRecipients = formData.notifyAllAllowedRecipients || formData.notificationUserIds.length > 0 || formData.notificationGroupIds.length > 0;
+    if (!editingEventId && formData.sendEmailOnCreate && !hasNotificationRecipients) { setError('Selecione ao menos um destinatário permitido para enviar o e-mail.'); return; }
     if (hasNotificationRecipients && !hasNotificationMessage) { setError('Informe a mensagem da notificação.'); return; }
     if (hasNotificationMessage && !hasNotificationRecipients) { setError('Selecione ao menos um destinatário para enviar a notificação.'); return; }
     setFormLoading(true);
