@@ -16,7 +16,7 @@ export function AgendaEventEmailModal({ event, session, onClose }: Props) {
   const email = useAgendaEventEmail(event.id, session);
   return <Modal titleId={titleId} descriptionId={descriptionId} className="agenda-email-modal"
     onClose={() => { if (!email.submitting) onClose(); }}>
-    <h2 id={titleId}>Notificar por e-mail</h2>
+    <div className="agenda-email-heading"><h2 id={titleId}>Notificar por e-mail</h2><Button type="button" variant="ghost" onClick={onClose} disabled={email.submitting} aria-label="Fechar notificação por e-mail">Fechar</Button></div>
     <p id={descriptionId}>Confira os destinatários de “{event.title}”. A confirmação solicita um envio por pessoa, sem alterar os lembretes do evento.</p>
     {email.loading && <p role="status">Carregando destinatários...</p>}
     {email.error && <AlertMessage type="error">{email.error}</AlertMessage>}
@@ -34,9 +34,9 @@ export function AgendaEventEmailModal({ event, session, onClose }: Props) {
       </ul> : <p>Este evento não possui destinatários disponíveis para e-mail. Os destinatários são registrados na criação do evento.</p>}
     </>}
     <div className="agenda-email-actions">
-      <Button onClick={onClose} disabled={email.submitting}>{email.result ? 'Fechar' : 'Cancelar'}</Button>
-      {!email.loading && <Button onClick={email.retry} disabled={email.submitting}>Atualizar destinatários</Button>}
-      <Button variant="primary" onClick={() => void email.send()}
+      <Button type="button" onClick={onClose} disabled={email.submitting}>{email.result ? 'Fechar' : 'Cancelar'}</Button>
+      {!email.loading && <Button type="button" onClick={email.retry} disabled={email.submitting}>Atualizar destinatários</Button>}
+      <Button type="button" variant="primary" onClick={() => void email.send()}
         disabled={email.loading || email.submitting || !email.preview?.canSend || Boolean(email.result)}>
         {email.submitting ? 'Solicitando envio...' : 'Confirmar envio por e-mail'}
       </Button>

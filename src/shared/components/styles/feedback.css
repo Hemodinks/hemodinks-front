@@ -206,3 +206,12 @@
     transform: scaleX(0.96);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-ring,
+  .loader-orbit,
+  .loader-core,
+  .vital-line span {
+    animation: none;
+  }
+}

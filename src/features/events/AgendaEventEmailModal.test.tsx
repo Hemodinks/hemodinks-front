@@ -46,3 +46,12 @@ it('only exposes the event action to a manager and hides it for completed events
   rerender(<AgendaEventCard {...props} isAdmin agendaEvent={{ ...event, isCompleted: true }} />);
   expect(screen.queryByRole('button', { name: 'Notificar por e-mail' })).not.toBeInTheDocument();
 });
+
+
+it('provides an explicit accessible close action without submitting emails', async () => {
+  const onClose = vi.fn();
+  render(<AgendaEventEmailModal event={event} session={session} onClose={onClose} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Fechar notificação por e-mail' }));
+  expect(onClose).toHaveBeenCalledOnce();
+  expect(service.queueEventEmailNotification).not.toHaveBeenCalled();
+});
