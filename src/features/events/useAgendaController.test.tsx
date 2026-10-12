@@ -159,11 +159,11 @@ it('keeps email opt-in disabled by default and never queues a message on ordinar
   expect(queueEventEmailNotification).not.toHaveBeenCalled();
 });
 
-it('queues after successful creation, including creator once and preserving tenant-scoped API validation', async () => {
+it('queues after successful creation, using the existing persisted recipients and preserving tenant-scoped API validation', async () => {
   vi.mocked(queueEventEmailNotification).mockResolvedValue({ queuedCount: 2 });
   const { result } = await setup();
   act(() => result.current.setFormData(current => ({ ...current, title: 'Evento por e-mail',
-    notificationMessage: 'Convite', notificationUserIds: [1, 2], sendEmailOnCreate: true, copyCreatorOnEmail: true })));
+    notificationMessage: 'Convite', notificationUserIds: [1, 2], sendEmailOnCreate: true })));
   await act(() => result.current.handleSubmit(submit()));
   expect(services.createAgendaEvent).toHaveBeenCalledWith(expect.objectContaining({ notificationUserIds: [1, 2] }), 'token');
   expect(queueEventEmailNotification).toHaveBeenCalledWith(saved.id, 'token', expect.any(String));
@@ -174,7 +174,7 @@ it('does not queue email when event creation fails', async () => {
   const { result } = await setup();
   vi.mocked(services.createAgendaEvent).mockRejectedValueOnce(new Error('Falha ao salvar'));
   act(() => result.current.setFormData(current => ({ ...current, title: 'Falha', notificationMessage: 'Convite',
-    notificationUserIds: [2], sendEmailOnCreate: true, copyCreatorOnEmail: false })));
+    notificationUserIds: [2], sendEmailOnCreate: true })));
   await act(() => result.current.handleSubmit(submit()));
   expect(queueEventEmailNotification).not.toHaveBeenCalled();
 });
