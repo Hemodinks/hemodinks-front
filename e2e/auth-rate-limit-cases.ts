@@ -221,7 +221,7 @@ export function registerAuthRateLimitCases<TSession extends Session>({ setup, lo
     expect(calls).toBe(1);
     await recover.click();
     await expect(page.getByRole('alert')).toHaveCount(0);
-    expect(calls).toBe(2);
+    await expect.poll(() => calls, { message: 'O reenvio manual deve chegar à API simulada' }).toBe(2);
   });
 
   test('limite de acesso: confirmação de redefinição respeita espera sem repetir senha', async ({ page }) => {
