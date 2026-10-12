@@ -19,6 +19,8 @@ export type AgendaFormData = {
   notifyAllAllowedRecipients: boolean;
   notificationUserIds: number[];
   notificationGroupIds: number[];
+  sendEmailOnCreate: boolean;
+  copyCreatorOnEmail: boolean;
 };
 
 export type AgendaSection = 'calendario' | 'cadastro';
@@ -87,6 +89,8 @@ export function buildEmptyForm(
     notifyAllAllowedRecipients: false,
     notificationUserIds: [],
     notificationGroupIds: [],
+    sendEmailOnCreate: false,
+    copyCreatorOnEmail: true,
   };
 }
 
