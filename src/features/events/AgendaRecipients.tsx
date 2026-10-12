@@ -42,8 +42,6 @@ export function AgendaRecipients({ formData, setFormData, notificationRecipientO
       <CheckboxField label="Notificar participantes por e-mail ao criar o evento" checked={formData.sendEmailOnCreate}
         onCheckedChange={checked => setFormData(current => ({ ...current, sendEmailOnCreate: checked }))} />
       {formData.sendEmailOnCreate && <>
-        <CheckboxField label="Enviar cópia ao criador do evento" checked={formData.copyCreatorOnEmail}
-          onCheckedChange={checked => setFormData(current => ({ ...current, copyCreatorOnEmail: checked }))} />
         <p role="status">Os e-mails serão solicitados após salvar o evento, usando apenas destinatários autorizados. A confirmação da fila não garante entrega.</p>
       </>}
     </div>}
