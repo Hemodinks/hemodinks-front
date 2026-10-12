@@ -1,3 +1,4 @@
+import { registerAgendaEmailCases } from './agenda-email-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
 import { registerPasswordPolicyCases } from './password-policy-cases';
 import { registerSecurityObservationCases } from './security-observation-cases';
@@ -2298,6 +2299,8 @@ registerAgendaResponsiveCases({ mockApi, loginViaUi });
 registerAgendaMonthCases({ mockApi, loginViaUi });
 
 registerAgendaRecipientCases({ mockApi, loginViaUi });
+
+registerAgendaEmailCases({ mockApi, loginViaUi });
 
 registerAgendaViewCases({ mockApi, loginViaUi });
 

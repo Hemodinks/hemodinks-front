@@ -1,7 +1,9 @@
+import { useState } from 'react';
+import { AgendaEventEmailModal } from './AgendaEventEmailModal';
 import { AgendaViewToolbar } from './AgendaViewToolbar';
 import { AgendaPeriodView } from './AgendaPeriodView';
 import { CalendarDays, CheckCircle2, Plus, RefreshCw } from 'lucide-react';
-import type { AuthSession } from '../../types';
+import type { AgendaEvent, AuthSession } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, ToastMessage } from '../../shared/components/ui';
 import { AgendaCalendarSection } from './AgendaCalendarSection';
 import { AgendaEventForm } from './AgendaEventForm';
@@ -17,6 +19,7 @@ export function AgendaPage(props: AgendaPageProps) {
   return <AgendaPageContent key={`${session.user.clinicaId}:${session.user.id}:${session.token}`} {...props} />;
 }
 function AgendaPageContent({ session, isAdmin, isMedical }: AgendaPageProps) {
+  const [emailEvent, setEmailEvent] = useState<AgendaEvent | null>(null);
   const agenda = useAgendaController({ session, isMedical });
   return <section className="workspace agenda-workspace" data-tour="agenda-overview">
     <DataPanel className="agenda-panel">
@@ -43,11 +46,11 @@ function AgendaPageContent({ session, isAdmin, isMedical }: AgendaPageProps) {
         todayKey={agenda.todayKey} loading={agenda.loading} holidayLoading={agenda.holidayLoading} isAdmin={isAdmin}
         currentUserId={session.user.id} onPreviousMonth={agenda.handlePreviousMonth} onNextMonth={agenda.handleNextMonth}
         onSelectDate={agenda.handleSelectDate} onOpenDraftForSelectedDate={agenda.openDraftForSelectedDate}
-        onComplete={agenda.handleComplete} onEdit={agenda.handleEdit} onDelete={agenda.handleDelete}
+        onNotifyEmail={setEmailEvent} onComplete={agenda.handleComplete} onEdit={agenda.handleEdit} onDelete={agenda.handleDelete}
       /> : <AgendaPeriodView view={agenda.view} visibleMonth={agenda.visibleMonth} selectedDate={agenda.selectedDate}
         todayKey={agenda.todayKey} events={agenda.events} loading={agenda.loading} isAdmin={isAdmin} currentUserId={session.user.id}
         onSelectDate={agenda.handleSelectDate} onPrevious={agenda.handlePreviousMonth} onNext={agenda.handleNextMonth}
-        onComplete={agenda.handleComplete} onEdit={agenda.handleEdit} onDelete={agenda.handleDelete} />}
+        onNotifyEmail={setEmailEvent} onComplete={agenda.handleComplete} onEdit={agenda.handleEdit} onDelete={agenda.handleDelete} />}
       </> : <AgendaEventForm
         editingEventId={agenda.editingEventId} formData={agenda.formData} formLoading={agenda.formLoading}
         medicalUsers={agenda.medicalUsers} notificationRecipientOptions={agenda.notificationRecipientOptions}
@@ -58,6 +61,7 @@ function AgendaPageContent({ session, isAdmin, isMedical }: AgendaPageProps) {
         onToggleNotificationGroup={agenda.toggleNotificationGroup}
       />}
     </DataPanel>
+    {emailEvent && <AgendaEventEmailModal key={emailEvent.id} event={emailEvent} session={session} onClose={() => setEmailEvent(null)} />}
     {agenda.confirmationDialog}
   </section>;
 }
