@@ -2,6 +2,8 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { StrictMode, type FormEvent } from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import * as services from '../../services';
+import { queueEventEmailNotification } from '../../services/eventEmailService';
+vi.mock('../../services/eventEmailService', () => ({ queueEventEmailNotification: vi.fn() }));
 import type { AgendaEvent, AuthSession } from '../../types';
 import { useAgendaController } from './useAgendaController';
 import { buildEmptyForm } from './agendaUtils';
@@ -147,4 +149,32 @@ it('creates and edits all-day events with civil dates and the persisted timezone
   expect(result.current.formData).toMatchObject({ isAllDay: true, startDate: '2026-09-26', endDate: '2026-09-28', timeZoneId: 'Pacific/Kiritimati' });
   await act(() => result.current.handleSubmit(submit()));
   expect(services.updateAgendaEvent).toHaveBeenCalledWith(1, expect.objectContaining({ isAllDay: true, allDayStartDate: '2026-09-26', allDayEndDate: '2026-09-28', timeZoneId: 'Pacific/Kiritimati' }), 'token');
+});
+
+
+it('keeps email opt-in disabled by default and never queues a message on ordinary creation', async () => {
+  const { result } = await setup();
+  act(() => result.current.setFormData(current => ({ ...current, title: 'Evento simples' })));
+  await act(() => result.current.handleSubmit(submit()));
+  expect(queueEventEmailNotification).not.toHaveBeenCalled();
+});
+
+it('queues after successful creation, including creator once and preserving tenant-scoped API validation', async () => {
+  vi.mocked(queueEventEmailNotification).mockResolvedValue({ queuedCount: 2 });
+  const { result } = await setup();
+  act(() => result.current.setFormData(current => ({ ...current, title: 'Evento por e-mail',
+    notificationMessage: 'Convite', notificationUserIds: [1, 2], sendEmailOnCreate: true, copyCreatorOnEmail: true })));
+  await act(() => result.current.handleSubmit(submit()));
+  expect(services.createAgendaEvent).toHaveBeenCalledWith(expect.objectContaining({ notificationUserIds: [1, 2] }), 'token');
+  expect(queueEventEmailNotification).toHaveBeenCalledWith(saved.id, 'token', expect.any(String));
+  expect(result.current.successMessage).toContain('fila de e-mail');
+});
+
+it('does not queue email when event creation fails', async () => {
+  const { result } = await setup();
+  vi.mocked(services.createAgendaEvent).mockRejectedValueOnce(new Error('Falha ao salvar'));
+  act(() => result.current.setFormData(current => ({ ...current, title: 'Falha', notificationMessage: 'Convite',
+    notificationUserIds: [2], sendEmailOnCreate: true, copyCreatorOnEmail: false })));
+  await act(() => result.current.handleSubmit(submit()));
+  expect(queueEventEmailNotification).not.toHaveBeenCalled();
 });
