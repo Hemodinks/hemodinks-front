@@ -50,7 +50,7 @@ export function AgendaEventEmailModal({ event, session, onClose }: Props) {
         <X size={20} aria-hidden="true" />
       </IconButton>
     </header>
-    <div className="agenda-email-body">
+    <div className="agenda-email-body" role="region" aria-label="Detalhes do envio por e-mail" tabIndex={0}>
       <p id={descriptionId} className="agenda-email-description">Confira os destinatários de “{event.title}”. Cada pessoa recebe uma mensagem individual, sem alterar os lembretes do evento.</p>
       {email.loading && <p role="status">Carregando destinatários...</p>}
       {email.error && <AlertMessage type="error">{email.error} Atualize os destinatários ou tente novamente. Se persistir, informe ao suporte o evento e o horário da tentativa.</AlertMessage>}
