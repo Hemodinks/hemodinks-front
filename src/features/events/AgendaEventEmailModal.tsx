@@ -1,8 +1,9 @@
 import { useId } from 'react';
 import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
 import type { AgendaEvent, AuthSession } from '../../types';
 import { Modal } from '../../shared/components/Modal';
-import { AlertMessage, Button } from '../../shared/components/ui';
+import { AlertMessage, Button, IconButton } from '../../shared/components/ui';
 import { useAgendaEventEmail } from './useAgendaEventEmail';
 import './agenda-email.css';
 
@@ -28,9 +29,14 @@ export function AgendaEventEmailModal({ event, session, onClose }: Props) {
   const creator = preview?.creatorCopy;
   const unavailableCopy = !creator ? 'A cópia ao criador ainda não está disponível neste ambiente.'
     : creator.unavailableReason ? creatorReasons[creator.unavailableReason] ?? 'A cópia não está disponível para este evento.' : '';
-  const blockedReason = email.result ? 'Solicitação aceita. Atualize o status para acompanhar o processamento.'
-    : !preview || preview.canSend ? ''
+  const blockedReason = email.loading ? 'Carregando destinatários antes de liberar a confirmação.'
+    : email.submitting ? 'Solicitando a inclusão dos e-mails na fila de envio.'
+    : email.result ? 'Solicitação aceita. Atualize o status para acompanhar o processamento.'
+    : !preview ? 'Não foi possível consultar os destinatários. Atualize para tentar novamente.'
+    : preview.canSend ? 'Ao confirmar, os e-mails serão colocados na fila de envio. A entrega pode levar alguns instantes.'
     : event.isCompleted ? 'Eventos concluídos não permitem novos envios.'
+    : preview.recipients.length > 0 && preview.recipients.every(recipient => recipient.status === 'pending' || recipient.status === 'sent')
+      ? 'Os e-mails já estão na fila de envio ou foram enviados. Não é necessário confirmar novamente.'
     : preview.pendingCount > 0 ? 'O envio já foi solicitado e está na fila. Aguarde o processamento ou atualize o status.'
     : preview.failedCount > 0 ? 'Não há novos destinatários disponíveis. Este modal não refaz envios já solicitados.'
     : preview.sentCount > 0 ? 'Os envios já foram solicitados para todos os destinatários disponíveis. Eles não serão duplicados.'
@@ -38,7 +44,12 @@ export function AgendaEventEmailModal({ event, session, onClose }: Props) {
     : 'O envio não está autorizado para este evento no estado atual.';
   return createPortal(<Modal titleId={titleId} descriptionId={descriptionId} className="agenda-email-modal" backdropClassName="agenda-email-backdrop"
     onClose={() => { if (!email.submitting) onClose(); }}>
-    <header className="agenda-email-heading"><h2 id={titleId}>Notificar por e-mail</h2><Button type="button" variant="ghost" onClick={onClose} disabled={email.submitting} aria-label="Fechar notificação por e-mail">Fechar</Button></header>
+    <header className="agenda-email-heading">
+      <h2 id={titleId}>Notificar por e-mail</h2>
+      <IconButton label="Fechar notificação por e-mail" tone="muted" className="agenda-email-close" onClick={onClose} disabled={email.submitting}>
+        <X size={20} aria-hidden="true" />
+      </IconButton>
+    </header>
     <div className="agenda-email-body">
       <p id={descriptionId} className="agenda-email-description">Confira os destinatários de “{event.title}”. Cada pessoa recebe uma mensagem individual, sem alterar os lembretes do evento.</p>
       {email.loading && <p role="status">Carregando destinatários...</p>}
