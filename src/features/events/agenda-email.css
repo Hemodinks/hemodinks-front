@@ -1,8 +1,34 @@
-.agenda-email-modal { width: min(600px, 100%); }
+.agenda-email-backdrop { z-index: 10003; }
+.modal-panel.agenda-email-modal { width: min(680px, 100%); min-width: 0; background: var(--background); display: flex; flex-direction: column; overflow: hidden; }
+.agenda-email-heading, .agenda-email-description, .agenda-email-actions { flex-shrink: 0; }
 .agenda-email-modal h2, .agenda-email-modal p { overflow-wrap: anywhere; }
-.agenda-email-recipients { list-style: none; padding: 0; display: grid; gap: 10px; }
-.agenda-email-recipients li { display: grid; gap: 4px; border-bottom: 1px solid var(--line); padding: 8px 0; overflow-wrap: anywhere; }
-.agenda-email-recipients small { color: var(--muted); }
-.agenda-email-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
-.agenda-email-actions button { white-space: normal; }
-@media (max-width: 520px) { .agenda-email-actions button { flex: 1 1 100%; } }
+.agenda-email-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.agenda-email-heading h2 { margin: 0; min-width: 0; font-size: 1.25rem; }
+.agenda-email-heading button { flex: 0 0 auto; width: auto; }
+.agenda-email-description { margin: 16px 0; line-height: 1.6; color: var(--muted); }
+.agenda-email-body { display: grid; gap: 14px; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+.agenda-email-body > p { margin: 0; line-height: 1.6; }
+.agenda-email-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.agenda-email-summary > div { border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; }
+.agenda-email-summary dt { font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+.agenda-email-summary dd { margin: 6px 0 0; font-size: 1.4rem; font-weight: 700; }
+.agenda-email-copy { border: 1px solid var(--line); border-radius: 8px; padding: 14px; min-width: 0; }
+.agenda-email-copy label { display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; }
+.agenda-email-copy input { flex: 0 0 auto; width: 18px; height: 18px; margin: 0; }
+.agenda-email-copy p { margin: 8px 0 0; font-size: .85rem; line-height: 1.5; color: var(--muted); }
+.agenda-email-recipients { list-style: none; padding: 0; margin: 0; display: grid; }
+.agenda-email-recipients li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding: 12px 0; overflow-wrap: anywhere; }
+.agenda-email-recipients li > div { display: grid; gap: 4px; min-width: 0; }
+.agenda-email-recipients span, .agenda-email-note { font-size: .85rem; color: var(--muted); }
+.agenda-email-status { border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: .8rem; }
+.agenda-email-reason { font-size: .9rem; }
+.agenda-email-reason:empty { display: none; }
+.agenda-email-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 18px; }
+.agenda-email-actions button { flex: 0 1 auto; width: auto; white-space: normal; }
+@media (max-width: 520px) {
+  .agenda-email-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .agenda-email-recipients li { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .agenda-email-status { justify-self: start; }
+  .agenda-email-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .agenda-email-actions button { width: 100%; }
+}
