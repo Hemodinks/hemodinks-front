@@ -40,6 +40,13 @@ export function registerAgendaEmailCases(helpers: Helpers) {
     const modal = page.getByRole('dialog', { name: 'Notificar por e-mail', exact: true });
     await expect(modal.getByText(recipient.email)).toBeVisible();
     expect(posts).toBe(0);
+    const heading = await modal.getByRole('heading', { name: 'Notificar por e-mail' }).boundingBox();
+    const close = await modal.getByRole('button', { name: 'Fechar notificação por e-mail' }).boundingBox();
+    expect(heading).not.toBeNull();
+    expect(close).not.toBeNull();
+    expect(close!.x).toBeGreaterThanOrEqual(heading!.x + heading!.width + 12);
+    expect(close!.y).toBeLessThan(heading!.y + heading!.height);
+    await page.screenshot({ path: test.info().outputPath('email-modal.png') });
     const audit = await new AxeBuilder({ page }).include('.agenda-email-modal').analyze();
     expect(audit.violations.filter(issue => issue.impact === 'serious' || issue.impact === 'critical')).toEqual([]);
     await modal.getByRole('button', { name: 'Cancelar', exact: true }).click();
@@ -59,6 +66,7 @@ export function registerAgendaEmailCases(helpers: Helpers) {
     await modal.getByRole('button', { name: 'Fechar', exact: true }).click();
     await card.getByRole('button', { name: 'Notificar por e-mail', exact: true }).click();
     await expect(confirm).toBeDisabled();
+    await expect(confirm).toHaveAccessibleDescription(/já estão na fila de envio ou foram enviados/);
     expect(posts).toBe(1);
     expect(errors).toEqual([]);
   });

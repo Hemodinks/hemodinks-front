@@ -1,8 +1,22 @@
-.agenda-email-modal { width: min(600px, 100%); }
+.agenda-email-modal { width: min(600px, 100%); background: var(--panel-strong); background: rgb(from var(--panel-strong) r g b / 1); }
 .agenda-email-modal h2, .agenda-email-modal p { overflow-wrap: anywhere; }
-.agenda-email-recipients { list-style: none; padding: 0; display: grid; gap: 10px; }
-.agenda-email-recipients li { display: grid; gap: 4px; border-bottom: 1px solid var(--line); padding: 8px 0; overflow-wrap: anywhere; }
+.agenda-email-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 16px; }
+.agenda-email-heading h2 { min-width: 0; margin: 0; line-height: 1.4; }
+.agenda-email-heading .agenda-email-close { flex: 0 0 44px; width: 44px; min-height: 44px; background: transparent; border-color: transparent; box-shadow: none; }
+.agenda-email-heading .agenda-email-close:hover { background: var(--line); }
+.agenda-email-modal p { line-height: 1.6; }
+.agenda-email-summary { padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; }
+.agenda-email-recipients { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 0; }
+.agenda-email-recipients li { display: grid; gap: 6px; border-bottom: 1px solid var(--line); padding: 14px 0; overflow-wrap: anywhere; }
+.agenda-email-recipients li:last-child { border-bottom: 0; }
 .agenda-email-recipients small { color: var(--muted); }
-.agenda-email-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
-.agenda-email-actions button { white-space: normal; }
-@media (max-width: 520px) { .agenda-email-actions button { flex: 1 1 100%; } }
+.agenda-email-status { justify-self: start; border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; }
+.agenda-email-footer { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 8px; }
+.agenda-email-hint { margin: 0 0 14px; color: var(--muted); font-size: 0.875rem; }
+.agenda-email-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.agenda-email-actions button { white-space: normal; min-height: 44px; }
+.agenda-email-actions .primary-action { flex: 1 1 100%; }
+@media (max-width: 520px) {
+  .agenda-email-heading { gap: 12px; }
+  .agenda-email-actions button { flex: 1 1 100%; }
+}
