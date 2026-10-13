@@ -1,7 +1,8 @@
 import { useId } from 'react';
+import { X } from 'lucide-react';
 import type { AgendaEvent, AuthSession } from '../../types';
 import { Modal } from '../../shared/components/Modal';
-import { AlertMessage, Button } from '../../shared/components/ui';
+import { AlertMessage, Button, IconButton } from '../../shared/components/ui';
 import { useAgendaEventEmail } from './useAgendaEventEmail';
 import './agenda-email.css';
 
@@ -14,32 +15,50 @@ export function AgendaEventEmailModal({ event, session, onClose }: Props) {
   const titleId = useId();
   const descriptionId = useId();
   const email = useAgendaEventEmail(event.id, session);
+  const sendHintId = useId();
+  const sendHint = email.loading ? 'Carregando destinatários antes de liberar a confirmação.'
+    : email.submitting ? 'Solicitando a inclusão dos e-mails na fila de envio.'
+    : email.result ? 'Solicitação concluída. Atualize os destinatários para consultar o andamento dos envios.'
+    : !email.preview ? 'Não foi possível consultar os destinatários. Atualize para tentar novamente.'
+    : !email.preview.canSend
+      ? email.preview.recipients.length > 0 && email.preview.recipients.every(recipient => recipient.status === 'pending' || recipient.status === 'sent')
+        ? 'Os e-mails já estão na fila de envio ou foram enviados. Não é necessário confirmar novamente.'
+        : 'Não há novos envios disponíveis para este evento. Confira os destinatários e seus estados acima.'
+      : 'Ao confirmar, os e-mails serão colocados na fila de envio. A entrega pode levar alguns instantes.';
   return <Modal titleId={titleId} descriptionId={descriptionId} className="agenda-email-modal"
     onClose={() => { if (!email.submitting) onClose(); }}>
-    <div className="agenda-email-heading"><h2 id={titleId}>Notificar por e-mail</h2><Button type="button" variant="ghost" onClick={onClose} disabled={email.submitting} aria-label="Fechar notificação por e-mail">Fechar</Button></div>
-    <p id={descriptionId}>Confira os destinatários de “{event.title}”. A confirmação solicita um envio por pessoa, sem alterar os lembretes do evento.</p>
+    <div className="agenda-email-heading">
+      <h2 id={titleId}>Notificar por e-mail</h2>
+      <IconButton label="Fechar notificação por e-mail" tone="muted" className="agenda-email-close" onClick={onClose} disabled={email.submitting}>
+        <X size={20} aria-hidden="true" />
+      </IconButton>
+    </div>
+    <p id={descriptionId}>Confira os destinatários de “{event.title}”. A confirmação coloca os e-mails na fila de envio, sem alterar os lembretes do evento.</p>
     {email.loading && <p role="status">Carregando destinatários...</p>}
     {email.error && <AlertMessage type="error">{email.error}</AlertMessage>}
     {email.result && <AlertMessage type="success">{email.result.queuedCount > 0
       ? email.result.queuedCount + ' destinatário(s) na fila de envio. Isso ainda não confirma a entrega dos e-mails.'
       : 'Nenhum novo envio solicitado. Confira os estados abaixo.'}</AlertMessage>}
     {email.preview && <>
-      <p>{email.preview.recipientCount} destinatário(s) permitido(s). {email.preview.pendingCount} aguardando envio; {email.preview.sentCount} enviado(s).</p>
+      <p className="agenda-email-summary">{email.preview.recipientCount} destinatário(s) permitido(s). {email.preview.pendingCount} aguardando envio; {email.preview.sentCount} enviado(s).</p>
       {email.preview.failedCount > 0 && <AlertMessage type="warning">{email.preview.failedCount} envio(s) falharam. Entre em contato com o suporte.</AlertMessage>}
       {email.preview.excludedCount > 0 && <p>Alguns destinatários foram excluídos por indisponibilidade ou falta de permissão atual.</p>}
       {email.preview.recipients.length ? <ul className="agenda-email-recipients" aria-label="Destinatários do e-mail">
         {email.preview.recipients.map(recipient => <li key={recipient.userId}>
-          <strong>{recipient.nome}</strong><span>{recipient.email}</span><small>{statusLabels[recipient.status]}</small>
+          <strong>{recipient.nome}</strong><span>{recipient.email}</span><small className="agenda-email-status">{statusLabels[recipient.status]}</small>
         </li>)}
       </ul> : <p>Este evento não possui destinatários disponíveis para e-mail. Os destinatários são registrados na criação do evento.</p>}
     </>}
-    <div className="agenda-email-actions">
-      <Button type="button" onClick={onClose} disabled={email.submitting}>{email.result ? 'Fechar' : 'Cancelar'}</Button>
-      {!email.loading && <Button type="button" onClick={email.retry} disabled={email.submitting}>Atualizar destinatários</Button>}
-      <Button type="button" variant="primary" onClick={() => void email.send()}
-        disabled={email.loading || email.submitting || !email.preview?.canSend || Boolean(email.result)}>
-        {email.submitting ? 'Solicitando envio...' : 'Confirmar envio por e-mail'}
-      </Button>
+    <div className="agenda-email-footer">
+      <p id={sendHintId} className="agenda-email-hint" role="status">{sendHint}</p>
+      <div className="agenda-email-actions">
+        <Button type="button" onClick={onClose} disabled={email.submitting}>{email.result ? 'Fechar' : 'Cancelar'}</Button>
+        {!email.loading && <Button type="button" onClick={email.retry} disabled={email.submitting}>Atualizar destinatários</Button>}
+        <Button type="button" variant="primary" aria-describedby={sendHintId} onClick={() => void email.send()}
+          disabled={email.loading || email.submitting || !email.preview?.canSend || Boolean(email.result)}>
+          {email.submitting ? 'Solicitando envio...' : 'Confirmar envio por e-mail'}
+        </Button>
+      </div>
     </div>
   </Modal>;
 }

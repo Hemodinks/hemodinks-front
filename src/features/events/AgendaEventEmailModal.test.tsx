@@ -55,3 +55,17 @@ it('provides an explicit accessible close action without submitting emails', asy
   expect(onClose).toHaveBeenCalledOnce();
   expect(service.queueEventEmailNotification).not.toHaveBeenCalled();
 });
+
+it('explains why confirmation is disabled when recipients are already queued', async () => {
+  vi.mocked(service.getEventEmailNotification).mockResolvedValue({
+    recipients: [{ userId: 2, nome: 'Pessoa permitida', email: 'pessoa@example.test', status: 'pending' }],
+    recipientCount: 1, pendingCount: 1, sentCount: 0, failedCount: 0, excludedCount: 0, canSend: false,
+  });
+  render(<AgendaEventEmailModal event={event} session={session} onClose={vi.fn()} />);
+  const reason = await screen.findByText('Os e-mails já estão na fila de envio ou foram enviados. Não é necessário confirmar novamente.');
+  const confirm = screen.getByRole('button', { name: 'Confirmar envio por e-mail' });
+  expect(confirm).toBeDisabled();
+  expect(confirm).toHaveAccessibleDescription(reason.textContent!);
+  fireEvent.click(confirm);
+  expect(service.queueEventEmailNotification).not.toHaveBeenCalled();
+});
