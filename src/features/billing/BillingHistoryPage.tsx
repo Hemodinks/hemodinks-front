@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { sessionEpoch } from '../../services/sessionEpoch';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, CalendarClock, ChevronDown, Download, FileText, History, ReceiptText, Trash2, TriangleAlert, Upload, Wallet } from 'lucide-react';
 import { AlertMessage, Button, DataPanel, IconButton, ToastMessage } from '../../shared/components/ui';
@@ -23,6 +24,8 @@ function formatFileSize(bytes: number) {
 }
 
 export function BillingHistoryPage({ session, isMedical, canManageFiles }: BillingHistoryPageProps) {
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [tableSorts, setTableSorts] = useState<Record<string, { sortBy: BillingDateSortField; sortDirection: 'asc' | 'desc' }>>({});
   const dateHeader = (table: string, field: BillingDateSortField, label: string) => (
     <SortableTableHeader field={field} label={label} activeField={tableSorts[table]?.sortBy ?? ''}
@@ -117,15 +120,18 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
   };
 
   const handleDownloadFile = async (fileId: number, fileName: string) => {
+    const epoch = sessionEpoch();
+    const isCurrent = () => mounted.current && epoch === sessionEpoch();
     const key = `download-${fileId}`;
     setBusyFileKey(key);
     setFileMessage(null);
     try {
-      downloadBlob(await downloadBillingHistoryFile(session.token, fileId), fileName);
+      const blob = await downloadBillingHistoryFile(session.token, fileId);
+      if (isCurrent()) downloadBlob(blob, fileName);
     } catch (error) {
-      setFileMessage({ type: 'error', text: error instanceof Error ? error.message : 'Não foi possível baixar o arquivo.' });
+      if (isCurrent()) setFileMessage({ type: 'error', text: error instanceof Error ? error.message : 'Não foi possível baixar o arquivo.' });
     } finally {
-      setBusyFileKey(null);
+      if (mounted.current) setBusyFileKey(null);
     }
   };
 

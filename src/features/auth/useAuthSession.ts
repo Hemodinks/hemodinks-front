@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AuthSession } from '../../types';
 import { TEAM_PROFILE_ID } from '../../shared/utils/formatters';
 import { decodeJwtPayload } from '../../shared/utils/jwt';
-import { revokeSession, restoreSession } from '../../services/sessionService';
+import { revokeSession, restoreSession, sessionIdentity } from '../../services/sessionService';
 import { sessionEpoch, advanceSessionEpoch } from '../../services/sessionEpoch';
 import { buildSessionFromLogin } from '../../app/appSession';
 import { queryClient } from '../../queryClient';
 
 const SESSION_KEY = 'hemodinks.session';
+const contextOf = (value: AuthSession) => JSON.stringify([sessionIdentity(value.token), value.user.id, value.user.clinicaId]);
 
 function clearStoredSession() {
   try { localStorage.removeItem(SESSION_KEY); } catch { /* Storage can be disabled. */ }
@@ -44,7 +45,6 @@ export function useAuthSession() {
   const version = useRef(0);
   const bootstrap = useRef<ReturnType<typeof restoreSession> | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
-  const contextOf = (value: AuthSession) => { const claims = decodeJwtPayload(value.token); return JSON.stringify([claims?.sid, value.user.clinicaId]); };
 
   useEffect(() => {
     if (typeof BroadcastChannel === 'undefined') return;
@@ -65,8 +65,7 @@ export function useAuthSession() {
     version.current++;
     const normalized = normalizeTeamPinRequirement(nextSession);
     const old = current.current;
-    if (!old || old.user.id !== normalized.user.id || old.user.clinicaId !== normalized.user.clinicaId
-      || decodeJwtPayload(old.token)?.sid !== decodeJwtPayload(normalized.token)?.sid) {
+    if (!old || contextOf(old) !== contextOf(normalized)) {
       if (old) channel.current?.postMessage({ type: 'invalidate', context: contextOf(old) });
       advanceSessionEpoch();
       queryClient.clear();

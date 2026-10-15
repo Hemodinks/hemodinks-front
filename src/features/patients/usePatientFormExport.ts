@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PacienteExportFormat } from '../../appTypes';
 import { getPacienteObservacoes } from '../../services';
+import { sessionEpoch } from '../../services/sessionEpoch';
 import { getErrorMessage } from '../../shared/utils/formatters';
 import type { PacienteFormData, PacienteObservacao } from '../../types';
 import { exportPatientForm } from './export/patientFormExporter';
@@ -23,6 +24,7 @@ export function usePatientFormExport({
 
   const handleExport = async (format: PacienteExportFormat) => {
     if (exportLoading) return;
+    const epoch = sessionEpoch();
 
     setExportLoading(format);
     setExportError('');
@@ -35,11 +37,12 @@ export function usePatientFormExport({
           // Observations enrich the PDF but must not block exporting form data.
         }
       }
+      if (epoch !== sessionEpoch()) return;
       await exportPatientForm({ format, formData: pacienteFormData, companyName, sessionToken, observations });
     } catch (error) {
-      setExportError(getErrorMessage(error));
+      if (epoch === sessionEpoch()) setExportError(getErrorMessage(error));
     } finally {
-      setExportLoading(null);
+      if (epoch === sessionEpoch()) setExportLoading(null);
     }
   };
 

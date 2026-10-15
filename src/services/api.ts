@@ -142,15 +142,19 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
   const authorization = headers.get('Authorization');
   const originalToken = typeof authorization === 'string' && authorization.startsWith('Bearer ')
     ? authorization.slice(7) : null;
+  const epoch = sessionEpoch();
+  const assertCurrentContext = () => {
+    if (originalToken && epoch !== sessionEpoch()) throw new ApiError('A sessão foi alterada.', 409);
+  };
   const resolver = manageSession && client === apiClient && originalToken ? sessionTokenResolver : null;
   if (resolver && originalToken) {
     headers.set('Authorization', `Bearer ${await resolver(originalToken, false)}`);
     config = { ...config, headers };
   }
+  assertCurrentContext();
   try {
-    const epoch = sessionEpoch();
     const response = await client.request<T>(config);
-    if (originalToken && epoch !== sessionEpoch()) throw new ApiError('A sessão foi alterada.', 409);
+    assertCurrentContext();
 
     if (response.status === 204) {
       return undefined as T;
@@ -158,10 +162,12 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
 
     return response.data;
   } catch (error) {
+    assertCurrentContext();
     const sentToken = String(headers.get('Authorization') ?? '').replace(/^Bearer /, '');
     if (resolver && originalToken && isJwtExpired(sentToken) && axios.isAxiosError(error) && error.response?.status === 401
       && readSessionFailureCode(error.response.data) !== SESSION_ABSOLUTE_EXPIRED_CODE) {
       const token = await resolver(originalToken, true);
+      assertCurrentContext();
       // A generic 401 does not prove a write had no effect. A header alone also
       // cannot guarantee that the target endpoint implements idempotency.
       if (!['GET', 'HEAD', 'OPTIONS'].includes((config.method ?? 'GET').toUpperCase()))
@@ -169,11 +175,11 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
           409, 'session_write_retry_required');
       headers.set('Authorization', `Bearer ${token}`);
       try {
-        const epoch = sessionEpoch();
         const response = await client.request<T>({ ...config, headers });
-        if (epoch !== sessionEpoch()) throw new ApiError('A sessão foi alterada.', 409);
+        assertCurrentContext();
         return response.data;
       } catch (retryError) {
+        assertCurrentContext();
         throw toApiError(retryError, notifyUnauthorized, token);
       }
     }
