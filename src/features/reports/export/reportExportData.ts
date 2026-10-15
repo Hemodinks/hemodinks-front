@@ -29,9 +29,27 @@ export const reportColumns: readonly ReportColumn[] = [
   { header: 'Glosa', getValue: (record) => numericValue(record, record.glosaAmount, record.glosaRaw, record.glosaHasNumericValue) },
   { header: 'Líquido', getValue: (record) => formatCurrency(record.netAmount) },
   { header: 'Status', getValue: (record) => record.statusLabel },
-  { header: 'Pendências', getValue: (record) => String(record.pendingChecklistItems) },
+  { header: 'Itens pendentes do checklist', getValue: (record) => String(record.pendingChecklistItems) },
   { header: 'Anexos', getValue: (record) => String(record.filesCount) },
+  { header: 'Atendimento', getValue: (record) => String(record.id) },
 ];
+
+export const reportPendingHeaders = ['Atendimento', 'Data da cirurgia', 'Situação do pagamento', 'Natureza', 'Item', 'Status', 'Descrição / valor', 'Motivo / orientação'] as const;
+
+export function getReportPendingRows(records: ReportRecord[]) {
+  return records.flatMap((record) => record.billingChecklist
+    .filter((item) => item.status === 'warning' || item.status === 'missing')
+    .map((item) => ({
+      Atendimento: String(record.id),
+      'Data da cirurgia': record.surgeryDateLabel,
+      'Situação do pagamento': record.statusLabel,
+      Natureza: 'Checklist documental/operacional',
+      Item: item.label,
+      Status: item.status === 'warning' ? 'Atenção' : 'Pendente',
+      'Descrição / valor': item.value,
+      'Motivo / orientação': item.hint || '-',
+    })));
+}
 
 export function getReportExportRows(records: ReportRecord[]) {
   return records.map((record) => Object.fromEntries(

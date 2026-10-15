@@ -12,6 +12,19 @@ const identity: ReportIdentity = {
 };
 
 describe('padrão visual do XLSX', () => {
+  it('adiciona aba analítica com referências próprias e cabeçalho sem inventar itens', async () => {
+    const blob = createReportXlsxBlob([{ Atendimento: '42' }], ['Atendimento'], {
+      sheetName: 'Atendimentos', identity,
+      additionalSheets: [{ sheetName: 'Detalhamento de pendências', headers: ['Atendimento', 'Item'], rows: [], emptyMessage: 'Nenhuma pendência encontrada' }],
+    });
+    const content = new TextDecoder().decode(await blob.arrayBuffer());
+    expect(content).toContain('sheet name="Detalhamento de pendências" sheetId="2" r:id="rId2"');
+    expect(content).toContain('Target="worksheets/sheet2.xml"');
+    expect(content).toContain('PartName="/xl/worksheets/sheet2.xml"');
+    expect(content).toContain('Nenhuma pendência encontrada');
+    expect(content).toContain('localSheetId="1"');
+    expect(content).toContain('xl/media/logo.png');
+  });
   it('inclui identidade, logo, congelamento, filtro, impressão e formatos tipados', async () => {
     const rows = Array.from({ length: 40 }, (_, index) => ({
       Data: '10/08/2026',

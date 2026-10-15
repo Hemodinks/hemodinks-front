@@ -4,6 +4,7 @@ import { resolveReportIdentity } from '../../../shared/export/reportIdentity';
 import { getPacienteObservacoes } from '../../../services';
 import type { PacienteObservacao } from '../../../types';
 import type { ReportRecord } from '../reportTypes';
+import { sessionEpoch } from '../../../services/sessionEpoch';
 
 function slugify(value: string) {
   return value
@@ -22,7 +23,10 @@ export async function exportIndividualBillingPdf(
   record: ReportRecord,
   companyName: string,
   sessionToken: string,
+  shouldContinue?: () => boolean,
 ) {
+  const epoch = sessionEpoch();
+  const isCurrent = () => epoch === sessionEpoch() && (shouldContinue?.() ?? true);
   const formData = {
     ...getPacienteFormData(record.paciente),
     pagamento: record.paymentRaw,
@@ -34,12 +38,14 @@ export async function exportIndividualBillingPdf(
     sessionToken,
     contextLines: [record.patientName, `${record.surgeryDateLabel} • ${record.statusLabel}`],
   });
+  if (!isCurrent()) return;
   let observations: PacienteObservacao[] = [];
   try {
     observations = await getPacienteObservacoes(record.paciente.id, sessionToken);
   } catch {
     // A indisponibilidade das conversas não deve impedir a exportação da ficha.
   }
+  if (!isCurrent()) return;
   const document = await createPatientFormPdf(formData, identity, observations);
-  document.save(getIndividualBillingPdfFileName(record));
+  if (isCurrent()) document.save(getIndividualBillingPdfFileName(record));
 }

@@ -82,6 +82,7 @@ export function useReportsPage({ session, companyName, isMedical }: Options) {
 
   return {
     filters,
+    appliedFilters,
     setFilters,
     filterError,
     records,

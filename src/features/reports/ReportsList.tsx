@@ -3,6 +3,7 @@ import { Button, DataPanel, IconButton } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
 import { BillingChecklist, BillingProcedureList } from '../billing/BillingPageComponents';
 import type { ReportRecord } from './reportTypes';
+import { CHECKLIST_COUNT_DESCRIPTION } from '../billing/BillingPendingItemsModal';
 
 type Props = {
   records: ReportRecord[];
@@ -15,6 +16,7 @@ type Props = {
   individualExportLoadingId: number | null;
   onPageChange: (page: number) => void;
   onExportIndividualPdf: (record: ReportRecord) => void;
+  onOpenChecklist: (record: ReportRecord) => void;
 };
 
 function tags(values: string[], fallback: string) {
@@ -62,7 +64,8 @@ export function ReportsList(props: Props) {
                 <div><dt>Fornecedor OPME</dt><dd>{record.opmeSupplier}</dd></div>
                 <div><dt>Autorização</dt><dd>{record.authorizationCode || 'Não informada'}</dd></div>
                 <div><dt>Data do pagamento</dt><dd>{record.paymentDateLabel}</dd></div>
-                <div><dt>Anexos / pendências</dt><dd>{record.filesCount} / {record.pendingChecklistItems}</dd></div>
+                <div><dt>Anexos</dt><dd>{record.filesCount}</dd></div>
+                <div><dt>Itens pendentes do checklist</dt><dd><button type="button" className="billing-checklist-count" title={CHECKLIST_COUNT_DESCRIPTION} aria-label={`Itens pendentes do checklist de ${record.patientName}: ${record.pendingChecklistItems}`} onClick={() => props.onOpenChecklist(record)}>{record.pendingChecklistItems} · Ver motivos</button></dd></div>
               </dl>
 
               <section className="report-financial-grid" aria-label={`Valores de ${record.patientName}`}>

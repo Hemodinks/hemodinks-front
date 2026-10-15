@@ -5,6 +5,7 @@ import { basePaciente } from '../../../test/appTestData';
 import type { PacienteObservacao } from '../../../types';
 import type { ReportRecord } from '../reportTypes';
 import { exportIndividualBillingPdf, getIndividualBillingPdfFileName } from './individualBillingPdfExporter';
+import { advanceSessionEpoch } from '../../../services/sessionEpoch';
 
 vi.mock('../../../services', () => ({ getPacienteObservacoes: vi.fn() }));
 vi.mock('../../../shared/export/reportIdentity', () => ({ resolveReportIdentity: vi.fn().mockResolvedValue({}) }));
@@ -12,6 +13,17 @@ vi.mock('../../patients/export/patientFormExporter', () => ({ createPatientFormP
 
 describe('PDF individual do faturamento', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it('não salva ficha se a sessão mudar enquanto o documento é gerado', async () => {
+    const save = vi.fn();
+    vi.mocked(getPacienteObservacoes).mockResolvedValue([]);
+    vi.mocked(createPatientFormPdf).mockImplementation(async () => {
+      advanceSessionEpoch();
+      return { save } as never;
+    });
+    await exportIndividualBillingPdf({ paciente: basePaciente, patientName: basePaciente.nomePaciente } as ReportRecord, 'Clínica', 'jwt-token');
+    expect(save).not.toHaveBeenCalled();
+  });
 
   it('gera um nome de arquivo identificável e seguro para a ficha do paciente', () => {
     const record = { patientName: 'José da Silva' } as ReportRecord;
