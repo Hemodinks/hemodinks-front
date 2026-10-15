@@ -12,16 +12,18 @@ type BillingSummaryCardProps = {
   caption: string;
   tone: 'gross' | 'net' | 'glosa' | 'records' | 'paid' | 'attention';
   icon: ReactNode;
+  onClick?: () => void;
 };
 
-export function BillingSummaryCard({ title, value, caption, tone, icon }: BillingSummaryCardProps) {
+export function BillingSummaryCard({ title, value, caption, tone, icon, onClick }: BillingSummaryCardProps) {
+  const Element = onClick ? 'button' : 'article';
   return (
-    <article className={`billing-summary-card billing-summary-${tone}`}>
+    <Element className={`billing-summary-card billing-summary-${tone}`} {...(onClick ? { type: 'button' as const, onClick } : {})}>
       <span className="billing-summary-icon">{icon}</span>
       <span className="billing-summary-title">{title}</span>
       <strong>{value}</strong>
       <span className="billing-summary-caption">{caption}</span>
-    </article>
+    </Element>
   );
 }
 
@@ -48,7 +50,7 @@ export function BillingRankingPanel({ title, subtitle, items, emptyLabel }: Bill
             <li key={item.label}>
               <div>
                 <strong>{item.label}</strong>
-                <span>{item.totalRecords} cirurgia(s) | {item.pendingCount} com pendências</span>
+                <span>{item.totalRecords} cirurgia(s) | {item.pendingCount} com checklist incompleto</span>
               </div>
               <div className="billing-ranking-values">
                 <strong>{formatCurrency(item.totalGrossAmount)}</strong>
@@ -173,7 +175,7 @@ export function BillingSummaryModal({ record, authToken, onClose }: BillingSumma
           <article className="billing-summary-info-card billing-summary-support-card">
             <span>Status / suporte</span>
             <strong>{record.statusLabel}</strong>
-            <p>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendência(s)</p>
+            <p>{record.filesCount} anexo(s) | {record.pendingChecklistItems} itens pendentes do checklist</p>
           </article>
         </section>
 

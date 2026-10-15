@@ -1,5 +1,37 @@
 @import '../../shared/components/styles/filter-accordion.css';
 
+.billing-checklist-count {
+  color: var(--action-primary);
+  background: var(--input-bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-height: 44px;
+  padding: 8px;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  white-space: normal;
+}
+
+button.billing-summary-card { font: inherit; text-align: left; color: var(--ink); cursor: pointer; }
+.billing-checklist-count:focus-visible,
+button.billing-summary-card:focus-visible,
+.billing-pending-record > summary:focus-visible { outline: 3px solid var(--action-primary); outline-offset: 3px; }
+.billing-pending-backdrop { z-index: 60; }
+.billing-pending-modal { width: min(800px, 100%); overflow-wrap: anywhere; background: var(--panel-strong); }
+.billing-pending-modal .billing-flag { white-space: nowrap; flex: 0 0 auto; }
+.billing-pending-modal .panel-title { gap: 12px; }
+.billing-pending-modal h2 { margin: 0; }
+.billing-pending-record { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.billing-pending-record > summary { cursor: pointer; font-weight: 800; }
+:root[data-theme="dark"] .billing-pending-modal .billing-flag.missing { color: #fecaca; }
+:root[data-theme="dark"] .billing-pending-modal .billing-flag.warning { color: #fed7aa; }
+@media (max-width: 760px) {
+  .billing-workspace .billing-table { min-width: 0; }
+  .billing-workspace .billing-patient-cell { min-width: 0; }
+}
+
 .billing-workspace {
   gap: 16px;
   font-variant-numeric: tabular-nums lining-nums;

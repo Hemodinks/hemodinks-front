@@ -1,4 +1,5 @@
 import { registerAgendaEmailCases } from './agenda-email-cases';
+import { registerReportChecklistCases } from './report-checklist-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
 import { registerPasswordPolicyCases } from './password-policy-cases';
 import { registerSecurityObservationCases } from './security-observation-cases';
@@ -681,6 +682,12 @@ registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session })
 registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
 registerPatientListTests({ setup: mockApi, login: loginViaUi });
+
+const checklistMedicalSession = { ...session, user: { ...session.user, id: 1, nome: 'Ana Hemodinks', perfilId: 2, perfilNome: 'Medicos' } };
+registerReportChecklistCases({ mockApi, loginViaUi, patient: paciente,
+  mockMedical: page => mockApi(page, checklistMedicalSession),
+  loginMedical: (page, path) => loginViaUi(page, path, checklistMedicalSession),
+});
 
 test('accordions de filtros iniciam fechados e abrem por teclado em todas as telas', async ({ page }) => {
   await mockApi(page);

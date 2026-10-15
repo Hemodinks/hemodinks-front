@@ -101,7 +101,7 @@ export function BillingFiltersPanel({
             <BillingMonthField id="billing-period-end" label="Competência final" value={filters.competenciaFinal} onChange={onEndMonthChange} />
             <DateInput id="billing-payment-start-date" className="filter-field" label="Data inicial do pagamento" value={filters.paymentStartDate} max={filters.paymentEndDate || undefined} onChange={(paymentStartDate) => setFilters((current) => ({ ...current, paymentStartDate }))} />
             <DateInput id="billing-payment-end-date" className="filter-field" label="Data final do pagamento" value={filters.paymentEndDate} min={filters.paymentStartDate || undefined} onChange={(paymentEndDate) => setFilters((current) => ({ ...current, paymentEndDate }))} />
-            <CheckboxField className="billing-checkbox" label="Mostrar apenas cirurgias com pendências de faturamento" checked={filters.onlyPendingItems} onCheckedChange={(onlyPendingItems) => setFilters((current) => ({ ...current, onlyPendingItems }))} />
+            <CheckboxField className="billing-checkbox" label="Mostrar apenas atendimentos com checklist incompleto" checked={filters.onlyPendingItems} onCheckedChange={(onlyPendingItems) => setFilters((current) => ({ ...current, onlyPendingItems }))} />
             <div className="billing-filter-actions">
               <Button className="billing-apply-filters" variant="primary" onClick={onApply} disabled={isFetching} data-tour="billing-apply"><Search size={16} />Consultar</Button>
               <Button className="billing-clear-filters" onClick={onClear}>Limpar filtros</Button>

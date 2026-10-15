@@ -38,3 +38,4 @@ export type ReportData = ReportCatalogs & {
 export type ReportSummary = BillingSummary;
 
 export type ReportExportFormat = 'pdf' | 'xlsx';
+export type ReportExportDetailLevel = 'synthetic' | 'complete';

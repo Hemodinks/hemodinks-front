@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getErrorMessage } from '../../shared/utils/formatters';
-import type { ReportExportFormat, ReportRecord } from './reportTypes';
+import type { ReportExportDetailLevel, ReportExportFormat, ReportRecord } from './reportTypes';
 import type { ReportFilters } from './reportTypes';
 import { exportReport } from './export/reportExporter';
 import { exportIndividualBillingPdf } from './export/individualBillingPdfExporter';
@@ -22,7 +22,7 @@ function describeFilters(filters: ReportFilters) {
   const regimeLabels: Record<ReportFilters['regime'], string> = { all: 'Todos', convenio: 'Convênio', particular: 'Particular' };
   if (filters.status !== 'all') lines.push(`Status: ${statusLabels[filters.status]}`);
   if (filters.regime !== 'all') lines.push(`Regime: ${regimeLabels[filters.regime]}`);
-  if (filters.onlyPendingItems) lines.push('Somente itens com pendências');
+  if (filters.onlyPendingItems) lines.push('Somente atendimentos com checklist incompleto');
   return lines.length ? lines : ['Todos os registros'];
 }
 
@@ -30,35 +30,50 @@ export function useReportExport(records: ReportRecord[], companyName: string, se
   const [exportLoading, setExportLoading] = useState(false);
   const [individualExportLoadingId, setIndividualExportLoadingId] = useState<number | null>(null);
   const [exportError, setExportError] = useState('');
+  const [exportDetailLevel, setExportDetailLevel] = useState<ReportExportDetailLevel>('complete');
+  const currentScope = useRef({ records, sessionToken, filters, companyName });
+  currentScope.current = { records, sessionToken, filters, companyName };
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const createScopeGuard = () => {
+    const scope = currentScope.current;
+    return () => mounted.current && currentScope.current.records === scope.records
+      && currentScope.current.sessionToken === scope.sessionToken
+      && currentScope.current.filters === scope.filters
+      && currentScope.current.companyName === scope.companyName;
+  };
 
   const handleExport = async (format: ReportExportFormat) => {
+    if (exportLoading) return;
     if (!records.length) {
       setExportError('Não há registros no filtro atual para exportar.');
       return;
     }
     setExportLoading(true);
     setExportError('');
+    const shouldContinue = createScopeGuard();
     try {
-      await exportReport({ format, records, companyName, sessionToken, contextLines: describeFilters(filters) });
+      await exportReport({ format, detailLevel: exportDetailLevel, records, companyName, sessionToken, contextLines: describeFilters(filters), shouldContinue });
     } catch (error) {
-      setExportError(getErrorMessage(error));
+      if (shouldContinue()) setExportError(getErrorMessage(error));
     } finally {
-      setExportLoading(false);
+      if (mounted.current) setExportLoading(false);
     }
   };
 
   const handleIndividualExport = async (record: ReportRecord) => {
-    if (individualExportLoadingId != null) return;
+    if (individualExportLoadingId != null || !records.includes(record)) return;
     setIndividualExportLoadingId(record.id);
     setExportError('');
+    const shouldContinue = createScopeGuard();
     try {
-      await exportIndividualBillingPdf(record, companyName, sessionToken);
+      await exportIndividualBillingPdf(record, companyName, sessionToken, shouldContinue);
     } catch (error) {
-      setExportError(getErrorMessage(error));
+      if (shouldContinue()) setExportError(getErrorMessage(error));
     } finally {
-      setIndividualExportLoadingId(null);
+      if (mounted.current) setIndividualExportLoadingId(null);
     }
   };
 
-  return { exportLoading, individualExportLoadingId, exportError, handleExport, handleIndividualExport };
+  return { exportDetailLevel, setExportDetailLevel, exportLoading, individualExportLoadingId, exportError, handleExport, handleIndividualExport };
 }

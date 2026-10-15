@@ -7,6 +7,8 @@ import { ReportsSummary } from './ReportsSummary';
 import { useReportsPage } from './useReportsPage';
 import '../billing/billing.css';
 import './reports.css';
+import { BillingPendingItemsModal } from '../billing/BillingPendingItemsModal';
+import { useBillingChecklistDialog } from '../billing/useBillingChecklistDialog';
 
 type Props = {
   session: AuthSession;
@@ -16,6 +18,7 @@ type Props = {
 
 export function ReportsPage({ session, companyName, isMedical }: Props) {
   const report = useReportsPage({ session, companyName, isMedical });
+  const checklist = useBillingChecklistDialog(report.records, JSON.stringify([session.token, session.user.clinicaId, report.appliedFilters]));
   return (
     <section className="workspace billing-workspace reports-workspace" data-tour="reports-overview">
       {isMedical && <AlertMessage type="warning" icon={<Info size={17} />}>Os dados estão restritos aos atendimentos vinculados ao médico autenticado.</AlertMessage>}
@@ -35,12 +38,14 @@ export function ReportsPage({ session, companyName, isMedical }: Props) {
         resultCount={report.records.length}
         isFetching={report.isFetching}
         exportLoading={report.exportLoading}
+        exportDetailLevel={report.exportDetailLevel}
+        onExportDetailLevelChange={report.setExportDetailLevel}
         onApply={report.applyFilters}
         onClear={report.clearFilters}
         onRefresh={report.refresh}
         onExport={(format) => void report.handleExport(format)}
       />
-      <ReportsSummary summary={report.summary} />
+      <ReportsSummary summary={report.summary} pendingItemsCount={report.records.reduce((sum, record) => sum + record.pendingChecklistItems, 0)} onOpenChecklist={() => checklist.open()} />
       <ReportsList
         records={report.visibleRecords}
         isPending={report.isPending}
@@ -52,7 +57,9 @@ export function ReportsPage({ session, companyName, isMedical }: Props) {
         individualExportLoadingId={report.individualExportLoadingId}
         onPageChange={report.setCurrentPage}
         onExportIndividualPdf={(record) => void report.handleIndividualExport(record)}
+        onOpenChecklist={(record) => checklist.open(record.id)}
       />
+      {checklist.isOpen && <BillingPendingItemsModal records={checklist.records} individual={checklist.individual} onClose={checklist.close} />}
     </section>
   );
 }

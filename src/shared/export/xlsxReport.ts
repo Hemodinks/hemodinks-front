@@ -5,6 +5,7 @@ export type ReportExportRow = Record<string, unknown>;
 type XlsxReportOptions = {
   sheetName?: string;
   identity?: ReportIdentity;
+  additionalSheets?: Array<{ sheetName: string; rows: ReportExportRow[]; headers: readonly string[]; emptyMessage?: string }>;
 };
 
 function escapeXml(value: string) {
@@ -44,7 +45,7 @@ function buildCellXml(reference: string, value: unknown, style: number, header: 
   return `<c r="${reference}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(normalized)}</t></is></c>`;
 }
 
-function buildWorksheetXml(rows: ReportExportRow[], headers: readonly string[], identity?: ReportIdentity) {
+function buildWorksheetXml(rows: ReportExportRow[], headers: readonly string[], identity?: ReportIdentity, emptyMessage?: string) {
   const lastColumn = getExcelColumnName(Math.max(0, headers.length - 1));
   const tableHeaderRow = identity ? 6 : 1;
   const dataStartRow = tableHeaderRow + 1;
@@ -59,7 +60,7 @@ function buildWorksheetXml(rows: ReportExportRow[], headers: readonly string[], 
     `<row r="1" ht="24" customHeight="1"><c r="${textStart}1" s="1" t="inlineStr"><is><t>${escapeXml(identity.clinicName)}</t></is></c></row>`,
     `<row r="2" ht="22" customHeight="1"><c r="${textStart}2" s="1" t="inlineStr"><is><t>${escapeXml(identity.title)}</t></is></c></row>`,
     `<row r="3"><c r="${textStart}3" s="1" t="inlineStr"><is><t>${escapeXml(new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(identity.generatedAt))}</t></is></c></row>`,
-    `<row r="4"><c r="${textStart}4" s="1" t="inlineStr"><is><t>${escapeXml(identity.contextLines.join(' • ') || 'Dados da tela')}</t></is></c></row>`,
+    `<row r="4" ht="${Math.max(20, Math.min(409, identity.contextLines.length * 16))}" customHeight="1"><c r="${textStart}4" s="7" t="inlineStr"><is><t xml:space="preserve">${escapeXml(identity.contextLines.join('\n') || 'Dados da tela')}</t></is></c></row>`,
     '<row r="5" ht="8" customHeight="1"/>',
   ].join('') : '';
   const headerCells = headers.map((header, index) => buildCellXml(`${getExcelColumnName(index)}${tableHeaderRow}`, header, 2, header)).join('');
@@ -73,12 +74,14 @@ function buildWorksheetXml(rows: ReportExportRow[], headers: readonly string[], 
     ? `<mergeCells count="4">${[1, 2, 3, 4].map((row) => `<mergeCell ref="${textStart}${row}:${lastColumn}${row}"/>`).join('')}</mergeCells>`
     : '';
   const drawing = identity?.logo ? '<drawing r:id="rId1"/>' : '';
+  const emptyRow = !rows.length && emptyMessage
+    ? `<row r="${dataStartRow}">${buildCellXml(`A${dataStartRow}`, emptyMessage, 3, '')}</row>` : '';
   const lastRow = Math.max(tableHeaderRow, dataStartRow + rows.length - 1);
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <sheetViews><sheetView workbookViewId="0"><pane ySplit="${tableHeaderRow}" topLeftCell="A${dataStartRow}" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
-  <cols>${columnsXml}</cols><sheetData>${metaRows}<row r="${tableHeaderRow}" ht="28" customHeight="1">${headerCells}</row>${dataRows}</sheetData>
+  <cols>${columnsXml}</cols><sheetData>${metaRows}<row r="${tableHeaderRow}" ht="28" customHeight="1">${headerCells}</row>${dataRows}${emptyRow}</sheetData>
   ${mergeCells}<autoFilter ref="A${tableHeaderRow}:${lastColumn}${lastRow}"/>
   <printOptions horizontalCentered="1"/><pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>
   <pageSetup orientation="${headers.length > 8 ? 'landscape' : 'portrait'}" paperSize="9" fitToWidth="1" fitToHeight="0"/>
@@ -96,7 +99,7 @@ function buildWorkbookStylesXml(identity?: ReportIdentity) {
   <fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF${primary}"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF8FAFC"/><bgColor indexed="64"/></patternFill></fill></fills>
   <borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFE2E8F0"/></left><right style="thin"><color rgb="FFE2E8F0"/></right><top style="thin"><color rgb="FFE2E8F0"/></top><bottom style="thin"><color rgb="FFE2E8F0"/></bottom><diagonal/></border></borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="7"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="2" fillId="2" borderId="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="3" borderId="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="165" fontId="0" fillId="0" borderId="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right"/></xf></cellXfs>
+  <cellXfs count="8"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="2" fillId="2" borderId="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="3" borderId="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="165" fontId="0" fillId="0" borderId="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="right"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs>
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
 }
@@ -164,19 +167,28 @@ function buildDrawingFiles(identity?: ReportIdentity) {
 }
 
 export function createReportXlsxBlob(rows: ReportExportRow[], headers: readonly string[], options: XlsxReportOptions = {}) {
-  const safeSheetName = escapeXml((options.sheetName ?? 'Dados').slice(0, 31) || 'Dados');
-  const lastColumn = getExcelColumnName(Math.max(0, headers.length - 1));
+  const sheets = [{ sheetName: options.sheetName ?? 'Dados', rows, headers, emptyMessage: undefined as string | undefined }, ...(options.additionalSheets ?? [])];
+  const sheetNames = sheets.map((sheet) => escapeXml(sheet.sheetName.slice(0, 31) || 'Dados'));
   const logoExtension = options.identity?.logo?.extension;
   const imageDefault = logoExtension ? `<Default Extension="${logoExtension}" ContentType="image/${logoExtension}"/>` : '';
   const drawingOverride = logoExtension ? '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>' : '';
   const tableHeaderRow = options.identity ? 6 : 1;
+  const worksheets = sheets.map((_, index) => `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('');
+  const sheetEntries = sheetNames.map((name, index) => `<sheet name="${name}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`).join('');
+  const definedNames = sheets.map((sheet, index) => {
+    const name = sheetNames[index].replace(/&apos;/g, '&apos;&apos;');
+    const lastColumn = getExcelColumnName(Math.max(0, sheet.headers.length - 1));
+    const lastRow = tableHeaderRow + Math.max(sheet.rows.length, sheet.emptyMessage ? 1 : 0);
+    return `<definedName name="_xlnm.Print_Titles" localSheetId="${index}">'${name}'!$${tableHeaderRow}:$${tableHeaderRow}</definedName><definedName name="_xlnm.Print_Area" localSheetId="${index}">'${name}'!$A$1:$${lastColumn}$${lastRow}</definedName>`;
+  }).join('');
+  const relationships = sheets.map((_, index) => `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`).join('');
   return createZipBlob([
-    { name: '[Content_Types].xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${imageDefault}<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>${drawingOverride}</Types>` },
+    { name: '[Content_Types].xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${imageDefault}<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${worksheets}${drawingOverride}</Types>` },
     { name: '_rels/.rels', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
-    { name: 'xl/workbook.xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${safeSheetName}" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm.Print_Titles" localSheetId="0">'${safeSheetName}'!$${tableHeaderRow}:$${tableHeaderRow}</definedName><definedName name="_xlnm.Print_Area" localSheetId="0">'${safeSheetName}'!$A$1:$${lastColumn}$${Math.max(tableHeaderRow, tableHeaderRow + rows.length)}</definedName></definedNames></workbook>` },
-    { name: 'xl/_rels/workbook.xml.rels', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' },
+    { name: 'xl/workbook.xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheetEntries}</sheets><definedNames>${definedNames}</definedNames></workbook>` },
+    { name: 'xl/_rels/workbook.xml.rels', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relationships}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
     { name: 'xl/styles.xml', content: buildWorkbookStylesXml(options.identity) },
-    { name: 'xl/worksheets/sheet1.xml', content: buildWorksheetXml(rows, headers, options.identity) },
+    ...sheets.map((sheet, index) => ({ name: `xl/worksheets/sheet${index + 1}.xml`, content: buildWorksheetXml(sheet.rows, sheet.headers, index === 0 ? options.identity : options.identity && { ...options.identity, logo: null }, sheet.emptyMessage) })),
     ...buildDrawingFiles(options.identity),
   ]);
 }
