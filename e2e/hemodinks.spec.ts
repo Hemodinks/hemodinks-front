@@ -1,4 +1,5 @@
 import { registerAgendaEmailCases } from './agenda-email-cases';
+import { registerTenantIsolationCases } from './tenant-isolation-cases';
 import { registerReportChecklistCases } from './report-checklist-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
 import { registerPasswordPolicyCases } from './password-policy-cases';
@@ -677,6 +678,8 @@ async function mockApi(page: Page, loginSession = session, options: {
 }
 
 registerAuthRateLimitCases({ setup: mockApi, login: loginViaUi, session });
+registerTenantIsolationCases({ mockApi: page => mockApi(page, superAdminSession),
+  login: (page, path) => loginViaUi(page, path, superAdminSession), user: superAdminSession.user, patient: paciente });
 registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });
 registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session });
 registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });

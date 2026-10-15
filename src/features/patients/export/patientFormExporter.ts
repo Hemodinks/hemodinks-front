@@ -1,4 +1,5 @@
 import type { PacienteExportFormat } from '../../../appTypes';
+import { sessionEpoch } from '../../../services/sessionEpoch';
 import { formatCurrency, toDisplayDate } from '../../../shared/utils/formatters';
 import { downloadBlob } from '../../../shared/utils/downloadFile';
 import { addPdfReportFooters, drawPdfReportHeader, drawPdfSectionTitle, getPdfReportTableStyles, PDF_REPORT_BODY_START, PDF_REPORT_MARGIN } from '../../../shared/export/pdfReport';
@@ -236,6 +237,7 @@ export async function exportPatientForm({
   sessionToken,
   observations = [],
 }: ExportPatientFormOptions) {
+  const epoch = sessionEpoch();
   const fileName = getPatientFormExportFileName(format, companyName);
   const identity = await resolveReportIdentity({
     clinicName: companyName,
@@ -243,6 +245,7 @@ export async function exportPatientForm({
     sessionToken,
     contextLines: [formData.nomePaciente || 'Paciente não informado'],
   });
+  if (epoch !== sessionEpoch()) return;
 
   if (format === 'xlsx') {
     const rows = getPacienteFormExportRows(formData);
@@ -252,5 +255,6 @@ export async function exportPatientForm({
   }
 
   const document = await createPatientFormPdf(formData, identity, observations);
+  if (epoch !== sessionEpoch()) return;
   document.save(fileName);
 }

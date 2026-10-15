@@ -1,4 +1,5 @@
 import type { Paciente } from '../../../types';
+import { sessionEpoch } from '../../../services/sessionEpoch';
 import type { PacienteExportFormat } from '../../../appTypes';
 import { downloadBlob } from '../../../shared/utils/downloadFile';
 import { addPdfReportFooters, getPdfReportPageHooks, getPdfReportTableStyles, PDF_REPORT_BODY_START } from '../../../shared/export/pdfReport';
@@ -46,6 +47,7 @@ async function createPatientListPdf(items: Paciente[], identity: ReportIdentity)
 }
 
 export async function exportPatientList({ format, items, companyName, sessionToken, contextLines }: ExportPatientListOptions) {
+  const epoch = sessionEpoch();
   const fileName = getPatientExportFileName(format, companyName);
   const identity = await resolveReportIdentity({
     clinicName: companyName,
@@ -53,6 +55,7 @@ export async function exportPatientList({ format, items, companyName, sessionTok
     sessionToken,
     contextLines: [`${items.length} registro(s)`, ...(contextLines ?? [])],
   });
+  if (epoch !== sessionEpoch()) return;
 
   if (format === 'xlsx') {
     const rows = getPacienteExportRows(items);
@@ -62,5 +65,6 @@ export async function exportPatientList({ format, items, companyName, sessionTok
   }
 
   const document = await createPatientListPdf(items, identity);
+  if (epoch !== sessionEpoch()) return;
   document.save(fileName);
 }
