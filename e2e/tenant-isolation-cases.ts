@@ -25,6 +25,10 @@ function deferred() {
 }
 async function navigate(page: Page, label: string) {
   const menu = page.getByLabel('Menu da clínica');
+  if (!await menu.isVisible()) {
+    await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();
+  }
+  await expect(menu).toBeVisible();
   if (label === 'Relatórios' || label === 'Faturamento') {
     const toggle = menu.getByRole('button', { name: /^Faturamento(?: \d+)?$/ });
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
@@ -36,12 +40,12 @@ async function navigate(page: Page, label: string) {
 async function switchClinic(page: Page, id: number) {
   await navigate(page, 'Clínicas');
   await page.getByRole('button', { name: `Acessar ${clinics[id - 1].nome}`, exact: true }).click();
-  await expect(page.getByLabel('Menu da clínica')).toBeVisible();
   await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole('heading', { name: 'Painel inicial', exact: true })).toBeVisible();
 }
 
 export function registerTenantIsolationCases(helpers: Helpers) {
-  async function setup(page: Page, server = { active: 1, authenticated: false }) {
+  async function setup(page: Page, server = { active: 1, authenticated: false }, deniedClinics = new Set<number>()) {
     await helpers.mockApi(page);
     const requests: { path: string; id: string | undefined; slug: string | undefined; token: string | undefined }[] = [];
     const record = (id: number) => ({ ...helpers.patient, id: 10, nomePaciente: marker(id),
@@ -72,6 +76,9 @@ export function registerTenantIsolationCases(helpers: Helpers) {
         expect([1, 2]).toContain(id);
         expect(headers['x-clinica-slug']).toBe(clinics[id - 1].slug);
         expect(headers.authorization).toBe(`Bearer ${token(id)}`);
+        if (path.startsWith('/api/pacientes') && deniedClinics.has(id)) {
+          return route.fulfill({ status: 403, json: { message: 'Paciente de outra clínica: detalhe privado fictício' } });
+        }
         if (path === '/api/pacientes/10') return route.fulfill({ json: record(id) });
         if (path === '/api/pacientes/' || path === '/api/faturamentos-medicos/') return route.fulfill({ json: {
           items: [record(id)], page: 1, pageSize: 10, totalItems: 1, totalPages: 1,
@@ -118,6 +125,29 @@ export function registerTenantIsolationCases(helpers: Helpers) {
       }
     });
   }
+
+  test('tenant #163: resposta negada na clínica Beta não recupera dados da Alfa', async ({ page }) => {
+    const denied = new Set<number>([2]);
+    const state = await setup(page, undefined, denied);
+    await helpers.login(page, '/pacientes');
+    await expect(page.getByText(marker(1), { exact: true })).toBeVisible();
+    await switchClinic(page, 2);
+    await navigate(page, 'Pacientes');
+    await expect(page.getByRole('alert')).toContainText('Operação não permitida.');
+    await expect(page.getByText(marker(1), { exact: true })).toHaveCount(0);
+    await expect(page.getByText(marker(2), { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Paciente de outra clínica: detalhe privado fictício', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: `Arquivos anexos de ${marker(1)}`, exact: true })).toHaveCount(0);
+    // A recovery in the same context must fetch Beta, never restore Alfa's cache.
+    const before = state.requests.length;
+    denied.clear();
+    await page.getByRole('button', { name: 'Atualizar lista de pacientes', exact: true }).click();
+    await expect(page.getByText(marker(2), { exact: true })).toBeVisible();
+    await expect(page.getByText(marker(1), { exact: true })).toHaveCount(0);
+    const refreshed = state.requests.slice(before);
+    expect(refreshed.length).toBeGreaterThan(0);
+    expect(refreshed.every(request => request.id === '2')).toBe(true);
+  });
 
   test('tenant #162: agenda recarrega eventos ao trocar Alfa → Beta → Alfa pela UI', async ({ page }) => {
     await setup(page);

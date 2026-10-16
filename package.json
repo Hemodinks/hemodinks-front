@@ -36,7 +36,8 @@
     "tutorial:record:library": "playwright test --config=playwright.tutorials.library.config.ts",
     "tutorial:compose:library": "tsx scripts/tutorials/compose-library-videos.ts",
     "tutorial:produce:library": "npm run tutorial:setup && npm run tutorial:audio:library && npm run tutorial:record:library && npm run tutorial:compose:library",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "test:e2e:responsive": "playwright test --config=playwright.responsive.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/comfortaa": "^5.3.0",
