@@ -1,5 +1,6 @@
 import { registerAgendaEmailCases } from './agenda-email-cases';
 import { registerTenantIsolationCases } from './tenant-isolation-cases';
+import { registerResponsiveSmokeCases } from './responsive-smoke-cases';
 import { registerReportChecklistCases } from './report-checklist-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
 import { registerPasswordPolicyCases } from './password-policy-cases';
@@ -677,6 +678,17 @@ async function mockApi(page: Page, loginSession = session, options: {
   return state;
 }
 
+test.beforeEach(async ({ context }, testInfo) => {
+  if (!testInfo.project.name.startsWith('responsive-')) return;
+  // Fail closed if a local environment points a mock-only test at a real service.
+  await context.route('**/*', async route => {
+    const origin = new URL(route.request().url()).origin;
+    if (origin === 'http://127.0.0.1:5175' || origin === 'http://localhost:5000') return route.fallback();
+    await route.abort('blockedbyclient');
+    expect(origin, 'A matriz responsiva permite somente serviços locais simulados').toBe('http://localhost:5000');
+  });
+});
+
 registerAuthRateLimitCases({ setup: mockApi, login: loginViaUi, session });
 registerTenantIsolationCases({ mockApi: page => mockApi(page, superAdminSession),
   login: (page, path) => loginViaUi(page, path, superAdminSession), user: superAdminSession.user, patient: paciente });
@@ -685,6 +697,7 @@ registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session })
 registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
 registerPatientListTests({ setup: mockApi, login: loginViaUi });
+registerResponsiveSmokeCases({ setup: mockApi, login: loginViaUi });
 
 const checklistMedicalSession = { ...session, user: { ...session.user, id: 1, nome: 'Ana Hemodinks', perfilId: 2, perfilNome: 'Medicos' } };
 registerReportChecklistCases({ mockApi, loginViaUi, patient: paciente,

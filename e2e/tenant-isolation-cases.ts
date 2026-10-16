@@ -25,6 +25,9 @@ function deferred() {
 }
 async function navigate(page: Page, label: string) {
   const menu = page.getByLabel('Menu da clínica');
+  const openMenu = page.getByRole('button', { name: 'Abrir menu', exact: true });
+  await expect.poll(async () => await menu.isVisible() || await openMenu.isVisible()).toBe(true);
+  if (!await menu.isVisible()) await openMenu.click();
   if (label === 'Relatórios' || label === 'Faturamento') {
     const toggle = menu.getByRole('button', { name: /^Faturamento(?: \d+)?$/ });
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
@@ -35,8 +38,14 @@ async function navigate(page: Page, label: string) {
 }
 async function switchClinic(page: Page, id: number) {
   await navigate(page, 'Clínicas');
-  await page.getByRole('button', { name: `Acessar ${clinics[id - 1].nome}`, exact: true }).click();
-  await expect(page.getByLabel('Menu da clínica')).toBeVisible();
+  const access = page.getByRole('button', { name: `Acessar ${clinics[id - 1].nome}`, exact: true });
+  await expect(access).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  if (id === 2 && page.viewportSize()?.width === 390 && test.info().title.includes('Pacientes')) {
+    await page.screenshot({ path: test.info().outputPath('clinics-mobile.png'), fullPage: true });
+  }
+  await access.click();
+  await expect(page.getByRole('button', { name: 'Menu do usuário', exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 
@@ -87,6 +96,27 @@ export function registerTenantIsolationCases(helpers: Helpers) {
     });
     return { server, requests };
   }
+
+  test('responsive #163: recusa de arquivo cross-tenant não expõe conteúdo nem inicia download', async ({ page }) => {
+    await setup(page);
+    const downloads: string[] = [];
+    page.on('download', file => downloads.push(file.suggestedFilename()));
+    // The server refuses this stale file reference in clinic Alfa. It never sends Beta's bytes.
+    await page.route('**/api/pacientes/10/arquivos/7/download', async route => {
+      expect(route.request().headers()['x-clinica-id']).toBe('1');
+      expect(route.request().headers().authorization).toBe(`Bearer ${token(1)}`);
+      await route.fulfill({ status: 403, json: { message: 'Operação não permitida.' } });
+    });
+    await helpers.login(page, '/pacientes');
+    await page.getByRole('button', { name: `Arquivos anexos de ${marker(1)}`, exact: true }).click();
+    const modal = page.getByRole('dialog');
+    await expect(modal).toContainText('documento-alfa.pdf');
+    await modal.getByRole('button', { name: 'Baixar', exact: true }).click();
+    await expect(modal.getByRole('button', { name: 'Tentar novamente', exact: true })).toHaveAttribute('title', 'Operação não permitida.');
+    await expect(page.getByText(marker(2), { exact: true })).toHaveCount(0);
+    await expect(page.getByText('documento-beta.pdf', { exact: true })).toHaveCount(0);
+    expect(downloads).toEqual([]);
+  });
 
   for (const [label, path] of [['Pacientes', '/pacientes'], ['Relatórios', '/relatorios'], ['Faturamento', '/faturamento-medico']]) {
     test(`tenant #162: ${label} não reutiliza dados ao trocar Alfa → Beta → Alfa pela UI`, async ({ page }) => {

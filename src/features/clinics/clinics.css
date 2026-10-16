@@ -4,6 +4,11 @@
 .clinic-name-cell > span { display: grid; gap: 2px; }
 .clinic-name-cell small { color: var(--muted); }
 .clinic-list-logo { width: 42px; height: 42px; border-radius: 9px; object-fit: cover; }
+@media (max-width: 760px) {
+  .clinics-workspace .clinics-table { min-width: 0; }
+  .clinics-table .clinic-name-cell, .clinics-table .clinic-name-cell > span { min-width: 0; }
+  .clinics-table .row-actions { flex-wrap: wrap; }
+}
 .clinic-form-panel { display: grid; gap: 18px; }
 .clinic-form { display: grid; gap: 16px; }
 .clinic-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
