@@ -47,6 +47,7 @@
 .combobox-toggle:active,
 .date-picker-button:focus,
 .date-picker-button:focus-visible,
+.date-picker-button:focus-within,
 .date-picker-button:active,
 .side-nav button:focus,
 .side-nav button:focus-visible,

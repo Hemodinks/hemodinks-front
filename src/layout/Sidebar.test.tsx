@@ -53,6 +53,7 @@ describe('menu lateral de faturamento', () => {
 
     await user.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('group', { name: 'Opções de faturamento' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Gestão de faturamento' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Histórico' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Relatórios' })).toBeVisible();

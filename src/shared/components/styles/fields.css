@@ -238,6 +238,7 @@ textarea::placeholder {
 }
 
 .multi-combobox-option:hover,
+.multi-combobox-option.is-active,
 .multi-combobox-option.is-selected {
   background: var(--soft);
 }
