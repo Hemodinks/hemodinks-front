@@ -66,6 +66,7 @@ jobs:
           done
 
       - name: Install Playwright browsers
+        id: playwright-browsers
         run: npx playwright install chromium
 
       - name: Run unit tests
@@ -79,6 +80,10 @@ jobs:
 
       - name: Run E2E tests
         run: npm run test:e2e
+
+      - name: Run responsive critical journeys
+        if: ${{ !cancelled() && steps.playwright-browsers.outcome == 'success' }}
+        run: npm run test:e2e:responsive
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
@@ -95,4 +100,14 @@ jobs:
           path: |
             playwright-report
             test-results
+          if-no-files-found: ignore
+
+      - name: Upload responsive Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-responsive
+          path: |
+            playwright-report-responsive
+            test-results-responsive
           if-no-files-found: ignore
