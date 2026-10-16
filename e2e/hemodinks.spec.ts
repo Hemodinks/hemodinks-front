@@ -2166,14 +2166,26 @@ for (const variant of [{ width: 390, theme: 'light' }, { width: 1280, theme: 'da
 }
 
 test('bootstrap: nova sessão sem acesso não reutiliza dados da clínica anterior', async ({ page }) => {
-  await mockApi(page);
+  const apiState = await mockApi(page);
+  let releaseLogout!: () => void;
+  const pendingLogout = new Promise<void>(resolve => { releaseLogout = resolve; });
+  await page.route('**/api/session/sair', async route => {
+    await pendingLogout;
+    await route.fallback();
+  });
   await loginViaUi(page);
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   await page.goto('/pacientes');
   await expect(page.getByRole('cell', { name: paciente.nomePaciente, exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Menu do usuário', exact: true }).click();
+  const logout = page.waitForResponse(response => new URL(response.url()).pathname === '/api/session/sair');
   await page.getByRole('button', { name: /sair/i }).click();
   await expect(page.getByRole('heading', { name: 'Acesso ao sistema' })).toBeVisible();
+  // A tela de login aparece antes da revogação; só recarregue após encerrar a sessão no mock.
+  expect(apiState.authenticated).toBe(true);
+  releaseLogout();
+  expect((await logout).status()).toBe(204);
+  expect(apiState.authenticated).toBe(false);
   await page.route('**/api/users/login-context', route => route.fulfill({ json: { clinicas: [{ clinicaId: 2, nome: 'Clínica Beta', slug: 'beta' }] } }));
   await page.route('**/api/users/authenticate', route => route.fulfill({ json: {
     ...session.user, id: 199, clinicaId: 2, clinicaSlug: 'beta', token: 'beta-token',
@@ -2183,7 +2195,9 @@ test('bootstrap: nova sessão sem acesso não reutiliza dados da clínica anteri
   page.on('request', request => {
     if (/\/api\/(dashboard|pacientes|configuracoes-sistema)/.test(request.url())) operational.push(request.url());
   });
+  const restored = page.waitForResponse(response => new URL(response.url()).pathname === '/api/session/restaurar');
   await page.reload();
+  expect((await restored).status()).toBe(401);
   await page.getByLabel('Email').fill(session.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
