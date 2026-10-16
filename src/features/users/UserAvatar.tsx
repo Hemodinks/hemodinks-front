@@ -81,6 +81,7 @@ export function UserAvatar({ userId, name, photo, authToken, size = 'sm', decora
   return (
     <span
       className={`user-avatar fallback ${size}`}
+      role={decorative ? undefined : 'img'}
       aria-hidden={decorative ? true : undefined}
       aria-label={decorative ? undefined : `Sem foto de ${displayName}`}
       title={displayName}

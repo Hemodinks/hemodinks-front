@@ -138,6 +138,7 @@ export function Sidebar({
               <div
                 id={billingSubmenuId}
                 className="side-nav-billing-submenu"
+                role="group"
                 aria-label="Opções de faturamento"
                 hidden={!isBillingMenuOpen}
               >
