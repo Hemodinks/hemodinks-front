@@ -226,8 +226,11 @@ describe('billingUtils', () => {
   });
 
   it('filtra registros para medico atual, periodo, glosa e pendencias', () => {
+    // Competência boundaries use the local calendar, so keep the fixture in June
+    // in every runner timezone, including positive UTC offsets.
+    const localJuneRecord = { ...basePaciente, dataCadastro: new Date(2026, 5, 30, 15, 25, 50).toISOString() };
     const records = buildBillingRecords([
-      basePaciente,
+      localJuneRecord,
       {
         ...basePaciente,
         id: 3,
