@@ -67,12 +67,26 @@ export function summarizeBillingRecords(records: BillingRecord[]): BillingSummar
   });
 }
 
+export function getBillingMedicalParticipants(record: BillingRecord) {
+  const patient = record.paciente;
+  const principal = { id: record.doctorUserId, name: record.doctorName };
+  if (record.doctorUserId != null) return [principal];
+
+  // A API considera auxiliares quando a FK do principal esta ausente, inclusive em dados legados.
+  return [
+    ...(record.doctorName && record.doctorName !== 'Não informado' ? [principal] : []),
+    { id: patient.medicoAuxiliar1UserId, name: patient.medicoAuxiliar1 || '' },
+    { id: patient.medicoAuxiliar2UserId, name: patient.medicoAuxiliar2 || '' },
+  ];
+}
+
 function matchesCurrentMedicalUser(record: BillingRecord, options: FilterBillingOptions) {
   if (!options.restrictToMedicalUser) return true;
-  if (options.currentMedicalUserId != null && record.doctorUserId === options.currentMedicalUserId) return true;
-  const currentMedicalName = options.currentMedicalUserName?.trim() || '';
-  return Boolean(currentMedicalName)
-    && normalizeLookupText(record.doctorName) === normalizeLookupText(currentMedicalName);
+  return getBillingMedicalParticipants(record).some((member) => {
+    if (options.currentMedicalUserId != null && member.id != null) return member.id === options.currentMedicalUserId;
+    const currentName = options.currentMedicalUserName?.trim() || '';
+    return Boolean(currentName) && normalizeLookupText(member.name) === normalizeLookupText(currentName);
+  });
 }
 
 export function filterBillingRecords(
@@ -90,6 +104,7 @@ export function filterBillingRecords(
     .filter((record) => toNormalizedIncludes([
       record.patientName,
       record.doctorName,
+      ...getBillingMedicalParticipants(record).map((member) => member.name),
       record.hospitalName,
       record.convenioName,
       record.authorizationCode,
@@ -98,7 +113,7 @@ export function filterBillingRecords(
       record.paymentRaw,
       record.glosaRaw,
     ].join(' '), filters.search))
-    .filter((record) => toNormalizedIncludes(record.doctorName, filters.medico))
+    .filter((record) => !filters.medico || getBillingMedicalParticipants(record).some((member) => toNormalizedIncludes(member.name, filters.medico)))
     .filter((record) => toNormalizedIncludes(record.convenioName, filters.convenio))
     .filter((record) => toNormalizedIncludes(record.hospitalName, filters.hospital))
     .filter((record) => toNormalizedIncludes(record.procedureSummary, filters.procedimento))

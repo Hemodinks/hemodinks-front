@@ -96,7 +96,7 @@ export function PatientClinicalSection({
           {opmeFornecedoresError && <AlertMessage type="error">{opmeFornecedoresError}</AlertMessage>}
         </div>
       </PatientFormSection>
-      <PatientFormSection title="Equipe médica" description="Selecione os profissionais já cadastrados para cada função.">
+      <PatientFormSection title="Equipe médica" description="Selecione um cirurgião ou ao menos um médico auxiliar. O cirurgião também pode atuar como auxiliar.">
         <div className="patient-form-slot">
           <ComboboxField
             label="Cirurgião"
