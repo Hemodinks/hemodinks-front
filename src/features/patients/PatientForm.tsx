@@ -90,7 +90,7 @@ export function PatientForm({
   const canExportForm = Boolean(editingPacienteId || hasExportableFormData);
 
   const isMedicalUserSelectedElsewhere = (field: MedicalTeamField, userId: number) => (
-    Object.entries(medicalTeamFields).some(([currentField, config]) => currentField !== field && pacienteFormData[config.idKey] === userId)
+    Object.entries(medicalTeamFields).some(([currentField, config]) => field !== 'medico' && currentField !== 'medico' && currentField !== field && pacienteFormData[config.idKey] === userId)
   );
   const getMedicalOptions = (field: MedicalTeamField) => medicalUsers
     .filter((user) => !isMedicalUserSelectedElsewhere(field, user.id))
@@ -123,7 +123,7 @@ export function PatientForm({
         </div>
       </div>
       {exportError && <AlertMessage type="error">{exportError}</AlertMessage>}
-      <p className="patient-form-guidance">{formReadOnly ? 'Ficha disponível somente para consulta.' : 'Preencha o paciente, o hospital e pelo menos um procedimento. Os demais campos são opcionais.'}</p>
+      <p className="patient-form-guidance">{formReadOnly ? 'Ficha disponível somente para consulta.' : 'Preencha o paciente, o hospital, pelo menos um médico e um procedimento. Os demais campos são opcionais.'}</p>
       <form className="stack patient-form-layout" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField} aria-busy={pacienteFormLoading}>
         <fieldset className="form-fieldset patient-form-fields" disabled={formReadOnly || pacienteFormLoading} data-tour="patients-identification">
           <legend className="sr-only">Dados da ficha do paciente</legend>
