@@ -107,6 +107,9 @@ export function registerResponsiveSmokeCases({ setup, login }: Dependencies) {
       await hospital.press('Enter');
       await expect(hospital).toHaveValue('Santa Clara - Mater Dei');
       await expect(hospital).toHaveAttribute('aria-expanded', 'false');
+      const surgeon = page.getByRole('combobox', { name: 'Cirurgião', exact: true });
+      await surgeon.fill('Ana');
+      await page.getByRole('option', { name: 'Ana Hemodinks', exact: true }).click();
       await save.click();
       await expect(page.getByRole('alert')).toHaveText('Selecione ao menos um procedimento.');
       expect(api.writes).toEqual([]);
