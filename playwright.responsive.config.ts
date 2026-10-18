@@ -5,7 +5,7 @@ import base from './playwright.config';
 export default defineConfig({
   ...base,
   testMatch: '**/hemodinks.spec.ts',
-  grep: /responsive #163:|tenant #162:|bloqueia rota de usuarios para perfil paciente|protege relatórios com a autorização provisória/,
+  grep: /responsive #163:|tenant #162:|bloqueia rota de usuarios para perfil paciente|protege relatórios com a autorização provisória|faz login pelo formulario|cadastra com novos vínculos|consulta e exporta relatórios com filtros múltiplos|tenant #163: resposta negada/,
   forbidOnly: true,
   failOnFlakyTests: true,
   workers: 1,
@@ -45,8 +45,8 @@ export default defineConfig({
     },
   },
   projects: [
-    { name: 'responsive-desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } } },
-    { name: 'responsive-tablet', use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 }, hasTouch: true, isMobile: true } },
+    { name: 'responsive-desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
+    { name: 'responsive-tablet', use: { ...devices['Desktop Chrome'], viewport: { width: 820, height: 1180 }, hasTouch: true, isMobile: true } },
     { name: 'responsive-mobile', use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true } },
   ],
 });
