@@ -10,3 +10,7 @@ artifacts/tutorials
 /reports
 .lighthouseci
 public/otel-runtime-config.json
+
+# Responsive E2E evidence (uploaded by CI)
+/playwright-report-responsive/
+/test-results-responsive/

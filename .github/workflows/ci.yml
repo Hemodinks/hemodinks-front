@@ -66,6 +66,7 @@ jobs:
           done
 
       - name: Install Playwright browsers
+        id: playwright-browsers
         run: npx playwright install --with-deps chromium
 
       - name: Audit frontend architecture
@@ -84,6 +85,7 @@ jobs:
         run: npm run test:e2e
 
       - name: Run responsive and tenant smoke matrix
+        if: ${{ !cancelled() && steps.playwright-browsers.outcome == 'success' }}
         run: npm run test:e2e:responsive
 
       - name: Upload build artifact
@@ -101,5 +103,17 @@ jobs:
           path: |
             playwright-report
             test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload responsive Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-responsive
+          path: |
+            playwright-report/responsive
+            playwright-report/responsive-results.json
+            test-results/responsive
           if-no-files-found: ignore
           retention-days: 7
