@@ -155,6 +155,9 @@ export function registerAccessibilityAuditCases({ setup, login }: Dependencies) 
         await hospital.fill('Santa');
         await hospital.press('ArrowDown');
         await hospital.press('Enter');
+        const surgeon = page.getByRole('combobox', { name: 'Cirurgião', exact: true });
+        await surgeon.fill('Ana');
+        await page.getByRole('option', { name: 'Ana Hemodinks', exact: true }).click();
         await save.click();
         const error = page.getByRole('alert');
         await expect(error).toHaveText('Selecione ao menos um procedimento.');

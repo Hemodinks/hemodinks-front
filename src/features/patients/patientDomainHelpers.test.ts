@@ -43,7 +43,7 @@ describe('preparePatientPayload', () => {
     expect(result.error).toBe('Selecione um cirurgião cadastrado com perfil Médicos.');
   });
 
-  it('mantém a regra que impede repetição na equipe médica', () => {
+  it('permite principal e auxiliar iguais no payload', () => {
     const result = preparePatientPayload({
       pacienteFormData: {
         ...validForm(),
@@ -57,6 +57,7 @@ describe('preparePatientPayload', () => {
       opmeFornecedores: [],
     });
 
-    expect(result.error).toBe('Cirurgião e médicos auxiliares devem ser diferentes.');
+    expect(result.error).toBe('');
+    expect(result.payload).toMatchObject({ medicoUserId: 10, medicoAuxiliar1UserId: 10 });
   });
 });

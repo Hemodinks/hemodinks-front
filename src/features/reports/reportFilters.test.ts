@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BillingRecord } from '../billing/billingTypes';
-import { emptyReportFilters, enrichReportRecords, filterReportRecords, validateReportDateRange } from './reportFilters';
+import { emptyReportFilters, enrichReportRecords, filterReportRecords, getReportOptions, validateReportDateRange } from './reportFilters';
 
 function record(overrides: Partial<BillingRecord> = {}) {
   return {
@@ -80,5 +80,17 @@ describe('filtros de relatórios', () => {
     expect(filterReportRecords(records, { ...emptyReportFilters, status: 'glosa' }).map((item) => item.id)).toEqual([2]);
     expect(filterReportRecords(records, { ...emptyReportFilters, regime: 'particular' }).map((item) => item.id)).toEqual([2]);
     expect(filterReportRecords(records, { ...emptyReportFilters, onlyPendingItems: true }).map((item) => item.id)).toEqual([2]);
+  });
+});
+
+
+describe('issue174: relatorios sem principal', () => {
+  it('oferece e filtra auxiliar sem duplicar cirurgia', () => {
+    const source = record({ doctorUserId: null, doctorName: 'Não informado' });
+    source.paciente.medicoAuxiliar1UserId = 8;
+    source.paciente.medicoAuxiliar1 = 'Dra. Auxiliar';
+    const records = enrichReportRecords([source], [], []);
+    expect(getReportOptions(records, [], []).doctors).toEqual([{ value: 'Dra. Auxiliar', label: 'Dra. Auxiliar' }]);
+    expect(filterReportRecords(records, { ...emptyReportFilters, doctors: ['Dra. Auxiliar'] })).toHaveLength(1);
   });
 });
