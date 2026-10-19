@@ -52,3 +52,19 @@ describe('PatientForm: permissões e operações em andamento', () => {
     expect(input.onSubmit).not.toHaveBeenCalled();
   });
 });
+
+
+describe('issue174: opcoes da equipe', () => {
+  it('oferece principal como auxiliar e nao oferece auxiliar repetido', async () => {
+    const input = props();
+    input.pacienteFormData = { ...input.pacienteFormData, medicoUserId: 1, medico: 'Dra. Ana',
+      medicoAuxiliar1UserId: null, medicoAuxiliar1: '', medicoAuxiliar2UserId: null, medicoAuxiliar2: '' };
+    const { rerender } = render(<PatientForm {...input} />);
+    await userEvent.click(screen.getByRole('combobox', { name: 'Médico auxiliar 1' }));
+    expect(screen.getByRole('option', { name: 'Dra. Ana' })).toBeVisible();
+    input.pacienteFormData = { ...input.pacienteFormData, medicoAuxiliar1UserId: 1, medicoAuxiliar1: 'Dra. Ana' };
+    rerender(<PatientForm {...input} />);
+    await userEvent.click(screen.getByRole('combobox', { name: 'Médico auxiliar 2' }));
+    expect(screen.queryByRole('option', { name: 'Dra. Ana' })).not.toBeInTheDocument();
+  });
+});

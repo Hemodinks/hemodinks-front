@@ -44,6 +44,61 @@ async function noOverflow(page: Page) {
 
 export function registerPatientFormTests({ setup, login }: Dependencies) {
   test.describe('ficha paciente', () => {
+    for (const width of [1440, 390]) {
+      test(`issue174: equipe cirurgica, edicao e exportacao ${width}`, async ({ page }) => {
+        test.setTimeout(90_000);
+        await page.setViewportSize({ width, height: 900 });
+        const base = await setup(page);
+        const api = await mockPatientFormApi(page, base.pacientes[0], base.token);
+        await login(page, '/pacientes');
+        await page.getByRole('button', { name: 'Novo paciente', exact: true }).click();
+        await page.getByLabel('Paciente', { exact: true }).fill('Paciente Equipe 174');
+        await page.getByRole('combobox', { name: 'Hospital', exact: true }).fill('Hospital 174');
+        await page.getByRole('combobox', { name: 'Hospital', exact: true }).press('Tab');
+        await addProcedure(page);
+        const surgeon = page.getByRole('combobox', { name: 'Cirurgião', exact: true });
+        const first = page.getByRole('combobox', { name: 'Médico auxiliar 1', exact: true });
+        const selectAna = async (input: ReturnType<Page['getByRole']>) => {
+          await input.fill('Ana');
+          await page.getByRole('option', { name: 'Ana Hemodinks', exact: true }).click();
+        };
+        // Limpa o preenchimento automatico do medico, quando aplicavel.
+        await surgeon.fill('');
+        await surgeon.press('Tab');
+        await page.getByRole('button', { name: 'Cadastrar paciente', exact: true }).click();
+        await expect(page.getByRole('alert')).toHaveText('Selecione um cirurgião ou ao menos um médico auxiliar.');
+        expect(api.writes).toHaveLength(0);
+        await selectAna(surgeon);
+        await selectAna(first);
+        await noOverflow(page);
+        await page.getByRole('button', { name: 'Cadastrar paciente', exact: true }).click();
+        await expect(page.getByText('Paciente cadastrado com sucesso.', { exact: true })).toBeVisible();
+        expect(api.writes[0]).toMatchObject({ medicoUserId: 1, medicoAuxiliar1UserId: 1 });
+        await page.getByRole('button', { name: 'Editar Paciente Equipe 174', exact: true }).click();
+        await expect(surgeon).toHaveValue('Ana Hemodinks');
+        await expect(first).toHaveValue('Ana Hemodinks');
+        await surgeon.fill('');
+        await surgeon.press('Tab');
+        await expect(first).toHaveValue('Ana Hemodinks');
+        await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+        await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
+        expect(api.writes[1]).toMatchObject({ medicoUserId: null, medico: '', medicoAuxiliar1UserId: 1 });
+        await page.getByRole('button', { name: 'Editar Paciente Equipe 174', exact: true }).click();
+        await expect(surgeon).toHaveValue('');
+        await expect(first).toHaveValue('Ana Hemodinks');
+        const bytes = await download(page, 'Exportar ficha Excel', 'xlsx', 'cadastro-paciente-');
+        expect(bytes.toString()).toContain('Ana Hemodinks');
+        await download(page, 'Exportar ficha PDF', 'pdf', 'cadastro-paciente-');
+        await selectAna(surgeon);
+        await first.fill('');
+        await first.press('Tab');
+        await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+        await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
+        expect(api.writes[2]).toMatchObject({ medicoUserId: 1, medicoAuxiliar1UserId: null });
+        expect(api.patients.filter((patient) => patient.nomePaciente === 'Paciente Equipe 174')).toHaveLength(1);
+      });
+    }
+
     test('cadastra com novos vínculos, edita sem duplicar, exporta a ficha e envia arquivo', async ({ page }) => {
       const base = await setup(page);
       const api = await mockPatientFormApi(page, base.pacientes[0], base.token);
