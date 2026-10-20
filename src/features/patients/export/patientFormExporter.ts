@@ -1,3 +1,4 @@
+import { getSurgeryTypeLabel } from '../../../shared/surgeryType';
 import type { PacienteExportFormat } from '../../../appTypes';
 import { sessionEpoch } from '../../../services/sessionEpoch';
 import { formatCurrency, toDisplayDate } from '../../../shared/utils/formatters';
@@ -96,6 +97,12 @@ export async function createPatientFormPdf(
   document.text('Cirurgias Consolidadas:', leftColX, y);
   document.setFont('helvetica', 'normal');
   document.text(normalizeReportValue(formData.dataAtendimento), leftColX + 120, y);
+  y += lineHeight;
+
+  document.setFont('helvetica', 'bold');
+  document.text('Tipo de cirurgia:', leftColX, y);
+  document.setFont('helvetica', 'normal');
+  document.text(getSurgeryTypeLabel(formData.tipoCirurgia), leftColX + 100, y);
   y += lineHeight;
 
   document.setFont('helvetica', 'bold');

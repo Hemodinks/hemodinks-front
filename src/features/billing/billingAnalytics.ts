@@ -117,6 +117,7 @@ export function filterBillingRecords(
     .filter((record) => toNormalizedIncludes(record.convenioName, filters.convenio))
     .filter((record) => toNormalizedIncludes(record.hospitalName, filters.hospital))
     .filter((record) => toNormalizedIncludes(record.procedureSummary, filters.procedimento))
+    .filter((record) => !filters.tipoCirurgia || record.paciente.tipoCirurgia === filters.tipoCirurgia)
     .filter((record) => filters.regime === 'all' || record.regime === filters.regime)
     .filter((record) => {
       if (filters.status === 'all') return true;

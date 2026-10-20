@@ -51,6 +51,22 @@ describe('exportação sintética e completa da consulta', () => {
     }
   });
 
+  it.each(['synthetic', 'complete'] as const)('inclui classificação e resumo por atendimento em PDF/XLSX %s', async (detailLevel) => {
+    const urgent = { ...record(173), paciente: { ...basePaciente, tipoCirurgia: 'Urgencia' as const } };
+    await exportReport({ format: 'xlsx', records: [urgent], companyName: 'Clínica', detailLevel });
+    const blob = vi.mocked(downloadBlob).mock.calls[0][0] as Blob;
+    const content = new TextDecoder().decode(await blob.arrayBuffer());
+    expect(content).toContain('Resumo por tipo de cirurgia');
+    expect(content).toContain('Tipo de cirurgia');
+    expect(content).toContain('Urgência');
+    expect(content).not.toContain('Eletiva');
+    await exportReport({ format: 'pdf', records: [urgent], companyName: 'Clínica', detailLevel });
+    const pdf = new TextDecoder('windows-1252').decode(captured.documents[0].output('arraybuffer'));
+    expect(pdf).toContain('Tipo de cirurgia');
+    expect(pdf).toContain('Urgência');
+    expect(pdf).not.toContain('Eletiva');
+  });
+
   it('Completo é padrão e informa atendimento sem itens sem linha fictícia de pendência', async () => {
     await exportReport({ format: 'xlsx', records: [{ ...record(), billingChecklist: [], pendingChecklistItems: 0 }], companyName: 'Clínica' });
     const blob = vi.mocked(downloadBlob).mock.calls[0][0] as Blob;

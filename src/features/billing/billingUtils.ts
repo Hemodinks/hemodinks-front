@@ -305,6 +305,7 @@ function buildBillingChecklist(record: Omit<BillingRecord, 'billingChecklist' | 
 export function createEmptyBillingFilters(defaultDoctor = '', defaultCompetencia = ''): BillingFilters {
   return {
     search: '',
+    tipoCirurgia: '',
     medico: defaultDoctor,
     convenio: '',
     hospital: '',

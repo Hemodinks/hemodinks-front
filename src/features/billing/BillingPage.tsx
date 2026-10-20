@@ -1,3 +1,4 @@
+import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -86,6 +87,7 @@ export function BillingPage({
       appliedFilters.procedimento,
       appliedFilters.competenciaInicio,
       appliedFilters.competenciaFinal,
+      appliedFilters.tipoCirurgia,
       isMedical ? session.user.id : 'all',
     ],
     queryFn: () => loadBillingPatients(session.token, {
@@ -95,6 +97,7 @@ export function BillingPage({
       procedimento: appliedFilters.procedimento.trim(),
       competenciaInicio: appliedFilters.competenciaInicio,
       competenciaFinal: appliedFilters.competenciaFinal,
+      tipoCirurgia: appliedFilters.tipoCirurgia,
     }),
     staleTime: 30 * 1000,
   });
@@ -371,13 +374,13 @@ export function BillingPage({
                 <SortableTableHeader field="status" label="Status" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
                 <SortableTableHeader field="paymentDate" label="Data do pagamento" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
                 <th>Resumo</th>
-                <th>Visualizar</th>
+                <th>Visualizar</th><th>Tipo de cirurgia</th>
               </tr>
             </thead>
             <tbody>
               {billingQuery.isPending ? (
                 <tr>
-                  <td colSpan={6} className="empty-row">Carregando faturamento médico...</td>
+                  <td colSpan={7} className="empty-row">Carregando faturamento médico...</td>
                 </tr>
               ) : visibleBillingRecords.length ? (
                 visibleBillingRecords.map((record) => (
@@ -421,11 +424,12 @@ export function BillingPage({
                         <Eye size={18} />
                       </IconButton>
                     </td>
+                    <td data-label="Tipo de cirurgia">{getSurgeryTypeLabel(record.paciente.tipoCirurgia)}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
+                  <td colSpan={7} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
                 </tr>
               )}
             </tbody>

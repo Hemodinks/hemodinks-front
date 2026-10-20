@@ -1,4 +1,5 @@
 import { registerAgendaEmailCases } from './agenda-email-cases';
+import { registerSurgeryTypeCases } from './surgery-type-cases';
 import { registerTenantIsolationCases } from './tenant-isolation-cases';
 import { registerResponsiveSmokeCases } from './responsive-smoke-cases';
 import { registerAccessibilityAuditCases } from './accessibility-audit-cases';
@@ -116,6 +117,7 @@ const tutorialRecordingSession = {
 
 const paciente = {
   id: 10,
+  tipoCirurgia: 'Eletiva',
   userId: 20,
   data: '2026-06-01T00:00:00Z',
   dataAtendimento: '2026-06-01T00:00:00Z',
@@ -232,6 +234,7 @@ function buildPacienteFromPayload(id: number, payload: Payload) {
   return {
     ...paciente,
     id,
+    tipoCirurgia: String(payload.tipoCirurgia ?? paciente.tipoCirurgia),
     userId: Number(payload.userId ?? paciente.userId),
     data: typeof payload.data === 'string' ? payload.data : paciente.data,
     nomePaciente: String(payload.nomePaciente ?? paciente.nomePaciente),
@@ -697,6 +700,7 @@ registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });
 registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session });
 registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
+registerSurgeryTypeCases({ mockApi, loginViaUi });
 registerPatientListTests({ setup: mockApi, login: loginViaUi });
 registerResponsiveSmokeCases({ setup: mockApi, login: loginViaUi });
 registerAccessibilityAuditCases({ setup: mockApi, login: loginViaUi });

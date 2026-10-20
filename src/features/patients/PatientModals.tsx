@@ -1,3 +1,4 @@
+import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 import { FileText, X } from 'lucide-react';
 import type { Paciente } from '../../types';
 import { CopyValue } from '../../shared/components/CopyValue';
@@ -53,6 +54,7 @@ export function PatientInfoModal({ paciente, onClose }: PatientInfoModalProps) {
           </section>
 
           <section className="patient-info-detail-grid" aria-label="Informações clínicas do paciente">
+            <article className="patient-info-card"><span>Tipo de cirurgia</span><div className="patient-info-card-content">{getSurgeryTypeLabel(paciente.tipoCirurgia)}</div></article>
             <article className="patient-info-card">
               <span>Informações Adicionais</span>
               <div className="patient-info-card-content">

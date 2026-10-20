@@ -1,3 +1,5 @@
+import { getSurgeryTypeLabel, SURGERY_TYPE_OPTIONS } from '../../../shared/surgeryType';
+import { summarizeBillingRecords } from '../../billing/billingAnalytics';
 import { formatCurrency } from '../../../shared/utils/formatters';
 import type { ReportRecord } from '../reportTypes';
 
@@ -32,6 +34,7 @@ export const reportColumns: readonly ReportColumn[] = [
   { header: 'Itens pendentes do checklist', getValue: (record) => String(record.pendingChecklistItems) },
   { header: 'Anexos', getValue: (record) => String(record.filesCount) },
   { header: 'Atendimento', getValue: (record) => String(record.id) },
+  { header: 'Tipo de cirurgia', getValue: (record) => getSurgeryTypeLabel(record.paciente.tipoCirurgia) },
 ];
 
 export const reportPendingHeaders = ['Atendimento', 'Data da cirurgia', 'Situação do pagamento', 'Natureza', 'Item', 'Status', 'Descrição / valor', 'Motivo / orientação'] as const;
@@ -61,4 +64,21 @@ export function getReportFileName(extension: 'pdf' | 'xlsx', companyName: string
   const company = companyName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'hemodinks';
   return `relatorios-${company}-${new Date().toISOString().slice(0, 10)}.${extension}`;
+}
+
+export const reportSurgeryTypeHeaders = ['Tipo de cirurgia', 'Atendimentos', 'Faturado', 'Glosa', 'Líquido'];
+
+export function getReportSurgeryTypeRows(records: ReportRecord[]) {
+  return [...SURGERY_TYPE_OPTIONS.map((option) => option.value), undefined].flatMap((tipo) => {
+    const selected = records.filter((record) => (record.paciente.tipoCirurgia ?? undefined) === tipo);
+    if (!selected.length) return [];
+    const summary = summarizeBillingRecords(selected);
+    return [{
+      'Tipo de cirurgia': getSurgeryTypeLabel(tipo),
+      Atendimentos: String(summary.totalRecords),
+      Faturado: formatCurrency(summary.totalGrossAmount),
+      Glosa: formatCurrency(summary.totalGlosaAmount),
+      Líquido: formatCurrency(summary.totalNetAmount),
+    }];
+  });
 }

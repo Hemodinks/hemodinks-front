@@ -24,6 +24,22 @@ function props(overrides: Partial<ComponentProps<typeof PatientForm>> = {}): Com
 }
 
 describe('PatientForm: permissões e operações em andamento', () => {
+  it('seleciona Urgência na edição e permite trocar o tipo de cirurgia', async () => {
+    const input = props({ pacienteFormData: getPacienteFormData({ ...basePaciente, tipoCirurgia: 'Urgencia' }) });
+    render(<PatientForm {...input} />);
+    expect(screen.getByRole('radio', { name: 'Urgência' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Eletiva' })).not.toBeChecked();
+    await userEvent.click(screen.getByRole('radio', { name: 'Eletiva' }));
+    const update = vi.mocked(input.setPacienteFormData).mock.calls.at(-1)![0];
+    expect(typeof update === 'function' ? update(input.pacienteFormData) : update).toMatchObject({ tipoCirurgia: 'Eletiva' });
+  });
+
+  it.each([{ patientReadOnly: true }, { canEditPatients: false }, { pacienteFormLoading: true }])('bloqueia tipo de cirurgia durante consulta ou salvamento %j', (state) => {
+    render(<PatientForm {...props(state)} />);
+    expect(screen.getByRole('radio', { name: 'Eletiva' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Urgência' })).toBeDisabled();
+  });
+
   it.each([{ patientReadOnly: true }, { canEditPatients: false }])('preserva consulta sem permitir edição: %j', async (permissions) => {
     const input = props(permissions);
     render(<PatientForm {...input} />);

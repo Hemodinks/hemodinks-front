@@ -1,3 +1,4 @@
+import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { Modal } from '../../shared/components/Modal';
@@ -163,7 +164,7 @@ export function BillingSummaryModal({ record, authToken, onClose }: BillingSumma
           <article className="billing-summary-info-card">
             <span>Data / hospital</span>
             <strong>{record.surgeryDateLabel}</strong>
-            <p>{record.hospitalName}</p>
+            <p>{record.hospitalName}</p><p>Tipo de cirurgia: {getSurgeryTypeLabel(record.paciente.tipoCirurgia)}</p>
           </article>
 
           <article className="billing-summary-info-card billing-summary-convenio-card">
