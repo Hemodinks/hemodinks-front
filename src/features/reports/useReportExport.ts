@@ -1,3 +1,4 @@
+import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 import { useEffect, useRef, useState } from 'react';
 import { getErrorMessage } from '../../shared/utils/formatters';
 import type { ReportExportDetailLevel, ReportExportFormat, ReportRecord } from './reportTypes';
@@ -7,6 +8,7 @@ import { exportIndividualBillingPdf } from './export/individualBillingPdfExporte
 
 function describeFilters(filters: ReportFilters) {
   const lines: string[] = [];
+  if (filters.tipoCirurgia) lines.push(`Tipo de cirurgia: ${getSurgeryTypeLabel(filters.tipoCirurgia)}`);
   if (filters.requestStartDate || filters.requestEndDate) {
     lines.push(`Período da solicitação: ${filters.requestStartDate || 'início'} a ${filters.requestEndDate || 'hoje'}`);
   }

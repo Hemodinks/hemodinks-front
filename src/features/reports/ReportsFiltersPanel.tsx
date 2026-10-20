@@ -1,3 +1,4 @@
+import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
 import type { Dispatch, SetStateAction } from 'react';
 import { Download, FileText, RefreshCw, Search } from 'lucide-react';
 import { DateInput } from '../../shared/components/DateInput';
@@ -65,6 +66,7 @@ export function ReportsFiltersPanel(props: Props) {
                 {...(field.key === 'doctors' ? { 'data-tour': 'reports-combined-filters' } : {})}
               />
             ))}
+            <SurgeryTypeFilter className="filter-field" value={props.filters.tipoCirurgia} onChange={(tipoCirurgia) => props.setFilters((current) => ({ ...current, tipoCirurgia }))} />
             <SelectField className="filter-field" label="Status" value={props.filters.status} onChange={(event) => props.setFilters((current) => ({ ...current, status: event.target.value as ReportFilters['status'] }))}>
               {BILLING_STATUS_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </SelectField>

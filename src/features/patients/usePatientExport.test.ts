@@ -12,6 +12,19 @@ vi.mock('./export/patientListExporter', () => ({ exportPatientList: vi.fn(async 
 
 describe('ordenacao da exportacao de pacientes', () => {
   beforeEach(() => { vi.clearAllMocks(); });
+  it.each(['all', 'doctor', 'visible'] as const)('preserva o tipo de cirurgia no escopo %s', async (scope) => {
+    const urgent = { ...basePaciente, tipoCirurgia: 'Urgencia' as const };
+    vi.mocked(getPacientes).mockReset().mockResolvedValue(paged([urgent]));
+    const { result } = renderHook(() => usePatientExport({
+      session: mockSession(), companyName: 'Clinica', paginatedPacientes: [urgent],
+      pacienteFilters: { ...emptyPacienteFilters, medicoUserIds: [1], tipoCirurgia: 'Urgencia' },
+      sortBy: '', sortDirection: 'desc', setPacientesError: vi.fn(),
+    }));
+    act(() => result.current.setPacienteExportScope(scope));
+    await act(async () => result.current.handleExportPacientes('xlsx'));
+    if (scope !== 'visible') expect(getPacientes).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ tipoCirurgia: 'Urgencia' }));
+    expect(exportPatientList).toHaveBeenCalledWith(expect.objectContaining({ items: [urgent], contextLines: expect.arrayContaining(['Tipo de cirurgia: Urgência']) }));
+  });
   it('interrompe paginação e exportação quando muda a sessão durante a primeira página', async () => {
     let complete!: (value: ReturnType<typeof paged<typeof basePaciente>>) => void;
     vi.mocked(getPacientes).mockReset().mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));

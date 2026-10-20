@@ -157,8 +157,8 @@
 .patient-form-section-fields > .toggle-row { grid-column: 1 / -1; }
 .patient-form-panel .two-column-fields { gap: 16px 20px; align-items: end; }
 .patient-form-panel label { line-height: 1.5; }
-.patient-form-panel :is(input:not([type="checkbox"]):not([type="file"]), select, textarea) { min-width: 0; width: 100%; font-size: 1rem; }
-.patient-form-panel :is(input:not([type="checkbox"]):not([type="file"]), select) { min-height: 44px; }
+.patient-form-panel :is(input:not([type="checkbox"]):not([type="file"]):not([type="radio"]), select, textarea) { min-width: 0; width: 100%; font-size: 1rem; }
+.patient-form-panel :is(input:not([type="checkbox"]):not([type="file"]):not([type="radio"]), select) { min-height: 44px; }
 .patient-form-panel textarea { resize: vertical; min-height: 100px; }
 .patient-form-panel .toggle-row { min-height: 44px; align-items: center; }
 .patient-form-panel :is(.combobox-toggle, .date-picker-button) { width: 44px; min-height: 44px; right: 0; box-shadow: none; }

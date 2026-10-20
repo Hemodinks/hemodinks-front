@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { Convenio, Hospital, OpmeFornecedor, PacienteFormData } from '../../../types';
 import { AlertMessage, ComboboxField } from '../../../shared/components/ui';
 import { PatientFormSection } from './PatientFormSection';
+import { SurgeryTypeField } from '../../../shared/components/SurgeryTypeField';
 import {
   findConvenioByDescription,
   findHospitalByName,
@@ -44,6 +45,7 @@ export function PatientClinicalSection({
   return (
     <>
       <PatientFormSection title="Dados da cirurgia" description="Selecione uma opção ou digite um novo hospital, convênio ou fornecedor para cadastrar ao salvar.">
+        <SurgeryTypeField value={formData.tipoCirurgia} onChange={(tipoCirurgia) => setFormData((current) => ({ ...current, tipoCirurgia }))} disabled={formReadOnly} />
         <div className="patient-form-slot">
           <ComboboxField
             label="Convênio"

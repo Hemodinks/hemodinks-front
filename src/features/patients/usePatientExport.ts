@@ -7,6 +7,7 @@ import { getPagedItems, getPagedTotalPages } from '../../shared/utils/listing';
 import type { AuthSession, Paciente } from '../../types';
 import { exportPatientList } from './export/patientListExporter';
 import { getPacienteFilterQuery } from './patientUtils';
+import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 
 type UsePatientExportOptions = {
   session: AuthSession | null;
@@ -76,8 +77,8 @@ export function usePatientExport({
       return fetchPacientesForExport(getPacienteFilterQuery(pacienteFilters), epoch);
     }
 
-    const { dataInicio, dataFinal } = getPacienteFilterQuery(pacienteFilters);
-    return fetchPacientesForExport({ dataInicio, dataFinal }, epoch);
+    const { dataInicio, dataFinal, tipoCirurgia } = getPacienteFilterQuery(pacienteFilters);
+    return fetchPacientesForExport({ dataInicio, dataFinal, tipoCirurgia }, epoch);
   };
 
   const handleExportPacientes = async (format: PacienteExportFormat) => {
@@ -102,7 +103,7 @@ export function usePatientExport({
         items: exportItems,
         companyName,
         sessionToken: session.token,
-        contextLines: [scopeLabel, period ? `Período: ${period}` : 'Período: todos'],
+        contextLines: [scopeLabel, period ? `Período: ${period}` : 'Período: todos', ...(pacienteFilters.tipoCirurgia ? [`Tipo de cirurgia: ${getSurgeryTypeLabel(pacienteFilters.tipoCirurgia)}`] : [])],
       });
     } catch (error) {
       if (epoch === sessionEpoch()) setPacientesError(getErrorMessage(error));

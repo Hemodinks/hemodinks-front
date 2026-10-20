@@ -6,7 +6,7 @@ import { sessionEpoch } from '../../../services/sessionEpoch';
 import { summarizeBillingRecords } from '../../billing/billingAnalytics';
 import { formatCurrency } from '../../../shared/utils/formatters';
 import type { ReportExportDetailLevel, ReportExportFormat, ReportRecord } from '../reportTypes';
-import { getReportExportRows, getReportFileName, getReportPendingRows, reportColumns, reportPendingHeaders } from './reportExportData';
+import { getReportSurgeryTypeRows, reportSurgeryTypeHeaders, getReportExportRows, getReportFileName, getReportPendingRows, reportColumns, reportPendingHeaders } from './reportExportData';
 
 type Options = {
   format: ReportExportFormat;
@@ -59,6 +59,14 @@ async function createReportPdf(records: ReportRecord[], identity: ReportIdentity
     showHead: 'everyPage',
     rowPageBreak: 'avoid',
   });
+  autoTableModule.default(document, {
+    head: [reportSurgeryTypeHeaders],
+    body: getReportSurgeryTypeRows(records).map((row) => reportSurgeryTypeHeaders.map((header) => row[header as keyof typeof row])),
+    startY: (document as typeof document & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12,
+    ...getPdfReportTableStyles(identity),
+    ...pageHooks(identity),
+    rowPageBreak: 'avoid',
+  });
   if (detailLevel === 'complete') {
     const pendingRows = getReportPendingRows(records);
     if (pendingRows.length) document.addPage();
@@ -102,10 +110,10 @@ export async function exportReport({ format, records, companyName, sessionToken,
     const rows = getReportExportRows(records);
     const blob = createReportXlsxBlob(rows, reportColumns.map((column) => column.header), {
       sheetName: 'Atendimentos', identity,
-      additionalSheets: detailLevel === 'complete' ? [{
+      additionalSheets: [{ sheetName: 'Resumo por tipo de cirurgia', headers: reportSurgeryTypeHeaders, rows: getReportSurgeryTypeRows(records) }, ...(detailLevel === 'complete' ? [{
         sheetName: 'Detalhamento de pendências', headers: reportPendingHeaders,
         rows: getReportPendingRows(records), emptyMessage: 'Nenhuma pendência encontrada no checklist da consulta.',
-      }] : [],
+      }] : [])],
     });
     if (isCurrent()) downloadBlob(blob, fileName);
     return;

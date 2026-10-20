@@ -16,6 +16,7 @@ import {
 } from '../../shared/utils/formatters';
 
 export const emptyPacienteForm: PacienteFormData = {
+  tipoCirurgia: 'Eletiva',
   data: '',
   dataAtendimento: '',
   nomePaciente: '',
@@ -52,6 +53,7 @@ export const emptyPacienteForm: PacienteFormData = {
 };
 
 export const emptyPacienteFilters: PacienteFilters = {
+  tipoCirurgia: '',
   medicoUserIds: [],
   convenioIds: [],
   procedimento: '',
@@ -63,6 +65,7 @@ export const emptyPacienteFilters: PacienteFilters = {
 
 export function getPacienteFilterQuery(filters: PacienteFilters) {
   return {
+    ...(filters.tipoCirurgia ? { tipoCirurgia: filters.tipoCirurgia } : {}),
     ...(filters.medicoUserIds.length ? { medicoUserIds: filters.medicoUserIds.join(',') } : {}),
     ...(filters.convenioIds.length ? { convenioIds: filters.convenioIds.join(',') } : {}),
     ...(filters.procedimento.trim() ? { procedimento: filters.procedimento.trim() } : {}),
@@ -151,6 +154,7 @@ export function withPrimaryProcedimento(data: PacienteFormData): PacienteFormDat
 
 export function getPacienteFormData(paciente: Paciente): PacienteFormData {
   return withPrimaryProcedimento({
+    tipoCirurgia: paciente.tipoCirurgia ?? undefined,
     data: toDisplayDate(paciente.data || ''),
     dataAtendimento: toDisplayDate(paciente.dataAtendimento || ''),
     nomePaciente: paciente.nomePaciente,
@@ -258,6 +262,7 @@ export function toPacientePayload(data: PacienteFormData): PacientePayload {
   const firstProcedimento = procedimentos[0];
 
   return {
+    ...(data.tipoCirurgia !== undefined ? { tipoCirurgia: data.tipoCirurgia } : {}),
     data: data.data && isValidBirthDate(data.data) ? toApiDate(data.data) : null,
     dataAtendimento: data.dataAtendimento && isValidDate(data.dataAtendimento)
       ? toApiDate(data.dataAtendimento)

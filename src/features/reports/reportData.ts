@@ -17,9 +17,9 @@ async function loadAllMedicalGroups(token: string) {
   return groups;
 }
 
-export async function loadReportData(token: string): Promise<ReportData> {
+export async function loadReportData(token: string, tipoCirurgia?: import('../../shared/surgeryType').TipoCirurgia | ''): Promise<ReportData> {
   const [patientsResult, groupsResult, teamsResult] = await Promise.allSettled([
-    loadBillingPatients(token, { search: '', medico: '', convenio: '', procedimento: '', competenciaInicio: '', competenciaFinal: '' }),
+    loadBillingPatients(token, { tipoCirurgia, search: '', medico: '', convenio: '', procedimento: '', competenciaInicio: '', competenciaFinal: '' }),
     loadAllMedicalGroups(token),
     listTeams(token),
   ]);
