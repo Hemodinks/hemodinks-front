@@ -1061,12 +1061,19 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   await expect(pieSvg.getByRole('button', { name: /^4º trimestre de 2026/i })).toHaveCount(0);
 
   const barChart = page.getByRole('group', { name: /Gráfico de barras do faturamento mensal de 2026/i });
+  const octoberBar = page.getByLabel(/Outubro de 2026, 4º trimestre/i);
+  await octoberBar.focus();
+  await expect(octoberBar.getByRole('tooltip')).toBeVisible();
   const chartDimensions = await barChart.evaluate((element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }));
   expect(chartDimensions.scrollWidth).toBeLessThanOrEqual(chartDimensions.clientWidth);
   await expectNoGlobalHorizontalOverflow(page);
 
-  await page.setViewportSize({ width: 360, height: 860 });
-  await expectNoGlobalHorizontalOverflow(page);
+  for (const width of [1440, 1280, 1024, 820, 390, 360]) {
+    await page.setViewportSize({ width, height: 860 });
+    await expectNoGlobalHorizontalOverflow(page);
+    const dimensions = await barChart.evaluate((element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }));
+    expect(dimensions.scrollWidth, `Gráfico sem overflow em ${width}px`).toBeLessThanOrEqual(dimensions.clientWidth);
+  }
   const augustBar = page.getByLabel(/Agosto de 2026, 3º trimestre/i);
   await augustBar.focus();
   await expect(augustBar.getByRole('tooltip')).toBeVisible();
