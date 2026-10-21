@@ -1229,18 +1229,18 @@ button.billing-summary-card:focus-visible,
   left: 14px;
 }
 
-.billing-history-bar-column:nth-last-child(-n + 2) .billing-history-chart-tooltip {
+.billing-history-bar-column:nth-last-child(-n + 3) .billing-history-chart-tooltip {
   right: 0;
   left: auto;
   transform: translateY(4px);
 }
 
-.billing-history-bar-column:nth-last-child(-n + 2):hover .billing-history-chart-tooltip,
-.billing-history-bar-column:nth-last-child(-n + 2):focus .billing-history-chart-tooltip {
+.billing-history-bar-column:nth-last-child(-n + 3):hover .billing-history-chart-tooltip,
+.billing-history-bar-column:nth-last-child(-n + 3):focus .billing-history-chart-tooltip {
   transform: translateY(0);
 }
 
-.billing-history-bar-column:nth-last-child(-n + 2) .billing-history-chart-tooltip::after {
+.billing-history-bar-column:nth-last-child(-n + 3) .billing-history-chart-tooltip::after {
   right: 14px;
   left: auto;
   transform: none;
