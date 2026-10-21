@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { sessionEpoch } from '../../services/sessionEpoch';
 import { Download } from 'lucide-react';
 import { getErrorMessage } from '../utils/formatters';
 import { downloadBlob } from '../utils/downloadFile';
@@ -16,18 +17,22 @@ export function SecureFileDownloadButton({
 }: SecureFileDownloadButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   const download = async () => {
+    const epoch = sessionEpoch();
+    const isCurrent = () => mounted.current && epoch === sessionEpoch();
     setLoading(true);
     setError('');
 
     try {
       const blob = await loadFile();
-      downloadBlob(blob, fileName);
+      if (isCurrent()) downloadBlob(blob, fileName);
     } catch (downloadError) {
-      setError(getErrorMessage(downloadError));
+      if (isCurrent()) setError(getErrorMessage(downloadError));
     } finally {
-      setLoading(false);
+      if (mounted.current) setLoading(false);
     }
   };
 

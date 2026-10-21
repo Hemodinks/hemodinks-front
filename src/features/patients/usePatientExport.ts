@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
 import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from '../../appTypes';
 import { getPacientes } from '../../services';
+import { sessionEpoch } from '../../services/sessionEpoch';
 import { getErrorMessage, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
 import { getPagedItems, getPagedTotalPages } from '../../shared/utils/listing';
 import type { AuthSession, Paciente } from '../../types';
 import { exportPatientList } from './export/patientListExporter';
 import { getPacienteFilterQuery } from './patientUtils';
+import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 
 type UsePatientExportOptions = {
   session: AuthSession | null;
@@ -30,7 +32,7 @@ export function usePatientExport({
   const [pacienteExportScope, setPacienteExportScope] = useState<PacienteExportScope>('visible');
   const exportInFlight = useRef(false);
 
-  const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>) => {
+  const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>, epoch: number) => {
     if (!session) {
       return [];
     }
@@ -42,6 +44,7 @@ export function usePatientExport({
       sortDirection,
       ...query,
     });
+    if (epoch !== sessionEpoch()) return [];
 
     const items = [...getPagedItems(firstResult)];
     const totalPagesForExport = getPagedTotalPages(firstResult);
@@ -54,13 +57,14 @@ export function usePatientExport({
         sortBy: sortBy || 'data',
         sortDirection,
       });
+      if (epoch !== sessionEpoch()) return [];
       items.push(...getPagedItems(result));
     }
 
     return items;
   };
 
-  const loadPacientesForExport = async (scope: PacienteExportScope) => {
+  const loadPacientesForExport = async (scope: PacienteExportScope, epoch: number) => {
     if (scope === 'visible') {
       return paginatedPacientes;
     }
@@ -70,11 +74,11 @@ export function usePatientExport({
         throw new Error('Selecione ao menos um cirurgião antes de exportar por cirurgião.');
       }
 
-      return fetchPacientesForExport(getPacienteFilterQuery(pacienteFilters));
+      return fetchPacientesForExport(getPacienteFilterQuery(pacienteFilters), epoch);
     }
 
-    const { dataInicio, dataFinal } = getPacienteFilterQuery(pacienteFilters);
-    return fetchPacientesForExport({ dataInicio, dataFinal });
+    const { dataInicio, dataFinal, tipoCirurgia } = getPacienteFilterQuery(pacienteFilters);
+    return fetchPacientesForExport({ dataInicio, dataFinal, tipoCirurgia }, epoch);
   };
 
   const handleExportPacientes = async (format: PacienteExportFormat) => {
@@ -83,11 +87,13 @@ export function usePatientExport({
     }
 
     exportInFlight.current = true;
+    const epoch = sessionEpoch();
     setPacienteExportLoading(format);
     setPacientesError('');
 
     try {
-      const exportItems = await loadPacientesForExport(pacienteExportScope);
+      const exportItems = await loadPacientesForExport(pacienteExportScope, epoch);
+      if (epoch !== sessionEpoch()) return;
       const period = [pacienteFilters.dataInicio, pacienteFilters.dataFinal].filter(Boolean).join(' a ');
       const scopeLabel = pacienteExportScope === 'all'
         ? 'Todos os pacientes'
@@ -97,13 +103,13 @@ export function usePatientExport({
         items: exportItems,
         companyName,
         sessionToken: session.token,
-        contextLines: [scopeLabel, period ? `Período: ${period}` : 'Período: todos'],
+        contextLines: [scopeLabel, period ? `Período: ${period}` : 'Período: todos', ...(pacienteFilters.tipoCirurgia ? [`Tipo de cirurgia: ${getSurgeryTypeLabel(pacienteFilters.tipoCirurgia)}`] : [])],
       });
     } catch (error) {
-      setPacientesError(getErrorMessage(error));
+      if (epoch === sessionEpoch()) setPacientesError(getErrorMessage(error));
     } finally {
       exportInFlight.current = false;
-      setPacienteExportLoading(null);
+      if (epoch === sessionEpoch()) setPacienteExportLoading(null);
     }
   };
 

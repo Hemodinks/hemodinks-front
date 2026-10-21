@@ -35,7 +35,7 @@ jobs:
     env:
       VITE_APP_ENV: ci
       VITE_APP_VERSION: ${{ github.sha }}
-      VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+      VITE_SENTRY_DSN: ''
       VITE_SENTRY_TRACES_SAMPLE_RATE: 0
 
     steps:
@@ -66,7 +66,11 @@ jobs:
           done
 
       - name: Install Playwright browsers
-        run: npx playwright install chromium
+        id: playwright-browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Audit frontend architecture
+        run: npm run audit:architecture
 
       - name: Run unit tests
         run: npm test
@@ -79,6 +83,10 @@ jobs:
 
       - name: Run E2E tests
         run: npm run test:e2e
+
+      - name: Run responsive and tenant smoke matrix
+        if: ${{ !cancelled() && steps.playwright-browsers.outcome == 'success' }}
+        run: npm run test:e2e:responsive
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
@@ -96,3 +104,16 @@ jobs:
             playwright-report
             test-results
           if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload responsive Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-responsive
+          path: |
+            playwright-report/responsive
+            playwright-report/responsive-results.json
+            test-results/responsive
+          if-no-files-found: ignore
+          retention-days: 7

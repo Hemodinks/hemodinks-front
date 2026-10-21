@@ -8,13 +8,15 @@ export default defineConfig({
     timeout: 8_000,
   },
   retries: process.env.CI ? 2 : 0,
+  forbidOnly: Boolean(process.env.CI),
   workers: process.env.CI ? 1 : undefined,
   use: {
     baseURL: 'http://127.0.0.1:5174',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   webServer: {
-    command: 'npm run dev -- --port 5174',
+    command: 'npm run dev -- --host 127.0.0.1 --port 5174',
     url: 'http://127.0.0.1:5174',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

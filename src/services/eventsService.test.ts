@@ -8,7 +8,9 @@ it('serializes optional filters with the authenticated token, including false st
   const config = spy.mock.calls[0][0];
   expect(config.url).toBe('/api/events/');
   expect(config.headers).toMatchObject({ Authorization: 'Bearer token' });
-  const params = new URLSearchParams(config.params);
+  const params = config.params;
+  expect(params).toBeInstanceOf(URLSearchParams);
+  if (!(params instanceof URLSearchParams)) throw new Error('Filtros da agenda inválidos');
   expect(params.get('fromDate')).toBe(new Date('2026-09-01T00:00:00Z').toLocaleDateString('en-CA'));
   expect(params.get('toDate')).toBe(new Date('2026-09-30T23:59:59Z').toLocaleDateString('en-CA'));
   expect(Object.fromEntries(params)).toMatchObject({ from: '2026-09-01T00:00:00Z', to: '2026-09-30T23:59:59Z', search: 'Reunião & auditoria', userId: '99', isCompleted: 'false' });

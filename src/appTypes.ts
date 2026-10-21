@@ -1,3 +1,5 @@
+import type { TipoCirurgia } from './shared/surgeryType';
+
 export type Theme = 'light' | 'dark';
 
 export type AppView = 'dashboard' | 'users' | 'profile' | 'patients' | 'billing' | 'billingHistory' | 'reports' | 'tutorials' | 'medicalGroups' | 'agenda' | 'settings' | 'clinics';
@@ -16,6 +18,7 @@ export type CbhpmFilters = {
 };
 
 export type PacienteFilters = {
+  tipoCirurgia?: TipoCirurgia | '';
   medicoUserIds: number[];
   convenioIds: number[];
   procedimento: string;

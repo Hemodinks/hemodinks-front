@@ -1,3 +1,4 @@
+import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 import { ArrowLeft, Info, RefreshCw, TriangleAlert } from 'lucide-react';
 import { AlertMessage, Button, DataPanel, IconButton } from '../../shared/components/ui';
 import { formatCurrency, formatPersonName } from '../../shared/utils/formatters';
@@ -98,6 +99,7 @@ export function BillingDetailView({
                   <div><span className="eyebrow">Resumo clínico-administrativo</span><h4>Dados usados no faturamento</h4></div>
                 </div>
                 <dl className="billing-detail-list">
+                  <div><dt>Tipo de cirurgia</dt><dd>{getSurgeryTypeLabel(record.paciente.tipoCirurgia)}</dd></div>
                   <div><dt>Data da cirurgia</dt><dd>{record.surgeryDateLabel}</dd></div>
                   <div><dt>Cirurgião</dt><dd>{record.doctorName}</dd></div>
                   <div><dt>Auxiliares</dt><dd>{record.assistantNames.length ? record.assistantNames.join(', ') : '-'}</dd></div>

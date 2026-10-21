@@ -1,3 +1,5 @@
+import type { TipoCirurgia } from '../shared/surgeryType';
+
 export type PacienteProcedimento = {
   id?: number;
   cbhpmCodigo?: string | null;
@@ -48,6 +50,7 @@ export type PacienteFaturamento = {
 
 export type Paciente = {
   id: number;
+  tipoCirurgia?: TipoCirurgia | null;
   userId: number;
   data?: string | null;
   dataAtendimento?: string | null;
@@ -94,6 +97,7 @@ export type Paciente = {
 };
 
 export type PacienteFormData = {
+  tipoCirurgia?: TipoCirurgia;
   data: string | null;
   dataAtendimento: string | null;
   nomePaciente: string;

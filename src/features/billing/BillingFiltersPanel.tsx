@@ -1,3 +1,4 @@
+import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
 import type { Dispatch, SetStateAction } from 'react';
 import { RefreshCw, Search } from 'lucide-react';
 import {
@@ -91,6 +92,7 @@ export function BillingFiltersPanel({
             <ComboboxField className="filter-field" label="Convênio" value={filters.convenio} options={convenioOptions} onValueChange={(convenio) => setFilters((current) => ({ ...current, convenio }))} disabled={!conveniosCount && !filters.convenio} placeholder={conveniosCount ? 'Todos os convênios' : 'Nenhum convênio cadastrado'} noOptionsLabel="Nenhum convênio encontrado." />
             <ComboboxField className="filter-field" label="Hospital" value={filters.hospital} options={hospitalOptions} onValueChange={(hospital) => setFilters((current) => ({ ...current, hospital }))} placeholder="Todos os hospitais" noOptionsLabel="Nenhum hospital encontrado." />
             <ComboboxField className="filter-field" label="Procedimento" value={filters.procedimento} options={procedureOptions} onValueChange={(procedimento) => setFilters((current) => ({ ...current, procedimento }))} placeholder="Principal ou associado" noOptionsLabel="Nenhum procedimento encontrado." />
+            <SurgeryTypeFilter className="filter-field" value={filters.tipoCirurgia} onChange={(tipoCirurgia) => setFilters((current) => ({ ...current, tipoCirurgia }))} />
             <SelectField className="filter-field" label="Status" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as BillingFilters['status'] }))}>
               {BILLING_STATUS_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </SelectField>
@@ -101,7 +103,7 @@ export function BillingFiltersPanel({
             <BillingMonthField id="billing-period-end" label="Competência final" value={filters.competenciaFinal} onChange={onEndMonthChange} />
             <DateInput id="billing-payment-start-date" className="filter-field" label="Data inicial do pagamento" value={filters.paymentStartDate} max={filters.paymentEndDate || undefined} onChange={(paymentStartDate) => setFilters((current) => ({ ...current, paymentStartDate }))} />
             <DateInput id="billing-payment-end-date" className="filter-field" label="Data final do pagamento" value={filters.paymentEndDate} min={filters.paymentStartDate || undefined} onChange={(paymentEndDate) => setFilters((current) => ({ ...current, paymentEndDate }))} />
-            <CheckboxField className="billing-checkbox" label="Mostrar apenas cirurgias com pendências de faturamento" checked={filters.onlyPendingItems} onCheckedChange={(onlyPendingItems) => setFilters((current) => ({ ...current, onlyPendingItems }))} />
+            <CheckboxField className="billing-checkbox" label="Mostrar apenas atendimentos com checklist incompleto" checked={filters.onlyPendingItems} onCheckedChange={(onlyPendingItems) => setFilters((current) => ({ ...current, onlyPendingItems }))} />
             <div className="billing-filter-actions">
               <Button className="billing-apply-filters" variant="primary" onClick={onApply} disabled={isFetching} data-tour="billing-apply"><Search size={16} />Consultar</Button>
               <Button className="billing-clear-filters" onClick={onClear}>Limpar filtros</Button>

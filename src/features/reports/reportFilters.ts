@@ -1,9 +1,11 @@
+import { getBillingMedicalParticipants } from '../billing/billingAnalytics';
 import { normalizeLookupText, parseDisplayDate } from '../../shared/utils/formatters';
 import type { BillingRecord } from '../billing/billingTypes';
 import type { MedicalGroup, Team } from '../../types';
 import type { ReportFilters, ReportRecord } from './reportTypes';
 
 export const emptyReportFilters: ReportFilters = {
+  tipoCirurgia: '',
   startDate: '',
   endDate: '',
   requestStartDate: '',
@@ -112,7 +114,8 @@ export function filterReportRecords(records: ReportRecord[], filters: ReportFilt
     if (requestEnd && (!requestDate || requestDate > requestEnd)) return false;
     if (paymentStart && (!paymentDate || paymentDate < paymentStart)) return false;
     if (paymentEnd && (!paymentDate || paymentDate > paymentEnd)) return false;
-    return selectedIncludes(filters.doctors, record.doctorName)
+    if (filters.tipoCirurgia && record.paciente.tipoCirurgia !== filters.tipoCirurgia) return false;
+    return selectedOverlaps(filters.doctors, getBillingMedicalParticipants(record).map((member) => member.name))
       && selectedOverlaps(filters.teams, record.teamNames)
       && selectedOverlaps(filters.medicalGroups, record.medicalGroupNames)
       && selectedIncludes(filters.hospitals, record.hospitalName)
@@ -131,7 +134,7 @@ export function getReportOptions(records: ReportRecord[], groups: MedicalGroup[]
     .sort((left, right) => left.localeCompare(right, 'pt-BR', { sensitivity: 'base' }))
     .map((value) => ({ value, label: value }));
   return {
-    doctors: unique(records.map((record) => record.doctorName)),
+    doctors: unique(records.flatMap((record) => getBillingMedicalParticipants(record).map((member) => member.name))),
     teams: unique(teams.filter((team) => team.ativa).map((team) => team.nome)),
     medicalGroups: unique(groups.filter((group) => group.ativo).map((group) => group.nome)),
     hospitals: unique(records.map((record) => record.hospitalName)),

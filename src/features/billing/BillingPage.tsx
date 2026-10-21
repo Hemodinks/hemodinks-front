@@ -1,3 +1,4 @@
+import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -41,6 +42,8 @@ import {
   summarizeBillingRecords,
 } from './billingUtils';
 import type { BillingPageProps } from './billingPageTypes';
+import { BillingPendingItemsModal, CHECKLIST_COUNT_DESCRIPTION } from './BillingPendingItemsModal';
+import { useBillingChecklistDialog } from './useBillingChecklistDialog';
 
 const BILLING_PAGE_SIZE = 10;
 
@@ -84,6 +87,7 @@ export function BillingPage({
       appliedFilters.procedimento,
       appliedFilters.competenciaInicio,
       appliedFilters.competenciaFinal,
+      appliedFilters.tipoCirurgia,
       isMedical ? session.user.id : 'all',
     ],
     queryFn: () => loadBillingPatients(session.token, {
@@ -93,6 +97,7 @@ export function BillingPage({
       procedimento: appliedFilters.procedimento.trim(),
       competenciaInicio: appliedFilters.competenciaInicio,
       competenciaFinal: appliedFilters.competenciaFinal,
+      tipoCirurgia: appliedFilters.tipoCirurgia,
     }),
     staleTime: 30 * 1000,
   });
@@ -148,6 +153,7 @@ export function BillingPage({
     billingScopeRecords.flatMap((record) => record.procedures.map((procedure) => procedure.procedimento)),
   );
   const summary = summarizeBillingRecords(billingRecords);
+  const checklist = useBillingChecklistDialog(billingRecords, JSON.stringify([session.token, session.user.clinicaId, appliedFilters]));
   const doctorBreakdown = groupBillingByDoctor(billingRecords).slice(0, 5);
   const convenioBreakdown = groupBillingByConvenio(billingRecords).slice(0, 5);
   const selectedRecord = detailRecordId == null
@@ -313,18 +319,19 @@ export function BillingPage({
           icon={<ClipboardList size={18} />}
         />
         <BillingSummaryCard
-          title="Pagamentos"
-          value={`${summary.paidCount} pagas`}
-          caption={`${summary.pendingCount} pendentes | ${summary.missingAmountCount} sem valor`}
+          title="Pagamentos pendentes"
+          value={String(summary.pendingCount)}
+          caption={`${summary.paidCount} pagos | ${summary.missingAmountCount} sem valor informado`}
           tone="paid"
           icon={<CheckCircle2 size={18} />}
         />
         <BillingSummaryCard
-          title="Pendências"
+          title="Atendimentos com checklist incompleto"
           value={String(summary.recordsWithPendingItems)}
-          caption={`${summary.authorizationCount} autorizações | ${summary.attachmentCount} com anexos`}
+          caption={`${billingRecords.reduce((sum, record) => sum + record.pendingChecklistItems, 0)} itens pendentes do checklist · ${summary.authorizationCount} autorizações | ${summary.attachmentCount} com anexos · Ver motivos`}
           tone="attention"
           icon={<Info size={18} />}
+          onClick={() => checklist.open()}
         />
       </section>
 
@@ -367,13 +374,13 @@ export function BillingPage({
                 <SortableTableHeader field="status" label="Status" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
                 <SortableTableHeader field="paymentDate" label="Data do pagamento" activeField={sortBy} direction={sortDirection} onSortChange={changeSort} />
                 <th>Resumo</th>
-                <th>Visualizar</th>
+                <th>Visualizar</th><th>Tipo de cirurgia</th>
               </tr>
             </thead>
             <tbody>
               {billingQuery.isPending ? (
                 <tr>
-                  <td colSpan={6} className="empty-row">Carregando faturamento médico...</td>
+                  <td colSpan={7} className="empty-row">Carregando faturamento médico...</td>
                 </tr>
               ) : visibleBillingRecords.length ? (
                 visibleBillingRecords.map((record) => (
@@ -382,7 +389,8 @@ export function BillingPage({
                       <div className="billing-patient-cell">
                         <div>
                           <strong>{record.patientName}</strong>
-                          <span>{record.filesCount} anexo(s) | {record.pendingChecklistItems} pendência(s)</span>
+                          <span>{record.filesCount} anexo(s)</span>
+                          <button type="button" className="billing-checklist-count" title={CHECKLIST_COUNT_DESCRIPTION} aria-label={`Itens pendentes do checklist de ${record.patientName}: ${record.pendingChecklistItems}`} onClick={() => checklist.open(record.id)}>{record.pendingChecklistItems} itens pendentes do checklist · Ver motivos</button>
                         </div>
                       </div>
                     </td>
@@ -416,11 +424,12 @@ export function BillingPage({
                         <Eye size={18} />
                       </IconButton>
                     </td>
+                    <td data-label="Tipo de cirurgia">{getSurgeryTypeLabel(record.paciente.tipoCirurgia)}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
+                  <td colSpan={7} className="empty-row">Nenhuma cirurgia encontrada para os filtros informados.</td>
                 </tr>
               )}
             </tbody>
@@ -450,6 +459,7 @@ export function BillingPage({
         </div>
       </DataPanel>
 
+      {checklist.isOpen && <BillingPendingItemsModal records={checklist.records} individual={checklist.individual} onClose={checklist.close} />}
       {summaryRecord && (
         <BillingSummaryModal
           record={summaryRecord}

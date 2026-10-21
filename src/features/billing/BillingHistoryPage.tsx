@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
+import { getSurgeryTypeLabel, type TipoCirurgia } from '../../shared/surgeryType';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { sessionEpoch } from '../../services/sessionEpoch';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, CalendarClock, ChevronDown, Download, FileText, History, ReceiptText, Trash2, TriangleAlert, Upload, Wallet } from 'lucide-react';
 import { AlertMessage, Button, DataPanel, IconButton, ToastMessage } from '../../shared/components/ui';
@@ -23,6 +26,8 @@ function formatFileSize(bytes: number) {
 }
 
 export function BillingHistoryPage({ session, isMedical, canManageFiles }: BillingHistoryPageProps) {
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [tableSorts, setTableSorts] = useState<Record<string, { sortBy: BillingDateSortField; sortDirection: 'asc' | 'desc' }>>({});
   const dateHeader = (table: string, field: BillingDateSortField, label: string) => (
     <SortableTableHeader field={field} label={label} activeField={tableSorts[table]?.sortBy ?? ''}
@@ -36,6 +41,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
   const sortedRecords = (items: BillingRecord[], table: string) => tableSorts[table]
     ? sortBillingRecords(items, tableSorts[table])
     : items;
+  const [tipoCirurgia, setTipoCirurgia] = useState<TipoCirurgia | ''>('');
   const [openYears, setOpenYears] = useState<Set<number>>(new Set());
   const [openMonth, setOpenMonth] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'history' | 'charts'>('history');
@@ -45,8 +51,9 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
   const [busyFileKey, setBusyFileKey] = useState<string | null>(null);
   const [fileMessage, setFileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const billingQuery = useQuery({
-    queryKey: ['billingRecords', session.token, '', '', '', '', '', '', isMedical ? session.user.id : 'all'],
+    queryKey: ['billingRecords', session.token, '', '', '', '', '', '', tipoCirurgia, isMedical ? session.user.id : 'all'],
     queryFn: () => loadBillingPatients(session.token, {
+      tipoCirurgia,
       search: '',
       medico: '',
       convenio: '',
@@ -63,13 +70,13 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
   });
   const records = useMemo(() => filterBillingRecords(
     buildBillingRecords(billingQuery.data ?? []),
-    createEmptyBillingFilters('', ''),
+    { ...createEmptyBillingFilters('', ''), tipoCirurgia },
     {
       restrictToMedicalUser: isMedical,
       currentMedicalUserId: session.user.id,
       currentMedicalUserName: session.user.nome,
     },
-  ), [billingQuery.data, isMedical, session.user.id, session.user.nome]);
+  ), [billingQuery.data, isMedical, session.user.id, session.user.nome, tipoCirurgia]);
   const history = useMemo(() => buildBillingHistory(records), [records]);
   const historyFiles = Array.isArray(filesQuery.data) ? filesQuery.data : [];
   const summaryRecord = summaryRecordId == null
@@ -79,8 +86,12 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
   useEffect(() => {
     const newestYear = history.years[0]?.year;
     if (newestYear == null) return;
-    setOpenYears((current) => current.size ? current : new Set([newestYear]));
-    setSelectedYear((current) => current ?? newestYear);
+    const availableYears = new Set(history.years.map((year) => year.year));
+    setOpenYears((current) => {
+      const remainingYears = new Set([...current].filter((year) => availableYears.has(year)));
+      return remainingYears.size ? remainingYears : new Set([newestYear]);
+    });
+    setSelectedYear((current) => current != null && availableYears.has(current) ? current : newestYear);
   }, [history.years]);
 
   const toggleYear = (year: number) => {
@@ -117,15 +128,18 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
   };
 
   const handleDownloadFile = async (fileId: number, fileName: string) => {
+    const epoch = sessionEpoch();
+    const isCurrent = () => mounted.current && epoch === sessionEpoch();
     const key = `download-${fileId}`;
     setBusyFileKey(key);
     setFileMessage(null);
     try {
-      downloadBlob(await downloadBillingHistoryFile(session.token, fileId), fileName);
+      const blob = await downloadBillingHistoryFile(session.token, fileId);
+      if (isCurrent()) downloadBlob(blob, fileName);
     } catch (error) {
-      setFileMessage({ type: 'error', text: error instanceof Error ? error.message : 'Não foi possível baixar o arquivo.' });
+      if (isCurrent()) setFileMessage({ type: 'error', text: error instanceof Error ? error.message : 'Não foi possível baixar o arquivo.' });
     } finally {
-      setBusyFileKey(null);
+      if (mounted.current) setBusyFileKey(null);
     }
   };
 
@@ -165,6 +179,8 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
           </button>
         </div>
       </DataPanel>
+
+      <DataPanel><SurgeryTypeFilter value={tipoCirurgia} onChange={setTipoCirurgia} /></DataPanel>
 
       {billingQuery.error && (
         <AlertMessage type="error">
@@ -211,7 +227,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
               <tbody>
                 {sortedRecords(history.recordsWithoutAttendanceDate, 'invalid').map((record) => (
                   <tr key={record.id}>
-                    <td data-label="Paciente"><strong>{record.patientName}</strong><span>{record.convenioName}</span></td>
+                    <td data-label="Paciente"><strong>{record.patientName}</strong><span>{getSurgeryTypeLabel(record.paciente.tipoCirurgia)}</span><span>{record.convenioName}</span></td>
                     <td data-label="Cirurgião">{record.doctorName}</td>
                     <td data-label="Data da solicitação">{toDisplayDate(record.paciente.data) || '-'}</td>
                     <td data-label="Cirurgias Consolidadas"><span className="status-pill warning">Não informada</span></td>
@@ -334,7 +350,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
                                     <tbody>
                                       {sortedRecords(monthGroup.records, `${yearGroup.year}-${monthGroup.month}`).map((record) => (
                                         <tr key={record.id}>
-                                          <td data-label="Paciente"><strong>{record.patientName}</strong><span>{record.convenioName}</span></td>
+                                          <td data-label="Paciente"><strong>{record.patientName}</strong><span>{getSurgeryTypeLabel(record.paciente.tipoCirurgia)}</span><span>{record.convenioName}</span></td>
                                           <td data-label="Cirurgião">{record.doctorName}</td>
                                           <td data-label="Cirurgias Consolidadas">{record.surgeryDateLabel}</td>
                                           <td data-label="Faturado">{formatCurrency(record.paymentAmount)}</td>

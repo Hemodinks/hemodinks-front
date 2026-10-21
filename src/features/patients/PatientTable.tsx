@@ -1,3 +1,4 @@
+import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 import { Eye, FileText, Info, MessageSquareText, Pencil, Trash2 } from 'lucide-react';
 import { IconButton } from '../../shared/components/ui';
 import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
@@ -19,10 +20,10 @@ export function PatientTable(props: PatientTableProps) {
       <thead><tr>
         {sortHeader('nome', 'Paciente')}<th>Ações</th>{sortHeader('data', 'Data da solicitação')}
         {sortHeader('dataAtendimento', 'Cirurgias Consolidadas')}<th>Info</th>{sortHeader('medico', 'Cirurgião')}
-        {sortHeader('status', 'Status Pago')}{sortHeader('arquivos', 'Arquivos')}<th>Obs.</th>
+        {sortHeader('status', 'Status Pago')}{sortHeader('arquivos', 'Arquivos')}<th>Obs.</th><th>Tipo de cirurgia</th>
       </tr></thead>
       <tbody>{props.pacientesLoading
-        ? <tr><td colSpan={9} className="empty-row"><span role="status">Carregando pacientes...</span></td></tr>
+        ? <tr><td colSpan={10} className="empty-row"><span role="status">Carregando pacientes...</span></td></tr>
         : props.pacientes.length ? props.pacientes.map((paciente) => {
           const unreadObservations = paciente.observacoesNaoLidasCount ?? 0;
           const hasUnreadObservations = unreadObservations > 0;
@@ -51,8 +52,9 @@ export function PatientTable(props: PatientTableProps) {
                 <MessageSquareText size={16} /><span className="patient-observation-count">{unreadObservations}</span></button>
               : <span className={`attachment-count patient-observation-count${hasUnreadObservations ? ' has-unread-observations' : ''}`}>
                 <MessageSquareText size={15} />{unreadObservations}</span>}</td>
+            <td data-label="Tipo de cirurgia">{getSurgeryTypeLabel(paciente.tipoCirurgia)}</td>
           </tr>;
-        }) : <tr><td colSpan={9} className="empty-row"><span role="status">Nenhum paciente encontrado.</span></td></tr>}
+        }) : <tr><td colSpan={10} className="empty-row"><span role="status">Nenhum paciente encontrado.</span></td></tr>}
       </tbody>
     </table>
   </div>;

@@ -4,15 +4,21 @@ import type { AppView } from '../appTypes';
 import { useTutorials } from '../features/tutorials/TutorialProvider';
 import { CONTEXTUAL_FLOWS } from './contextualFlows';
 import './styles/contextual-flow-drawer.css';
+import { ContextualToolTrigger } from './ContextualToolTrigger';
 
 type ContextualFlowDrawerProps = {
   activeView: AppView;
+  embedded?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-export function ContextualFlowDrawer({ activeView }: ContextualFlowDrawerProps) {
+export function ContextualFlowDrawer({ activeView, embedded = false, open, onOpenChange }: ContextualFlowDrawerProps) {
   const panelId = useId();
   const viewFlows = CONTEXTUAL_FLOWS[activeView];
-  const [isOpen, setIsOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const isOpen = open ?? localOpen;
+  const setIsOpen = (value: boolean) => { setLocalOpen(value); onOpenChange?.(value); };
   const [openFlowId, setOpenFlowId] = useState<string | null>(viewFlows.flows[0]?.id ?? null);
   const { activeTutorialId, completedTutorials, getTutorialsForView, startTutorial } = useTutorials();
   const tutorials = getTutorialsForView(activeView);
@@ -21,20 +27,13 @@ export function ContextualFlowDrawer({ activeView }: ContextualFlowDrawerProps) 
     setOpenFlowId(viewFlows.flows[0]?.id ?? null);
   }, [activeView, viewFlows.flows]);
 
+  const Container = embedded ? 'div' : 'aside';
   return (
-    <aside className={`contextual-flow-drawer view-${activeView} ${isOpen ? 'is-open' : ''}`} aria-label="Ajuda contextual">
-      <button
-        type="button"
-        className="contextual-flow-trigger"
-        aria-expanded={isOpen}
-        aria-controls={panelId}
+    <Container className={`contextual-flow-drawer view-${activeView} ${embedded ? 'is-embedded' : ''} ${isOpen ? 'is-open' : ''}`} aria-label={embedded ? undefined : 'Ajuda contextual'}>
+      {!embedded && <ContextualToolTrigger expanded={isOpen} panelId={panelId}
         aria-label={isOpen ? 'Fechar ajuda da tela' : `Abrir ajuda de ${viewFlows.title}`}
-        onClick={() => setIsOpen((current) => !current)}
-        data-tour="help-menu"
-      >
-        {isOpen ? <X size={21} /> : <CircleHelp size={21} />}
-        <span>Como usar</span>
-      </button>
+        onClick={() => setIsOpen(!isOpen)} data-tour="help-menu"
+        icon={isOpen ? <X size={21} /> : <CircleHelp size={21} />}>Como usar</ContextualToolTrigger>}
 
       <div id={panelId} className="contextual-flow-panel" hidden={!isOpen}>
         <header className="contextual-flow-heading">
@@ -99,6 +98,6 @@ export function ContextualFlowDrawer({ activeView }: ContextualFlowDrawerProps) 
           })}
         </div>
       </div>
-    </aside>
+    </Container>
   );
 }

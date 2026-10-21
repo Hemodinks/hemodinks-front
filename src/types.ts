@@ -1,3 +1,7 @@
+import type { TipoCirurgia } from './shared/surgeryType';
+
+export type { TipoCirurgia } from './shared/surgeryType';
+
 export type User = {
   id: number;
   nome: string;
@@ -78,6 +82,7 @@ export type ListQuery = {
 };
 
 export type PacienteListQuery = ListQuery & {
+  tipoCirurgia?: TipoCirurgia | '';
   medico?: string;
   convenio?: string;
   medicoUserIds?: string;

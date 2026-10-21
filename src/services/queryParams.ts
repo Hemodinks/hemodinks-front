@@ -19,6 +19,10 @@ export function buildListQueryParams(query?: ListQuery | PacienteListQuery | Cbh
     params.set('profileId', String(query.profileId));
   }
 
+  if (query && 'tipoCirurgia' in query && query.tipoCirurgia) {
+    params.set('tipoCirurgia', query.tipoCirurgia);
+  }
+
   if (query && 'medicoUserIds' in query && query.medicoUserIds?.trim()) {
     params.set('medicoUserIds', query.medicoUserIds.trim());
   }

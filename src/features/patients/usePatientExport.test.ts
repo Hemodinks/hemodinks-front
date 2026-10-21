@@ -5,12 +5,41 @@ import { basePaciente, mockSession, paged } from '../../test/appTestData';
 import { emptyPacienteFilters } from './patientUtils';
 import { exportPatientList } from './export/patientListExporter';
 import { usePatientExport } from './usePatientExport';
+import { advanceSessionEpoch } from '../../services/sessionEpoch';
 
 vi.mock('../../services', () => ({ getPacientes: vi.fn() }));
 vi.mock('./export/patientListExporter', () => ({ exportPatientList: vi.fn(async () => {}) }));
 
 describe('ordenacao da exportacao de pacientes', () => {
   beforeEach(() => { vi.clearAllMocks(); });
+  it.each(['all', 'doctor', 'visible'] as const)('preserva o tipo de cirurgia no escopo %s', async (scope) => {
+    const urgent = { ...basePaciente, tipoCirurgia: 'Urgencia' as const };
+    vi.mocked(getPacientes).mockReset().mockResolvedValue(paged([urgent]));
+    const { result } = renderHook(() => usePatientExport({
+      session: mockSession(), companyName: 'Clinica', paginatedPacientes: [urgent],
+      pacienteFilters: { ...emptyPacienteFilters, medicoUserIds: [1], tipoCirurgia: 'Urgencia' },
+      sortBy: '', sortDirection: 'desc', setPacientesError: vi.fn(),
+    }));
+    act(() => result.current.setPacienteExportScope(scope));
+    await act(async () => result.current.handleExportPacientes('xlsx'));
+    if (scope !== 'visible') expect(getPacientes).toHaveBeenCalledWith('jwt-token', expect.objectContaining({ tipoCirurgia: 'Urgencia' }));
+    expect(exportPatientList).toHaveBeenCalledWith(expect.objectContaining({ items: [urgent], contextLines: expect.arrayContaining(['Tipo de cirurgia: Urgência']) }));
+  });
+  it('interrompe paginação e exportação quando muda a sessão durante a primeira página', async () => {
+    let complete!: (value: ReturnType<typeof paged<typeof basePaciente>>) => void;
+    vi.mocked(getPacientes).mockReset().mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+    const { result } = renderHook(() => usePatientExport({
+      session: mockSession(), companyName: 'A', paginatedPacientes: [], pacienteFilters: emptyPacienteFilters,
+      sortBy: '', sortDirection: 'desc', setPacientesError: vi.fn(),
+    }));
+    act(() => result.current.setPacienteExportScope('all'));
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.handleExportPacientes('xlsx'); });
+    advanceSessionEpoch();
+    await act(async () => { complete({ ...paged([basePaciente]), totalPages: 2 }); await pending; });
+    expect(getPacientes).toHaveBeenCalledTimes(1);
+    expect(exportPatientList).not.toHaveBeenCalled();
+  });
   it.each(['asc', 'desc'] as const)('preserva a ordem %s da API entre todas as paginas exportadas', async (sortDirection) => {
     const older = { ...basePaciente, id: 1, dataAtendimento: '2026-12-31', dataAtualizacao: '2026-09-09' };
     const newer = { ...basePaciente, id: 2, dataAtendimento: '2030-12-01', dataAtualizacao: '2026-01-01' };

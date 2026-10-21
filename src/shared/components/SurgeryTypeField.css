@@ -1,0 +1,7 @@
+.surgery-type-field { min-width: 0; margin: 0; padding: 0; border: 0; }
+.surgery-type-field legend { margin-bottom: 7px; padding: 0; color: var(--muted); font-size: .84rem; font-weight: 600; }
+.surgery-type-options { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.surgery-type-options label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
+.surgery-type-options input[type="radio"] { width: 18px; height: 18px; min-height: 0; margin: 0; padding: 0; accent-color: var(--teal); }
+.surgery-type-options input:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.surgery-type-field:disabled label { cursor: default; }

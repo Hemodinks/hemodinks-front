@@ -226,8 +226,11 @@ describe('billingUtils', () => {
   });
 
   it('filtra registros para medico atual, periodo, glosa e pendencias', () => {
+    // Competência boundaries use the local calendar, so keep the fixture in June
+    // in every runner timezone, including positive UTC offsets.
+    const localJuneRecord = { ...basePaciente, dataCadastro: new Date(2026, 5, 30, 15, 25, 50).toISOString() };
     const records = buildBillingRecords([
-      basePaciente,
+      localJuneRecord,
       {
         ...basePaciente,
         id: 3,
@@ -256,5 +259,36 @@ describe('billingUtils', () => {
 
     expect(filtered).toHaveLength(1);
     expect(filtered[0].id).toBe(1);
+  });
+});
+
+
+describe('issue174: financeiro sem principal', () => {
+  it('inclui auxiliar sem principal uma vez e preserva totais', () => {
+    const records = buildBillingRecords([{ ...basePaciente, medicoUserId: null, medico: '' }]);
+    const result = filterBillingRecords(records, { ...createEmptyBillingFilters(), medico: 'Andre' },
+      { restrictToMedicalUser: true, currentMedicalUserId: 8 });
+    expect(result).toHaveLength(1);
+    expect(summarizeBillingRecords(result).totalGrossAmount).toBe(records[0].paymentAmount);
+  });
+  it('nao amplia escopo para auxiliar quando existe principal diferente', () => {
+    expect(filterBillingRecords(buildBillingRecords([basePaciente]), createEmptyBillingFilters(),
+      { restrictToMedicalUser: true, currentMedicalUserId: 8 })).toHaveLength(0);
+  });
+  it('nao duplica cirurgia com principal e auxiliar iguais', () => {
+    const records = buildBillingRecords([{ ...basePaciente, medicoAuxiliar1UserId: 7, medicoAuxiliar1: basePaciente.medico }]);
+    expect(summarizeBillingRecords(records).totalRecords).toBe(1);
+  });
+});
+
+
+describe('issue174: principal legado sem identificador', () => {
+  it('preserva busca pelo nome legado e inclui auxiliar identificado sem duplicar', () => {
+    const records = buildBillingRecords([{ ...basePaciente, medicoUserId: null, medico: 'Dr. Antigo' }]);
+    expect(filterBillingRecords(records, { ...createEmptyBillingFilters(), medico: 'Antigo' })).toHaveLength(1);
+    expect(filterBillingRecords(records, { ...createEmptyBillingFilters(), medico: 'Andre' },
+      { restrictToMedicalUser: true, currentMedicalUserId: 8 })).toHaveLength(1);
+    expect(filterBillingRecords(records, createEmptyBillingFilters(),
+      { restrictToMedicalUser: true, currentMedicalUserId: 9, currentMedicalUserName: 'Dr. Andre Lima' })).toHaveLength(0);
   });
 });
