@@ -1,3 +1,4 @@
+import { registerCalculatorCases } from './calculator-cases';
 import { registerAgendaEmailCases } from './agenda-email-cases';
 import { registerSurgeryTypeCases } from './surgery-type-cases';
 import { registerTenantIsolationCases } from './tenant-isolation-cases';
@@ -701,6 +702,7 @@ registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session })
 registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
 registerSurgeryTypeCases({ mockApi, loginViaUi });
+registerCalculatorCases({ mockApi, loginViaUi });
 registerPatientListTests({ setup: mockApi, login: loginViaUi });
 registerResponsiveSmokeCases({ setup: mockApi, login: loginViaUi });
 registerAccessibilityAuditCases({ setup: mockApi, login: loginViaUi });
