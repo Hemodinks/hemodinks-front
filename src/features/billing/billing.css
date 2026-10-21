@@ -1796,18 +1796,18 @@ button.billing-summary-card:focus-visible,
     transform: translateX(-50%);
   }
 
-  .billing-history-bar-column:nth-last-child(-n + 4) .billing-history-chart-tooltip {
+  .billing-history-bar-column:nth-last-child(-n + 5) .billing-history-chart-tooltip {
     right: 0;
     left: auto;
     transform: translateY(4px);
   }
 
-  .billing-history-bar-column:nth-last-child(-n + 4):hover .billing-history-chart-tooltip,
-  .billing-history-bar-column:nth-last-child(-n + 4):focus .billing-history-chart-tooltip {
+  .billing-history-bar-column:nth-last-child(-n + 5):hover .billing-history-chart-tooltip,
+  .billing-history-bar-column:nth-last-child(-n + 5):focus .billing-history-chart-tooltip {
     transform: translateY(0);
   }
 
-  .billing-history-bar-column:nth-last-child(-n + 4) .billing-history-chart-tooltip::after {
+  .billing-history-bar-column:nth-last-child(-n + 5) .billing-history-chart-tooltip::after {
     right: 14px;
     left: auto;
     transform: none;
