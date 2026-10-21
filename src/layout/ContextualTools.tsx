@@ -31,7 +31,7 @@ export function ContextualTools({ activeView }: { activeView: AppView }) {
       if (event.key === 'Escape' && active) { event.preventDefault(); event.stopPropagation(); close(); }
     }}>
     <div className="contextual-tool-triggers">
-      <ContextualToolTrigger ref={helpTrigger} expanded={active === 'help'} panelId={helpId}
+      <ContextualToolTrigger ref={helpTrigger} expanded={active === 'help'} panelId={helpId} className="contextual-tool-help"
         aria-label={active === 'help' ? 'Fechar ajuda da tela' : `Abrir ajuda de ${CONTEXTUAL_FLOWS[activeView].title}`}
         data-tour="help-menu" icon={active === 'help' ? <X size={21} /> : <CircleHelp size={21} />}
         onClick={() => setOpen(current => current === 'help' ? null : 'help')}>Como usar</ContextualToolTrigger>

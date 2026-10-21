@@ -4,6 +4,20 @@ import { describe, expect, it, vi } from 'vitest';
 import { Calculator } from './Calculator';
 
 describe('painel da calculadora', () => {
+  it('calcula porcentagem por botão e teclado, sem repetir a conversão', async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+    await user.click(screen.getByRole('button', { name: 'Limpar' }));
+    await user.keyboard('200+10');
+    await user.click(screen.getByRole('button', { name: 'Porcentagem' }));
+    await user.keyboard('%{Enter}');
+    expect(screen.getByLabelText('Resultado da calculadora')).toHaveTextContent(/^220$/);
+    await user.keyboard('{Delete}10%');
+    expect(screen.getByLabelText('Resultado da calculadora')).toHaveTextContent(/^0,1$/);
+    await user.keyboard('{Delete}200/10%{Enter}');
+    expect(screen.getByLabelText('Resultado da calculadora')).toHaveTextContent(/^2000$/);
+  });
+
   it('opera por botões e anuncia números com vírgula', async () => {
     const user = userEvent.setup();
     render(<Calculator />);

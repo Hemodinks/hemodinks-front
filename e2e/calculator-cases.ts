@@ -19,7 +19,98 @@ async function noOverlap(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 }
 export function registerCalculatorCases(helpers: Helpers) {
+  test('issue178: destaque de ajuda respeita movimento reduzido e mantém os acionadores separados', async ({ page }) => {
+    const errors = await safeSetup(page, helpers);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await helpers.loginViaUi(page, '/pacientes');
+    const help = page.getByRole('button', { name: 'Abrir ajuda de Pacientes - Cirurgias' });
+    const calculator = page.getByRole('button', { name: 'Abrir calculadora', exact: true });
+    await expect(help).toHaveCSS('animation-name', 'contextual-tool-help-invite');
+    await expect(calculator).toHaveCSS('animation-name', 'none');
+    await help.evaluate(element => {
+      const animation = element.getAnimations()[0];
+      animation.pause(); animation.currentTime = 2368;
+    });
+    const helpBox = (await help.boundingBox())!;
+    const calculatorBox = (await calculator.boundingBox())!;
+    const rail = (await page.locator('.contextual-tools').boundingBox())!;
+    expect(helpBox.x).toBeGreaterThanOrEqual(rail.x);
+    expect(helpBox.x + helpBox.width).toBeLessThanOrEqual(rail.x + rail.width);
+    expect(calculatorBox.y - helpBox.y - helpBox.height).toBeGreaterThan(12);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(help).toHaveCSS('animation-name', 'none');
+    await help.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { name: 'Pacientes - Cirurgias' })).toBeVisible();
+    await noOverlap(page);
+    await page.keyboard.press('Escape');
+    await expect(help).toBeFocused();
+    expect(errors).toEqual([]);
+  });
+
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    test(`issue178: porcentagem, contraste e teclas acessíveis em ${width}px`, async ({ page }, info) => {
+      const errors = await safeSetup(page, helpers);
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await helpers.loginViaUi(page, '/pacientes');
+      await page.getByRole('button', { name: 'Abrir calculadora', exact: true }).click();
+      const panel = page.getByRole('region', { name: 'Calculadora', exact: true });
+      await noOverlap(page);
+      await panel.getByRole('button', { name: 'Limpar', exact: true }).click();
+      for (const [input, expected] of [['10%', '0,1'], ['200+10%=', '220'], ['200-10%=', '180'], ['200*10%=', '20'], ['200/10%=', '2000']]) {
+        await page.keyboard.press('Delete');
+        await page.keyboard.type(input);
+        await expect(page.getByLabel('Resultado da calculadora')).toHaveText(expected);
+      }
+      await page.keyboard.press('Delete'); await page.keyboard.type('200+10');
+      await panel.getByRole('button', { name: 'Porcentagem', exact: true }).click();
+      await panel.getByRole('button', { name: 'Igual', exact: true }).click();
+      await expect(page.getByLabel('Resultado da calculadora')).toHaveText('220');
+      await page.keyboard.press('Delete'); await page.keyboard.type('999999999999');
+      const keySizes = await panel.locator('.calculator-keys button').evaluateAll(keys => keys.map(key => {
+        const rect = key.getBoundingClientRect(); return { width: rect.width, height: rect.height };
+      }));
+      expect(keySizes).toHaveLength(20);
+      for (const size of keySizes) { expect(size.width).toBeGreaterThanOrEqual(44); expect(size.height).toBeGreaterThanOrEqual(44); }
+      for (const theme of ['light', 'dark']) {
+        await page.evaluate(value => document.documentElement.dataset.theme = value, theme);
+        const backgrounds = await panel.locator('.calculator-key-number, .calculator-key-operator, .calculator-key-utility, .calculator-key-equals')
+          .evaluateAll(keys => Object.fromEntries(keys.map(key => [key.className, getComputedStyle(key).backgroundColor])));
+        expect(new Set(Object.values(backgrounds)).size).toBe(4);
+        expect((await new AxeBuilder({ page }).include('.contextual-tools').analyze()).violations).toEqual([]);
+        await page.screenshot({ path: info.outputPath(`calculator-${width}-${theme}.png`), fullPage: true });
+      }
+      expect(await page.getByLabel('Resultado da calculadora').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+      await page.getByRole('button', { name: 'Fechar painel da calculadora', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Abrir calculadora', exact: true })).toBeFocused();
+      expect(errors).toEqual([]);
+    });
+  }
+
+  test('issue178: reflow equivalente a zoom de 200% mantém painel, teclado e formulário utilizáveis', async ({ page }, info) => {
+    const errors = await safeSetup(page, helpers);
+    // 1280x900 at 200% zoom exposes a 640x450 CSS viewport with doubled pixels.
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 640, height: 450, deviceScaleFactor: 2, mobile: false });
+    await helpers.loginViaUi(page, '/pacientes');
+    await page.getByRole('button', { name: 'Abrir calculadora', exact: true }).click();
+    await noOverlap(page);
+    const panel = page.getByRole('region', { name: 'Calculadora', exact: true });
+    await panel.getByRole('button', { name: 'Limpar' }).click();
+    await page.keyboard.type('200+10%=');
+    await expect(page.getByLabel('Resultado da calculadora')).toHaveText('220');
+    await panel.getByRole('button', { name: 'Igual' }).scrollIntoViewIfNeeded();
+    await expect(panel.getByRole('button', { name: 'Igual' })).toBeInViewport();
+    await page.screenshot({ path: info.outputPath('calculator-reflow-200.png'), fullPage: true });
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('button', { name: 'Abrir calculadora', exact: true })).toBeFocused();
+    expect(errors).toEqual([]);
+    await cdp.detach();
+  });
+
   test('issue175: ferramentas iguais, expansão sem sobreposição e calculadora acessível', async ({ page }, info) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     const errors = await safeSetup(page, helpers);
     await helpers.loginViaUi(page, '/pacientes');
     const help = page.getByRole('button', { name: 'Abrir ajuda de Pacientes - Cirurgias' });
@@ -29,7 +120,7 @@ export function registerCalculatorCases(helpers: Helpers) {
     expect(calculatorBox.width).toBeCloseTo(helpBox.width, 0);
     expect(calculatorBox.height).toBeCloseTo(helpBox.height, 0);
     expect(calculatorBox.x).toBeCloseTo(helpBox.x, 0);
-    expect(calculatorBox.y - (helpBox.y + helpBox.height)).toBeCloseTo(8, 0);
+    expect(calculatorBox.y - (helpBox.y + helpBox.height)).toBeCloseTo(16, 0);
     await calculator.click();
     await noOverlap(page);
     const result = page.getByLabel('Resultado da calculadora');
