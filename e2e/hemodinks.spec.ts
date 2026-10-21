@@ -1015,7 +1015,10 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   await juneButton.click();
   await expect(juneButton).toHaveAttribute('aria-expanded', 'true');
   await expect(page.getByRole('heading', { name: 'Total faturado em Junho' })).toBeVisible();
-  await expect(page.getByRole('cell', { name: 'Paciente Hemodinks Particular', exact: true })).toBeVisible();
+  const patientCell = page.getByRole('cell').filter({ has: page.getByText('Paciente Hemodinks', { exact: true }) });
+  await expect(patientCell).toBeVisible();
+  await expect(patientCell.getByText('Eletiva', { exact: true })).toBeVisible();
+  await expect(patientCell.getByText('Particular', { exact: true })).toBeVisible();
 
   const mayButton = page.getByRole('button', { name: /^Maio 0 atendimento/i });
   await mayButton.click();
@@ -1036,6 +1039,7 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   const secondQuarterSlice = page.getByLabel(/^2º trimestre de 2026, Abril a Junho/i);
   await expect(secondQuarterSlice).toHaveAttribute('stroke', '#2563eb');
   const pieSvg = page.getByRole('group', { name: /Participação dos trimestres no faturamento de 2026/i });
+  await pieSvg.scrollIntoViewIfNeeded();
   const pieBox = await pieSvg.boundingBox();
   expect(pieBox).not.toBeNull();
   await page.mouse.move(pieBox!.x + pieBox!.width / 2, pieBox!.y + pieBox!.height * (32 / 240));
@@ -1063,6 +1067,9 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
 
   await page.setViewportSize({ width: 360, height: 860 });
   await expectNoGlobalHorizontalOverflow(page);
+  const augustBar = page.getByLabel(/Agosto de 2026, 3º trimestre/i);
+  await augustBar.focus();
+  await expect(augustBar.getByRole('tooltip')).toBeVisible();
   const mobileChartDimensions = await barChart.evaluate((element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }));
   expect(mobileChartDimensions.scrollWidth).toBeLessThanOrEqual(mobileChartDimensions.clientWidth);
 });
