@@ -99,8 +99,8 @@ export function useUserCrudActions(options: UseUserCrudActionsOptions) {
           perfilNome: formatProfileName(savedUser.perfilId || DEFAULT_PROFILE_ID, savedUser.perfilNome) } });
       }
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token), refetchType: 'none' }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(session.token) }),
       ]);
       userForm.resetUserForm(); userList.setCurrentPage(1); setModuleMode('list');
@@ -118,8 +118,8 @@ export function useUserCrudActions(options: UseUserCrudActionsOptions) {
       await deleteMutation.mutateAsync({ id: user.id, token: session.token });
       if (user.id === session.user.id) { onDeleteCurrentUser(); return; }
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token), refetchType: 'none' }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(session.token) }),
       ]);
       userList.setSuccessMessage('Usuário excluído.');

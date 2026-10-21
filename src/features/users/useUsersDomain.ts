@@ -139,7 +139,7 @@ export function useUsersDomain({
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token), refetchType: 'none' });
     }
 
     await usersQuery.refetch();
