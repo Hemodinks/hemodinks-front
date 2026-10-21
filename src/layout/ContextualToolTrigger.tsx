@@ -7,8 +7,8 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   ref?: Ref<HTMLButtonElement>;
 };
 
-export function ContextualToolTrigger({ expanded, panelId, icon, children, ...props }: Props) {
-  return <button {...props} type="button" className="contextual-flow-trigger"
+export function ContextualToolTrigger({ expanded, panelId, icon, children, className = '', ...props }: Props) {
+  return <button {...props} type="button" className={`contextual-flow-trigger ${className}`.trim()}
     aria-expanded={expanded} aria-controls={panelId}>
     {icon}<span>{children}</span>
   </button>;

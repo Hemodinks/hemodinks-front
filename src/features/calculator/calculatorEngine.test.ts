@@ -7,6 +7,37 @@ function calculate(keys: string[]) {
 
 describe('calculadora independente', () => {
   it.each([
+    ['10%', '0.1'], ['200+10%=', '220'], ['200-10%=', '180'],
+    ['200*10%=', '20'], ['200/10%=', '2000'],
+    ['200+10%%=', '220'], ['10%%', '0.1'], ['200+10%==', '240'],
+    ['200*10%==', '2'], ['200+10%5=', '205'],
+    ['10%+2=', '2.1'], ['200+0%=', '200'], ['0+10%=', '0'],
+  ])('calcula porcentagem em %s como %s', (input, expected) => {
+    expect(calculate([...input])).toMatchObject({ display: expected, error: null });
+  });
+
+  it('mantém sinal, edição explícita, resultado e entrada incompleta previsíveis após %', () => {
+    expect(calculate([...('200+10%'), 'sign', '=']).display).toBe('180');
+    expect(calculate([...('200+10%'), 'sign', '%', '=']).display).toBe('180');
+    expect(calculate([...('200+10%'), 'backspace', '5', '=']).display).toBe('225');
+    expect(calculate([...('200+10='), '%', '=']).display).toBe('2.1');
+    expect(calculate([...('200+10%='), 'clear', ...'10%']).display).toBe('0.1');
+    const pending = calculate([...'200+']);
+    expect(calculatorReducer(pending, '%')).toEqual(pending);
+    expect(calculate(['%', 'unknown', '1', '0', '%']).display).toBe('0.1');
+  });
+
+  it('aplica os limites e arredondamento existentes a porcentagem', () => {
+    expect(calculate([...'999999999999%']).display).toBe('9999999999.99');
+    expect(calculate([...'999999999999+999999999999%']).error).toMatch(/limite/);
+    expect(calculate([...'0.00000000001%']).error).toMatch(/limite/);
+    const failed = calculate([...'200/0%=']);
+    expect(failed.error).toMatch(/zero/);
+    expect(calculatorReducer(failed, '%')).toEqual(failed);
+    expect(calculatorReducer(failed, 'clear')).toEqual(initialCalculatorState);
+  });
+
+  it.each([
     [['1', '2', '+', '3', '='], '15'],
     [['8', '-', '1', '0', '='], '-2'],
     [['6', '*', '7', '='], '42'],

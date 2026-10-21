@@ -3,14 +3,14 @@ const { chromium } = require('playwright');
 module.exports = {
   ci: {
     collect: {
-      staticDistDir: './dist',
-      isSinglePageApplication: true,
+      startServerCommand: 'node scripts/lighthouse-server.cjs',
+      startServerReadyPattern: 'Lighthouse fixture server ready',
       chromePath: chromium.executablePath(),
       url: [
-        'http://localhost/dashboard',
-        'http://localhost/usuarios',
-        'http://localhost/pacientes',
-        'http://localhost/agenda',
+        'http://127.0.0.1:5199/dashboard',
+        'http://127.0.0.1:5199/usuarios',
+        'http://127.0.0.1:5199/pacientes',
+        'http://127.0.0.1:5199/agenda',
       ],
       numberOfRuns: 1,
       puppeteerScript: './scripts/lighthouse-auth.cjs',

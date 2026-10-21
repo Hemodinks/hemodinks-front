@@ -93,9 +93,9 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
       patientList.setPacienteSuccessMessage(warningMessage ? `${baseMessage} Paciente salvo, mas a observação não foi enviada.`
         : observationText ? `${baseMessage} Observação enviada.` : baseMessage);
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardNotifications(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacienteObservacoesRoot(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.convenios(session.token) }),
@@ -122,8 +122,8 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
     try {
       await deleteMutation.mutateAsync({ id: paciente.id, token: session.token });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token), refetchType: 'none' }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token), refetchType: 'none' }),
       ]);
       patientList.setPacienteSuccessMessage('Paciente excluído.');
       await loadPacientes(session.token, true); await loadDashboardSummary(session.token, true);
@@ -140,8 +140,8 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
     try {
       await deleteFileMutation.mutateAsync({ pacienteId: paciente.id, arquivoId, token: session.token });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token), refetchType: 'none' }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token), refetchType: 'none' }),
       ]);
       patientForm.setEditingPacienteDetails(await getPaciente(paciente.id, session.token));
       await loadPacientes(session.token, true); await loadDashboardSummary(session.token, true);
