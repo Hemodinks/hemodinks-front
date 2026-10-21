@@ -7,35 +7,42 @@
 }
 .app-tools-content { min-width: 0; }
 .contextual-tools.contextual-flow-drawer {
+  --contextual-tool-gap: 16px;
+  --contextual-tool-rail: 56px;
+  --contextual-trigger-height: 160px;
+  --contextual-viewport-offset: 32px;
   position: sticky;
   top: 16px;
   right: auto;
   bottom: auto;
   z-index: 1;
   margin-top: 16px;
-  width: 48px;
+  width: var(--contextual-tool-rail);
   max-width: 100%;
-  max-height: calc(100dvh - 32px);
-  grid-template-columns: 48px;
+  max-height: calc(100dvh - var(--contextual-viewport-offset));
+  grid-template-columns: var(--contextual-tool-rail);
   transform: none;
   transition: none;
 }
 .contextual-tools.contextual-flow-drawer.is-open {
   width: 380px;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: var(--contextual-tool-rail) minmax(0, 1fr);
 }
-.contextual-tool-triggers { display: grid; align-content: start; gap: 8px; }
-.contextual-tools .contextual-flow-trigger {
+.contextual-tool-triggers { display: grid; justify-items: center; align-content: start; gap: var(--contextual-tool-gap); padding-block: 4px; max-height: calc(100dvh - var(--contextual-viewport-offset)); box-sizing: border-box; overflow-y: auto; scrollbar-width: thin; }
+.contextual-tools.contextual-flow-drawer .contextual-tool-triggers .contextual-flow-trigger {
   width: 48px;
-  padding: 8px 4px;
-  gap: 6px;
-  height: 132px;
-  min-height: 132px;
+  min-width: 44px;
+  padding: 16px 8px;
+  gap: 8px;
+  height: var(--contextual-trigger-height);
+  min-height: var(--contextual-trigger-height);
   margin: 0;
   box-sizing: border-box;
   animation: none;
   transform: none;
+  transform-origin: center;
 }
+.contextual-tools .contextual-flow-trigger span { white-space: nowrap; }
 .contextual-tool-panels { min-width: 0; }
 .contextual-tools:not(.is-open) .contextual-tool-panels { display: none; }
 .contextual-tools .contextual-flow-drawer.is-embedded {
@@ -46,7 +53,7 @@
   transform: none;
 }
 .contextual-tools .contextual-flow-panel {
-  max-height: calc(100dvh - 32px);
+  max-height: calc(100dvh - var(--contextual-viewport-offset));
   overflow: auto;
   overscroll-behavior: contain;
   padding: 14px;
@@ -66,7 +73,8 @@
   }
 }
 @media (max-width: 760px) {
-  .contextual-tools .contextual-flow-trigger { height: 116px; min-height: 116px; padding: 4px; gap: 3px; font-size: .9rem; }
+  .contextual-tools.contextual-flow-drawer { --contextual-trigger-height: 148px; --contextual-viewport-offset: 16px; }
+  .contextual-tools.contextual-flow-drawer .contextual-tool-triggers .contextual-flow-trigger { padding: 12px 6px; font-size: .9rem; }
   .contextual-tools .contextual-flow-trigger svg { width: 17px; height: 17px; }
   .contextual-tools.contextual-flow-drawer { top: 8px; margin-top: 0; max-height: calc(100dvh - 16px); }
   .contextual-tools .contextual-flow-panel { max-height: calc(100dvh - 16px); padding: 10px; }
@@ -74,6 +82,18 @@
   .app-tools-layout > .contextual-tools.is-open { width: 100%; top: auto; }
 }
 
-/* The shared rail must not animate outside its reserved column. */
-.contextual-tools.contextual-flow-drawer .contextual-flow-trigger,
+/* The help pulse stays inside the rail and never moves the page or its sibling. */
+@media (prefers-reduced-motion: no-preference) {
+  .contextual-tools.contextual-flow-drawer:not(.is-open) .contextual-tool-help:not(:hover):not(:focus-visible) {
+    animation: contextual-tool-help-invite 3.2s ease-in-out infinite;
+  }
+}
 .contextual-tools.contextual-flow-drawer.is-open .contextual-flow-panel { animation: none; transform: none; }
+@keyframes contextual-tool-help-invite {
+  0%, 68%, 80%, 92%, 100% { transform: scale(1); }
+  74% { transform: scale(1.035); }
+  86% { transform: scale(1.02); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contextual-tools.contextual-flow-drawer .contextual-tool-help { animation: none; transform: none; }
+}
