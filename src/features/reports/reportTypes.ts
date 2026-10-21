@@ -2,6 +2,7 @@ import type { BillingRecord, BillingRegimeFilter, BillingStatusFilter, BillingSu
 import type { MedicalGroup, Team } from '../../types';
 
 export type ReportFilters = {
+  tipoCirurgia?: import('../../shared/surgeryType').TipoCirurgia | '';
   startDate: string;
   endDate: string;
   requestStartDate: string;
@@ -38,3 +39,4 @@ export type ReportData = ReportCatalogs & {
 export type ReportSummary = BillingSummary;
 
 export type ReportExportFormat = 'pdf' | 'xlsx';
+export type ReportExportDetailLevel = 'synthetic' | 'complete';

@@ -1,0 +1,1035 @@
+{
+  "issue": 164,
+  "date": "2026-10-16",
+  "browser": "Chromium",
+  "standard": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21aa"
+  ],
+  "existingBaseline": {
+    "passed": 36,
+    "failed": 0
+  },
+  "before": {
+    "skipped": 0,
+    "scans": [
+      {
+        "route": "/dashboard",
+        "width": 390,
+        "state": "dashboard-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 390,
+        "state": "dashboard-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 390,
+        "state": "menu-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 390,
+        "state": "usuarios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "aria-prohibited-attr",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 390,
+        "state": "usuarios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-prohibited-attr",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "pacientes-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "pacientes-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 390,
+        "state": "relatorios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 390,
+        "state": "relatorios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 390,
+        "state": "agenda-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 390,
+        "state": "agenda-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "combobox-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "erro-formulario",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "multiselect-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "modal-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "modal-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 768,
+        "state": "dashboard-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 768,
+        "state": "dashboard-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 768,
+        "state": "menu-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 768,
+        "state": "usuarios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "aria-prohibited-attr",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 768,
+        "state": "usuarios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-prohibited-attr",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "pacientes-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "pacientes-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 768,
+        "state": "relatorios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 768,
+        "state": "relatorios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 768,
+        "state": "agenda-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 768,
+        "state": "agenda-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "combobox-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "erro-formulario",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "multiselect-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "modal-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "modal-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 1280,
+        "state": "dashboard-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 1280,
+        "state": "dashboard-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 1280,
+        "state": "usuarios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "aria-prohibited-attr",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 1280,
+        "state": "usuarios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-prohibited-attr",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "pacientes-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "pacientes-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 1280,
+        "state": "relatorios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "aria-prohibited-attr",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 1280,
+        "state": "relatorios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-prohibited-attr",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 1280,
+        "state": "agenda-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 1280,
+        "state": "agenda-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "combobox-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "erro-formulario",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "multiselect-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "modal-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "modal-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      }
+    ],
+    "violationCount": 0,
+    "scanCount": 47,
+    "failed": 6,
+    "passed": 3
+  },
+  "after": {
+    "scanCount": 47,
+    "scans": [
+      {
+        "route": "/dashboard",
+        "width": 390,
+        "state": "dashboard-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 390,
+        "state": "dashboard-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 390,
+        "state": "menu-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 390,
+        "state": "usuarios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 390,
+        "state": "usuarios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "pacientes-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "pacientes-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 390,
+        "state": "relatorios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 390,
+        "state": "relatorios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 390,
+        "state": "agenda-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 390,
+        "state": "agenda-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "combobox-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "erro-formulario",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "multiselect-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "modal-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 390,
+        "state": "modal-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 768,
+        "state": "dashboard-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 768,
+        "state": "dashboard-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 768,
+        "state": "menu-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 768,
+        "state": "usuarios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 768,
+        "state": "usuarios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "pacientes-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "pacientes-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 768,
+        "state": "relatorios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 768,
+        "state": "relatorios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 768,
+        "state": "agenda-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 768,
+        "state": "agenda-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "combobox-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "erro-formulario",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "multiselect-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "modal-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 768,
+        "state": "modal-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 1280,
+        "state": "dashboard-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/dashboard",
+        "width": 1280,
+        "state": "dashboard-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 1280,
+        "state": "usuarios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/usuarios",
+        "width": 1280,
+        "state": "usuarios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "pacientes-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "pacientes-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 1280,
+        "state": "relatorios-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/relatorios",
+        "width": 1280,
+        "state": "relatorios-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 1280,
+        "state": "agenda-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/agenda",
+        "width": 1280,
+        "state": "agenda-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "combobox-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "erro-formulario",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "multiselect-aberto",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "modal-light",
+        "theme": "light",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      },
+      {
+        "route": "/pacientes",
+        "width": 1280,
+        "state": "modal-dark",
+        "theme": "dark",
+        "violations": [],
+        "incomplete": [
+          "aria-valid-attr-value",
+          "color-contrast"
+        ]
+      }
+    ],
+    "passed": 9,
+    "violationCount": 0,
+    "failed": 0,
+    "skipped": 0
+  },
+  "additionalReproductions": {
+    "longListFailures": 2,
+    "activeHighlightFailures": 1,
+    "avatarAccessibleNameFailures": 1,
+    "submenuAccessibleNameFailures": 1
+  },
+  "regressionSuite": {
+    "note": "Rodada ampla anterior aos refinamentos finais; auditoria de 9 cenários e suíte unitária completa repetidas após todos os ajustes. Os 12 smoke tests responsivos foram executados após corrigir rolagem/teclado e antes das duas correções apenas semânticas (avatar e submenu).",
+    "passed": 45,
+    "failed": 0
+  },
+  "unitTests": {
+    "passed": 632,
+    "files": 98,
+    "failed": 0
+  },
+  "responsiveSmoke": {
+    "passed": 12,
+    "projects": [
+      "desktop",
+      "tablet",
+      "mobile"
+    ],
+    "failed": 0
+  }
+}

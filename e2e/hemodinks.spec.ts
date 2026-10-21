@@ -1,4 +1,10 @@
+import { registerCalculatorCases } from './calculator-cases';
 import { registerAgendaEmailCases } from './agenda-email-cases';
+import { registerSurgeryTypeCases } from './surgery-type-cases';
+import { registerTenantIsolationCases } from './tenant-isolation-cases';
+import { registerResponsiveSmokeCases } from './responsive-smoke-cases';
+import { registerAccessibilityAuditCases } from './accessibility-audit-cases';
+import { registerReportChecklistCases } from './report-checklist-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
 import { registerPasswordPolicyCases } from './password-policy-cases';
 import { registerSecurityObservationCases } from './security-observation-cases';
@@ -112,6 +118,7 @@ const tutorialRecordingSession = {
 
 const paciente = {
   id: 10,
+  tipoCirurgia: 'Eletiva',
   userId: 20,
   data: '2026-06-01T00:00:00Z',
   dataAtendimento: '2026-06-01T00:00:00Z',
@@ -228,6 +235,7 @@ function buildPacienteFromPayload(id: number, payload: Payload) {
   return {
     ...paciente,
     id,
+    tipoCirurgia: String(payload.tipoCirurgia ?? paciente.tipoCirurgia),
     userId: Number(payload.userId ?? paciente.userId),
     data: typeof payload.data === 'string' ? payload.data : paciente.data,
     nomePaciente: String(payload.nomePaciente ?? paciente.nomePaciente),
@@ -675,12 +683,35 @@ async function mockApi(page: Page, loginSession = session, options: {
   return state;
 }
 
+test.beforeEach(async ({ context }, testInfo) => {
+  if (!testInfo.project.name.startsWith('responsive-')) return;
+  // Fail closed if a local environment points a mock-only test at a real service.
+  await context.route('**/*', async route => {
+    const origin = new URL(route.request().url()).origin;
+    if (origin === 'http://127.0.0.1:5175' || origin === 'http://localhost:5000') return route.fallback();
+    await route.abort('blockedbyclient');
+    expect(origin, 'A matriz responsiva permite somente serviços locais simulados').toBe('http://localhost:5000');
+  });
+});
+
 registerAuthRateLimitCases({ setup: mockApi, login: loginViaUi, session });
+registerTenantIsolationCases({ mockApi: page => mockApi(page, superAdminSession),
+  login: (page, path) => loginViaUi(page, path, superAdminSession), user: superAdminSession.user, patient: paciente });
 registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });
 registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session });
 registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
+registerSurgeryTypeCases({ mockApi, loginViaUi });
+registerCalculatorCases({ mockApi, loginViaUi });
 registerPatientListTests({ setup: mockApi, login: loginViaUi });
+registerResponsiveSmokeCases({ setup: mockApi, login: loginViaUi });
+registerAccessibilityAuditCases({ setup: mockApi, login: loginViaUi });
+
+const checklistMedicalSession = { ...session, user: { ...session.user, id: 1, nome: 'Ana Hemodinks', perfilId: 2, perfilNome: 'Medicos' } };
+registerReportChecklistCases({ mockApi, loginViaUi, patient: paciente,
+  mockMedical: page => mockApi(page, checklistMedicalSession),
+  loginMedical: (page, path) => loginViaUi(page, path, checklistMedicalSession),
+});
 
 test('accordions de filtros iniciam fechados e abrem por teclado em todas as telas', async ({ page }) => {
   await mockApi(page);
@@ -984,7 +1015,10 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   await juneButton.click();
   await expect(juneButton).toHaveAttribute('aria-expanded', 'true');
   await expect(page.getByRole('heading', { name: 'Total faturado em Junho' })).toBeVisible();
-  await expect(page.getByRole('cell', { name: 'Paciente Hemodinks Particular', exact: true })).toBeVisible();
+  const patientCell = page.getByRole('cell').filter({ has: page.getByText('Paciente Hemodinks', { exact: true }) });
+  await expect(patientCell).toBeVisible();
+  await expect(patientCell.getByText('Eletiva', { exact: true })).toBeVisible();
+  await expect(patientCell.getByText('Particular', { exact: true })).toBeVisible();
 
   const mayButton = page.getByRole('button', { name: /^Maio 0 atendimento/i });
   await mayButton.click();
@@ -1005,6 +1039,7 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   const secondQuarterSlice = page.getByLabel(/^2º trimestre de 2026, Abril a Junho/i);
   await expect(secondQuarterSlice).toHaveAttribute('stroke', '#2563eb');
   const pieSvg = page.getByRole('group', { name: /Participação dos trimestres no faturamento de 2026/i });
+  await pieSvg.scrollIntoViewIfNeeded();
   const pieBox = await pieSvg.boundingBox();
   expect(pieBox).not.toBeNull();
   await page.mouse.move(pieBox!.x + pieBox!.width / 2, pieBox!.y + pieBox!.height * (32 / 240));
@@ -1026,12 +1061,22 @@ test('consulta o histórico de faturamento por ano e mês', async ({ page }) => 
   await expect(pieSvg.getByRole('button', { name: /^4º trimestre de 2026/i })).toHaveCount(0);
 
   const barChart = page.getByRole('group', { name: /Gráfico de barras do faturamento mensal de 2026/i });
+  const octoberBar = page.getByLabel(/Outubro de 2026, 4º trimestre/i);
+  await octoberBar.focus();
+  await expect(octoberBar.getByRole('tooltip')).toBeVisible();
   const chartDimensions = await barChart.evaluate((element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }));
   expect(chartDimensions.scrollWidth).toBeLessThanOrEqual(chartDimensions.clientWidth);
   await expectNoGlobalHorizontalOverflow(page);
 
-  await page.setViewportSize({ width: 360, height: 860 });
-  await expectNoGlobalHorizontalOverflow(page);
+  for (const width of [1440, 1280, 1024, 820, 390, 360]) {
+    await page.setViewportSize({ width, height: 860 });
+    await expectNoGlobalHorizontalOverflow(page);
+    const dimensions = await barChart.evaluate((element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }));
+    expect(dimensions.scrollWidth, `Gráfico sem overflow em ${width}px`).toBeLessThanOrEqual(dimensions.clientWidth);
+  }
+  const augustBar = page.getByLabel(/Agosto de 2026, 3º trimestre/i);
+  await augustBar.focus();
+  await expect(augustBar.getByRole('tooltip')).toBeVisible();
   const mobileChartDimensions = await barChart.evaluate((element) => ({ clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }));
   expect(mobileChartDimensions.scrollWidth).toBeLessThanOrEqual(mobileChartDimensions.clientWidth);
 });
@@ -2143,14 +2188,26 @@ for (const variant of [{ width: 390, theme: 'light' }, { width: 1280, theme: 'da
 }
 
 test('bootstrap: nova sessão sem acesso não reutiliza dados da clínica anterior', async ({ page }) => {
-  await mockApi(page);
+  const apiState = await mockApi(page);
+  let releaseLogout!: () => void;
+  const pendingLogout = new Promise<void>(resolve => { releaseLogout = resolve; });
+  await page.route('**/api/session/sair', async route => {
+    await pendingLogout;
+    await route.fallback();
+  });
   await loginViaUi(page);
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   await page.goto('/pacientes');
   await expect(page.getByRole('cell', { name: paciente.nomePaciente, exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Menu do usuário', exact: true }).click();
+  const logout = page.waitForResponse(response => new URL(response.url()).pathname === '/api/session/sair');
   await page.getByRole('button', { name: /sair/i }).click();
   await expect(page.getByRole('heading', { name: 'Acesso ao sistema' })).toBeVisible();
+  // A tela de login aparece antes da revogação; só recarregue após encerrar a sessão no mock.
+  expect(apiState.authenticated).toBe(true);
+  releaseLogout();
+  expect((await logout).status()).toBe(204);
+  expect(apiState.authenticated).toBe(false);
   await page.route('**/api/users/login-context', route => route.fulfill({ json: { clinicas: [{ clinicaId: 2, nome: 'Clínica Beta', slug: 'beta' }] } }));
   await page.route('**/api/users/authenticate', route => route.fulfill({ json: {
     ...session.user, id: 199, clinicaId: 2, clinicaSlug: 'beta', token: 'beta-token',
@@ -2160,7 +2217,9 @@ test('bootstrap: nova sessão sem acesso não reutiliza dados da clínica anteri
   page.on('request', request => {
     if (/\/api\/(dashboard|pacientes|configuracoes-sistema)/.test(request.url())) operational.push(request.url());
   });
+  const restored = page.waitForResponse(response => new URL(response.url()).pathname === '/api/session/restaurar');
   await page.reload();
+  expect((await restored).status()).toBe(401);
   await page.getByLabel('Email').fill(session.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();

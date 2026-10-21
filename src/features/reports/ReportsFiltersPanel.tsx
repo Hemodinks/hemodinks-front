@@ -1,10 +1,11 @@
+import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
 import type { Dispatch, SetStateAction } from 'react';
 import { Download, FileText, RefreshCw, Search } from 'lucide-react';
 import { DateInput } from '../../shared/components/DateInput';
 import { Button, CheckboxField, DataPanel, IconButton, MultiSelectComboboxField, SelectField } from '../../shared/components/ui';
 import type { MultiSelectOption } from '../../shared/components/ui';
 import { BILLING_REGIME_FILTER_OPTIONS, BILLING_STATUS_FILTER_OPTIONS } from '../billing/billingPageUtils';
-import type { ReportExportFormat, ReportFilters } from './reportTypes';
+import type { ReportExportDetailLevel, ReportExportFormat, ReportFilters } from './reportTypes';
 
 type Options = Record<'doctors' | 'teams' | 'medicalGroups' | 'hospitals' | 'convenios' | 'procedures' | 'opmeSuppliers', MultiSelectOption[]>;
 
@@ -15,6 +16,8 @@ type Props = {
   resultCount: number;
   isFetching: boolean;
   exportLoading: boolean;
+  exportDetailLevel: ReportExportDetailLevel;
+  onExportDetailLevelChange: (value: ReportExportDetailLevel) => void;
   onApply: () => void;
   onClear: () => void;
   onRefresh: () => void;
@@ -63,6 +66,7 @@ export function ReportsFiltersPanel(props: Props) {
                 {...(field.key === 'doctors' ? { 'data-tour': 'reports-combined-filters' } : {})}
               />
             ))}
+            <SurgeryTypeFilter className="filter-field" value={props.filters.tipoCirurgia} onChange={(tipoCirurgia) => props.setFilters((current) => ({ ...current, tipoCirurgia }))} />
             <SelectField className="filter-field" label="Status" value={props.filters.status} onChange={(event) => props.setFilters((current) => ({ ...current, status: event.target.value as ReportFilters['status'] }))}>
               {BILLING_STATUS_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </SelectField>
@@ -71,7 +75,7 @@ export function ReportsFiltersPanel(props: Props) {
             </SelectField>
             <CheckboxField
               className="billing-checkbox reports-pending-filter"
-              label="Mostrar apenas itens com pendências de faturamento"
+              label="Mostrar apenas atendimentos com checklist incompleto"
               checked={props.filters.onlyPendingItems}
               onCheckedChange={(onlyPendingItems) => props.setFilters((current) => ({ ...current, onlyPendingItems }))}
             />
@@ -81,6 +85,10 @@ export function ReportsFiltersPanel(props: Props) {
             </div>
           </div>
           <div className="reports-filter-actions" data-tour="reports-export">
+            <SelectField label="Formato do relatório" value={props.exportDetailLevel} disabled={props.exportLoading} onChange={(event) => props.onExportDetailLevelChange(event.target.value as ReportExportDetailLevel)}>
+              <option value="complete">Completo</option>
+              <option value="synthetic">Sintético</option>
+            </SelectField>
             <IconButton label="Atualizar dados dos relatórios" title="Atualizar" onClick={props.onRefresh} disabled={props.isFetching}><RefreshCw size={18} /></IconButton>
             <Button className="reports-export-button reports-export-pdf" onClick={() => props.onExport('pdf')} disabled={props.exportLoading || !props.resultCount}><FileText size={17} />Exportar PDF</Button>
             <Button className="reports-export-button reports-export-xlsx" onClick={() => props.onExport('xlsx')} disabled={props.exportLoading || !props.resultCount}><Download size={17} />Exportar Planilha</Button>

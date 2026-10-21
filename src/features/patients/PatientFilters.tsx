@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { DateInput } from '../../shared/components/DateInput';
+import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
 import { Button, MultiSelectComboboxField, TextField } from '../../shared/components/ui';
 import type { PatientListProps } from './patientListTypes';
 import '../../shared/components/styles/filter-accordion.css';
@@ -17,6 +18,7 @@ export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdm
       </summary>
       <div className="billing-filters-content">
         <div className="patient-filter-grid" role="group" aria-label="Filtros de pacientes e cirurgias">
+          <SurgeryTypeFilter className="filter-field" value={pacienteFilters.tipoCirurgia} onChange={(tipoCirurgia) => onFiltersChange((current) => ({ ...current, tipoCirurgia }))} />
           {canUseExtendedFilters && <>
             <MultiSelectComboboxField className="filter-field" label="Cirurgião" values={pacienteFilters.medicoUserIds.map(String)}
               options={medicalUsers.map((user) => ({ value: String(user.id), label: user.nome }))}

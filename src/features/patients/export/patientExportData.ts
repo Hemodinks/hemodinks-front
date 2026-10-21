@@ -1,6 +1,7 @@
 import type { Paciente, PacienteFormData } from '../../../types';
 import { formatPersonName, toDisplayDate } from '../../../shared/utils/formatters';
 import { normalizeCbhpmCodigo } from '../patientUtils';
+import { getSurgeryTypeLabel } from '../../../shared/surgeryType';
 
 export type PatientExportColumn<T> = {
   header: string;
@@ -29,6 +30,7 @@ export const pacienteExportColumns: readonly PatientExportColumn<Paciente>[] = [
   { header: 'Data do pagamento', getValue: (paciente) => toDisplayDate(paciente.faturamento?.dataPagamento || '') || '-' },
   { header: 'Ativo', getValue: (paciente) => (paciente.ativo ? 'Sim' : 'Não') },
   { header: 'Arquivos', getValue: (paciente) => String(paciente.arquivosCount ?? paciente.arquivos.length) },
+  { header: 'Tipo de cirurgia', getValue: (paciente) => getSurgeryTypeLabel(paciente.tipoCirurgia) },
 ];
 
 export const pacienteFormExportColumns: readonly PatientExportColumn<PacienteFormData>[] = [
@@ -57,6 +59,7 @@ export const pacienteFormExportColumns: readonly PatientExportColumn<PacienteFor
   { header: 'Data do pagamento', getValue: (form) => toDisplayDate(form.dataPagamento || '') || '-' },
   { header: 'Paciente ativo', getValue: (form) => (form.ativo ? 'Sim' : 'Não') },
   { header: 'Nova observação', getValue: (form) => form.novaObservacao || '-' },
+  { header: 'Tipo de cirurgia', getValue: (form) => getSurgeryTypeLabel(form.tipoCirurgia) },
 ];
 
 function toExportRow<T>(source: T, columns: readonly PatientExportColumn<T>[]): PatientExportRow {
@@ -67,7 +70,7 @@ export function getPacienteExportRows(items: Paciente[]) {
   return items.map((paciente) => toExportRow(paciente, pacienteExportColumns));
 }
 
-export function getPacienteFormExportRows(formData: PacienteFormData) {
+export function getPacienteFormExportRows(formData: PacienteFormData): PatientExportRow[] {
   const baseRow = toExportRow(formData, pacienteFormExportColumns);
   const procedures = formData.procedimentos?.length
     ? formData.procedimentos

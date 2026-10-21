@@ -13,6 +13,11 @@ export type EventEmailPreview = {
   failedCount: number;
   excludedCount: number;
   canSend: boolean;
+  creatorCopy?: {
+    recipient: EventEmailRecipient | null;
+    canSend: boolean;
+    unavailableReason: string | null;
+  } | null;
 };
 
 export type EventEmailQueueResult = { queuedCount: number };

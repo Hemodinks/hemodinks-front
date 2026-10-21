@@ -185,14 +185,14 @@ describe('patientUtils', () => {
     expect(rows[1]['Código CBHPM']).toBe('20101201');
   });
 
-  it('bloqueia selecao repetida entre cirurgiao e medicos auxiliares', () => {
+  it('permite o mesmo medico como cirurgiao e auxiliar', () => {
     expect(getDuplicatedMedicalTeamError({
       ...emptyPacienteForm,
       medicoUserId: 1,
       medico: 'Dra. Ana',
       medicoAuxiliar1UserId: 1,
       medicoAuxiliar1: 'Dra. Ana',
-    })).toBe('Cirurgião e médicos auxiliares devem ser diferentes.');
+    })).toBe('');
 
     expect(getDuplicatedMedicalTeamError({
       ...emptyPacienteForm,
@@ -253,5 +253,27 @@ describe('patientUtils', () => {
     expect(formData.opmeFornecedorId).toBe(2);
     expect(formData.opmeFornecedor).toBe('AVL');
     expect(formData.procedimentos[0].cbhpmCodigo).toBe('10101012');
+  });
+});
+
+
+describe('issue174: matriz da equipe cirurgica', () => {
+  it.each([
+    [1, 1, null, true], [null, 1, null, true], [null, null, 2, true],
+    [null, null, null, false], [1, 2, null, true], [1, null, null, true],
+    [1, 2, 2, false], [null, 2, 2, false],
+  ])('valida principal %s e auxiliares %s/%s', (principal, first, second, valid) => {
+    const data = { ...emptyPacienteForm, nomePaciente: 'Paciente', hospital: 'Hospital',
+      procedimento: 'Consulta', medicoUserId: principal, medico: principal ? 'Ana' : '',
+      medicoAuxiliar1UserId: first, medicoAuxiliar1: first ? 'Auxiliar' : '',
+      medicoAuxiliar2UserId: second, medicoAuxiliar2: second ? 'Auxiliar' : '' };
+    expect(validatePacienteForm(data) === '').toBe(valid);
+    expect(toPacientePayload(data).medicoUserId).toBe(principal);
+  });
+
+  it('rejeita auxiliares legados repetidos por nome', () => {
+    expect(getDuplicatedMedicalTeamError({ ...emptyPacienteForm,
+      medicoAuxiliar1: ' Dra. Ana ', medicoAuxiliar2: 'dra. ana' }))
+      .toBe('Os médicos auxiliares devem ser diferentes.');
   });
 });

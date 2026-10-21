@@ -16,6 +16,7 @@ import {
 } from '../../shared/utils/formatters';
 
 export const emptyPacienteForm: PacienteFormData = {
+  tipoCirurgia: 'Eletiva',
   data: '',
   dataAtendimento: '',
   nomePaciente: '',
@@ -52,6 +53,7 @@ export const emptyPacienteForm: PacienteFormData = {
 };
 
 export const emptyPacienteFilters: PacienteFilters = {
+  tipoCirurgia: '',
   medicoUserIds: [],
   convenioIds: [],
   procedimento: '',
@@ -63,6 +65,7 @@ export const emptyPacienteFilters: PacienteFilters = {
 
 export function getPacienteFilterQuery(filters: PacienteFilters) {
   return {
+    ...(filters.tipoCirurgia ? { tipoCirurgia: filters.tipoCirurgia } : {}),
     ...(filters.medicoUserIds.length ? { medicoUserIds: filters.medicoUserIds.join(',') } : {}),
     ...(filters.convenioIds.length ? { convenioIds: filters.convenioIds.join(',') } : {}),
     ...(filters.procedimento.trim() ? { procedimento: filters.procedimento.trim() } : {}),
@@ -151,6 +154,7 @@ export function withPrimaryProcedimento(data: PacienteFormData): PacienteFormDat
 
 export function getPacienteFormData(paciente: Paciente): PacienteFormData {
   return withPrimaryProcedimento({
+    tipoCirurgia: paciente.tipoCirurgia ?? undefined,
     data: toDisplayDate(paciente.data || ''),
     dataAtendimento: toDisplayDate(paciente.dataAtendimento || ''),
     nomePaciente: paciente.nomePaciente,
@@ -199,6 +203,11 @@ export function validatePacienteForm(data: PacienteFormData) {
     return 'Selecione um hospital.';
   }
 
+  if (![data.medicoUserId, data.medicoAuxiliar1UserId, data.medicoAuxiliar2UserId].some((id) => id != null)
+    && ![data.medico, data.medicoAuxiliar1, data.medicoAuxiliar2].some((name) => name.trim())) {
+    return 'Selecione um cirurgião ou ao menos um médico auxiliar.';
+  }
+
   const duplicatedMedicalTeamError = getDuplicatedMedicalTeamError(data);
   if (duplicatedMedicalTeamError) {
     return duplicatedMedicalTeamError;
@@ -213,7 +222,6 @@ export function validatePacienteForm(data: PacienteFormData) {
 
 export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
   const medicalTeam = [
-    { userId: data.medicoUserId, name: data.medico },
     { userId: data.medicoAuxiliar1UserId, name: data.medicoAuxiliar1 },
     { userId: data.medicoAuxiliar2UserId, name: data.medicoAuxiliar2 },
   ];
@@ -223,7 +231,7 @@ export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
   for (const member of medicalTeam) {
     if (member.userId != null) {
       if (selectedUserIds.has(member.userId)) {
-          return 'Cirurgião e médicos auxiliares devem ser diferentes.';
+        return 'Os médicos auxiliares devem ser diferentes.';
       }
 
       selectedUserIds.add(member.userId);
@@ -236,7 +244,7 @@ export function getDuplicatedMedicalTeamError(data: PacienteFormData) {
     }
 
     if (selectedNames.has(normalizedName)) {
-      return 'Cirurgião e médicos auxiliares devem ser diferentes.';
+      return 'Os médicos auxiliares devem ser diferentes.';
     }
 
     selectedNames.add(normalizedName);
@@ -254,6 +262,7 @@ export function toPacientePayload(data: PacienteFormData): PacientePayload {
   const firstProcedimento = procedimentos[0];
 
   return {
+    ...(data.tipoCirurgia !== undefined ? { tipoCirurgia: data.tipoCirurgia } : {}),
     data: data.data && isValidBirthDate(data.data) ? toApiDate(data.data) : null,
     dataAtendimento: data.dataAtendimento && isValidDate(data.dataAtendimento)
       ? toApiDate(data.dataAtendimento)

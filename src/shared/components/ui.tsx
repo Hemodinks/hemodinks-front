@@ -4,6 +4,7 @@ import {
   type ReactNode,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
+  useEffect,
   useId,
   useRef,
   useState,
@@ -57,12 +58,20 @@ export function ComboboxField({
   const filteredOptions = normalizedValue
     ? uniqueOptions.filter((option) => normalizeComboboxText(option).includes(normalizedValue))
     : uniqueOptions;
+  const activeOptionId = isOpen && !disabled && activeIndex >= 0 && activeIndex < filteredOptions.length
+    ? `${listboxId}-option-${activeIndex}` : undefined;
+
+  useEffect(() => {
+    if (activeOptionId) {
+      document.getElementById(activeOptionId)?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    }
+  }, [activeOptionId]);
 
   const selectOption = (option: string) => {
     onValueChange(option);
+    inputRef.current?.focus();
     setActiveIndex(-1);
     setIsOpen(false);
-    inputRef.current?.focus();
   };
 
   return (
@@ -94,6 +103,7 @@ export function ComboboxField({
           aria-autocomplete="list"
           aria-controls={listboxId}
           aria-expanded={isOpen}
+          aria-activedescendant={activeOptionId}
           aria-haspopup="listbox"
           role="combobox"
           className="combobox-input"
@@ -175,15 +185,14 @@ export function ComboboxField({
               filteredOptions.map((option, index) => (
                 <button
                   key={option}
+                  id={`${listboxId}-option-${index}`}
                   type="button"
                   role="option"
                   aria-selected={activeIndex === index}
                   className={cx('combobox-option', activeIndex === index && 'is-active')}
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    selectOption(option);
-                  }}
-                  onMouseEnter={() => setActiveIndex(index)}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => selectOption(option)}
+                  onMouseMove={() => setActiveIndex(index)}
                 >
                   {option}
                 </button>
@@ -230,6 +239,7 @@ export function MultiSelectComboboxField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const selectedValues = new Set(values);
   const uniqueOptions = options.filter((option, index, list) => (
     option.value && list.findIndex((candidate) => candidate.value === option.value) === index
@@ -238,12 +248,21 @@ export function MultiSelectComboboxField({
   const filteredOptions = normalizedQuery
     ? uniqueOptions.filter((option) => normalizeComboboxText(option.label).includes(normalizedQuery))
     : uniqueOptions;
+  const activeOptionId = isOpen && !disabled && activeIndex >= 0 && activeIndex <= filteredOptions.length
+    ? `${listboxId}-option-${activeIndex}` : undefined;
+
+  useEffect(() => {
+    if (activeOptionId) {
+      document.getElementById(activeOptionId)?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    }
+  }, [activeOptionId]);
 
   const toggleValue = (value: string) => {
     onValuesChange(selectedValues.has(value)
       ? values.filter((selected) => selected !== value)
       : [...values, value]);
     setQuery('');
+    setActiveIndex(-1);
     setIsOpen(true);
     inputRef.current?.focus();
   };
@@ -257,6 +276,7 @@ export function MultiSelectComboboxField({
         if (!(nextTarget instanceof Node) || !fieldRef.current?.contains(nextTarget)) {
           setIsOpen(false);
           setQuery('');
+          setActiveIndex(-1);
         }
       }}
     >
@@ -295,18 +315,40 @@ export function MultiSelectComboboxField({
           aria-autocomplete="list"
           aria-controls={listboxId}
           aria-expanded={isOpen}
+          aria-activedescendant={activeOptionId}
           aria-haspopup="listbox"
           onFocus={() => !disabled && setIsOpen(true)}
           onChange={(event) => {
             setQuery(event.target.value);
             setIsOpen(true);
+            setActiveIndex(-1);
           }}
           onKeyDown={(event) => {
-            if (event.key === 'Escape') {
+            if (disabled) return;
+
+            if (event.key === 'ArrowDown') {
+              event.preventDefault();
+              setIsOpen(true);
+              setActiveIndex((current) => current < filteredOptions.length ? current + 1 : 0);
+            } else if (event.key === 'ArrowUp') {
+              event.preventDefault();
+              setIsOpen(true);
+              setActiveIndex((current) => current > 0 ? current - 1 : filteredOptions.length);
+            } else if (event.key === 'Escape') {
               setIsOpen(false);
               setQuery('');
+              setActiveIndex(-1);
             } else if (event.key === 'Backspace' && !query && values.length) {
               onValuesChange(values.slice(0, -1));
+            } else if (event.key === 'Enter' && isOpen && activeIndex >= 0 && activeIndex <= filteredOptions.length) {
+              event.preventDefault();
+              if (activeIndex === 0) {
+                onValuesChange([]);
+                setQuery('');
+                setActiveIndex(-1);
+              } else {
+                toggleValue(filteredOptions[activeIndex - 1].value);
+              }
             } else if (event.key === 'Enter' && filteredOptions.length === 1) {
               event.preventDefault();
               toggleValue(filteredOptions[0].value);
@@ -322,6 +364,7 @@ export function MultiSelectComboboxField({
           onClick={(event) => {
             event.stopPropagation();
             setIsOpen((current) => !current);
+            setActiveIndex(-1);
             inputRef.current?.focus();
           }}
         >
@@ -332,23 +375,26 @@ export function MultiSelectComboboxField({
         <div className="multi-combobox-listbox" id={listboxId} role="listbox" aria-multiselectable="true">
           <button
             type="button"
-            className={cx('multi-combobox-option', values.length === 0 && 'is-selected')}
+            id={`${listboxId}-option-0`}
+            className={cx('multi-combobox-option', values.length === 0 && 'is-selected', activeIndex === 0 && 'is-active')}
             role="option"
             aria-selected={values.length === 0}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               onValuesChange([]);
               setQuery('');
+              setActiveIndex(-1);
             }}
           >
             <span>{allOptionLabel}</span>
             {values.length === 0 && <Check size={16} />}
           </button>
-          {filteredOptions.map((option) => (
+          {filteredOptions.map((option, index) => (
             <button
               type="button"
-              className={cx('multi-combobox-option', selectedValues.has(option.value) && 'is-selected')}
+              className={cx('multi-combobox-option', selectedValues.has(option.value) && 'is-selected', activeIndex === index + 1 && 'is-active')}
               key={option.value}
+              id={`${listboxId}-option-${index + 1}`}
               role="option"
               aria-selected={selectedValues.has(option.value)}
               onMouseDown={(event) => event.preventDefault()}

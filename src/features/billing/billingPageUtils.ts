@@ -113,6 +113,7 @@ export function areBillingFiltersEqual(left: BillingFilters, right: BillingFilte
     && left.competenciaFinal === right.competenciaFinal
     && left.paymentStartDate === right.paymentStartDate
     && left.paymentEndDate === right.paymentEndDate
+    && (left.tipoCirurgia || '') === (right.tipoCirurgia || '')
     && left.status === right.status
     && left.regime === right.regime
     && left.onlyPendingItems === right.onlyPendingItems;
@@ -131,6 +132,7 @@ function toCompetenciaQueryValue(value: string) {
 export async function loadBillingPatients(
   token: string,
   filters: {
+    tipoCirurgia?: BillingFilters['tipoCirurgia'];
     search: string;
     medico: string;
     convenio: string;
@@ -148,6 +150,7 @@ export async function loadBillingPatients(
       page,
       pageSize: PATIENT_EXPORT_PAGE_SIZE,
       search: filters.search,
+      tipoCirurgia: filters.tipoCirurgia || undefined,
       medico: filters.medico || undefined,
       convenio: filters.convenio || undefined,
       procedimento: filters.procedimento || undefined,

@@ -55,12 +55,14 @@ describe('consentStorage', () => {
     saveConsent({ preferences: false, analytics: false });
     localStorage.setItem('hemodinks.theme', 'light');
     localStorage.setItem('hemodinks.dashboard.module-order', '[]');
+    localStorage.setItem('hemodinks.calculator.visibility', '{"version":1,"scopes":{"1:99":false}}');
     sessionStorage.setItem('hemodinks.session', 'jwt');
 
     clearOptionalPreferenceStorage();
 
     expect(localStorage.getItem('hemodinks.theme')).toBeNull();
     expect(localStorage.getItem('hemodinks.dashboard.module-order')).toBeNull();
+    expect(localStorage.getItem('hemodinks.calculator.visibility')).toBeNull();
     expect(localStorage.getItem(CONSENT_STORAGE_KEY)).not.toBeNull();
     expect(sessionStorage.getItem('hemodinks.session')).toBe('jwt');
   });

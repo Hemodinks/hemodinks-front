@@ -1,4 +1,5 @@
 import { useAgendaEvents } from './useAgendaEvents';
+import { queueEventEmailNotification } from '../../services/eventEmailService';
 import { agendaRange, type AgendaView } from './agendaViews';
 import type { AgendaEventFilters } from '../../services/eventsService';
 import { useAgendaRecipients } from './useAgendaRecipients';
@@ -130,12 +131,25 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     }
     const hasNotificationMessage = formData.notificationMessage.trim().length > 0;
     const hasNotificationRecipients = formData.notifyAllAllowedRecipients || formData.notificationUserIds.length > 0 || formData.notificationGroupIds.length > 0;
+    if (!editingEventId && formData.sendEmailOnCreate && !hasNotificationRecipients) { setError('Selecione ao menos um destinatário permitido para enviar o e-mail.'); return; }
     if (hasNotificationRecipients && !hasNotificationMessage) { setError('Informe a mensagem da notificação.'); return; }
     if (hasNotificationMessage && !hasNotificationRecipients) { setError('Selecione ao menos um destinatário para enviar a notificação.'); return; }
     setFormLoading(true);
     try {
       const savedEvent = editingEventId ? await updateAgendaEvent(editingEventId, buildPayload(), session.token) : await createAgendaEvent(buildPayload(), session.token);
-      invalidateEvents(); setSuccessMessage(editingEventId ? 'Evento atualizado.' : 'Evento cadastrado.');
+      let notificationStatus = '';
+      if (!editingEventId && formData.sendEmailOnCreate) {
+        try {
+          const queued = await queueEventEmailNotification(savedEvent.id, session.token, crypto.randomUUID());
+          notificationStatus = queued.queuedCount > 0
+            ? ` ${queued.queuedCount} destinatário(s) colocado(s) na fila de e-mail; entrega ainda não confirmada.`
+            : ' Nenhum novo e-mail foi enfileirado.';
+        } catch (notificationError) {
+          notificationStatus = ' Evento salvo, mas a solicitação de e-mail não foi confirmada. Confira o status antes de tentar reenviar.';
+          // Do not retry automatically: the queue may have accepted the request before a network failure.
+        }
+      }
+      invalidateEvents(); setSuccessMessage((editingEventId ? 'Evento atualizado.' : 'Evento cadastrado.') + notificationStatus);
       const savedDateKey = eventStartDate(savedEvent); const savedDate = fromDateKey(savedDateKey);
       setSelectedDate(savedDateKey); setVisibleMonth(new Date(savedDate.getFullYear(), savedDate.getMonth(), 1)); resetForm(savedDateKey);
       setActiveSection('calendario');
@@ -154,7 +168,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
       endTime: agendaEvent.isAllDay ? '10:00' : toTimeInput(end), notifyMedicalProfile: agendaEvent.notifyMedicalProfile,
       medicalUserId: agendaEvent.medicalUserId ? String(agendaEvent.medicalUserId) : '', notifyUser: agendaEvent.notifyUser,
       reminderPeriodMinutes: String(agendaEvent.reminderPeriodMinutes ?? defaultReminderMinutes), notificationMessage: '',
-      notifyAllAllowedRecipients: false, notificationUserIds: [], notificationGroupIds: [] });
+      notifyAllAllowedRecipients: false, notificationUserIds: [], notificationGroupIds: [], sendEmailOnCreate: false });
   };
   const completeSelectedEvent = async (agendaEvent: AgendaEvent) => {
     setError(''); setSuccessMessage('');

@@ -44,7 +44,7 @@ evento; este comportamento anterior não foi alterado.
 
 Não houve commit, deploy, alteração de secrets nem envio de e-mail real.
 
-## Validação
+## Validação original (antes da #169)
 
 - Frontend: 105 testes de agenda e camada HTTP aprovados.
 - API: 65 testes de envio, transporte, segurança e regressão aprovados, incluindo
@@ -55,3 +55,66 @@ Não houve commit, deploy, alteração de secrets nem envio de e-mail real.
 - Transporte validado com HTTP/SMTP simulados; entrega real e configuração do Azure
   ainda dependem da publicação e da validação operacional.
 - Projeto Azure Functions Workers compilado com zero erros e zero avisos.
+
+## Correção da issue frontend #169 — 2026-10-13
+
+Complexidade alta, risco alto de integração e estado multiclínica. Architect
+(high) investigou API e revisou frontend; QA (medium) implementou e executou os
+negativos, E2E e inspeção visual. Modelo dos subagentes não identificado no retorno
+ do runtime. Agente principal implementou produção e executou regressão/build.
+
+Causas verificadas:
+
+- `EventEmailRequestHandlers.cs:34` só autoriza novo envio para destinatário
+  `available`. `pendingCount=1/canSend=false` significa solicitação já enfileirada,
+  não ausência de destinatários. O bloqueio foi preservado e passou a ser explicado.
+- `eventEmailService.ts` não enviava `copyToCreator`; o frontend não modelava nem
+  apresentava `creatorCopy`. Agora GET usa `?copyToCreator=true` apenas no opt-in,
+  POST envia somente `{copyToCreator:boolean}`. Não aceita endereço/ID/clínica.
+- `useAgendaEventEmail.ts` recriava a chave ao atualizar preview. Agora preserva
+  chave e payload após tentativa incerta; confirmação aceita não se perde se GET
+  posterior falhar. Troca de contexto limpa escolha e oculta respostas anteriores.
+- O modal não organizava cabeçalho/rodapé e herdava fundo translúcido. O
+  `backdrop-filter` de `.app-layout` também prendia seu posicionamento fixo.
+  `AgendaEventEmailModal` usa portal local, preservando `Modal` compartilhado;
+  superfície opaca, corpo rolável, título/fechamento e ações visíveis, sem alterar
+  estilos globais. A inspeção de capturas revelou e confirmou essas correções.
+
+A cópia fica desmarcada por padrão. Ausência de email, autoria legada, perda de
+acesso e solicitação anterior recebem explicações. Criador já destinatário recebe
+somente uma mensagem, conforme deduplicação da API. Eventos sem autoria persistida
+não ganham criador inferido pelo responsável. A API #174 e migration
+`20261012210010_AddEventAuthenticatedCreator` precisam estar disponíveis no ambiente.
+
+Resultados reais:
+
+- `npm run verify`: arquitetura sem violações, **569 unitários em 88 arquivos
+  aprovados**, TypeScript e build aprovados. Inclui **28 testes direcionados**
+  de hook/modal/service, também aprovados isoladamente.
+- Playwright: **14 cenários distintos aprovados**. Última rodada completa teve
+  13 aprovados e um timeout no login antes do modal. Repetição dirigida: cinco
+  aprovados, incluindo esse caso e quatro inspeções visuais. Não se declara uma
+  rodada única de 14 casos verde. Comando: `npx playwright test --grep "agenda email:" --workers=1`.
+- Matriz 320/360/390/768/1280px, light/dark; axe sem violações graves/críticas,
+  foco/Tab/Escape, reabertura, opt-in, duplo clique, falha de rede com chave/payload
+  estáveis, pending/sent/failed, 403/404 e invalidação de estado por clínica.
+  Zoom foi validado por viewport equivalente a 200% (384x450, escala 2), sem
+  confundir CSS `zoom` com zoom nativo. As ações ficam completamente na viewport.
+- API: **71 aprovados, zero falhas/ignorados**, incluindo cópia, transporte
+  simulado, clínica cruzada, concorrência e migration em LocalDB descartável.
+  Relatório `hemodinks-api/out/issue-validation/issue169-api-regression.trx`.
+- `npm run budget` e `git diff --check` aprovados. Avisos preexistentes de tamanho
+  de types.ts e importação de observability permanecem fora do escopo.
+
+Capturas reais e saídas de navegador foram movidas para o diretório ignorado
+`hemodinks-api/out/issue169/frontend-validation/`; a subpasta
+`issue-169-viewport` contém 320/1280px em ambos os temas. Artefatos não entram no diff.
+
+Limites: E2E de frontend usa API mockada; testes da API usam transporte falso.
+Não houve email real nem inspeção de produção. Para fila persistentemente pendente,
+verificar worker/leases/tentativas e configuração/versão das Functions/SMTP no
+ambiente, sem expor secrets. `sent` significa aceitação pelo transporte, não entrega
+confirmada na caixa postal. Sem commit, push, PR, merge ou deploy. Frontend alterado
+na branch já aberta `chore/update-frontend-dependencies`; API `developer` sem
+alterações de produção nesta tarefa. Nenhuma dependência, regra de destinatários,
+notificação interna ou lembrete foi alterado.

@@ -15,6 +15,7 @@ export type ConsentRecord = OptionalConsentCategories & {
 
 const OPTIONAL_PREFERENCE_KEYS = [
   'hemodinks.theme',
+  'hemodinks.calculator.visibility',
   'hemodinks.dashboard.module-order',
   'hemodinks.tutorials.completed',
   'hemodinks.tutorials.hidden',

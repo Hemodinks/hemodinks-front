@@ -934,7 +934,8 @@ describe('App', () => {
 
   it('exclui apenas o evento clicado na agenda', async () => {
     const today = new Date();
-    const todayKey = `${today.getFullYear()}-${`${today.getMonth() + 1}`.padStart(2, '0')}-${`${today.getDate()}`.padStart(2, '0')}`;
+    // The selected agenda day is local; UTC literals can move an event to tomorrow.
+    const atLocalHour = (hour: number) => new Date(today.getFullYear(), today.getMonth(), today.getDate(), hour).toISOString();
     vi.mocked(api.getAgendaEvents).mockResolvedValue([
       {
         id: 101,
@@ -944,8 +945,8 @@ describe('App', () => {
         medicalUserName: null,
         title: 'Evento A',
         description: 'Primeiro evento',
-        start: `${todayKey}T12:00:00Z`,
-        end: `${todayKey}T13:00:00Z`,
+        start: atLocalHour(12),
+        end: atLocalHour(13),
         notifyMedicalProfile: false,
         notifyUser: false,
         reminderPeriodMinutes: null,
@@ -953,7 +954,7 @@ describe('App', () => {
         nextReminderAt: null,
         isCompleted: false,
         completedAt: null,
-        createdAt: `${todayKey}T11:00:00Z`,
+        createdAt: atLocalHour(11),
         updatedAt: null,
       },
       {
@@ -964,8 +965,8 @@ describe('App', () => {
         medicalUserName: null,
         title: 'Evento B',
         description: 'Segundo evento',
-        start: `${todayKey}T15:00:00Z`,
-        end: `${todayKey}T16:00:00Z`,
+        start: atLocalHour(15),
+        end: atLocalHour(16),
         notifyMedicalProfile: false,
         notifyUser: false,
         reminderPeriodMinutes: null,
@@ -973,7 +974,7 @@ describe('App', () => {
         nextReminderAt: null,
         isCompleted: false,
         completedAt: null,
-        createdAt: `${todayKey}T14:00:00Z`,
+        createdAt: atLocalHour(14),
         updatedAt: null,
       },
     ]);
@@ -984,7 +985,8 @@ describe('App', () => {
     await user.click(within(screen.getByLabelText('Menu da clínica')).getByRole('button', { name: /agenda e notificações/i }));
     expect(await screen.findByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: /Evento A$/ })).toBeInTheDocument();
-    const eventCards = await screen.findAllByRole('article');
+    const selectedDay = await screen.findByRole('region', { name: 'Eventos da data selecionada' });
+    const eventCards = await within(selectedDay).findAllByRole('article');
     expect(eventCards).toHaveLength(2);
     const eventCard = eventCards.find(card => within(card).queryByText('Evento A'));
     expect(eventCard).toBeDefined();
@@ -1870,6 +1872,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
     expect(api.createPaciente).toHaveBeenCalledWith({
+      tipoCirurgia: 'Eletiva',
       data: '2026-06-04',
       dataAtendimento: '2030-12-01',
       nomePaciente: 'Novo Paciente',
