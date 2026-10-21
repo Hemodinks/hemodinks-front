@@ -269,7 +269,14 @@ npm run test:e2e
 npm run audit:a11y
 npm run analyze
 npm run audit:lighthouse
+npm run test:performance
 ```
+
+`audit:lighthouse` gera um build de produção para auditoria com API fictícia local
+em `127.0.0.1:5199`, restaura uma sessão sintética pelo fluxo existente e mede
+dashboard, usuários, pacientes e agenda. Não utiliza a API configurada em `.env`.
+O servidor local serve assets com gzip; os relatórios ficam em `reports/lighthouse`.
+`test:performance` verifica o budget e os contratos dos dados fictícios.
 
 Cobertura atual inclui:
 

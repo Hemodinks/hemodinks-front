@@ -291,7 +291,7 @@ export function usePatientsDomainQueries({
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(token) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(token), refetchType: 'none' });
     }
 
     await medicalUsersQuery.refetch();
@@ -306,7 +306,7 @@ export function usePatientsDomainQueries({
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(token) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(token), refetchType: 'none' });
     }
 
     await pacientesQuery.refetch();
@@ -321,7 +321,7 @@ export function usePatientsDomainQueries({
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmRoot(token) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cbhpmRoot(token), refetchType: 'none' });
     }
 
     await cbhpmQuery.refetch();
@@ -333,7 +333,7 @@ export function usePatientsDomainQueries({
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(token) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(token), refetchType: 'none' });
     }
 
     await hospitaisQuery.refetch();
@@ -345,7 +345,7 @@ export function usePatientsDomainQueries({
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.convenios(token) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.convenios(token), refetchType: 'none' });
     }
 
     await conveniosQuery.refetch();
@@ -357,7 +357,7 @@ export function usePatientsDomainQueries({
     }
 
     if (forceRefresh) {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(token) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(token), refetchType: 'none' });
     }
 
     await opmeFornecedoresQuery.refetch();

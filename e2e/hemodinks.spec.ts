@@ -1,4 +1,5 @@
 import { registerCalculatorCases } from './calculator-cases';
+import { registerPerformanceRefetchCases } from './performance-refetch-cases';
 import { registerAgendaEmailCases } from './agenda-email-cases';
 import { registerSurgeryTypeCases } from './surgery-type-cases';
 import { registerTenantIsolationCases } from './tenant-isolation-cases';
@@ -25,6 +26,8 @@ import { registerPatientFormTests } from './patient-form-cases';
 import { registerPatientListTests } from './patient-list-cases';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
+
+registerPerformanceRefetchCases({ setup: mockApi, login: loginViaUi });
 
 test.beforeEach(async ({ page }, testInfo) => {
   page.on('pageerror', (error) => {
@@ -565,6 +568,11 @@ async function mockApi(page: Page, loginSession = session, options: {
     const pacienteMatch = path.match(/^\/api\/pacientes\/(\d+)$/);
     if (pacienteMatch) {
       const id = Number(pacienteMatch[1]);
+
+      if (method === 'DELETE') {
+        state.pacientes = state.pacientes.filter(item => item.id !== id);
+        return route.fulfill({ status: 204 });
+      }
 
       if (method === 'PUT') {
         const payload = request.postDataJSON() as Payload;
