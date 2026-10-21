@@ -1,3 +1,4 @@
+import { CalculatorPreferenceProvider } from '../features/calculator/CalculatorPreferenceProvider';
 import type { ReactNode } from 'react';
 import type { AppView, ModuleMode, Theme } from '../appTypes';
 import type { AuthSession, SelectClinicResponse } from '../types';
@@ -86,6 +87,7 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
   });
 
   return (
+    <CalculatorPreferenceProvider session={session}>
     <TutorialProvider activeView={activeView} allowedTutorialIds={allowedTutorialIds}>
       <AppShell
         banner={<ClinicCnpjWarning session={session} onUpdateClinic={navigation.openCurrentClinic} />}
@@ -175,5 +177,6 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
         />
       </AppShell>
     </TutorialProvider>
+    </CalculatorPreferenceProvider>
   );
 }

@@ -13,7 +13,7 @@ import {
 import { Sidebar } from './Sidebar';
 import { NavigationDrawer } from './NavigationDrawer';
 import { Topbar } from './Topbar';
-import { ContextualFlowDrawer } from './ContextualFlowDrawer';
+import { ContextualTools } from './ContextualTools';
 import { LegalFooter } from '../features/legal/LegalFooter';
 
 type AppShellProps = {
@@ -189,6 +189,8 @@ export function AppShell({
         onLogout={onLogout}
       />
 
+      <div className="app-tools-layout">
+      <div className="app-tools-content">
       {banner && <div className="app-banner-shell">{banner}</div>}
 
       <div className="app-layout">
@@ -199,9 +201,10 @@ export function AppShell({
         </main>
       </div>
 
-      <ContextualFlowDrawer activeView={activeView} />
-
       <LegalFooter className="app-legal-footer" />
+      </div>
+      <ContextualTools activeView={activeView} />
+      </div>
       </div>
       {navigationOpen && <NavigationDrawer onClose={closeNavigation}>{sidebar}</NavigationDrawer>}
 

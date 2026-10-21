@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { CheckCircle2, KeyRound, Moon, Palette, Sun } from "lucide-react";
+import { Calculator, CheckCircle2, KeyRound, Moon, Palette, Sun } from "lucide-react";
 import type { Theme } from "../../appTypes";
 import type { AuthSession } from "../../types";
 import { PasswordForm } from "../../shared/components/PasswordForm";
 import { EmailChangeAction } from "../../shared/components/EmailChangeAction";
-import { DataPanel, ToastMessage } from "../../shared/components/ui";
+import { CheckboxField, DataPanel, ToastMessage } from "../../shared/components/ui";
+import { useCalculatorPreference } from "../calculator/CalculatorPreferenceProvider";
 import "./settings.css";
 
 type SystemSettingsPageProps = {
@@ -21,6 +22,7 @@ export function SystemSettingsPage({
   onPasswordChanged,
 }: SystemSettingsPageProps) {
   const [passwordSuccess, setPasswordSuccess] = useState("");
+  const { visible, setVisible } = useCalculatorPreference();
 
   return (
     <section className="workspace system-settings-workspace">
@@ -67,6 +69,19 @@ export function SystemSettingsPage({
               <strong>Escuro</strong>
             </button>
           </div>
+        </DataPanel>
+
+        <DataPanel className="system-settings-panel">
+          <div className="settings-section-heading">
+            <span className="settings-section-icon" aria-hidden="true"><Calculator size={19} /></span>
+            <h3>Calculadora</h3>
+          </div>
+          <CheckboxField
+            label="Exibir calculadora flutuante"
+            checked={visible}
+            onCheckedChange={setVisible}
+          />
+          <p className="helper-text">A preferência fica neste navegador para sua conta e clínica quando o armazenamento de preferências está autorizado. Sem essa autorização, vale apenas nesta sessão.</p>
         </DataPanel>
 
         <DataPanel className="system-settings-panel system-settings-password-panel">
