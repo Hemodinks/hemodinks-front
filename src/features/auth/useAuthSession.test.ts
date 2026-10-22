@@ -146,6 +146,29 @@ it('preserves the context and cache during ordinary access-token renewal', async
   expect(queryClient.getQueryData(['pacientes', session.token])).toEqual(['authorized data']);
 });
 
+it('empties private queries and mutations for Alfa → Beta → Alfa and logout, even when token claims reuse membership ids', async () => {
+  const { result } = renderHook(() => useAuthSession());
+  await waitFor(() => expect(result.current.restoring).toBe(false));
+  const scoped = (id: number): AuthSession => ({ ...createTeamSession(true), token: createJwtToken({
+    sid: 'shared-session', usuarioGlobalId: 1, usuarioClinicaId: 8, clinicaId: String(id),
+    clinicaSlug: id === 1 ? 'alfa' : 'beta',
+  }), user: { ...createTeamSession(true).user, clinicaId: id } });
+  act(() => result.current.persistSession(scoped(1)));
+  for (const next of [scoped(2), scoped(1), null]) {
+    const previousEpoch = sessionEpoch();
+    const token = result.current.session!.token;
+    for (const domain of ['pacientes', 'reports', 'billingRecords', 'billingHistoryFiles', 'dashboardNotifications']) {
+      queryClient.setQueryData([domain, token], { private: 'previous clinic data' });
+    }
+    queryClient.getMutationCache().build(queryClient, { mutationKey: ['patient update', token] });
+    act(() => next ? result.current.persistSession(next) : result.current.clearSession());
+    expect(sessionEpoch()).toBeGreaterThan(previousEpoch);
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
+    expect(queryClient.getMutationCache().getAll()).toHaveLength(0);
+    expect(result.current.session).toEqual(next);
+  }
+});
+
 it('does not invalidate a different team operator when a tab signs out without sid', async () => {
   const channels: Array<{ onmessage?: (event: { data: unknown }) => void; messages: unknown[] }> = [];
   class Channel {

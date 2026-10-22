@@ -1,7 +1,7 @@
 import { act, fireEvent, renderHook } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, apiClient, get } from '../../services/api';
+import { ApiError, apiClient, get, post } from '../../services/api';
 import { renewSession, recordSessionActivity } from '../../services/sessionService';
 import type { AuthSession } from '../../types';
 import { useSessionExpiration } from './useSessionLifecycle';
@@ -39,6 +39,25 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('active session renewal', () => {
+  it.each(['read', 'write'])('rejects a late %s callback from Alfa after mounting Beta with the same session identifiers', async kind => {
+    const scoped = (id: string, slug: string) => `header.${btoa(JSON.stringify({
+      sid: 'session-a', usuarioGlobalId: 1, usuarioClinicaId: 2,
+      clinicaId: id, clinicaSlug: slug, exp: Date.now() / 1000 + 1800,
+    }))}.signature`;
+    const alfa = scoped('1', 'alfa');
+    const beta = scoped('2', 'beta');
+    const hook = mount({ ...session(beta), user: { ...session(beta).user, clinicaId: 2, clinicaSlug: 'beta' } });
+    await act(async () => {});
+    const request = vi.spyOn(apiClient, 'request').mockResolvedValue({ status: 200, data: { private: 'Beta' } });
+    const action = kind === 'read' ? get('/api/pacientes', alfa) : post('/api/pacientes', { nome: 'Paciente Alfa' }, alfa);
+    await expect(action).rejects.toMatchObject({ status: 401 });
+    expect(request).not.toHaveBeenCalled();
+    expect(hook.expired).not.toHaveBeenCalled();
+    await expect(get('/api/pacientes', beta)).resolves.toEqual({ private: 'Beta' });
+    expect(request).toHaveBeenCalledOnce();
+    hook.unmount();
+  });
+
   it('preserves session and clinic when renewal or activity is temporarily limited', async () => {
     vi.mocked(recordSessionActivity).mockRejectedValue(new ApiError('Wait', 429, 'rate_limited', 2));
     const activeSession = session();
