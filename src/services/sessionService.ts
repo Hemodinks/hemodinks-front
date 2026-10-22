@@ -30,7 +30,9 @@ export async function revokeSession(token: string) {
 export function sessionIdentity(token: string) {
   const claims = decodeJwtPayload(token);
   return JSON.stringify([claims?.sid, claims?.usuarioGlobalId, claims?.usuarioClinicaId,
-    claims?.equipeId, claims?.equipeOperadorId, claims?.sid ? undefined : claims?.auth_time]);
+    claims?.equipeId, claims?.equipeOperadorId, claims?.sid ? undefined : claims?.auth_time,
+    // Never resolve a callback from another clinic to the current clinic's token.
+    String(claims?.clinicaId ?? ''), String(claims?.clinicaSlug ?? '').trim().toLowerCase()]);
 }
 
 export async function renewSession(token: string, active: boolean): Promise<SessionRenewal> {
