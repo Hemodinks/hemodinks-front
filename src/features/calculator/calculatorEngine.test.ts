@@ -6,6 +6,21 @@ function calculate(keys: string[]) {
 }
 
 describe('calculadora independente', () => {
+  it('registra resultados intermediários, porcentagens e preserva histórico após limpar ou erro', () => {
+    const state = calculate([...'2+3*4=']);
+    expect(state.history).toEqual([
+      { expression: '5 × 4 =', result: '20' }, { expression: '2 + 3 =', result: '5' },
+    ]);
+    const cleared = calculatorReducer(state, 'clear');
+    const failed = [...'8/0='].reduce(calculatorReducer, cleared);
+    expect(failed.history).toEqual(state.history);
+    expect(calculatorReducer(failed, '3').history).toEqual(state.history);
+    expect(calculatorReducer(state, 'clearHistory')).toMatchObject({ display: '20', history: [] });
+    expect(calculate([...'10%%']).history).toEqual([{ expression: '10% =', result: '0.1' }]);
+    expect(calculate([...'200+10%=']).history).toEqual([{ expression: '200 + 20 =', result: '220' }]);
+    expect(initialCalculatorState.history).toEqual([]);
+  });
+
   it.each([
     ['10%', '0.1'], ['200+10%=', '220'], ['200-10%=', '180'],
     ['200*10%=', '20'], ['200/10%=', '2000'],

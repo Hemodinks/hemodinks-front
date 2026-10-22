@@ -20,7 +20,7 @@ export function Calculator({ onClose }: { onClose?: () => void }) {
 
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.ctrlKey || event.altKey || event.metaKey || event.nativeEvent.isComposing) return;
-    if (event.key === 'Enter' && event.target instanceof HTMLElement && event.target.closest('.calculator-close')) return;
+    if (event.key === 'Enter' && event.target instanceof HTMLElement && event.target.closest('.calculator-close, .calculator-history-clear')) return;
     // Escape belongs to the surrounding dock, which restores focus on close.
     const key = event.key === 'Enter' ? '=' : event.key === 'Backspace' ? 'backspace' : event.key === 'Delete' ? 'clear' : event.key;
     if (!/^\d$/.test(key) && !['.', ',', '+', '-', '*', '/', '%', '=', 'backspace', 'clear'].includes(key)) return;
@@ -47,6 +47,20 @@ export function Calculator({ onClose }: { onClose?: () => void }) {
         ))}
       </div>
       <p className="calculator-hint">Operações na ordem digitada. Até 12 dígitos; resultados arredondados.</p>
+      <section className="calculator-history" aria-label="Histórico de operações">
+        <div className="calculator-history-heading">
+          <h3>Histórico</h3>
+          <button type="button" className="calculator-history-clear" disabled={!state.history.length}
+            onClick={() => dispatch('clearHistory')}>Limpar histórico</button>
+        </div>
+        {state.history.length ? <ol tabIndex={0} aria-label="Operações realizadas">
+          {state.history.map((entry, index) => <li key={state.history.length - index}>
+            <span>{entry.expression.replaceAll('.', ',')}</span>
+            <strong>{entry.result.replace('.', ',')}</strong>
+          </li>)}
+        </ol> : <p>Nenhuma operação nesta utilização.</p>}
+        <p>Histórico temporário, apagado ao fechar a calculadora.</p>
+      </section>
     </section>
   );
 }
