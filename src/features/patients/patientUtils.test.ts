@@ -15,6 +15,24 @@ import {
 import { getPacienteFormExportRows } from './export/patientExportData';
 
 describe('patientUtils', () => {
+  it.each([
+    ['10/10/2026', '09/10/2026', false], ['10/10/2026', '10/10/2026', true],
+    ['10/10/2026', '11/10/2026', true], ['31/12/2025', '01/01/2026', true],
+    ['01/01/2026', '31/12/2025', false], ['01/03/2024', '29/02/2024', false],
+    ['', '09/10/2026', true], ['10/10/2026', '', true], ['', '', true],
+  ])('valida cronologia civil de solicitação %s e consolidação %s', (data, dataAtendimento, valid) => {
+    const form = { ...getPacienteFormData(basePaciente), data, dataAtendimento };
+    expect(validatePacienteForm(form)).toBe(valid ? '' : 'A data da consolidação não pode ser anterior à data da solicitação.');
+  });
+
+  it('compara a data civil recebida da API sem converter os horários/offsets', () => {
+    const form = getPacienteFormData({ ...basePaciente,
+      data: '2026-10-10T23:30:00-03:00', dataAtendimento: '2026-10-10T00:30:00+14:00' });
+    expect(validatePacienteForm(form)).toBe('');
+    expect(validatePacienteForm({ ...form, dataAtendimento: '09/10/2026' }))
+      .toBe('A data da consolidação não pode ser anterior à data da solicitação.');
+  });
+
   it.each(['01/12/2030', '29/02/2032'])('preserva a cirurgia consolidada futura %s no payload e na edicao', (date) => {
     const payload = toPacientePayload({ ...emptyPacienteForm, dataAtendimento: date });
     expect(payload.dataAtendimento).toBe(date === '01/12/2030' ? '2030-12-01' : '2032-02-29');

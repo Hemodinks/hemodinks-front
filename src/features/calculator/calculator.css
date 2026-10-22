@@ -15,3 +15,13 @@
 .calculator-keys button:disabled { opacity: .55; cursor: not-allowed; }
 .calculator button:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
 .calculator-hint { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: .75rem; line-height: 1.5; }
+.calculator-history { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.calculator-history-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.calculator-history h3 { margin: 0; font-size: .95rem; }
+.calculator-history-clear { min-height: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-strong); color: var(--ink); cursor: pointer; }
+.calculator-history-clear:disabled { opacity: .55; cursor: default; }
+.calculator-history ol { max-height: 220px; overflow-y: auto; list-style: none; margin: 8px 0; padding: 0 4px; }
+.calculator-history li { display: grid; gap: 4px; padding: 12px 0; text-align: right; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.calculator-history li span, .calculator-history p { color: var(--muted); font-size: .75rem; line-height: 1.5; }
+.calculator-history li strong { font-size: 1rem; }
+.calculator-history ol:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
