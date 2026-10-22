@@ -1,9 +1,33 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Calculator } from './Calculator';
 
 describe('painel da calculadora', () => {
+  it('mantém operações concluídas durante o uso e permite limpar somente o histórico pelo teclado', async () => {
+    const user = userEvent.setup();
+    const view = render(<Calculator />);
+    await user.click(screen.getByRole('button', { name: '8' }));
+    await user.keyboard('*5{Enter}+9{Enter}{Enter}');
+    const history = screen.getByRole('region', { name: 'Histórico de operações' });
+    expect(within(history).getAllByRole('listitem').map(item => item.textContent)).toEqual([
+      '49 + 9 =58', '40 + 9 =49', '8 × 5 =40',
+    ]);
+    await user.keyboard('{Delete}1/0{Enter}');
+    expect(within(history).getAllByRole('listitem')).toHaveLength(3);
+    await user.keyboard('2,5*4{Enter}');
+    expect(within(history).getAllByRole('listitem')[0]).toHaveTextContent('2,5 × 4 =10');
+    screen.getByRole('button', { name: 'Limpar histórico' }).focus();
+    await user.keyboard('{Enter}');
+    expect(within(history).queryByRole('list')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Resultado da calculadora')).toHaveTextContent(/^10$/);
+    await user.click(screen.getByRole('button', { name: '3' }));
+    await user.keyboard('+4{Enter}');
+    view.unmount();
+    render(<Calculator />);
+    expect(screen.getByText('Nenhuma operação nesta utilização.')).toBeInTheDocument();
+  });
+
   it('calcula porcentagem por botão e teclado, sem repetir a conversão', async () => {
     const user = userEvent.setup();
     render(<Calculator />);
