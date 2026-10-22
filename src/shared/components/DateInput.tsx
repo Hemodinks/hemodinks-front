@@ -1,4 +1,5 @@
 import { CalendarDays } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import {
   formatDateInput,
   fromDatePickerValue,
@@ -16,6 +17,7 @@ type DateInputProps = {
   max?: string;
   required?: boolean;
   disabled?: boolean;
+  error?: string;
 };
 
 export function DateInput({
@@ -28,13 +30,19 @@ export function DateInput({
   max = getTodayPickerValue(),
   required = false,
   disabled = false,
+  error,
 }: DateInputProps) {
+  const textInput = useRef<HTMLInputElement>(null);
+  const errorId = error ? `${id}-error` : undefined;
+  useEffect(() => { textInput.current?.setCustomValidity(error ?? ''); }, [error]);
+
   return (
     <div className={['date-field', className].filter(Boolean).join(' ')}>
       <label htmlFor={id}>{label}</label>
       <div className="date-input-control">
         <input
           id={id}
+          ref={textInput}
           type="text"
           value={value}
           onChange={(event) => onChange(formatDateInput(event.target.value))}
@@ -43,6 +51,8 @@ export function DateInput({
           placeholder="dd/mm/yyyy"
           required={required}
           disabled={disabled}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={errorId}
         />
         <span className="date-picker-button" title={`Selecionar ${label.toLowerCase()}`}>
           <CalendarDays size={17} />
@@ -54,9 +64,12 @@ export function DateInput({
             max={max ? toDatePickerValue(max) : undefined}
             aria-label={`Selecionar ${label.toLowerCase()}`}
             disabled={disabled}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={errorId}
           />
         </span>
       </div>
+      {error && <small id={errorId} role="alert" className="date-field-error">{error}</small>}
     </div>
   );
 }
