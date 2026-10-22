@@ -41,6 +41,17 @@ textarea::placeholder {
   position: relative;
 }
 
+.date-field-error {
+  color: var(--danger);
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.date-input-control > input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
 .combobox-field {
   position: relative;
 }
