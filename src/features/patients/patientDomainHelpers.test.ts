@@ -12,6 +12,16 @@ const validForm = () => ({
 });
 
 describe('preparePatientPayload', () => {
+  it('não prepara payload com cronologia invertida mesmo sem validação nativa do formulário', () => {
+    const result = preparePatientPayload({
+      pacienteFormData: { ...validForm(), data: '10/10/2026', dataAtendimento: '09/10/2026' },
+      medicalUsers: [{ id: 10, nome: 'Dra. Ana', email: 'ana@teste.com' }],
+      hospitais: [], convenios: [], opmeFornecedores: [],
+    });
+    expect(result.payload).toBeNull();
+    expect(result.error).toBe('A data da consolidação não pode ser anterior à data da solicitação.');
+  });
+
   it('resolve seleções textuais para os identificadores cadastrados', () => {
     const result = preparePatientPayload({
       pacienteFormData: { ...validForm(), convenio: 'Unimed', opmeFornecedor: 'Fornecedor OPME' },

@@ -44,6 +44,85 @@ async function noOverflow(page: Page) {
 
 export function registerPatientFormTests({ setup, login }: Dependencies) {
   test.describe('ficha paciente', () => {
+    for (const width of [390, 1440]) {
+      const message = 'A data da consolidação não pode ser anterior à data da solicitação.';
+      test(`issue182: criação valida datas digitadas e selecionadas em ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 900 });
+        const base = await setup(page);
+        const api = await mockPatientFormApi(page, base.pacientes[0], base.token);
+        await login(page, '/pacientes');
+        await page.getByRole('button', { name: 'Novo paciente', exact: true }).click();
+        await page.getByLabel('Paciente', { exact: true }).fill('Paciente Datas');
+        await page.getByRole('combobox', { name: 'Hospital', exact: true }).fill('Hospital Datas');
+        await page.getByRole('combobox', { name: 'Hospital', exact: true }).press('Tab');
+        await page.getByRole('combobox', { name: 'Cirurgião', exact: true }).fill('Ana');
+        await page.getByRole('option', { name: 'Ana Hemodinks', exact: true }).click();
+        await addProcedure(page);
+        const request = page.getByLabel('Data da Solicitação', { exact: true });
+        const consolidated = page.getByLabel('Cirurgias Consolidadas', { exact: true });
+        if (width === 390) {
+          await request.fill('10102026'); await consolidated.fill('09102026');
+        } else {
+          await page.getByLabel('Selecionar data da solicitação', { exact: true }).fill('2026-10-10');
+          await page.getByLabel('Selecionar cirurgias consolidadas', { exact: true }).fill('2026-10-09');
+        }
+        await expect(page.getByRole('alert')).toHaveText(message);
+        await expect(consolidated).toHaveAccessibleDescription(message);
+        await expect(page.getByLabel('Selecionar cirurgias consolidadas', { exact: true })).toHaveAttribute('min', '2026-10-10');
+        await page.getByRole('button', { name: 'Cadastrar paciente', exact: true }).click();
+        expect(api.writes).toHaveLength(0);
+        await expect(consolidated).toBeFocused();
+        await expect(consolidated).toHaveValue('09/10/2026');
+        await noOverflow(page);
+        expect((await new AxeBuilder({ page }).include('.patient-form-panel').analyze()).violations).toEqual([]);
+        await page.screenshot({ path: info.outputPath(`invalid-dates-${width}.png`), fullPage: true });
+        // Changing the request date must revalidate the already-entered consolidation.
+        await request.fill('09102026');
+        await expect(page.getByRole('alert')).toHaveCount(0);
+        await page.getByRole('button', { name: 'Cadastrar paciente', exact: true }).click();
+        await expect(page.getByText('Paciente cadastrado com sucesso.', { exact: true })).toBeVisible();
+        expect(api.writes).toHaveLength(1);
+        expect(api.writes[0]).toMatchObject({ data: '2026-10-09', dataAtendimento: '2026-10-09' });
+        await page.getByRole('button', { name: 'Editar Paciente Datas', exact: true }).click();
+        await consolidated.fill('11102026');
+        await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+        await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
+        expect(api.writes[1]).toMatchObject({ data: '2026-10-09', dataAtendimento: '2026-10-11' });
+      });
+
+      test(`issue182: edição de legado e datas opcionais em ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        const base = await setup(page);
+        const api = await mockPatientFormApi(page, { ...base.pacientes[0],
+          data: '2026-10-10T00:30:00+14:00', dataAtendimento: '2026-10-09T23:30:00-12:00' }, base.token);
+        await login(page, '/pacientes');
+        const edit = () => page.getByRole('button', { name: 'Editar Paciente Hemodinks', exact: true }).click();
+        const save = () => page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+        const request = page.getByLabel('Data da Solicitação', { exact: true });
+        const consolidated = page.getByLabel('Cirurgias Consolidadas', { exact: true });
+        await edit();
+        await expect(request).toHaveValue('10/10/2026');
+        await expect(consolidated).toHaveValue('09/10/2026');
+        await expect(page.getByRole('alert')).toHaveText(message);
+        await save(); expect(api.writes).toHaveLength(0);
+        await consolidated.fill('10102026'); await save();
+        await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
+        expect(api.writes).toHaveLength(1);
+        await edit(); await request.fill('11102026');
+        await expect(page.getByRole('alert')).toHaveText(message);
+        await save(); expect(api.writes).toHaveLength(1);
+        await request.clear(); await save();
+        await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
+        expect(api.writes[1]).toMatchObject({ data: null, dataAtendimento: '2026-10-10' });
+        await edit(); await consolidated.clear(); await save();
+        await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
+        expect(api.writes[2]).toMatchObject({ data: null, dataAtendimento: null });
+        await edit(); await request.fill('10102026'); await save();
+        await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
+        expect(api.writes[3]).toMatchObject({ data: '2026-10-10', dataAtendimento: null });
+      });
+    }
+
     for (const width of [1440, 390]) {
       test(`issue174: equipe cirurgica, edicao e exportacao ${width}`, async ({ page }) => {
         test.setTimeout(90_000);
