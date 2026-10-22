@@ -19,6 +19,42 @@ async function noOverlap(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 }
 export function registerCalculatorCases(helpers: Helpers) {
+  for (const width of [320, 768, 1440]) {
+    test(`histórico temporário da calculadora em ${width}px`, async ({ page }, info) => {
+      const errors = await safeSetup(page, helpers);
+      await page.setViewportSize({ width, height: 900 });
+      await helpers.loginViaUi(page, '/pacientes');
+      const open = page.getByRole('button', { name: 'Abrir calculadora', exact: true });
+      await open.click();
+      const panel = page.getByRole('region', { name: 'Calculadora', exact: true });
+      const history = panel.getByRole('region', { name: 'Histórico de operações' });
+      await panel.getByRole('button', { name: '8', exact: true }).click();
+      await page.keyboard.type('*5=+9=');
+      await expect(history.getByRole('listitem')).toHaveText(['40 + 9 =49', '8 × 5 =40']);
+      await page.keyboard.press('Delete');
+      await expect(history.getByRole('listitem')).toHaveCount(2);
+      await noOverlap(page);
+      await history.scrollIntoViewIfNeeded();
+      expect((await new AxeBuilder({ page }).include('.contextual-tools').analyze()).violations).toEqual([]);
+      await page.screenshot({ path: info.outputPath(`calculator-history-${width}.png`), fullPage: true });
+      await panel.getByRole('button', { name: 'Limpar histórico' }).focus();
+      await page.keyboard.press('Enter');
+      await expect(history.getByRole('listitem')).toHaveCount(0);
+      await expect(panel.getByLabel('Resultado da calculadora')).toHaveText('0');
+      await panel.getByRole('button', { name: '2', exact: true }).click();
+      await page.keyboard.type('+3=');
+      await expect(history.getByRole('listitem')).toHaveCount(1);
+      await page.keyboard.press('Escape');
+      await open.click();
+      await expect(history.getByRole('listitem')).toHaveCount(0);
+      await expect(history.getByText('Nenhuma operação nesta utilização.')).toBeVisible();
+      await page.reload();
+      await open.click();
+      await expect(history.getByRole('listitem')).toHaveCount(0);
+      expect(errors).toEqual([]);
+    });
+  }
+
   test('issue178: destaque de ajuda respeita movimento reduzido e mantém os acionadores separados', async ({ page }) => {
     const errors = await safeSetup(page, helpers);
     await page.emulateMedia({ reducedMotion: 'no-preference' });
@@ -97,7 +133,7 @@ export function registerCalculatorCases(helpers: Helpers) {
     await page.getByRole('button', { name: 'Abrir calculadora', exact: true }).click();
     await noOverlap(page);
     const panel = page.getByRole('region', { name: 'Calculadora', exact: true });
-    await panel.getByRole('button', { name: 'Limpar' }).click();
+    await panel.getByRole('button', { name: 'Limpar', exact: true }).click();
     await page.keyboard.type('200+10%=');
     await expect(page.getByLabel('Resultado da calculadora')).toHaveText('220');
     await panel.getByRole('button', { name: 'Igual' }).scrollIntoViewIfNeeded();

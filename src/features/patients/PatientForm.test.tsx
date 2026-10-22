@@ -1,10 +1,11 @@
-import type { ComponentProps } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { basePaciente } from '../../test/appTestData';
 import { PatientForm } from './PatientForm';
 import { getPacienteFormData } from './patientUtils';
+import type { PacienteFormData } from '../../types';
 
 vi.mock('./usePatientFormExport', () => ({
   usePatientFormExport: () => ({ exportLoading: null, exportError: '', handleExport: vi.fn() }),
@@ -24,6 +25,39 @@ function props(overrides: Partial<ComponentProps<typeof PatientForm>> = {}): Com
 }
 
 describe('PatientForm: permissões e operações em andamento', () => {
+  it.each([null, basePaciente.id])('impede envio manual invertido, preserva valores e revalida ambas as datas (%s)', async editingPacienteId => {
+    const submit = vi.fn(event => event.preventDefault());
+    function Form() {
+      const [data, setData] = useState<PacienteFormData>({ ...getPacienteFormData(basePaciente), data: '10/10/2026', dataAtendimento: '09/10/2026' });
+      return <PatientForm {...props({ editingPacienteId, pacienteFormData: data, setPacienteFormData: setData, onSubmit: submit })} />;
+    }
+    const user = userEvent.setup();
+    render(<Form />);
+    const request = screen.getByLabelText('Data da Solicitação', { exact: true });
+    const consolidated = screen.getByLabelText('Cirurgias Consolidadas', { exact: true });
+    const picker = screen.getByLabelText('Selecionar cirurgias consolidadas');
+    const message = 'A data da consolidação não pode ser anterior à data da solicitação.';
+    expect(screen.getByRole('alert')).toHaveTextContent(message);
+    expect(consolidated).toHaveAccessibleDescription(message);
+    expect(consolidated).toHaveAttribute('aria-invalid', 'true');
+    expect(picker).toHaveAttribute('min', '2026-10-10');
+    expect(consolidated).toHaveValue('09/10/2026');
+    await user.click(screen.getByRole('button', { name: editingPacienteId ? 'Salvar alterações' : 'Cadastrar paciente' }));
+    expect(submit).not.toHaveBeenCalled();
+    await user.clear(consolidated); await user.type(consolidated, '10102026');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: editingPacienteId ? 'Salvar alterações' : 'Cadastrar paciente' }));
+    expect(submit).toHaveBeenCalledOnce();
+    await user.clear(request); await user.type(request, '11102026');
+    expect(screen.getByRole('alert')).toHaveTextContent(message);
+    expect(consolidated).toHaveValue('10/10/2026');
+    await user.clear(request);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(picker).not.toHaveAttribute('min');
+    expect(consolidated).not.toHaveAttribute('required');
+    expect(request).not.toHaveAttribute('required');
+  });
+
   it('seleciona Urgência na edição e permite trocar o tipo de cirurgia', async () => {
     const input = props({ pacienteFormData: getPacienteFormData({ ...basePaciente, tipoCirurgia: 'Urgencia' }) });
     render(<PatientForm {...input} />);

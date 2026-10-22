@@ -1,6 +1,7 @@
 type Operator = '+' | '-' | '*' | '/';
 
 export interface CalculatorState {
+  history: { expression: string; result: string }[];
   display: string;
   error: string | null;
   accumulator: number | null;
@@ -12,6 +13,7 @@ export interface CalculatorState {
 }
 
 export const initialCalculatorState: CalculatorState = {
+  history: [],
   display: '0', error: null, accumulator: null, operator: null,
   waiting: false, lastOperator: null, lastOperand: null, percentApplied: false,
 };
@@ -27,7 +29,7 @@ function apply(left: number, right: number, operator: Operator): number {
 
 function displayResult(state: CalculatorState, value: number): CalculatorState {
   if (!Number.isFinite(value) || Math.abs(value) > 999999999999 || (value !== 0 && Math.abs(value) < 0.000000000001)) {
-    return { ...initialCalculatorState, error: 'Resultado fora do limite da calculadora.' };
+    return { ...initialCalculatorState, history: state.history, error: 'Resultado fora do limite da calculadora.' };
   }
   // Twelve significant digits avoid binary floating-point tails; twelve decimal
   // places also keep recurring fractions within the visible panel.
@@ -37,19 +39,24 @@ function displayResult(state: CalculatorState, value: number): CalculatorState {
 
 function result(state: CalculatorState, operator: Operator, operand: number): CalculatorState {
   if (operator === '/' && operand === 0) {
-    return { ...initialCalculatorState, error: 'Não é possível dividir por zero.' };
+    return { ...initialCalculatorState, history: state.history, error: 'Não é possível dividir por zero.' };
   }
-  return displayResult(state, apply(state.accumulator ?? Number(state.display), operand, operator));
+  const left = state.accumulator ?? Number(state.display);
+  const computed = displayResult(state, apply(left, operand, operator));
+  if (computed.error) return computed;
+  const symbol = operator === '*' ? '×' : operator === '/' ? '÷' : operator === '-' ? '−' : '+';
+  return { ...computed, history: [{ expression: `${left} ${symbol} ${operand} =`, result: computed.display }, ...state.history] };
 }
 
 /** Immediate operations, like a basic desk calculator. Never evaluates expressions. */
 export function calculatorReducer(state: CalculatorState, key: string): CalculatorState {
-  if (key === 'clear') return initialCalculatorState;
+  if (key === 'clearHistory') return { ...state, history: [] };
+  if (key === 'clear') return { ...initialCalculatorState, history: state.history };
   const digit = /^\d$/.test(key);
   const decimal = key === '.' || key === ',';
   if (state.error) {
     if (!digit && !decimal && key !== 'sign') return state;
-    state = initialCalculatorState;
+    state = { ...initialCalculatorState, history: state.history };
   }
   if (digit || decimal) {
     const current = state.waiting || state.percentApplied ? '0' : state.display;
@@ -66,6 +73,9 @@ export function calculatorReducer(state: CalculatorState, key: string): Calculat
     const value = state.operator === '+' || state.operator === '-'
       ? (state.accumulator ?? 0) * fraction : fraction;
     const computed = displayResult(state, value);
+    if (!computed.error && !state.operator) {
+      computed.history = [{ expression: `${state.display}% =`, result: computed.display }, ...state.history];
+    }
     return computed.error ? computed : { ...computed, waiting: false, percentApplied: true, lastOperator: null, lastOperand: null };
   }
   if (key === 'sign') {

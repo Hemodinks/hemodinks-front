@@ -191,10 +191,19 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
   });
 }
 
+export function getPatientChronologyError(data: Pick<PacienteFormData, 'data' | 'dataAtendimento'>) {
+  // Compare normalized civil dates, never timestamps or localized strings.
+  return data.data && data.dataAtendimento && isValidDate(data.data) && isValidDate(data.dataAtendimento)
+    && toDatePickerValue(data.dataAtendimento) < toDatePickerValue(data.data)
+    ? 'A data da consolidação não pode ser anterior à data da solicitação.' : '';
+}
+
 export function validatePacienteForm(data: PacienteFormData) {
   if (data.dataAtendimento && !isValidDate(data.dataAtendimento)) {
     return 'Informe uma data válida para Cirurgias Consolidadas.';
   }
+  const chronologyError = getPatientChronologyError(data);
+  if (chronologyError) return chronologyError;
   if (!data.nomePaciente.trim()) {
     return 'Informe o nome do paciente.';
   }
