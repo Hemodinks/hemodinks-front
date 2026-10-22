@@ -5,6 +5,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { DateInput } from './DateInput';
 
 describe('DateInput', () => {
+  it('associa o erro aos dois controles e limpa a validade customizada após correção', () => {
+    const input = { id: 'consolidation', label: 'Consolidação', value: '09/10/2026', onChange: vi.fn(), max: '' };
+    const { rerender } = render(<DateInput {...input} error="Datas invertidas." />);
+    const text = screen.getByRole('textbox', { name: 'Consolidação' });
+    const calendar = screen.getByLabelText('Selecionar consolidação');
+    expect(text).toBeInvalid();
+    expect(text).toHaveAccessibleDescription('Datas invertidas.');
+    expect(calendar).toHaveAccessibleDescription('Datas invertidas.');
+    rerender(<DateInput {...input} value="10/10/2026" />);
+    expect(text).toBeValid();
+    expect(text).not.toHaveAttribute('aria-invalid');
+    expect(calendar).not.toHaveAttribute('aria-describedby');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('preserva máscara digitada, sincronização com calendário e limites', async () => {
     function Field() {
       const [value, setValue] = useState('');

@@ -2,7 +2,8 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { PacienteFormData } from '../../../types';
 import { DateInput } from '../../../shared/components/DateInput';
 import { TextField } from '../../../shared/components/ui';
-import { MAX_NAME_LENGTH } from '../../../shared/utils/formatters';
+import { isValidDate, MAX_NAME_LENGTH } from '../../../shared/utils/formatters';
+import { getPatientChronologyError } from '../patientUtils';
 
 type Props = {
   formData: PacienteFormData;
@@ -31,6 +32,8 @@ export function PatientIdentificationSection({ formData, setFormData }: Props) {
         id="patient-appointment-date"
         label="Cirurgias Consolidadas"
         max=""
+        min={formData.data && isValidDate(formData.data) ? formData.data : undefined}
+        error={getPatientChronologyError(formData)}
         value={formData.dataAtendimento || ''}
         onChange={(value) => setFormData((current) => ({ ...current, dataAtendimento: value }))}
       />
