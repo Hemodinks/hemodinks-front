@@ -253,4 +253,35 @@ export function registerTenantIsolationCases(helpers: Helpers) {
     await expect(other.getByRole('button', { name: 'Exportar PDF', exact: true })).toHaveCount(0);
     await other.close();
   });
+
+  test('tenant #162: download autorizado de Alfa em voo não inicia após mudar para Beta', async ({ page }) => {
+    await setup(page);
+    const downloads: string[] = [];
+    page.on('download', file => downloads.push(file.suggestedFilename()));
+    const requested = deferred(); const release = deferred(); const settled = deferred();
+    await page.route('**/api/pacientes/10/arquivos/7/download', async route => {
+      expect(route.request().headers()['x-clinica-id']).toBe('1');
+      expect(route.request().headers().authorization).toBe(`Bearer ${token(1)}`);
+      requested.release();
+      await release.promise;
+      try {
+        await route.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4 arquivo privado Alfa' });
+      } catch { /* The browser may cancel the old request during context teardown. */ }
+      finally { settled.release(); }
+    });
+    await helpers.login(page, '/pacientes');
+    await page.getByRole('button', { name: `Arquivos anexos de ${marker(1)}`, exact: true }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Baixar', exact: true }).click();
+    await requested.promise;
+    await page.getByRole('button', { name: 'Fechar arquivos do paciente', exact: true }).click();
+    try {
+      await switchClinic(page, 2);
+    } finally { release.release(); }
+    await settled.promise;
+    await navigate(page, 'Pacientes');
+    await expect(page.getByText(marker(2), { exact: true })).toBeVisible();
+    await expect(page.getByText(marker(1), { exact: true })).toHaveCount(0);
+    await expect(page.getByText('documento-alfa.pdf', { exact: true })).toHaveCount(0);
+    expect(downloads).toEqual([]);
+  });
 }
