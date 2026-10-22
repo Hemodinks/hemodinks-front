@@ -1,7 +1,7 @@
 import { restoreSession } from './sessionService';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from './api';
-import { renewSession } from './sessionService';
+import { renewSession, sessionIdentity } from './sessionService';
 
 function token(membership = 2) {
   return `h.${btoa(JSON.stringify({ sid: 'session-a', usuarioGlobalId: 1, usuarioClinicaId: membership }))}.s`;
@@ -9,6 +9,18 @@ function token(membership = 2) {
 afterEach(() => vi.restoreAllMocks());
 
 describe('refresh transport', () => {
+  it.each([
+    [{ clinicaId: '1', clinicaSlug: 'alfa' }, { clinicaId: '2', clinicaSlug: 'beta' }],
+    [{ clinicaSlug: 'alfa' }, { clinicaSlug: 'beta' }],
+  ])('rejects another clinic even when session and membership identifiers match', async (first, second) => {
+    const scoped = (clinic: Record<string, unknown>) => `h.${btoa(JSON.stringify({
+      sid: 'same-session', usuarioGlobalId: 1, usuarioClinicaId: 2, ...clinic,
+    }))}.s`;
+    expect(sessionIdentity(scoped(first))).not.toBe(sessionIdentity(scoped(second)));
+    vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { token: scoped(second), idleTimeoutMinutes: 30 } });
+    await expect(renewSession(scoped(first), true)).rejects.toMatchObject({ status: 401 });
+  });
+
   it('uses the HttpOnly cookie and a CSRF header, without sending an expired bearer', async () => {
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { token: token(), idleTimeoutMinutes: 30 } });
     await renewSession(token(), true);
