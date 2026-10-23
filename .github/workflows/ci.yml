@@ -26,7 +26,7 @@ env:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   test-and-build:
@@ -41,6 +41,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -64,6 +67,9 @@ jobs:
             echo "::warning::npm ci failed on attempt ${attempt}. Retrying in 15 seconds..."
             sleep 15
           done
+
+      - name: Test production release gate
+        run: npm run test:release-gate
 
       - name: Install Playwright browsers
         id: playwright-browsers
@@ -117,3 +123,13 @@ jobs:
             test-results/responsive
           if-no-files-found: ignore
           retention-days: 7
+
+  deploy:
+    name: Deploy Azure Static Web Apps
+    needs: test-and-build
+    if: ${{ needs.test-and-build.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    uses: ./.github/workflows/azure-static-web-apps-production.yml
+    secrets:
+      AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410 }}
+      VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
