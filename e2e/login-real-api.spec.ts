@@ -124,7 +124,9 @@ test('limite real: conta limitada preserva outra pessoa no mesmo IP — case:ind
   await page.getByLabel('Senha', { exact: true }).fill(fixture!.individual.password);
   await submit.click();
   await expect.poll(() => Boolean(sessions.get(page))).toBe(true);
-  const terms = page.getByRole('checkbox', { name: /Li e estou ciente/ });
+  // The preceding individual test has already registered consent in this API.
+  // Wait for bootstrap to show the dashboard or an enabled acceptance form.
+  const terms = page.getByRole('checkbox', { name: /Li e estou ciente/ }).and(page.locator(':enabled'));
   await expect(page.locator('.topbar').or(terms)).toBeVisible();
   if (await terms.isVisible()) {
     await terms.check();
