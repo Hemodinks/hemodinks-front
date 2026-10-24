@@ -100,12 +100,95 @@ reports/lighthouse/
 
 `public/staticwebapp.config.json` define o fallback SPA, os headers de seguranca e as regras de cache. O arquivo e copiado para a raiz de `dist` pelo build do Vite.
 
-O workflow `.github/workflows/azure-static-web-apps-white-grass-0d59a4410.yml`:
+O CI chama `.github/workflows/azure-static-web-apps-production.yml` somente depois de
+`Test and build` terminar com sucesso no mesmo run. O job exige auditoria de
+arquitetura, testes do gate, Vitest, build, budget, Playwright E2E e matriz
+responsiva/tenant. Falha, cancelamento ou job ignorado bloqueiam a publicacao.
 
-- roda apenas em `push` para `main` ou acionamento manual selecionando a `main`
-- executa testes, build e budget antes da publicacao
-- publica `dist` no Azure Static Web Apps
-- nao cria preview nem deploy de producao em pull requests
+- Producao aceita apenas `push` para `main` ou **Run workflow no CI**, selecionando
+  `main`. PRs e outras branches nao publicam. O Azure reusable nao tem trigger direto.
+- Os dois checkouts e `VITE_APP_VERSION` usam o mesmo `github.sha`; nao ha busca de
+  um CI verde de outra revisao nem download de artefatos de outro run.
+- O deploy preserva testes, build de producao, budget, `dist`, fallback SPA e a acao
+  Azure existentes. O build CI usa ambiente CI, sem credenciais de producao.
+- Permissao do token GitHub: apenas `contents: read`. O token Azure e passado
+  explicitamente ao reusable e fica restrito a validacao de inputs/upload.
+- Runs da main nao se cancelam automaticamente; o upload tem concorrencia global
+  `azure-static-web-apps-production`, sem cancelamento. O GitHub pode substituir
+  execucoes pendentes; nao ha garantia de ordem FIFO nem de publicar todo push.
+- Imediatamente antes do upload, a API GitHub deve confirmar que o SHA ainda e o
+  HEAD da main. SHA antigo, resposta vazia ou erro bloqueiam, inclusive em reruns.
+  Consulta e upload nao sao atomicos: main pode avancar durante o upload; a
+  serializacao impede que um upload antigo sobreponha outro upload novo concluido.
+- Rerun do job de deploy pode repetir a mesma revisao se ela ainda for a main;
+  reutiliza o sucesso do CI daquele run/SHA. Nao ha promessa de upload exactly-once.
+- Previews e homologacao Vercel continuam separados, sem novo trigger de producao.
+
+### Protecao e transicao (#181)
+
+Auditoria em 23/10/2026: main tinha `enforce_admins: true`, sem required checks;
+nenhum ruleset. Foi configurado e relido via API o check **Test and build**,
+vinculado ao GitHub Actions (`app_id: 15368`), com `strict: true`, preservando as
+demais protecoes. Esse check agrega E2E e matriz responsiva. Conferir em
+Settings > Branches > main > Require status checks > Test and build, com branch
+atualizada obrigatoria. Nao exigir o check de deploy em PR: ele e intencionalmente
+ignorado fora da main.
+
+O workflow legado `azure-static-web-apps-white-grass-0d59a4410.yml` (ID `310093793`)
+foi desativado via API e relido como `disabled_manually`: reruns historicos usam
+definicoes antigas e poderiam contornar o gate. Seu caminho foi substituido pelo
+novo reusable. **Nao reabilitar o workflow legado**. A publicacao automatica fica
+suspensa ate integrar esta mudanca; nao houve deploy, commit ou merge nesta tarefa.
+Verificacao read-only:
+
+```powershell
+gh api repos/Hemodinks/hemodinks-front/branches/main/protection/required_status_checks
+gh api repos/Hemodinks/hemodinks-front/rulesets
+gh api repos/Hemodinks/hemodinks-front/actions/workflows/310093793 --jq '.state'
+npm run test:release-gate
+```
+
+Plano de implantacao: revisar o diff e testes, integrar primeiro em developer por
+processo autorizado, validar CI remoto sem producao, promover a main somente com
+autorizacao. O reusable local e carregado do mesmo commit do caller. Nao executar
+Run workflow em main apenas para testar: isso publica apos CI aprovado.
+
+Rollback: reverter o conteudo da SPA em um novo commit da main, preservando os
+workflows do gate, e executar CI completo antes de publicar. Nao reexecutar run
+antigo, remover `needs`, restaurar o workflow legado ou desativar required checks.
+Front #162 e API #171 seguem abertas na auditoria; testes tenant do frontend usam
+API simulada e nao substituem a validacao integrada com a API.
+
+Validacao local em 23/10/2026: 25 testes do gate aprovados; actionlint 1.7.12,
+auditoria de arquitetura, build e budget aprovados. A consulta real read-only ao
+GitHub aceitou HEAD atual e rejeitou SHA divergente. Vitest completo com dois
+workers: 757 aprovados e 4 timeouts em `src/App.test.tsx` (111 arquivos aprovados,
+1 falhou). Reexecucao apenas dos quatro cenarios: 2 aprovados e 2 timeouts
+reproduzidos (`lista e cadastra pacientes` e `libera cadastro, edicao, arquivos e
+foto para medico mesmo sem feature de gerenciamento`). A tentativa inicial sem
+limite de workers foi interrompida apos timeout em ReportsChecklist; os 4 testes
+desse arquivo passaram isoladamente. Nenhum timeout/assertion foi alterado.
+Essa execucao local nao pode ser declarada verde; falhas devem bloquear o release.
+Playwright completo: 197 aprovados, 1 falhou (evidencias visuais desktop/mobile),
+1 flaky (refresh/exclusao de usuarios em 390px) e 27 ignorados, em 29,6 minutos.
+Matriz responsiva/tenant: 54 aprovados, sem falhas ou flaky, em 7,0 minutos
+(18 desktop, 18 tablet, 18 smartphone). Fixtures de API simulada, sem credenciais
+de producao. Esses resultados locais nao comprovavam CI integral aprovado.
+Validacao local executada em Windows/Node 24.14.0; o CI usa Ubuntu/Node 22.
+
+Atualizacao da integracao (#181), 23/10/2026: o
+[CI 40032049065](https://github.com/Hemodinks/hemodinks-front/actions/runs/40032049065)
+concluiu `Test and build` com sucesso na `developer`, commit `2391307`. O job de
+deploy foi ignorado, como esperado fora da `main`. Essa evidencia remota nao
+altera os resultados locais historicos acima nem comprova API real em producao.
+
+A branch `integration/issue-181-ci-e2e-main` combina esse commit com a `main`
+`1a2a9bf`, sem conflitos. Os 39 commits exclusivos da `main` eram historico de
+merges, sem diferenca funcional adicional nas arvores da aplicacao. A PR deve
+validar novamente `Test and build` sobre a combinacao com a base atualizada,
+conforme protecao `strict`; a execucao antiga da `developer` nao substitui esse
+check. O merge na `main` dispara CI e, somente apos sucesso, o deploy. O workflow
+legado permanece desativado. Nenhum deploy faz parte da preparacao desta PR.
 
 Segredos necessarios:
 

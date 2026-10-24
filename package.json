@@ -17,6 +17,7 @@
     "audit:lighthouse": "node scripts/run-lighthouse.mjs",
     "test:performance": "node --test scripts/check-bundle-budget.test.mjs scripts/lighthouse-fixtures.test.cjs",
     "test": "vitest run",
+    "test:release-gate": "node --test scripts/release-gate.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:responsive": "playwright test --config=playwright.responsive.config.ts",
     "test:e2e:homologation": "playwright test --config=playwright.homologation.config.ts",

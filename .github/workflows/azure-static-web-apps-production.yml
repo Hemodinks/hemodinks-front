@@ -1,10 +1,14 @@
 name: Deploy Azure Static Web Apps
 
 "on":
-  push:
-    branches:
-      - main
-  workflow_dispatch: {}
+  workflow_call:
+    secrets:
+      AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410:
+        required: true
+      VITE_API_URL:
+        required: true
+      VITE_SENTRY_DSN:
+        required: false
 
 permissions:
   contents: read
@@ -17,28 +21,31 @@ env:
   NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: 10000
   NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: 120000
 
-concurrency:
-  group: azure-static-web-apps-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build_and_deploy:
-    if: github.ref == 'refs/heads/main'
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     name: Deploy production
     runs-on: ubuntu-latest
+    concurrency:
+      group: azure-static-web-apps-production
+      cancel-in-progress: false
     env:
-      AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410 }}
-      VITE_API_URL: ${{ secrets.VITE_API_URL }}
-      VITE_APP_ENV: production
+      VITE_APP_ENV: ci
       VITE_APP_VERSION: ${{ github.sha }}
-      VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-      VITE_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.VITE_SENTRY_TRACES_SAMPLE_RATE }}
+      VITE_SENTRY_DSN: ''
+      VITE_SENTRY_TRACES_SAMPLE_RATE: 0
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
 
       - name: Check deployment inputs
+        env:
+          AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410 }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         shell: bash
         run: |
           missing=()
@@ -80,13 +87,25 @@ jobs:
         run: npm test
 
       - name: Build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_APP_ENV: production
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.VITE_SENTRY_TRACES_SAMPLE_RATE }}
         run: npm run build
 
       - name: Check bundle budget
         run: npm run budget
 
+      - name: Verify release revision is still current
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/assert-release-revision.mjs
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
+        env:
+          AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410 }}
         with:
           azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
