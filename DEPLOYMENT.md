@@ -168,14 +168,27 @@ reproduzidos (`lista e cadastra pacientes` e `libera cadastro, edicao, arquivos 
 foto para medico mesmo sem feature de gerenciamento`). A tentativa inicial sem
 limite de workers foi interrompida apos timeout em ReportsChecklist; os 4 testes
 desse arquivo passaram isoladamente. Nenhum timeout/assertion foi alterado.
-Essa suite nao pode ser declarada verde; falhas devem bloquear o release.
+Essa execucao local nao pode ser declarada verde; falhas devem bloquear o release.
 Playwright completo: 197 aprovados, 1 falhou (evidencias visuais desktop/mobile),
 1 flaky (refresh/exclusao de usuarios em 390px) e 27 ignorados, em 29,6 minutos.
 Matriz responsiva/tenant: 54 aprovados, sem falhas ou flaky, em 7,0 minutos
 (18 desktop, 18 tablet, 18 smartphone). Fixtures de API simulada, sem credenciais
-de producao. O E2E completo e o Vitest impedem declarar o CI integral aprovado.
+de producao. Esses resultados locais nao comprovavam CI integral aprovado.
 Validacao local executada em Windows/Node 24.14.0; o CI usa Ubuntu/Node 22.
-Execucao remota do workflow alterado permanece pendente de integracao autorizada.
+
+Atualizacao da integracao (#181), 23/10/2026: o
+[CI 40032049065](https://github.com/Hemodinks/hemodinks-front/actions/runs/40032049065)
+concluiu `Test and build` com sucesso na `developer`, commit `2391307`. O job de
+deploy foi ignorado, como esperado fora da `main`. Essa evidencia remota nao
+altera os resultados locais historicos acima nem comprova API real em producao.
+
+A branch `integration/issue-181-ci-e2e-main` combina esse commit com a `main`
+`1a2a9bf`, sem conflitos. Os 39 commits exclusivos da `main` eram historico de
+merges, sem diferenca funcional adicional nas arvores da aplicacao. A PR deve
+validar novamente `Test and build` sobre a combinacao com a base atualizada,
+conforme protecao `strict`; a execucao antiga da `developer` nao substitui esse
+check. O merge na `main` dispara CI e, somente apos sucesso, o deploy. O workflow
+legado permanece desativado. Nenhum deploy faz parte da preparacao desta PR.
 
 Segredos necessarios:
 
