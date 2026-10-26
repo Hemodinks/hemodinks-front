@@ -40,7 +40,7 @@ export function BillingPendingItemsModal({ records, individual = false, onClose 
         <p>{pendingRecords.length} atendimento(s) com checklist incompleto no filtro atual. Abra um atendimento para ver os motivos.</p>
         {pendingRecords.map((record) => (
           <details key={record.id} className="billing-pending-record">
-            <summary>{record.patientName} · #{record.id} · {record.pendingChecklistItems} itens pendentes do checklist</summary>
+            <summary tabIndex={0}>{record.patientName} · #{record.id} · {record.pendingChecklistItems} itens pendentes do checklist</summary>
             {renderRecord(record)}
           </details>
         ))}
