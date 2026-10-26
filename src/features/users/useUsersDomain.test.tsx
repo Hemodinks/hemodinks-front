@@ -14,6 +14,27 @@ vi.mock('../../services', () => ({ getUsers: vi.fn(), deleteUser: vi.fn(),
   getDashboardSummary: vi.fn(), getSystemSettings: vi.fn(), DEFAULT_SYSTEM_SETTINGS: {} }));
 afterEach(() => { queryClient.clear(); vi.clearAllMocks(); });
 
+it.each([
+  { canAccessUsers: false, precisaTrocarSenha: false },
+  { canAccessUsers: true, precisaTrocarSenha: true },
+])('does not manually request a disabled user list (%j)', async ({ canAccessUsers, precisaTrocarSenha }) => {
+  const session = mockSession();
+  session.user.precisaTrocarSenha = precisaTrocarSenha;
+  vi.mocked(getUsers).mockResolvedValue(paged([]));
+  const { result } = renderHook(() => useUsersDomain({
+    session, activeView: 'users', moduleMode: 'list', canAccessUsers,
+    canEditOwnUser: true, isAdmin: false, setModuleMode: vi.fn(), navigateToView: vi.fn(),
+    persistSession: vi.fn(), loadDashboardSummary: vi.fn(), onDeleteCurrentUser: vi.fn(),
+    onIdentityChanged: vi.fn(), confirmAction: vi.fn(),
+  }), { wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider> });
+  const inactivePage = queryKeys.users(session.token, { page: 2, pageSize: 10, search: '' });
+  queryClient.setQueryData(inactivePage, paged([]));
+  await act(async () => { result.current.refreshUsers(); });
+  await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+  expect(getUsers).not.toHaveBeenCalled();
+  expect(queryClient.getQueryState(inactivePage)?.isInvalidated).toBe(false);
+});
+
 it('refreshes the active user list once, invalidates inactive pages and preserves another clinic', async () => {
   const session = mockSession();
   vi.mocked(getUsers).mockResolvedValue(paged([]));

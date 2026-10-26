@@ -134,7 +134,7 @@ export function useUsersDomain({
   }, [setUsersError, usersQuery.error]);
 
   const refreshUserList = async (forceRefresh = false) => {
-    if (!session) {
+    if (!session || session.user.precisaTrocarSenha || !canAccessUsers) {
       return;
     }
 
