@@ -81,6 +81,9 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      - name: Test performance budgets and audit fixtures
+        run: npm run test:performance
+
       - name: Build
         run: npm run build
 

@@ -111,3 +111,82 @@ Agentes: Frontend (investigação somente leitura; esforço medium definido pelo
 papel). QA foi acionado, mas encerrou por limite de uso sem alterações entregues;
 implementação e validação foram executadas pelo agente principal. Nenhum commit,
 PR, merge, deploy ou encerramento remoto da issue.
+
+## Reexecução — 26/10/2026
+
+Risco e complexidade moderados. A auditoria anterior e seus limites foram
+preservados. As issues dependentes #162 e #181 ainda constam abertas no GitHub;
+esta execução manual valida o frontend local, sem promover alterações remotas.
+
+Correções incrementais:
+
+- `src/features/users/useUsersDomain.ts:136`: o refresh manual ignorava as
+  condições de acesso/troca de senha que desabilitam a consulta automática.
+  `refetch()` executava uma chamada mesmo com a consulta desabilitada. O loader
+  agora verifica essas condições antes de invalidar cache ou consultar a API.
+  Os dois testes negativos reproduziram **1 request antes / 0 depois**; refresh e
+  exclusão autorizados continuam com um request por lista/resumo atualizado.
+  Não foram alterados autenticação, autorização efetiva da API ou chaves de cache.
+- `src/features/patients/usePatientsDomainQueries.test.tsx`: cada caso de lookup
+  agora verifica a chave do respectivo domínio em outra clínica, em vez de
+  verificar apenas o cache de pacientes em todos os casos.
+- `.github/workflows/ci.yml`: os testes `node:test` de budgets e fixtures passam
+  a ser executados explicitamente; eles não integram o `npm test` do Vitest.
+
+Builds Lighthouse comparáveis, com a mesma configuração mobile/gzip e dados
+sintéticos, uma coleta por rota, Lighthouse 12.6.1:
+
+| Rota | Performance antes/depois | LCP ms antes/depois | TBT ms antes/depois | CLS antes/depois | A11y final |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| /dashboard | 79 / 84 | 4353 / 3602 | 198 / 202 | 0.000 / 0.011 | 100 |
+| /usuarios | 87 / 86 | 3606 / 3606 | 135 / 183 | 0.011 / 0.011 | 100 |
+| /pacientes | 84 / 86 | 3607 / 3608 | 245 / 178 | 0.011 / 0.011 | 100 |
+| /agenda | 84 / 78 | 3608 / 4657 | 248 / 202 | 0.011 / 0.011 | 100 |
+
+Todas as assertions existentes passaram, sem `runWarnings`. Os scores oscilam
+nos dois sentidos; não há evidência de ganho estatístico em Core Web Vitals.
+A correção de requests só atua nos estados restritos, ausentes da fixture admin.
+LCP segue como ponto de atenção; INP e percentis reais não foram medidos.
+
+| Bundle auditável (KiB) | Antes | Depois | Limite |
+| --- | ---: | ---: | ---: |
+| Entrada JS raw / gzip | 250.51 / 80.30 | 250.54 / 80.31 | 380 / 120 |
+| JS inicial raw / gzip | 566.87 / 179.80 | 566.90 / 179.81 | 650 / 200 |
+| CSS inicial raw | 63.41 | 63.41 | 70 |
+| Maior chunk JS raw / gzip | 469.80 / 155.78 | 469.80 / 155.78 | 550 / 180 |
+
+Sem redução de bundle. Sentry, jsPDF e html2canvas permanecem os maiores chunks
+adiados; não foi feita divisão adicional ou memoização sem evidência de benefício.
+Os limiares não foram afrouxados. Performance no Lighthouse continua `warn` e
+acessibilidade `error`, conforme a configuração existente.
+
+Evidências locais ignoradas pelo Git: `reports/performance-165/2026-10-26/`
+(JSON/HTML e métricas de baseline/after), `reports/performance-165-*.log`.
+Não foram usados dados reais, alterados secrets ou executados workflows remotos.
+
+Validação desta reexecução:
+
+- `npm run verify`: arquitetura, **763 testes em 112 arquivos** e build aprovados.
+- `npm run test:performance`: **11 testes aprovados**, incluindo os negativos de
+  limite, gzip, chunk adiado e stylesheet ausente.
+- `npm run analyze` antes/depois: aprovado. Treemap final em
+  `dist/bundle-stats.html`; `npm run budget` final aprovado com JS inicial
+  **566.94 KiB raw / 179.82 KiB gzip**, usando a configuração padrão do analyze.
+- `npm run audit:lighthouse` antes/depois: aprovado nas quatro rotas.
+- E2E com filtro `performance:|cadastra e edita usuario|tenant|isolamento|bloqueia
+  rota de usuarios para perfil paciente`: 16 aprovados e um timeout de 30 s na
+  navegação inicial de `/usuarios` mobile (`page.goto`/restauração), durante a
+  execução simultânea da suíte unitária. O caso foi repetido isoladamente com
+  `--grep 'performance:.*usuarios.*390px' --workers=1`: aprovado em 9,9 s, sem
+  mudar timeout/assertions. Os 17 cenários distintos foram assim validados.
+  Logs e trace da falha inicial foram preservados; não se atribui causalidade
+  definitiva ao paralelismo a partir dessa única ocorrência.
+- As respostas 401 da restauração sem sessão e 403 dos negativos de tenant são
+  simuladas. Permanecem os avisos existentes de tamanho de `src/types.ts` e de
+  import estático/dinâmico de `observability.ts`; não foram suprimidos.
+
+QA (medium) investigou cobertura sem editar ou executar testes. A revisão
+adicional Security foi acionada, mas falhou por limite de uso, sem parecer.
+O agente principal implementou, revisou o diff e executou as validações.
+CI remota, autorização real do backend e dados de produção não foram validados;
+as evidências são locais. Sem commit, PR, merge ou deploy.
