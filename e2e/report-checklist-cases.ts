@@ -21,7 +21,7 @@ async function mockRecords(page: Page, helpers: Helpers, medical = false) {
 }
 
 export function registerReportChecklistCases(helpers: Helpers) {
-  for (const path of ['/relatorios', '/faturamento-medico']) for (const width of [390, 1280]) for (const theme of ['light', 'dark']) {
+  for (const path of ['/relatorios', '/faturamento-medico']) for (const width of [390, 768, 1280]) for (const theme of ['light', 'dark']) {
     test(`checklist #171: motivos acessíveis em ${path} ${width}px ${theme}`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
       await page.addInitScript(value => localStorage.setItem('hemodinks.theme', value), theme);
@@ -61,9 +61,18 @@ export function registerReportChecklistCases(helpers: Helpers) {
       await page.getByRole('button', { name: /Atendimentos com checklist incompleto/ }).click();
       await expect(modal).toContainText('2 atendimento(s) com checklist incompleto no filtro atual.');
       const paidSummary = modal.locator('summary').filter({ hasText: 'Paciente Checklist Pago · #171' });
-      await paidSummary.focus();
+      const otherSummary = modal.locator('summary').filter({ hasText: 'Paciente Outro Atendimento · #172' });
+      await expect(close).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(paidSummary).toBeFocused();
       await page.keyboard.press('Enter');
       await expect(modal.getByText('Líquido estimado a partir de pagamento menos glosa.', { exact: true }).first()).toBeVisible();
+      await page.keyboard.press('Tab');
+      await expect(otherSummary).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(close).toBeFocused();
+      await page.keyboard.press('Shift+Tab');
+      await expect(otherSummary).toBeFocused();
       await page.screenshot({ path: testInfo.outputPath('checklist-global.png') });
       await page.keyboard.press('Escape');
       const overflow = await page.evaluate(() => [...document.querySelectorAll('body *')]
