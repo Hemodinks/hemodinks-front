@@ -90,12 +90,12 @@ it.each([true, false])('patient deletion refreshes once only when permitted (%s)
 afterEach(() => { queryClient.clear(); vi.clearAllMocks(); });
 
 it.each([
-  ['loadPacientes', 'getPacientes'],
-  ['loadMedicalUsers', 'getScopedMedicalUsers'],
-  ['loadHospitais', 'getHospitais'],
-  ['loadConvenios', 'getConvenios'],
-  ['loadOpmeFornecedores', 'getOpmeFornecedores'],
-] as const)('%s performs exactly one request per forced refresh', async (loader, service) => {
+  ['loadPacientes', 'getPacientes', queryKeys.pacientes],
+  ['loadMedicalUsers', 'getScopedMedicalUsers', queryKeys.medicalUsers],
+  ['loadHospitais', 'getHospitais', queryKeys.hospitais],
+  ['loadConvenios', 'getConvenios', queryKeys.convenios],
+  ['loadOpmeFornecedores', 'getOpmeFornecedores', queryKeys.opmeFornecedores],
+] as const)('%s performs exactly one request per forced refresh', async (loader, service, cacheKey) => {
   const { result } = renderHook(() => usePatientsDomainQueries({
     session, activeView: 'patients', moduleMode: 'list',
     canAccessPatients: true, canConsultCbhpm: true, patientReadOnly: false,
@@ -103,7 +103,7 @@ it.each([
   }), { wrapper });
   await waitFor(() => expect(queryClient.isFetching()).toBe(0));
   expect(api[service]).toHaveBeenCalledTimes(1);
-  const anotherClinic = queryKeys.pacientes('other-clinic', { page: 1, pageSize: 10 });
+  const anotherClinic = cacheKey('other-clinic');
   queryClient.setQueryData(anotherClinic, paged([]));
   await act(async () => { await result.current[loader](session.token, true); });
   expect(api[service]).toHaveBeenCalledTimes(2);
