@@ -31,7 +31,9 @@ export function AgendaEventEmailModal({ event, session, onClose }: Props) {
     : creator.unavailableReason ? creatorReasons[creator.unavailableReason] ?? 'A cópia não está disponível para este evento.' : '';
   const blockedReason = email.loading ? 'Carregando destinatários antes de liberar a confirmação.'
     : email.submitting ? 'Solicitando a inclusão dos e-mails na fila de envio.'
-    : email.result ? 'Solicitação aceita. Atualize o status para acompanhar o processamento.'
+    : email.result ? email.refreshingStatus
+      ? 'Solicitação aceita. Atualizando o status dos destinatários; você já pode fechar esta janela.'
+      : 'Solicitação aceita. Atualize o status para acompanhar o processamento.'
     : !preview ? 'Não foi possível consultar os destinatários. Atualize para tentar novamente.'
     : preview.canSend ? 'Ao confirmar, os e-mails serão colocados na fila de envio. A entrega pode levar alguns instantes.'
     : event.isCompleted ? 'Eventos concluídos não permitem novos envios.'
@@ -86,7 +88,7 @@ export function AgendaEventEmailModal({ event, session, onClose }: Props) {
     </div>
     <footer className="agenda-email-actions">
       <Button type="button" onClick={onClose} disabled={email.submitting}>{email.result ? 'Fechar' : 'Cancelar'}</Button>
-      {!email.loading && <Button type="button" onClick={email.retry} disabled={email.submitting}>Atualizar destinatários</Button>}
+      {!email.loading && <Button type="button" onClick={email.retry} disabled={email.submitting || email.refreshingStatus}>Atualizar destinatários</Button>}
       <Button type="button" variant="primary" onClick={() => void email.send()} aria-describedby={reasonId}
         disabled={email.loading || email.submitting || !preview?.canSend || Boolean(email.result)}>
         {email.submitting ? 'Solicitando envio...' : 'Confirmar envio por e-mail'}

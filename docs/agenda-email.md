@@ -118,3 +118,34 @@ confirmada na caixa postal. Sem commit, push, PR, merge ou deploy. Frontend alte
 na branch já aberta `chore/update-frontend-dependencies`; API `developer` sem
 alterações de produção nesta tarefa. Nenhuma dependência, regra de destinatários,
 notificação interna ou lembrete foi alterado.
+
+## Revalidação da #169 — 26/10/2026
+
+A implementação principal já estava presente. O contrato de cópia foi conferido
+no código local da API (`EventEmailRequestHandlers.cs`) e na documentação da #174;
+não houve alteração na API nem inspeção do ambiente implantado. `canSend=false`
+com destinatário `pending` continua significando envio já enfileirado.
+
+Lacuna reproduzida em `useAgendaEventEmail.ts`: após o POST aceito, o GET de status
+mantinha `submitting=true`, impedindo Fechar/Escape mesmo com sucesso visível.
+Agora a atualização de status tem estado próprio, sem bloquear o fechamento após
+aceite. `result`, `inFlight`, chave e bloqueio da cópia continuam impedindo novos
+envios e alterações do payload durante essa atualização. A resposta antiga não
+preenche o modal reaberto. Nenhuma mudança de CSS ou componente global foi necessária.
+
+Os dois novos unitários falharam antes da correção e passaram depois; os **31
+testes direcionados** de hook/modal/service passaram. Os **16 E2E** passaram em
+uma rodada, incluindo status lento/fechamento/reabertura em 390 e 1280px,
+matriz 320/360/390/768/1280px nos dois temas, axe, teclado, cópia e retry.
+Capturas 320/1280px light/dark inspecionadas. Logs em `reports/issue-169-*.log`
+e capturas em `test-results/` (ignorados pelo Git).
+
+Regressão completa: **765 testes em 112 arquivos** e arquitetura aprovados.
+O build inicial detectou a opção `exact` do Playwright usada indevidamente em um
+teste Testing Library; após remover essa opção (sem relaxar a seleção por nome),
+os **12 testes do modal** e `npm run build` passaram. `git diff --check` aprovado.
+
+Classificação alta por integração, estado de clínica e efeitos do envio. Security
+(high) investigou e aprovou o diff, sem editar ou executar testes. Implementação e
+validação pelo principal. E2E usa API simulada; não comprova SMTP, worker ou entrega
+real. Sem envio real, commit, merge ou deploy.
