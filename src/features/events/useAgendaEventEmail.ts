@@ -12,6 +12,7 @@ export function useAgendaEventEmail(eventId: number, session: AuthSession) {
   const [preview, setPreview] = useState<EventEmailPreview | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<EventEmailQueueResult | null>(null);
   const [attemptedScope, setAttemptedScope] = useState('');
@@ -34,7 +35,7 @@ export function useAgendaEventEmail(eventId: number, session: AuthSession) {
     loadedContext.current = '';
     if (previousScope.current !== scope) {
       previousScope.current = scope;
-      setResult(null); setSubmitting(false); setAttemptedScope('');
+      setResult(null); setSubmitting(false); setRefreshingStatus(false); setAttemptedScope('');
       inFlight.current = false; attempted.current = false;
     }
     // Refreshing status after an uncertain POST must retain both key and payload.
@@ -73,18 +74,21 @@ export function useAgendaEventEmail(eventId: number, session: AuthSession) {
       const queued = await queueEventEmailNotification(eventId, session.token, requestKey.current, copyToCreator);
       if (!current()) return;
       setResult(queued);
+      // Queue acceptance allows closing; the follow-up read must not trap the user.
+      setSubmitting(false); setRefreshingStatus(true);
       const refreshed = await getEventEmailNotification(eventId, session.token, undefined, copyToCreator);
       if (current()) setPreview(refreshed);
     } catch (caught) {
       if (current()) setError(getErrorMessage(caught));
     } finally {
-      if (current()) { inFlight.current = false; setSubmitting(false); }
+      if (current()) { inFlight.current = false; setSubmitting(false); setRefreshingStatus(false); }
     }
   };
 
   const sameScope = previousScope.current === scope;
   return { preview: sameScope ? preview : null, loading: !sameScope || loading,
-    submitting: sameScope && submitting, error: sameScope ? error : '', result: sameScope ? result : null,
+    submitting: sameScope && submitting, refreshingStatus: sameScope && refreshingStatus,
+    error: sameScope ? error : '', result: sameScope ? result : null,
     copyToCreator, setCopyToCreator, copyLocked: attemptedScope === scope,
     send, retry: () => { if (!inFlight.current) setRevision(value => value + 1); } };
 }

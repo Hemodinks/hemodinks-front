@@ -34,6 +34,26 @@ it('shows an error and never enables confirmation after a forbidden preview', as
   expect(screen.getByRole('button', { name: 'Confirmar envio por e-mail' })).toBeDisabled();
 });
 
+it.each(['close', 'Escape'])('allows %s after queue acceptance while delivery status is still loading', async action => {
+  const onClose = vi.fn();
+  vi.mocked(service.queueEventEmailNotification).mockResolvedValue({ queuedCount: 1 });
+  render(<AgendaEventEmailModal event={event} session={session} onClose={onClose} />);
+  const confirm = screen.getByRole('button', { name: 'Confirmar envio por e-mail' });
+  await waitFor(() => expect(confirm).toBeEnabled());
+  vi.mocked(service.getEventEmailNotification).mockImplementationOnce(() => new Promise(() => {}));
+  fireEvent.click(confirm);
+  await screen.findByText(/Isso ainda não confirma a entrega/);
+  expect(confirm).toBeDisabled();
+  const close = screen.getByRole('button', { name: 'Fechar notificação por e-mail' });
+  expect(close).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Fechar' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Atualizar destinatários' })).toBeDisabled();
+  if (action === 'close') fireEvent.click(close);
+  else fireEvent.keyDown(document, { key: 'Escape' });
+  expect(onClose).toHaveBeenCalledOnce();
+  expect(service.queueEventEmailNotification).toHaveBeenCalledOnce();
+});
+
 it('only exposes the event action to a manager and hides it for completed events', () => {
   const notify = vi.fn();
   const props = { agendaEvent: event, isAdmin: false, currentUserId: 2, onNotifyEmail: notify,

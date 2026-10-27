@@ -184,6 +184,52 @@ export function registerAgendaEmailCreatorCases(helpers: Helpers) {
 
 
 export function registerAgendaEmailStatusCases(helpers: Helpers) {
+  for (const width of [390, 1280]) test('agenda email: fecha após aceite com status lento sem reutilizar resposta antiga em ' + width + 'px', async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const card = await createEvent(page, helpers);
+    let reads = 0;
+    let posts = 0;
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const queued = { ...preview, pendingCount: 1, canSend: false,
+      recipients: [{ ...recipient, nome: 'Destinatário atualizado', status: 'pending' }] };
+    await page.route('**/api/events/*/email-notification*', async route => {
+      if (route.request().method() === 'POST') {
+        posts++;
+        return route.fulfill({ status: 202, json: { queuedCount: 1 } });
+      }
+      reads++;
+      if (reads === 2) {
+        await gate;
+        return route.fulfill({ json: { ...queued, recipients: [{ ...recipient, nome: 'Resposta antiga', status: 'pending' }] } });
+      }
+      return route.fulfill({ json: reads > 2 ? queued : preview });
+    });
+    const opener = card.getByRole('button', { name: 'Notificar por e-mail', exact: true });
+    await opener.click();
+    const modal = page.getByRole('dialog', { name: 'Notificar por e-mail', exact: true });
+    await modal.getByRole('button', { name: 'Confirmar envio por e-mail' }).click();
+    await expect(modal.getByText(/Isso ainda não confirma a entrega/)).toBeVisible();
+    await expect.poll(() => reads).toBe(2);
+    await expect(modal.getByRole('button', { name: 'Confirmar envio por e-mail' })).toBeDisabled();
+    await expect(modal.getByRole('button', { name: 'Atualizar destinatários' })).toBeDisabled();
+    await expect(modal.getByRole('button', { name: 'Fechar', exact: true })).toBeEnabled();
+    await expect(modal.getByRole('button', { name: 'Fechar notificação por e-mail' })).toBeEnabled();
+    if (width === 390) await page.keyboard.press('Escape');
+    else await modal.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await expect(modal).not.toBeVisible();
+    await expect(opener).toBeFocused();
+    await opener.click();
+    await expect(modal.getByText('Destinatário atualizado', { exact: true })).toBeVisible();
+    const oldResponse = page.waitForResponse(response => response.url().includes('/email-notification') && response.request().method() === 'GET');
+    release();
+    await (await oldResponse).finished();
+    await expect(modal.getByText('Destinatário atualizado', { exact: true })).toBeVisible();
+    await expect(modal.getByText('Resposta antiga', { exact: true })).toHaveCount(0);
+    await expect(modal.getByRole('button', { name: 'Confirmar envio por e-mail' })).toBeDisabled();
+    expect(posts).toBe(1);
+  });
+
   test('agenda email: estados da entrega não permitem reenfileirar ou inferir clínica alheia', async ({ page }) => {
     const card = await createEvent(page, helpers);
     let forbidden = false;
