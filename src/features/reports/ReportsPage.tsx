@@ -30,6 +30,10 @@ export function ReportsPage({ session, companyName, isMedical }: Props) {
       {report.filterError && <AlertMessage type="error">{report.filterError}</AlertMessage>}
       {report.exportError && <AlertMessage type="error">{report.exportError}</AlertMessage>}
       {report.queryError && <AlertMessage type="error">{report.queryError instanceof Error ? report.queryError.message : 'Não foi possível carregar os relatórios.'}</AlertMessage>}
+      <p className="billing-inline-note" role="status">{report.isFetching
+        ? 'Atualizando a consulta. Aguarde para exportar.'
+        : report.queryError ? 'Não foi possível confirmar a consulta. Atualize os dados antes de exportar.'
+          : 'A exportação usa os dados desta consulta. Para incluir alterações recentes, atualize os dados.'}</p>
 
       <ReportsFiltersPanel
         filters={report.filters}
@@ -37,7 +41,8 @@ export function ReportsPage({ session, companyName, isMedical }: Props) {
         options={report.options}
         resultCount={report.records.length}
         isFetching={report.isFetching}
-        exportLoading={report.exportLoading}
+        exportLoading={report.exportLoading || report.individualExportLoadingId !== null}
+        exportBlocked={Boolean(report.queryError)}
         exportDetailLevel={report.exportDetailLevel}
         onExportDetailLevelChange={report.setExportDetailLevel}
         onApply={report.applyFilters}
@@ -55,6 +60,7 @@ export function ReportsPage({ session, companyName, isMedical }: Props) {
         visibleEnd={report.visibleEnd}
         totalRecords={report.records.length}
         individualExportLoadingId={report.individualExportLoadingId}
+        exportBlocked={report.exportLoading || report.isFetching || Boolean(report.queryError)}
         onPageChange={report.setCurrentPage}
         onExportIndividualPdf={(record) => void report.handleIndividualExport(record)}
         onOpenChecklist={(record) => checklist.open(record.id)}

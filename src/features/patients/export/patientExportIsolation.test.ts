@@ -34,6 +34,14 @@ describe('isolamento de exportações de pacientes', () => {
     form: (format: 'pdf' | 'xlsx') => exportPatientForm({ format, formData: { ...emptyPacienteForm, nomePaciente: 'Paciente A' }, companyName: 'Clínica A', sessionToken: 'a' }),
   };
 
+  it.each(['pdf', 'xlsx'] as const)('cancela lista %s quando o escopo muda durante a identidade', async format => {
+    let current = true;
+    vi.mocked(resolveReportIdentity).mockImplementationOnce(async () => { current = false; return identity; });
+    await exportPatientList({ format, items: [basePaciente], companyName: 'Clínica A', shouldContinue: () => current });
+    expect(downloadBlob).not.toHaveBeenCalled();
+    expect(pdf.save).not.toHaveBeenCalled();
+  });
+
   it.each(['list', 'form'] as const)('não baixa %s de A após mudança de sessão enquanto prepara a identidade', async (kind) => {
     let complete!: (value: ReportIdentity) => void;
     vi.mocked(resolveReportIdentity).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));

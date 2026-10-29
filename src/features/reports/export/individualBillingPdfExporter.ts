@@ -20,11 +20,12 @@ export function getIndividualBillingPdfFileName(record: ReportRecord) {
 }
 
 export async function exportIndividualBillingPdf(
-  record: ReportRecord,
+  sourceRecord: ReportRecord,
   companyName: string,
   sessionToken: string,
   shouldContinue?: () => boolean,
 ) {
+  const record = structuredClone(sourceRecord);
   const epoch = sessionEpoch();
   const isCurrent = () => epoch === sessionEpoch() && (shouldContinue?.() ?? true);
   const formData = {

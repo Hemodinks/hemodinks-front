@@ -40,13 +40,33 @@ describe('ordenacao da exportacao de pacientes', () => {
     expect(getPacientes).toHaveBeenCalledTimes(1);
     expect(exportPatientList).not.toHaveBeenCalled();
   });
+
+  it.each(['filter', 'sort', 'scope', 'unmount'] as const)('cancela coleta atrasada após mudança de %s na mesma sessão', async change => {
+    let finish!: (value: ReturnType<typeof paged<typeof basePaciente>>) => void;
+    vi.mocked(getPacientes).mockReset().mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    const session = mockSession();
+    const { result, rerender, unmount } = renderHook(({ filters, sort }) => usePatientExport({
+      session, companyName: 'Clínica A', paginatedPacientes: [], pacienteFilters: filters,
+      sortBy: sort, sortDirection: 'desc', setPacientesError: vi.fn(),
+    }), { initialProps: { filters: emptyPacienteFilters, sort: 'data' } });
+    act(() => result.current.setPacienteExportScope('all'));
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.handleExportPacientes('xlsx'); });
+    if (change === 'unmount') unmount();
+    else if (change === 'scope') act(() => result.current.setPacienteExportScope('visible'));
+    else rerender({ filters: change === 'filter' ? { ...emptyPacienteFilters, procedimento: 'Outro' } : emptyPacienteFilters,
+      sort: change === 'sort' ? 'nome' : 'data' });
+    await act(async () => { finish(paged([basePaciente])); await pending; });
+    expect(exportPatientList).not.toHaveBeenCalled();
+    expect(getPacientes).toHaveBeenCalledTimes(1);
+  });
   it.each(['asc', 'desc'] as const)('preserva a ordem %s da API entre todas as paginas exportadas', async (sortDirection) => {
     const older = { ...basePaciente, id: 1, dataAtendimento: '2026-12-31', dataAtualizacao: '2026-09-09' };
     const newer = { ...basePaciente, id: 2, dataAtendimento: '2030-12-01', dataAtualizacao: '2026-01-01' };
     const items = sortDirection === 'asc' ? [older, newer] : [newer, older];
     vi.mocked(getPacientes).mockReset()
-      .mockResolvedValueOnce({ ...paged([items[0]]), totalPages: 2 })
-      .mockResolvedValueOnce({ ...paged([items[1]]), page: 2, totalPages: 2 });
+      .mockResolvedValueOnce(paged([items[0]], 1, 1, 2))
+      .mockResolvedValueOnce(paged([items[1]], 2, 1, 2));
     const { result } = renderHook(() => usePatientExport({
       session: mockSession(), companyName: 'Clinica', paginatedPacientes: [], pacienteFilters: emptyPacienteFilters,
       sortBy: 'dataAtendimento', sortDirection, setPacientesError: vi.fn(),
