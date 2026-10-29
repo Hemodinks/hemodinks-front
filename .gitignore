@@ -8,6 +8,9 @@ test-results
 playwright-report
 artifacts/tutorials
 /reports
+integration/real-api/bin/
+integration/real-api/obj/
+.integration/
 .lighthouseci
 public/otel-runtime-config.json
 
