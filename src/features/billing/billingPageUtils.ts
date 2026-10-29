@@ -1,8 +1,9 @@
 import { getFaturamentosMedicos } from '../../services';
 import { normalizeDisplayText, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
-import type { Paciente } from '../../types';
 import type { BillingFilters, BillingRecord, BillingRegimeFilter, BillingStatusFilter } from './billingUtils';
 import { compareDateValues } from '../../shared/utils/dateSorting';
+import { collectConsistentPages } from '../../shared/utils/collectConsistentPages';
+import { sessionEpoch } from '../../services/sessionEpoch';
 
 export type BillingDateSortField = 'paymentDate' | 'requestDate' | 'attendanceDate';
 export type BillingSortField = 'patient' | 'doctor' | 'status' | BillingDateSortField;
@@ -141,29 +142,19 @@ export async function loadBillingPatients(
     competenciaFinal: string;
   },
 ) {
-  const items: Paciente[] = [];
-  let page = 1;
-  let totalPages = 1;
-
-  do {
-    const response = await getFaturamentosMedicos(token, {
+  const epoch = sessionEpoch();
+  const queryFilters = { ...filters };
+  return collectConsistentPages(page => getFaturamentosMedicos(token, {
       page,
       pageSize: PATIENT_EXPORT_PAGE_SIZE,
-      search: filters.search,
-      tipoCirurgia: filters.tipoCirurgia || undefined,
-      medico: filters.medico || undefined,
-      convenio: filters.convenio || undefined,
-      procedimento: filters.procedimento || undefined,
-      competenciaInicio: toCompetenciaQueryValue(filters.competenciaInicio),
-      competenciaFinal: toCompetenciaQueryValue(filters.competenciaFinal),
+      search: queryFilters.search,
+      tipoCirurgia: queryFilters.tipoCirurgia || undefined,
+      medico: queryFilters.medico || undefined,
+      convenio: queryFilters.convenio || undefined,
+      procedimento: queryFilters.procedimento || undefined,
+      competenciaInicio: toCompetenciaQueryValue(queryFilters.competenciaInicio),
+      competenciaFinal: toCompetenciaQueryValue(queryFilters.competenciaFinal),
       sortBy: 'recent',
       sortDirection: 'desc',
-    });
-
-    items.push(...response.items);
-    totalPages = response.totalPages;
-    page += 1;
-  } while (page <= totalPages);
-
-  return items;
+    }), () => epoch === sessionEpoch());
 }
