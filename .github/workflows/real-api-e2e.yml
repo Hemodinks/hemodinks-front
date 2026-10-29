@@ -1,0 +1,54 @@
+name: Web + real API E2E
+
+on:
+  pull_request:
+    branches: [developer, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-api-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-integration:
+    name: Web + API + synthetic SQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HEMODINKS_API_ROOT: ${{ github.workspace }}/.integration/api
+      VITE_SENTRY_DSN: ''
+      VITE_APP_ENV: synthetic-e2e
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Checkout reviewed API revision
+        uses: actions/checkout@v6
+        with:
+          repository: Hemodinks/hemodinks-api
+          ref: 456bc0163ab4426b0854a5ec44044b6ca29738d9
+          path: .integration/api
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - run: npm ci
+      - run: npx --no-install playwright install --with-deps chromium
+      - run: npm run test:e2e:real:policy
+      - name: Exercise Web + real API + disposable SQL (no production credentials)
+        run: npm run test:e2e:real
+      - name: Upload minimized integration evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: real-api-e2e-summary
+          path: test-results/real-api/summary.json
+          if-no-files-found: error
+          retention-days: 7
