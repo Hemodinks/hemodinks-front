@@ -16,6 +16,7 @@ type Props = {
   resultCount: number;
   isFetching: boolean;
   exportLoading: boolean;
+  exportBlocked?: boolean;
   exportDetailLevel: ReportExportDetailLevel;
   onExportDetailLevelChange: (value: ReportExportDetailLevel) => void;
   onApply: () => void;
@@ -90,8 +91,8 @@ export function ReportsFiltersPanel(props: Props) {
               <option value="synthetic">Sintético</option>
             </SelectField>
             <IconButton label="Atualizar dados dos relatórios" title="Atualizar" onClick={props.onRefresh} disabled={props.isFetching}><RefreshCw size={18} /></IconButton>
-            <Button className="reports-export-button reports-export-pdf" onClick={() => props.onExport('pdf')} disabled={props.exportLoading || !props.resultCount}><FileText size={17} />Exportar PDF</Button>
-            <Button className="reports-export-button reports-export-xlsx" onClick={() => props.onExport('xlsx')} disabled={props.exportLoading || !props.resultCount}><Download size={17} />Exportar Planilha</Button>
+            <Button className="reports-export-button reports-export-pdf" onClick={() => props.onExport('pdf')} disabled={props.exportLoading || props.isFetching || props.exportBlocked || !props.resultCount}><FileText size={17} />Exportar PDF</Button>
+            <Button className="reports-export-button reports-export-xlsx" onClick={() => props.onExport('xlsx')} disabled={props.exportLoading || props.isFetching || props.exportBlocked || !props.resultCount}><Download size={17} />Exportar Planilha</Button>
           </div>
         </div>
       </details>

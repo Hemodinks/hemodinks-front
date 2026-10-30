@@ -113,4 +113,28 @@ describe('exportação sintética e completa da consulta', () => {
     await exportReport({ format: 'xlsx', records: [record()], companyName: 'Clínica', shouldContinue: () => false });
     expect(downloadBlob).not.toHaveBeenCalled();
   });
+
+  it.each(['xlsx', 'pdf'] as const)('mantém uma cópia coerente de resumo, linhas e checklist em %s durante um await', async format => {
+    const original = vi.mocked(resolveReportIdentity).getMockImplementation()!;
+    let finish!: () => void;
+    vi.mocked(resolveReportIdentity).mockImplementationOnce(options => new Promise(resolve => {
+      finish = () => { void original(options).then(resolve); };
+    }));
+    const source = [{ ...record(), patientName: 'Consulta Original' }];
+    const pending = exportReport({ format, records: source, companyName: 'Clínica' });
+    source[0].patientName = 'Consulta Alterada';
+    source[0].billingChecklist[0].hint = 'Motivo alterado';
+    source.push(record(8));
+    finish();
+    await pending;
+    const raw = format === 'xlsx'
+      ? new TextDecoder().decode(await (vi.mocked(downloadBlob).mock.calls[0][0] as Blob).arrayBuffer())
+      : new TextDecoder('windows-1252').decode(captured.documents[0].output('arraybuffer'));
+    const content = format === 'pdf' ? [...raw.matchAll(/\(((?:\\.|[^\\)])*)\)\s*Tj/g)]
+      .map(match => match[1].replace(/\\([()\\])/g, '$1')).join(' ') : raw;
+    expect(content).toContain('Consulta Original');
+    expect(content).toContain('1 atendimento(s)');
+    expect(content).not.toContain('Consulta Alterada');
+    expect(content).not.toContain('Motivo alterado');
+  });
 });

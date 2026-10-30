@@ -8,8 +8,8 @@ vi.mock('../../services', () => ({ getFaturamentosMedicos: vi.fn() }));
 describe('contrato de tipo de cirurgia na consulta paginada de faturamento', () => {
   it('transmite Urgencia em todas as páginas sem alterar os demais filtros', async () => {
     vi.mocked(getFaturamentosMedicos)
-      .mockResolvedValueOnce({ items: [{ ...basePaciente, id: 1, tipoCirurgia: 'Urgencia' }], totalPages: 2 } as never)
-      .mockResolvedValueOnce({ items: [{ ...basePaciente, id: 2, tipoCirurgia: 'Urgencia' }], totalPages: 2 } as never);
+      .mockResolvedValueOnce({ items: [{ ...basePaciente, id: 1, tipoCirurgia: 'Urgencia' }], page: 1, pageSize: 1, totalItems: 2, totalPages: 2 })
+      .mockResolvedValueOnce({ items: [{ ...basePaciente, id: 2, tipoCirurgia: 'Urgencia' }], page: 2, pageSize: 1, totalItems: 2, totalPages: 2 });
     const result = await loadBillingPatients('session-test', {
       tipoCirurgia: 'Urgencia', search: 'busca', medico: 'Médico', convenio: 'Convênio', procedimento: 'Procedimento', competenciaInicio: '2026-01', competenciaFinal: '2026-12',
     });

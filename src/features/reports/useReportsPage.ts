@@ -61,7 +61,7 @@ export function useReportsPage({ session, companyName, isMedical }: Options) {
   const visibleStart = records.length ? (visiblePage - 1) * REPORT_PAGE_SIZE + 1 : 0;
   const visibleEnd = Math.min(visiblePage * REPORT_PAGE_SIZE, records.length);
   const visibleRecords = records.slice(visibleStart ? visibleStart - 1 : 0, visibleEnd);
-  const reportExport = useReportExport(records, companyName, session.token, appliedFilters);
+  const reportExport = useReportExport(records, companyName, session.token, appliedFilters, query.isFetching || query.isError);
 
   useEffect(() => setCurrentPage((page) => Math.min(page, totalPages)), [totalPages]);
 
