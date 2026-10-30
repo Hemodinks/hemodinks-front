@@ -86,7 +86,8 @@ async function createReportPdf(records: ReportRecord[], identity: ReportIdentity
   return document;
 }
 
-export async function exportReport({ format, records, companyName, sessionToken, contextLines, detailLevel = 'complete', shouldContinue }: Options) {
+export async function exportReport({ format, records: sourceRecords, companyName, sessionToken, contextLines, detailLevel = 'complete', shouldContinue }: Options) {
+  const records = structuredClone(sourceRecords);
   const epoch = sessionEpoch();
   const isCurrent = () => epoch === sessionEpoch() && (shouldContinue?.() ?? true);
   const fileName = getReportFileName(format, companyName);

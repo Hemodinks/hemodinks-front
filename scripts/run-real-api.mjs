@@ -22,24 +22,72 @@ let containerCreated = false;
 let cleaning;
 function command(binary, args, options = {}) {
   const result = spawnSync(binary, args, { cwd: root, encoding: 'utf8', ...options });
-  if (result.error || result.status !== 0) throw new Error(`${binary} failed (${result.status ?? 'unavailable'}).`);
+  if (result.error || result.status !== 0) {
+    throw new Error(`${binary} failed (${result.error?.code ?? result.status ?? 'unavailable'}).`);
+  }
   return result.stdout.trim();
 }
-function stop(child) {
-  if (!child || child.exitCode !== null) return;
-  if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
-  else { try { process.kill(-child.pid, 'SIGTERM'); } catch { /* already exited */ } }
+async function waitForExit(child, timeoutMs) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  await new Promise(resolve => {
+    const done = () => { clearTimeout(timer); child.off('exit', done); resolve(); };
+    const timer = setTimeout(done, timeoutMs);
+    child.once('exit', done);
+  });
+}
+async function stop(child, label) {
+  if (!child) return;
+  try {
+    if (process.platform === 'win32') {
+      if (child.exitCode === null && child.signalCode === null) {
+        const result = spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'],
+          { windowsHide: true, stdio: 'ignore', timeout: 5_000 });
+        if (result.error) throw new Error(`${label} taskkill failed (${result.error.code}).`);
+        await waitForExit(child, 1_000);
+      }
+    } else if (child.pid) {
+      const signalGroup = signal => {
+        try { process.kill(-child.pid, signal); }
+        catch (error) { if (error.code !== 'ESRCH') throw error; }
+      };
+      signalGroup('SIGTERM');
+      await waitForExit(child, 3_000);
+      if (child.exitCode === null && child.signalCode === null) {
+        signalGroup('SIGKILL');
+        await waitForExit(child, 2_000);
+      }
+    }
+    if (child.exitCode === null && child.signalCode === null) {
+      throw new Error(`${label} did not exit during cleanup.`);
+    }
+  } finally {
+    // A detached child may leave a grandchild holding its stdout/stderr pipes open.
+    // Release those handles even when the process leader already exited.
+    child.stdin?.destroy();
+    child.stdout?.destroy();
+    child.stderr?.destroy();
+    child.unref();
+  }
 }
 async function cleanup() {
   return cleaning ??= (async () => {
-    stop(playwright);
-    stop(host);
-    try {
-      if (containerCreated) command('docker', ['rm', '-f', container]);
-    } finally {
-      await rm(fixturePath, { force: true });
-      await rm(storagePath, { force: true, recursive: true });
+    const errors = [];
+    async function step(label, action) {
+      console.log(`Synthetic cleanup: ${label}`);
+      try { await action(); }
+      catch (error) { errors.push(`${label}: ${error.message}`); }
     }
+    await step('stop Playwright', () => stop(playwright, 'Playwright'));
+    await step('stop synthetic API', () => stop(host, 'Synthetic API'));
+    if (containerCreated) {
+      // Never let an unresponsive Docker daemon consume the whole GitHub Actions timeout.
+      await step('remove disposable SQL container', () =>
+        command('docker', ['rm', '-f', container], { timeout: 20_000 }));
+    }
+    await step('remove synthetic fixture', () => rm(fixturePath, { force: true }));
+    await step('remove synthetic storage', () => rm(storagePath, { force: true, recursive: true }));
+    if (errors.length) throw new Error(errors.join('; '));
+    console.log('Synthetic cleanup complete.');
   })();
 }
 for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { void cleanup().finally(() => process.exit(1)); });
@@ -130,16 +178,19 @@ try {
     }
     for (const suite of report.suites ?? []) collect(suite);
   } catch { /* startup/discovery failure: do not report a passing suite */ }
-  try {
-    await writeFile(summaryPath, JSON.stringify({
-      passed: process.exitCode !== 1 && stats !== null, stats, scenarios,
-      frontendRevision: command('git', ['rev-parse', 'HEAD']),
-      frontendWorkingTreeDirty: Boolean(command('git', ['status', '--porcelain'])),
-      apiRevision: command('git', ['-C', apiRoot, 'rev-parse', 'HEAD']),
-      apiWorkingTreeDirty: Boolean(command('git', ['-C', apiRoot, 'status', '--porcelain'])),
-      database: 'disposable SQL Server; current EF schema; synthetic fixtures',
-    }, null, 2));
-  } finally {
-    await cleanup();
+  // Cleanup is part of the gate: a leaked disposable SQL container must not pass.
+  // Still emit the minimized summary if cleanup fails, for safe CI diagnostics.
+  try { await cleanup(); }
+  catch (error) {
+    console.error(`Synthetic E2E cleanup failed: ${error.message}`);
+    process.exitCode = 1;
   }
+  await writeFile(summaryPath, JSON.stringify({
+    passed: !process.exitCode && stats !== null, stats, scenarios,
+    frontendRevision: command('git', ['rev-parse', 'HEAD']),
+    frontendWorkingTreeDirty: Boolean(command('git', ['status', '--porcelain'])),
+    apiRevision: command('git', ['-C', apiRoot, 'rev-parse', 'HEAD']),
+    apiWorkingTreeDirty: Boolean(command('git', ['-C', apiRoot, 'status', '--porcelain'])),
+    database: 'disposable SQL Server; current EF schema; synthetic fixtures',
+  }, null, 2));
 }

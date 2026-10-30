@@ -1601,7 +1601,7 @@ test('tutorial de relatórios usa somente alvos data-tour existentes e conclui a
   await expect(mission).toContainText('Etapa 7 de 7');
   await expectActiveTourTarget(page, 'reports-results');
   await mission.getByRole('button', { name: 'Concluir tutorial' }).click();
-  await expect(page.getByRole('status')).toContainText('Missão concluída');
+  await expect(page.locator('.tutorial-notice[role="status"]')).toContainText('Missão concluída');
 
   await page.getByRole('button', { name: 'Fechar mensagem do tutorial' }).click();
   await page.getByRole('complementary', { name: 'Ajuda contextual' }).getByRole('button', { name: /abrir ajuda de relatórios/i }).click();
@@ -1749,7 +1749,7 @@ test('tutorial encerra de forma amigável quando um alvo não existe', async ({ 
     .getByRole('button', { name: /abrir ajuda de relatórios/i })
     .click();
   await page.getByRole('button', { name: /iniciar missão: dominar os relatórios/i }).click();
-  await expect(page.getByRole('status')).toContainText('foi encerrada com segurança');
+  await expect(page.locator('.tutorial-notice[role="status"]')).toContainText('foi encerrada com segurança');
   await expect(page.locator('.tutorial-mission-popover')).toHaveCount(0);
 });
 

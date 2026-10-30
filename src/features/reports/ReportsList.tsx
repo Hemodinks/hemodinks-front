@@ -15,6 +15,7 @@ type Props = {
   visibleEnd: number;
   totalRecords: number;
   individualExportLoadingId: number | null;
+  exportBlocked?: boolean;
   onPageChange: (page: number) => void;
   onExportIndividualPdf: (record: ReportRecord) => void;
   onOpenChecklist: (record: ReportRecord) => void;
@@ -48,7 +49,7 @@ export function ReportsList(props: Props) {
                   <Button
                     className="reports-individual-pdf"
                     type="button"
-                    disabled={props.individualExportLoadingId != null}
+                    disabled={props.exportBlocked || props.individualExportLoadingId != null}
                     onClick={() => props.onExportIndividualPdf(record)}
                   >
                     <FileText size={16} />

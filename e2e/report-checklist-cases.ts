@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile } from 'node:fs/promises';
+import { registerExportConsistencyCases } from './export-consistency-cases';
 
 type Helpers = {
   mockApi: (page: Page) => Promise<unknown>;
@@ -21,6 +22,7 @@ async function mockRecords(page: Page, helpers: Helpers, medical = false) {
 }
 
 export function registerReportChecklistCases(helpers: Helpers) {
+  registerExportConsistencyCases(helpers);
   for (const path of ['/relatorios', '/faturamento-medico']) for (const width of [390, 768, 1280]) for (const theme of ['light', 'dark']) {
     test(`checklist #171: motivos acessíveis em ${path} ${width}px ${theme}`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
