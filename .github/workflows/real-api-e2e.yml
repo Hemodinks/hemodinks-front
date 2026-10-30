@@ -1,6 +1,8 @@
 name: Web + real API E2E
 
 on:
+  push:
+    branches: [developer]
   pull_request:
     branches: [developer, main]
   workflow_dispatch:
