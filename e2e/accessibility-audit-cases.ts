@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mockPatientFormApi } from './patient-form-api';
+import { applyThemeForAudit } from './theme-audit';
 
 type Dependencies = {
   setup: (page: Page) => Promise<{ token: string; pacientes: Record<string, any>[] }>;
@@ -80,7 +81,7 @@ export function registerAccessibilityAuditCases({ setup, login }: Dependencies) 
             await expect(page.getByRole('group', { name: 'Opções de faturamento', exact: true })).toBeVisible();
           }
           for (const theme of ['light', 'dark']) {
-            await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
+            await applyThemeForAudit(page, theme);
             await audit(page, info, `${path.slice(1)}-${theme}`);
           }
           if (path === '/dashboard' && width < 981) {
@@ -224,7 +225,7 @@ export function registerAccessibilityAuditCases({ setup, login }: Dependencies) 
         await confirm.press('Tab');
         await expect(cancel).toBeFocused();
         for (const theme of ['light', 'dark']) {
-          await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
+          await applyThemeForAudit(page, theme);
           await audit(page, info, `modal-${theme}`);
         }
         const bounds = await dialog.boundingBox();

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mockPatientFormApi } from './patient-form-api';
+import { applyThemeForAudit } from './theme-audit';
 
 type Dependencies = {
   setup: (page: Page) => Promise<{ token: string; pacientes: Record<string, any>[] }>;
@@ -39,7 +40,7 @@ export function registerPatientListTests({ setup, login }: Dependencies) {
         await expect(panel.locator('.export-xlsx-btn')).toHaveCSS('border-top-color', 'rgb(22, 101, 52)');
         if (width === 390 || width === 1440) {
           for (const theme of ['light', 'dark']) {
-            await page.evaluate((value) => document.documentElement.dataset.theme = value, theme);
+            await applyThemeForAudit(page, theme);
             expect((await new AxeBuilder({ page }).include('.patient-list-panel').analyze()).violations).toEqual([]);
             await page.screenshot({ path: testInfo.outputPath(`listagem-${width}-${theme}.png`), fullPage: true });
           }
