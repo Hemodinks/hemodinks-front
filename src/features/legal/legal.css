@@ -31,6 +31,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  min-height: 24px;
   margin-bottom: 28px;
   color: var(--teal);
   font-weight: 900;
@@ -81,7 +82,7 @@
 .legal-acceptance-links { display: flex; flex-wrap: wrap; gap: 8px 18px; }
 .legal-acceptance-links a { color: var(--teal); font-weight: 800; }
 .legal-acceptance-check { display: flex; align-items: flex-start; gap: 12px; line-height: 1.55; }
-.legal-acceptance-check input { width: 20px; height: 20px; flex: 0 0 auto; margin-top: 2px; accent-color: var(--teal); }
+.legal-acceptance-check input { width: 24px; height: 24px; min-height: 0; flex: 0 0 auto; margin-top: 2px; accent-color: var(--teal); }
 .legal-acceptance-action {
   display: grid;
   gap: 16px;

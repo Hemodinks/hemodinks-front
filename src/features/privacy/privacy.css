@@ -57,7 +57,7 @@
 }
 
 .cookie-category h3 { font-size: 0.92rem; }
-.cookie-category p { max-width: 520px; }
+.cookie-category p { max-width: 520px; color: color-mix(in srgb, var(--muted) 80%, var(--ink)); }
 .cookie-category input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: var(--teal); }
 .cookie-required-status { flex: 0 0 auto; color: var(--teal); font-size: 0.76rem; font-weight: 900; }
 .cookie-modal-actions { justify-content: flex-end; }
