@@ -68,4 +68,42 @@ export function registerExportConsistencyCases(helpers: Helpers) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     expect(errors).toEqual([]);
   });
+
+  for (const label of ['Exportar Planilha', 'Exportar PDF']) test(`exportação: foto da clínica com 404 não trava ${label} nos relatórios`, async ({ page }) => {
+    test.setTimeout(60_000);
+    await helpers.mockApi(page);
+    const date = new Date().toISOString();
+    const item = { ...helpers.patient, id: 195001, nomePaciente: 'Caso 196', statusPago: true, data: date, dataAtendimento: date };
+    await page.route('**/api/faturamentos-medicos/**', route => route.fulfill({
+      json: { items: [item], page: 1, pageSize: 100, totalItems: 1, totalPages: 1 },
+    }));
+    await page.route('**/api/configuracoes-sistema/current/foto-empresa', route => route.fulfill({ status: 404, body: '' }));
+    await helpers.loginViaUi(page, '/relatorios');
+    await expect(page.getByText('Caso 196', { exact: true }).first()).toBeVisible();
+    await page.locator('summary').filter({ hasText: 'Filtros' }).click();
+    const button = page.getByRole('button', { name: label, exact: true });
+    const [download] = await Promise.all([page.waitForEvent('download', { timeout: 25_000 }), button.click()]);
+    expect(await download.failure()).toBeNull();
+    await expect(button).toBeEnabled();
+  });
+
+  for (const label of ['Exportar Planilha', 'Exportar PDF']) test(`exportação: foto da clínica sem resposta não trava ${label} nos relatórios`, async ({ page }) => {
+    test.setTimeout(60_000);
+    await helpers.mockApi(page);
+    const date = new Date().toISOString();
+    const item = { ...helpers.patient, id: 195000, nomePaciente: 'Caso 195', statusPago: true, data: date, dataAtendimento: date };
+    await page.route('**/api/faturamentos-medicos/**', route => route.fulfill({
+      json: { items: [item], page: 1, pageSize: 100, totalItems: 1, totalPages: 1 },
+    }));
+    let photoRequests = 0;
+    await page.route('**/api/configuracoes-sistema/current/foto-empresa', () => { photoRequests += 1; });
+    await helpers.loginViaUi(page, '/relatorios');
+    await expect(page.getByText('Caso 195', { exact: true }).first()).toBeVisible();
+    await page.locator('summary').filter({ hasText: 'Filtros' }).click();
+    const button = page.getByRole('button', { name: label, exact: true });
+    const [download] = await Promise.all([page.waitForEvent('download', { timeout: 25_000 }), button.click()]);
+    expect(await download.failure()).toBeNull();
+    expect(photoRequests).toBeGreaterThan(0);
+    await expect(button).toBeEnabled();
+  });
 }
