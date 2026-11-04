@@ -32,6 +32,26 @@ describe('identidade visual dos relatórios', () => {
     expect(failedLogo.logo).toBeNull();
   });
 
+  it('segue com a marca padrão quando a logo da clínica não responde', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      blob: () => Promise.resolve(createPngBlob(96, 96)),
+    }));
+
+    const pending = resolveReportIdentity({
+      clinicName: 'Clínica sem resposta',
+      title: 'Relatório',
+      logoLoader: () => new Promise<Blob>(() => undefined),
+    });
+    await vi.advanceTimersByTimeAsync(10_000);
+    const identity = await pending;
+
+    expect(identity.logo).toMatchObject({ extension: 'png', width: 96, height: 96 });
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
   it('usa a mesma marca padrão da interface quando a clínica não possui imagem', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
