@@ -269,6 +269,13 @@
   gap: 16px;
 }
 
+.system-settings-panel .toggle-row input {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+}
+
 .system-settings-password-panel {
   grid-column: 1 / -1;
 }
