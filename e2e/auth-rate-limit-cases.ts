@@ -150,7 +150,7 @@ export function registerAuthRateLimitCases<TSession extends Session>({ setup, lo
     const context = await browser.newContext();
     try {
       const other = await context.newPage();
-      await other.addInitScript(() => localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({ necessary: true, version: '1.1', preferences: true, analytics: false })));
+      await other.addInitScript(() => localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({ necessary: true, version: '1.2', preferences: true, analytics: false })));
       const second = { ...session, user: { ...session.user, email: 'other@example.com' } };
       await setup(other, second);
       await login(other, '/', second);

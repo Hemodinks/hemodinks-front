@@ -61,7 +61,7 @@ export function CookiePreferencesModal({ initialValue, onClose, onSave }: Props)
         <label className="cookie-category">
           <div>
             <h3>Análise</h3>
-            <p>Permitem o envio opcional de informações técnicas para diagnóstico de erros, desempenho e estabilidade por ferramentas como Sentry, New Relic Browser e OpenTelemetry.</p>
+            <p>Permitem o envio opcional de informações técnicas para diagnóstico de erros, desempenho e estabilidade pelo New Relic Browser.</p>
           </div>
           <input
             type="checkbox"
