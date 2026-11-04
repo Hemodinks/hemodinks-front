@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { applyThemeForAudit } from './theme-audit';
 type Helpers = { mockApi: (page: Page) => Promise<unknown>; loginViaUi: (page: Page, path?: string) => Promise<void> };
 const toggleName = 'Exibir calculadora flutuante';
 async function safeSetup(page: Page, helpers: Helpers) {
@@ -110,7 +111,7 @@ export function registerCalculatorCases(helpers: Helpers) {
       expect(keySizes).toHaveLength(20);
       for (const size of keySizes) { expect(size.width).toBeGreaterThanOrEqual(44); expect(size.height).toBeGreaterThanOrEqual(44); }
       for (const theme of ['light', 'dark']) {
-        await page.evaluate(value => document.documentElement.dataset.theme = value, theme);
+        await applyThemeForAudit(page, theme);
         const backgrounds = await panel.locator('.calculator-key-number, .calculator-key-operator, .calculator-key-utility, .calculator-key-equals')
           .evaluateAll(keys => Object.fromEntries(keys.map(key => [key.className, getComputedStyle(key).backgroundColor])));
         expect(new Set(Object.values(backgrounds)).size).toBe(4);

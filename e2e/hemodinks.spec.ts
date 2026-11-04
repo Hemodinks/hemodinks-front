@@ -24,6 +24,7 @@ import { getTutorialNarration } from '../src/features/tutorials/tutorialNarratio
 import { TUTORIAL_MEDIA } from '../scripts/tutorials/library-config';
 import { registerPatientFormTests } from './patient-form-cases';
 import { registerPatientListTests } from './patient-list-cases';
+import { applyThemeForAudit, settleStyleTransitions } from './theme-audit';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
@@ -1365,16 +1366,12 @@ test('privacidade: oferece escolha real, persiste categorias e controla análise
   await page.getByRole('button', { name: 'Configurar cookies' }).click();
   await dialog.getByRole('checkbox', { name: /Preferências/ }).uncheck();
   await dialog.getByRole('checkbox', { name: /Análise/ }).uncheck();
-  const possibleRevocationReload = Promise.race([
-    page.waitForEvent('load').catch(() => null),
-    page.waitForTimeout(1_000),
-  ]);
   await dialog.getByRole('button', { name: 'Salvar preferências' }).click();
-  await possibleRevocationReload;
   await expect(page).toHaveURL(/\/$/);
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
+  // Revocation may reload the page, which rejects an in-flight evaluate; undefined keeps polling.
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')).catch(() => undefined))
     .toMatchObject({ preferences: false, analytics: false });
-  await expect.poll(() => page.evaluate(() => localStorage.getItem('hemodinks.theme'))).toBeNull();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('hemodinks.theme')).catch(() => undefined)).toBeNull();
 });
 
 test('privacidade: sincroniza preferência autenticada com o backend e persiste alterações', async ({ page }) => {
@@ -1406,12 +1403,7 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
   const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
   await dialog.getByRole('checkbox', { name: /Preferências/ }).uncheck();
   await dialog.getByRole('checkbox', { name: /Análise/ }).uncheck();
-  const possibleRevocationReload = Promise.race([
-    page.waitForEvent('load').catch(() => null),
-    page.waitForTimeout(1_000),
-  ]);
   await dialog.getByRole('button', { name: 'Salvar preferências' }).click();
-  await possibleRevocationReload;
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
 
   await expect.poll(() => apiState.privacyPreferencePayload).toEqual({
@@ -1419,7 +1411,8 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
     preferencesEnabled: false,
     analyticsEnabled: false,
   });
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
+  // Revocation may reload the page, which rejects an in-flight evaluate; undefined keeps polling.
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')).catch(() => undefined))
     .toMatchObject({ preferences: false, analytics: false });
 });
 
@@ -1977,7 +1970,7 @@ test('login wait: explica demora e permite cancelar sem abrir sessão tardia', a
   await expect(page.locator('[role="status"].loading-overlay-panel')).toContainText('Ainda estamos aguardando');
   const cancel = page.getByRole('button', { name: 'Cancelar tentativa' });
   for (const theme of ['light', 'dark']) {
-    await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
+    await applyThemeForAudit(page, theme);
     await expect(cancel).toBeVisible();
     const audit = await new AxeBuilder({ page }).include('.login-cancel-attempt').withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(audit.violations).toEqual([]);
@@ -2284,6 +2277,7 @@ test('dashboard operacional preserva fundo, tema e navegação nas larguras soli
     await page.screenshot({ path: testInfo.outputPath(`dashboard-light-${width}.png`), fullPage: true });
     await page.getByRole('button', { name: 'Usar tema escuro', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await settleStyleTransitions(page);
     await expectNoGlobalHorizontalOverflow(page);
     await page.screenshot({ path: testInfo.outputPath(`dashboard-dark-${width}.png`), fullPage: true });
     if (width === 1440 || width === 390) {
