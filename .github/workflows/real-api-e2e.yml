@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: Hemodinks/hemodinks-api
-          ref: 4a9805b979a4bff3b3ab9e9c7d596505a42a932c
+          ref: fa3ef7cddf233807c83379fa804a286e0a6513d9
           path: .integration/api
           persist-credentials: false
       - uses: actions/setup-node@v6
