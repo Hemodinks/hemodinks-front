@@ -2,7 +2,7 @@ export function PrivacyPolicyContent() {
   return (
     <>
       <div className="legal-document-header-copy">
-        <p className="legal-document-meta"><strong>Última atualização:</strong> 3 de setembro de 2026<br /><strong>Versão:</strong> 1.1</p>
+        <p className="legal-document-meta"><strong>Última atualização:</strong> 4 de novembro de 2026<br /><strong>Versão:</strong> 1.2</p>
         <p>Este Aviso de Privacidade explica como os dados pessoais são tratados na plataforma HemoDinks, incluindo informações utilizadas no acesso ao sistema, na operação das funcionalidades contratadas e nos documentos enviados pelas clínicas.</p>
         <p>O HemoDinks é uma plataforma de gestão destinada a clínicas e profissionais autorizados. A plataforma não substitui avaliações, decisões ou responsabilidades de profissionais de saúde.</p>
       </div>
@@ -93,8 +93,6 @@ export function PrivacyPolicyContent() {
             <li>Microsoft Azure, para hospedagem do frontend e da API, banco de dados, armazenamento de arquivos, processamento de filas e execução de serviços auxiliares;</li>
             <li>Google, por meio do serviço Gmail SMTP, para o envio de comunicações transacionais, como mensagens de recuperação de senha;</li>
             <li>New Relic, quando habilitado, para monitoramento de desempenho, diagnóstico de falhas e observabilidade técnica;</li>
-            <li>Sentry, quando habilitado e mediante as preferências de consentimento aplicáveis, para diagnóstico de erros e desempenho do frontend;</li>
-            <li>o provedor configurado para o recebimento de telemetria OpenTelemetry, quando essa integração estiver habilitada;</li>
             <li>Render e Vercel, quando utilizados em ambientes de homologação, confirmação ou implantação alternativa;</li>
             <li>Nager.Date, para consulta de feriados brasileiros, sem o envio intencional de dados cadastrais ou clínicos;</li>
             <li>prestadores autorizados necessários ao suporte, à segurança e à manutenção da plataforma.</li>

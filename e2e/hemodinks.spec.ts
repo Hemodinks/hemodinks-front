@@ -42,7 +42,7 @@ test.beforeEach(async ({ page }, testInfo) => {
     await page.addInitScript(() => {
       localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({
         necessary: true,
-        version: '1.1',
+        version: '1.2',
         updatedAt: '2026-09-03T12:00:00.000Z',
         preferences: true,
         analytics: false,
@@ -470,8 +470,8 @@ async function mockApi(page: Page, loginSession = session, options: {
           },
           privacyNotice: {
             documentType: 'PrivacyNoticeAcknowledgement',
-            currentVersion: '1.1',
-            acceptedVersion: state.legalAccepted ? '1.1' : null,
+            currentVersion: '1.2',
+            acceptedVersion: state.legalAccepted ? '1.2' : null,
             acceptedAtUtc: state.legalAccepted ? '2026-09-03T15:30:00Z' : null,
             isCurrent: state.legalAccepted,
           },
@@ -492,8 +492,8 @@ async function mockApi(page: Page, loginSession = session, options: {
       return route.fulfill({
         json: {
           hasPreference: state.privacyPreference !== null,
-          currentDocumentVersion: '1.1',
-          documentVersion: state.privacyPreference ? '1.1' : null,
+          currentDocumentVersion: '1.2',
+          documentVersion: state.privacyPreference ? '1.2' : null,
           preferencesEnabled: state.privacyPreference?.preferences ?? false,
           analyticsEnabled: state.privacyPreference?.analytics ?? false,
           acceptedAtUtc: state.privacyPreference ? '2026-09-03T15:30:00Z' : null,
@@ -829,7 +829,7 @@ test('exige aceite versionado uma única vez e mantém o acesso após novo login
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   expect(apiState.legalAcceptancePayload).toEqual({
     termsOfUseVersion: '1.1',
-    privacyNoticeVersion: '1.1',
+    privacyNoticeVersion: '1.2',
   });
 
   await page.getByRole('button', { name: 'Menu do usuário', exact: true }).click();
@@ -1363,7 +1363,7 @@ test('privacidade: oferece escolha real, persiste categorias e controla análise
   await expect(banner).toHaveCount(0);
   await expect.poll(() => analyticsModuleRequests).toBe(1);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
-    .toMatchObject({ necessary: true, version: '1.1', preferences: true, analytics: true });
+    .toMatchObject({ necessary: true, version: '1.2', preferences: true, analytics: true });
 
   await page.getByRole('button', { name: 'Configurar cookies' }).click();
   await dialog.getByRole('checkbox', { name: /Preferências/ }).uncheck();
@@ -1380,7 +1380,7 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
   await page.addInitScript(() => {
     localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({
       necessary: true,
-      version: '1.1',
+      version: '1.2',
       updatedAt: '2026-09-03T12:00:00.000Z',
       preferences: false,
       analytics: false,
@@ -1398,7 +1398,7 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
   await loginViaUi(page);
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
-    .toMatchObject({ necessary: true, version: '1.1', preferences: true, analytics: true });
+    .toMatchObject({ necessary: true, version: '1.2', preferences: true, analytics: true });
   await expect.poll(() => analyticsModuleRequests).toBe(1);
 
   await page.getByRole('button', { name: 'Configurar cookies' }).click();
@@ -1409,7 +1409,7 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
 
   await expect.poll(() => apiState.privacyPreferencePayload).toEqual({
-    documentVersion: '1.1',
+    documentVersion: '1.2',
     preferencesEnabled: false,
     analyticsEnabled: false,
   });
@@ -1444,10 +1444,23 @@ test('privacidade: mantém escolha personalizada no reload e pede nova decisão 
 
   await page.evaluate(() => {
     const record = JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}');
-    localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({ ...record, version: '1.0' }));
+    localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({ ...record, version: '1.1' }));
   });
   await page.reload();
   await expect(page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })).toBeVisible();
+});
+
+test('privacidade: aviso e preferências citam só as ferramentas em uso', async ({ page }) => {
+  await mockApi(page);
+  await page.goto('/politica-de-privacidade');
+  const notice = page.locator('.legal-document');
+  await expect(notice).toContainText('New Relic');
+  await expect(notice).not.toContainText(/sentry|opentelemetry/i);
+  await loginViaUi(page);
+  await page.getByRole('button', { name: 'Configurar cookies' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
+  await expect(dialog).toContainText('New Relic');
+  await expect(dialog).not.toContainText(/sentry|opentelemetry/i);
 });
 
 test('privacidade: modal permanece acessível e contido em desktop, notebook, tablet e smartphone', async ({ page }) => {
@@ -1517,7 +1530,7 @@ test('privacidade: páginas jurídicas são públicas e responsivas', async ({ p
 
   for (const [path, title, version] of [
     ['/termos-de-uso', 'Termos de Uso', 'Versão: 1.1'],
-    ['/politica-de-privacidade', 'Aviso de Privacidade do HemoDinks', 'Versão: 1.1'],
+    ['/politica-de-privacidade', 'Aviso de Privacidade do HemoDinks', 'Versão: 1.2'],
   ] as const) {
     await page.goto(path);
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();

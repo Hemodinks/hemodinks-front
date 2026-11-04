@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
     }
   });
   await page.addInitScript(() => localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({
-    necessary: true, version: '1.1', updatedAt: new Date().toISOString(), preferences: true, analytics: false,
+    necessary: true, version: '1.2', updatedAt: new Date().toISOString(), preferences: true, analytics: false,
   })));
 });
 
