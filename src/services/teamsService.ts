@@ -5,55 +5,6 @@ export function listTeams(token: string) {
   return get<Team[]>("/api/equipes/", token);
 }
 
-export function createTeam(payload: CreateTeamPayload, token: string) {
-  return post<{ id: number }>("/api/equipes/", payload, token);
-}
-
-export function updateTeam(
-  id: number,
-  payload: {
-    nome?: string;
-    modoIdentificacao?: TeamIdentificationMode;
-    ativa?: boolean;
-  },
-  token: string,
-) {
-  return put<void>(`/api/equipes/${id}`, payload, token);
-}
-
-export function addTeamMember(
-  teamId: number,
-  userId: number,
-  gerarPin: boolean,
-  token: string,
-) {
-  return post<{ id: number; pinTemporario?: string | null }>(
-    `/api/equipes/${teamId}/membros`,
-    { userId, gerarPin },
-    token,
-  );
-}
-
-export function removeTeamMember(
-  teamId: number,
-  userId: number,
-  token: string,
-) {
-  return del<void>(`/api/equipes/${teamId}/membros/${userId}`, token);
-}
-
-export function resetTeamOperatorPin(
-  teamId: number,
-  operatorId: number,
-  token: string,
-) {
-  return post<{ pinTemporario: string }>(
-    `/api/equipes/${teamId}/operadores/${operatorId}/pin`,
-    {},
-    token,
-  );
-}
-
 export function changeCurrentTeamPin(
   pinAtual: string,
   novoPin: string,

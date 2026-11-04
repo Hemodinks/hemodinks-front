@@ -7,8 +7,6 @@ name: Deploy Azure Static Web Apps
         required: true
       VITE_API_URL:
         required: true
-      VITE_SENTRY_DSN:
-        required: false
 
 permissions:
   contents: read
@@ -32,8 +30,6 @@ jobs:
     env:
       VITE_APP_ENV: ci
       VITE_APP_VERSION: ${{ github.sha }}
-      VITE_SENTRY_DSN: ''
-      VITE_SENTRY_TRACES_SAMPLE_RATE: 0
 
     steps:
       - name: Checkout
@@ -90,8 +86,6 @@ jobs:
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_APP_ENV: production
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          VITE_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.VITE_SENTRY_TRACES_SAMPLE_RATE }}
         run: npm run build
 
       - name: Check bundle budget

@@ -91,7 +91,7 @@ function EmailChangeForm({ session, onChanged }: Props) {
     }
   };
 
-  return <div className="stack sentry-block nr-block" data-private="true">
+  return <div className="stack nr-block" data-private="true">
     <form className="stack" onInvalid={focusFirstInvalidFormField} onSubmit={event => {
       event.preventDefault();
       if (open) return;
@@ -105,7 +105,7 @@ function EmailChangeForm({ session, onChanged }: Props) {
       <Button type="submit" variant="primary" aria-disabled={open}>Continuar alteração de email</Button>
     </form>
     {open && <Modal titleId="email-change-title" descriptionId="email-change-description" onClose={cancel}>
-      <div className="stack sentry-block nr-block" data-private="true">
+      <div className="stack nr-block" data-private="true">
         <h2 id="email-change-title">{pending ? 'Confirmar novo email' : 'Confirmar identidade'}</h2>
         <p id="email-change-description">{pending
           ? 'Cole o código recebido no novo endereço. O email ainda não foi alterado.'

@@ -110,11 +110,6 @@ export function eventTouchesDate(event: AgendaEvent, dateKey: string) {
   return startKey <= dateKey && endKey >= dateKey;
 }
 
-export function mergeAgendaEvent(currentEvents: AgendaEvent[], agendaEvent: AgendaEvent) {
-  return [...currentEvents.filter((item) => item.id !== agendaEvent.id), agendaEvent]
-    .sort((first, second) => new Date(first.start).getTime() - new Date(second.start).getTime());
-}
-
 export function composeDateTime(dateKey: string, timeValue: string) {
   return parseAgendaDateTime(dateKey, timeValue) ?? new Date(Number.NaN);
 }

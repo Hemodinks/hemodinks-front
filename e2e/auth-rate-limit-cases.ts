@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { applyThemeForAudit } from './theme-audit';
 
 type Session = { token: string; user: { email: string; id: number } };
 const genericMessage = 'Muitas tentativas. Aguarde antes de tentar novamente.';
@@ -83,7 +84,7 @@ export function registerAuthRateLimitCases<TSession extends Session>({ setup, lo
       // axe and screenshots use browser timers. Keep the normal clock for these
       // audits; the separate timing case above controls the wait deterministically.
       for (const theme of ['light', 'dark']) {
-        await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
+        await applyThemeForAudit(page, theme);
         const audit = await new AxeBuilder({ page }).include('.login-panel').withTags(['wcag2a', 'wcag2aa']).analyze();
         expect(audit.violations).toEqual([]);
         await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -149,7 +150,7 @@ export function registerAuthRateLimitCases<TSession extends Session>({ setup, lo
     const context = await browser.newContext();
     try {
       const other = await context.newPage();
-      await other.addInitScript(() => localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({ necessary: true, version: '1.1', preferences: true, analytics: false })));
+      await other.addInitScript(() => localStorage.setItem('hemodinks.privacy-consent', JSON.stringify({ necessary: true, version: '1.2', preferences: true, analytics: false })));
       const second = { ...session, user: { ...session.user, email: 'other@example.com' } };
       await setup(other, second);
       await login(other, '/', second);

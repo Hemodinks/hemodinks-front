@@ -41,7 +41,7 @@ export type BillingQuarterHighlight = {
 export type BillingHistoryMonthTone = 'highest' | 'lowest' | 'neutral';
 export type BillingQuarterPerformanceTone = 'most-profitable' | 'least-profitable' | 'neutral';
 
-export function getBillingHistoryDate(record: BillingRecord) {
+function getBillingHistoryDate(record: BillingRecord) {
   return record.attendanceDate;
 }
 

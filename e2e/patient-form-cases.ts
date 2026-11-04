@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile } from 'node:fs/promises';
 import { mockPatientFormApi } from './patient-form-api';
+import { applyThemeForAudit } from './theme-audit';
 
 type Dependencies = {
   setup: (page: Page) => Promise<{ token: string; pacientes: Record<string, any>[] }>;
@@ -336,7 +337,7 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
         await page.screenshot({ path: testInfo.outputPath(`ficha-${width}.png`), fullPage: true });
         if (width === 390 || width === 1440) {
           for (const theme of ['light', 'dark']) {
-            await page.evaluate((value) => document.documentElement.dataset.theme = value, theme);
+            await applyThemeForAudit(page, theme);
             const result = await new AxeBuilder({ page }).include('.patient-form-panel').analyze();
             expect(result.violations).toEqual([]);
             await page.screenshot({ path: testInfo.outputPath(`ficha-${width}-${theme}.png`), fullPage: true });

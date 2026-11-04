@@ -27,7 +27,7 @@ export function getInvalidPatientFileMessage(files: File[]) {
     : '';
 }
 
-export function resolveMedicalSelection(
+function resolveMedicalSelection(
   medicalUsers: MedicalUserOption[],
   userId: number | null,
   nome: string,
@@ -52,7 +52,7 @@ type BuildPatientPayloadWithLookupsOptions = {
   opmeFornecedores: OpmeFornecedor[];
 };
 
-export function buildPatientPayloadWithLookups({
+function buildPatientPayloadWithLookups({
   pacienteFormData,
   medicalUsers,
   hospitais,

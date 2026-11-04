@@ -2,7 +2,7 @@ import type { AgendaFormData } from './agendaUtils';
 
 export type AgendaScheduleField = 'title' | 'startDate' | 'startTime' | 'endDate' | 'endTime';
 export type AgendaFieldErrors = Partial<Record<AgendaScheduleField, string>>;
-export const endAfterStartMessage = 'O término deve ser posterior ao início.';
+const endAfterStartMessage = 'O término deve ser posterior ao início.';
 
 export function isAgendaDateValid(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number(value.slice(0, 4)) < 1) return false;

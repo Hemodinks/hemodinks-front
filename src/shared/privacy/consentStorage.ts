@@ -1,5 +1,5 @@
 export const CONSENT_STORAGE_KEY = 'hemodinks.privacy-consent';
-export const PRIVACY_POLICY_VERSION = '1.1';
+export const PRIVACY_POLICY_VERSION = '1.2';
 export const CONSENT_POLICY_VERSION = PRIVACY_POLICY_VERSION;
 
 export type OptionalConsentCategories = {

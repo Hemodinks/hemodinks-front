@@ -17,6 +17,7 @@ type ExportPatientListOptions = {
   companyName: string;
   sessionToken?: string;
   contextLines?: string[];
+  shouldContinue?: () => boolean;
 };
 
 async function createPatientListPdf(items: Paciente[], identity: ReportIdentity) {
@@ -46,8 +47,10 @@ async function createPatientListPdf(items: Paciente[], identity: ReportIdentity)
   return document;
 }
 
-export async function exportPatientList({ format, items, companyName, sessionToken, contextLines }: ExportPatientListOptions) {
+export async function exportPatientList({ format, items: sourceItems, companyName, sessionToken, contextLines, shouldContinue }: ExportPatientListOptions) {
+  const items = structuredClone(sourceItems);
   const epoch = sessionEpoch();
+  const isCurrent = () => epoch === sessionEpoch() && (shouldContinue?.() ?? true);
   const fileName = getPatientExportFileName(format, companyName);
   const identity = await resolveReportIdentity({
     clinicName: companyName,
@@ -55,16 +58,17 @@ export async function exportPatientList({ format, items, companyName, sessionTok
     sessionToken,
     contextLines: [`${items.length} registro(s)`, ...(contextLines ?? [])],
   });
-  if (epoch !== sessionEpoch()) return;
+  if (!isCurrent()) return;
 
   if (format === 'xlsx') {
     const rows = getPacienteExportRows(items);
     const headers = pacienteExportColumns.map((column) => column.header);
-    downloadBlob(createReportXlsxBlob(rows, headers, { sheetName: 'Pacientes', identity }), fileName);
+    const blob = createReportXlsxBlob(rows, headers, { sheetName: 'Pacientes', identity });
+    if (isCurrent()) downloadBlob(blob, fileName);
     return;
   }
 
   const document = await createPatientListPdf(items, identity);
-  if (epoch !== sessionEpoch()) return;
+  if (!isCurrent()) return;
   document.save(fileName);
 }

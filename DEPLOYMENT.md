@@ -38,7 +38,6 @@ Minimo para qualquer build publicado:
 VITE_API_URL=https://<api-publica>
 VITE_APP_ENV=production
 VITE_APP_VERSION=<versao-ou-sha>
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 Observabilidade opcional no browser:
@@ -51,20 +50,11 @@ VITE_NEW_RELIC_BEACON=<opcional>
 VITE_NEW_RELIC_ERROR_BEACON=<opcional>
 VITE_NEW_RELIC_LICENSE_KEY=<opcional>
 VITE_NEW_RELIC_TRUST_KEY=<opcional>
-VITE_SENTRY_DSN=<opcional>
-VITE_OTEL_EXPORTER_OTLP_ENDPOINT=<opcional>
-VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=<opcional>
-VITE_OTEL_EXPORTER_OTLP_HEADERS=<opcional>
-VITE_OTEL_EXPORTER_OTLP_TRACES_HEADERS=<opcional>
-VITE_OTEL_SERVICE_NAME=hemodinks-front
-VITE_OTEL_TRACES_SAMPLE_RATE=1
 ```
 
 Notas:
 
 - `VITE_NEW_RELIC_BEACON` e `VITE_NEW_RELIC_ERROR_BEACON` sao avancadas e podem ficar vazias.
-- O build gera `public/otel-runtime-config.json` automaticamente via `scripts/write-otel-runtime-config.mjs`.
-- Se o backend OTLP exigir segredo privado, publique um proxy/collector seu em vez de expor a credencial no bundle.
 
 ## Validacao antes de deploy
 
@@ -92,7 +82,6 @@ Artefatos uteis:
 ```text
 dist/
 dist/bundle-stats.html
-public/otel-runtime-config.json
 reports/lighthouse/
 ```
 
@@ -195,7 +184,6 @@ Segredos necessarios:
 ```text
 AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410
 VITE_API_URL
-VITE_SENTRY_DSN
 ```
 
 O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate dos PRs e pushes. Lighthouse fica separado em `.github/workflows/lighthouse.yml` e deve ser iniciado manualmente quando necessario.
@@ -220,7 +208,6 @@ Variaveis principais:
 VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
 VITE_APP_ENV=confirmation
 VITE_APP_VERSION=<versao-ou-sha>
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 Use `.env.confirmation.example` para reproduzir esse build localmente.
@@ -261,7 +248,7 @@ Validar no navegador:
 - exportacao XLSX e PDF
 - layout sem scroll horizontal em `360px`, `390px` e `768px`
 - fallback do Error Boundary
-- eventos de Sentry/New Relic/OTLP quando configurados
+- eventos do New Relic Browser quando configurado
 
 ## Troubleshooting
 
@@ -283,4 +270,3 @@ npm run analyze
 
 Abra `dist/bundle-stats.html` e confira se `jspdf` e outros pacotes pesados continuam em chunks separados.
 
-Se a telemetria OTLP nao aparecer, confira `public/otel-runtime-config.json` no build gerado e valide se o endpoint publicado aceita chamadas de browser.

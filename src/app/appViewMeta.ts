@@ -23,7 +23,7 @@ export function getAppTitle(activeView: AppView) {
                 : activeView === 'clinics' ? 'Clínicas' : 'Agenda e notificações';
 }
 
-export function getActiveModuleLabel(activeView: AppView) {
+function getActiveModuleLabel(activeView: AppView) {
   return activeView === 'users'
     ? 'Usuários'
     : activeView === 'profile' ? 'Meu cadastro'
@@ -37,7 +37,7 @@ export function getActiveModuleLabel(activeView: AppView) {
               : activeView === 'clinics' ? 'Clínicas' : 'Agenda e notificações';
 }
 
-export function getFormBreadcrumbLabel({
+function getFormBreadcrumbLabel({
   activeView,
   editingId,
   editingPacienteId,
