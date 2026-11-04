@@ -3,6 +3,7 @@ import defaultCompanyLogo from '../../../imagem hemodinks github.jpg';
 
 const DEFAULT_REPORT_COLOR = '#14877D';
 const EMPTY_REPORT_VALUE = 'Não informado';
+const REPORT_LOGO_TIMEOUT_MS = 10_000;
 
 export type ReportLogo = {
   bytes: Uint8Array;
@@ -99,6 +100,14 @@ export async function normalizeReportLogo(blob: Blob): Promise<ReportLogo | null
   return { bytes, ...size };
 }
 
+// The logo is optional: a request that never answers must not keep the export running forever.
+function withLogoTimeout<T>(task: Promise<T>) {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Tempo esgotado ao carregar a logo.')), REPORT_LOGO_TIMEOUT_MS);
+    task.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
+}
+
 async function loadClinicReportLogo(sessionToken?: string, logoLoader?: () => Promise<Blob>) {
   const loaders = [
     logoLoader ?? (() => getSystemSettingsCompanyPhoto(sessionToken)),
@@ -110,7 +119,7 @@ async function loadClinicReportLogo(sessionToken?: string, logoLoader?: () => Pr
 
   for (const load of loaders) {
     try {
-      const logo = await normalizeReportLogo(await load());
+      const logo = await withLogoTimeout(load().then(normalizeReportLogo));
       if (logo) return logo;
     } catch {
       // A ausência de uma imagem específica da clínica usa a mesma marca padrão da interface.
