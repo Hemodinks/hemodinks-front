@@ -26,10 +26,6 @@ export function deactivatePlatformClinic(id: number, token: string) {
   return del<void>(`/api/platform/clinicas/${id}`, token);
 }
 
-export function listSessionClinics(token: string) {
-  return get<SessionClinic[]>('/api/session/clinicas', token);
-}
-
 export function selectSessionClinic(clinicaId: number, token: string) {
   return post<SelectClinicResponse>('/api/session/selecionar-clinica', { clinicaId }, token);
 }

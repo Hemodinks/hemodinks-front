@@ -88,9 +88,8 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
 
     if (previous?.analytics && !categories.analytics) {
       void stopOptionalAnalytics().then(({ requiresReload }) => {
-        // New Relic Browser has no supported shutdown API and the browser OTel
-        // provider cannot be registered again safely after shutdown. Reloading
-        // preserves the session while applying revocation before app bootstrap.
+        // New Relic Browser has no supported shutdown API. Reloading preserves
+        // the session while applying revocation before app bootstrap.
         if (requiresReload) window.location.reload();
       });
     }

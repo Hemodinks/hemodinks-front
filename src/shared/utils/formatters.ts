@@ -140,10 +140,6 @@ export function findOpmeFornecedorByName(
     : undefined;
 }
 
-export function isValidProfileId(perfilId: number) {
-  return PROFILE_OPTIONS.some((profile) => profile.id === perfilId);
-}
-
 export function isAssignableUserProfileId(perfilId: number) {
   return USER_PROFILE_OPTIONS.some((profile) => profile.id === perfilId);
 }
@@ -152,7 +148,7 @@ export function isMedicalProfileId(perfilId: number) {
   return perfilId === MEDICAL_PROFILE_ID;
 }
 
-export function getProfileName(perfilId: number) {
+function getProfileName(perfilId: number) {
   return (
     PROFILE_OPTIONS.find((profile) => profile.id === perfilId)?.nome ??
     "Médicos"
@@ -266,7 +262,7 @@ export function resolveProfilePhotoSource(photo?: string | null) {
   return `${API_ASSET_BASE_URL}/${value}`;
 }
 
-export function onlyDigits(value: string) {
+function onlyDigits(value: string) {
   return value.replace(/\D/g, "");
 }
 
@@ -290,28 +286,6 @@ export function formatCpfInput(value: string) {
 
 export function normalizeCpfForPayload(value: string) {
   return onlyDigits(value).slice(0, 11);
-}
-
-export function isValidCpf(value: string) {
-  const cpf = onlyDigits(value);
-
-  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
-    return false;
-  }
-
-  const getDigit = (length: number) => {
-    const sum = cpf
-      .slice(0, length)
-      .split("")
-      .reduce(
-        (total, digit, index) => total + Number(digit) * (length + 1 - index),
-        0,
-      );
-    const rest = (sum * 10) % 11;
-    return rest === 10 ? 0 : rest;
-  };
-
-  return getDigit(9) === Number(cpf[9]) && getDigit(10) === Number(cpf[10]);
 }
 
 export function getLocalBrazilPhoneDigits(value: string) {

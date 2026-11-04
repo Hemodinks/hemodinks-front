@@ -50,7 +50,7 @@ const TEAM_IMPLICIT_FEATURES = new Set<string>([
   LICENSE_FEATURES.cbhpmConsultar,
 ]);
 
-export function getSessionFeatures(user: SessionUser | null | undefined): ReadonlySet<string> {
+function getSessionFeatures(user: SessionUser | null | undefined): ReadonlySet<string> {
   if (!user) {
     return new Set();
   }

@@ -38,7 +38,7 @@ export function PasswordInput({
           onChange={(event) => onChange(event.target.value)}
           autoComplete={autoComplete}
           data-private={autoComplete === 'new-password' ? true : undefined}
-          className={autoComplete === 'new-password' ? 'sentry-mask nr-mask' : undefined}
+          className={autoComplete === 'new-password' ? 'nr-mask' : undefined}
           minLength={minLength}
           maxLength={maxLength}
           required={required}

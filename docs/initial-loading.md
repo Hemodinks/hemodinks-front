@@ -38,7 +38,6 @@ No repositório da API, `docs/production-blue-green-runbook.md` documenta `minRe
 
 ## Observabilidade
 
-Os spans `bootstrap.public_clinics` e `bootstrap.session_clinic_legal` usam o OpenTelemetry API já instalado e o provider existente. Registram duração e resultado (`success`, `error`, `timeout`, `cancelled`), sem senha, token, slug, ClinicaId ou dados pessoais/clínicos. Não inicializam um novo exporter nem alteram consentimento de análise.
 
 O primeiro span mede o tempo da leitura pública até a resposta, incluindo rede/API/banco; não é uma medição isolada de disponibilidade da API. O segundo mede a validação autenticada combinada. Não são inventadas métricas separadas para permissões e clínica que chegam na mesma resposta. A soma entre fases não deve incluir o tempo que a pessoa passa preenchendo o login. Para decompor o cold start, correlacionar com traces/logs de request e startup já existentes na API.
 

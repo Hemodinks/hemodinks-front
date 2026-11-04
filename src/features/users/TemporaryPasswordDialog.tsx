@@ -37,7 +37,7 @@ export function TemporaryPasswordDialog({ user, token, onClose }: { user: User; 
   };
   const title = expired ? 'Senha temporária expirada' : result ? 'Senha temporária gerada' : 'Gerar senha temporária?';
   return <Modal titleId="temporary-password-title" descriptionId="temporary-password-description" onClose={close} className="temporary-password-modal" backdropClassName="temporary-password-backdrop">
-    <div className="sentry-block nr-block" data-private="true" aria-busy={loading}>
+    <div className="nr-block" data-private="true" aria-busy={loading}>
       <header className="temporary-password-header">
         <span className="temporary-password-emblem" aria-hidden="true">{expired ? <Clock3 size={26} /> : result ? <CheckCircle2 size={26} /> : <KeyRound size={26} />}</span>
         <div>
@@ -59,7 +59,7 @@ export function TemporaryPasswordDialog({ user, token, onClose }: { user: User; 
           </div>
           {result ? <div className="temporary-password-secret">
             <div className="temporary-password-secret-heading"><label htmlFor="temporary-password-value">Senha de acesso temporário</label><span>Exibição única</span></div>
-            <input id="temporary-password-value" className="sentry-mask nr-mask" data-private="true" readOnly autoComplete="off" spellCheck={false} value={result.senhaTemporaria} onFocus={(event) => event.target.select()} />
+            <input id="temporary-password-value" className="nr-mask" data-private="true" readOnly autoComplete="off" spellCheck={false} value={result.senhaTemporaria} onFocus={(event) => event.target.select()} />
             <div className="temporary-password-secret-footer"><span><Clock3 size={15} />Expira às {new Date(result.expiresAtUtc).toLocaleTimeString('pt-BR')}</span><Button className="temporary-password-copy" onClick={() => void copy()}>{copied ? <Check size={17} /> : <Copy size={17} />}{copied ? 'Senha copiada' : 'Copiar senha'}</Button></div>
             <p role="status">{copied ? 'Copiada! Envie somente ao titular da conta.' : 'Copie antes de fechar. Esta senha não poderá ser consultada novamente.'}</p>
           </div> : <div className="temporary-password-notice"><AlertTriangle size={21} /><div><strong>As sessões anteriores serão encerradas</strong><p>A senha temporária anterior será invalidada. Após entrar, o usuário deverá cadastrar uma nova senha pessoal.</p></div></div>}
