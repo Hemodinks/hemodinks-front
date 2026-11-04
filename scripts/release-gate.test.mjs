@@ -24,7 +24,7 @@ test('production has a same-run dependency on the complete CI job', () => {
   assert.equal(ci.on.pull_request_target, undefined);
   assert.equal(existsSync(new URL('../.github/workflows/azure-static-web-apps-white-grass-0d59a4410.yml', import.meta.url)), false);
   assert.deepEqual(Object.keys(ci.jobs.deploy.secrets).sort(), [
-    'AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410', 'VITE_API_URL', 'VITE_SENTRY_DSN',
+    'AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410', 'VITE_API_URL',
   ]);
   const uploadWorkflows = readdirSync(new URL('../.github/workflows/', import.meta.url))
     .filter(name => /\.ya?ml$/.test(name))
@@ -59,7 +59,7 @@ test('CI requires gate regression tests, E2E and responsive matrix without failu
     "${{ !cancelled() && steps.playwright-browsers.outcome == 'success' }}");
   assert.equal(job.env.AZURE_STATIC_WEB_APPS_API_TOKEN, undefined);
   assert.equal(job.env.VITE_API_URL, undefined);
-  assert.equal(job.env.VITE_SENTRY_DSN, '');
+  assert.equal(job.env.VITE_SENTRY_DSN, undefined);
 });
 
 test('production is serialized, pinned and revalidated immediately before upload', () => {
@@ -81,7 +81,7 @@ test('production is serialized, pinned and revalidated immediately before upload
   assert.equal(job.steps[upload].env.AZURE_STATIC_WEB_APPS_API_TOKEN, '${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410 }}');
   assert.equal(job.env.AZURE_STATIC_WEB_APPS_API_TOKEN, undefined);
   assert.equal(job.env.VITE_API_URL, undefined);
-  assert.equal(job.env.VITE_SENTRY_DSN, '');
+  assert.equal(job.env.VITE_SENTRY_DSN, undefined);
   assert.equal(job.steps.find(step => step.name === 'Build').env.VITE_APP_ENV, 'production');
 });
 

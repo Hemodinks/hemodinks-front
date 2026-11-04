@@ -1,6 +1,6 @@
 import type { PagedResult } from '../../types';
 
-export const CONSULTATION_CHANGED_MESSAGE = 'Os dados da consulta mudaram durante o carregamento. Atualize a consulta e tente novamente.';
+const CONSULTATION_CHANGED_MESSAGE = 'Os dados da consulta mudaram durante o carregamento. Atualize a consulta e tente novamente.';
 
 // Offset pagination has no server snapshot/version. Reject observable drift instead
 // of deduplicating it silently: a duplicate can also mean another record was omitted.

@@ -5,7 +5,7 @@ function escapeXml(value: string) {
   return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;');
 }
 
-export function applyTutorialPronunciations(text: string, keys: readonly string[] = []) {
+function applyTutorialPronunciations(text: string, keys: readonly string[] = []) {
   let escaped = escapeXml(text);
   for (const key of keys) {
     if (!(key in tutorialPronunciations)) throw new Error(`Pronúncia desconhecida: ${key}`);

@@ -21,7 +21,6 @@ jobs:
     timeout-minutes: 20
     env:
       HEMODINKS_API_ROOT: ${{ github.workspace }}/.integration/api
-      VITE_SENTRY_DSN: ''
       VITE_APP_ENV: synthetic-e2e
     steps:
       - uses: actions/checkout@v6

@@ -1,8 +1,8 @@
 import { getSystemSettingsCompanyPhoto } from '../../services';
 import defaultCompanyLogo from '../../../imagem hemodinks github.jpg';
 
-export const DEFAULT_REPORT_COLOR = '#14877D';
-export const EMPTY_REPORT_VALUE = 'Não informado';
+const DEFAULT_REPORT_COLOR = '#14877D';
+const EMPTY_REPORT_VALUE = 'Não informado';
 
 export type ReportLogo = {
   bytes: Uint8Array;
@@ -99,7 +99,7 @@ export async function normalizeReportLogo(blob: Blob): Promise<ReportLogo | null
   return { bytes, ...size };
 }
 
-export async function loadClinicReportLogo(sessionToken?: string, logoLoader?: () => Promise<Blob>) {
+async function loadClinicReportLogo(sessionToken?: string, logoLoader?: () => Promise<Blob>) {
   const loaders = [
     logoLoader ?? (() => getSystemSettingsCompanyPhoto(sessionToken)),
     () => fetch(defaultCompanyLogo).then((response) => {
@@ -125,7 +125,7 @@ export function normalizeReportValue(value: unknown) {
   return !text || text === '-' ? EMPTY_REPORT_VALUE : text;
 }
 
-export function normalizeReportColor(value?: string | null) {
+function normalizeReportColor(value?: string | null) {
   const normalized = value?.trim().toUpperCase();
   return normalized && /^#[0-9A-F]{6}$/.test(normalized) ? normalized : DEFAULT_REPORT_COLOR;
 }

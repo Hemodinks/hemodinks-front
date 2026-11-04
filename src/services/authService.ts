@@ -20,7 +20,7 @@ export type ResolveLoginClinicsResponse = {
 };
 
 // The first login request can include service startup; subsequent authentication steps keep their existing limit.
-export const LOGIN_CONTEXT_TIMEOUT_MS = 120_000;
+const LOGIN_CONTEXT_TIMEOUT_MS = 120_000;
 
 export function resolveLoginClinics(email: string, senha: string, signal?: AbortSignal) {
   return post<ResolveLoginClinicsResponse>(

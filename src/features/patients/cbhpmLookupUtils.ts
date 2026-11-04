@@ -1,7 +1,7 @@
 import type { CbhpmFilters } from '../../appTypes';
 import { normalizeCbhpmCodigo } from './patientUtils';
 
-export const CBHPM_SEARCH_MIN_LENGTH = 3;
+const CBHPM_SEARCH_MIN_LENGTH = 3;
 export const CBHPM_AUTO_SEARCH_DELAY_MS = 3000;
 export type CbhpmAutoSearchFilters = Pick<CbhpmFilters, 'codigo' | 'procedimento'>;
 

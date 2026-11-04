@@ -15,8 +15,6 @@ env:
   NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: 120000
   VITE_APP_ENV: ci
   VITE_APP_VERSION: ${{ github.sha }}
-  VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-  VITE_SENTRY_TRACES_SAMPLE_RATE: 0
 
 concurrency:
   group: lighthouse-${{ github.ref }}

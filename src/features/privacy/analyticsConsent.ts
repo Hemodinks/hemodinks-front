@@ -1,3 +1,4 @@
+
 let analyticsStarted = false;
 let analyticsAllowed = false;
 let startPromise: Promise<void> | null = null;
@@ -12,17 +13,11 @@ export async function startOptionalAnalytics() {
   }
 
   startPromise = (async () => {
-    const [{ initNewRelicBrowser }, { initObservability }, { initOpenTelemetryBrowser }] = await Promise.all([
-      import('../../newRelic'),
-      import('../../observability'),
-      import('../../otel'),
-    ]);
+    const { initNewRelicBrowser } = await import('../../newRelic');
 
     if (!analyticsAllowed) return;
 
     initNewRelicBrowser();
-    initObservability();
-    await initOpenTelemetryBrowser();
 
     analyticsStarted = analyticsAllowed;
   })().finally(() => {
@@ -40,18 +35,8 @@ export async function stopOptionalAnalytics() {
     return { requiresReload: false };
   }
 
-  const [newRelic, observability, otel] = await Promise.all([
-    import('../../newRelic'),
-    import('../../observability'),
-    import('../../otel'),
-  ]);
-  const requiresReload = newRelic.hasInitializedNewRelicBrowser()
-    || otel.hasInitializedOpenTelemetryBrowser();
-
-  await Promise.all([
-    observability.disableObservability(),
-    otel.shutdownOpenTelemetryBrowser(),
-  ]);
+  const newRelic = await import('../../newRelic');
+  const requiresReload = newRelic.hasInitializedNewRelicBrowser();
   analyticsStarted = false;
 
   return { requiresReload };

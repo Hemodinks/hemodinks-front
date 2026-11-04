@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./node_modules/**)",
+      "Read(./dist/**)",
+      "Read(./playwright-report*/**)",
+      "Read(./test-results*/**)",
+      "Read(./reports/**)",
+      "Read(./artifacts/**)",
+      "Read(./tmp/**)",
+      "Read(./public/tutorials/**)",
+      "Read(./**/*.log)",
+      "Read(./.env)"
+    ]
+  }
+}

@@ -12,7 +12,7 @@ type Props = {
   onUpdateClinic: () => void;
 };
 
-export function canViewClinicCnpjWarning(profileId: number) {
+function canViewClinicCnpjWarning(profileId: number) {
   return profileId === ADMIN_PROFILE_ID || profileId === SUPER_ADMIN_PROFILE_ID;
 }
 
