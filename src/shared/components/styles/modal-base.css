@@ -57,7 +57,8 @@
     overflow-wrap: anywhere;
   }
 
-  .modal-panel .panel-title .icon-button {
+  .modal-panel .panel-title .icon-button,
+  .modal-panel .panel-title-actions {
     flex: 0 0 auto;
   }
 }

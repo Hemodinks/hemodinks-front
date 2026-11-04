@@ -5,6 +5,7 @@ import { registerSurgeryTypeCases } from './surgery-type-cases';
 import { registerTenantIsolationCases } from './tenant-isolation-cases';
 import { registerResponsiveSmokeCases } from './responsive-smoke-cases';
 import { registerAccessibilityAuditCases } from './accessibility-audit-cases';
+import { registerResponsiveA11yRefinementCases } from './responsive-a11y-refinement-cases';
 import { registerReportChecklistCases } from './report-checklist-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
 import { registerPasswordPolicyCases } from './password-policy-cases';
@@ -715,6 +716,7 @@ registerCalculatorCases({ mockApi, loginViaUi });
 registerPatientListTests({ setup: mockApi, login: loginViaUi });
 registerResponsiveSmokeCases({ setup: mockApi, login: loginViaUi });
 registerAccessibilityAuditCases({ setup: mockApi, login: loginViaUi });
+registerResponsiveA11yRefinementCases({ setup: mockApi, login: loginViaUi, nonAdminSession: patientSession });
 
 const checklistMedicalSession = { ...session, user: { ...session.user, id: 1, nome: 'Ana Hemodinks', perfilId: 2, perfilNome: 'Medicos' } };
 registerReportChecklistCases({ mockApi, loginViaUi, patient: paciente,
