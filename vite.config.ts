@@ -50,10 +50,6 @@ export default defineConfig(({ mode }) => ({
             return undefined;
           }
 
-          if (normalizedId.includes('@sentry/react')) {
-            return 'observability';
-          }
-
           if (normalizedId.includes('react-router-dom') || normalizedId.includes('react-dom') || normalizedId.includes('/react/')) {
             return 'react-vendor';
           }

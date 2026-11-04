@@ -148,7 +148,7 @@ try {
   playwright = spawn(process.execPath, ['node_modules/@playwright/test/cli.js', 'test', '--config=playwright.real-api.config.ts', ...process.argv.slice(2)], {
     cwd: root, detached: process.platform !== 'win32', windowsHide: true, stdio: 'inherit', env: {
       ...process.env, HEMODINKS_REAL_FIXTURE: fixturePath, VITE_API_URL: 'http://127.0.0.1:5193',
-      VITE_SENTRY_DSN: '', VITE_APP_ENV: 'synthetic-e2e',
+      VITE_APP_ENV: 'synthetic-e2e',
     },
   });
   const code = await new Promise((resolveExit, reject) => { playwright.once('exit', resolveExit); playwright.once('error', reject); });

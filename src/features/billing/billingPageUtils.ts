@@ -73,16 +73,6 @@ function normalizeFilterOption(value: string) {
     .trim();
 }
 
-export function getFilterOptionLabel<TValue extends string>(options: Array<{ label: string; value: TValue }>, value: TValue) {
-  return options.find((option) => option.value === value)?.label ?? options[0]?.label ?? '';
-}
-
-export function getFilterOptionValue<TValue extends string>(options: Array<{ label: string; value: TValue }>, label: string) {
-  const normalizedLabel = normalizeFilterOption(label);
-
-  return options.find((option) => normalizeFilterOption(option.label) === normalizedLabel)?.value;
-}
-
 export function parseBillingDetailId(value: string | null) {
   if (!value) {
     return null;

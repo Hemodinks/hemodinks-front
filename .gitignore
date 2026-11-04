@@ -12,8 +12,10 @@ integration/real-api/bin/
 integration/real-api/obj/
 .integration/
 .lighthouseci
-public/otel-runtime-config.json
 
 # Responsive E2E evidence (uploaded by CI)
 /playwright-report-responsive/
 /test-results-responsive/
+
+# Logs locais de build/teste
+*.log

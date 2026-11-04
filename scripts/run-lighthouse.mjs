@@ -2,15 +2,12 @@ import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 const require = createRequire(import.meta.url);
-const env = { ...process.env, VITE_API_URL: '/', VITE_SENTRY_DSN: '',
+const env = { ...process.env, VITE_API_URL: '/',
   VITE_NEW_RELIC_APPLICATION_ID: '', VITE_NEW_RELIC_AGENT_ID: '', VITE_NEW_RELIC_ACCOUNT_ID: '',
-  VITE_NEW_RELIC_LICENSE_KEY: '', VITE_NEW_RELIC_TRUST_KEY: '',
-  VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: '', OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: '',
-  VITE_OTEL_EXPORTER_OTLP_ENDPOINT: '', ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL: '', OTEL_EXPORTER_OTLP_ENDPOINT: '' };
+  VITE_NEW_RELIC_LICENSE_KEY: '', VITE_NEW_RELIC_TRUST_KEY: '' };
 
 // Environment overrides belong only to these child processes; .env is untouched.
 const commands = [
-  ['scripts/write-otel-runtime-config.mjs'],
   [require.resolve('typescript/bin/tsc'), '-b'],
   [join(dirname(require.resolve('vite/package.json')), 'bin/vite.js'), 'build'],
 ];

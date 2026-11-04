@@ -13,7 +13,7 @@ SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front
 - Playwright + axe-core
 - lucide-react
 - jsPDF + jsPDF AutoTable carregados sob demanda
-- Sentry, New Relic Browser e OpenTelemetry opcionais para observabilidade
+- New Relic Browser opcional para observabilidade
 - Lighthouse CI e bundle analyzer para auditoria
 
 ## Mapa da documentacao
@@ -81,14 +81,6 @@ VITE_NEW_RELIC_BEACON=
 VITE_NEW_RELIC_ERROR_BEACON=
 VITE_NEW_RELIC_LICENSE_KEY=
 VITE_NEW_RELIC_TRUST_KEY=
-VITE_OTEL_EXPORTER_OTLP_ENDPOINT=
-VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=
-VITE_OTEL_EXPORTER_OTLP_HEADERS=
-VITE_OTEL_EXPORTER_OTLP_TRACES_HEADERS=
-VITE_OTEL_SERVICE_NAME=hemodinks-front
-VITE_OTEL_TRACES_SAMPLE_RATE=1
-VITE_SENTRY_DSN=
-VITE_SENTRY_TRACES_SAMPLE_RATE=0
 ```
 
 Exemplo confirmation:
@@ -103,9 +95,6 @@ Observacoes:
 - Em chamadas autenticadas, o tenant vem dos claims `clinicaId` e `clinicaSlug` do JWT. A troca usa `/api/session/selecionar-clinica` e substitui o token.
 - Se o front estiver em um dominio customizado por clinica, como `clinica-a.seudominio.com`, o client tambem tenta inferir o slug pela URL. Hosts compartilhados de plataforma, como `onrender.com` e `vercel.app`, sao ignorados nessa inferencia para evitar falsos positivos.
 - `VITE_NEW_RELIC_BEACON` e `VITE_NEW_RELIC_ERROR_BEACON` sao avancadas. Se ficarem vazias, o app usa `bam.nr-data.net`.
-- `scripts/write-otel-runtime-config.mjs` gera `public/otel-runtime-config.json` antes de `dev`, `build` e `analyze`.
-- Quando o front sobe via `Hemodinks.AppHost`, o script reaproveita `ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL` e `OTEL_EXPORTER_OTLP_*` injetados pelo host local.
-- Use `VITE_OTEL_*` em build publicado apenas com endpoints e headers seguros para browser.
 
 ## Executar
 
@@ -181,7 +170,7 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 - tema claro/escuro, iniciando no escuro quando ainda não existe preferência salva
 - monitoramento técnico paginado com inspeção de fluxo, query e limpeza confirmada dos logs
 - Error Boundary com fallback visual
-- observabilidade opcional via Sentry, New Relic Browser e OTLP
+- observabilidade opcional via New Relic Browser
 - consentimento versionado para preferências locais e observabilidade opcional, sem bloquear a sessão necessária
 
 ## Arquitetura resumida
@@ -225,7 +214,7 @@ Pontos principais:
 - `src/features/users/useUsersDomain.ts` cobre listagem, autoedicao, upload de arquivos e troca de senha.
 - `src/features/billing/BillingPage.tsx` compoe a tela financeira a partir de `GET /api/faturamentos-medicos`.
 - `src/features/settings/OptionsPage.tsx` alterna entre configurações e monitoramento; `SystemSettingsPage.tsx` administra tema e senha, e `MonitoringPage.tsx` apresenta os erros técnicos da clínica.
-- `src/observability.ts`, `src/newRelic.ts` e `src/otel.ts` inicializam a telemetria opcional.
+- `src/newRelic.ts` inicializa a telemetria opcional (New Relic Browser), após consentimento de análise.
 
 Mais detalhes em [TECHNICAL.md](./TECHNICAL.md).
 

@@ -43,7 +43,6 @@ vi.mock('./services', () => ({
   createPlatformClinic: vi.fn(),
   updatePlatformClinic: vi.fn(),
   deactivatePlatformClinic: vi.fn(),
-  listSessionClinics: vi.fn(),
   selectSessionClinic: vi.fn(),
   completeAgendaEvent: vi.fn(),
   createAgendaEvent: vi.fn(),

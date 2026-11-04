@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { API_READ_TIMEOUT_MS, ApiError } from '../../services/api';
 
-export const BOOTSTRAP_TIMEOUT_MS = API_READ_TIMEOUT_MS;
+const BOOTSTRAP_TIMEOUT_MS = API_READ_TIMEOUT_MS;
 const SLOW_MS = 12_000;
 const RETRY_MS = 35_000;
 
@@ -30,22 +29,17 @@ export function useBootstrapRequest<T>(
     if (!enabled || (active.current && !active.current.retryAllowed)) return;
     active.current?.cancel();
     const controller = new AbortController();
-    const span = trace.getTracer('hemodinks-bootstrap').startSpan(`bootstrap.${stage}`);
-    const started = performance.now();
     let finished = false;
     let slowTimer: ReturnType<typeof setTimeout>;
     let retryTimer: ReturnType<typeof setTimeout>;
     let deadline: ReturnType<typeof setTimeout>;
-    const finish = (outcome: string) => {
+    const finish = () => {
       if (finished) return false;
       finished = true;
       clearTimeout(slowTimer); clearTimeout(retryTimer); clearTimeout(deadline);
-      span.setAttributes({ 'bootstrap.outcome': outcome, 'bootstrap.duration_ms': performance.now() - started });
-      if (outcome === 'error' || outcome === 'timeout') span.setStatus({ code: SpanStatusCode.ERROR });
-      span.end();
       return true;
     };
-    const attempt = { retryAllowed: false, cancel: () => { finish('cancelled'); controller.abort(); } };
+    const attempt = { retryAllowed: false, cancel: () => { finish(); controller.abort(); } };
     active.current = attempt;
     setState({ data: null, loading: true, slow: false, canRetry: false, error: '' });
     slowTimer = setTimeout(() => setState(s => ({ ...s, slow: true })), SLOW_MS);
@@ -54,21 +48,18 @@ export function useBootstrapRequest<T>(
       setState(s => ({ ...s, canRetry: true }));
     }, RETRY_MS);
     deadline = setTimeout(() => {
-      if (!finish('timeout')) return;
+      if (!finish()) return;
       controller.abort();
       active.current = null;
       setState({ data: null, loading: false, slow: false, canRetry: true, error: bootstrapErrorMessage(new ApiError('', undefined, 'ETIMEDOUT')) });
     }, BOOTSTRAP_TIMEOUT_MS);
     try {
       const data = await request(controller.signal);
-      if (!finish('success')) return;
+      if (!finish()) return;
       active.current = null;
       setState({ data, loading: false, slow: false, canRetry: false, error: '' });
     } catch (error) {
-      if (!finished && error instanceof ApiError && error.status) {
-        span.setAttribute('http.response.status_code', error.status);
-      }
-      if (!finish('error')) return;
+      if (!finish()) return;
       active.current = null;
       setState({ data: null, loading: false, slow: false, canRetry: true, error: bootstrapErrorMessage(error) });
     }
