@@ -30,8 +30,8 @@ function fixture(path, method) {
   if (path === '/api/session/atividade' && method === 'POST') return { idleTimeoutMinutes: 30 };
   if (method !== 'GET') return undefined;
   const data = {
-    '/api/legal-acceptances/current': { requiresAcceptance: false, termsOfUse: document, privacyNotice: document },
-    '/api/privacy-preferences/current': { hasPreference: true, currentDocumentVersion: '1.1', documentVersion: '1.1', preferencesEnabled: true, analyticsEnabled: false },
+    '/api/legal-acceptances/current': { requiresAcceptance: false, termsOfUse: document, privacyNotice: { ...document, currentVersion: '1.2', acceptedVersion: '1.2' } },
+    '/api/privacy-preferences/current': { hasPreference: true, currentDocumentVersion: '1.2', documentVersion: '1.2', preferencesEnabled: true, analyticsEnabled: false },
     '/api/configuracoes-sistema/current': { id: 1, nomeEmpresa: 'HemoDinks Audit', fotoEmpresa: null },
     '/api/dashboard/summary': { usersCount: 10, activeUsersCount: 10, pacientesCount: 10, activePatientsCount: 10,
       pendingPaymentsCount: 2, patientFilesCount: 0, upcomingEventsCount: 1, unreadAgendaNotificationCount: 0 },

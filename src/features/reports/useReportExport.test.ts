@@ -42,4 +42,34 @@ describe('exportação mantém o escopo da consulta', () => {
     await act(async () => { finish(identity); await pending; });
     expect(downloadBlob).not.toHaveBeenCalled();
   });
+
+  it.each(['bulk', 'individual'] as const)('impede duas gerações no mesmo render: bulk + %s', async kind => {
+    const { result } = renderHook(() => useReportExport(records, 'Clínica A', 'token-a', emptyReportFilters));
+    await act(async () => { await Promise.all([result.current.handleExport('xlsx'), kind === 'bulk'
+      ? result.current.handleExport('xlsx') : result.current.handleIndividualExport(records[0])]); });
+    expect(downloadBlob).toHaveBeenCalledTimes(1);
+    expect(resolveReportIdentity).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['filter', 'session', 'records'] as const)('não reativa geração antiga após %s mudar A → B → A', async change => {
+    let finish!: (value: typeof identity) => void;
+    vi.mocked(resolveReportIdentity).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    const initialProps = { filters: emptyReportFilters, token: 'token-a', queryRecords: records };
+    const { result, rerender } = renderHook(({ filters, token, queryRecords }) => useReportExport(queryRecords, 'Clínica A', token, filters), {
+      initialProps,
+    });
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.handleExport('xlsx'); });
+    rerender({ filters: change === 'filter' ? { ...emptyReportFilters, status: 'pending' } : emptyReportFilters,
+      token: change === 'session' ? 'token-b' : 'token-a', queryRecords: change === 'records' ? [...records] : records });
+    rerender(initialProps);
+    await act(async () => { finish(identity); await pending; });
+    expect(downloadBlob).not.toHaveBeenCalled();
+  });
+
+  it('não inicia arquivo enquanto a consulta está em atualização ou erro', async () => {
+    const { result } = renderHook(() => useReportExport(records, 'Clínica A', 'token-a', emptyReportFilters, true));
+    await act(async () => { await result.current.handleExport('xlsx'); await result.current.handleIndividualExport(records[0]); });
+    expect(resolveReportIdentity).not.toHaveBeenCalled();
+  });
 });

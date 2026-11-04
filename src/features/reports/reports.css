@@ -31,7 +31,7 @@
 .report-financial-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .report-financial-grid strong { color: var(--teal); font-size: 1.08rem; }
 .report-record-details { border-top: 1px solid var(--line); padding-top: 12px; }
-.report-record-details > summary { color: var(--action-primary); cursor: pointer; font-weight: 900; }
+.report-record-details > summary { min-height: 24px; color: var(--action-primary); cursor: pointer; font-weight: 900; }
 .report-record-details-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding-top: 14px; }
 .report-record-details-content h4 { margin: 0 0 10px; }
 @media (max-width: 1180px) { .reports-filter-grid, .report-record-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reports-query-actions { grid-column: 1 / -1; } }

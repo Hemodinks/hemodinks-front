@@ -35,8 +35,6 @@ jobs:
     env:
       VITE_APP_ENV: ci
       VITE_APP_VERSION: ${{ github.sha }}
-      VITE_SENTRY_DSN: ''
-      VITE_SENTRY_TRACES_SAMPLE_RATE: 0
 
     steps:
       - name: Checkout
@@ -135,4 +133,3 @@ jobs:
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410 }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
-      VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}

@@ -3,7 +3,8 @@ import type { PacienteExportFormat, PacienteExportScope, PacienteFilters } from 
 import { getPacientes } from '../../services';
 import { sessionEpoch } from '../../services/sessionEpoch';
 import { getErrorMessage, PATIENT_EXPORT_PAGE_SIZE } from '../../shared/utils/formatters';
-import { getPagedItems, getPagedTotalPages } from '../../shared/utils/listing';
+import { collectConsistentPages } from '../../shared/utils/collectConsistentPages';
+import { useExportScope } from '../../shared/hooks/useExportScope';
 import type { AuthSession, Paciente } from '../../types';
 import { exportPatientList } from './export/patientListExporter';
 import { getPacienteFilterQuery } from './patientUtils';
@@ -31,54 +32,39 @@ export function usePatientExport({
   const [pacienteExportLoading, setPacienteExportLoading] = useState<PacienteExportFormat | null>(null);
   const [pacienteExportScope, setPacienteExportScope] = useState<PacienteExportScope>('visible');
   const exportInFlight = useRef(false);
+  const scope = useExportScope([session?.token, session?.user.clinicaId, session?.user.perfilId, companyName,
+    JSON.stringify(pacienteFilters), sortBy, sortDirection, pacienteExportScope,
+    pacienteExportScope === 'visible' ? JSON.stringify(paginatedPacientes) : null]);
 
-  const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>, epoch: number) => {
+  const fetchPacientesForExport = async (query: NonNullable<Parameters<typeof getPacientes>[1]>, shouldContinue: () => boolean) => {
     if (!session) {
       return [];
     }
 
-    const firstResult = await getPacientes(session.token, {
-      page: 1,
+    return collectConsistentPages(page => getPacientes(session.token, {
+      page,
       pageSize: PATIENT_EXPORT_PAGE_SIZE,
       sortBy: sortBy || 'data',
       sortDirection,
       ...query,
-    });
-    if (epoch !== sessionEpoch()) return [];
-
-    const items = [...getPagedItems(firstResult)];
-    const totalPagesForExport = getPagedTotalPages(firstResult);
-
-    for (let page = 2; page <= totalPagesForExport; page += 1) {
-      const result = await getPacientes(session.token, {
-        ...query,
-        page,
-        pageSize: PATIENT_EXPORT_PAGE_SIZE,
-        sortBy: sortBy || 'data',
-        sortDirection,
-      });
-      if (epoch !== sessionEpoch()) return [];
-      items.push(...getPagedItems(result));
-    }
-
-    return items;
+    }), shouldContinue);
   };
 
-  const loadPacientesForExport = async (scope: PacienteExportScope, epoch: number) => {
-    if (scope === 'visible') {
+  const loadPacientesForExport = async (selection: PacienteExportScope, shouldContinue: () => boolean) => {
+    if (selection === 'visible') {
       return paginatedPacientes;
     }
 
-    if (scope === 'doctor') {
+    if (selection === 'doctor') {
       if (!pacienteFilters.medicoUserIds.length) {
         throw new Error('Selecione ao menos um cirurgião antes de exportar por cirurgião.');
       }
 
-      return fetchPacientesForExport(getPacienteFilterQuery(pacienteFilters), epoch);
+      return fetchPacientesForExport(getPacienteFilterQuery(pacienteFilters), shouldContinue);
     }
 
     const { dataInicio, dataFinal, tipoCirurgia } = getPacienteFilterQuery(pacienteFilters);
-    return fetchPacientesForExport({ dataInicio, dataFinal, tipoCirurgia }, epoch);
+    return fetchPacientesForExport({ dataInicio, dataFinal, tipoCirurgia }, shouldContinue);
   };
 
   const handleExportPacientes = async (format: PacienteExportFormat) => {
@@ -88,12 +74,14 @@ export function usePatientExport({
 
     exportInFlight.current = true;
     const epoch = sessionEpoch();
+    const isScopeCurrent = scope.capture();
+    const shouldContinue = () => epoch === sessionEpoch() && isScopeCurrent();
     setPacienteExportLoading(format);
     setPacientesError('');
 
     try {
-      const exportItems = await loadPacientesForExport(pacienteExportScope, epoch);
-      if (epoch !== sessionEpoch()) return;
+      const exportItems = await loadPacientesForExport(pacienteExportScope, shouldContinue);
+      if (!shouldContinue()) return;
       const period = [pacienteFilters.dataInicio, pacienteFilters.dataFinal].filter(Boolean).join(' a ');
       const scopeLabel = pacienteExportScope === 'all'
         ? 'Todos os pacientes'
@@ -103,13 +91,14 @@ export function usePatientExport({
         items: exportItems,
         companyName,
         sessionToken: session.token,
+        shouldContinue,
         contextLines: [scopeLabel, period ? `Período: ${period}` : 'Período: todos', ...(pacienteFilters.tipoCirurgia ? [`Tipo de cirurgia: ${getSurgeryTypeLabel(pacienteFilters.tipoCirurgia)}`] : [])],
       });
     } catch (error) {
-      if (epoch === sessionEpoch()) setPacientesError(getErrorMessage(error));
+      if (shouldContinue()) setPacientesError(getErrorMessage(error));
     } finally {
       exportInFlight.current = false;
-      if (epoch === sessionEpoch()) setPacienteExportLoading(null);
+      if (scope.isMounted() && epoch === sessionEpoch()) setPacienteExportLoading(null);
     }
   };
 

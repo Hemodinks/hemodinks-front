@@ -1,5 +1,6 @@
 import { getSurgeryTypeLabel } from '../../shared/surgeryType';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useExportScope } from '../../shared/hooks/useExportScope';
 import { getErrorMessage } from '../../shared/utils/formatters';
 import type { ReportExportDetailLevel, ReportExportFormat, ReportRecord } from './reportTypes';
 import type { ReportFilters } from './reportTypes';
@@ -28,52 +29,47 @@ function describeFilters(filters: ReportFilters) {
   return lines.length ? lines : ['Todos os registros'];
 }
 
-export function useReportExport(records: ReportRecord[], companyName: string, sessionToken: string, filters: ReportFilters) {
+export function useReportExport(records: ReportRecord[], companyName: string, sessionToken: string, filters: ReportFilters, blocked = false) {
   const [exportLoading, setExportLoading] = useState(false);
   const [individualExportLoadingId, setIndividualExportLoadingId] = useState<number | null>(null);
   const [exportError, setExportError] = useState('');
   const [exportDetailLevel, setExportDetailLevel] = useState<ReportExportDetailLevel>('complete');
-  const currentScope = useRef({ records, sessionToken, filters, companyName });
-  currentScope.current = { records, sessionToken, filters, companyName };
-  const mounted = useRef(true);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
-  const createScopeGuard = () => {
-    const scope = currentScope.current;
-    return () => mounted.current && currentScope.current.records === scope.records
-      && currentScope.current.sessionToken === scope.sessionToken
-      && currentScope.current.filters === scope.filters
-      && currentScope.current.companyName === scope.companyName;
-  };
+  const scope = useExportScope([records, sessionToken, filters, companyName, exportDetailLevel, blocked]);
+  const inFlight = useRef(false);
 
   const handleExport = async (format: ReportExportFormat) => {
-    if (exportLoading) return;
+    if (inFlight.current || blocked) return;
     if (!records.length) {
       setExportError('Não há registros no filtro atual para exportar.');
       return;
     }
+    inFlight.current = true;
     setExportLoading(true);
     setExportError('');
-    const shouldContinue = createScopeGuard();
+    const shouldContinue = scope.capture();
     try {
       await exportReport({ format, detailLevel: exportDetailLevel, records, companyName, sessionToken, contextLines: describeFilters(filters), shouldContinue });
     } catch (error) {
       if (shouldContinue()) setExportError(getErrorMessage(error));
     } finally {
-      if (mounted.current) setExportLoading(false);
+      inFlight.current = false;
+      if (scope.isMounted()) setExportLoading(false);
     }
   };
 
   const handleIndividualExport = async (record: ReportRecord) => {
-    if (individualExportLoadingId != null || !records.includes(record)) return;
+    if (inFlight.current || blocked || !records.includes(record)) return;
+    inFlight.current = true;
     setIndividualExportLoadingId(record.id);
     setExportError('');
-    const shouldContinue = createScopeGuard();
+    const shouldContinue = scope.capture();
     try {
       await exportIndividualBillingPdf(record, companyName, sessionToken, shouldContinue);
     } catch (error) {
       if (shouldContinue()) setExportError(getErrorMessage(error));
     } finally {
-      if (mounted.current) setIndividualExportLoadingId(null);
+      inFlight.current = false;
+      if (scope.isMounted()) setIndividualExportLoadingId(null);
     }
   };
 

@@ -65,9 +65,7 @@ Responsabilidades:
 | `src/app/useAppChrome.ts` | dashboard summary, notificacoes e configuracao do sistema |
 | `src/routes.ts` | mapeamento entre `AppView` e paths da SPA |
 | `src/queryClient.ts` | configuracao global do TanStack Query |
-| `src/otel.ts` | traces OTLP no browser com runtime config |
 | `src/newRelic.ts` | inicializacao opcional do Browser agent do New Relic |
-| `src/observability.ts` | Sentry opcional e associacao do usuario logado |
 | `src/shared/queryKeys.ts` | chaves padronizadas de cache |
 | `src/shared/components/ui.tsx` | API publica (barrel) das primitivas de UI reutilizadas |
 | `src/shared/components/ui/*` | implementacoes coesas das primitivas de UI |
@@ -299,9 +297,6 @@ Responsabilidades:
 Arquivos:
 
 - `src/newRelic.ts`
-- `src/observability.ts`
-- `src/otel.ts`
-- `scripts/write-otel-runtime-config.mjs`
 
 Variaveis reconhecidas:
 
@@ -315,21 +310,11 @@ VITE_NEW_RELIC_BEACON
 VITE_NEW_RELIC_ERROR_BEACON
 VITE_NEW_RELIC_LICENSE_KEY
 VITE_NEW_RELIC_TRUST_KEY
-VITE_OTEL_EXPORTER_OTLP_ENDPOINT
-VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-VITE_OTEL_EXPORTER_OTLP_HEADERS
-VITE_OTEL_EXPORTER_OTLP_TRACES_HEADERS
-VITE_OTEL_SERVICE_NAME
-VITE_OTEL_TRACES_SAMPLE_RATE
-VITE_SENTRY_DSN
-VITE_SENTRY_TRACES_SAMPLE_RATE
 ```
 
 Comportamento:
 
 - `src/main.tsx` tenta subir New Relic antes do bootstrap do React
-- `src/observability.ts` associa usuario ao contexto do Sentry
-- `src/otel.ts` le `public/otel-runtime-config.json` e so inicializa se existir endpoint valido
 - sem as envs completas, as integracoes ficam desativadas sem bloquear o app
 
 ## UI, acessibilidade e responsividade
@@ -441,7 +426,6 @@ Endpoints consumidos:
 - mantenha labels e `aria-label` em controles interativos
 - ao adicionar rota nova, atualize `src/routes.ts`, `README.md` e este documento
 - ao mexer em faturamento, pacientes ou agenda, rode E2E
-- ao mexer em observabilidade, valide `public/otel-runtime-config.json` gerado no build
 
 ## Checklist para mudancas grandes
 

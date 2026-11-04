@@ -110,7 +110,7 @@ export function getCalculatedGlosaValue(estimatedValue: number, receivedValue: s
   return formatCurrencyInput(String(Math.round(glosaValue * 100)));
 }
 
-export function getPacienteProcedimentosFromForm(data: PacienteFormData) {
+function getPacienteProcedimentosFromForm(data: PacienteFormData) {
   const procedimentos = normalizePacienteProcedimentos(data.procedimentos);
   if (procedimentos.length) {
     return procedimentos;

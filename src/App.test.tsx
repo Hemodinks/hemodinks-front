@@ -43,7 +43,6 @@ vi.mock('./services', () => ({
   createPlatformClinic: vi.fn(),
   updatePlatformClinic: vi.fn(),
   deactivatePlatformClinic: vi.fn(),
-  listSessionClinics: vi.fn(),
   selectSessionClinic: vi.fn(),
   completeAgendaEvent: vi.fn(),
   createAgendaEvent: vi.fn(),
@@ -108,8 +107,8 @@ const currentLegalAcceptance = {
   },
   privacyNotice: {
     documentType: 'PrivacyNoticeAcknowledgement' as const,
-    currentVersion: '1.1',
-    acceptedVersion: '1.1',
+    currentVersion: '1.2',
+    acceptedVersion: '1.2',
     acceptedAtUtc: '2026-09-03T15:30:00Z',
     isCurrent: true,
   },
@@ -128,8 +127,8 @@ const pendingLegalAcceptance = {
 
 const currentPrivacyPreference = {
   hasPreference: true,
-  currentDocumentVersion: '1.1',
-  documentVersion: '1.1',
+  currentDocumentVersion: '1.2',
+  documentVersion: '1.2',
   preferencesEnabled: true,
   analyticsEnabled: false,
   acceptedAtUtc: '2026-09-03T15:30:00Z',
@@ -484,7 +483,7 @@ describe('App', () => {
 
     await waitFor(() => expect(JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) ?? '{}')).toMatchObject({
       necessary: true,
-      version: '1.1',
+      version: '1.2',
       preferences: false,
       analytics: false,
       updatedAt: '2026-09-03T16:00:00Z',
@@ -508,7 +507,7 @@ describe('App', () => {
 
     await waitFor(() => expect(api.updateCurrentPrivacyPreference).toHaveBeenCalledWith(
       'jwt-token',
-      '1.1',
+      '1.2',
       true,
       false,
     ));
@@ -525,7 +524,7 @@ describe('App', () => {
 
     await waitFor(() => expect(api.updateCurrentPrivacyPreference).toHaveBeenCalledWith(
       'jwt-token',
-      '1.1',
+      '1.2',
       false,
       false,
     ));
@@ -533,7 +532,7 @@ describe('App', () => {
 
   it.each([
     ['/termos-de-uso', 'Termos de Uso', 'Versão: 1.1'],
-    ['/politica-de-privacidade', 'Aviso de Privacidade do HemoDinks', 'Versão: 1.1'],
+    ['/politica-de-privacidade', 'Aviso de Privacidade do HemoDinks', 'Versão: 1.2'],
   ])('abre a rota pública %s sem carregar dados da aplicação', async (path, title, version) => {
     window.history.pushState({}, '', path);
     render(<App />);
@@ -566,7 +565,7 @@ describe('App', () => {
     await waitFor(() => expect(submit).toBeEnabled());
     await user.click(submit);
 
-    expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledWith('jwt-token', '1.1', '1.1');
+    expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledWith('jwt-token', '1.1', '1.2');
     await waitFor(() => expect(window.location.pathname).toBe('/'));
   });
 
@@ -597,7 +596,7 @@ describe('App', () => {
     }));
     await user.click(screen.getByRole('button', { name: 'Aceitar e continuar' }));
 
-    expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledWith('jwt-token', '1.1', '1.1');
+    expect(api.acceptCurrentLegalDocuments).toHaveBeenCalledWith('jwt-token', '1.1', '1.2');
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   });
 
