@@ -30,10 +30,6 @@ services:
         sync: false
       - key: VITE_NEW_RELIC_TRUST_KEY
         sync: false
-      - key: VITE_SENTRY_DSN
-        sync: false
-      - key: VITE_SENTRY_TRACES_SAMPLE_RATE
-        value: "0"
     routes:
       - type: rewrite
         source: /*

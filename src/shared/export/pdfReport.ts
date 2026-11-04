@@ -3,7 +3,7 @@ import type { UserOptions } from 'jspdf-autotable';
 import { fitReportLogo, formatReportGenerationDate, getReportContrastColor, reportColorToRgb, type ReportIdentity } from './reportIdentity';
 
 export const PDF_REPORT_MARGIN = 28;
-export const PDF_REPORT_HEADER_HEIGHT = 78;
+const PDF_REPORT_HEADER_HEIGHT = 78;
 export const PDF_REPORT_BODY_START = PDF_REPORT_HEADER_HEIGHT + 18;
 const FOOTER_HEIGHT = 24;
 

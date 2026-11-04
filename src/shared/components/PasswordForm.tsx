@@ -75,7 +75,7 @@ export function PasswordForm({ session, forced = false, onChanged, onCancel }: P
   };
 
   return (
-    <form data-private="true" className="stack sentry-block nr-block" onSubmit={handleSubmit} onInvalid={focusFirstInvalidFormField}>
+    <form data-private="true" className="stack nr-block" onSubmit={handleSubmit} onInvalid={focusFirstInvalidFormField}>
       {forced && (
         <p className="alert warning">
           A senha temporária precisa ser alterada para liberar o acesso.

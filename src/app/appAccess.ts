@@ -20,7 +20,7 @@ export const MEDICAL_ALLOWED_ENTRY_PATHS = new Set([
   "/pacientes",
 ]);
 
-export const CLINIC_MODULES = {
+const CLINIC_MODULES = {
   users: "usuarios",
   patients: "pacientes",
   billing: "faturamento",

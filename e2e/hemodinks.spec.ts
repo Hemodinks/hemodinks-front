@@ -1337,16 +1337,16 @@ async function openReportsTutorial(page: Page) {
 
 test('privacidade: oferece escolha real, persiste categorias e controla análise opcional', async ({ page }) => {
   await mockApi(page);
-  let otelConfigRequests = 0;
-  await page.route('**/otel-runtime-config.json', async (route) => {
-    otelConfigRequests += 1;
-    await route.fulfill({ json: { enabled: false } });
+  let analyticsModuleRequests = 0;
+  await page.route('**/src/newRelic.ts*', async (route) => {
+    analyticsModuleRequests += 1;
+    await route.continue();
   });
 
   await page.goto('/');
   const banner = page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' });
   await expect(banner).toBeVisible();
-  await expect.poll(() => otelConfigRequests).toBe(0);
+  await expect.poll(() => analyticsModuleRequests).toBe(0);
 
   const configureButton = banner.getByRole('button', { name: 'Configurar' });
   await configureButton.focus();
@@ -1361,7 +1361,7 @@ test('privacidade: oferece escolha real, persiste categorias e controla análise
 
   await banner.getByRole('button', { name: 'Aceitar opcionais' }).click();
   await expect(banner).toHaveCount(0);
-  await expect.poll(() => otelConfigRequests).toBe(1);
+  await expect.poll(() => analyticsModuleRequests).toBe(1);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
     .toMatchObject({ necessary: true, version: '1.1', preferences: true, analytics: true });
 
@@ -1389,17 +1389,17 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
   const apiState = await mockApi(page, session, {
     privacyPreference: { preferences: true, analytics: true },
   });
-  let otelConfigRequests = 0;
-  await page.route('**/otel-runtime-config.json', async (route) => {
-    otelConfigRequests += 1;
-    await route.fulfill({ json: { enabled: false } });
+  let analyticsModuleRequests = 0;
+  await page.route('**/src/newRelic.ts*', async (route) => {
+    analyticsModuleRequests += 1;
+    await route.continue();
   });
 
   await loginViaUi(page);
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}')))
     .toMatchObject({ necessary: true, version: '1.1', preferences: true, analytics: true });
-  await expect.poll(() => otelConfigRequests).toBe(1);
+  await expect.poll(() => analyticsModuleRequests).toBe(1);
 
   await page.getByRole('button', { name: 'Configurar cookies' }).click();
   const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
@@ -1420,10 +1420,10 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
 
 test('privacidade: mantém escolha personalizada no reload e pede nova decisão após mudança de versão', async ({ page }) => {
   await mockApi(page);
-  let otelConfigRequests = 0;
-  await page.route('**/otel-runtime-config.json', async (route) => {
-    otelConfigRequests += 1;
-    await route.fulfill({ json: { enabled: false } });
+  let analyticsModuleRequests = 0;
+  await page.route('**/src/newRelic.ts*', async (route) => {
+    analyticsModuleRequests += 1;
+    await route.continue();
   });
 
   await page.goto('/');
@@ -1432,7 +1432,7 @@ test('privacidade: mantém escolha personalizada no reload e pede nova decisão 
   const dialog = page.getByRole('dialog', { name: 'Configurar cookies e armazenamentos' });
   await dialog.getByRole('checkbox', { name: /Preferências/ }).check();
   await dialog.getByRole('button', { name: 'Salvar preferências' }).click();
-  await expect.poll(() => otelConfigRequests).toBe(0);
+  await expect.poll(() => analyticsModuleRequests).toBe(0);
 
   await page.reload();
   await expect(page.getByRole('complementary', { name: 'Sua privacidade no HemoDinks' })).toHaveCount(0);
@@ -1440,7 +1440,7 @@ test('privacidade: mantém escolha personalizada no reload e pede nova decisão 
   await expect(dialog.getByRole('checkbox', { name: /Preferências/ })).toBeChecked();
   await expect(dialog.getByRole('checkbox', { name: /Análise/ })).not.toBeChecked();
   await dialog.getByRole('button', { name: 'Aceitar opcionais' }).click();
-  await expect.poll(() => otelConfigRequests).toBe(1);
+  await expect.poll(() => analyticsModuleRequests).toBe(1);
 
   await page.evaluate(() => {
     const record = JSON.parse(localStorage.getItem('hemodinks.privacy-consent') ?? '{}');

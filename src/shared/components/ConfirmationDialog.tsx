@@ -29,7 +29,7 @@ function getToneIcon(tone: ConfirmationTone): ReactNode {
   return <CheckCircle2 size={24} />;
 }
 
-export function ConfirmationDialog({
+function ConfirmationDialog({
   tone,
   title,
   message,
