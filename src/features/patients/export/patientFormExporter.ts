@@ -245,7 +245,7 @@ export async function exportPatientForm({
   observations = [],
 }: ExportPatientFormOptions) {
   const epoch = sessionEpoch();
-  const fileName = getPatientFormExportFileName(format, companyName);
+  const fileName = getPatientFormExportFileName(format, formData.nomePaciente);
   const identity = await resolveReportIdentity({
     clinicName: companyName,
     title: 'Cadastro de paciente',

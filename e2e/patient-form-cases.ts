@@ -166,9 +166,9 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
         await page.getByRole('button', { name: 'Editar Paciente Equipe 174', exact: true }).click();
         await expect(surgeon).toHaveValue('');
         await expect(first).toHaveValue('Ana Hemodinks');
-        const bytes = await download(page, 'Exportar ficha Excel', 'xlsx', 'cadastro-paciente-');
+        const bytes = await download(page, 'Exportar ficha Excel', 'xlsx', 'Paciente Equipe 174 \\d{4}-\\d{2}-\\d{2}');
         expect(bytes.toString()).toContain('Ana Hemodinks');
-        await download(page, 'Exportar ficha PDF', 'pdf', 'cadastro-paciente-');
+        await download(page, 'Exportar ficha PDF', 'pdf', 'Paciente Equipe 174 \\d{4}-\\d{2}-\\d{2}');
         await selectAna(surgeon);
         await first.fill('');
         await first.press('Tab');
@@ -224,8 +224,8 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
       await page.getByLabel('Tratamento médico', { exact: true }).fill('Tratamento fictício');
       await page.getByLabel('Arquivos do paciente').setInputFiles({ name: 'documento-teste.txt', mimeType: 'text/plain', buffer: Buffer.from('Documento fictício E2E') });
       await expect(page.getByText('documento-teste.txt', { exact: true })).toBeVisible();
-      await download(page, 'Exportar ficha PDF', 'pdf', 'cadastro-paciente-');
-      await download(page, 'Exportar ficha Excel', 'xlsx', 'cadastro-paciente-');
+      await download(page, 'Exportar ficha PDF', 'pdf', 'Paciente Fluxo Completo \\d{4}-\\d{2}-\\d{2}');
+      await download(page, 'Exportar ficha Excel', 'xlsx', 'Paciente Fluxo Completo \\d{4}-\\d{2}-\\d{2}');
       await page.getByRole('button', { name: 'Cadastrar paciente' }).click();
       await expect(page.getByText('Paciente cadastrado com sucesso.', { exact: true })).toBeVisible();
       expect(api.writes).toHaveLength(1);
@@ -240,8 +240,8 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
       await expect(page.getByRole('combobox', { name: 'Hospital', exact: true })).toHaveValue('Hospital Novo E2E');
       await expect(page.getByRole('textbox', { name: 'Tratamento médico', exact: true })).toHaveValue('Tratamento fictício');
       await expect(page.getByRole('button', { name: 'documento-teste.txt', exact: true })).toBeVisible();
-      await download(page, 'Exportar ficha PDF', 'pdf', 'cadastro-paciente-');
-      await download(page, 'Exportar ficha Excel', 'xlsx', 'cadastro-paciente-');
+      await download(page, 'Exportar ficha PDF', 'pdf', 'Paciente Fluxo Completo \\d{4}-\\d{2}-\\d{2}');
+      await download(page, 'Exportar ficha Excel', 'xlsx', 'Paciente Fluxo Completo \\d{4}-\\d{2}-\\d{2}');
       await page.getByLabel('Paciente', { exact: true }).fill('Paciente Fluxo Editado');
       await page.getByRole('button', { name: 'Salvar alterações' }).click();
       await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();

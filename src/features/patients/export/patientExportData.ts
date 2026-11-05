@@ -1,4 +1,5 @@
 import type { Paciente, PacienteFormData } from '../../../types';
+import { getTodayPickerValue } from '../../../shared/utils/dateFormatters';
 import { formatPersonName, toDisplayDate } from '../../../shared/utils/formatters';
 import { normalizeCbhpmCodigo } from '../patientUtils';
 import { getSurgeryTypeLabel } from '../../../shared/surgeryType';
@@ -99,14 +100,17 @@ function slugifyFilePart(value: string) {
 }
 
 function getDatedFileName(prefix: string, extension: 'xlsx' | 'pdf', companyName: string) {
-  const date = new Date().toISOString().slice(0, 10);
-  return `${prefix}-${slugifyFilePart(companyName)}-${date}.${extension}`;
+  return `${prefix}-${slugifyFilePart(companyName)}-${getTodayPickerValue()}.${extension}`;
 }
 
 export function getPatientExportFileName(extension: 'xlsx' | 'pdf', companyName = 'Hemodinks') {
   return getDatedFileName('pacientes', extension, companyName);
 }
 
-export function getPatientFormExportFileName(extension: 'xlsx' | 'pdf', companyName = 'Hemodinks') {
-  return getDatedFileName('cadastro-paciente', extension, companyName);
+export function getPatientFormExportFileName(extension: 'xlsx' | 'pdf', patientName: string) {
+  const safeName = patientName
+    .replace(/[<>:"/\\|?*\p{Cc}]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s.]+|[\s.]+$/g, '');
+  return `${safeName || 'Paciente'} ${getTodayPickerValue()}.${extension}`;
 }
