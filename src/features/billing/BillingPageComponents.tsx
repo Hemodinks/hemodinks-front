@@ -1,6 +1,6 @@
 import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 import type { ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { Modal } from '../../shared/components/Modal';
 import { IconButton } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
@@ -37,13 +37,14 @@ type BillingRankingPanelProps = {
 
 export function BillingRankingPanel({ title, subtitle, items, emptyLabel }: BillingRankingPanelProps) {
   return (
-    <article className="billing-ranking-panel">
-      <div className="billing-section-heading">
+    <details className="billing-ranking-panel">
+      <summary className="billing-ranking-summary">
         <div>
           <span className="eyebrow">{subtitle}</span>
           <h3>{title}</h3>
         </div>
-      </div>
+        <ChevronDown className="billing-ranking-chevron" size={20} aria-hidden="true" />
+      </summary>
 
       {items.length ? (
         <ol className="billing-ranking-list">
@@ -63,7 +64,7 @@ export function BillingRankingPanel({ title, subtitle, items, emptyLabel }: Bill
       ) : (
         <p className="empty-row">{emptyLabel}</p>
       )}
-    </article>
+    </details>
   );
 }
 
