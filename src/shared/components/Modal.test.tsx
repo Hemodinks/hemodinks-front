@@ -1,4 +1,5 @@
 import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { Modal } from './Modal';
@@ -43,6 +44,36 @@ it('mantém foco no diálogo sem controles e fecha por Escape uma única vez', a
   expect(dialog).toHaveFocus();
   await user.keyboard('{Escape}');
   expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+it('usa o onClose mais recente no Escape logo após a atualização da tela', async () => {
+  const environment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+  const actEnvironment = environment.IS_REACT_ACT_ENVIRONMENT;
+  environment.IS_REACT_ACT_ENVIRONMENT = false;
+  const previous = vi.fn();
+  const latest = vi.fn();
+  const host = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(host);
+  try {
+    root.render(<Modal titleId="latest-title" onClose={previous}><h2 id="latest-title">Aguarde</h2></Modal>);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    // O observer roda após a atualização e antes dos efeitos passivos, como um find* da Testing Library.
+    await new Promise<void>((resolve) => {
+      const observer = new MutationObserver(() => {
+        observer.disconnect();
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        resolve();
+      });
+      observer.observe(host, { subtree: true, childList: true });
+      root.render(<Modal titleId="latest-title" onClose={latest}><h2 id="latest-title">Aguarde</h2><p>Concluído</p></Modal>);
+    });
+    expect(latest).toHaveBeenCalledOnce();
+    expect(previous).not.toHaveBeenCalled();
+  } finally {
+    root.unmount();
+    host.remove();
+    environment.IS_REACT_ACT_ENVIRONMENT = actEnvironment;
+  }
 });
 
 it('mantém o foco no modal em StrictMode e o devolve ao acionador após fechar', () => {
