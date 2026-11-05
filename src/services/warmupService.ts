@@ -7,10 +7,6 @@ let attempted = false;
 /** One best-effort attempt per tab session, independent of auth and clinic context. */
 export async function warmupApi(): Promise<void> {
   if (import.meta.env.VITE_WARMUP_ENABLED === 'false') return;
-  if (isLoginPreparationEnabled()) {
-    try { await warmLoginApi(); } catch { /* Login offers bounded retry on demand. */ }
-    return;
-  }
   if (attempted) return;
   attempted = true;
   try {
@@ -19,6 +15,11 @@ export async function warmupApi(): Promise<void> {
     sessionStorage.setItem(SESSION_KEY, '1');
   } catch {
     // Storage may be blocked. The in-memory guard still prevents repeated calls.
+  }
+
+  if (isLoginPreparationEnabled()) {
+    try { await warmLoginApi(); } catch { /* Login offers bounded retry on demand. */ }
+    return;
   }
 
   try {
