@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
 
 type ModalProps = {
   titleId: string;
@@ -24,7 +24,8 @@ export function Modal({ titleId, descriptionId, className = '', backdropClassNam
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const restoreFocusFrameRef = useRef<number | null>(null);
 
-  useEffect(() => {
+  // Runs with the commit so Escape never reaches a callback from the previous render.
+  useLayoutEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
