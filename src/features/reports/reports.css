@@ -34,5 +34,6 @@
 .report-record-details > summary { min-height: 24px; color: var(--action-primary); cursor: pointer; font-weight: 900; }
 .report-record-details-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding-top: 14px; }
 .report-record-details-content h4 { margin: 0 0 10px; }
+.report-record-info-content { display: grid; gap: 10px; padding-top: 14px; }
 @media (max-width: 1180px) { .reports-filter-grid, .report-record-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reports-query-actions { grid-column: 1 / -1; } }
 @media (max-width: 760px) { .reports-filter-grid, .reports-period-tour-target, .report-record-grid, .report-financial-grid, .report-record-details-content { grid-template-columns: 1fr; } .reports-period-tour-target, .reports-pending-filter, .reports-query-actions { grid-column: 1; } .reports-filter-actions button { flex: 1 1 150px; } .reports-export-button { min-width: 0; } .report-record-header { flex-direction: column; } }
