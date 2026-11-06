@@ -37,6 +37,18 @@ describe('tipo de cirurgia nas consultas e relatórios', () => {
     expect(filterReportRecords(records(), emptyReportFilters)).toHaveLength(3);
   });
 
+  it('filtra e resume Em processo de autorização antes dos demais tipos', () => {
+    const inAuthorization = enrichReportRecords(buildBillingRecords([
+      { ...basePaciente, id: 104, tipoCirurgia: 'EmAutorizacao', pagamento: '70,00', repasseGlosa: '0,00' },
+    ]), [], []);
+    const all = [...records(), ...inAuthorization];
+    expect(filterBillingRecords(all, { ...createEmptyBillingFilters(), tipoCirurgia: 'EmAutorizacao' }).map(record => record.id)).toEqual([104]);
+    const selected = filterReportRecords(all, { ...emptyReportFilters, tipoCirurgia: 'EmAutorizacao' });
+    expect(selected.map(record => record.id)).toEqual([104]);
+    expect(exportData.getReportExportRows(selected)[0]['Tipo de cirurgia']).toBe('Em processo de autorização');
+    expect(exportData.getReportSurgeryTypeRows(all).map(row => row['Tipo de cirurgia'])).toEqual(['Em processo de autorização', 'Eletiva', 'Urgência']);
+  });
+
   it('não inventa classificação para resposta sem tipo e mantém atendimento nos totais', () => {
     const [source] = records();
     const legacy = { ...source, paciente: { ...source.paciente, tipoCirurgia: undefined } };

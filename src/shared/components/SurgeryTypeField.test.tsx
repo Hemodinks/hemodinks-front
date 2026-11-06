@@ -15,8 +15,11 @@ describe('tipo de cirurgia acessível', () => {
     const group = screen.getByRole('group', { name: 'Tipo de cirurgia' });
     expect(within(group).getByRole('radio', { name: 'Eletiva' })).not.toBeChecked();
     expect(within(group).getByRole('radio', { name: 'Urgência' })).not.toBeChecked();
+    expect(within(group).getAllByRole('radio').map((radio) => radio.getAttribute('value'))).toEqual(['EmAutorizacao', 'Eletiva', 'Urgencia']);
     await userEvent.tab();
     await userEvent.keyboard(' ');
+    expect(screen.getByRole('radio', { name: 'Em processo de autorização' })).toBeChecked();
+    await userEvent.keyboard('{ArrowRight}');
     expect(screen.getByRole('radio', { name: 'Eletiva' })).toBeChecked();
     await userEvent.keyboard('{ArrowRight}');
     expect(screen.getByRole('radio', { name: 'Urgência' })).toBeChecked();
@@ -38,6 +41,9 @@ describe('tipo de cirurgia acessível', () => {
     render(<Filter />);
     const select = screen.getByRole('combobox', { name: 'Tipo de cirurgia' });
     expect(select).toHaveValue('');
+    expect(within(select).getAllByRole('option').map((option) => option.getAttribute('value'))).toEqual(['', 'EmAutorizacao', 'Eletiva', 'Urgencia']);
+    await userEvent.selectOptions(select, 'EmAutorizacao');
+    expect(select).toHaveValue('EmAutorizacao');
     await userEvent.selectOptions(select, 'Urgencia');
     expect(select).toHaveValue('Urgencia');
     await userEvent.selectOptions(select, 'Eletiva');
