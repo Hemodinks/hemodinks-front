@@ -45,14 +45,36 @@ it('cancel interrupts retry delay without a new request', async () => {
   await vi.runAllTimersAsync();
   expect(get).toHaveBeenCalledTimes(1);
 });
-it('does not retry a definitive failure', async () => {
+it.each([403, 404, 429])('warmup refused with %i neither retries nor blocks login', async status => {
   const { get, prepareLoginApi } = await setup();
-  get.mockRejectedValue({ response: { status: 403 } });
-  await expect(prepareLoginApi(new AbortController().signal)).rejects.toThrow('Nenhuma credencial');
+  get.mockRejectedValue({ response: { status } });
+  await expect(prepareLoginApi(new AbortController().signal)).resolves.toBeUndefined();
   expect(get).toHaveBeenCalledTimes(1);
 });
-it('can disable preparation for production', async () => {
+it('can be disabled at build time', async () => {
   const { isLoginPreparationEnabled } = await setup();
   vi.stubEnv('VITE_LOGIN_PREPARATION_ENABLED', 'false');
   expect(isLoginPreparationEnabled()).toBe(false);
+});
+it.each([
+  ['hemodinks.gestao-saude.tec.br', true],
+  ['hemodinks-homologacao.gestao-saude.tec.br', true],
+  ['clinica.gestao-saude.tec.br', true],
+  ['hemodinks-homologacao.vercel.app', true],
+  ['localhost', false],
+  ['gestao-saude.tec.br.example.com', false],
+  ['fakegestao-saude.tec.br', false],
+])('default for %s is %s', async (hostname, expected) => {
+  const { isLoginPreparationEnabled } = await setup();
+  vi.stubEnv('VITE_LOGIN_PREPARATION_ENABLED', undefined as unknown as string);
+  vi.stubGlobal('location', { ...window.location, hostname });
+  try { expect(isLoginPreparationEnabled()).toBe(expected); } finally { vi.unstubAllGlobals(); }
+});
+it('an unavailable service exhausts attempts without continuing', async () => {
+  const { get, prepareLoginApi } = await setup();
+  get.mockRejectedValue({ response: { status: 503 } });
+  const result = expect(prepareLoginApi(new AbortController().signal)).rejects.toThrow('Nenhuma credencial');
+  await vi.runAllTimersAsync();
+  await result;
+  expect(get).toHaveBeenCalledTimes(3);
 });

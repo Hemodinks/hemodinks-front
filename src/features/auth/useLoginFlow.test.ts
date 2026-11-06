@@ -186,6 +186,41 @@ describe('login state isolation', () => {
 
 
 describe('homologation login preparation', () => {
+  it('a refused warmup still sends credentials, only after it resolves', async () => {
+    vi.stubEnv('VITE_LOGIN_PREPARATION_ENABLED', 'true');
+    sessionStorage.clear();
+    const { apiClient } = await import('../../services/api');
+    let refuse!: (reason: unknown) => void;
+    const get = vi.spyOn(apiClient, 'get').mockImplementation(() => new Promise((_, reject) => { refuse = reject; }));
+    try {
+      const hook = setup();
+      let pending!: Promise<void>;
+      act(() => { pending = hook.result.current.handleLogin(event); });
+      expect(resolveLoginClinics).not.toHaveBeenCalled();
+      await act(async () => { refuse({ response: { status: 429 } }); await pending; });
+      expect(resolveLoginClinics).toHaveBeenCalledTimes(1);
+    } finally { get.mockRestore(); vi.unstubAllEnvs(); }
+  });
+
+  it('never sends credentials while the service stays unavailable', async () => {
+    vi.stubEnv('VITE_LOGIN_PREPARATION_ENABLED', 'true');
+    sessionStorage.clear();
+    vi.useFakeTimers();
+    const { apiClient } = await import('../../services/api');
+    const get = vi.spyOn(apiClient, 'get').mockRejectedValue({ response: { status: 503 } });
+    try {
+      const hook = setup();
+      await act(async () => {
+        const pending = hook.result.current.handleLogin(event);
+        await vi.advanceTimersByTimeAsync(11_000);
+        await pending;
+      });
+      expect(get).toHaveBeenCalledTimes(3);
+      expect(resolveLoginClinics).not.toHaveBeenCalled();
+      expect(hook.result.current.loginError).toContain('Nenhuma credencial');
+    } finally { get.mockRestore(); vi.useRealTimers(); vi.unstubAllEnvs(); }
+  });
+
   it('never sends credentials while warmup is pending and honors cancellation', async () => {
     vi.stubEnv('VITE_LOGIN_PREPARATION_ENABLED', 'true');
     const { apiClient } = await import('../../services/api');

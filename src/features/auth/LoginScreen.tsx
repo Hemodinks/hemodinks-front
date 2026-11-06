@@ -76,7 +76,7 @@ export function LoginScreen({
   return (
     <main className="auth-screen">
       <LoginLoadingOverlay active={loginLoading} onCancel={onCancelLogin}
-        stage={loginPreparing ? "Preparando ambiente de homologação…" : undefined} />
+        stage={loginPreparing ? "Preparando o ambiente…" : undefined} />
       <LoadingOverlay active={isBusy && !loginLoading} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
