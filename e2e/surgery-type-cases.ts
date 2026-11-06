@@ -164,11 +164,18 @@ export function registerSurgeryTypeCases(helpers: Helpers) {
   for (const path of ['/faturamento-medico', '/relatorios']) test(`issue173: ${path} aplica filtro na API e limpa Todos`, async ({ page }, testInfo) => {
     const api = await fixture(page, helpers);
     await helpers.loginViaUi(page, path);
+    // Em Relatórios, o botão de motivos fica no accordion fechado de cada atendimento.
+    const openRecord = async (name: string) => {
+      if (path === '/relatorios') await page.getByRole('article').filter({ hasText: name }).getByText('Ver dados e valores do atendimento', { exact: true }).click();
+    };
+    await openRecord(elective);
     await expect(page.getByRole('button', { name: new RegExp(`Itens pendentes do checklist de ${elective}:`) })).toBeVisible();
     await openFilters(page);
     const filter = page.getByRole('combobox', { name: 'Tipo de cirurgia', exact: true });
     await filter.selectOption('Urgencia');
     await page.getByRole('button', { name: 'Consultar', exact: true }).click();
+    await expect(page.getByText(elective, { exact: true })).toHaveCount(0);
+    await openRecord(urgent);
     await expect(page.getByRole('button', { name: new RegExp(`Itens pendentes do checklist de ${urgent}:`) })).toBeVisible();
     await expect(page.getByRole('button', { name: new RegExp(`Itens pendentes do checklist de ${elective}:`) })).toHaveCount(0);
     await expect.poll(() => api.queries.some(query => query.path === '/api/faturamentos-medicos/' && query.params.get('tipoCirurgia') === 'Urgencia')).toBe(true);
@@ -176,6 +183,7 @@ export function registerSurgeryTypeCases(helpers: Helpers) {
     await page.screenshot({ path: testInfo.outputPath('surgery-type-filter.png'), fullPage: true });
     await page.getByRole('button', { name: 'Limpar filtros', exact: true }).click();
     await expect(filter).toHaveValue('');
+    await openRecord(elective);
     await expect(page.getByRole('button', { name: new RegExp(`Itens pendentes do checklist de ${elective}:`) })).toBeVisible();
     const refreshed = page.waitForRequest(request => new URL(request.url()).pathname === '/api/faturamentos-medicos/');
     await page.getByRole('button', { name: path === '/relatorios' ? 'Atualizar dados dos relatórios' : 'Atualizar faturamento médico', exact: true }).click();
@@ -215,11 +223,14 @@ export function registerSurgeryTypeCases(helpers: Helpers) {
     await openFilters(page);
     await page.getByRole('combobox', { name: 'Tipo de cirurgia', exact: true }).selectOption('Urgencia');
     await page.getByRole('button', { name: 'Consultar', exact: true }).click();
+    await expect(page.getByText(elective, { exact: true })).toHaveCount(0);
+    await page.getByRole('article').filter({ hasText: urgent }).getByText('Ver dados e valores do atendimento', { exact: true }).click();
     await expect(page.getByRole('button', { name: new RegExp(`Itens pendentes do checklist de ${urgent}:`) })).toBeVisible();
     const claims = JSON.parse(Buffer.from(current.token.split('.')[1], 'base64url').toString());
     const token = `test.${Buffer.from(JSON.stringify({ ...claims, clinicaId: 2, clinicaSlug: 'beta' })).toString('base64url')}.signature`;
     await page.route('**/api/session/restaurar', route => route.fulfill({ json: { ...current, clinicaId: 2, clinicaSlug: 'beta', token } }));
     await page.reload();
+    await page.getByRole('article').filter({ hasText: beta }).getByText('Ver dados e valores do atendimento', { exact: true }).click();
     await expect(page.getByRole('button', { name: new RegExp(`Itens pendentes do checklist de ${beta}:`) })).toBeVisible();
     await expect(page.getByText(urgent, { exact: true })).toHaveCount(0);
     await expect(page.getByText(elective, { exact: true })).toHaveCount(0);

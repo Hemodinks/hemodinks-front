@@ -8,8 +8,8 @@ let pending: { controller: AbortController; promise: Promise<void> } | null = nu
 export function isLoginPreparationEnabled() {
   const setting = import.meta.env.VITE_LOGIN_PREPARATION_ENABLED;
   if (setting !== undefined) return setting === 'true';
-  return ['hemodinks-homologacao.gestao-saude.tec.br', 'hemodinks-homologacao.vercel.app']
-    .includes(window.location.hostname);
+  const host = window.location.hostname;
+  return host === 'hemodinks-homologacao.vercel.app' || host === 'gestao-saude.tec.br' || host.endsWith('.gestao-saude.tec.br');
 }
 
 function isReady() {
@@ -65,9 +65,11 @@ export async function prepareLoginApi(signal: AbortSignal) {
     catch (error) {
       checkAbort(signal);
       const status = (error as { response?: { status?: number } })?.response?.status;
-      if (attempt === 2 || (status !== undefined && status < 500 && status !== 408)) break;
+      // Warmup is only an optimization: a refusal (per-IP budget, proxy) must not block login.
+      if (status !== undefined && status < 500 && status !== 408) return;
+      if (attempt === 2) break;
       await delay(signal);
     }
   }
-  throw new Error('Não foi possível preparar o ambiente de homologação. Nenhuma credencial foi enviada. Aguarde um pouco e tente entrar novamente.');
+  throw new Error('Não foi possível preparar o ambiente. Nenhuma credencial foi enviada. Aguarde um pouco e tente entrar novamente.');
 }

@@ -66,6 +66,19 @@ describe('infrastructure warmup', () => {
     expect(get).toHaveBeenCalledTimes(1);
   });
 
+  it('with login preparation, a reload in the same tab does not wake the database again', async () => {
+    vi.stubEnv('VITE_LOGIN_PREPARATION_ENABLED', 'true');
+    const first = await setup();
+    first.get.mockResolvedValue({ status: 204 });
+    await first.warmupApi();
+    expect(first.get).toHaveBeenCalledTimes(1);
+    vi.resetModules();
+    const reloaded = await setup();
+    await reloaded.warmupApi();
+    expect(reloaded.get).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
   it('can be disabled at build time without accessing the API', async () => {
     const { get, warmupApi } = await setup();
     vi.stubEnv('VITE_WARMUP_ENABLED', 'false');

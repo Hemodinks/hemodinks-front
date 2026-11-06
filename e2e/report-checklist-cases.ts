@@ -21,8 +21,69 @@ async function mockRecords(page: Page, helpers: Helpers, medical = false) {
   await page.route('**/api/faturamentos-medicos/**', route => route.fulfill({ json: { items: records, page: 1, pageSize: 100, totalItems: records.length, totalPages: 1 } }));
 }
 
+// Em Relatórios, o botão de motivos fica no accordion fechado de cada atendimento.
+async function openReportRecord(page: Page, patientName: string) {
+  await page.getByRole('article').filter({ hasText: patientName }).getByText('Ver dados e valores do atendimento', { exact: true }).click();
+}
+
 export function registerReportChecklistCases(helpers: Helpers) {
   registerExportConsistencyCases(helpers);
+  for (const width of [390, 820, 1440]) {
+    test(`relatórios: dados e valores do atendimento fechados em ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await mockRecords(page, helpers);
+      await helpers.loginViaUi(page, '/relatorios');
+      const card = page.getByRole('article').filter({ hasText: 'Paciente Checklist Pago' });
+      await expect(card.getByRole('heading', { name: 'Paciente Checklist Pago', exact: true })).toBeVisible();
+      await expect(card.getByRole('button', { name: 'PDF', exact: true })).toBeVisible();
+      await expect(card.getByText('Pago', { exact: true })).toBeVisible();
+      await expect(card.getByText('Ver procedimentos e checklist de faturamento', { exact: true })).toBeVisible();
+      const values = card.getByRole('region', { name: 'Valores de Paciente Checklist Pago', exact: true });
+      await expect(values).toHaveCount(0);
+      const closedHeight = (await card.boundingBox())!.height;
+
+      await card.locator('summary').filter({ hasText: 'Ver dados e valores do atendimento' }).focus();
+      await page.keyboard.press('Enter');
+      await expect(values).toBeVisible();
+      await expect(card.getByText('Tipo de cirurgia', { exact: true })).toBeVisible();
+      expect((await card.boundingBox())!.height).toBeGreaterThan(closedHeight);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      expect(overflow).toBeLessThanOrEqual(1);
+
+      await page.keyboard.press('Enter');
+      await expect(values).toHaveCount(0);
+    });
+
+    test(`faturamento: accordions de equipe e pagadores fechados em ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await mockRecords(page, helpers);
+      await helpers.loginViaUi(page, '/faturamento-medico');
+      const team = page.getByRole('heading', { name: 'Cirurgiões com maior valor informado', exact: true });
+      const payers = page.getByRole('heading', { name: 'Convênios e regime com maior concentração', exact: true });
+      const rows = page.getByRole('listitem').filter({ hasText: 'com checklist incompleto' });
+      await expect(team).toBeVisible();
+      await expect(payers).toBeVisible();
+      await expect(rows).toHaveCount(0);
+
+      const [teamBox, payersBox] = [await team.boundingBox(), await payers.boundingBox()];
+      if (width === 1440) {
+        expect(payersBox!.x).toBeGreaterThan(teamBox!.x + teamBox!.width);
+        expect(Math.abs(payersBox!.y - teamBox!.y)).toBeLessThanOrEqual(30);
+      }
+      if (width === 390) expect(payersBox!.y).toBeGreaterThan(teamBox!.y);
+
+      await team.click();
+      await expect(rows.filter({ hasText: 'Ana Hemodinks' })).toBeVisible();
+      await expect(rows.filter({ hasText: 'Outro Médico' })).toBeVisible();
+      await page.locator('summary').filter({ has: payers }).focus();
+      await page.keyboard.press('Enter');
+      await expect(rows).not.toHaveCount(2);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      expect(overflow).toBeLessThanOrEqual(1);
+      await team.click();
+      await expect(rows.filter({ hasText: 'Ana Hemodinks' })).toHaveCount(0);
+    });
+  }
   for (const path of ['/relatorios', '/faturamento-medico']) for (const width of [390, 768, 1280]) for (const theme of ['light', 'dark']) {
     test(`checklist #171: motivos acessíveis em ${path} ${width}px ${theme}`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
@@ -31,6 +92,7 @@ export function registerReportChecklistCases(helpers: Helpers) {
       page.on('pageerror', error => errors.push(error.message));
       await mockRecords(page, helpers);
       await helpers.loginViaUi(page, path);
+      if (path === '/relatorios') await openReportRecord(page, 'Paciente Checklist Pago');
       const trigger = page.getByRole('button', { name: /^Itens pendentes do checklist de Paciente Checklist Pago: \d+$/ });
       await expect(trigger).toBeVisible();
       const count = Number((await trigger.getAttribute('aria-label'))!.match(/: (\d+)$/)![1]);
@@ -88,6 +150,7 @@ export function registerReportChecklistCases(helpers: Helpers) {
   test('checklist #171: consulta aplica o filtro e modal global usa o mesmo conjunto', async ({ page }) => {
     await mockRecords(page, helpers);
     await helpers.loginViaUi(page, '/relatorios');
+    await openReportRecord(page, 'Paciente Outro Atendimento');
     await expect(page.getByRole('button', { name: /Itens pendentes do checklist de Paciente Outro Atendimento/ })).toBeVisible();
     await page.locator('.billing-filters-summary').click();
     await page.getByRole('checkbox', { name: 'Mostrar apenas atendimentos com checklist incompleto', exact: true }).check();
@@ -96,6 +159,7 @@ export function registerReportChecklistCases(helpers: Helpers) {
     await expect(page.getByRole('button', { name: /Itens pendentes do checklist de Paciente Outro Atendimento/ })).toBeVisible();
     await page.getByRole('button', { name: 'Consultar', exact: true }).click();
     await expect(page.getByText('1 atendimento(s) encontrados', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Paciente Outro Atendimento', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Itens pendentes do checklist de Paciente Outro Atendimento/ })).toHaveCount(0);
     await page.getByRole('button', { name: /Atendimentos com checklist incompleto/ }).click();
     const modal = page.getByRole('dialog', { name: 'Itens pendentes do checklist', exact: true });
@@ -111,7 +175,9 @@ export function registerReportChecklistCases(helpers: Helpers) {
     const menu = page.getByLabel('Menu da clínica');
     await menu.getByRole('button', { name: 'Faturamento', exact: true }).click();
     await menu.getByRole('button', { name: 'Relatórios', exact: true }).click();
+    await openReportRecord(page, 'Paciente Checklist Pago');
     await expect(page.getByRole('button', { name: /Itens pendentes do checklist de Paciente Checklist Pago/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Paciente Outro Atendimento', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Itens pendentes do checklist de Paciente Outro Atendimento/ })).toHaveCount(0);
     await page.getByRole('button', { name: /Atendimentos com checklist incompleto/ }).click();
     const modal = page.getByRole('dialog', { name: 'Itens pendentes do checklist', exact: true });
@@ -124,6 +190,7 @@ export function registerReportChecklistCases(helpers: Helpers) {
     const authenticated = page.waitForResponse(response => new URL(response.url()).pathname === '/api/users/authenticate');
     await helpers.loginViaUi(page, '/relatorios');
     const current = await (await authenticated).json();
+    await openReportRecord(page, 'Paciente Checklist Pago');
     await page.getByRole('button', { name: /Itens pendentes do checklist de Paciente Checklist Pago/ }).click();
     await expect(page.getByRole('dialog', { name: 'Itens pendentes do checklist', exact: true })).toBeVisible();
     const claims = JSON.parse(Buffer.from(current.token.split('.')[1], 'base64url').toString());
@@ -131,6 +198,7 @@ export function registerReportChecklistCases(helpers: Helpers) {
     await page.route('**/api/session/restaurar', route => route.fulfill({ json: { ...current, clinicaId: 2, clinicaSlug: 'beta', token: betaToken } }));
     await page.route('**/api/faturamentos-medicos/**', route => route.fulfill({ json: { items: [{ ...helpers.patient, id: 171, nomePaciente: 'Paciente Clínica Beta', pagamento: '100,00' }], page: 1, pageSize: 100, totalItems: 1, totalPages: 1 } }));
     await page.reload();
+    await openReportRecord(page, 'Paciente Clínica Beta');
     await expect(page.getByRole('button', { name: /Itens pendentes do checklist de Paciente Clínica Beta/ })).toBeVisible();
     await expect(page.getByRole('dialog', { name: 'Itens pendentes do checklist', exact: true })).toHaveCount(0);
     await expect(page.getByText('Paciente Checklist Pago', { exact: true })).toHaveCount(0);
@@ -144,6 +212,7 @@ export function registerReportChecklistCases(helpers: Helpers) {
     await page.setViewportSize({ width, height: 900 });
     await mockRecords(page, helpers);
     await helpers.loginViaUi(page, '/relatorios');
+    await openReportRecord(page, 'Paciente Checklist Pago');
     await expect(page.getByRole('button', { name: /Itens pendentes do checklist de Paciente Checklist Pago/ })).toBeVisible();
     await page.locator('.billing-filters-summary').click();
     const format = page.getByRole('combobox', { name: 'Formato do relatório', exact: true });

@@ -2395,7 +2395,7 @@ test('homologation preparation: waits before credentials and cancellation preven
   await page.getByLabel('Email', { exact: true }).fill(session.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page.getByText('Preparando ambiente de homologação…')).toBeVisible();
+  await expect(page.getByText('Preparando o ambiente…')).toBeVisible();
   expect(loginRequests).toBe(0);
   await page.getByRole('button', { name: 'Cancelar tentativa' }).click();
   release();
@@ -2408,14 +2408,14 @@ test('homologation preparation: failure allows a fresh attempt and successful lo
   test.skip(process.env.VITE_LOGIN_PREPARATION_ENABLED !== 'true');
   await mockApi(page);
   let available = false;
-  await page.route('**/api/warmup', route => route.fulfill({ status: available ? 204 : 403 }));
+  await page.route('**/api/warmup', route => route.fulfill({ status: available ? 204 : 503 }));
   let loginRequests = 0;
   page.on('request', request => { if (request.url().includes('/login-context')) loginRequests++; });
   await page.goto('/');
   await page.getByLabel('Email', { exact: true }).fill(session.user.email);
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page.getByText(/Nenhuma credencial foi enviada/)).toBeVisible();
+  await expect(page.getByText(/Nenhuma credencial foi enviada/)).toBeVisible({ timeout: 30_000 });
   expect(loginRequests).toBe(0);
   available = true;
   await page.locator('#login-password').fill(LOGIN_PASSWORD);
