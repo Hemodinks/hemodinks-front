@@ -95,13 +95,13 @@ async function openFilters(page: Page) {
 }
 
 export function registerSurgeryTypeCases(helpers: Helpers) {
-  test('issue173: cadastro inicia eletiva e urgência persiste na edição e ficha exportada', async ({ page }, testInfo) => {
+  test('issue173: cadastro inicia em processo de autorização e urgência persiste na edição e ficha exportada', async ({ page }, testInfo) => {
     test.setTimeout(90_000);
     const api = await fixture(page, helpers);
     await helpers.loginViaUi(page, '/pacientes');
     await page.getByRole('button', { name: 'Novo paciente', exact: true }).click();
     const group = page.getByRole('group', { name: 'Tipo de cirurgia', exact: true });
-    await expect(group.getByRole('radio', { name: 'Eletiva', exact: true })).toBeChecked();
+    await expect(group.getByRole('radio', { name: 'Em processo de autorização', exact: true })).toBeChecked();
     await group.getByRole('radio', { name: 'Urgência', exact: true }).check();
     await page.getByLabel('Paciente', { exact: true }).fill('Cirurgia Nova Urgente');
     await page.getByRole('combobox', { name: 'Hospital', exact: true }).fill('Hospital Cirurgia');
@@ -129,6 +129,40 @@ export function registerSurgeryTypeCases(helpers: Helpers) {
     expect(api.writes[1]).toMatchObject({ tipoCirurgia: 'Eletiva' });
     await page.getByRole('button', { name: 'Editar Cirurgia Nova Urgente', exact: true }).click();
     await expect(group.getByRole('radio', { name: 'Eletiva', exact: true })).toBeChecked();
+    expect(api.errors).toEqual([]);
+  });
+
+  test('issue173: em processo de autorização vem primeiro, é o padrão, persiste e filtra', async ({ page }) => {
+    test.setTimeout(90_000);
+    const api = await fixture(page, helpers);
+    const label = 'Em processo de autorização';
+    const name = 'Cirurgia Nova Em Autorizacao';
+    await helpers.loginViaUi(page, '/pacientes');
+    await page.getByRole('button', { name: 'Novo paciente', exact: true }).click();
+    const group = page.getByRole('group', { name: 'Tipo de cirurgia', exact: true });
+    await expect(group.getByRole('radio')).toHaveCount(3);
+    await expect(group.getByRole('radio').first()).toHaveAccessibleName(label);
+    await expect(group.getByRole('radio', { name: label, exact: true })).toBeChecked();
+    await page.getByLabel('Paciente', { exact: true }).fill(name);
+    await page.getByRole('combobox', { name: 'Hospital', exact: true }).fill('Hospital Cirurgia');
+    await page.getByRole('combobox', { name: 'Hospital', exact: true }).press('Tab');
+    const surgeon = page.getByRole('combobox', { name: 'Cirurgião', exact: true });
+    await surgeon.fill('Ana');
+    await page.getByRole('option', { name: 'Ana Hemodinks', exact: true }).click();
+    await page.getByRole('button', { name: 'Adicionar procedimento', exact: true }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Adicionar', exact: true }).click();
+    await noOverflow(page);
+    await page.getByRole('button', { name: 'Cadastrar paciente', exact: true }).click();
+    await expect(page.getByText('Paciente cadastrado com sucesso.', { exact: true })).toBeVisible();
+    expect(api.writes[0]).toMatchObject({ tipoCirurgia: 'EmAutorizacao' });
+    await openFilters(page);
+    await page.getByRole('combobox', { name: 'Tipo de cirurgia', exact: true }).selectOption('EmAutorizacao');
+    await expect(page.getByRole('button', { name: `Editar ${name}`, exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: `Editar ${urgent}`, exact: true })).toHaveCount(0);
+    await expect.poll(() => api.queries.some(query => query.path === '/api/pacientes/' && query.params.get('tipoCirurgia') === 'EmAutorizacao')).toBe(true);
+    await noOverflow(page);
+    await page.getByRole('button', { name: `Editar ${name}`, exact: true }).click();
+    await expect(group.getByRole('radio', { name: label, exact: true })).toBeChecked();
     expect(api.errors).toEqual([]);
   });
 
