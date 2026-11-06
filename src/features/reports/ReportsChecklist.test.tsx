@@ -22,9 +22,27 @@ function setup() {
   return { ...view, client, session, user: userEvent.setup() };
 }
 
+async function openRecordInfo(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByText('Ver dados e valores do atendimento'));
+}
+
 describe('motivos de checklist dos relatórios', () => {
+  it('mantém os dados e valores fechados e o cabeçalho do atendimento visível', async () => {
+    const { user } = setup();
+    expect(await screen.findByRole('heading', { name: 'Atendimento A' })).toBeVisible();
+    const paymentLabel = screen.getByText('Tipo de cirurgia', { selector: 'dt' });
+    const pdf = screen.getByRole('button', { name: 'PDF' });
+    expect(paymentLabel).not.toBeVisible();
+    expect(screen.getByText('Faturado', { selector: 'span' })).not.toBeVisible();
+    expect(pdf).toBeVisible();
+    await openRecordInfo(user);
+    expect(paymentLabel).toBeVisible();
+    expect(screen.getByText('Faturado', { selector: 'span' })).toBeVisible();
+  });
+
   it('abre somente alertas reais do atendimento pago e separa a situação financeira', async () => {
     const { user } = setup();
+    await openRecordInfo(user);
     await user.click(await screen.findByRole('button', { name: /Itens pendentes do checklist de Atendimento A/i }));
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText('Pagamentos pendentes: 0')).toBeVisible();
@@ -37,6 +55,7 @@ describe('motivos de checklist dos relatórios', () => {
 
   it('não reabre seleção antiga quando sessão muda mesmo com mesmo id de atendimento', async () => {
     const { user, client, session, rerender } = setup();
+    await openRecordInfo(user);
     await user.click(await screen.findByRole('button', { name: /Itens pendentes do checklist de Atendimento A/i }));
     const otherSession = { ...session, token: 'clinic-b-token', user: { ...session.user, clinicaId: 2 } };
     rerender(<QueryClientProvider client={client}><ReportsPage session={otherSession} companyName="Clínica B" isMedical={false} /></QueryClientProvider>);

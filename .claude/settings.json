@@ -5,7 +5,7 @@
       "Read(./dist/**)",
       "Read(./playwright-report*/**)",
       "Read(./test-results*/**)",
-      "Read(./reports/**)",
+      "Read(/reports/**)",
       "Read(./artifacts/**)",
       "Read(./tmp/**)",
       "Read(./public/tutorials/**)",

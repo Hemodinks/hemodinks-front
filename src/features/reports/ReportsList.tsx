@@ -59,23 +59,28 @@ export function ReportsList(props: Props) {
                 </div>
               </header>
 
-              <dl className="report-record-grid">
-                <div><dt>Tipo de cirurgia</dt><dd>{getSurgeryTypeLabel(record.paciente.tipoCirurgia)}</dd></div>
-                <div><dt>Equipe</dt><dd>{tags(record.teamNames, 'Não vinculada')}</dd></div>
-                <div><dt>Grupo médico</dt><dd>{tags(record.medicalGroupNames, 'Não vinculado')}</dd></div>
-                <div><dt>Auxiliares</dt><dd>{tags(record.assistantNames, 'Não informados')}</dd></div>
-                <div><dt>Fornecedor OPME</dt><dd>{record.opmeSupplier}</dd></div>
-                <div><dt>Autorização</dt><dd>{record.authorizationCode || 'Não informada'}</dd></div>
-                <div><dt>Data do pagamento</dt><dd>{record.paymentDateLabel}</dd></div>
-                <div><dt>Anexos</dt><dd>{record.filesCount}</dd></div>
-                <div><dt>Itens pendentes do checklist</dt><dd><button type="button" className="billing-checklist-count" title={CHECKLIST_COUNT_DESCRIPTION} aria-label={`Itens pendentes do checklist de ${record.patientName}: ${record.pendingChecklistItems}`} onClick={() => props.onOpenChecklist(record)}>{record.pendingChecklistItems} · Ver motivos</button></dd></div>
-              </dl>
+              <details className="report-record-details report-record-info">
+                <summary>Ver dados e valores do atendimento</summary>
+                <div className="report-record-info-content">
+                  <dl className="report-record-grid">
+                    <div><dt>Tipo de cirurgia</dt><dd>{getSurgeryTypeLabel(record.paciente.tipoCirurgia)}</dd></div>
+                    <div><dt>Equipe</dt><dd>{tags(record.teamNames, 'Não vinculada')}</dd></div>
+                    <div><dt>Grupo médico</dt><dd>{tags(record.medicalGroupNames, 'Não vinculado')}</dd></div>
+                    <div><dt>Auxiliares</dt><dd>{tags(record.assistantNames, 'Não informados')}</dd></div>
+                    <div><dt>Fornecedor OPME</dt><dd>{record.opmeSupplier}</dd></div>
+                    <div><dt>Autorização</dt><dd>{record.authorizationCode || 'Não informada'}</dd></div>
+                    <div><dt>Data do pagamento</dt><dd>{record.paymentDateLabel}</dd></div>
+                    <div><dt>Anexos</dt><dd>{record.filesCount}</dd></div>
+                    <div><dt>Itens pendentes do checklist</dt><dd><button type="button" className="billing-checklist-count" title={CHECKLIST_COUNT_DESCRIPTION} aria-label={`Itens pendentes do checklist de ${record.patientName}: ${record.pendingChecklistItems}`} onClick={() => props.onOpenChecklist(record)}>{record.pendingChecklistItems} · Ver motivos</button></dd></div>
+                  </dl>
 
-              <section className="report-financial-grid" aria-label={`Valores de ${record.patientName}`}>
-                <div><span>Faturado</span><strong>{record.paymentHasNumericValue ? formatCurrency(record.paymentAmount) : record.paymentRaw || '-'}</strong></div>
-                <div><span>Glosa</span><strong>{record.glosaHasNumericValue ? formatCurrency(record.glosaAmount) : record.glosaRaw || '-'}</strong></div>
-                <div><span>Líquido</span><strong>{formatCurrency(record.netAmount)}</strong></div>
-              </section>
+                  <section className="report-financial-grid" aria-label={`Valores de ${record.patientName}`}>
+                    <div><span>Faturado</span><strong>{record.paymentHasNumericValue ? formatCurrency(record.paymentAmount) : record.paymentRaw || '-'}</strong></div>
+                    <div><span>Glosa</span><strong>{record.glosaHasNumericValue ? formatCurrency(record.glosaAmount) : record.glosaRaw || '-'}</strong></div>
+                    <div><span>Líquido</span><strong>{formatCurrency(record.netAmount)}</strong></div>
+                  </section>
+                </div>
+              </details>
 
               <details className="report-record-details">
                 <summary>Ver procedimentos e checklist de faturamento</summary>
