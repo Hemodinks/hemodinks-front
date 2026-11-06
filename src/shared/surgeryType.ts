@@ -1,6 +1,7 @@
-export type TipoCirurgia = 'Eletiva' | 'Urgencia';
+export type TipoCirurgia = 'EmAutorizacao' | 'Eletiva' | 'Urgencia';
 
 export const SURGERY_TYPE_OPTIONS = [
+  { value: 'EmAutorizacao', label: 'Em processo de autorização' },
   { value: 'Eletiva', label: 'Eletiva' },
   { value: 'Urgencia', label: 'Urgência' },
 ] as const;
