@@ -1,16 +1,18 @@
 # Hemodinks Front
 
-SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front cobre autenticacao multiclinica, redefinicao de senha, dashboard, usuarios, meu cadastro, pacientes, observacoes, faturamento medico, grupos medicos, agenda/notificacoes, configuracao da conta e administracao de clinicas.
+SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front cobre autenticacao multiclinica (incluindo equipes), redefinicao de senha, dashboard, usuarios, meu cadastro, pacientes/cirurgias, observacoes, faturamento medico, historico e relatorios, grupos medicos, agenda/notificacoes, tutoriais interativos, opcoes/monitoramento e administracao de clinicas.
 
 ## Stack
 
 - React 19
 - TypeScript
 - Vite 7
-- React Router
-- TanStack Query
-- Vitest + Testing Library
-- Playwright + axe-core
+- React Router 7
+- TanStack Query 5 (sem store global)
+- axios (somente via `src/services/api.ts`)
+- Vitest 4 + Testing Library
+- Playwright 1.60 + axe-core (E2E, matriz responsiva e E2E com API real)
+- Driver.js para tutoriais interativos
 - lucide-react
 - jsPDF + jsPDF AutoTable carregados sob demanda
 - New Relic Browser opcional para observabilidade
@@ -22,6 +24,9 @@ SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front
 - `TECHNICAL.md`: arquitetura, contratos de API e convencoes de manutencao
 - `DEPLOYMENT.md`: deploy, ambientes, CORS e checklist operacional
 - `TUTORIALS.md`: autoria, Azure Speech, áudio incremental, Playwright e gravação dos tutoriais
+- `AGENTS.md`: regras para agentes de codigo (invariantes, comandos e escopo)
+- `docs/`: registros de issues, QA, redesigns e auditorias (historico)
+- Matriz de perfis x permissoes: `hemodinks-api/docs/MATRIZ_PERFIS_PERMISSOES.md`
 
 ## URLs
 
@@ -29,9 +34,10 @@ SPA React/Vite do Hemodinks para operacao assistencial e administrativa. O front
 | --- | --- |
 | Front local | `http://localhost:5173` |
 | Front producao | `https://hemodinks.gestao-saude.tec.br` |
-| Front homologacao | `https://hemodinks-homologacao.gestao-saude.tec.br` |
+| Front homologacao | `https://hemodinks-homologacao.gestao-saude.tec.br` (Vercel, branch `developer`) |
 | Front confirmation (Render blueprint) | `https://hemodinks-front-confirmation.onrender.com` |
 | API local | `http://localhost:5000` |
+| API homologacao | `https://hemodinks-api-1-90nb.onrender.com` |
 | Swagger local | `http://localhost:5000/swagger` |
 | Scalar local | `http://localhost:5000/scalar` |
 | OpenAPI local | `http://localhost:5000/openapi/v1.json` |
@@ -114,8 +120,13 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `npm run budget` | valida limites de tamanho do bundle |
 | `npm run audit:a11y` | roda Playwright com axe nas rotas criticas |
 | `npm run audit:lighthouse` | roda build e LHCI autenticado |
-| `npm test` | roda testes unitarios e de integracao |
+| `npm test` | roda testes unitarios e de integracao (Vitest) |
+| `npm run verify` | `audit:architecture` + testes + build (obrigatorio quando mexer em mais de um modulo) |
+| `npm run audit:architecture` | limite de 550 linhas e fronteiras `shared/`/`services/` |
 | `npm run test:e2e` | roda testes E2E com Playwright |
+| `npm run test:e2e:responsive` | E2E em 390, 820 e 1440 px |
+| `npm run test:e2e:real` | E2E contra a API real e SQL sintetico (ver `docs/real-api-e2e.md`) |
+| `npm run tutorial:*` / `record:tutorials*` | producao de audio e videos dos tutoriais (ver `TUTORIALS.md`) |
 | `npm run preview` | serve o build gerado em `dist` |
 
 ## Rotas
@@ -126,40 +137,46 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `/reset-password?token=...` | confirmacao de reset de senha por token |
 | `/termos-de-uso` | documento público de Termos de Uso |
 | `/politica-de-privacidade` | documento público de Política de Privacidade |
-| `/dashboard` | painel inicial |
+| `/dashboard` | painel inicial (`/` redireciona quando ha sessao) |
 | `/usuarios` | listagem e cadastro de usuarios |
 | `/meu-cadastro` | autoatendimento do medico ou paciente |
-| `/pacientes` | listagem, cadastro, observacoes e exportacoes de pacientes |
+| `/pacientes` | pacientes/cirurgias: listagem, cadastro, observacoes, filtros (tipo e status da cirurgia) e exportacoes |
 | `/faturamento-medico` | leitura financeira consolidada a partir dos pacientes |
 | `/historico-faturamento` | histórico mensal, destaques trimestrais, gráficos e arquivos de faturamento |
+| `/relatorios` | relatorios analiticos com filtros e exportacao PDF/XLSX |
+| `/tutoriais-interativos` | biblioteca de videos e missoes guiadas |
 | `/grupos-medicos` | grupos de medicos usados em notificacoes da agenda |
 | `/agenda` | agenda e notificacoes internas |
-| `/opcoes` | configurações da conta e monitoramento técnico de erros |
-| `/clinicas` | CRUD, identidade visual e troca segura de clinica para SuperAdministrador |
+| `/opcoes` (alias `/configuracoes`) | configurações da conta e monitoramento técnico de erros |
+| `/clinicas` | SuperAdministrador: CRUD, identidade visual e troca de clinica; Administrador: a propria clinica e suas equipes |
 
 ## Perfis e acesso
 
-| Perfil | Acesso principal |
+| Perfil | Acesso principal no menu |
 | --- | --- |
-| Administrador | dashboard, usuarios, pacientes, faturamento, grupos medicos, agenda e opcoes |
-| SuperAdministrador | todos os modulos administrativos, CRUD de clinicas e troca segura de tenant |
-| Medicos | dashboard, meu cadastro, pacientes, faturamento e agenda |
-| Controller | pacientes e faturamento |
-| Paciente | meu cadastro e pacientes em modo leitura |
+| Administrador | painel, usuarios, pacientes (inclui exclusao), faturamento/historico/relatorios, grupos medicos, agenda, clinica propria e opcoes |
+| SuperAdministrador | tudo do Administrador, CRUD de clinicas, troca de clinica e modulos nao contratados |
+| Medicos | painel, meu cadastro, pacientes, faturamento/historico/relatorios e agenda |
+| Controller | pacientes (licenca), faturamento/historico/relatorios, grupos medicos e agenda |
+| Equipe | usuarios (membros), pacientes, faturamento/historico/relatorios e agenda; sem operador identificado fica somente leitura |
+| Pacientes | meu cadastro, pacientes em modo leitura e agenda |
+
+Todos os perfis veem os tutoriais interativos. Itens operacionais dependem do modulo contratado no plano `Parcial`.
+O front e apenas UX: a autorizacao e da API (matriz completa em `hemodinks-api/docs/MATRIZ_PERFIS_PERMISSOES.md`).
 
 ## Funcionalidades
 
-- login com JWT
-- sessao mantida apenas em memoria do React
+- login com JWT por clinica, selecao de clinica e identificacao de operador de equipe (selecao ou PIN)
+- token apenas em memoria; renovacao pelo cookie `HttpOnly` (`/api/session/renovar`), atividade entre abas e logout
 - troca obrigatoria de senha no primeiro acesso
 - reset de senha por email/token quando a API publica esse fluxo
-- fallback de reset para senha padrao quando a API estiver nesse modo
 - dashboard com resumo, notificacoes e contadores operacionais
 - CRUD de usuarios com foto de perfil e anexos do cadastro medico
 - tela "Meu cadastro" para medico e paciente
-- CRUD de pacientes com vinculo medico, convenio, hospital, OPME e procedimentos CBHPM
+- CRUD de pacientes/cirurgias com vinculo medico, convenio, hospital, OPME, procedimentos CBHPM, tipo da cirurgia e status (consolidada quando a data da consolidacao esta preenchida)
 - observacoes por paciente com leitura, resposta e contadores de nao lidas
-- exportacao de pacientes em XLSX e PDF
+- exportacao de pacientes, faturamento e relatorios em XLSX e PDF no navegador, respeitando os filtros (inclusive tipo e status da cirurgia)
+- relatorios analiticos com filtros combinados
 - faturamento medico derivado dos dados de pacientes e procedimentos
 - histórico de faturamento por data de atendimento, com dashboard trimestral, gráfico de barras mensal e gráfico circular trimestral
 - destaques verde/vermelho para maior e menor faturamento de cada trimestre e composição financeira no accordion mensal
@@ -169,6 +186,8 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 - configuracao do nome e da foto no CRUD exclusivo de clinicas
 - tema claro/escuro, iniciando no escuro quando ainda não existe preferência salva
 - monitoramento técnico paginado com inspeção de fluxo, query e limpeza confirmada dos logs
+- calculadora e ajuda contextual (`ContextualTools`)
+- tutoriais interativos com Driver.js, narração em MP3 estático (fallback Web Speech) e biblioteca de vídeos
 - Error Boundary com fallback visual
 - observabilidade opcional via New Relic Browser
 - consentimento versionado para preferências locais e observabilidade opcional, sem bloquear a sessão necessária
@@ -177,21 +196,18 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 
 ```text
 src/
-  app/
+  app/            # orquestracao, permissoes (appAccess.ts), rotas lazy
   features/
-    auth/
-    billing/
-    dashboard/
-    events/
-    medicalGroups/
-    patients/
-      export/       # schema e adaptadores PDF/XLSX
-    settings/
-    users/
-  layout/
-  services/
+    auth/ billing/ calculator/ clinics/ dashboard/ events/ legal/
+    medicalGroups/ patients/ privacy/ reports/ settings/ tutorials/ users/
+      export/     # schemas e exportadores PDF/XLSX por dominio
+  layout/         # Sidebar, ContextualTools
+  services/       # HTTP e sessao (api.ts); nunca axios direto em componente
   shared/
-    components/ui/  # primitivas visuais coesas
+    components/   # ui.tsx, Modal, DateInput, ComboboxField, filtros
+    export/       # infraestrutura comum de exportacao
+    navigation/   # APP_MODULES (apresentacao)
+  routes.ts       # VIEW_PATHS
   styles/
 ```
 
@@ -218,7 +234,7 @@ Pontos principais:
 
 Mais detalhes em [TECHNICAL.md](./TECHNICAL.md).
 
-Guarda arquitetural: `npm run audit:architecture`. Validacao completa local: `npm run verify` e `npm run test:e2e`.
+Guarda arquitetural: `npm run audit:architecture`. Validacao completa local: `npm run verify`, `npm run test:e2e` e, se mudou visual, `npm run test:e2e:responsive`.
 
 ## Cache e API
 
@@ -251,8 +267,7 @@ Observacoes:
 Suite principal:
 
 ```powershell
-npm test
-npm run build
+npm run verify
 npm run budget
 npm run test:e2e
 npm run audit:a11y
@@ -271,110 +286,19 @@ Cobertura atual inclui:
 
 - testes unitarios e de integracao para `App`, `api.ts`, utilitarios de pacientes e faturamento
 - E2E de login, reset, navegacao autenticada e regras por perfil
-- E2E de usuarios, pacientes, agenda e mobile
+- E2E de usuarios, pacientes, agenda, tutoriais e matriz responsiva (390/820/1440)
+- E2E com API real e SQL sintetico no CI (`Web + real API E2E`)
 - axe para acessibilidade seria/critica
 - Lighthouse autenticado via LHCI
 - budget de bundle e analise visual do build
 
 ## Deploy
 
-Detalhes de Azure Static Web Apps, confirmation e checklist operacional em [DEPLOYMENT.md](./DEPLOYMENT.md).
+Producao: Azure Static Web Apps (deploy pelo CI na `main`). Homologacao: Vercel a partir da `developer`. Detalhes e checklist em [DEPLOYMENT.md](./DEPLOYMENT.md).
 
-# Tutoriais interativos
+## Tutoriais interativos
 
-O frontend possui uma infraestrutura reutilizável de missões guiadas com [Driver.js](https://driverjs.com/) e narração local pela Web Speech API (`SpeechSynthesisUtterance`, `pt-BR`). A primeira missão implementada é **Relatórios — consulta analítica e filtros**, com sete etapas.
-
-O acesso fica na gaveta **Como usar** da tela de Relatórios. O tutorial usa apenas seletores `data-tour`, mantém o alvo acionável, não simula cliques no modo interativo, interrompe a fala anterior ao trocar de etapa e encerra com uma mensagem segura se algum alvo não estiver disponível. As preferências de conclusão e “Não mostrar novamente” ficam somente no `localStorage` do navegador.
-
-## Levantamento funcional e missões recomendadas
-
-O aplicativo é um SaaS multiclínica com rotas protegidas por sessão, perfil, licença e módulos contratados. Os perfis identificados no frontend são SuperAdministrador, Administrador, Médico, Controlador, Equipe e Paciente. O menu libera Painel, Usuários/Meu cadastro, Pacientes-Cirurgias, Faturamento/Relatórios, Grupos médicos, Agenda, Clínicas e Configuração conforme essas permissões.
-
-| Missão | Objetivo | Etapas estimadas | Situação |
-| --- | --- | ---: | --- |
-| Seleção de clínica e login | Escolher o tenant e entrar com segurança | 5 | Planejada |
-| Cadastro de clínica | Configurar identidade, plano, módulos, limites e administrador | 7 | Planejada |
-| Equipe e identificação | Criar equipe, vincular membros e configurar identificação/PIN | 7 | Planejada |
-| Cadastro de paciente | Informar dados cadastrais, vínculos e documentos sanitizados | 6 | Planejada |
-| Atendimento/cirurgia | Registrar hospital, cirurgião, convênio e procedimentos | 7 | Planejada |
-| Gestão de faturamento | Consultar pendências, valores e detalhes financeiros | 6 | Planejada |
-| Relatórios e filtros | Combinar filtros e interpretar resumo e resultados | 7 | **Implementada** |
-| Exportação PDF/XLSX | Escolher escopo e gerar arquivos de relatório | 4 | Planejada |
-| Pesquisa Full-Text | Pesquisar termos e refinar resultados | 4 | Planejada |
-| Usuários e perfis | Cadastrar usuário e aplicar o perfil adequado | 7 | Planejada |
-| Troca de clínica | Selecionar outro tenant permitido na mesma sessão | 4 | Planejada |
-| Agenda e notificações | Criar evento, lembrete e destinatários | 7 | Planejada |
-
-Os demais tutoriais não foram implementados nesta etapa, para que o padrão de Relatórios possa ser validado antes da expansão.
-
-## Arquitetura e replicação
-
-- `src/features/tutorials/TutorialProvider.tsx`: ciclo de vida do Driver.js, fala, controles, conclusão e falhas amigáveis.
-- `src/features/tutorials/tutorialTypes.ts`: contrato das configurações.
-- `src/features/tutorials/tutorialRegistry.ts`: registro central e tipado.
-- `src/features/tutorials/configs/reportsTutorial.ts`: configuração isolada da missão de Relatórios.
-- `src/features/tutorials/tutorialStorage.ts`: preferências locais, sem dados clínicos.
-- `src/features/tutorials/speech.ts`: narração gratuita em português do Brasil.
-- `src/features/tutorials/tutorials.css`: aparência, foco, alvo animado, mobile e `prefers-reduced-motion`.
-
-Para adicionar uma missão:
-
-1. Adicione `data-tour="nome-estavel"` aos alvos reais; não use classes visuais como seletores.
-2. Crie um arquivo em `src/features/tutorials/configs/` com uma etapa por objetivo. Use `action: 'click'` quando a ação real for obrigatória e `action: 'continue'` para conteúdo informativo.
-3. Registre a configuração em `tutorialRegistry.ts` e libere o ID no `TutorialProvider` somente quando a permissão funcional correspondente estiver ativa.
-4. Exponha a missão na ajuda contextual da rota e acrescente a cobertura Playwright.
-5. Use apenas textos e opções fictícias de homologação. Nunca coloque pacientes, usuários, e-mails, documentos, tokens ou informações clínicas reais na configuração.
-
-## Testes dos tutoriais
-
-```bash
-npm run test:e2e -- --grep "tutorial"
-npm run audit:architecture
-npm test
-npm run build
-```
-
-Os testes cobrem existência dos alvos `data-tour`, bloqueio de avanço antes da ação, conclusão, voltar, repetir narração, sair, alvo ausente, desktop/mobile e restrição por perfil. O projeto não possui um script ESLint; `audit:architecture`, TypeScript no `build`, Vitest e Playwright formam a validação disponível.
-
-## Gravação passiva em homologação
-
-A gravação usa viewport e vídeo de `1920x1080`, espera entre as etapas e armazena os WebM em `artifacts/tutorials/test-results`. A autenticação roda antes, com vídeo desligado; portanto a senha não aparece na gravação. A sessão temporária também fica sob `artifacts/tutorials/.auth`, caminho ignorado pelo Git.
-
-Use exclusivamente uma conta e uma clínica fictícias e sanitizadas:
-
-```powershell
-$env:TUTORIAL_BASE_URL='https://homologacao.example.invalid'
-$env:TUTORIAL_CLINIC='slug-ou-id-ficticio'
-$env:TUTORIAL_EMAIL='tutorial@example.invalid'
-$env:TUTORIAL_PASSWORD='senha-da-conta-ficticia'
-$env:TUTORIAL_DATA_CONFIRMATION='SANITIZED_ONLY'
-$env:TUTORIAL_STEP_DELAY_MS='1800'
-npm run record:tutorials:reports
-```
-
-`npm run record:tutorials` grava todas as missões registradas no arquivo de gravação. Cada nova funcionalidade deve receber um teste próprio e, consequentemente, um WebM separado. Não publique os arquivos de sessão em artefatos compartilhados; conserve apenas os vídeos finais.
-
-### Produção local com narração e legendas
-
-O pipeline local usa Piper TTS com a voz brasileira `pt_BR-faber-medium` e o binário do `ffmpeg-static`. Os textos são importados diretamente das configurações dos tutoriais; não há cópia paralela do roteiro. No Windows, os subprocessos Python são forçados a usar UTF-8 para preservar acentos e cedilha na fonetização. A síntese utiliza velocidade natural, menor variação fonética e pausas de três décimos de segundo entre frases para melhorar a dicção. O ambiente Python, o modelo de voz, as faixas WAV, a timeline e os vídeos ficam em `artifacts/tutorials`, ignorado pelo Git. Cada faixa é normalizada em -14 LUFS e o mix final recebe margem de -2 dBTP, para manter a voz alta e uniforme sem clipping após a compressão.
-
-```bash
-npm run tutorial:produce:reports
-```
-
-Para gerar a biblioteca completa com os 11 fluxos adicionais, uma faixa de áudio por etapa, gravações independentes em 1920×1080 e publicação automática em `public/tutorials`, execute:
-
-```bash
-npm run tutorial:produce:library
-```
-
-O módulo autenticado fica disponível em `/tutoriais-interativos` e apresenta os 12 vídeos nos formatos WebM e MP4 H.264. A produção completa utiliza somente os dados fictícios definidos nos testes locais; os diretórios temporários, timelines e faixas WAV permanecem em `artifacts/tutorials` e não são versionados.
-
-O comando instala o Piper em um ambiente virtual isolado, baixa e valida o modelo de voz, gera uma faixa por etapa, grava o fluxo com pausas antes e depois de cada ação e exporta:
-
-- `artifacts/tutorials/reports/tutorial-relatorios-narrado.webm` — VP9 + Opus;
-- `artifacts/tutorials/reports/tutorial-relatorios-narrado.mp4` — H.264 + AAC;
-- `artifacts/tutorials/reports/tutorial-relatorios.srt` — legendas sincronizadas;
-- `artifacts/tutorials/reports/audio/step-*.wav` — uma faixa por etapa.
-
-As legendas também são queimadas nos dois vídeos para permanecerem visíveis em players sem suporte a faixas externas. O Piper requer Python 3.9 ou superior e o primeiro uso baixa aproximadamente 65 MB do modelo oficial de voz.
+Existem 12 missoes em `src/features/tutorials/configs/` (login e clinica, cadastro de clinica, equipe e identificacao,
+cadastro de paciente, cirurgia, gestao de faturamento, relatorios, exportacao, pesquisa Full-Text, usuarios e perfis,
+troca de clinica, agenda e notificacoes), acessiveis em `/tutoriais-interativos` e pela ajuda contextual. Autoria,
+narracao (Azure Speech/Piper), gravacao e publicacao dos videos estao em [TUTORIALS.md](./TUTORIALS.md).
