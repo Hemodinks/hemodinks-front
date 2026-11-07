@@ -1,11 +1,13 @@
 import { getBillingMedicalParticipants } from '../billing/billingAnalytics';
 import { normalizeLookupText, parseDisplayDate } from '../../shared/utils/formatters';
+import { matchesSurgeryStatus } from '../../shared/surgeryStatus';
 import type { BillingRecord } from '../billing/billingTypes';
 import type { MedicalGroup, Team } from '../../types';
 import type { ReportFilters, ReportRecord } from './reportTypes';
 
 export const emptyReportFilters: ReportFilters = {
   tipoCirurgia: '',
+  statusCirurgia: '',
   startDate: '',
   endDate: '',
   requestStartDate: '',
@@ -115,6 +117,7 @@ export function filterReportRecords(records: ReportRecord[], filters: ReportFilt
     if (paymentStart && (!paymentDate || paymentDate < paymentStart)) return false;
     if (paymentEnd && (!paymentDate || paymentDate > paymentEnd)) return false;
     if (filters.tipoCirurgia && record.paciente.tipoCirurgia !== filters.tipoCirurgia) return false;
+    if (!matchesSurgeryStatus(record.paciente, filters.statusCirurgia)) return false;
     return selectedOverlaps(filters.doctors, getBillingMedicalParticipants(record).map((member) => member.name))
       && selectedOverlaps(filters.teams, record.teamNames)
       && selectedOverlaps(filters.medicalGroups, record.medicalGroupNames)

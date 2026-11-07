@@ -3,6 +3,7 @@ import type { MedicalGroup, Team } from '../../types';
 
 export type ReportFilters = {
   tipoCirurgia?: import('../../shared/surgeryType').TipoCirurgia | '';
+  statusCirurgia?: import('../../shared/surgeryStatus').StatusCirurgia | '';
   startDate: string;
   endDate: string;
   requestStartDate: string;

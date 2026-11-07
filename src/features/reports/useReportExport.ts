@@ -1,4 +1,5 @@
 import { getSurgeryTypeLabel } from '../../shared/surgeryType';
+import { SURGERY_STATUS_OPTIONS } from '../../shared/surgeryStatus';
 import { useRef, useState } from 'react';
 import { useExportScope } from '../../shared/hooks/useExportScope';
 import { getErrorMessage } from '../../shared/utils/formatters';
@@ -10,6 +11,8 @@ import { exportIndividualBillingPdf } from './export/individualBillingPdfExporte
 function describeFilters(filters: ReportFilters) {
   const lines: string[] = [];
   if (filters.tipoCirurgia) lines.push(`Tipo de cirurgia: ${getSurgeryTypeLabel(filters.tipoCirurgia)}`);
+  const status = SURGERY_STATUS_OPTIONS.find((option) => option.value === filters.statusCirurgia);
+  if (status) lines.push(`Status da cirurgia: ${status.filterLabel}`);
   if (filters.requestStartDate || filters.requestEndDate) {
     lines.push(`Período da solicitação: ${filters.requestStartDate || 'início'} a ${filters.requestEndDate || 'hoje'}`);
   }
