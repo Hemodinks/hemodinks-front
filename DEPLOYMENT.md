@@ -8,7 +8,9 @@ Frontend React/Vite publicado como SPA. O build final fica em `dist` e toda rota
 | --- | --- |
 | Local | `http://localhost:5173` |
 | Producao | `https://hemodinks.gestao-saude.tec.br` |
-| Homologacao | `https://hemodinks-homologacao.gestao-saude.tec.br` |
+| Homologacao | `https://hemodinks-homologacao.gestao-saude.tec.br` (Vercel, projeto `hemodinks-front-confirmation`) |
+| API producao | Azure Container Apps (`hemodinks-api-prod`, liberada no CSP) |
+| API homologacao | `https://hemodinks-api-1-90nb.onrender.com` |
 | API local | `http://localhost:5000` |
 | Swagger local | `http://localhost:5000/swagger` |
 | Scalar local | `http://localhost:5000/scalar` |
@@ -68,10 +70,10 @@ npx playwright install chromium
 Checklist local recomendado:
 
 ```powershell
-npm test
-npm run build
+npm run verify
 npm run budget
 npm run test:e2e
+npm run test:e2e:responsive
 npm run audit:a11y
 npm run analyze
 npm run audit:lighthouse
@@ -199,18 +201,25 @@ O arquivo `src/vercel.json` mantém desabilitado o projeto Vercel legado de prod
 - build `npm run build && npm run budget`
 - output `dist`
 - deploy Git habilitado somente para `developer`
+- proxy de `/api/:path*` para `https://hemodinks-api-1-90nb.onrender.com/api/:path*` (mesmo site do front, evitando bloqueio de cookie entre sites)
 - rewrite SPA de `/(.*)` para `/index.html`
 - headers de segurança e cache dos assets
 
 Variaveis principais:
 
 ```text
-VITE_API_URL=https://hemodinks-api-confirmation.onrender.com
+VITE_API_URL=<origem do proprio front, para usar o proxy /api, ou https://hemodinks-api-1-90nb.onrender.com>
 VITE_APP_ENV=confirmation
 VITE_APP_VERSION=<versao-ou-sha>
 ```
 
-Use `.env.confirmation.example` para reproduzir esse build localmente.
+A API de homologacao atual e o servico Render `hemodinks-api-1` (o antigo `hemodinks-api-confirmation` continua
+liberado no CSP apenas por compatibilidade). `.env.confirmation.example` reproduz esse build localmente; ajuste
+`VITE_API_URL` para a API de homologacao atual.
+
+A homologacao do front e publicada pela integracao Git da Vercel a cada push na `developer`; nenhum workflow deste
+repositorio publica a homologacao. A API correspondente e publicada pelo workflow `Publish Homologation` do
+`hemodinks-api` (ver `hemodinks-api/docs/homologation-migrations.md`).
 
 Não use **Redeploy** em um deployment antigo que ainda contenha redirects ou rewrites inválidos. Crie um deployment a partir da versão mais recente da branch `developer`; a Vercel aplicará o `vercel.json` correspondente ao novo commit.
 
@@ -235,18 +244,20 @@ Cors__AllowedOrigins__0=https://hemodinks-homologacao.gestao-saude.tec.br
 Validar no navegador:
 
 - login
-- reset de senha por token, se a API estiver com esse fluxo habilitado
+- reset de senha por token
+- selecao de clinica e identificacao de equipe
 - dashboard carregando resumo
 - notificacoes abrindo, marcando como lidas e atualizando contadores
 - usuarios e meu cadastro
-- listagem e formulario de pacientes
+- listagem, filtros (tipo e status da cirurgia) e formulario de pacientes
 - observacoes de pacientes
-- faturamento medico
+- faturamento medico, historico e relatorios
 - grupos medicos
 - agenda e notificacoes
-- configuracao da empresa, tema e troca de senha
+- clinicas, opcoes (tema e troca de senha) e monitoramento
 - exportacao XLSX e PDF
-- layout sem scroll horizontal em `360px`, `390px` e `768px`
+- layout sem scroll horizontal em `390px`, `820px` e `1440px`
+- tutoriais interativos
 - fallback do Error Boundary
 - eventos do New Relic Browser quando configurado
 
