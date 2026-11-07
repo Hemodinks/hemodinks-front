@@ -7,6 +7,7 @@ import { emptyPacienteFilters } from './patientUtils';
 
 function arePacienteFiltersEqual(current: PacienteFilters, debounced: PacienteFilters) {
   return current.tipoCirurgia === debounced.tipoCirurgia
+    && (current.statusCirurgia || '') === (debounced.statusCirurgia || '')
     && current.medicoUserIds.join(',') === debounced.medicoUserIds.join(',')
     && current.convenioIds.join(',') === debounced.convenioIds.join(',')
     && current.procedimento === debounced.procedimento

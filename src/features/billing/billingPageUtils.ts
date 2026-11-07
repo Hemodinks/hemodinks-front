@@ -105,6 +105,7 @@ export function areBillingFiltersEqual(left: BillingFilters, right: BillingFilte
     && left.paymentStartDate === right.paymentStartDate
     && left.paymentEndDate === right.paymentEndDate
     && (left.tipoCirurgia || '') === (right.tipoCirurgia || '')
+    && (left.statusCirurgia || '') === (right.statusCirurgia || '')
     && left.status === right.status
     && left.regime === right.regime
     && left.onlyPendingItems === right.onlyPendingItems;
@@ -124,6 +125,7 @@ export async function loadBillingPatients(
   token: string,
   filters: {
     tipoCirurgia?: BillingFilters['tipoCirurgia'];
+    statusCirurgia?: BillingFilters['statusCirurgia'];
     search: string;
     medico: string;
     convenio: string;
@@ -139,6 +141,7 @@ export async function loadBillingPatients(
       pageSize: PATIENT_EXPORT_PAGE_SIZE,
       search: queryFilters.search,
       tipoCirurgia: queryFilters.tipoCirurgia || undefined,
+      statusCirurgia: queryFilters.statusCirurgia || undefined,
       medico: queryFilters.medico || undefined,
       convenio: queryFilters.convenio || undefined,
       procedimento: queryFilters.procedimento || undefined,

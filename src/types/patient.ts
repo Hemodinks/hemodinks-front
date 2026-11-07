@@ -1,4 +1,5 @@
 import type { TipoCirurgia } from '../shared/surgeryType';
+import type { StatusCirurgia } from '../shared/surgeryStatus';
 
 export type PacienteProcedimento = {
   id?: number;
@@ -51,6 +52,7 @@ export type PacienteFaturamento = {
 export type Paciente = {
   id: number;
   tipoCirurgia?: TipoCirurgia | null;
+  statusCirurgia?: StatusCirurgia | null;
   userId: number;
   data?: string | null;
   dataAtendimento?: string | null;

@@ -1,4 +1,5 @@
 import type { TipoCirurgia } from './shared/surgeryType';
+import type { StatusCirurgia } from './shared/surgeryStatus';
 
 export type Theme = 'light' | 'dark';
 
@@ -19,6 +20,7 @@ export type CbhpmFilters = {
 
 export type PacienteFilters = {
   tipoCirurgia?: TipoCirurgia | '';
+  statusCirurgia?: StatusCirurgia | '';
   medicoUserIds: number[];
   convenioIds: number[];
   procedimento: string;

@@ -88,6 +88,7 @@ export function BillingPage({
       appliedFilters.competenciaInicio,
       appliedFilters.competenciaFinal,
       appliedFilters.tipoCirurgia,
+      appliedFilters.statusCirurgia,
       isMedical ? session.user.id : 'all',
     ],
     queryFn: () => loadBillingPatients(session.token, {
@@ -98,6 +99,7 @@ export function BillingPage({
       competenciaInicio: appliedFilters.competenciaInicio,
       competenciaFinal: appliedFilters.competenciaFinal,
       tipoCirurgia: appliedFilters.tipoCirurgia,
+      statusCirurgia: appliedFilters.statusCirurgia,
     }),
     staleTime: 30 * 1000,
   });

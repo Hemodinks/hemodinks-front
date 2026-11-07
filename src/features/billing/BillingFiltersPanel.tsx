@@ -1,3 +1,4 @@
+import { SurgeryStatusFilter } from '../../shared/components/SurgeryStatusFilter';
 import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
 import type { Dispatch, SetStateAction } from 'react';
 import { RefreshCw, Search } from 'lucide-react';
@@ -93,6 +94,7 @@ export function BillingFiltersPanel({
             <ComboboxField className="filter-field" label="Hospital" value={filters.hospital} options={hospitalOptions} onValueChange={(hospital) => setFilters((current) => ({ ...current, hospital }))} placeholder="Todos os hospitais" noOptionsLabel="Nenhum hospital encontrado." />
             <ComboboxField className="filter-field" label="Procedimento" value={filters.procedimento} options={procedureOptions} onValueChange={(procedimento) => setFilters((current) => ({ ...current, procedimento }))} placeholder="Principal ou associado" noOptionsLabel="Nenhum procedimento encontrado." />
             <SurgeryTypeFilter className="filter-field" value={filters.tipoCirurgia} onChange={(tipoCirurgia) => setFilters((current) => ({ ...current, tipoCirurgia }))} />
+            <SurgeryStatusFilter className="filter-field" value={filters.statusCirurgia} onChange={(statusCirurgia) => setFilters((current) => ({ ...current, statusCirurgia }))} />
             <SelectField className="filter-field" label="Status" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as BillingFilters['status'] }))}>
               {BILLING_STATUS_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </SelectField>

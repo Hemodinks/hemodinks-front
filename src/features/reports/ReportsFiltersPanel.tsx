@@ -1,3 +1,4 @@
+import { SurgeryStatusFilter } from '../../shared/components/SurgeryStatusFilter';
 import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
 import type { Dispatch, SetStateAction } from 'react';
 import { Download, FileText, RefreshCw, Search } from 'lucide-react';
@@ -68,6 +69,7 @@ export function ReportsFiltersPanel(props: Props) {
               />
             ))}
             <SurgeryTypeFilter className="filter-field" value={props.filters.tipoCirurgia} onChange={(tipoCirurgia) => props.setFilters((current) => ({ ...current, tipoCirurgia }))} />
+            <SurgeryStatusFilter className="filter-field" value={props.filters.statusCirurgia} onChange={(statusCirurgia) => props.setFilters((current) => ({ ...current, statusCirurgia }))} />
             <SelectField className="filter-field" label="Status" value={props.filters.status} onChange={(event) => props.setFilters((current) => ({ ...current, status: event.target.value as ReportFilters['status'] }))}>
               {BILLING_STATUS_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </SelectField>
