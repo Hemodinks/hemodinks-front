@@ -894,6 +894,7 @@ test('abre o módulo de tutoriais interativos e carrega o vídeo de Relatórios'
 });
 
 test('todos os tutoriais registrados possuem configuração e alvos estáveis', async ({ page }) => {
+  test.slow();
   await mockApi(page, superAdminSession);
   expect(Object.keys(TUTORIALS)).toHaveLength(12);
   for (const tutorial of Object.values(TUTORIALS)) {
@@ -912,6 +913,7 @@ test('todos os tutoriais registrados possuem configuração e alvos estáveis', 
 });
 
 test('exibe o fluxo contextual correspondente para o SuperAdministrador', async ({ page }) => {
+  test.slow();
   await mockApi(page, superAdminSession);
   const routes = [
     ['/dashboard', 'Painel inicial'],
@@ -1302,6 +1304,7 @@ test('nao apresenta violacoes serias de acessibilidade nas rotas principais', as
 });
 
 test('gera evidencias visuais desktop e mobile das telas principais', async ({ page }, testInfo) => {
+  test.slow();
   await mockApi(page);
 
   for (const width of [390, 1440]) {

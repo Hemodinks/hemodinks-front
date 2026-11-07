@@ -1871,7 +1871,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /cadastrar paciente/i }));
 
     expect(api.createPaciente).toHaveBeenCalledWith({
-      tipoCirurgia: 'Eletiva',
+      tipoCirurgia: 'EmAutorizacao',
       data: '2026-06-04',
       dataAtendimento: '2030-12-01',
       nomePaciente: 'Novo Paciente',

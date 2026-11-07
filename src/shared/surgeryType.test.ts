@@ -4,9 +4,11 @@ import { getSurgeryTypeLabel, SURGERY_TYPE_OPTIONS } from './surgeryType';
 describe('surgery type presentation', () => {
   it('keeps API enum values while presenting Portuguese labels', () => {
     expect(SURGERY_TYPE_OPTIONS).toEqual([
+      { value: 'EmAutorizacao', label: 'Em processo de autorização' },
       { value: 'Eletiva', label: 'Eletiva' },
       { value: 'Urgencia', label: 'Urgência' },
     ]);
+    expect(getSurgeryTypeLabel('EmAutorizacao')).toBe('Em processo de autorização');
     expect(getSurgeryTypeLabel('Eletiva')).toBe('Eletiva');
     expect(getSurgeryTypeLabel('Urgencia')).toBe('Urgência');
   });
