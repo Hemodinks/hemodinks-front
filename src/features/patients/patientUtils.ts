@@ -16,7 +16,7 @@ import {
 } from '../../shared/utils/formatters';
 
 export const emptyPacienteForm: PacienteFormData = {
-  tipoCirurgia: 'Eletiva',
+  tipoCirurgia: 'EmAutorizacao',
   data: '',
   dataAtendimento: '',
   nomePaciente: '',

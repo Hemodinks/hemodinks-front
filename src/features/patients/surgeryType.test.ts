@@ -4,8 +4,8 @@ import { emptyPacienteFilters, emptyPacienteForm, getPacienteFilterQuery, getPac
 import { getPacienteExportRows, getPacienteFormExportRows } from './export/patientExportData';
 
 describe('issue173: tipo de cirurgia em pacientes', () => {
-  it('envia Eletiva no cadastro novo e mantém Urgencia na edição', () => {
-    expect(toPacientePayload(emptyPacienteForm).tipoCirurgia).toBe('Eletiva');
+  it('envia Em processo de autorização no cadastro novo e mantém Urgencia na edição', () => {
+    expect(toPacientePayload(emptyPacienteForm).tipoCirurgia).toBe('EmAutorizacao');
     expect(toPacientePayload(getPacienteFormData({ ...basePaciente, tipoCirurgia: 'Urgencia' })).tipoCirurgia).toBe('Urgencia');
   });
 
@@ -19,6 +19,17 @@ describe('issue173: tipo de cirurgia em pacientes', () => {
     expect(getPacienteFilterQuery(emptyPacienteFilters)).not.toHaveProperty('tipoCirurgia');
     expect(getPacienteFilterQuery({ ...emptyPacienteFilters, tipoCirurgia: 'Urgencia', medicoUserIds: [3], procedimento: 'Cirurgia' }))
       .toMatchObject({ tipoCirurgia: 'Urgencia', medicoUserIds: '3', procedimento: 'Cirurgia' });
+  });
+
+  it('mantém Em processo de autorização na edição e no filtro', () => {
+    expect(toPacientePayload(getPacienteFormData({ ...basePaciente, tipoCirurgia: 'EmAutorizacao' })).tipoCirurgia).toBe('EmAutorizacao');
+    expect(getPacienteFilterQuery({ ...emptyPacienteFilters, tipoCirurgia: 'EmAutorizacao' })).toMatchObject({ tipoCirurgia: 'EmAutorizacao' });
+  });
+
+  it('exporta Em processo de autorização na listagem e na ficha', () => {
+    const patient = { ...basePaciente, tipoCirurgia: 'EmAutorizacao' as const };
+    expect(getPacienteExportRows([patient])[0]['Tipo de cirurgia']).toBe('Em processo de autorização');
+    expect(getPacienteFormExportRows(getPacienteFormData(patient))[0]['Tipo de cirurgia']).toBe('Em processo de autorização');
   });
 
   it.each(['Eletiva', 'Urgencia', undefined] as const)('exporta tipo %s na listagem e ficha sem inventar informação', (tipoCirurgia) => {
