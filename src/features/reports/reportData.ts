@@ -12,9 +12,13 @@ async function loadAllMedicalGroups(token: string) {
     () => epoch === sessionEpoch());
 }
 
-export async function loadReportData(token: string, tipoCirurgia?: import('../../shared/surgeryType').TipoCirurgia | ''): Promise<ReportData> {
+export async function loadReportData(
+  token: string,
+  tipoCirurgia?: import('../../shared/surgeryType').TipoCirurgia | '',
+  statusCirurgia?: import('../../shared/surgeryStatus').StatusCirurgia | '',
+): Promise<ReportData> {
   const [patientsResult, groupsResult, teamsResult] = await Promise.allSettled([
-    loadBillingPatients(token, { tipoCirurgia, search: '', medico: '', convenio: '', procedimento: '', competenciaInicio: '', competenciaFinal: '' }),
+    loadBillingPatients(token, { tipoCirurgia, statusCirurgia, search: '', medico: '', convenio: '', procedimento: '', competenciaInicio: '', competenciaFinal: '' }),
     loadAllMedicalGroups(token),
     listTeams(token),
   ]);

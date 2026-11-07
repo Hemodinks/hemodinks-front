@@ -3,6 +3,7 @@ import type { PacienteFormData } from '../../../types';
 import { DateInput } from '../../../shared/components/DateInput';
 import { TextField } from '../../../shared/components/ui';
 import { isValidDate, MAX_NAME_LENGTH } from '../../../shared/utils/formatters';
+import { getSurgeryStatusLabel, type StatusCirurgia } from '../../../shared/surgeryStatus';
 import { getPatientChronologyError } from '../patientUtils';
 
 type Props = {
@@ -11,6 +12,8 @@ type Props = {
 };
 
 export function PatientIdentificationSection({ formData, setFormData }: Props) {
+  // Só uma data válida é enviada à API; o indicador segue a mesma regra.
+  const status: StatusCirurgia = formData.dataAtendimento && isValidDate(formData.dataAtendimento) ? 'Consolidada' : 'NaoConsolidada';
   return (
     <>
       <TextField
@@ -37,6 +40,10 @@ export function PatientIdentificationSection({ formData, setFormData }: Props) {
         value={formData.dataAtendimento || ''}
         onChange={(value) => setFormData((current) => ({ ...current, dataAtendimento: value }))}
       />
+      <p className="surgery-status-indicator" role="status" aria-live="polite">
+        <span>Status da cirurgia</span>
+        <span className={`status-pill ${status === 'Consolidada' ? 'ok' : 'warning'}`}>{getSurgeryStatusLabel(status)}</span>
+      </p>
     </>
   );
 }

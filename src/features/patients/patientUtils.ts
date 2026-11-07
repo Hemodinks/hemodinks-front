@@ -54,6 +54,7 @@ export const emptyPacienteForm: PacienteFormData = {
 
 export const emptyPacienteFilters: PacienteFilters = {
   tipoCirurgia: '',
+  statusCirurgia: '',
   medicoUserIds: [],
   convenioIds: [],
   procedimento: '',
@@ -66,6 +67,7 @@ export const emptyPacienteFilters: PacienteFilters = {
 export function getPacienteFilterQuery(filters: PacienteFilters) {
   return {
     ...(filters.tipoCirurgia ? { tipoCirurgia: filters.tipoCirurgia } : {}),
+    ...(filters.statusCirurgia ? { statusCirurgia: filters.statusCirurgia } : {}),
     ...(filters.medicoUserIds.length ? { medicoUserIds: filters.medicoUserIds.join(',') } : {}),
     ...(filters.convenioIds.length ? { convenioIds: filters.convenioIds.join(',') } : {}),
     ...(filters.procedimento.trim() ? { procedimento: filters.procedimento.trim() } : {}),

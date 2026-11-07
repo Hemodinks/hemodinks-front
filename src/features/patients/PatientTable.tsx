@@ -1,4 +1,5 @@
 import { getSurgeryTypeLabel } from '../../shared/surgeryType';
+import { getSurgeryStatus, getSurgeryStatusLabel } from '../../shared/surgeryStatus';
 import { Eye, FileText, Info, MessageSquareText, Pencil, Trash2 } from 'lucide-react';
 import { IconButton } from '../../shared/components/ui';
 import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
@@ -20,10 +21,10 @@ export function PatientTable(props: PatientTableProps) {
       <thead><tr>
         {sortHeader('nome', 'Paciente')}<th>Ações</th>{sortHeader('data', 'Data da solicitação')}
         {sortHeader('dataAtendimento', 'Cirurgias Consolidadas')}<th>Info</th>{sortHeader('medico', 'Cirurgião')}
-        {sortHeader('status', 'Status Pago')}{sortHeader('arquivos', 'Arquivos')}<th>Obs.</th><th>Tipo de cirurgia</th>
+        {sortHeader('status', 'Status Pago')}{sortHeader('arquivos', 'Arquivos')}<th>Obs.</th><th>Tipo de cirurgia</th><th>Status da cirurgia</th>
       </tr></thead>
       <tbody>{props.pacientesLoading
-        ? <tr><td colSpan={10} className="empty-row"><span role="status">Carregando pacientes...</span></td></tr>
+        ? <tr><td colSpan={11} className="empty-row"><span role="status">Carregando pacientes...</span></td></tr>
         : props.pacientes.length ? props.pacientes.map((paciente) => {
           const unreadObservations = paciente.observacoesNaoLidasCount ?? 0;
           const hasUnreadObservations = unreadObservations > 0;
@@ -53,8 +54,9 @@ export function PatientTable(props: PatientTableProps) {
               : <span className={`attachment-count patient-observation-count${hasUnreadObservations ? ' has-unread-observations' : ''}`}>
                 <MessageSquareText size={15} />{unreadObservations}</span>}</td>
             <td data-label="Tipo de cirurgia">{getSurgeryTypeLabel(paciente.tipoCirurgia)}</td>
+            <td data-label="Status da cirurgia"><span className={`status-pill ${getSurgeryStatus(paciente) === 'Consolidada' ? 'ok' : 'warning'}`}>{getSurgeryStatusLabel(getSurgeryStatus(paciente))}</span></td>
           </tr>;
-        }) : <tr><td colSpan={10} className="empty-row"><span role="status">Nenhum paciente encontrado.</span></td></tr>}
+        }) : <tr><td colSpan={11} className="empty-row"><span role="status">Nenhum paciente encontrado.</span></td></tr>}
       </tbody>
     </table>
   </div>;
