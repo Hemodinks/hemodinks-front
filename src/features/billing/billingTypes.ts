@@ -15,6 +15,7 @@ export type BillingChecklistItem = {
 
 export type BillingFilters = {
   tipoCirurgia?: import('../../shared/surgeryType').TipoCirurgia | '';
+  statusCirurgia?: import('../../shared/surgeryStatus').StatusCirurgia | '';
   search: string;
   medico: string;
   convenio: string;

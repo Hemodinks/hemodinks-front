@@ -1,4 +1,5 @@
 import { getSurgeryTypeLabel, SURGERY_TYPE_OPTIONS } from '../../../shared/surgeryType';
+import { getSurgeryStatus, getSurgeryStatusLabel } from '../../../shared/surgeryStatus';
 import { summarizeBillingRecords } from '../../billing/billingAnalytics';
 import { formatCurrency } from '../../../shared/utils/formatters';
 import type { ReportRecord } from '../reportTypes';
@@ -35,6 +36,7 @@ export const reportColumns: readonly ReportColumn[] = [
   { header: 'Anexos', getValue: (record) => String(record.filesCount) },
   { header: 'Atendimento', getValue: (record) => String(record.id) },
   { header: 'Tipo de cirurgia', getValue: (record) => getSurgeryTypeLabel(record.paciente.tipoCirurgia) },
+  { header: 'Status da cirurgia', getValue: (record) => getSurgeryStatusLabel(getSurgeryStatus(record.paciente)) },
 ];
 
 export const reportPendingHeaders = ['Atendimento', 'Data da cirurgia', 'Situação do pagamento', 'Natureza', 'Item', 'Status', 'Descrição / valor', 'Motivo / orientação'] as const;

@@ -27,8 +27,8 @@ export function useReportsPage({ session, companyName, isMedical }: Options) {
   const [filterError, setFilterError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const query = useQuery({
-    queryKey: ['reports', session.token, appliedFilters.tipoCirurgia || ''],
-    queryFn: () => loadReportData(session.token, appliedFilters.tipoCirurgia),
+    queryKey: ['reports', session.token, appliedFilters.tipoCirurgia || '', appliedFilters.statusCirurgia || ''],
+    queryFn: () => loadReportData(session.token, appliedFilters.tipoCirurgia, appliedFilters.statusCirurgia),
     staleTime: 30 * 1000,
   });
 

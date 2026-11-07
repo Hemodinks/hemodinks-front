@@ -1,4 +1,6 @@
+import { SurgeryStatusFilter } from '../../shared/components/SurgeryStatusFilter';
 import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
+import type { StatusCirurgia } from '../../shared/surgeryStatus';
 import { getSurgeryTypeLabel, type TipoCirurgia } from '../../shared/surgeryType';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { sessionEpoch } from '../../services/sessionEpoch';
@@ -42,6 +44,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
     ? sortBillingRecords(items, tableSorts[table])
     : items;
   const [tipoCirurgia, setTipoCirurgia] = useState<TipoCirurgia | ''>('');
+  const [statusCirurgia, setStatusCirurgia] = useState<StatusCirurgia | ''>('');
   const [openYears, setOpenYears] = useState<Set<number>>(new Set());
   const [openMonth, setOpenMonth] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'history' | 'charts'>('history');
@@ -51,9 +54,10 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
   const [busyFileKey, setBusyFileKey] = useState<string | null>(null);
   const [fileMessage, setFileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const billingQuery = useQuery({
-    queryKey: ['billingRecords', session.token, '', '', '', '', '', '', tipoCirurgia, isMedical ? session.user.id : 'all'],
+    queryKey: ['billingRecords', session.token, '', '', '', '', '', '', tipoCirurgia, statusCirurgia, isMedical ? session.user.id : 'all'],
     queryFn: () => loadBillingPatients(session.token, {
       tipoCirurgia,
+      statusCirurgia,
       search: '',
       medico: '',
       convenio: '',
@@ -70,13 +74,13 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
   });
   const records = useMemo(() => filterBillingRecords(
     buildBillingRecords(billingQuery.data ?? []),
-    { ...createEmptyBillingFilters('', ''), tipoCirurgia },
+    { ...createEmptyBillingFilters('', ''), tipoCirurgia, statusCirurgia },
     {
       restrictToMedicalUser: isMedical,
       currentMedicalUserId: session.user.id,
       currentMedicalUserName: session.user.nome,
     },
-  ), [billingQuery.data, isMedical, session.user.id, session.user.nome, tipoCirurgia]);
+  ), [billingQuery.data, isMedical, session.user.id, session.user.nome, tipoCirurgia, statusCirurgia]);
   const history = useMemo(() => buildBillingHistory(records), [records]);
   const historyFiles = Array.isArray(filesQuery.data) ? filesQuery.data : [];
   const summaryRecord = summaryRecordId == null
@@ -180,7 +184,10 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
         </div>
       </DataPanel>
 
-      <DataPanel><SurgeryTypeFilter value={tipoCirurgia} onChange={setTipoCirurgia} /></DataPanel>
+      <DataPanel><div className="billing-filter-grid" role="group" aria-label="Filtros do histórico">
+        <SurgeryTypeFilter className="filter-field" value={tipoCirurgia} onChange={setTipoCirurgia} />
+        <SurgeryStatusFilter className="filter-field" value={statusCirurgia} onChange={setStatusCirurgia} />
+      </div></DataPanel>
 
       {billingQuery.error && (
         <AlertMessage type="error">

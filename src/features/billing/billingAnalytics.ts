@@ -1,4 +1,5 @@
 import { normalizeLookupText, toDatePickerValue } from '../../shared/utils/formatters';
+import { matchesSurgeryStatus } from '../../shared/surgeryStatus';
 import type {
   BillingBreakdownItem,
   BillingFilters,
@@ -118,6 +119,7 @@ export function filterBillingRecords(
     .filter((record) => toNormalizedIncludes(record.hospitalName, filters.hospital))
     .filter((record) => toNormalizedIncludes(record.procedureSummary, filters.procedimento))
     .filter((record) => !filters.tipoCirurgia || record.paciente.tipoCirurgia === filters.tipoCirurgia)
+    .filter((record) => matchesSurgeryStatus(record.paciente, filters.statusCirurgia))
     .filter((record) => filters.regime === 'all' || record.regime === filters.regime)
     .filter((record) => {
       if (filters.status === 'all') return true;
