@@ -9,6 +9,7 @@ import type { AuthSession, Paciente } from '../../types';
 import { exportPatientList } from './export/patientListExporter';
 import { getPacienteFilterQuery } from './patientUtils';
 import { getSurgeryTypeLabel } from '../../shared/surgeryType';
+import { SURGERY_STATUS_OPTIONS } from '../../shared/surgeryStatus';
 
 type UsePatientExportOptions = {
   session: AuthSession | null;
@@ -63,8 +64,8 @@ export function usePatientExport({
       return fetchPacientesForExport(getPacienteFilterQuery(pacienteFilters), shouldContinue);
     }
 
-    const { dataInicio, dataFinal, tipoCirurgia } = getPacienteFilterQuery(pacienteFilters);
-    return fetchPacientesForExport({ dataInicio, dataFinal, tipoCirurgia }, shouldContinue);
+    const { dataInicio, dataFinal, tipoCirurgia, statusCirurgia } = getPacienteFilterQuery(pacienteFilters);
+    return fetchPacientesForExport({ dataInicio, dataFinal, tipoCirurgia, statusCirurgia }, shouldContinue);
   };
 
   const handleExportPacientes = async (format: PacienteExportFormat) => {
@@ -92,7 +93,8 @@ export function usePatientExport({
         companyName,
         sessionToken: session.token,
         shouldContinue,
-        contextLines: [scopeLabel, period ? `Período: ${period}` : 'Período: todos', ...(pacienteFilters.tipoCirurgia ? [`Tipo de cirurgia: ${getSurgeryTypeLabel(pacienteFilters.tipoCirurgia)}`] : [])],
+        contextLines: [scopeLabel, period ? `Período: ${period}` : 'Período: todos', ...(pacienteFilters.tipoCirurgia ? [`Tipo de cirurgia: ${getSurgeryTypeLabel(pacienteFilters.tipoCirurgia)}`] : []),
+          ...(pacienteFilters.statusCirurgia ? [`Status da cirurgia: ${SURGERY_STATUS_OPTIONS.find((option) => option.value === pacienteFilters.statusCirurgia)?.filterLabel}`] : [])],
       });
     } catch (error) {
       if (shouldContinue()) setPacientesError(getErrorMessage(error));

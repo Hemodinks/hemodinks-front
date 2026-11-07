@@ -306,6 +306,7 @@ export function createEmptyBillingFilters(defaultDoctor = '', defaultCompetencia
   return {
     search: '',
     tipoCirurgia: '',
+    statusCirurgia: '',
     medico: defaultDoctor,
     convenio: '',
     hospital: '',

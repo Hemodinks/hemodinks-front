@@ -1,4 +1,5 @@
 import { getSurgeryTypeLabel } from '../../shared/surgeryType';
+import { getSurgeryStatus, getSurgeryStatusLabel } from '../../shared/surgeryStatus';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { Button, DataPanel, IconButton } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
@@ -64,6 +65,7 @@ export function ReportsList(props: Props) {
                 <div className="report-record-info-content">
                   <dl className="report-record-grid">
                     <div><dt>Tipo de cirurgia</dt><dd>{getSurgeryTypeLabel(record.paciente.tipoCirurgia)}</dd></div>
+                    <div><dt>Status da cirurgia</dt><dd>{getSurgeryStatusLabel(getSurgeryStatus(record.paciente))}</dd></div>
                     <div><dt>Equipe</dt><dd>{tags(record.teamNames, 'Não vinculada')}</dd></div>
                     <div><dt>Grupo médico</dt><dd>{tags(record.medicalGroupNames, 'Não vinculado')}</dd></div>
                     <div><dt>Auxiliares</dt><dd>{tags(record.assistantNames, 'Não informados')}</dd></div>
