@@ -60,6 +60,7 @@ jobs:
     needs: scope
     if: ${{ !cancelled() && needs.scope.outputs.run_tests != 'false' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       VITE_APP_ENV: ci
       VITE_APP_VERSION: ${{ github.sha }}
