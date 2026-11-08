@@ -1811,8 +1811,8 @@ test('grava tutorial local de relatórios com dados sanitizados', async ({ page 
   await mockApi(page, tutorialRecordingSession, { sanitizedTutorial: true });
   await loginViaUi(page, '/relatorios', tutorialRecordingSession);
   await expect(page.getByText('Registro Fictício 001')).toBeVisible();
-  await expect(page.getByLabel('Usuário logado').getByText('Usuário Fictício')).toBeVisible();
-  await expect(page.getByText('tutorial@example.invalid')).toBeVisible();
+  // O cabeçalho mostra só o nome; o e-mail fica dentro do menu do usuário.
+  await expect(page.getByRole('button', { name: 'Menu do usuário', exact: true })).toContainText('Usuário Fictício');
   await pause(700);
   await page.getByRole('complementary', { name: 'Ajuda contextual' }).getByRole('button', { name: /abrir ajuda de relatórios/i }).click();
   await pause(700);
@@ -1836,7 +1836,7 @@ test('grava tutorial local de relatórios com dados sanitizados', async ({ page 
     if (step.interaction?.type === 'click') await page.locator(step.interaction.target).click();
     else await mission.getByRole('button', { name: position === tutorial.steps.length - 1 ? 'Concluir tutorial' : 'Continuar tutorial' }).click();
   }
-  await expect(page.getByRole('status')).toContainText('Missão concluída');
+  await expect(page.getByRole('status').filter({ hasText: 'Missão concluída' })).toBeVisible();
   await pause(900);
   await mkdir(dirname(timelineOutput), { recursive: true });
   await writeFile(timelineOutput, JSON.stringify({
