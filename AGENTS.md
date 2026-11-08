@@ -6,12 +6,15 @@ Sistema de saúde multi-clínica: o front é UX; segurança e autorização são
 ## Mapa
 
 - Telas por domínio: `src/features/<módulo>/` (Page, componentes, hooks `use*Domain`, testes ao lado)
-- Orquestração, permissões e rotas: `src/app/` (`AppContent.tsx`, `appAccess.ts`, `lazyModules.tsx`)
+- Orquestração, permissões e rotas: `src/app/` (`AppContent.tsx`, `appAccess.ts`, `lazyModules.tsx`) e `src/routes.ts`
 - HTTP e sessão: `src/services/` (`api.ts`; nunca chamar axios direto em componente)
 - Componentes compartilhados: `src/shared/components/` (`ui.tsx`, `Modal`, `DateInput`, `ComboboxField`, tabelas)
 - Exportações PDF/XLSX: `src/shared/export/` e `src/features/*/export/`
 - Observabilidade: só New Relic Browser (`src/newRelic.ts`), iniciado após consentimento de análise
-- E2E: `e2e/` (configs `playwright*.config.ts`)
+- Regras espelhadas da API: `src/shared/surgeryType.ts`, `src/shared/surgeryStatus.ts`
+- Tutoriais: `src/features/tutorials/` (configs em `configs/`; produção em `TUTORIALS.md`)
+- E2E: `e2e/` (configs `playwright*.config.ts`); E2E com API real: `npm run test:e2e:real` (`docs/real-api-e2e.md`)
+- Docs: `README.md`, `TECHNICAL.md` (rotas, contratos de API), `DEPLOYMENT.md`, `TUTORIALS.md`; `docs/` é histórico
 - Codex: subagentes e política de esforço em `.codex/ORCHESTRATION.md`.
 
 ## Comandos
@@ -54,6 +57,13 @@ Preserve labels, roles, foco, teclado e `aria-*`. Playwright: seletores por role
 
 Menor mudança correta. Sem redesenho ou refatoração oportunista. Problema fora do escopo → reporte, não corrija.
 Não presuma componente, hook, rota ou endpoint sem localizar no código.
+
+## Documentação
+
+- Rota nova ou mudança de acesso → atualize `src/routes.ts`, `appAccess.ts`, `README.md` e `TECHNICAL.md`
+  (e a matriz em `hemodinks-api/scripts/generate_permissions_matrix.py`).
+- Endpoint novo consumido → acrescente na tabela de contratos do `TECHNICAL.md`.
+- `docs/` guarda registros de issues, QA e redesigns: não reescreva; marque o que ficou obsoleto.
 
 ## Pronto quando
 

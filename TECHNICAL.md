@@ -24,32 +24,25 @@ A arquitetura usa modulos verticais por funcionalidade e quatro papeis inspirado
 
 A direcao permitida e apresentacao -> aplicacao -> dominio, com infraestrutura injetada ou chamada pela aplicacao. `shared` e `services` nao podem depender de `app` ou `features`. O comando `npm run audit:architecture` verifica essas fronteiras e impede novos arquivos de producao acima de 550 linhas, avisando a partir de 500.
 
-O modulo `features/reports` segue a mesma direcao: `ReportsPage` apenas compoe a tela, `useReportsPage` orquestra estado e consulta, `reportFilters` concentra regras puras e `export/` possui os adaptadores PDF/XLSX. A rota `/relatorios` herda temporariamente a autorizacao de faturamento ate a definicao da matriz definitiva de perfis.
+O modulo `features/reports` segue a mesma direcao: `ReportsPage` apenas compoe a tela, `useReportsPage` orquestra estado e consulta, `reportFilters` concentra regras puras e `export/` possui os adaptadores PDF/XLSX. A rota `/relatorios` herda a autorizacao de faturamento (`canAccessReports = canAccessBilling`).
 
 ## Estrutura
 
 ```text
 src/
-  app/
+  app/            # AppContent, appAccess.ts, lazyModules.tsx, appViewMeta
   features/
-    auth/
-    billing/
-    dashboard/
-    events/
-    medicalGroups/
-    patients/
-      export/
-    settings/
-    users/
-  layout/
-  services/
+    auth/ billing/ calculator/ clinics/ dashboard/ events/ legal/
+    medicalGroups/ patients/ privacy/ reports/ settings/ tutorials/ users/
+  layout/         # Sidebar, ContextualTools, contextualFlows
+  services/       # api.ts + *Service.ts
   shared/
-    components/
-      ui/
-    hooks/
-    utils/
-    queryKeys.ts
+    components/   # ui.tsx (barrel), ui/*, Modal, DateInput, ComboboxField, filtros
+    export/       # infraestrutura comum de PDF/XLSX
+    hooks/ navigation/ privacy/ utils/
+    queryKeys.ts  surgeryType.ts  surgeryStatus.ts
   types/
+  routes.ts
   styles/
 ```
 
@@ -70,6 +63,10 @@ Responsabilidades:
 | `src/shared/components/ui.tsx` | API publica (barrel) das primitivas de UI reutilizadas |
 | `src/shared/components/ui/*` | implementacoes coesas das primitivas de UI |
 | `src/features/patients/export/*` | schemas puros e adaptadores PDF/XLSX de pacientes |
+| `src/features/reports/*` | relatorios: `useReportsPage`, `reportFilters`, `reportData` e `export/` |
+| `src/shared/surgeryType.ts` / `surgeryStatus.ts` | tipo e status da cirurgia (mesma regra da API) e opcoes dos filtros |
+| `src/shared/navigation/appModules.ts` | titulos, rotulos e icones dos modulos (apresentacao) |
+| `src/features/tutorials/*` | missoes Driver.js, narracao e biblioteca de videos |
 | `src/features/patients/usePatientFileActions.ts` | estado e ações de anexos isolados do domínio principal |
 | `src/features/billing/billingTypes.ts` | contratos puros do faturamento |
 | `src/features/billing/billingAnalytics.ts` | filtros, totais e agrupamentos financeiros puros |
@@ -89,22 +86,30 @@ Rotas publicas:
 
 | Path | Uso |
 | --- | --- |
-| `/` | login ou redirecionamento para dashboard |
+| `/` | login (selecao de clinica e equipe) ou redirecionamento para dashboard |
 | `/reset-password?token=...` | confirmacao de reset de senha |
+| `/termos-de-uso` | Termos de Uso |
+| `/politica-de-privacidade` | Politica de Privacidade |
 
-Rotas internas:
+Rotas internas (`src/routes.ts`; acesso calculado em `src/app/appAccess.ts`):
 
-| Path | View interna | Observacao |
+| Path | View interna | Quem ve |
 | --- | --- | --- |
-| `/dashboard` | `dashboard` | indisponivel para controller |
-| `/usuarios` | `users` | apenas administrador |
-| `/meu-cadastro` | `profile` | medico e paciente |
-| `/pacientes` | `patients` | todos os perfis autenticados; paciente entra em modo leitura |
-| `/faturamento-medico` | `billing` | administrador, SuperAdministrador, medico, controller e equipe com modulo de faturamento |
-| `/historico-faturamento` | `billingHistory` | mesmos perfis e regras de modulo do faturamento |
-| `/grupos-medicos` | `medicalGroups` | apenas administrador |
-| `/agenda` | `agenda` | indisponivel para controller |
-| `/opcoes` | `settings` | administrador e SuperAdministrador; `/configuracoes` permanece como alias legado |
+| `/dashboard` | `dashboard` | quem tem a licenca `Dashboard.Visualizar` (medico sempre) |
+| `/usuarios` | `users` | Administrador, SuperAdministrador e Equipe, com modulo `usuarios` |
+| `/meu-cadastro` | `profile` | Medico e Paciente |
+| `/pacientes` | `patients` | licenca `Pacientes.Visualizar` (medico sempre) e modulo `pacientes`; Paciente e equipe sem operador em leitura |
+| `/faturamento-medico` | `billing` | Administrador, SuperAdministrador, Medico, Controller e Equipe com modulo `faturamento` |
+| `/historico-faturamento` | `billingHistory` | mesmas regras do faturamento |
+| `/relatorios` | `reports` | mesmas regras do faturamento |
+| `/tutoriais-interativos` | `tutorials` | qualquer sessao |
+| `/grupos-medicos` | `medicalGroups` | Administrador, SuperAdministrador e Controller, com modulo `grupos-medicos` |
+| `/agenda` | `agenda` | todos os perfis com modulo `agenda` |
+| `/opcoes` | `settings` | Administrador e SuperAdministrador; `/configuracoes` permanece como alias legado |
+| `/clinicas` | `clinics` | Administrador (propria clinica) e SuperAdministrador |
+
+O SuperAdministrador ignora o plano `Parcial` na interface; os demais perfis so veem modulos contratados.
+A exclusao de pacientes aparece apenas para Administrador e SuperAdministrador (a API tambem permite ao Medico).
 
 `useRouteView` sincroniza URL, permissoes e view ativa. Se a rota nao for permitida para o perfil atual, a aplicacao redireciona para uma view valida.
 
@@ -112,13 +117,18 @@ Rotas internas:
 
 `useAuthSession` controla a sessao do usuario:
 
-- o token JWT fica apenas em memoria do React
-- o hook remove `hemodinks.session` do `localStorage` ao iniciar
-- um refresh completo da pagina encerra a sessao atual
+- o token JWT fica apenas em memoria do React; nunca em `localStorage`/`sessionStorage`
+- o hook remove `hemodinks.session` legado do `localStorage` ao iniciar
+- ao recarregar a pagina, `POST /api/session/restaurar` recupera a sessao pelo cookie `HttpOnly` quando ela ainda esta ativa no servidor
+- `POST /api/session/renovar` (ou `/renovar-equipe`) renova o JWT antes do vencimento; `/api/session/atividade` registra interacao local no maximo uma vez por minuto; abas compartilham sinais via BroadcastChannel e Web Locks
+- `POST /api/session/sair` revoga a sessao; trocar de clinica (`/api/session/selecionar-clinica`) limpa o `queryClient`
 
 Fluxos suportados:
 
-- login por `POST /api/users/authenticate`
+- contexto do login por `POST /api/users/login-context` e login por `POST /api/users/authenticate`
+- identificacao do operador da equipe por `POST /api/equipe-auth/identificar` (selecao ou PIN)
+- senha temporaria concluida por `POST /api/users/password/temporary/complete`
+- troca de e-mail com confirmacao (`/api/users/email/change*`)
 - reset por email via `POST /api/users/password/reset`
 - confirmacao por token via `POST /api/users/password/reset/confirm`
 - troca obrigatoria de senha quando `precisaTrocarSenha=true`
@@ -203,7 +213,7 @@ Arquivos principais:
 - `src/features/patients/usePatientLookups.ts`
 - `src/features/patients/useCbhpmLookup.ts`
 - `src/features/patients/PatientObservacoesModal.tsx`
-- `src/features/patients/patientExport.ts`
+- `src/features/patients/usePatientExport.ts` e `export/`
 
 Responsabilidades:
 
@@ -213,7 +223,9 @@ Responsabilidades:
 - procedimentos CBHPM e procedimentos associados
 - upload de arquivos do paciente
 - observacoes com resposta e marcacao de leitura
-- exportacao XLSX/PDF
+- filtros por tipo da cirurgia e status da cirurgia (`statusCirurgia`: Todas / Consolidadas / Não consolidadas), enviados a API
+- indicador do status no cadastro: consolidada quando a data da consolidacao esta preenchida
+- exportacao XLSX/PDF da listagem e da ficha
 
 ### Faturamento medico
 
@@ -244,6 +256,32 @@ Responsabilidades:
 
 Os graficos sao implementados sem biblioteca externa. As barras usam HTML/CSS e o grafico circular usa setores SVG com `strokeDasharray`, permitindo que toda a fatia seja interativa. Trimestres zerados permanecem consultaveis pela legenda, mas nao criam uma fatia invisivel. Os dados exibidos sao derivados dos mesmos `BillingRecord` usados pela tabela, evitando divergencia entre indicadores, graficos e detalhamento.
 
+### Relatorios
+
+Arquivos principais:
+
+- `src/features/reports/ReportsPage.tsx`, `useReportsPage.ts`, `reportFilters.ts`, `reportData.ts`
+- `src/features/reports/export/*`
+
+Responsabilidades:
+
+- carregar a base de faturamento (`loadBillingPatients`) com tipo e status da cirurgia enviados a API
+- filtros combinados (periodo, medico, convenio, hospital, procedimento, situacao, tipo e status da cirurgia)
+- resumo, lista detalhada e exportacao PDF/XLSX com a linha de contexto dos filtros
+
+### Clinicas e equipes
+
+- `src/features/clinics/*`: CRUD de clinicas (SuperAdministrador), dados da propria clinica (Administrador), plano, modulos, identidade visual e equipes (`/api/platform/clinicas/*`)
+
+### Tutoriais, ajuda e calculadora
+
+- `src/features/tutorials/*`: 12 missoes Driver.js e biblioteca em `/tutoriais-interativos` (ver `TUTORIALS.md`)
+- `src/layout/ContextualTools.tsx` e `contextualFlows.ts`: ajuda "Como usar" e calculadora
+
+### LGPD
+
+- `src/features/legal/*` e `src/features/privacy/*`: aceite dos termos (`/api/legal-acceptances/current`), preferencias de privacidade e consentimento de analise antes do New Relic
+
 ### Grupos medicos
 
 Arquivos principais:
@@ -265,8 +303,8 @@ Arquivo principal:
 
 Responsabilidades:
 
-- calendario mensal
-- CRUD de eventos
+- visoes mensal, semanal e lista (`agendaViews.ts`), com eventos de dia inteiro
+- CRUD de eventos e envio de e-mail do evento (`/api/events/{id}/email-notification`)
 - notificacao para usuario, perfil medico, usuarios especificos e grupos medicos
 - contadores de notificacao nao lida
 - marcacao de notificacoes da agenda como lidas
@@ -288,6 +326,7 @@ Responsabilidades:
 - persistencia da escolha explicita do usuario, inclusive do tema claro
 - troca de senha
 - consulta paginada dos erros tecnicos da clinica, com 25 registros por pagina
+- eventos de seguranca (`/api/monitoramento/seguranca`)
 - exibicao de modulo, descricao, timestamp, metodo, linha, usuario, operacao de banco, request ID e fluxo de classes
 - exibicao opcional da query relacionada dentro de `details`
 - atualizacao manual da listagem e limpeza confirmada dos logs atuais; novos erros continuam sendo registrados
@@ -361,62 +400,103 @@ Fallback local:
 http://localhost:5000
 ```
 
-Endpoints consumidos:
+Endpoints consumidos (extraidos de `src/services` e `src/features`):
 
-| Metodo | Path | Uso |
+| Area | Metodo | Path |
 | --- | --- | --- |
-| `POST` | `/api/users/authenticate` | login |
-| `POST` | `/api/users/password/reset` | solicitar reset |
-| `POST` | `/api/users/password/reset/confirm` | confirmar reset por token |
-| `GET` | `/api/dashboard/summary` | resumo dashboard |
-| `GET` | `/api/dashboard/notifications` | notificacoes do dashboard |
-| `GET` | `/api/users/` | listar usuarios |
-| `GET` | `/api/users/{id}` | detalhe ou meu cadastro |
-| `GET` | `/api/users/{id}/foto-perfil` | foto de perfil |
-| `POST` | `/api/users/` | criar usuario |
-| `PUT` | `/api/users/{id}` | editar usuario |
-| `DELETE` | `/api/users/{id}` | excluir usuario |
-| `PUT` | `/api/users/{id}/password` | trocar senha |
-| `POST` | `/api/users/{id}/arquivos` | upload de documento medico |
-| `DELETE` | `/api/users/{id}/arquivos/{arquivoId}` | excluir documento medico |
-| `GET` | `/api/pacientes/` | listar pacientes |
-| `GET` | `/api/pacientes/{id}` | detalhe do paciente |
-| `POST` | `/api/pacientes/` | criar paciente |
-| `PUT` | `/api/pacientes/{id}` | editar paciente |
-| `DELETE` | `/api/pacientes/{id}` | excluir paciente |
-| `POST` | `/api/pacientes/{id}/arquivos` | upload de anexo |
-| `DELETE` | `/api/pacientes/{id}/arquivos/{arquivoId}` | excluir anexo |
-| `GET` | `/api/pacientes/{id}/observacoes` | listar observacoes |
-| `POST` | `/api/pacientes/{id}/observacoes` | criar observacao |
-| `POST` | `/api/pacientes/{id}/observacoes/marcar-lidas` | marcar observacoes lidas |
-| `GET` | `/api/faturamentos-medicos/` | base do faturamento medico |
-| `GET` | `/api/faturamentos-medicos/historico/arquivos` | listar arquivos do historico, opcionalmente por ano e mes |
-| `POST` | `/api/faturamentos-medicos/historico/{ano}/{mes}/arquivos` | anexar arquivo ao mes do historico |
-| `GET` | `/api/faturamentos-medicos/historico/arquivos/{id}/download` | baixar arquivo mensal |
-| `DELETE` | `/api/faturamentos-medicos/historico/arquivos/{id}` | excluir arquivo mensal |
-| `GET` | `/api/grupos-medicos/` | listar grupos medicos |
-| `GET` | `/api/grupos-medicos/{id}` | detalhe do grupo |
-| `POST` | `/api/grupos-medicos/` | criar grupo |
-| `PUT` | `/api/grupos-medicos/{id}` | editar grupo |
-| `DELETE` | `/api/grupos-medicos/{id}` | excluir grupo |
-| `GET` | `/api/grupos-medicos/medicos` | medicos elegiveis por escopo |
-| `GET` | `/api/events/` | listar eventos |
-| `GET` | `/api/events/medical-users` | medicos da agenda |
-| `GET` | `/api/events/notification-recipients` | usuarios e grupos permitidos |
-| `POST` | `/api/events/notifications/mark-read` | marcar notificacoes da agenda |
-| `POST` | `/api/events/` | criar evento |
-| `PUT` | `/api/events/{id}` | editar evento |
-| `POST` | `/api/events/{id}/complete` | concluir evento |
-| `DELETE` | `/api/events/{id}` | excluir evento |
-| `GET` | `/api/hospitais/` | lookup de hospitais |
-| `GET` | `/api/convenios/` | lookup de convenios |
-| `GET` | `/api/opme/` | lookup de fornecedores OPME |
-| `GET` | `/api/cbhpm/` | busca CBHPM |
-| `GET` | `/api/configuracoes-sistema/current` | configuracao da empresa |
-| `GET` | `/api/configuracoes-sistema/current/foto-empresa` | logo/foto da empresa |
-| `PUT` | `/api/configuracoes-sistema/current` | atualizar configuracao da empresa |
-| `GET` | `/api/monitoramento/erros` | erros técnicos paginados e restritos à clínica do administrador |
-| `DELETE` | `/api/monitoramento/erros` | limpa o histórico técnico no escopo do administrador |
+| Sessao | `POST` | `/api/session/atividade` |
+| Sessao | `POST` | `/api/session/renovar` |
+| Sessao | `POST` | `/api/session/renovar-equipe` |
+| Sessao | `POST` | `/api/session/restaurar` |
+| Sessao | `POST` | `/api/session/sair` |
+| Sessao | `POST` | `/api/session/selecionar-clinica` |
+| Usuarios e autenticacao | `GET` | `/api/users` |
+| Usuarios e autenticacao | `POST` | `/api/users` |
+| Usuarios e autenticacao | `POST` | `/api/users/authenticate` |
+| Usuarios e autenticacao | `POST` | `/api/users/email/change` |
+| Usuarios e autenticacao | `POST` | `/api/users/email/change/cancel` |
+| Usuarios e autenticacao | `POST` | `/api/users/email/change/confirm` |
+| Usuarios e autenticacao | `POST` | `/api/users/login-context` |
+| Usuarios e autenticacao | `POST` | `/api/users/password/reset` |
+| Usuarios e autenticacao | `POST` | `/api/users/password/reset/confirm` |
+| Usuarios e autenticacao | `POST` | `/api/users/password/temporary/complete` |
+| Usuarios e autenticacao | `GET` | `/api/users/{id}` |
+| Usuarios e autenticacao | `PUT` | `/api/users/{id}` |
+| Usuarios e autenticacao | `DELETE` | `/api/users/{id}` |
+| Usuarios e autenticacao | `POST` | `/api/users/{id}/arquivos` |
+| Usuarios e autenticacao | `DELETE` | `/api/users/{id}/arquivos/{id}` |
+| Usuarios e autenticacao | `GET` | `/api/users/{id}/arquivos/{id}/download` |
+| Usuarios e autenticacao | `GET` | `/api/users/{id}/foto-perfil` |
+| Usuarios e autenticacao | `PUT` | `/api/users/{id}/password` |
+| Usuarios e autenticacao | `PUT` | `/api/users/{id}/password/reset` |
+| Equipes | `POST` | `/api/equipe-auth/identificar` |
+| Equipes | `PUT` | `/api/equipe-auth/pin` |
+| Equipes | `GET` | `/api/equipes` |
+| Clinicas (plataforma) | `GET` | `/api/platform/clinicas` |
+| Clinicas (plataforma) | `POST` | `/api/platform/clinicas` |
+| Clinicas (plataforma) | `GET` | `/api/platform/clinicas/{id}` |
+| Clinicas (plataforma) | `PUT` | `/api/platform/clinicas/{id}` |
+| Clinicas (plataforma) | `DELETE` | `/api/platform/clinicas/{id}` |
+| Clinicas (plataforma) | `GET` | `/api/platform/clinicas/{id}/equipes` |
+| Clinicas (plataforma) | `GET` | `/api/platform/clinicas/{id}/equipes/usuarios` |
+| Clinicas (plataforma) | `PUT` | `/api/platform/clinicas/{id}/equipes/{id}` |
+| Clinicas (plataforma) | `POST` | `/api/platform/clinicas/{id}/equipes/{id}/membros` |
+| Clinicas (plataforma) | `DELETE` | `/api/platform/clinicas/{id}/equipes/{id}/membros/{id}` |
+| Clinicas (plataforma) | `POST` | `/api/platform/clinicas/{id}/equipes/{id}/operadores/{id}/pin` |
+| Clinicas (plataforma) | `GET` | `/api/public/clinicas` |
+| Clinicas (plataforma) | `GET` | `/api/public/clinicas/{slug}/foto` |
+| Identidade visual | `GET` | `/api/configuracoes-sistema/current` |
+| Identidade visual | `GET` | `/api/configuracoes-sistema/current/foto-empresa` |
+| LGPD | `GET` | `/api/legal-acceptances/current` |
+| LGPD | `POST` | `/api/legal-acceptances/current` |
+| LGPD | `GET` | `/api/privacy-preferences/current` |
+| LGPD | `PUT` | `/api/privacy-preferences/current` |
+| Licenca | `GET` | `/api/licencas/current` |
+| Dashboard | `GET` | `/api/dashboard/notifications` |
+| Dashboard | `GET` | `/api/dashboard/summary` |
+| Pacientes e cirurgias | `GET` | `/api/pacientes` |
+| Pacientes e cirurgias | `POST` | `/api/pacientes` |
+| Pacientes e cirurgias | `GET` | `/api/pacientes/{id}` |
+| Pacientes e cirurgias | `PUT` | `/api/pacientes/{id}` |
+| Pacientes e cirurgias | `DELETE` | `/api/pacientes/{id}` |
+| Pacientes e cirurgias | `POST` | `/api/pacientes/{id}/arquivos` |
+| Pacientes e cirurgias | `DELETE` | `/api/pacientes/{id}/arquivos/{id}` |
+| Pacientes e cirurgias | `GET` | `/api/pacientes/{id}/arquivos/{id}/download` |
+| Pacientes e cirurgias | `GET` | `/api/pacientes/{id}/observacoes` |
+| Pacientes e cirurgias | `POST` | `/api/pacientes/{id}/observacoes` |
+| Pacientes e cirurgias | `POST` | `/api/pacientes/{id}/observacoes/marcar-lidas` |
+| Faturamento medico | `GET` | `/api/faturamentos-medicos` |
+| Faturamento medico | `GET` | `/api/faturamentos-medicos/historico/arquivos` |
+| Faturamento medico | `DELETE` | `/api/faturamentos-medicos/historico/arquivos/{id}` |
+| Faturamento medico | `GET` | `/api/faturamentos-medicos/historico/arquivos/{id}/download` |
+| Faturamento medico | `POST` | `/api/faturamentos-medicos/historico/{id}/{id}/arquivos` |
+| Grupos medicos | `GET` | `/api/grupos-medicos` |
+| Grupos medicos | `POST` | `/api/grupos-medicos` |
+| Grupos medicos | `GET` | `/api/grupos-medicos/medicos` |
+| Grupos medicos | `GET` | `/api/grupos-medicos/{id}` |
+| Grupos medicos | `PUT` | `/api/grupos-medicos/{id}` |
+| Grupos medicos | `DELETE` | `/api/grupos-medicos/{id}` |
+| Agenda | `GET` | `/api/events` |
+| Agenda | `POST` | `/api/events` |
+| Agenda | `GET` | `/api/events/medical-users` |
+| Agenda | `GET` | `/api/events/notification-recipients` |
+| Agenda | `POST` | `/api/events/notifications/mark-read` |
+| Agenda | `PUT` | `/api/events/{id}` |
+| Agenda | `DELETE` | `/api/events/{id}` |
+| Agenda | `POST` | `/api/events/{id}/complete` |
+| Agenda | `GET` | `/api/events/{id}/email-notification` |
+| Agenda | `POST` | `/api/events/{id}/email-notification` |
+| Catalogos (lookups) | `GET` | `/api/cbhpm` |
+| Catalogos (lookups) | `GET` | `/api/convenios` |
+| Catalogos (lookups) | `GET` | `/api/hospitais` |
+| Catalogos (lookups) | `GET` | `/api/opme` |
+| Opcoes e monitoramento | `GET` | `/api/monitoramento/erros` |
+| Opcoes e monitoramento | `DELETE` | `/api/monitoramento/erros` |
+| Opcoes e monitoramento | `GET` | `/api/monitoramento/seguranca` |
+| Infraestrutura | `GET` | `/api/warmup` |
+
+`systemSettingsService.updateSystemSettings` ainda chama `PUT /api/configuracoes-sistema/current`, que a API nao
+expoe mais; a funcao nao e usada pela interface (nome e foto pertencem a clinica, em `/api/platform/clinicas/{id}`).
 
 ## Convencoes de manutencao
 
@@ -424,16 +504,17 @@ Endpoints consumidos:
 - centralize chamadas HTTP em `src/services`
 - preserve imports pesados em `import()` quando o uso for eventual
 - mantenha labels e `aria-label` em controles interativos
-- ao adicionar rota nova, atualize `src/routes.ts`, `README.md` e este documento
+- ao adicionar rota nova, atualize `src/routes.ts`, `src/app/appAccess.ts`, `README.md` e este documento
+- nao implemente regra diferente da API para o mesmo requisito (ex.: `surgeryStatus.ts` espelha a derivacao do backend)
 - ao mexer em faturamento, pacientes ou agenda, rode E2E
 
 ## Checklist para mudancas grandes
 
 ```powershell
-npm test
-npm run build
+npm run verify
 npm run budget
 npm run test:e2e
+npm run test:e2e:responsive
 npm run audit:a11y
 npm run analyze
 npm run audit:lighthouse
