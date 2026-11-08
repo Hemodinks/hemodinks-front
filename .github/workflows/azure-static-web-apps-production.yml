@@ -24,6 +24,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     name: Deploy production
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     concurrency:
       group: azure-static-web-apps-production
       cancel-in-progress: false
