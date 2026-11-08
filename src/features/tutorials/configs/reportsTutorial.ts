@@ -27,7 +27,7 @@ export const reportsTutorial = {
       title: 'Prepare a consulta',
       objective: 'Conheça o painel que reúne todos os critérios disponíveis.',
       narration: {
-        text: 'Este painel reúne os critérios da consulta. Você pode combinar período, médicos, equipes, hospitais, convênios, procedimentos, fornecedores, situação e regime. Quanto mais específicos forem os filtros, mais preciso será o resultado.',
+        text: 'Este painel reúne os critérios da consulta. Você pode combinar período, médicos, equipes, hospitais, convênios, procedimentos, fornecedores, tipo e status da cirurgia, situação e regime. Quanto mais específicos forem os filtros, mais preciso será o resultado.',
         audio: '/tutorials/audio/reports/filters.mp3',
       },
       action: 'continue',
