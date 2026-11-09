@@ -43,9 +43,14 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
     ) as AzureStaticWebAppsConfiguration;
 
     for (const route of [...Object.values(VIEW_PATHS), '/configuracoes']) {
+      // A rota recebe o HTML do fallback: mantém o mesmo "sem cache" de /index.html,
+      // senão o Azure aplica max-age=30 e links diretos podem servir HTML desatualizado após deploy.
       expect(configuration.routes, route).toContainEqual({
         route,
-        headers: { 'X-Robots-Tag': 'noindex, nofollow' },
+        headers: {
+          'X-Robots-Tag': 'noindex, nofollow',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
       });
     }
     const publicRoutes = ['/', '/index.html', '/termos-de-uso', '/politica-de-privacidade'];
