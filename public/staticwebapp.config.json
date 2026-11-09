@@ -15,79 +15,92 @@
     {
       "route": "/dashboard",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/usuarios",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/meu-cadastro",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/pacientes",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/faturamento-medico",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/historico-faturamento",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/relatorios",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/tutoriais-interativos",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/grupos-medicos",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/agenda",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/opcoes",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/clinicas",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "route": "/configuracoes",
       "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
       }
     }
   ],
@@ -99,7 +112,7 @@
     ]
   },
   "globalHeaders": {
-    "Content-Security-Policy": "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; script-src-attr 'none'; connect-src 'self' https://hemodinks-api-prod.politepond-d8524c51.brazilsouth.azurecontainerapps.io https://hemodinks-api-1-90nb.onrender.com https://hemodinks-api-confirmation.onrender.com https://date.nager.at https://bam.nr-data.net https://bam-cell.nr-data.net; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+    "Content-Security-Policy": "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; script-src-attr 'none'; connect-src 'self' https://hemodinks-api-prod.politepond-d8524c51.brazilsouth.azurecontainerapps.io https://date.nager.at https://bam.nr-data.net https://bam-cell.nr-data.net; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
     "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
     "Referrer-Policy": "no-referrer",
     "Strict-Transport-Security": "max-age=31536000",

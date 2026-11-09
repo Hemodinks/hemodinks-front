@@ -213,9 +213,9 @@ VITE_APP_ENV=confirmation
 VITE_APP_VERSION=<versao-ou-sha>
 ```
 
-A API de homologacao atual e o servico Render `hemodinks-api-1` (o antigo `hemodinks-api-confirmation` continua
-liberado no CSP apenas por compatibilidade). `.env.confirmation.example` reproduz esse build localmente; ajuste
-`VITE_API_URL` para a API de homologacao atual.
+A API de homologacao atual e o servico Render `hemodinks-api-1`; so ele e liberado no CSP do `vercel.json`. A CSP de
+producao (`staticwebapp.config.json`, `nginx*.conf`) nao libera nenhuma API do Render (issue #220).
+`.env.confirmation.example` reproduz esse build localmente.
 
 A homologacao do front e publicada pela integracao Git da Vercel a cada push na `developer`; nenhum workflow deste
 repositorio publica a homologacao. A API correspondente e publicada pelo workflow `Publish Homologation` do
@@ -230,8 +230,9 @@ Não use **Redeploy** em um deployment antigo que ainda contenha redirects ou re
   titulo, descricao, canonical e `meta robots` a cada rota; telas internas recebem
   `noindex, nofollow` e nao expoem canonical.
 - Producao (Azure): `public/staticwebapp.config.json` envia `X-Robots-Tag: noindex, nofollow`
-  nas rotas de `VIEW_PATHS` e em `/configuracoes`. Rota interna nova precisa entrar nessa
-  lista; `src/deploymentConfig.test.ts` falha se faltar.
+  nas rotas de `VIEW_PATHS` e em `/configuracoes`, junto com o mesmo `Cache-Control` sem cache
+  de `/index.html` (rota com regra propria nao herda o header do fallback). Rota interna nova
+  precisa entrar nessa lista; `src/deploymentConfig.test.ts` falha se faltar.
 - Homologacao (Vercel): `vercel.json` envia `X-Robots-Tag: noindex, nofollow` em tudo,
   para nao competir com producao nos buscadores.
 - `public/robots.txt` libera o rastreamento (o `noindex` precisa ser lido pelo buscador)
