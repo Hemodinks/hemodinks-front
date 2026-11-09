@@ -230,8 +230,9 @@ Não use **Redeploy** em um deployment antigo que ainda contenha redirects ou re
   titulo, descricao, canonical e `meta robots` a cada rota; telas internas recebem
   `noindex, nofollow` e nao expoem canonical.
 - Producao (Azure): `public/staticwebapp.config.json` envia `X-Robots-Tag: noindex, nofollow`
-  nas rotas de `VIEW_PATHS` e em `/configuracoes`. Rota interna nova precisa entrar nessa
-  lista; `src/deploymentConfig.test.ts` falha se faltar.
+  nas rotas de `VIEW_PATHS` e em `/configuracoes`, junto com o mesmo `Cache-Control` sem cache
+  de `/index.html` (rota com regra propria nao herda o header do fallback). Rota interna nova
+  precisa entrar nessa lista; `src/deploymentConfig.test.ts` falha se faltar.
 - Homologacao (Vercel): `vercel.json` envia `X-Robots-Tag: noindex, nofollow` em tudo,
   para nao competir com producao nos buscadores.
 - `public/robots.txt` libera o rastreamento (o `noindex` precisa ser lido pelo buscador)
