@@ -33,6 +33,7 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
     expect(contentSecurityPolicy).toContain('https://date.nager.at');
     expect(contentSecurityPolicy).not.toContain("'unsafe-eval'");
     expect(contentSecurityPolicy).not.toContain('http://localhost:');
+    expect(contentSecurityPolicy).not.toContain('onrender.com');
     expect(configuration.globalHeaders?.['X-Content-Type-Options']).toBe('nosniff');
   });
 
@@ -83,7 +84,8 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
     const contentSecurityPolicy = configuration.headers
       ?.flatMap((entry) => entry.headers)
       .find((header) => header.key === 'Content-Security-Policy');
-    expect(contentSecurityPolicy?.value).toContain('https://hemodinks-api-confirmation.onrender.com');
+    expect(contentSecurityPolicy?.value).toContain('https://hemodinks-api-1-90nb.onrender.com');
+    expect(contentSecurityPolicy?.value).not.toContain('https://hemodinks-api-confirmation.onrender.com');
     expect(contentSecurityPolicy?.value).toContain("script-src 'self';");
     expect(contentSecurityPolicy?.value).toContain('https://date.nager.at');
     expect(contentSecurityPolicy?.value).not.toContain("'unsafe-eval'");
@@ -96,5 +98,13 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
     ) as VercelConfiguration;
 
     expect(configuration.git?.deploymentEnabled).toBe(false);
+  });
+
+  it('não libera APIs do Render na CSP das imagens nginx', () => {
+    for (const file of ['nginx.conf', 'nginx.proxy.conf.template']) {
+      const configuration = readFileSync(resolve(process.cwd(), file), 'utf8');
+      expect(configuration, file).toContain('Content-Security-Policy');
+      expect(configuration, file).not.toContain('onrender.com');
+    }
   });
 });
