@@ -38,4 +38,25 @@ export function registerPerformanceRefetchCases({ setup, login }: Dependencies) 
       });
     }
   }
+
+  test('performance: login não carrega lookups das telas de pacientes e grupos médicos (#204)', async ({ page }, testInfo) => {
+    await setup(page);
+    const lookups = ['/api/hospitais/', '/api/convenios/', '/api/opme/', '/api/grupos-medicos/medicos'];
+    const reads = new Map<string, number>();
+    page.on('request', request => {
+      if (request.method() !== 'GET') return;
+      const path = new URL(request.url()).pathname;
+      if (path.startsWith('/api/')) reads.set(path, (reads.get(path) ?? 0) + 1);
+    });
+    await login(page, '/dashboard');
+    await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    testInfo.annotations.push({ type: 'login-api-gets', description: JSON.stringify(Object.fromEntries(reads)) });
+    for (const path of lookups) expect(reads.get(path) ?? 0, path).toBe(0);
+    await page.getByRole('button', { name: /^pacientes/i }).click();
+    await expect(page).toHaveURL(/\/pacientes$/);
+    await expect(page.getByText('Paciente Hemodinks').first()).toBeVisible({ timeout: 15_000 });
+    // A tela de pacientes usa os quatro lookups (médicos vêm de /api/grupos-medicos/medicos).
+    for (const path of lookups) await expect.poll(() => reads.get(path) ?? 0, path).toBe(1);
+  });
 }
