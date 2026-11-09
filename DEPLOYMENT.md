@@ -213,9 +213,9 @@ VITE_APP_ENV=confirmation
 VITE_APP_VERSION=<versao-ou-sha>
 ```
 
-A API de homologacao atual e o servico Render `hemodinks-api-1` (o antigo `hemodinks-api-confirmation` continua
-liberado no CSP apenas por compatibilidade). `.env.confirmation.example` reproduz esse build localmente; ajuste
-`VITE_API_URL` para a API de homologacao atual.
+A API de homologacao atual e o servico Render `hemodinks-api-1`; so ele e liberado no CSP do `vercel.json`. A CSP de
+producao (`staticwebapp.config.json`, `nginx*.conf`) nao libera nenhuma API do Render (issue #220).
+`.env.confirmation.example` reproduz esse build localmente.
 
 A homologacao do front e publicada pela integracao Git da Vercel a cada push na `developer`; nenhum workflow deste
 repositorio publica a homologacao. A API correspondente e publicada pelo workflow `Publish Homologation` do
