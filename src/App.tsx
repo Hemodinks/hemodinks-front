@@ -5,6 +5,7 @@ import { AppContent } from './app/AppContent';
 import { ConsentProvider } from './features/privacy/ConsentProvider';
 import { LegalDocumentPage } from './features/legal/LegalDocumentPage';
 import { LEGAL_DOCUMENTS } from './features/legal/legalDocuments';
+import { PageMetadata } from './app/usePageMetadata';
 import { queryClient } from './queryClient';
 import { ErrorBoundary } from './shared/components/ErrorBoundary';
 
@@ -14,6 +15,7 @@ export default function App() {
       <ErrorBoundary>
         <BrowserRouter>
           <ConsentProvider>
+            <PageMetadata />
             <AppUpdateNotice />
             <Routes>
               <Route path="/termos-de-uso" element={<LegalDocumentPage document={LEGAL_DOCUMENTS['termos-de-uso']} />} />
