@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { VIEW_PATHS } from './routes';
 
 type AzureStaticWebAppsConfiguration = {
   globalHeaders?: Record<string, string>;
@@ -33,6 +34,36 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
     expect(contentSecurityPolicy).not.toContain("'unsafe-eval'");
     expect(contentSecurityPolicy).not.toContain('http://localhost:');
     expect(configuration.globalHeaders?.['X-Content-Type-Options']).toBe('nosniff');
+  });
+
+  it('não indexa as telas internas em produção', () => {
+    const configuration = JSON.parse(
+      readFileSync(resolve(process.cwd(), 'public/staticwebapp.config.json'), 'utf8'),
+    ) as AzureStaticWebAppsConfiguration;
+
+    for (const route of [...Object.values(VIEW_PATHS), '/configuracoes']) {
+      expect(configuration.routes, route).toContainEqual({
+        route,
+        headers: { 'X-Robots-Tag': 'noindex, nofollow' },
+      });
+    }
+    const publicRoutes = ['/', '/index.html', '/termos-de-uso', '/politica-de-privacidade'];
+    const noindexRoutes = configuration.routes
+      ?.filter((entry) => entry.headers?.['X-Robots-Tag'])
+      .map((entry) => entry.route) ?? [];
+    expect(noindexRoutes.filter((route) => publicRoutes.includes(route))).toEqual([]);
+    expect(configuration.globalHeaders?.['X-Robots-Tag']).toBeUndefined();
+  });
+
+  it('nunca indexa a homologação da Vercel', () => {
+    const configuration = JSON.parse(
+      readFileSync(resolve(process.cwd(), 'vercel.json'), 'utf8'),
+    ) as VercelConfiguration;
+
+    const robotsHeader = configuration.headers
+      ?.flatMap((entry) => entry.headers)
+      .find((header) => header.key === 'X-Robots-Tag');
+    expect(robotsHeader?.value).toBe('noindex, nofollow');
   });
 
   it('habilita na Vercel somente a homologação da branch developer', () => {

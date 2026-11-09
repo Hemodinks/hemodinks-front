@@ -223,6 +223,23 @@ repositorio publica a homologacao. A API correspondente e publicada pelo workflo
 
 Não use **Redeploy** em um deployment antigo que ainda contenha redirects ou rewrites inválidos. Crie um deployment a partir da versão mais recente da branch `developer`; a Vercel aplicará o `vercel.json` correspondente ao novo commit.
 
+## SEO e indexacao
+
+- Indexaveis somente `/` (login), `/termos-de-uso` e `/politica-de-privacidade`
+  (`src/app/pageMetadata.ts`). O componente `PageMetadata` (`src/App.tsx`) atualiza
+  titulo, descricao, canonical e `meta robots` a cada rota; telas internas recebem
+  `noindex, nofollow` e nao expoem canonical.
+- Producao (Azure): `public/staticwebapp.config.json` envia `X-Robots-Tag: noindex, nofollow`
+  nas rotas de `VIEW_PATHS` e em `/configuracoes`. Rota interna nova precisa entrar nessa
+  lista; `src/deploymentConfig.test.ts` falha se faltar.
+- Homologacao (Vercel): `vercel.json` envia `X-Robots-Tag: noindex, nofollow` em tudo,
+  para nao competir com producao nos buscadores.
+- `public/robots.txt` libera o rastreamento (o `noindex` precisa ser lido pelo buscador)
+  e aponta `public/sitemap.xml`, que lista somente as tres paginas publicas.
+- `index.html` traz Open Graph, Twitter Card (`public/og-image.png`, 1200x630), dados
+  estruturados `SoftwareApplication` e a verificacao do Google Search Console. O JSON-LD
+  e bloco de dados, nao script executavel: nao exige mudanca na CSP.
+
 ## CORS esperado na API
 
 A API precisa permitir a origem do front publicado.
