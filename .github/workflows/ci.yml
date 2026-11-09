@@ -130,6 +130,7 @@ jobs:
           name: hemodinks-front-dist
           path: dist
           if-no-files-found: error
+          retention-days: 7
 
       - name: Upload Playwright report
         if: always()
