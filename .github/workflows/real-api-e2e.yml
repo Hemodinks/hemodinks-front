@@ -23,21 +23,21 @@ jobs:
       HEMODINKS_API_ROOT: ${{ github.workspace }}/.integration/api
       VITE_APP_ENV: synthetic-e2e
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Checkout reviewed API revision
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: Hemodinks/hemodinks-api
           ref: fa3ef7cddf233807c83379fa804a286e0a6513d9
           path: .integration/api
           persist-credentials: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           dotnet-version: 10.0.x
       - run: npm ci
@@ -47,7 +47,7 @@ jobs:
         run: npm run test:e2e:real
       - name: Upload minimized integration evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: real-api-e2e-summary
           path: test-results/real-api/summary.json
