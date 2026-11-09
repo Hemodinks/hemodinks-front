@@ -14,6 +14,7 @@ import { usePatientCrudActions } from './usePatientCrudActions';
 import { usePatientForm } from './usePatientForm';
 import { useAppChrome } from '../../app/useAppChrome';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
+import type { AppView } from '../../appTypes';
 
 vi.mock('../../services', () => ({
   getPacientes: vi.fn(), getScopedMedicalUsers: vi.fn(), getHospitais: vi.fn(),
@@ -108,4 +109,31 @@ it.each([
   await act(async () => { await result.current[loader](session.token, true); });
   expect(api[service]).toHaveBeenCalledTimes(2);
   expect(queryClient.getQueryState(anotherClinic)?.isInvalidated).toBe(false);
+});
+
+it.each<[AppView, string[]]>([
+  ['dashboard', []],
+  ['billing', ['getConvenios']],
+  ['billingHistory', ['getConvenios']],
+  ['patients', ['getHospitais', 'getConvenios', 'getOpmeFornecedores']],
+])('loads lookups only on the screens that use them (%s)', async (activeView, expected) => {
+  renderHook(() => usePatientsDomainQueries({
+    session, activeView, moduleMode: 'list', canAccessPatients: true, canConsultCbhpm: true, patientReadOnly: false,
+    patientList: usePatientList(), patientLookups: usePatientLookups(), cbhpmLookup: useCbhpmLookup(),
+  }), { wrapper });
+  await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+  for (const service of ['getHospitais', 'getConvenios', 'getOpmeFornecedores'] as const) {
+    expect(api[service]).toHaveBeenCalledTimes(expected.includes(service) ? 1 : 0);
+  }
+});
+
+it('does not load patient lookups on the patients screen without patient access', async () => {
+  renderHook(() => usePatientsDomainQueries({
+    session, activeView: 'patients', moduleMode: 'list', canAccessPatients: false, canConsultCbhpm: false,
+    patientReadOnly: true, patientList: usePatientList(), patientLookups: usePatientLookups(), cbhpmLookup: useCbhpmLookup(),
+  }), { wrapper });
+  await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+  expect(api.getHospitais).not.toHaveBeenCalled();
+  expect(api.getConvenios).not.toHaveBeenCalled();
+  expect(api.getOpmeFornecedores).not.toHaveBeenCalled();
 });
