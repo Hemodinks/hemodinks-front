@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hemodinks.gestao-saude.tec.br/sitemap.xml

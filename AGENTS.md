@@ -21,6 +21,7 @@ Sistema de saúde multi-clínica: o front é UX; segurança e autorização são
 
 ```bash
 npx vitest run <caminho/do/arquivo.test.tsx>   # teste focado
+npx tsc -b                                      # typecheck rápido (o build roda o mesmo)
 npm run verify                                  # arquitetura + testes + build
 npm run test:e2e -- <spec>                      # E2E focado
 npm run test:e2e:responsive                     # 390 / 820 / 1440 px
@@ -34,7 +35,8 @@ npm run build && npm run budget                 # orçamento de bundle
 
 ## Invariantes — nunca quebrar
 
-1. Token só em memória; nunca em `localStorage`/`sessionStorage`; nunca no console.
+1. Token e dados de sessão/paciente só em memória; nunca em `localStorage`/`sessionStorage`; nunca no console.
+   Storage só para preferência (tema, com consentimento), registro de consentimento e flags técnicas sem dado pessoal.
 2. Trocar de clínica limpa o cache (`queryClient`) e o estado dependente; nunca misturar dados de clínicas.
 3. Permissão no front é só UX; `ClinicaId` do front não é mecanismo de segurança.
 4. Não trocar componente completo (DateInput, ComboboxField, tabelas, filtros, exportações) por versão simplificada.
@@ -68,6 +70,7 @@ Não presuma componente, hook, rota ou endpoint sem localizar no código.
 ## Pronto quando
 
 Teste focado passa; `npm run verify` passa se mexeu em mais de um módulo; mobile validado se mudou visual.
+O CI também roda `test:release-gate`, `test:performance`, `budget` e E2E desktop + responsivo: rode o que a mudança afeta.
 Resposta final, só isto: o que mudou · arquivos principais · testes executados e resultado · riscos reais.
 
 ## Prioridade
