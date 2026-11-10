@@ -15,6 +15,7 @@ export const queryKeys = {
     query?: PacienteListQuery,
   ) => ['pacientes', token, query] as const,
   pacientesRoot: (token: string) => ['pacientes', token] as const,
+  pacientesPendenciasDataConsolidacao: (token: string) => ['pacientesPendenciasDataConsolidacao', token] as const,
   pacienteObservacoes: (token: string, pacienteId: number) => ['pacienteObservacoes', token, pacienteId] as const,
   pacienteObservacoesRoot: (token: string) => ['pacienteObservacoes', token] as const,
   hospitais: (token: string) => ['hospitais', token] as const,

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import { DateInput } from '../../shared/components/DateInput';
 import { SurgeryStatusFilter } from '../../shared/components/SurgeryStatusFilter';
 import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
@@ -13,6 +13,7 @@ type PatientFiltersProps = Pick<PatientListProps,
 export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdmin, isTeam, onFiltersChange, onClearFilters }: PatientFiltersProps) {
   const canUseExtendedFilters = isAdmin || isTeam;
   return (
+    <>
     <details className="billing-filters-accordion patient-filters-accordion">
       <summary className="billing-filters-summary" aria-label="Filtros de pacientes">
         <span className="billing-filters-toggle">Filtros</span>
@@ -47,5 +48,15 @@ export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdm
         </div>
       </div>
     </details>
+    {pacienteFilters.pendenciaDataConsolidacao && (
+      <p className="patient-pending-filter-chip" role="status">
+        <AlertTriangle size={15} aria-hidden="true" />
+        <span>Exibindo somente cadastros com ano da data da consolidação fora do período permitido.</span>
+        <Button onClick={() => onFiltersChange((current) => ({ ...current, pendenciaDataConsolidacao: false }))}>
+          <X size={14} />Remover filtro
+        </Button>
+      </p>
+    )}
+    </>
   );
 }

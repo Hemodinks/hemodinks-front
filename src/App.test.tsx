@@ -1797,7 +1797,7 @@ describe('App', () => {
 
     await user.type(screen.getByLabelText('Data da Solicitação'), '04062026');
     expect(screen.getByLabelText('Selecionar cirurgias consolidadas')).not.toHaveAttribute('max');
-    await user.type(screen.getByLabelText('Cirurgias Consolidadas'), '01122030');
+    await user.type(screen.getByLabelText('Cirurgias Consolidadas'), '01122026');
     await user.type(screen.getByLabelText('Paciente'), 'Novo Paciente');
     expect(screen.queryByLabelText('CPF')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
@@ -1873,7 +1873,7 @@ describe('App', () => {
     expect(api.createPaciente).toHaveBeenCalledWith({
       tipoCirurgia: 'EmAutorizacao',
       data: '2026-06-04',
-      dataAtendimento: '2030-12-01',
+      dataAtendimento: '2026-12-01',
       nomePaciente: 'Novo Paciente',
       diagnostico: '',
       tratamentoMedico: '',

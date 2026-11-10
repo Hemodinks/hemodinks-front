@@ -271,6 +271,16 @@ export function usePatientsDomain({
     setPacienteFilters(emptyPacienteFilters);
   };
 
+  // Banner de pendências: abre a lista já filtrada, sem esperar o debounce.
+  const openPatientsWithConsolidationPending = () => {
+    if (!canAccessPatients) return;
+    const pendingFilters = { ...emptyPacienteFilters, pendenciaDataConsolidacao: true };
+    setPacienteFilters(pendingFilters);
+    setDebouncedPacienteFilters(pendingFilters);
+    setPacienteCurrentPage(1);
+    openPatientsList();
+  };
+
   const refreshPacientes = () => {
     if (session) {
       void loadPacientes(session.token, true);
@@ -329,6 +339,7 @@ export function usePatientsDomain({
     openNewPacienteForm,
     closePacienteForm,
     clearPacienteFilters,
+    openPatientsWithConsolidationPending,
     refreshPacientes,
     refreshCbhpm,
     closePatientFilesModal,
