@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildListQueryParams } from '../../services/queryParams';
-import { getConsolidationMaxYear, getConsolidationYearError } from './consolidationDate';
+import { getConsolidationMaxYear, getConsolidationYearError, isConsolidationClearForbiddenMessage } from './consolidationDate';
 
 const NOW = new Date('2026-11-10T12:00:00Z');
 const RANGE_ERROR = 'O ano da data da consolidação deve estar entre 2026 e 2027.';
@@ -30,6 +30,14 @@ describe('consolidationDate', () => {
     expect(getConsolidationYearError('02/04/2016', '02/04/2016', NOW)).toBe('');
     expect(getConsolidationYearError('02/04/2045', '02/04/2016', NOW)).toBe(RANGE_ERROR);
     expect(getConsolidationYearError('02/04/2026', '02/04/2016', NOW)).toBe('');
+  });
+
+  it('não permite apagar a data de um cadastro pendente, mas permite em cadastro normal', () => {
+    expect(getConsolidationYearError('', '20/05/8202', NOW)).toBe(
+      'Não é permitido apagar a data de uma cirurgia já consolidada. Corrija o ano da data da consolidação para um valor entre 2026 e 2027.');
+    expect(isConsolidationClearForbiddenMessage(getConsolidationYearError(null, '02/04/2016', NOW))).toBe(true);
+    expect(getConsolidationYearError('', '20/05/2026', NOW)).toBe('');
+    expect(getConsolidationYearError('', '', NOW)).toBe('');
   });
 
   it('envia o filtro de pendência somente quando ativo', () => {

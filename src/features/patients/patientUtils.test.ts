@@ -25,6 +25,13 @@ describe('patientUtils', () => {
     expect(validatePacienteForm(form)).toBe(valid ? '' : 'A data da consolidação não pode ser anterior à data da solicitação.');
   });
 
+  it('bloqueia apagar a data de consolidação pendente ao salvar', () => {
+    const form = getPacienteFormData({ ...basePaciente, data: null, dataAtendimento: '2016-04-02' });
+    expect(validatePacienteForm({ ...form, dataAtendimento: '' }))
+      .toMatch(/^Não é permitido apagar a data de uma cirurgia já consolidada\./);
+    expect(validatePacienteForm(form)).toBe('');
+  });
+
   it('compara a data civil recebida da API sem converter os horários/offsets', () => {
     const form = getPacienteFormData({ ...basePaciente,
       data: '2026-10-10T23:30:00-03:00', dataAtendimento: '2026-10-10T00:30:00+14:00' });
