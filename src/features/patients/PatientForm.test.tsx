@@ -105,7 +105,7 @@ describe('PatientForm: permissões e operações em andamento', () => {
 
 
 describe('PatientForm: data da consolidação pendente', () => {
-  const forbidden = 'Não é permitido apagar a data de uma cirurgia já consolidada. Corrija o ano da data da consolidação para um valor entre 2026 e 2027.';
+  const forbidden = 'Não é permitido apagar a data de uma cirurgia já consolidada. Corrija o ano da data da consolidação para um valor entre 2025 e 2027.';
 
   it('exibe em toast o bloqueio de apagar a data e mantém outros erros como alerta', () => {
     const view = render(<PatientForm {...props({ pacienteFormError: forbidden })} />);
