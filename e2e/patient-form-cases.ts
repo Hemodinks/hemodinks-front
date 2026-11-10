@@ -115,12 +115,13 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
         await request.clear(); await save();
         await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
         expect(api.writes[1]).toMatchObject({ data: null, dataAtendimento: '2026-10-10' });
+        // Cirurgia já consolidada não pode ter a data apagada: toast explica e nada é gravado.
         await edit(); await consolidated.clear(); await save();
+        await expect(page.getByRole('alert')).toHaveText('Não é permitido apagar a data de uma cirurgia já consolidada.');
+        expect(api.writes).toHaveLength(2);
+        await consolidated.fill('10102026'); await request.fill('10102026'); await save();
         await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
-        expect(api.writes[2]).toMatchObject({ data: null, dataAtendimento: null });
-        await edit(); await request.fill('10102026'); await save();
-        await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
-        expect(api.writes[3]).toMatchObject({ data: '2026-10-10', dataAtendimento: null });
+        expect(api.writes[2]).toMatchObject({ data: '2026-10-10', dataAtendimento: '2026-10-10' });
       });
     }
 
