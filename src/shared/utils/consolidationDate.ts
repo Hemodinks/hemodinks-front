@@ -1,8 +1,8 @@
 import { isValidDate, toDatePickerValue } from './formatters';
 
-// Espelha DataConsolidacaoRules da API: o HemoDinks opera desde 2026 e o limite
-// superior acompanha o ano corrente de Brasília (+1).
-export const CONSOLIDATION_MIN_YEAR = 2026;
+// Espelha DataConsolidacaoRules da API: ano mínimo 2025 (regra de negócio) e limite
+// superior acompanhando o ano corrente de Brasília (+1).
+export const CONSOLIDATION_MIN_YEAR = 2025;
 
 const BRASILIA_OFFSET_MS = 3 * 60 * 60 * 1000;
 
