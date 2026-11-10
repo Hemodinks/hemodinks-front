@@ -97,6 +97,7 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardNotifications(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacienteObservacoesRoot(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesPendenciasDataConsolidacao(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.hospitais(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.convenios(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.opmeFornecedores(session.token) }),
@@ -122,6 +123,7 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
     try {
       await deleteMutation.mutateAsync({ id: paciente.id, token: session.token });
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesPendenciasDataConsolidacao(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token), refetchType: 'none' }),
       ]);

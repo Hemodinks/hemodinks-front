@@ -15,11 +15,12 @@ import { AppMainContent } from './AppMainContent';
 import { AppModals } from './AppModals';
 import { buildBreadcrumbItems, getAppTitle } from './appViewMeta';
 import { ClinicCnpjWarning } from '../features/clinics/ClinicCnpjWarning';
+import { ConsolidationDatePendingWarning } from '../features/patients/ConsolidationDatePendingWarning';
 
 type AccessState = ReturnType<typeof getAppAccess>;
 type Navigation = {
   openDashboard: () => void; openUsersList: () => void; openMyProfile: () => void;
-  openPatientsList: () => void; openPatientsListFromMenu: () => void;
+  openPatientsList: () => void; openPatientsListFromMenu: () => void; openPatientsWithConsolidationPending: () => void;
   openBilling: () => void; openBillingHistory: () => void; openReports: () => void; openTutorials: () => void;
   openMedicalGroups: () => void; openAgenda: () => void; openSettings: () => void; openClinics: () => void;
   openCurrentClinic: () => void;
@@ -90,7 +91,10 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
     <CalculatorPreferenceProvider session={session}>
     <TutorialProvider activeView={activeView} allowedTutorialIds={allowedTutorialIds}>
       <AppShell
-        banner={<ClinicCnpjWarning session={session} onUpdateClinic={navigation.openCurrentClinic} />}
+        banner={<div className="app-banner-stack">
+          <ConsolidationDatePendingWarning session={session} onOpenPending={navigation.openPatientsWithConsolidationPending} />
+          <ClinicCnpjWarning session={session} onUpdateClinic={navigation.openCurrentClinic} />
+        </div>}
         session={session}
         isBusy={isBusy}
         appTitle={getAppTitle(activeView)}

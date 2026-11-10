@@ -14,7 +14,8 @@ function arePacienteFiltersEqual(current: PacienteFilters, debounced: PacienteFi
     && current.dataInicio === debounced.dataInicio
     && current.dataFinal === debounced.dataFinal
     && current.dataSolicitacaoInicio === debounced.dataSolicitacaoInicio
-    && current.dataSolicitacaoFinal === debounced.dataSolicitacaoFinal;
+    && current.dataSolicitacaoFinal === debounced.dataSolicitacaoFinal
+    && Boolean(current.pendenciaDataConsolidacao) === Boolean(debounced.pendenciaDataConsolidacao);
 }
 
 export function usePatientList() {
