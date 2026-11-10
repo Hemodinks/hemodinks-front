@@ -17,8 +17,11 @@ export function getConsolidationYearRangeMessage(maxYear = getConsolidationMaxYe
 // Mesmo texto da API (DataConsolidacaoRules.MensagemApagarProibido): exibido em toast.
 export const CONSOLIDATION_CLEAR_FORBIDDEN_PREFIX = 'Não é permitido apagar a data de uma cirurgia já consolidada.';
 
-export function getConsolidationClearForbiddenMessage(maxYear = getConsolidationMaxYear()) {
-  return `${CONSOLIDATION_CLEAR_FORBIDDEN_PREFIX} Corrija o ano da data da consolidação para um valor entre ${CONSOLIDATION_MIN_YEAR} e ${maxYear}.`;
+// Cadastro pendente (ano fora da faixa) recebe também a orientação de correção do ano.
+export function getConsolidationClearForbiddenMessage(pending: boolean, maxYear = getConsolidationMaxYear()) {
+  return pending
+    ? `${CONSOLIDATION_CLEAR_FORBIDDEN_PREFIX} Corrija o ano da data da consolidação para um valor entre ${CONSOLIDATION_MIN_YEAR} e ${maxYear}.`
+    : CONSOLIDATION_CLEAR_FORBIDDEN_PREFIX;
 }
 
 export function isConsolidationClearForbiddenMessage(message: string | null | undefined) {
@@ -32,8 +35,8 @@ function isOutOfRange(value: string, maxYear: number) {
 
 /**
  * Data legada fora da faixa continua aceita enquanto não for alterada (pendência sinalizada no banner);
- * qualquer data nova ou alterada precisa respeitar a faixa, e a data pendente não pode ser apagada
- * (evita mascarar o faturamento).
+ * qualquer data nova ou alterada precisa respeitar a faixa. Cirurgia já consolidada (com data) nunca pode
+ * ter a data apagada, para não mascarar o faturamento; só cadastros que nunca tiveram data ficam sem data.
  */
 export function getConsolidationYearError(
   value: string | null | undefined,
@@ -42,8 +45,8 @@ export function getConsolidationYearError(
 ) {
   const maxYear = getConsolidationMaxYear(now);
   if (!value?.trim()) {
-    return originalValue && isValidDate(originalValue) && isOutOfRange(originalValue, maxYear)
-      ? getConsolidationClearForbiddenMessage(maxYear) : '';
+    return originalValue && isValidDate(originalValue)
+      ? getConsolidationClearForbiddenMessage(isOutOfRange(originalValue, maxYear), maxYear) : '';
   }
   if (!isValidDate(value)) return '';
   if (originalValue && toDatePickerValue(originalValue) === toDatePickerValue(value)) return '';

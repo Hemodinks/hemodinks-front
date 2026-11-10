@@ -32,11 +32,11 @@ describe('consolidationDate', () => {
     expect(getConsolidationYearError('02/04/2026', '02/04/2016', NOW)).toBe('');
   });
 
-  it('não permite apagar a data de um cadastro pendente, mas permite em cadastro normal', () => {
+  it('não permite apagar a data de cirurgia já consolidada; só cadastro sem data fica sem data', () => {
     expect(getConsolidationYearError('', '20/05/8202', NOW)).toBe(
       'Não é permitido apagar a data de uma cirurgia já consolidada. Corrija o ano da data da consolidação para um valor entre 2026 e 2027.');
     expect(isConsolidationClearForbiddenMessage(getConsolidationYearError(null, '02/04/2016', NOW))).toBe(true);
-    expect(getConsolidationYearError('', '20/05/2026', NOW)).toBe('');
+    expect(getConsolidationYearError('', '10/11/2026', NOW)).toBe('Não é permitido apagar a data de uma cirurgia já consolidada.');
     expect(getConsolidationYearError('', '', NOW)).toBe('');
   });
 
