@@ -3,7 +3,7 @@ import { buildListQueryParams } from '../../services/queryParams';
 import { getConsolidationMaxYear, getConsolidationYearError, isConsolidationClearForbiddenMessage } from './consolidationDate';
 
 const NOW = new Date('2026-11-10T12:00:00Z');
-const RANGE_ERROR = 'O ano da data da consolidação deve estar entre 2026 e 2027.';
+const RANGE_ERROR = 'O ano da data da consolidação deve estar entre 2025 e 2027.';
 
 describe('consolidationDate', () => {
   it.each([
@@ -15,7 +15,8 @@ describe('consolidationDate', () => {
   });
 
   it.each([
-    ['31/12/2025', RANGE_ERROR],
+    ['31/12/2024', RANGE_ERROR],
+    ['01/01/2025', ''],
     ['01/01/2026', ''],
     ['31/12/2027', ''],
     ['01/01/2028', RANGE_ERROR],
@@ -34,7 +35,7 @@ describe('consolidationDate', () => {
 
   it('não permite apagar a data de cirurgia já consolidada; só cadastro sem data fica sem data', () => {
     expect(getConsolidationYearError('', '20/05/8202', NOW)).toBe(
-      'Não é permitido apagar a data de uma cirurgia já consolidada. Corrija o ano da data da consolidação para um valor entre 2026 e 2027.');
+      'Não é permitido apagar a data de uma cirurgia já consolidada. Corrija o ano da data da consolidação para um valor entre 2025 e 2027.');
     expect(isConsolidationClearForbiddenMessage(getConsolidationYearError(null, '02/04/2016', NOW))).toBe(true);
     expect(getConsolidationYearError('', '10/11/2026', NOW)).toBe('Não é permitido apagar a data de uma cirurgia já consolidada.');
     expect(getConsolidationYearError('', '', NOW)).toBe('');
