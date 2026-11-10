@@ -95,6 +95,7 @@ export type PacienteListQuery = ListQuery & {
   dataFinal?: string;
   dataSolicitacaoInicio?: string;
   dataSolicitacaoFinal?: string;
+  pendenciaDataConsolidacao?: boolean;
   competenciaInicio?: string;
   competenciaFinal?: string;
 };
