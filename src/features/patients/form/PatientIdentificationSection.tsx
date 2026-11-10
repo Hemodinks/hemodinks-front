@@ -5,12 +5,18 @@ import { TextField } from '../../../shared/components/ui';
 import { isValidDate, MAX_NAME_LENGTH } from '../../../shared/utils/formatters';
 import { getSurgeryStatusLabel, type StatusCirurgia } from '../../../shared/surgeryStatus';
 import { getPatientChronologyError } from '../patientUtils';
-import { getConsolidationYearError } from '../../../shared/utils/consolidationDate';
+import { getConsolidationYearError, isConsolidationClearForbiddenMessage } from '../../../shared/utils/consolidationDate';
 
 type Props = {
   formData: PacienteFormData;
   setFormData: Dispatch<SetStateAction<PacienteFormData>>;
 };
+
+// Apagar a data pendente não bloqueia o envio no campo: a validação do salvar mostra o toast explicativo.
+function getInlineConsolidationError(formData: PacienteFormData) {
+  const error = getConsolidationYearError(formData.dataAtendimento, formData.dataAtendimentoOriginal);
+  return isConsolidationClearForbiddenMessage(error) ? '' : error;
+}
 
 export function PatientIdentificationSection({ formData, setFormData }: Props) {
   // Só uma data válida é enviada à API; o indicador segue a mesma regra.
@@ -37,7 +43,7 @@ export function PatientIdentificationSection({ formData, setFormData }: Props) {
         label="Cirurgias Consolidadas"
         max=""
         min={formData.data && isValidDate(formData.data) ? formData.data : undefined}
-        error={getPatientChronologyError(formData) || getConsolidationYearError(formData.dataAtendimento, formData.dataAtendimentoOriginal)}
+        error={getPatientChronologyError(formData) || getInlineConsolidationError(formData)}
         value={formData.dataAtendimento || ''}
         onChange={(value) => setFormData((current) => ({ ...current, dataAtendimento: value }))}
       />
