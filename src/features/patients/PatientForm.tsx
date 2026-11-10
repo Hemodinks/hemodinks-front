@@ -1,7 +1,8 @@
-import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect } from 'react';
-import { FileDown, Plus, Save, X } from 'lucide-react';
+import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useState } from 'react';
+import { CalendarX2, FileDown, Plus, Save, X } from 'lucide-react';
 import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
-import { AlertMessage, Button, FormPanel, IconButton } from '../../shared/components/ui';
+import { AlertMessage, Button, FormPanel, IconButton, ToastMessage } from '../../shared/components/ui';
+import { isConsolidationClearForbiddenMessage } from '../../shared/utils/consolidationDate';
 import { findMedicalUserByName, formatPersonName } from '../../shared/utils/formatters';
 import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import { getCalculatedGlosaValue } from './patientUtils';
@@ -80,6 +81,8 @@ export function PatientForm({
   onDeletePacienteArquivo,
   onOpenPacienteObservacoes,
 }: PatientFormProps) {
+  // Remonta o toast a cada tentativa de salvar, mesmo com a mesma mensagem.
+  const [submitAttempt, setSubmitAttempt] = useState(0);
   const formReadOnly = patientReadOnly || (editingPacienteId ? !canEditPatients : false);
   const canSubmitForm = !formReadOnly && (!editingPacienteId || canEditPatients);
   const { exportLoading, exportError, handleExport } = usePatientFormExport({ editingPacienteId, sessionToken, pacienteFormData, companyName });
@@ -124,7 +127,7 @@ export function PatientForm({
       </div>
       {exportError && <AlertMessage type="error">{exportError}</AlertMessage>}
       <p className="patient-form-guidance">{formReadOnly ? 'Ficha disponível somente para consulta.' : 'Preencha o paciente, o hospital, pelo menos um médico e um procedimento. Os demais campos são opcionais.'}</p>
-      <form className="stack patient-form-layout" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField} aria-busy={pacienteFormLoading}>
+      <form className="stack patient-form-layout" onSubmit={(event) => { setSubmitAttempt((value) => value + 1); onSubmit(event); }} onInvalid={focusFirstInvalidFormField} aria-busy={pacienteFormLoading}>
         <fieldset className="form-fieldset patient-form-fields" disabled={formReadOnly || pacienteFormLoading} data-tour="patients-identification">
           <legend className="sr-only">Dados da ficha do paciente</legend>
           <PatientFormSection title="Dados principais">
@@ -167,7 +170,9 @@ export function PatientForm({
             />
           </PatientFormSection>
         </fieldset>
-        {pacienteFormError && <AlertMessage type="error">{pacienteFormError}</AlertMessage>}
+        {pacienteFormError && (isConsolidationClearForbiddenMessage(pacienteFormError)
+          ? <ToastMessage key={submitAttempt} type="error" icon={<CalendarX2 size={17} aria-hidden="true" />}>{pacienteFormError}</ToastMessage>
+          : <AlertMessage type="error">{pacienteFormError}</AlertMessage>)}
         <div className="patient-form-actions">
           <Button onClick={onClose} disabled={pacienteFormLoading}>{formReadOnly ? 'Voltar à listagem' : 'Cancelar'}</Button>
           {canSubmitForm && <Button variant="primary" type="submit" disabled={pacienteFormLoading} data-tour="patients-save">{editingPacienteId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}{pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar alterações' : 'Cadastrar paciente'}</Button>}
