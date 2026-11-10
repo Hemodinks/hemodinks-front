@@ -87,6 +87,10 @@ dist/bundle-stats.html
 reports/lighthouse/
 ```
 
+GitHub Actions externas ficam pinadas por SHA completo com a versao em comentario
+(`uses: owner/action@<sha> # vX.Y.Z`); `npm run test:release-gate` bloqueia tag, branch ou SHA curto. O Dependabot
+(`.github/dependabot.yml`) abre um PR semanal agrupado para `developer` atualizando SHA e comentario (#222 da API).
+
 ## Azure Static Web Apps: producao
 
 `public/staticwebapp.config.json` define o fallback SPA, os headers de seguranca e as regras de cache. O arquivo e copiado para a raiz de `dist` pelo build do Vite.

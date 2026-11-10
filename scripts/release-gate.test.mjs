@@ -9,6 +9,13 @@ const { load } = createRequire(import.meta.url)('js-yaml');
 const workflow = name => load(readFileSync(new URL(`../.github/workflows/${name}`, import.meta.url), 'utf8'));
 const ci = workflow('ci.yml');
 const azure = workflow('azure-static-web-apps-production.yml');
+const SWA_DEPLOY = 'Azure/static-web-apps-deploy@4d27395796ac319302594769cfe812bd207490b1';
+const workflowDir = new URL('../.github/workflows/', import.meta.url);
+// Actions externas: SHA completo + comentario de versao (#222); workflows locais (./) ficam de fora.
+const unpinnedActions = text => [...text.matchAll(/^\s*(?:-\s*)?uses:\s*(\S+)(.*)$/gm)]
+  .filter(([, ref]) => !ref.startsWith('./'))
+  .filter(([, ref, rest]) => !/^[\w.-]+\/[\w./-]+@[0-9a-f]{40}$/.test(ref) || !/^\s*#\s*v\d+(\.\d+)*\s*$/.test(rest))
+  .map(([, ref]) => ref);
 const revision = {
   eventName: 'push', ref: 'refs/heads/main', sha: 'a'.repeat(40), repository: 'Hemodinks/hemodinks-front',
 };
@@ -69,7 +76,7 @@ test('production is serialized, pinned and revalidated immediately before upload
   assert.equal(job.if, ci.jobs.deploy.if.replace("needs.test-and-build.result == 'success' && ", ''));
   assert.deepEqual(azure.permissions, { contents: 'read' });
   assert.equal(job.steps.find(step => step.name === 'Checkout').with.ref, '${{ github.sha }}');
-  const upload = job.steps.findIndex(step => step.uses === 'Azure/static-web-apps-deploy@v1');
+  const upload = job.steps.findIndex(step => step.uses === SWA_DEPLOY);
   assert.equal(job['continue-on-error'], undefined);
   for (const step of [job.steps[upload - 1], job.steps[upload]]) {
     assert.equal(step.if, undefined);
@@ -105,4 +112,28 @@ test('API errors, empty head and invalid context fail closed', () => {
   assert.throws(() => assertReleaseRevision(revision, () => { throw new Error('API unavailable'); }));
   assert.throws(() => assertReleaseRevision(revision, () => ''), /no longer/);
   assert.throws(() => assertReleaseRevision({ ...revision, sha: '' }, () => revision.sha), /Invalid/);
+});
+
+test('third-party actions are pinned by full SHA with a version comment', () => {
+  const files = readdirSync(workflowDir).filter(name => /\.ya?ml$/.test(name));
+  assert.ok(files.length > 0);
+  const problems = Object.fromEntries(files
+    .map(name => [name, unpinnedActions(readFileSync(new URL(name, workflowDir), 'utf8'))])
+    .filter(([, refs]) => refs.length > 0));
+  assert.deepEqual(problems, {});
+  const dependabot = readFileSync(new URL('../.github/dependabot.yml', import.meta.url), 'utf8');
+  assert.match(dependabot, /package-ecosystem: github-actions/);
+  assert.match(dependabot, /target-branch: developer/);
+});
+
+test('pin check rejects tags, branches, short SHAs and missing version comments', () => {
+  for (const line of [
+    'uses: actions/checkout@v6',
+    'uses: actions/checkout@main',
+    'uses: actions/checkout@3d3c42e',
+    '- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
+  ]) assert.equal(unpinnedActions(line).length, 1, line);
+  assert.deepEqual(unpinnedActions(
+    '  - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n    uses: ./.github/workflows/x.yml',
+  ), []);
 });

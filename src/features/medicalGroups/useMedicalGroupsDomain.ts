@@ -90,7 +90,8 @@ export function useMedicalGroupsDomain({
   const availableMedicalUsersQuery = useQuery({
     queryKey: queryKeys.medicalUsers(session?.token ?? ''),
     queryFn: () => getScopedMedicalUsers(session?.token ?? ''),
-    enabled: sessionReady,
+    // Só o formulário de grupo usa a lista de médicos; não carrega no login (#204).
+    enabled: sessionReady && activeView === 'medicalGroups' && moduleMode === 'form',
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
   const saveMedicalGroupMutation = useMutation({
