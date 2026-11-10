@@ -22,12 +22,12 @@ describe('ConsolidationDatePendingWarning', () => {
   });
 
   it.each([1, 2, 4, 5])('exibe aviso com o total e abre a lista filtrada para o perfil %s', async (perfilId) => {
-    vi.mocked(getDataConsolidacaoPendencias).mockResolvedValue({ total: 4, anoMinimo: 2026, anoMaximo: 2027 });
+    vi.mocked(getDataConsolidacaoPendencias).mockResolvedValue({ total: 4, anoMinimo: 2025, anoMaximo: 2027 });
     const onOpenPending = vi.fn();
     renderWarning(mockSession({ perfilId }), onOpenPending);
 
     expect(await screen.findByRole('status')).toHaveTextContent('4 cadastros com ano da data da consolidação inválido');
-    expect(screen.getByRole('status')).toHaveTextContent('entre 2026 e 2027');
+    expect(screen.getByRole('status')).toHaveTextContent('entre 2025 e 2027');
     expect(screen.getByRole('status')).toHaveTextContent('Pacientes - Cirurgias');
     fireEvent.click(screen.getByRole('button', { name: /ver pendências/i }));
     expect(onOpenPending).toHaveBeenCalledOnce();
@@ -41,11 +41,11 @@ describe('ConsolidationDatePendingWarning', () => {
 
   it('não exibe sem pendências e some quando a última pendência é corrigida', async () => {
     const session = mockSession();
-    vi.mocked(getDataConsolidacaoPendencias).mockResolvedValue({ total: 1, anoMinimo: 2026, anoMaximo: 2027 });
+    vi.mocked(getDataConsolidacaoPendencias).mockResolvedValue({ total: 1, anoMinimo: 2025, anoMaximo: 2027 });
     renderWarning(session);
     expect(await screen.findByRole('status')).toHaveTextContent('1 cadastro com ano');
 
-    queryClient.setQueryData(queryKeys.pacientesPendenciasDataConsolidacao(session.token), { total: 0, anoMinimo: 2026, anoMaximo: 2027 });
+    queryClient.setQueryData(queryKeys.pacientesPendenciasDataConsolidacao(session.token), { total: 0, anoMinimo: 2025, anoMaximo: 2027 });
     await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
   });
 
