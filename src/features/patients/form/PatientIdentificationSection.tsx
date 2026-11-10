@@ -5,6 +5,7 @@ import { TextField } from '../../../shared/components/ui';
 import { isValidDate, MAX_NAME_LENGTH } from '../../../shared/utils/formatters';
 import { getSurgeryStatusLabel, type StatusCirurgia } from '../../../shared/surgeryStatus';
 import { getPatientChronologyError } from '../patientUtils';
+import { getConsolidationYearError } from '../../../shared/utils/consolidationDate';
 
 type Props = {
   formData: PacienteFormData;
@@ -36,7 +37,7 @@ export function PatientIdentificationSection({ formData, setFormData }: Props) {
         label="Cirurgias Consolidadas"
         max=""
         min={formData.data && isValidDate(formData.data) ? formData.data : undefined}
-        error={getPatientChronologyError(formData)}
+        error={getPatientChronologyError(formData) || getConsolidationYearError(formData.dataAtendimento, formData.dataAtendimentoOriginal)}
         value={formData.dataAtendimento || ''}
         onChange={(value) => setFormData((current) => ({ ...current, dataAtendimento: value }))}
       />

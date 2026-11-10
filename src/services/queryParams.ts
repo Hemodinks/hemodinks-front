@@ -27,6 +27,10 @@ export function buildListQueryParams(query?: ListQuery | PacienteListQuery | Cbh
     params.set('statusCirurgia', query.statusCirurgia);
   }
 
+  if (query && 'pendenciaDataConsolidacao' in query && query.pendenciaDataConsolidacao) {
+    params.set('pendenciaDataConsolidacao', 'true');
+  }
+
   if (query && 'medicoUserIds' in query && query.medicoUserIds?.trim()) {
     params.set('medicoUserIds', query.medicoUserIds.trim());
   }

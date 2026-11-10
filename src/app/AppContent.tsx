@@ -426,6 +426,10 @@ function AppSessionContent({ auth, loginFlow }: {
       openMyProfile: usersDomain.openMyProfile,
       openPatientsList: patientsDomain.openPatientsList,
       openPatientsListFromMenu,
+      openPatientsWithConsolidationPending: () => {
+        resetProfileRouteState();
+        patientsDomain.openPatientsWithConsolidationPending();
+      },
       openBilling,
       openBillingHistory,
       openReports,
