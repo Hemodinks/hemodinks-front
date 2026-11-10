@@ -117,17 +117,17 @@ describe('PatientForm: data da consolidação pendente', () => {
     expect(screen.getByRole('alert')).not.toHaveClass('toast-message');
   });
 
-  it('apagar a data pendente não trava o envio no campo, para a validação do salvar exibir o toast', async () => {
+  it.each([['8202-05-20', '20/05/8202'], ['2026-11-10', '10/11/2026']])('apagar a data já consolidada (%s) não trava o envio no campo, para a validação do salvar exibir o toast', async (apiDate, displayDate) => {
     const submit = vi.fn(event => event.preventDefault());
     function Form() {
       const [data, setData] = useState<PacienteFormData>({
-        ...getPacienteFormData({ ...basePaciente, data: null, dataAtendimento: '8202-05-20' }) });
+        ...getPacienteFormData({ ...basePaciente, data: null, dataAtendimento: apiDate }) });
       return <PatientForm {...props({ pacienteFormData: data, setPacienteFormData: setData, onSubmit: submit })} />;
     }
     const user = userEvent.setup();
     render(<Form />);
     const consolidated = screen.getByLabelText('Cirurgias Consolidadas', { exact: true });
-    expect(consolidated).toHaveValue('20/05/8202');
+    expect(consolidated).toHaveValue(displayDate);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
     await user.clear(consolidated);
