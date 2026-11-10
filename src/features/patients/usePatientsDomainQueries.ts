@@ -99,6 +99,10 @@ export function usePatientsDomainQueries({
     sortDirection,
   }), [debouncedPacienteFilters, debouncedPacienteSearchTerm, pacienteCurrentPage, sortBy, sortDirection]);
   const sessionReady = Boolean(session && !session.user.precisaTrocarSenha);
+  // Lookups carregam só na tela que os consome, não no login (#204).
+  const patientsViewReady = sessionReady && canAccessPatients && activeView === 'patients';
+  const conveniosViewReady = patientsViewReady
+    || (sessionReady && (activeView === 'billing' || activeView === 'billingHistory'));
   const pacientesQuery = useQuery({
     queryKey: queryKeys.pacientes(session?.token ?? '', pacientesQueryParams),
     queryFn: () => getPacientes(session?.token ?? '', pacientesQueryParams),
@@ -117,19 +121,19 @@ export function usePatientsDomainQueries({
   const hospitaisQuery = useQuery({
     queryKey: queryKeys.hospitais(session?.token ?? ''),
     queryFn: () => getHospitais(session?.token ?? ''),
-    enabled: sessionReady,
+    enabled: patientsViewReady,
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
   const conveniosQuery = useQuery({
     queryKey: queryKeys.convenios(session?.token ?? ''),
     queryFn: () => getConvenios(session?.token ?? ''),
-    enabled: sessionReady,
+    enabled: conveniosViewReady,
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
   const opmeFornecedoresQuery = useQuery({
     queryKey: queryKeys.opmeFornecedores(session?.token ?? ''),
     queryFn: () => getOpmeFornecedores(session?.token ?? ''),
-    enabled: sessionReady,
+    enabled: patientsViewReady,
     staleTime: LOOKUP_CACHE_TIME_MS,
   });
   const appliedCbhpmFilterValidationMessage = useMemo(
