@@ -115,12 +115,13 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
         await request.clear(); await save();
         await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
         expect(api.writes[1]).toMatchObject({ data: null, dataAtendimento: '2026-10-10' });
+        // Cirurgia já consolidada não pode ter a data apagada: toast explica e nada é gravado.
         await edit(); await consolidated.clear(); await save();
+        await expect(page.getByRole('alert')).toHaveText('Não é permitido apagar a data de uma cirurgia já consolidada.');
+        expect(api.writes).toHaveLength(2);
+        await consolidated.fill('10102026'); await request.fill('10102026'); await save();
         await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
-        expect(api.writes[2]).toMatchObject({ data: null, dataAtendimento: null });
-        await edit(); await request.fill('10102026'); await save();
-        await expect(page.getByText('Paciente atualizado.', { exact: true })).toBeVisible();
-        expect(api.writes[3]).toMatchObject({ data: '2026-10-10', dataAtendimento: null });
+        expect(api.writes[2]).toMatchObject({ data: '2026-10-10', dataAtendimento: '2026-10-10' });
       });
     }
 
@@ -190,7 +191,7 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
       await page.getByLabel('Paciente', { exact: true }).fill('Paciente Fluxo Completo');
       await page.getByLabel('Selecionar data da solicitação', { exact: true }).fill('2026-06-01');
       await expect(page.getByLabel('Data da Solicitação', { exact: true })).toHaveValue('01/06/2026');
-      await page.getByLabel('Selecionar cirurgias consolidadas', { exact: true }).fill('2030-12-01');
+      await page.getByLabel('Selecionar cirurgias consolidadas', { exact: true }).fill('2026-12-01');
       for (const [label, value, hint] of [
         ['Hospital', 'Hospital Novo E2E', 'Novo hospital: será cadastrado ao salvar.'],
         ['Convênio', 'Convênio Novo E2E', 'Novo convênio: será cadastrado ao salvar.'],

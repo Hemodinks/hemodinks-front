@@ -102,6 +102,8 @@ export type PacienteFormData = {
   tipoCirurgia?: TipoCirurgia;
   data: string | null;
   dataAtendimento: string | null;
+  // Valor carregado do cadastro: data legada fora da faixa só é aceita se não for alterada.
+  dataAtendimentoOriginal?: string | null;
   nomePaciente: string;
   diagnostico: string;
   tratamentoMedico: string;

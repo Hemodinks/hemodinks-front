@@ -104,6 +104,39 @@ describe('PatientForm: permissões e operações em andamento', () => {
 });
 
 
+describe('PatientForm: data da consolidação pendente', () => {
+  const forbidden = 'Não é permitido apagar a data de uma cirurgia já consolidada. Corrija o ano da data da consolidação para um valor entre 2026 e 2027.';
+
+  it('exibe em toast o bloqueio de apagar a data e mantém outros erros como alerta', () => {
+    const view = render(<PatientForm {...props({ pacienteFormError: forbidden })} />);
+    const toast = screen.getByRole('alert');
+    expect(toast).toHaveTextContent(forbidden);
+    expect(toast).toHaveClass('toast-message');
+
+    view.rerender(<PatientForm {...props({ pacienteFormError: 'Selecione um hospital.' })} />);
+    expect(screen.getByRole('alert')).not.toHaveClass('toast-message');
+  });
+
+  it.each([['8202-05-20', '20/05/8202'], ['2026-11-10', '10/11/2026']])('apagar a data já consolidada (%s) não trava o envio no campo, para a validação do salvar exibir o toast', async (apiDate, displayDate) => {
+    const submit = vi.fn(event => event.preventDefault());
+    function Form() {
+      const [data, setData] = useState<PacienteFormData>({
+        ...getPacienteFormData({ ...basePaciente, data: null, dataAtendimento: apiDate }) });
+      return <PatientForm {...props({ pacienteFormData: data, setPacienteFormData: setData, onSubmit: submit })} />;
+    }
+    const user = userEvent.setup();
+    render(<Form />);
+    const consolidated = screen.getByLabelText('Cirurgias Consolidadas', { exact: true });
+    expect(consolidated).toHaveValue(displayDate);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await user.clear(consolidated);
+    expect(consolidated).not.toHaveAttribute('aria-invalid', 'true');
+    await user.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    expect(submit).toHaveBeenCalledOnce();
+  });
+});
+
 describe('issue174: opcoes da equipe', () => {
   it('oferece principal como auxiliar e nao oferece auxiliar repetido', async () => {
     const input = props();

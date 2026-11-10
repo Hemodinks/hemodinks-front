@@ -15,6 +15,12 @@ export function getPacientes(token: string, query?: PacienteListQuery) {
   });
 }
 
+export type DataConsolidacaoPendencias = { total: number; anoMinimo: number; anoMaximo: number };
+
+export function getDataConsolidacaoPendencias(token: string) {
+  return get<DataConsolidacaoPendencias>('/api/pacientes/pendencias/data-consolidacao', token);
+}
+
 export function getPaciente(id: number, token: string) {
   return get<Paciente>(`/api/pacientes/${id}`, token);
 }

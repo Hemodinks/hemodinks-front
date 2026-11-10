@@ -1,3 +1,4 @@
+import { getConsolidationYearError } from '../../shared/utils/consolidationDate';
 import type { Paciente, PacienteFormData, PacientePayload, PacienteProcedimento } from '../../types';
 import type { PacienteFilters } from '../../appTypes';
 import {
@@ -62,6 +63,7 @@ export const emptyPacienteFilters: PacienteFilters = {
   dataFinal: '',
   dataSolicitacaoInicio: '',
   dataSolicitacaoFinal: '',
+  pendenciaDataConsolidacao: false,
 };
 
 export function getPacienteFilterQuery(filters: PacienteFilters) {
@@ -75,6 +77,7 @@ export function getPacienteFilterQuery(filters: PacienteFilters) {
     ...(toDatePickerValue(filters.dataFinal) ? { dataFinal: toDatePickerValue(filters.dataFinal) } : {}),
     ...(toDatePickerValue(filters.dataSolicitacaoInicio) ? { dataSolicitacaoInicio: toDatePickerValue(filters.dataSolicitacaoInicio) } : {}),
     ...(toDatePickerValue(filters.dataSolicitacaoFinal) ? { dataSolicitacaoFinal: toDatePickerValue(filters.dataSolicitacaoFinal) } : {}),
+    ...(filters.pendenciaDataConsolidacao ? { pendenciaDataConsolidacao: true } : {}),
   };
 }
 
@@ -159,6 +162,7 @@ export function getPacienteFormData(paciente: Paciente): PacienteFormData {
     tipoCirurgia: paciente.tipoCirurgia ?? undefined,
     data: toDisplayDate(paciente.data || ''),
     dataAtendimento: toDisplayDate(paciente.dataAtendimento || ''),
+    dataAtendimentoOriginal: toDisplayDate(paciente.dataAtendimento || ''),
     nomePaciente: paciente.nomePaciente,
     diagnostico: paciente.diagnostico || '',
     tratamentoMedico: paciente.tratamentoMedico || '',
@@ -206,6 +210,8 @@ export function validatePacienteForm(data: PacienteFormData) {
   }
   const chronologyError = getPatientChronologyError(data);
   if (chronologyError) return chronologyError;
+  const consolidationYearError = getConsolidationYearError(data.dataAtendimento, data.dataAtendimentoOriginal);
+  if (consolidationYearError) return consolidationYearError;
   if (!data.nomePaciente.trim()) {
     return 'Informe o nome do paciente.';
   }
