@@ -26,9 +26,9 @@ describe('ConsolidationDatePendingWarning', () => {
     const onOpenPending = vi.fn();
     renderWarning(mockSession({ perfilId }), onOpenPending);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('4 cadastros com ano da data da consolidação inválido');
-    expect(screen.getByRole('alert')).toHaveTextContent('entre 2026 e 2027');
-    expect(screen.getByRole('alert')).toHaveTextContent('Pacientes - Cirurgias');
+    expect(await screen.findByRole('status')).toHaveTextContent('4 cadastros com ano da data da consolidação inválido');
+    expect(screen.getByRole('status')).toHaveTextContent('entre 2026 e 2027');
+    expect(screen.getByRole('status')).toHaveTextContent('Pacientes - Cirurgias');
     fireEvent.click(screen.getByRole('button', { name: /ver pendências/i }));
     expect(onOpenPending).toHaveBeenCalledOnce();
   });
@@ -36,23 +36,30 @@ describe('ConsolidationDatePendingWarning', () => {
   it.each([3, 6])('não consulta nem exibe para o perfil %s', (perfilId) => {
     renderWarning(mockSession({ perfilId }));
     expect(getDataConsolidacaoPendencias).not.toHaveBeenCalled();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('não exibe sem pendências e some quando a última pendência é corrigida', async () => {
     const session = mockSession();
     vi.mocked(getDataConsolidacaoPendencias).mockResolvedValue({ total: 1, anoMinimo: 2026, anoMaximo: 2027 });
     renderWarning(session);
-    expect(await screen.findByRole('alert')).toHaveTextContent('1 cadastro com ano');
+    expect(await screen.findByRole('status')).toHaveTextContent('1 cadastro com ano');
 
     queryClient.setQueryData(queryKeys.pacientesPendenciasDataConsolidacao(session.token), { total: 0, anoMinimo: 2026, anoMaximo: 2027 });
-    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+  });
+
+  it('não exibe banner com resposta incompleta da API', async () => {
+    vi.mocked(getDataConsolidacaoPendencias).mockResolvedValue({} as never);
+    renderWarning();
+    await waitFor(() => expect(getDataConsolidacaoPendencias).toHaveBeenCalled());
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('não exibe nada quando a API recusa a consulta', async () => {
     vi.mocked(getDataConsolidacaoPendencias).mockRejectedValue(new Error('403'));
     renderWarning();
     await waitFor(() => expect(getDataConsolidacaoPendencias).toHaveBeenCalled());
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });

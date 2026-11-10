@@ -36,11 +36,13 @@ export function ConsolidationDatePendingWarning({ session, onOpenPending }: Prop
   });
 
   const pending = pendingQuery.data;
-  if (!canView || !pending || pending.total <= 0) return null;
+  // Só exibe com resposta completa: total numérico positivo e faixa informada.
+  if (!canView || !pending || typeof pending.total !== 'number' || pending.total <= 0
+    || typeof pending.anoMinimo !== 'number' || typeof pending.anoMaximo !== 'number') return null;
 
   const plural = pending.total === 1;
   return (
-    <div className="consolidation-pending-warning" role="alert">
+    <div className="consolidation-pending-warning" role="status" aria-live="polite" aria-label="Correção pendente na data da consolidação">
       <span className="consolidation-pending-warning-icon" aria-hidden="true">
         <CalendarX2 size={22} />
       </span>
