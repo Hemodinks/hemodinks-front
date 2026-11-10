@@ -28,6 +28,7 @@ export type PacienteFilters = {
   dataFinal: string;
   dataSolicitacaoInicio: string;
   dataSolicitacaoFinal: string;
+  pendenciaDataConsolidacao?: boolean;
 };
 
 export type PacienteExportFormat = 'xlsx' | 'pdf';

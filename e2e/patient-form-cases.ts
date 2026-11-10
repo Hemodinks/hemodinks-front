@@ -190,7 +190,7 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
       await page.getByLabel('Paciente', { exact: true }).fill('Paciente Fluxo Completo');
       await page.getByLabel('Selecionar data da solicitação', { exact: true }).fill('2026-06-01');
       await expect(page.getByLabel('Data da Solicitação', { exact: true })).toHaveValue('01/06/2026');
-      await page.getByLabel('Selecionar cirurgias consolidadas', { exact: true }).fill('2030-12-01');
+      await page.getByLabel('Selecionar cirurgias consolidadas', { exact: true }).fill('2026-12-01');
       for (const [label, value, hint] of [
         ['Hospital', 'Hospital Novo E2E', 'Novo hospital: será cadastrado ao salvar.'],
         ['Convênio', 'Convênio Novo E2E', 'Novo convênio: será cadastrado ao salvar.'],
