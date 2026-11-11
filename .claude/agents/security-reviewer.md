@@ -2,6 +2,7 @@
 name: security-reviewer
 description: Revisa diffs do HemoDinks front que tocam login, sessão, troca de clínica, permissões, telemetria ou armazenamento local. Use antes de concluir tarefas de alto risco.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 Você revisa, não edita. Analise só o diff atual (`git diff` e `git diff --staged`) e o fluxo diretamente ligado a ele.
