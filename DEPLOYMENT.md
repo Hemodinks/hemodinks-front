@@ -96,16 +96,27 @@ GitHub Actions externas ficam pinadas por SHA completo com a versao em comentari
 `public/staticwebapp.config.json` define o fallback SPA, os headers de seguranca e as regras de cache. O arquivo e copiado para a raiz de `dist` pelo build do Vite.
 
 O CI chama `.github/workflows/azure-static-web-apps-production.yml` somente depois de
-`Test and build` terminar com sucesso no mesmo run. O job exige auditoria de
-arquitetura, testes do gate, Vitest, build, budget, Playwright E2E e matriz
-responsiva/tenant. Falha, cancelamento ou job ignorado bloqueiam a publicacao.
+`Test and build` terminar com sucesso no mesmo run. `Test and build` e o portao que
+agrega tres jobs paralelos: `Unit tests and build` (testes do gate, auditoria de
+arquitetura, Vitest, performance, build e budget), `E2E (n/3)` (Playwright em 3 shards)
+e `Responsive smoke matrix` (matriz responsiva/tenant). A decisao fica em
+`scripts/ci-gate.mjs`: falha, cancelamento, job ignorado sem prova ou saida inesperada
+do escopo bloqueiam a publicacao.
 
 - Producao aceita apenas `push` para `main` ou **Run workflow no CI**, selecionando
   `main`. PRs e outras branches nao publicam. O Azure reusable nao tem trigger direto.
-- Os dois checkouts e `VITE_APP_VERSION` usam o mesmo `github.sha`; nao ha busca de
-  um CI verde de outra revisao nem download de artefatos de outro run.
-- O deploy preserva testes, build de producao, budget, `dist`, fallback SPA e a acao
-  Azure existentes. O build CI usa ambiente CI, sem credenciais de producao.
+- Reuso do PR (`scripts/ci_scope.py`): no push da `main`, os jobs de teste sao pulados
+  somente se o commit for o merge de um PR cuja base e o `before` do push, a base e
+  ancestral do head do PR, a arvore do merge e identica a do head e, num run
+  `pull_request` do CI para esse head, os jobs de teste reais (`Unit tests and build`,
+  todos os `E2E (n/3)` e `Responsive smoke matrix`) terminaram com `success`. Run que so
+  passou por ter pulado testes nao vale como prova. Qualquer duvida ou erro roda tudo.
+  Mudanca so de documentacao na `main` roda tudo; **Run workflow** na `main` roda tudo.
+- Os dois checkouts e `VITE_APP_VERSION` usam o mesmo `github.sha`; nao ha download de
+  artefatos de outro run. O build de producao e sempre refeito no proprio deploy.
+- O deploy preserva build de producao, budget, `dist`, fallback SPA e a acao Azure
+  existentes. Os testes unitarios nao sao repetidos no deploy: ja fazem parte do
+  portao `Test and build`. O build CI usa ambiente CI, sem credenciais de producao.
 - Permissao do token GitHub: apenas `contents: read`. O token Azure e passado
   explicitamente ao reusable e fica restrito a validacao de inputs/upload.
 - Runs da main nao se cancelam automaticamente; o upload tem concorrencia global
