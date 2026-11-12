@@ -110,3 +110,5 @@ export function getAppAccess(session: AuthSession | null) {
     canUseClinicsRoute: isAdmin,
   };
 }
+
+export type AppAccess = ReturnType<typeof getAppAccess>;

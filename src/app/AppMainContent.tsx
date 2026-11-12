@@ -18,28 +18,7 @@ import {
   OptionsPage,
   UsersPage,
 } from './lazyModules';
-
-type AccessState = {
-  canAccessPatients: boolean;
-  canAccessUsers: boolean;
-  canEditOwnUser: boolean;
-  canAccessBilling: boolean;
-  canAccessReports: boolean;
-  canAccessMedicalGroups: boolean;
-  canAccessAgenda: boolean;
-  canAccessSettings: boolean;
-  canCreatePatients: boolean;
-  canEditPatients: boolean;
-  canDeletePatients: boolean;
-  canManagePatientObservacoes: boolean;
-  patientReadOnly: boolean;
-  isAdmin: boolean;
-  isController: boolean;
-  isSuperAdmin: boolean;
-  isTeam: boolean;
-  isMedical: boolean;
-  canAccessClinics: boolean;
-};
+import { useAppAccess } from './AppAccessContext';
 
 type DashboardCounts = {
   usersCount: number;
@@ -76,7 +55,6 @@ type AppMainContentProps = {
   activeView: AppView;
   moduleMode: ModuleMode;
   companyName: string;
-  access: AccessState;
   counts: DashboardCounts;
   usersDomain: UsersDomainState;
   patientsDomain: PatientsDomainState;
@@ -97,7 +75,6 @@ export function AppMainContent({
   activeView,
   moduleMode,
   companyName,
-  access,
   counts,
   usersDomain,
   patientsDomain,
@@ -132,7 +109,7 @@ export function AppMainContent({
     isTeam,
     isMedical,
     canAccessClinics,
-  } = access;
+  } = useAppAccess();
   const {
     usersCount,
     pacientesCount,

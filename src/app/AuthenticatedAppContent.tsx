@@ -10,14 +10,13 @@ import { AppShell } from '../layout/AppShell';
 import { API_ASSET_BASE_URL, formatProfileName } from '../shared/utils/formatters';
 import { getAllowedTutorialIds } from '../features/tutorials/tutorialAccess';
 import { TutorialProvider } from '../features/tutorials/TutorialProvider';
-import { getAppAccess } from './appAccess';
+import { useAppAccess } from './AppAccessContext';
 import { AppMainContent } from './AppMainContent';
 import { AppModals } from './AppModals';
 import { buildBreadcrumbItems, getAppTitle } from './appViewMeta';
 import { ClinicCnpjWarning } from '../features/clinics/ClinicCnpjWarning';
 import { ConsolidationDatePendingWarning } from '../features/patients/ConsolidationDatePendingWarning';
 
-type AccessState = ReturnType<typeof getAppAccess>;
 type Navigation = {
   openDashboard: () => void; openUsersList: () => void; openMyProfile: () => void;
   openPatientsList: () => void; openPatientsListFromMenu: () => void; openPatientsWithConsolidationPending: () => void;
@@ -38,7 +37,6 @@ type Props = {
   moduleMode: ModuleMode;
   isBusy: boolean;
   theme: Theme;
-  access: AccessState;
   appChrome: AppChromeState;
   usersDomain: UsersDomainState;
   patientsDomain: PatientsDomainState;
@@ -52,7 +50,8 @@ type Props = {
   onClinicSelected: (result: SelectClinicResponse) => void;
 };
 
-export function AuthenticatedAppContent({ session, activeView, moduleMode, isBusy, theme, access, appChrome, usersDomain, patientsDomain, medicalGroupsDomain, navigation, sortHandlers, confirmationDialog, onThemeToggle, onThemeChange, onLogout, onClinicSelected }: Props) {
+export function AuthenticatedAppContent({ session, activeView, moduleMode, isBusy, theme, appChrome, usersDomain, patientsDomain, medicalGroupsDomain, navigation, sortHandlers, confirmationDialog, onThemeToggle, onThemeChange, onLogout, onClinicSelected }: Props) {
+  const access = useAppAccess();
   const activeUsersCount = appChrome.dashboardSummary?.activeUsersCount ?? 0;
   const activePatientsCount = appChrome.dashboardSummary?.activePatientsCount ?? patientsDomain.pacientesTotalItems;
   const pendingPaymentsCount = appChrome.dashboardSummary?.pendingPaymentsCount ?? 0;
@@ -160,7 +159,6 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
           activeView={activeView}
           moduleMode={moduleMode}
           companyName={appChrome.companyName}
-          access={access}
           counts={{ usersCount, pacientesCount, activeUsersCount, activePatientsCount, pendingPaymentsCount, patientFilesCount, upcomingEventsCount, unreadAgendaNotificationCount }}
           usersDomain={usersDomain}
           patientsDomain={patientsDomain}
