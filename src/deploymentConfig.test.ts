@@ -114,3 +114,29 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
     }
   });
 });
+
+describe('PWA nos hosts de deploy (#206)', () => {
+  const azure = JSON.parse(readFileSync(resolve(process.cwd(), 'public/staticwebapp.config.json'), 'utf8')) as
+    AzureStaticWebAppsConfiguration & { mimeTypes?: Record<string, string>; navigationFallback?: { exclude?: string[] } };
+  const vercel = JSON.parse(readFileSync(resolve(process.cwd(), 'vercel.json'), 'utf8')) as
+    { headers?: Array<{ source: string; headers: Array<{ key: string; value: string }> }> };
+  const noStore = 'no-cache, no-store, must-revalidate';
+
+  it('nunca deixa o sw.js em cache HTTP, para a atualização do worker chegar', () => {
+    expect(azure.routes).toContainEqual({ route: '/sw.js', headers: { 'Cache-Control': noStore, 'Service-Worker-Allowed': '/' } });
+    const vercelWorker = vercel.headers?.find((entry) => entry.source === '/sw.js');
+    expect(vercelWorker?.headers).toContainEqual({ key: 'Cache-Control', value: noStore });
+  });
+
+  it('serve o manifest como arquivo, com o tipo correto', () => {
+    expect(azure.mimeTypes?.['.webmanifest']).toBe('application/manifest+json');
+    expect(azure.navigationFallback?.exclude?.some((pattern) => pattern.includes('webmanifest'))).toBe(true);
+  });
+
+  it('mantém a CSP: worker e manifest só da própria origem, sem novas origens', () => {
+    const csp = azure.globalHeaders?.['Content-Security-Policy'] ?? '';
+    expect(csp).toContain("worker-src 'self' blob:");
+    expect(csp).toContain("manifest-src 'self'");
+    expect(csp).not.toContain("'unsafe-eval'");
+  });
+});

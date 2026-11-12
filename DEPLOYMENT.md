@@ -207,6 +207,14 @@ O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate dos PRs e pu
 
 O arquivo `src/vercel.json` mantém desabilitado o projeto Vercel legado de produção. O `vercel.json` da raiz pertence à homologação e habilita deploy automático somente para a branch `developer`.
 
+### PWA (#206)
+
+- `/sw.js` vai sempre sem cache HTTP (`no-cache, no-store, must-revalidate`) e com `Service-Worker-Allowed: /`, no
+  Azure (`staticwebapp.config.json`) e na Vercel (`vercel.json`), para uma nova versão do worker chegar.
+- `/manifest.webmanifest` com `Cache-Control: no-cache`, MIME `application/manifest+json` e fora do fallback SPA.
+- Smoke após deploy: DevTools > Application > Manifest sem erros; Service Workers ativo em `/`; Cache Storage só com
+  `hemodinks-static-*` contendo só `/assets/*`.
+
 ## Vercel: homologacao
 
 `vercel.json` define o projeto `hemodinks-front-confirmation`:
