@@ -67,7 +67,7 @@ export default defineConfig(({ mode }) => ({
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
     globals: true,
-    // App.test exercises complete authenticated form flows. Five seconds is
+    // App.*.test exercises complete authenticated form flows. Five seconds is
     // too close to the observed runtime under parallel CI load and made
     // unrelated cases fail nondeterministically without assertion failures.
     testTimeout: 10_000,

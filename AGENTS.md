@@ -31,7 +31,8 @@ npm run build && npm run budget                 # orçamento de bundle
 ## Não ler (gasta contexto e não ajuda)
 
 `node_modules/`, `dist/`, `playwright-report*/`, `test-results*/`, `reports/`, `artifacts/`, `tmp/`, `*.log`, `public/tutorials/`.
-`src/App.test.tsx` tem 2.500+ linhas: busque o caso com grep e leia só o trecho.
+Testes de integração do App ficam em `src/App.<fluxo>.test.tsx` (auth, privacy, navigation, users, patients,
+patientsAccess), com mocks e `beforeEach` comuns em `src/test/appServicesMock.ts` e `src/test/appTestSetup.ts`.
 
 ## Invariantes — nunca quebrar
 

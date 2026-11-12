@@ -1,0 +1,260 @@
+.billing-history-years,
+.billing-history-months {
+  display: grid;
+  gap: 12px;
+}
+
+.billing-history-year-toggle,
+.billing-history-month-toggle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto 20px;
+  align-items: center;
+  gap: 16px;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.billing-history-year-toggle {
+  min-height: 88px;
+  padding: 18px 22px;
+}
+
+.billing-history-period {
+  display: grid;
+  gap: 5px;
+}
+
+.billing-history-period strong {
+  font-size: 1.12rem;
+}
+
+.billing-history-period small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.billing-history-totals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px 18px;
+}
+
+.billing-history-totals span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.billing-history-chevron {
+  transition: transform 180ms ease;
+}
+
+.billing-history-year.is-open > .billing-history-year-toggle .billing-history-chevron,
+.billing-history-month.is-open > .billing-history-month-toggle .billing-history-chevron {
+  transform: rotate(180deg);
+}
+
+.billing-history-months {
+  padding: 0 18px 18px;
+}
+
+.billing-history-month {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.billing-history-month.is-highest { border-color: #86efac; }
+.billing-history-month.is-lowest { border-color: #fca5a5; }
+
+.billing-history-month.is-highest > .billing-history-month-toggle {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.billing-history-month.is-lowest > .billing-history-month-toggle {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.billing-history-month.is-highest .billing-history-period small,
+.billing-history-month.is-highest .billing-history-month-value { color: #166534; }
+
+.billing-history-month.is-lowest .billing-history-period small,
+.billing-history-month.is-lowest .billing-history-month-value { color: #991b1b; }
+
+.billing-history-month-toggle {
+  min-height: 66px;
+  padding: 13px 16px;
+}
+
+.billing-history-month-value {
+  color: #0f766e;
+  font-weight: 900;
+}
+
+.billing-history-month-content {
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.billing-history-month-summary {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.billing-history-month-summary-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.billing-history-month-summary-heading h3 { margin: 4px 0 0; font-size: 1rem; }
+.billing-history-month-summary-heading > strong { color: #0f766e; font-size: 1.18rem; }
+
+.billing-history-month-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.billing-history-month-summary-grid article {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--input-bg);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.billing-history-month-summary-grid article:hover {
+  z-index: 1;
+  border-color: currentColor;
+  box-shadow:
+    0 16px 26px color-mix(in srgb, currentColor 18%, transparent),
+    0 4px 0 color-mix(in srgb, currentColor 18%, var(--line));
+  transform: translateY(-3px) scale(1.025);
+}
+
+.billing-history-month-summary-grid article > span { min-width: 0; display: grid; gap: 3px; }
+.billing-history-month-summary-grid small { color: var(--muted); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+.billing-history-month-summary-grid strong { color: var(--ink); font-size: 0.82rem; white-space: nowrap; }
+.billing-history-month-summary-grid .is-gross { color: #0f766e; background: color-mix(in srgb, #0f766e 8%, var(--input-bg)); }
+.billing-history-month-summary-grid .is-glosa { color: #b91c1c; background: color-mix(in srgb, #b91c1c 8%, var(--input-bg)); }
+.billing-history-month-summary-grid .is-net { color: #2563eb; background: color-mix(in srgb, #2563eb 8%, var(--input-bg)); }
+
+.billing-history-files {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.billing-history-files-heading,
+.billing-history-file-list li,
+.billing-history-file-list li > span,
+.billing-history-file-actions {
+  display: flex;
+  align-items: center;
+}
+
+.billing-history-files-heading,
+.billing-history-file-list li {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.billing-history-files-heading > div,
+.billing-history-file-list li > span > span {
+  display: grid;
+  gap: 3px;
+}
+
+.billing-history-files-heading small,
+.billing-history-file-list small,
+.billing-history-files-empty {
+  color: var(--muted);
+}
+
+.billing-history-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 13px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.billing-history-upload.is-busy {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.billing-history-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.billing-history-file-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.billing-history-file-list li {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--input-bg);
+}
+
+.billing-history-file-list li > span,
+.billing-history-file-actions {
+  gap: 9px;
+}
+
+.billing-history-files-empty {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.billing-history-empty {
+  margin: 0;
+  padding: 20px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.billing-history-table th,
+.billing-history-table td {
+  white-space: nowrap;
+}
+
