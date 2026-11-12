@@ -10,7 +10,7 @@ const { load } = createRequire(import.meta.url)('js-yaml');
 const workflow = name => load(readFileSync(new URL(`../.github/workflows/${name}`, import.meta.url), 'utf8'));
 const ci = workflow('ci.yml');
 const azure = workflow('azure-static-web-apps-production.yml');
-const SWA_DEPLOY = 'Azure/static-web-apps-deploy@4d27395796ac319302594769cfe812bd207490b1';
+const SWA_DEPLOY = 'Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9';
 const workflowDir = new URL('../.github/workflows/', import.meta.url);
 // Actions externas: SHA completo + comentario de versao (#222); workflows locais (./) ficam de fora.
 const unpinnedActions = text => [...text.matchAll(/^\s*(?:-\s*)?uses:\s*(\S+)(.*)$/gm)]
