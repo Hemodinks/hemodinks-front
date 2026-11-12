@@ -1,0 +1,359 @@
+.billing-history-hero,
+.billing-history-year {
+  padding: 0;
+  overflow: hidden;
+}
+
+.billing-history-hero-copy {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px;
+}
+
+.billing-history-hero-copy h2,
+.billing-history-hero-copy p {
+  margin: 0;
+}
+
+.billing-history-hero-copy h2 {
+  margin-top: 4px;
+  font-size: 1.35rem;
+}
+
+.billing-history-hero-copy p {
+  margin-top: 7px;
+  color: var(--muted);
+}
+
+.billing-history-icon {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: #0f766e;
+  background: rgba(15, 118, 110, 0.13);
+}
+
+.billing-history-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 0 22px;
+  border-top: 1px solid var(--line);
+}
+
+.billing-history-tabs button {
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.billing-history-tabs button:hover,
+.billing-history-tabs button.is-active {
+  color: var(--action-primary);
+}
+
+.billing-history-tabs button.is-active {
+  border-bottom-color: var(--action-primary);
+  background: color-mix(in srgb, var(--action-primary) 7%, transparent);
+}
+
+.billing-history-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.billing-history-section-header h3,
+.billing-history-section-header p {
+  margin: 0;
+}
+
+.billing-history-invalid-alert-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.billing-history-invalid-toggle {
+  min-height: 32px;
+  padding: 6px 10px;
+  color: var(--ink);
+  background: color-mix(in srgb, #b7791f var(--control-color-opacity), transparent);
+  border-color: #925f19;
+  box-shadow: none;
+}
+
+.billing-history-invalid-toggle:hover {
+  background: color-mix(in srgb, #925f19 var(--control-color-opacity), transparent);
+  border-color: #784b14;
+}
+
+.billing-history-invalid-records {
+  display: grid;
+  gap: 14px;
+}
+
+.billing-history-invalid-table-wrap {
+  max-height: 420px;
+}
+
+.billing-history-invalid-table {
+  min-width: 820px;
+}
+
+.billing-history-invalid-table td strong,
+.billing-history-invalid-table td span:not(.status-pill) {
+  display: block;
+}
+
+.billing-history-invalid-table td span:not(.status-pill) {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.billing-history-section-header h3 {
+  margin-top: 5px;
+  font-size: 1.15rem;
+}
+
+.billing-history-section-header p {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.billing-history-year-picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.billing-history-year-picker button {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--muted);
+  background: var(--input-bg);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.billing-history-year-picker button.is-active {
+  border-color: var(--action-primary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--action-primary) var(--control-color-opacity), transparent);
+}
+
+.billing-history-quarter-dashboard,
+.billing-history-charts-heading,
+.billing-history-chart-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.billing-history-quarter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.billing-history-quarter-card {
+  min-width: 0;
+  display: grid;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--input-bg);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.billing-history-quarter-card:hover {
+  z-index: 1;
+  border-color: var(--quarter-card-tone, var(--action-secondary));
+  box-shadow:
+    0 18px 30px color-mix(in srgb, var(--quarter-card-tone, var(--action-secondary)) 24%, transparent),
+    0 5px 0 color-mix(in srgb, var(--quarter-card-tone, var(--action-secondary)) 20%, var(--line));
+  transform: translateY(-4px) scale(1.025);
+}
+
+.billing-history-quarter-card.is-most-profitable {
+  --quarter-card-tone: #16a34a;
+  border-color: #4ade80;
+  background-color: #bbf7d0;
+  background-image: linear-gradient(145deg, #dcfce7 0%, #bbf7d0 100%);
+  box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.08);
+}
+
+.billing-history-quarter-card.is-least-profitable {
+  --quarter-card-tone: #dc2626;
+  border-color: #f87171;
+  background-color: #fecaca;
+  background-image: linear-gradient(145deg, #fee2e2 0%, #fecaca 100%);
+  box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.08);
+}
+
+.billing-history-quarter-card.is-neutral {
+  --quarter-card-tone: #64748b;
+  border-color: var(--line);
+  background: var(--input-bg);
+}
+
+.billing-history-quarter-card.is-most-profitable .billing-history-quarter-title strong,
+.billing-history-quarter-card.is-most-profitable .billing-history-quarter-title span {
+  color: #166534;
+}
+
+.billing-history-quarter-card.is-least-profitable .billing-history-quarter-title strong,
+.billing-history-quarter-card.is-least-profitable .billing-history-quarter-title span {
+  color: #991b1b;
+}
+
+:root[data-theme="dark"] .billing-history-quarter-card.is-most-profitable {
+  background-color: color-mix(in srgb, #16a34a 22%, var(--input-bg));
+  background-image: linear-gradient(145deg, color-mix(in srgb, #16a34a 26%, var(--input-bg)), color-mix(in srgb, #16a34a 18%, var(--input-bg)));
+}
+
+:root[data-theme="dark"] .billing-history-quarter-card.is-least-profitable {
+  background-color: color-mix(in srgb, #dc2626 22%, var(--input-bg));
+  background-image: linear-gradient(145deg, color-mix(in srgb, #dc2626 26%, var(--input-bg)), color-mix(in srgb, #dc2626 18%, var(--input-bg)));
+}
+
+:root[data-theme="dark"] .billing-history-quarter-card.is-most-profitable .billing-history-quarter-title strong,
+:root[data-theme="dark"] .billing-history-quarter-card.is-most-profitable .billing-history-quarter-title span {
+  color: #bbf7d0;
+}
+
+:root[data-theme="dark"] .billing-history-quarter-card.is-least-profitable .billing-history-quarter-title strong,
+:root[data-theme="dark"] .billing-history-quarter-card.is-least-profitable .billing-history-quarter-title span {
+  color: #fecaca;
+}
+
+.billing-history-quarter-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.billing-history-quarter-title strong { color: var(--ink); }
+
+.billing-history-quarter-badge {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 4px 7px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.billing-history-quarter-badge.is-most-profitable { color: #166534; background: #dcfce7; }
+.billing-history-quarter-badge.is-least-profitable { color: #991b1b; background: #fee2e2; }
+.billing-history-quarter-badge.is-neutral { color: #475569; background: #f1f5f9; }
+
+:root[data-theme="dark"] .billing-history-quarter-badge.is-most-profitable { color: #bbf7d0; background: #14532d; }
+:root[data-theme="dark"] .billing-history-quarter-badge.is-least-profitable { color: #fecaca; background: #7f1d1d; }
+:root[data-theme="dark"] .billing-history-quarter-badge.is-neutral { color: #e2e8f0; background: #334155; }
+
+.billing-history-quarter-total {
+  display: grid;
+  gap: 3px;
+  padding: 3px 0 5px;
+}
+
+.billing-history-quarter-total strong {
+  color: var(--ink);
+  font-size: 1.18rem;
+  line-height: 1.1;
+}
+
+.billing-history-quarter-total small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.billing-history-quarter-highlight {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 4px 9px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 8px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--panel) 78%, transparent);
+}
+
+.billing-history-quarter-highlight > span { min-width: 0; display: grid; gap: 2px; }
+.billing-history-quarter-highlight small { font-size: 0.68rem; font-weight: 800; }
+.billing-history-quarter-highlight b { grid-column: 2; font-size: 0.78rem; }
+
+.billing-history-quarter-highlight svg.is-highest { color: #15803d; }
+.billing-history-quarter-highlight svg.is-lowest { color: #dc2626; }
+
+.billing-history-quarter-empty {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 74px;
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+}
+
+.billing-history-quarter-empty span { display: grid; gap: 3px; }
+.billing-history-quarter-empty strong { color: var(--ink); }
+.billing-history-quarter-empty small { font-size: 0.68rem; font-weight: 700; }
+
+.billing-history-quarter-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.billing-history-quarter-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.billing-history-quarter-legend i {
+  width: 11px;
+  height: 11px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+}
+
+.billing-history-quarter-legend .is-most-profitable i { color: #16a34a; background: #bbf7d0; }
+.billing-history-quarter-legend .is-least-profitable i { color: #dc2626; background: #fecaca; }
+.billing-history-quarter-legend .is-neutral i { color: #64748b; background: #e2e8f0; }
+
