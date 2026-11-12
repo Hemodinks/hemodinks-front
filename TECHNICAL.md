@@ -346,6 +346,21 @@ Responsabilidades:
 - exibicao opcional da query relacionada dentro de `details`
 - atualizacao manual da listagem e limpeza confirmada dos logs atuais; novos erros continuam sendo registrados
 
+## PWA (instalação e service worker)
+
+O front é instalável (#206): `public/manifest.webmanifest` (standalone, `start_url`/`scope` `/`, ícones 192/512 e
+maskable em `public/icons/`) e metas de iOS no `index.html` (`apple-touch-icon`, `apple-mobile-web-app-*`).
+
+`public/sw.js` (sem biblioteca) é registrado por `src/registerServiceWorker.ts` só no build de produção, após o `load`;
+falha de registro não afeta o app. Ele faz cache **apenas** de `/assets/*` (arquivos com hash, imutáveis), do próprio
+origin, GET, sem query string, sem `no-store`/`private` e com `Content-Type` de script, CSS, imagem ou fonte (um HTML
+de fallback do SPA para um asset que sumiu após deploy nunca é guardado). Ficam de fora, sempre pela rede: API
+(qualquer origin ou `/api/*`), HTML e navegações (o `index.html` segue sem cache e o aviso de nova versão continua
+funcionando), ícones (sem hash), tutoriais, `sw.js`, manifest e terceiros (New Relic). Não há dado de paciente, sessão ou clínica no Cache
+Storage; por isso logout e troca de clínica não precisam limpá-lo. Caches antigos do próprio app são removidos ao
+ativar uma nova versão do worker (`CACHE_NAME` em `sw.js`); limite de 80 entradas. Não há modo offline.
+A CSP não mudou (`worker-src 'self' blob:`, `manifest-src 'self'`). Testes: `src/pwa.test.ts`.
+
 ## Observabilidade
 
 Arquivos:
