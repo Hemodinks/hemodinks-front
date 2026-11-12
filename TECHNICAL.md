@@ -91,7 +91,8 @@ Rotas publicas:
 | `/termos-de-uso` | Termos de Uso |
 | `/politica-de-privacidade` | Politica de Privacidade |
 
-Rotas internas (`src/routes.ts`; acesso calculado em `src/app/appAccess.ts`):
+Rotas internas (`src/routes.ts`; acesso calculado em `src/app/appAccess.ts` e distribuído às telas autenticadas por
+`AppAccessProvider`/`useAppAccess()` em `src/app/AppAccessContext.tsx`, sem fallback permissivo fora do provider):
 
 | Path | View interna | Quem ve |
 | --- | --- | --- |
