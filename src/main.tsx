@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { registerServiceWorker } from './registerServiceWorker';
 import { warmupApi } from './services/warmupService';
 import '@fontsource-variable/comfortaa';
 import './styles.css';
@@ -12,6 +13,7 @@ function bootstrap() {
     </StrictMode>,
   );
   void warmupApi();
+  registerServiceWorker();
 }
 
 bootstrap();
