@@ -15,8 +15,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  scope:
+    name: Decide real API test scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      run_tests: ${{ steps.decide.outputs.run_tests }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Same rules as ci.yml: skip a merge push whose exact tree already passed this job in its PR.
+      - name: Decide
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_BEFORE: ${{ github.event.before }}
+          CI_WORKFLOW: real-api-e2e.yml
+          CI_REQUIRED_JOBS: "Web + API + synthetic SQL"
+        run: python3 -B scripts/ci_scope.py
+
   synthetic-integration:
     name: Web + API + synthetic SQL
+    needs: scope
+    if: ${{ !cancelled() && needs.scope.outputs.run_tests != 'false' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

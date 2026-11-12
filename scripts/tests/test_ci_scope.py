@@ -37,6 +37,9 @@ class FakeRepository:
     def ci_succeeded(self, sha, event=None):
         return (sha, event) in self._succeeded
 
+    def pull_request_tested(self, sha):
+        return (sha, "pull_request") in self._succeeded
+
 
 def merge(**overrides):
     values = dict(
@@ -70,12 +73,25 @@ class DecisionTests(unittest.TestCase):
     def run_tests(self, event, target, before, repo):
         return ci_scope.decide(event, target, before, repo)[0]
 
-    def test_main_and_unknown_targets_always_run(self):
+    def test_main_and_unknown_targets_always_run_documentation_changes(self):
         docs = FakeRepository(changed=["docs/a.md"], succeeded={(BEFORE, None)})
         for target in ("main", "", "release", "feature/x"):
             self.assertTrue(self.run_tests("pull_request", target, "", docs), target)
             self.assertTrue(self.run_tests("push", target, BEFORE, docs), target)
-        self.assertTrue(self.run_tests("push", "main", BEFORE, merge()))
+
+    def test_unknown_targets_never_reuse_a_tested_tree(self):
+        for target in ("", "release", "feature/x"):
+            self.assertTrue(self.run_tests("push", target, BEFORE, merge()), target)
+
+    def test_main_pull_request_always_runs(self):
+        self.assertTrue(self.run_tests("pull_request", "main", "", FakeRepository(changed=["docs/a.md"])))
+        self.assertTrue(self.run_tests("pull_request", "main", "", FakeRepository(changed=["src/a.ts"])))
+
+    def test_main_merge_with_tested_identical_tree_skips(self):
+        self.assertFalse(self.run_tests("push", "main", BEFORE, merge()))
+
+    def test_main_manual_run_always_runs(self):
+        self.assertTrue(self.run_tests("workflow_dispatch", "main", BEFORE, merge()))
 
     def test_manual_runs_always_run(self):
         docs = FakeRepository(changed=["docs/a.md"], succeeded={(BEFORE, None)})
@@ -110,13 +126,44 @@ class DecisionTests(unittest.TestCase):
             "only a push run passed": merge(succeeded={(PR_HEAD, "push")}),
         }
         for name, repo in cases.items():
-            self.assertTrue(self.run_tests("push", "developer", BEFORE, repo), name)
+            for target in ("developer", "main"):
+                self.assertTrue(self.run_tests("push", target, BEFORE, repo), f"{target}: {name}")
+
+
+class RequiredJobsTests(unittest.TestCase):
+    REQUIRED = ("Unit tests and build", "E2E (", "Responsive smoke matrix")
+
+    def jobs(self, **overrides):
+        jobs = {"Decide test scope": "success", "Unit tests and build": "success", "E2E (1/3)": "success",
+                "E2E (2/3)": "success", "E2E (3/3)": "success", "Responsive smoke matrix": "success",
+                "Test and build": "success"}
+        jobs.update(overrides)
+        return [(name, conclusion) for name, conclusion in jobs.items() if conclusion is not None]
+
+    def test_all_required_jobs_passed(self):
+        self.assertTrue(ci_scope.required_jobs_passed(self.jobs(), self.REQUIRED))
+
+    def test_skipped_failed_or_missing_test_jobs_prove_nothing(self):
+        cases = {
+            "skipped run (gate only)": self.jobs(**{"Unit tests and build": "skipped", "E2E (1/3)": "skipped",
+                                                   "E2E (2/3)": "skipped", "E2E (3/3)": "skipped",
+                                                   "Responsive smoke matrix": "skipped"}),
+            "one shard failed": self.jobs(**{"E2E (2/3)": "failure"}),
+            "one shard cancelled": self.jobs(**{"E2E (3/3)": "cancelled"}),
+            "responsive missing": self.jobs(**{"Responsive smoke matrix": None}),
+            "e2e missing": self.jobs(**{"E2E (1/3)": None, "E2E (2/3)": None, "E2E (3/3)": None}),
+        }
+        for name, jobs in cases.items():
+            self.assertFalse(ci_scope.required_jobs_passed(jobs, self.REQUIRED), name)
+
+    def test_empty_requirement_proves_nothing(self):
+        self.assertFalse(ci_scope.required_jobs_passed(self.jobs(), ()))
 
 
 class FailureHandlingTests(unittest.TestCase):
     def test_failed_check_runs_tests(self):
         class Broken:
-            def __init__(self, name=None):
+            def __init__(self, *args, **kwargs):
                 pass
 
             def changed(self, base, head):

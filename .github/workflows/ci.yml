@@ -53,14 +53,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           EVENT_BEFORE: ${{ github.event.before }}
+          CI_WORKFLOW: ci.yml
+          CI_REQUIRED_JOBS: "Unit tests and build,E2E (,Responsive smoke matrix"
         run: python3 -B scripts/ci_scope.py
 
-  test-and-build:
-    name: Test and build
+  unit:
+    name: Unit tests and build
     needs: scope
     if: ${{ !cancelled() && needs.scope.outputs.run_tests != 'false' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 20
     env:
       VITE_APP_ENV: ci
       VITE_APP_VERSION: ${{ github.sha }}
@@ -98,10 +100,6 @@ jobs:
       - name: Test production release gate
         run: npm run test:release-gate
 
-      - name: Install Playwright browsers
-        id: playwright-browsers
-        run: npx playwright install --with-deps chromium
-
       - name: Audit frontend architecture
         run: npm run audit:architecture
 
@@ -117,13 +115,6 @@ jobs:
       - name: Check bundle budget
         run: npm run budget
 
-      - name: Run E2E tests
-        run: npm run test:e2e
-
-      - name: Run responsive and tenant smoke matrix
-        if: ${{ !cancelled() && steps.playwright-browsers.outcome == 'success' }}
-        run: npm run test:e2e:responsive
-
       - name: Upload build artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -132,16 +123,112 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  e2e:
+    name: E2E (${{ matrix.shard }}/3)
+    needs: scope
+    if: ${{ !cancelled() && needs.scope.outputs.run_tests != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    env:
+      VITE_APP_ENV: ci
+      VITE_APP_VERSION: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::npm ci failed after ${attempt} attempts."
+              exit 1
+            fi
+
+            echo "::warning::npm ci failed on attempt ${attempt}. Retrying in 15 seconds..."
+            sleep 15
+          done
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/3
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: |
             playwright-report
             test-results
           if-no-files-found: ignore
           retention-days: 7
+
+  responsive:
+    name: Responsive smoke matrix
+    needs: scope
+    if: ${{ !cancelled() && needs.scope.outputs.run_tests != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_APP_ENV: ci
+      VITE_APP_VERSION: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::npm ci failed after ${attempt} attempts."
+              exit 1
+            fi
+
+            echo "::warning::npm ci failed on attempt ${attempt}. Retrying in 15 seconds..."
+            sleep 15
+          done
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run responsive and tenant smoke matrix
+        run: npm run test:e2e:responsive
 
       - name: Upload responsive Playwright report
         if: always()
@@ -154,6 +241,31 @@ jobs:
             test-results/responsive
           if-no-files-found: ignore
           retention-days: 7
+
+  # Required check on main. Passes only when every test job passed, or when the scope
+  # proved this exact tree already passed them (see scripts/ci_scope.py). Fails closed.
+  test-and-build:
+    name: Test and build
+    needs: [scope, unit, e2e, responsive]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: scripts
+
+      - name: Require test jobs or proven reuse
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          RUN_TESTS: ${{ needs.scope.outputs.run_tests }}
+          UNIT_RESULT: ${{ needs.unit.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          RESPONSIVE_RESULT: ${{ needs.responsive.result }}
+        run: node scripts/ci-gate.mjs
 
   deploy:
     name: Deploy Azure Static Web Apps
