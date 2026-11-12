@@ -91,6 +91,7 @@ export function getAppAccess(session: AuthSession | null) {
     canAccessMedicalGroups,
     canAccessSettings,
     canCreatePatients: canManagePatients,
+    canCreateUsers: canAccessUsers && isAdmin,
     canEditPatients: canManagePatients,
     canDeletePatients: isAdmin && hasClinicModule(CLINIC_MODULES.patients),
     canManagePatientObservacoes: canManagePatients,

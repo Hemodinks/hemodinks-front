@@ -97,6 +97,27 @@
       }
     },
     {
+      "route": "/usuarios/*",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "route": "/pacientes/*",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "route": "/grupos-medicos/*",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
       "route": "/configuracoes",
       "headers": {
         "X-Robots-Tag": "noindex, nofollow",
