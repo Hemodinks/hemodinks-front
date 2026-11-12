@@ -78,11 +78,7 @@ jobs:
             sleep 15
           done
 
-      - name: Run unit tests
-        env:
-          VITE_API_URL: http://localhost:5000
-        run: npm test
-
+      # Unit, E2E and responsive tests already gate this run through "Test and build".
       - name: Build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}

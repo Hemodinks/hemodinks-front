@@ -68,6 +68,9 @@ respostas 5xx observadas no navegador também fazem o teste falhar.
 ## Evidências e limites
 
 O workflow `Web + real API E2E` roda em PRs para developer/main ou manualmente.
+> Atualização (12/11/2026): também roda no push da `developer`, com o mesmo job de escopo do CI
+> (`scripts/ci_scope.py`): pula o merge cujo código idêntico já passou neste job no PR e PRs para
+> `developer` só de documentação.
 Não contém deploy, merge ou secrets de produção. Preserva integralmente o gate
 existente da #181; configurar este novo check como obrigatório no GitHub é uma
 ação administrativa separada, não realizada aqui.
