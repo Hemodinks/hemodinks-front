@@ -267,10 +267,13 @@ jobs:
           RESPONSIVE_RESULT: ${{ needs.responsive.result }}
         run: node scripts/ci-gate.mjs
 
+  # !cancelled() is required: without a status function GitHub adds an implicit success(), which is
+  # false when the test jobs were skipped by a proven tree reuse, and production would never deploy.
+  # "Test and build" stays the only approval: it fails closed for anything but passed or proven reuse.
   deploy:
     name: Deploy Azure Static Web Apps
     needs: test-and-build
-    if: ${{ needs.test-and-build.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    if: ${{ !cancelled() && needs.test-and-build.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     uses: ./.github/workflows/azure-static-web-apps-production.yml
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410 }}
