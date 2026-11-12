@@ -64,7 +64,7 @@ describe('App — login, sessão e troca de clínica', () => {
     vi.mocked(api.authenticate).mockResolvedValue({
       id: 99,
       nome: 'George Marcone',
-      email: 'gmarcone@gmail.com',
+      email: 'multi-clinica@example.com',
       token: 'jwt-token',
       cpf: '00000000191',
       fotoPerfil: 'data:image/png;base64,george',
@@ -82,18 +82,18 @@ describe('App — login, sessão e troca de clínica', () => {
 
     expect(await screen.findByText('GM Tech Solutions')).toBeInTheDocument();
 
-    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'multi-clinica@example.com');
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
-    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'SenhaAlterada@123', 'hemodinks', expect.any(AbortSignal));
+    expect(api.authenticate).toHaveBeenCalledWith('multi-clinica@example.com', 'SenhaAlterada@123', 'hemodinks', expect.any(AbortSignal));
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/dashboard');
     const activeSession = screen.getByLabelText('Menu da clínica');
     expect(activeSession).toHaveTextContent('Clínica atual');
     await user.click(screen.getByRole('button', { name: 'Menu do usuário' }));
     expect(screen.getByLabelText('Dados da sessão')).toHaveTextContent('Administrador');
-    expect(screen.getByLabelText('Dados da sessão')).toHaveTextContent('gmarcone@gmail.com');
+    expect(screen.getByLabelText('Dados da sessão')).toHaveTextContent('multi-clinica@example.com');
     await user.keyboard('{Escape}');
     expect(screen.getByLabelText('Indicadores da clínica')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Ações rápidas' })).toBeInTheDocument();
@@ -176,7 +176,7 @@ describe('App — login, sessão e troca de clínica', () => {
       clinicaId: 2,
       clinicaSlug: 'clinica-beta',
       nome: 'George Beta',
-      email: 'gmarcone@gmail.com',
+      email: 'multi-clinica@example.com',
       token: 'jwt-token',
       precisaTrocarSenha: false,
       perfilId: 1,
@@ -185,16 +185,16 @@ describe('App — login, sessão e troca de clínica', () => {
 
     render(<App />);
     expect(screen.queryByLabelText('Clínica')).not.toBeInTheDocument();
-    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'multi-clinica@example.com');
     await user.type(screen.getByLabelText('Senha'), 'test-password');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(await screen.findByRole('heading', { name: 'Escolha onde deseja entrar' })).toBeVisible();
-    expect(api.resolveLoginClinics).toHaveBeenCalledWith('gmarcone@gmail.com', 'test-password', expect.any(AbortSignal));
+    expect(api.resolveLoginClinics).toHaveBeenCalledWith('multi-clinica@example.com', 'test-password', expect.any(AbortSignal));
     expect(api.authenticate).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Clinica Beta' }));
 
-    expect(api.authenticate).toHaveBeenCalledWith('gmarcone@gmail.com', 'test-password', 'clinica-beta', expect.any(AbortSignal));
+    expect(api.authenticate).toHaveBeenCalledWith('multi-clinica@example.com', 'test-password', 'clinica-beta', expect.any(AbortSignal));
   });
 
   it.each(['pacientes', 'usuários'])('descarta %s da clinica anterior enquanto a nova consulta esta pendente', async (module) => {
@@ -252,7 +252,7 @@ describe('App — login, sessão e troca de clínica', () => {
     vi.mocked(api.authenticate).mockResolvedValue({
       id: 99,
       nome: 'George Marcone',
-      email: 'gmarcone@gmail.com',
+      email: 'multi-clinica@example.com',
       token: expiredToken,
       cpf: '00000000191',
       fotoPerfil: null,
@@ -263,7 +263,7 @@ describe('App — login, sessão e troca de clínica', () => {
 
     render(<App />);
 
-    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'multi-clinica@example.com');
     await user.type(screen.getByLabelText('Senha'), 'SenhaAlterada@123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
@@ -302,7 +302,7 @@ describe('App — login, sessão e troca de clínica', () => {
     vi.mocked(api.resolveLoginClinics).mockRejectedValueOnce(new Error('Credenciais invalidas.'));
     render(<App />);
 
-    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'multi-clinica@example.com');
     await user.type(screen.getByLabelText('Senha'), 'senha-incorreta');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
@@ -323,11 +323,11 @@ describe('App — login, sessão e troca de clínica', () => {
     });
     render(<App />);
 
-    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'multi-clinica@example.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
 
     await waitFor(() => {
-      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com', 'hemodinks');
+      expect(api.resetPassword).toHaveBeenCalledWith('multi-clinica@example.com', 'hemodinks');
     });
 
     expect(screen.getByLabelText('Senha')).toHaveValue('');
@@ -344,11 +344,11 @@ describe('App — login, sessão e troca de clínica', () => {
 
     render(<App />);
 
-    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'multi-clinica@example.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
 
     await waitFor(() => {
-      expect(api.resetPassword).toHaveBeenCalledWith('gmarcone@gmail.com', 'hemodinks');
+      expect(api.resetPassword).toHaveBeenCalledWith('multi-clinica@example.com', 'hemodinks');
     });
 
     expect(screen.getByLabelText('Senha')).toHaveValue('');
@@ -401,7 +401,7 @@ describe('App — login, sessão e troca de clínica', () => {
     vi.mocked(api.authenticate).mockResolvedValue({
       id: 99,
       nome: 'George Marcone',
-      email: 'gmarcone@gmail.com',
+      email: 'multi-clinica@example.com',
       token: 'jwt-token',
       cpf: '00000000191',
       fotoPerfil: null,
@@ -417,7 +417,7 @@ describe('App — login, sessão e troca de clínica', () => {
 
     render(<App />);
 
-    await user.type(await screen.findByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(await screen.findByLabelText('Email'), 'multi-clinica@example.com');
     await user.type(screen.getByLabelText('Senha'), 'temporary-test-password');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
@@ -439,7 +439,7 @@ describe('App — login, sessão e troca de clínica', () => {
     expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
     expect(api.getUsers).not.toHaveBeenCalled();
     vi.mocked(api.authenticate).mockResolvedValue(toLoginResponse(mockSession()));
-    await user.type(screen.getByLabelText('Email'), 'gmarcone@gmail.com');
+    await user.type(screen.getByLabelText('Email'), 'multi-clinica@example.com');
     await user.type(screen.getByLabelText('Senha'), 'different-test-password');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
     expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
