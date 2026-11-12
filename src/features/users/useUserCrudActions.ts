@@ -1,3 +1,4 @@
+import type { IsCurrentRoute } from '../../shared/hooks/useFormRouteSync';
 import { type FormEvent, type MutableRefObject, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { createUser, deleteUser, deleteUserArquivo, getUser, updateUser, uploadUserArquivo } from '../../services';
@@ -6,7 +7,6 @@ import { queryKeys } from '../../shared/queryKeys';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { DEFAULT_PROFILE_ID, formatProfileName, getErrorMessage, MEDICAL_PROFILE_ID, SUPER_ADMIN_PROFILE_ID, TEAM_PROFILE_ID } from '../../shared/utils/formatters';
 import type { AuthSession, User, UserPayload } from '../../types';
-import type { ModuleMode } from '../../appTypes';
 import { toUserPayload, validateUserForm } from './userUtils';
 import type { useUserForm } from './useUserForm';
 import type { useUserList } from './useUserList';
@@ -19,8 +19,9 @@ type UseUserCrudActionsOptions = {
   userList: ReturnType<typeof useUserList>;
   userForm: ReturnType<typeof useUserForm>;
   userFormRequestRef: MutableRefObject<number>;
-  setModuleMode: React.Dispatch<React.SetStateAction<ModuleMode>>;
-  navigateToView: (view: 'users' | 'profile' | 'dashboard') => void;
+  navigateToUserForm: (recordId: number) => void;
+  onRecordLoadError: (message: string) => void;
+  navigateToView: (view: 'users' | 'profile' | 'dashboard', replace?: boolean) => void;
   persistSession: (session: AuthSession) => void;
   refreshUserList: (forceRefresh?: boolean) => Promise<void>;
   loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
@@ -29,7 +30,7 @@ type UseUserCrudActionsOptions = {
 };
 
 export function useUserCrudActions(options: UseUserCrudActionsOptions) {
-  const { session, canUseUserForm, canAccessUsers, isAdmin, userList, userForm, userFormRequestRef, setModuleMode,
+  const { session, canUseUserForm, canAccessUsers, isAdmin, userList, userForm, userFormRequestRef, navigateToUserForm, onRecordLoadError,
     navigateToView, persistSession, refreshUserList, loadDashboardSummary, onDeleteCurrentUser, confirmAction } = options;
   const submitInFlightRef = useRef(false);
   const saveMutation = useMutation({
@@ -41,28 +42,50 @@ export function useUserCrudActions(options: UseUserCrudActionsOptions) {
     mutationFn: ({ userId, arquivoId, token }: { userId: number; arquivoId: number; token: string }) => deleteUserArquivo(userId, arquivoId, token),
   });
 
-  const handleEditUser = async (user: User) => {
+  // Fills the form with `user` right away (when known) and then with the server details.
+  // Called by the /usuarios/<id> route and by "meu cadastro" (/meu-cadastro is itself the form).
+  const loadUserForEdit = async (userOrId: User | number, isCurrent: IsCurrentRoute = () => true) => {
     if (!session) return;
+    const userId = typeof userOrId === 'number' ? userOrId : userOrId.id;
+    const known = typeof userOrId === 'number' ? userList.users.find((user) => user.id === userId) : userOrId;
     const requestId = userFormRequestRef.current + 1;
     userFormRequestRef.current = requestId;
-    userForm.applyUserToForm(user);
-    userForm.setEditingUserDetails(user);
+    userForm.resetUserForm();
+    if (known) {
+      userForm.applyUserToForm(known);
+      userForm.setEditingUserDetails(known);
+    }
     userForm.setFormError('');
+    onRecordLoadError('');
     userList.setSuccessMessage('');
     userForm.setPendingUserFiles([]);
-    navigateToView(canAccessUsers ? 'users' : 'profile');
-    setModuleMode('form');
     try {
       userForm.setFormLoading(true);
-      const details = await getUser(user.id, session.token);
-      if (userFormRequestRef.current !== requestId) return;
+      const details = await getUser(userId, session.token);
+      if (userFormRequestRef.current !== requestId || !isCurrent()) return;
       userForm.setEditingUserDetails(details);
       userForm.applyUserToForm(details);
     } catch (error) {
-      if (userFormRequestRef.current === requestId) userForm.setFormError(getErrorMessage(error));
+      if (userFormRequestRef.current !== requestId || !isCurrent()) return;
+      if (known) userForm.setFormError(getErrorMessage(error));
+      else {
+        // Never leave an empty form on an edit URL: it would read as "novo usuário".
+        onRecordLoadError(getErrorMessage(error));
+        navigateToView('users', true);
+      }
     } finally {
       if (userFormRequestRef.current === requestId) userForm.setFormLoading(false);
     }
+  };
+
+  const handleEditUser = (user: User) => {
+    if (!session) return;
+    if (canAccessUsers) {
+      navigateToUserForm(user.id);
+      return;
+    }
+    navigateToView('profile');
+    void loadUserForEdit(user);
   };
 
   const handleDeleteUserArquivo = async (user: User, arquivoId: number) => {
@@ -103,7 +126,7 @@ export function useUserCrudActions(options: UseUserCrudActionsOptions) {
         queryClient.invalidateQueries({ queryKey: queryKeys.usersRoot(session.token), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: queryKeys.medicalUsers(session.token) }),
       ]);
-      userForm.resetUserForm(); userList.setCurrentPage(1); setModuleMode('list');
+      userForm.resetUserForm(); userList.setCurrentPage(1); if (isAdmin) navigateToView('users');
       await refreshUserList(true);
       if (!isAdmin) navigateToView('dashboard');
       await loadDashboardSummary(session.token, true);
@@ -130,5 +153,5 @@ export function useUserCrudActions(options: UseUserCrudActionsOptions) {
     message: `Deseja excluir "${user.nome}"? Esta ação não poderá ser desfeita.`, confirmLabel: 'Sim', cancelLabel: 'Não',
     onConfirm: () => deleteSelectedUser(user) });
 
-  return { handleEditUser, handleDeleteUserArquivo, handleSubmitUser, handleDeleteUser };
+  return { handleEditUser, loadUserForEdit, handleDeleteUserArquivo, handleSubmitUser, handleDeleteUser };
 }

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useLayoutEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useLayoutEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { sessionEpoch } from '../services/sessionEpoch';
 import { useAuthSession } from "../features/auth/useAuthSession";
@@ -10,13 +10,15 @@ import { LegalAcceptanceGate } from "../features/legal/LegalAcceptanceGate";
 import { useLegalAcceptance } from "../features/legal/useLegalAcceptance";
 import { usePatientsDomain } from "../features/patients/usePatientsDomain";
 import { useUsersDomain } from "../features/users/useUsersDomain";
-import type { AppView, ModuleMode } from "../appTypes";
+import type { AppView } from "../appTypes";
+import type { FormView } from "../routes";
 import { queryClient } from "../queryClient";
 import { useConfirmationDialog } from "../shared/components/ConfirmationDialog";
 import { useRouteView } from "../shared/hooks/useRouteView";
 import { useScrollToTopOnNavigation } from "../shared/hooks/useScrollToTopOnNavigation";
 import { useThemePreference } from "../shared/hooks/useThemePreference";
 import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from "./appAccess";
+import { AppAccessProvider } from "./AppAccessContext";
 import { AppPublicContent } from "./AppPublicContent";
 import { AppCredentialGate } from "./AppCredentialGate";
 import { buildSessionForSelectedClinic, getResetPasswordCompletedMessage } from "./appSession";
@@ -50,7 +52,6 @@ function AppSessionContent({ auth, loginFlow }: {
   usePrivacyPreferenceSession(session);
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
-  const [moduleMode, setModuleMode] = useState<ModuleMode>("list");
   const access = getAppAccess(session);
   const credentialGateActive = Boolean(
     session && (session.user.precisaTrocarSenha || session.user.precisaTrocarPin),
@@ -68,59 +69,12 @@ function AppSessionContent({ auth, loginFlow }: {
     resetLoginState,
   } = loginFlow;
 
-  const {
-    isAdmin,
-    isSuperAdmin,
-    isController,
-    isTeam,
-    isMedical,
-    canAccessDashboard,
-    canAccessPatients,
-    canConsultCbhpm,
-    canAccessAgenda,
-    canAccessUsers,
-    canEditOwnUser,
-    canAccessBilling,
-    canAccessReports,
-    canAccessTutorials,
-    canAccessMedicalGroups,
-    canAccessSettings,
-    canCreatePatients,
-    canEditPatients,
-    canDeletePatients,
-    canManagePatientObservacoes,
-    patientReadOnly,
-    canUseDashboardRoute,
-    canUsePatientsRoute,
-    canUseUsersRoute,
-    canUseProfileRoute,
-    canUseBillingRoute,
-    canUseBillingHistoryRoute,
-    canUseReportsRoute,
-    canUseTutorialsRoute,
-    canUseMedicalGroupsRoute,
-    canUseAgendaRoute,
-    canUseSettingsRoute,
-    canAccessClinics,
-    canUseClinicsRoute,
-  } = access;
   const forceDashboardRoute =
     openDashboardAfterLogin &&
     Boolean(operationalSession && !operationalSession.user.precisaTrocarSenha);
-  const { activeView, navigateToView } = useRouteView({
+  const { activeView, moduleMode, formRecordId, navigateToView, navigateToForm } = useRouteView({
+    ...access,
     session: operationalSession,
-    canUseDashboardRoute,
-    canUsePatientsRoute,
-    canUseUsersRoute,
-    canUseProfileRoute,
-    canUseBillingRoute,
-    canUseBillingHistoryRoute,
-    canUseReportsRoute,
-    canUseTutorialsRoute,
-    canUseMedicalGroupsRoute,
-    canUseAgendaRoute,
-    canUseSettingsRoute,
-    canUseClinicsRoute,
     forceDashboardRoute,
   });
   const appChrome = useAppChrome({ session: operationalSession });
@@ -135,6 +89,13 @@ function AppSessionContent({ auth, loginFlow }: {
       navigateToView(view, replace);
     },
     [navigateToView],
+  );
+  const navigateToFormFromInteraction = useCallback(
+    (view: FormView, recordId: number | null = null, replace = false) => {
+      setOpenDashboardAfterLogin(false);
+      navigateToForm(view, recordId, replace);
+    },
+    [navigateToForm],
   );
   const returnToLogin = (infoMessage = "") => {
     resetLoginState(infoMessage);
@@ -155,7 +116,6 @@ function AppSessionContent({ auth, loginFlow }: {
     } else {
       navigateToView("dashboard", true);
     }
-    setModuleMode("list");
     setOpenDashboardAfterLogin(false);
     resetLoginState(infoMessage);
   }
@@ -167,10 +127,11 @@ function AppSessionContent({ auth, loginFlow }: {
     session: operationalSession,
     activeView,
     moduleMode,
-    canAccessUsers,
-    canEditOwnUser,
-    isAdmin,
-    setModuleMode,
+    canAccessUsers: access.canAccessUsers,
+    canEditOwnUser: access.canEditOwnUser,
+    isAdmin: access.isAdmin,
+    formRecordId,
+    navigateToForm: navigateToFormFromInteraction,
     navigateToView: navigateToViewFromInteraction,
     persistSession,
     loadDashboardSummary: appChrome.loadDashboardSummary,
@@ -183,15 +144,16 @@ function AppSessionContent({ auth, loginFlow }: {
     activeView,
     moduleMode,
     companyName: appChrome.companyName,
-    isAdmin,
-    isMedical,
-    canAccessPatients,
-    canCreatePatients,
-    canEditPatients,
-    canDeletePatients,
-    canConsultCbhpm,
-    patientReadOnly,
-    setModuleMode,
+    isAdmin: access.isAdmin,
+    isMedical: access.isMedical,
+    canAccessPatients: access.canAccessPatients,
+    canCreatePatients: access.canCreatePatients,
+    canEditPatients: access.canEditPatients,
+    canDeletePatients: access.canDeletePatients,
+    canConsultCbhpm: access.canConsultCbhpm,
+    patientReadOnly: access.patientReadOnly,
+    formRecordId,
+    navigateToForm: navigateToFormFromInteraction,
     navigateToView: navigateToViewFromInteraction,
     loadDashboardSummary: appChrome.loadDashboardSummary,
     confirmAction,
@@ -200,8 +162,9 @@ function AppSessionContent({ auth, loginFlow }: {
     session: operationalSession,
     activeView,
     moduleMode,
-    canAccessMedicalGroups,
-    setModuleMode,
+    canAccessMedicalGroups: access.canAccessMedicalGroups,
+    formRecordId,
+    navigateToForm: navigateToFormFromInteraction,
     navigateToView: navigateToViewFromInteraction,
     confirmAction,
   });
@@ -230,44 +193,39 @@ function AppSessionContent({ auth, loginFlow }: {
   const openDashboard = () => {
     resetProfileRouteState();
 
-    if (canAccessDashboard) {
+    if (access.canAccessDashboard) {
       navigateToViewFromInteraction("dashboard");
-      setModuleMode("list");
       return;
     }
-    if (canAccessPatients) {
+    if (access.canAccessPatients) {
       patientsDomain.openPatientsList();
       return;
     }
-    if (canEditOwnUser) {
+    if (access.canEditOwnUser) {
       usersDomain.openMyProfile();
       return;
     }
-    if (canAccessBilling) {
+    if (access.canAccessBilling) {
       navigateToViewFromInteraction("billing");
-      setModuleMode("list");
       return;
     }
-    if (canAccessAgenda) {
+    if (access.canAccessAgenda) {
       navigateToViewFromInteraction("agenda");
-      setModuleMode("list");
       return;
     }
 
     navigateToViewFromInteraction("settings");
-    setModuleMode("list");
   };
 
   const openAgenda = () => {
     resetProfileRouteState();
 
-    if (!canAccessAgenda) {
+    if (!access.canAccessAgenda) {
       openDashboard();
       return;
     }
 
     navigateToViewFromInteraction("agenda");
-    setModuleMode("list");
   };
 
   const openPatientsListFromMenu = () => {
@@ -278,7 +236,7 @@ function AppSessionContent({ auth, loginFlow }: {
   const openMedicalGroups = () => {
     resetProfileRouteState();
 
-    if (!canAccessMedicalGroups) {
+    if (!access.canAccessMedicalGroups) {
       openDashboard();
       return;
     }
@@ -288,54 +246,49 @@ function AppSessionContent({ auth, loginFlow }: {
 
   const openBillingView = (view: 'billing' | 'billingHistory') => {
     resetProfileRouteState();
-    if (!canAccessBilling) return openDashboard();
+    if (!access.canAccessBilling) return openDashboard();
     navigateToViewFromInteraction(view);
-    setModuleMode("list");
   };
   const openBilling = () => openBillingView('billing');
   const openBillingHistory = () => openBillingView('billingHistory');
   const openReports = () => {
     resetProfileRouteState();
-    if (!canAccessReports) return openDashboard();
+    if (!access.canAccessReports) return openDashboard();
     navigateToViewFromInteraction("reports");
-    setModuleMode("list");
   };
 
   const openTutorials = () => {
     resetProfileRouteState();
-    if (!canAccessTutorials) return openDashboard();
-    navigateToViewFromInteraction("tutorials"); setModuleMode("list");
+    if (!access.canAccessTutorials) return openDashboard();
+    navigateToViewFromInteraction("tutorials");
   };
 
   const openSettings = () => {
     resetProfileRouteState();
 
-    if (!canAccessSettings) {
+    if (!access.canAccessSettings) {
       openDashboard();
       return;
     }
 
     navigateToViewFromInteraction("settings");
-    setModuleMode("list");
   };
 
   const openClinics = () => {
     resetProfileRouteState();
-    if (!canAccessClinics) {
+    if (!access.canAccessClinics) {
       openDashboard();
       return;
     }
     navigateToViewFromInteraction("clinics");
-    setModuleMode("list");
   };
   const openCurrentClinic = () => {
     resetProfileRouteState();
-    if (!canAccessClinics || !session?.user.clinicaId) {
+    if (!access.canAccessClinics || !session?.user.clinicaId) {
       openDashboard();
       return;
     }
     navigate(`/clinicas?editar=${session.user.clinicaId}`);
-    setModuleMode("list");
   };
 
   const handleClinicSelected = (
@@ -344,8 +297,11 @@ function AppSessionContent({ auth, loginFlow }: {
     if (!session) return;
     queryClient.clear();
     appChrome.resetAppChrome();
+    // Same reset as endSession: no list, form or record of the previous clinic survives the switch.
+    usersDomain.resetUsersState();
+    patientsDomain.resetPatientsState();
+    medicalGroupsDomain.resetMedicalGroupsState();
     persistSession(buildSessionForSelectedClinic(session, result));
-    setModuleMode("list");
     navigateToViewFromInteraction("dashboard", true);
   };
 
@@ -409,13 +365,12 @@ function AppSessionContent({ auth, loginFlow }: {
     );
   }
 
-  return <Suspense fallback={<LoadingOverlay active message="Carregando a interface…" />}><AuthenticatedAppContent
+  return <Suspense fallback={<LoadingOverlay active message="Carregando a interface…" />}><AppAccessProvider access={access}><AuthenticatedAppContent
     session={session}
     activeView={activeView}
     moduleMode={moduleMode}
     isBusy={isBusy}
     theme={theme}
-    access={access}
     appChrome={appChrome}
     usersDomain={usersDomain}
     patientsDomain={patientsDomain}
@@ -446,5 +401,5 @@ function AppSessionContent({ auth, loginFlow }: {
     onThemeChange={setThemePreference}
     onLogout={logout}
     onClinicSelected={handleClinicSelected}
-  /></Suspense>;
+  /></AppAccessProvider></Suspense>;
 }

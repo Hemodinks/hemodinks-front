@@ -137,14 +137,14 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `/termos-de-uso` | documento público de Termos de Uso |
 | `/politica-de-privacidade` | documento público de Política de Privacidade |
 | `/dashboard` | painel inicial (`/` redireciona quando ha sessao) |
-| `/usuarios` | listagem e cadastro de usuarios |
+| `/usuarios` | listagem e cadastro de usuarios (`/usuarios/novo`, `/usuarios/<id>`) |
 | `/meu-cadastro` | autoatendimento do medico ou paciente |
-| `/pacientes` | pacientes/cirurgias: listagem, cadastro, observacoes, filtros (tipo e status da cirurgia) e exportacoes |
+| `/pacientes` | pacientes/cirurgias: listagem, cadastro (`/pacientes/novo`, `/pacientes/<id>`), observacoes, filtros (tipo e status da cirurgia) e exportacoes |
 | `/faturamento-medico` | leitura financeira consolidada a partir dos pacientes |
 | `/historico-faturamento` | histórico mensal, destaques trimestrais, gráficos e arquivos de faturamento |
 | `/relatorios` | relatorios analiticos com filtros e exportacao PDF/XLSX |
 | `/tutoriais-interativos` | biblioteca de videos e missoes guiadas |
-| `/grupos-medicos` | grupos de medicos usados em notificacoes da agenda |
+| `/grupos-medicos` | grupos de medicos usados em notificacoes da agenda (`/grupos-medicos/novo`, `/grupos-medicos/<id>`) |
 | `/agenda` | agenda e notificacoes internas |
 | `/opcoes` (alias `/configuracoes`) | configurações da conta e monitoramento técnico de erros |
 | `/clinicas` | SuperAdministrador: CRUD, identidade visual e troca de clinica; Administrador: a propria clinica e suas equipes |
