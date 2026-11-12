@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { VIEW_PATHS } from './routes';
+import { FORM_VIEWS, VIEW_PATHS } from './routes';
 
 type AzureStaticWebAppsConfiguration = {
   globalHeaders?: Record<string, string>;
@@ -42,7 +42,8 @@ describe('configuração de deploy do Azure Static Web Apps', () => {
       readFileSync(resolve(process.cwd(), 'public/staticwebapp.config.json'), 'utf8'),
     ) as AzureStaticWebAppsConfiguration;
 
-    for (const route of [...Object.values(VIEW_PATHS), '/configuracoes']) {
+    const formRoutes = FORM_VIEWS.map((view) => `${VIEW_PATHS[view]}/*`);
+    for (const route of [...Object.values(VIEW_PATHS), ...formRoutes, '/configuracoes']) {
       // A rota recebe o HTML do fallback: mantém o mesmo "sem cache" de /index.html,
       // senão o Azure aplica max-age=30 e links diretos podem servir HTML desatualizado após deploy.
       expect(configuration.routes, route).toContainEqual({

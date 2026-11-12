@@ -76,7 +76,7 @@ it.each([true, false])('patient deletion refreshes once only when permitted (%s)
     const chrome = useAppChrome({ session });
     return usePatientCrudActions({ session, canCreatePatients: true, canEditPatients: true, canDeletePatients,
       patientList, patientLookups, patientForm: usePatientForm(patientList.pacientes),
-      setModuleMode: vi.fn(), navigateToPatients: vi.fn(), loadPacientes: queries.loadPacientes,
+      navigateToPatientForm: vi.fn(), navigateToPatients: vi.fn(), onRecordLoadError: vi.fn(), loadPacientes: queries.loadPacientes,
       loadDashboardSummary: chrome.loadDashboardSummary, confirmAction });
   }, { wrapper });
   await waitFor(() => expect(queryClient.isFetching()).toBe(0));
