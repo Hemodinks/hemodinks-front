@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import type { AppView } from '../../appTypes';
-import { getViewFromPath, isRootPath, VIEW_PATHS } from '../../routes';
+import type { AppView, ModuleMode } from '../../appTypes';
+import { getFormPath, isRootPath, parseModuleRoute, VIEW_PATHS, type FormView } from '../../routes';
 import type { AuthSession } from '../../types';
 
 type UseRouteViewOptions = {
@@ -18,6 +18,9 @@ type UseRouteViewOptions = {
   canUseAgendaRoute: boolean;
   canUseSettingsRoute: boolean;
   canUseClinicsRoute: boolean;
+  // <base>/novo also needs the create permission; without it the module list opens instead.
+  canCreatePatients: boolean;
+  canCreateUsers: boolean;
   forceDashboardRoute?: boolean;
 };
 
@@ -35,11 +38,14 @@ export function useRouteView({
   canUseAgendaRoute,
   canUseSettingsRoute,
   canUseClinicsRoute,
+  canCreatePatients,
+  canCreateUsers,
   forceDashboardRoute = false,
 }: UseRouteViewOptions) {
   const location = useLocation();
   const navigate = useNavigate();
-  const routeView = getViewFromPath(location.pathname);
+  const route = parseModuleRoute(location.pathname);
+  const routeView = route.view;
   const isRootRoute = isRootPath(location.pathname);
   const shouldForceDashboardRoute = forceDashboardRoute && canUseDashboardRoute;
   const routeBlocked = (routeView === 'dashboard' && !canUseDashboardRoute)
@@ -73,6 +79,8 @@ export function useRouteView({
               : canUseAgendaRoute
                 ? 'agenda'
                 : canUseSettingsRoute ? 'settings' : 'clinics';
+  const newRecordDenied = route.mode === 'form' && route.recordId === null
+    && ((routeView === 'patients' && !canCreatePatients) || (routeView === 'users' && !canCreateUsers));
   const activeView: AppView = shouldForceDashboardRoute || !routeView || routeBlocked
     ? fallbackView
     : routeView;
@@ -84,15 +92,29 @@ export function useRouteView({
 
     if (shouldForceDashboardRoute || isRootRoute || !routeView || routeBlocked) {
       navigate(VIEW_PATHS[fallbackView], { replace: true });
+    } else if (newRecordDenied) {
+      navigate(VIEW_PATHS[routeView], { replace: true });
     }
-  }, [fallbackView, isRootRoute, navigate, routeBlocked, routeView, session, shouldForceDashboardRoute]);
+  }, [fallbackView, isRootRoute, navigate, newRecordDenied, routeBlocked, routeView, session, shouldForceDashboardRoute]);
 
   const navigateToView = useCallback((view: AppView, replace = false) => {
     navigate(VIEW_PATHS[view], { replace });
   }, [navigate]);
 
+  const navigateToForm = useCallback((view: FormView, recordId: number | null = null, replace = false) => {
+    navigate(getFormPath(view, recordId), { replace });
+  }, [navigate]);
+
+  // A blocked or fallback route never keeps the form state of the URL that was rejected.
+  const routeApplies = activeView === routeView;
+  const moduleMode: ModuleMode = routeApplies && !newRecordDenied ? route.mode : activeView === 'profile' ? 'form' : 'list';
+  const formRecordId = routeApplies ? route.recordId : null;
+
   return {
     activeView,
+    moduleMode,
+    formRecordId,
     navigateToView,
+    navigateToForm,
   };
 }

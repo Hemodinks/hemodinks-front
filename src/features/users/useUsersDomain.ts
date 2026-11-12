@@ -19,6 +19,7 @@ import { useUserList } from './useUserList';
 import type { UseUsersDomainOptions } from './usersDomainTypes';
 import { useUserFileInputs } from './useUserFileInputs';
 import { useUserCrudActions } from './useUserCrudActions';
+import { useFormRouteSync, useRecordLoadError } from '../../shared/hooks/useFormRouteSync';
 
 const LIST_CACHE_TIME_MS = 20 * 1000;
 
@@ -29,7 +30,8 @@ export function useUsersDomain({
   canAccessUsers,
   canEditOwnUser,
   isAdmin,
-  setModuleMode,
+  formRecordId,
+  navigateToForm,
   navigateToView,
   persistSession,
   loadDashboardSummary,
@@ -144,6 +146,7 @@ export function useUsersDomain({
 
     await usersQuery.refetch();
   };
+  const [recordLoadError, setRecordLoadError] = useRecordLoadError(activeView === 'users');
   const userCrudActions = useUserCrudActions({
     session,
     canUseUserForm,
@@ -152,7 +155,8 @@ export function useUsersDomain({
     userList,
     userForm,
     userFormRequestRef,
-    setModuleMode,
+    navigateToUserForm: (recordId) => navigateToForm('users', recordId),
+    onRecordLoadError: setRecordLoadError,
     navigateToView,
     persistSession,
     refreshUserList,
@@ -199,19 +203,27 @@ export function useUsersDomain({
     if (!canAccessUsers || !isAdmin) {
       return;
     }
+    navigateToForm('users', null);
+  };
 
+  // Opened by the /usuarios/novo route (click, back/forward, reload or shared link).
+  const initNewUserForm = () => {
+    if (!canAccessUsers || !isAdmin) {
+      navigateToView('users', true);
+      return;
+    }
+    cancelUserFormRequest();
     resetUserForm();
     setSuccessMessage('');
-    navigateToView('users');
-    setModuleMode('form');
   };
 
   const closeUserForm = () => {
     cancelUserFormRequest();
     resetUserForm();
-    setModuleMode('list');
 
-    if (!canAccessUsers) {
+    if (canAccessUsers) {
+      navigateToView('users');
+    } else {
       skipProfileAutoOpenRef.current = true;
       navigateToView('dashboard');
     }
@@ -224,7 +236,6 @@ export function useUsersDomain({
 
     cancelUserFormRequest();
     resetUserForm();
-    setModuleMode('list');
   };
 
   const openMyProfile = () => {
@@ -272,6 +283,15 @@ export function useUsersDomain({
     }
   }, [activeView, canEditOwnUser, editingId, moduleMode, session?.user.id]);
 
+  useFormRouteSync({
+    active: Boolean(session && !session.user.precisaTrocarSenha && canAccessUsers)
+      && activeView === 'users' && moduleMode === 'form',
+    recordId: formRecordId,
+    openNew: initNewUserForm,
+    openRecord: userCrudActions.loadUserForEdit,
+    onLeave: cancelUserFormRequest,
+  });
+
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
@@ -280,6 +300,7 @@ export function useUsersDomain({
 
   return {
     ...userList,
+    usersError: usersError || recordLoadError,
     ...userForm,
     ...userFileInputs,
     showPasswordModal,

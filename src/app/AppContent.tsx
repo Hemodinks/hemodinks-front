@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useLayoutEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useLayoutEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { sessionEpoch } from '../services/sessionEpoch';
 import { useAuthSession } from "../features/auth/useAuthSession";
@@ -10,7 +10,8 @@ import { LegalAcceptanceGate } from "../features/legal/LegalAcceptanceGate";
 import { useLegalAcceptance } from "../features/legal/useLegalAcceptance";
 import { usePatientsDomain } from "../features/patients/usePatientsDomain";
 import { useUsersDomain } from "../features/users/useUsersDomain";
-import type { AppView, ModuleMode } from "../appTypes";
+import type { AppView } from "../appTypes";
+import type { FormView } from "../routes";
 import { queryClient } from "../queryClient";
 import { useConfirmationDialog } from "../shared/components/ConfirmationDialog";
 import { useRouteView } from "../shared/hooks/useRouteView";
@@ -51,7 +52,6 @@ function AppSessionContent({ auth, loginFlow }: {
   usePrivacyPreferenceSession(session);
   const { theme, toggleTheme, setThemePreference } = useThemePreference();
   const { confirmAction, confirmationDialog } = useConfirmationDialog();
-  const [moduleMode, setModuleMode] = useState<ModuleMode>("list");
   const access = getAppAccess(session);
   const credentialGateActive = Boolean(
     session && (session.user.precisaTrocarSenha || session.user.precisaTrocarPin),
@@ -72,7 +72,7 @@ function AppSessionContent({ auth, loginFlow }: {
   const forceDashboardRoute =
     openDashboardAfterLogin &&
     Boolean(operationalSession && !operationalSession.user.precisaTrocarSenha);
-  const { activeView, navigateToView } = useRouteView({
+  const { activeView, moduleMode, formRecordId, navigateToView, navigateToForm } = useRouteView({
     ...access,
     session: operationalSession,
     forceDashboardRoute,
@@ -89,6 +89,13 @@ function AppSessionContent({ auth, loginFlow }: {
       navigateToView(view, replace);
     },
     [navigateToView],
+  );
+  const navigateToFormFromInteraction = useCallback(
+    (view: FormView, recordId: number | null = null, replace = false) => {
+      setOpenDashboardAfterLogin(false);
+      navigateToForm(view, recordId, replace);
+    },
+    [navigateToForm],
   );
   const returnToLogin = (infoMessage = "") => {
     resetLoginState(infoMessage);
@@ -109,7 +116,6 @@ function AppSessionContent({ auth, loginFlow }: {
     } else {
       navigateToView("dashboard", true);
     }
-    setModuleMode("list");
     setOpenDashboardAfterLogin(false);
     resetLoginState(infoMessage);
   }
@@ -124,7 +130,8 @@ function AppSessionContent({ auth, loginFlow }: {
     canAccessUsers: access.canAccessUsers,
     canEditOwnUser: access.canEditOwnUser,
     isAdmin: access.isAdmin,
-    setModuleMode,
+    formRecordId,
+    navigateToForm: navigateToFormFromInteraction,
     navigateToView: navigateToViewFromInteraction,
     persistSession,
     loadDashboardSummary: appChrome.loadDashboardSummary,
@@ -145,7 +152,8 @@ function AppSessionContent({ auth, loginFlow }: {
     canDeletePatients: access.canDeletePatients,
     canConsultCbhpm: access.canConsultCbhpm,
     patientReadOnly: access.patientReadOnly,
-    setModuleMode,
+    formRecordId,
+    navigateToForm: navigateToFormFromInteraction,
     navigateToView: navigateToViewFromInteraction,
     loadDashboardSummary: appChrome.loadDashboardSummary,
     confirmAction,
@@ -155,7 +163,8 @@ function AppSessionContent({ auth, loginFlow }: {
     activeView,
     moduleMode,
     canAccessMedicalGroups: access.canAccessMedicalGroups,
-    setModuleMode,
+    formRecordId,
+    navigateToForm: navigateToFormFromInteraction,
     navigateToView: navigateToViewFromInteraction,
     confirmAction,
   });
@@ -186,7 +195,6 @@ function AppSessionContent({ auth, loginFlow }: {
 
     if (access.canAccessDashboard) {
       navigateToViewFromInteraction("dashboard");
-      setModuleMode("list");
       return;
     }
     if (access.canAccessPatients) {
@@ -199,17 +207,14 @@ function AppSessionContent({ auth, loginFlow }: {
     }
     if (access.canAccessBilling) {
       navigateToViewFromInteraction("billing");
-      setModuleMode("list");
       return;
     }
     if (access.canAccessAgenda) {
       navigateToViewFromInteraction("agenda");
-      setModuleMode("list");
       return;
     }
 
     navigateToViewFromInteraction("settings");
-    setModuleMode("list");
   };
 
   const openAgenda = () => {
@@ -221,7 +226,6 @@ function AppSessionContent({ auth, loginFlow }: {
     }
 
     navigateToViewFromInteraction("agenda");
-    setModuleMode("list");
   };
 
   const openPatientsListFromMenu = () => {
@@ -244,7 +248,6 @@ function AppSessionContent({ auth, loginFlow }: {
     resetProfileRouteState();
     if (!access.canAccessBilling) return openDashboard();
     navigateToViewFromInteraction(view);
-    setModuleMode("list");
   };
   const openBilling = () => openBillingView('billing');
   const openBillingHistory = () => openBillingView('billingHistory');
@@ -252,13 +255,12 @@ function AppSessionContent({ auth, loginFlow }: {
     resetProfileRouteState();
     if (!access.canAccessReports) return openDashboard();
     navigateToViewFromInteraction("reports");
-    setModuleMode("list");
   };
 
   const openTutorials = () => {
     resetProfileRouteState();
     if (!access.canAccessTutorials) return openDashboard();
-    navigateToViewFromInteraction("tutorials"); setModuleMode("list");
+    navigateToViewFromInteraction("tutorials");
   };
 
   const openSettings = () => {
@@ -270,7 +272,6 @@ function AppSessionContent({ auth, loginFlow }: {
     }
 
     navigateToViewFromInteraction("settings");
-    setModuleMode("list");
   };
 
   const openClinics = () => {
@@ -280,7 +281,6 @@ function AppSessionContent({ auth, loginFlow }: {
       return;
     }
     navigateToViewFromInteraction("clinics");
-    setModuleMode("list");
   };
   const openCurrentClinic = () => {
     resetProfileRouteState();
@@ -289,7 +289,6 @@ function AppSessionContent({ auth, loginFlow }: {
       return;
     }
     navigate(`/clinicas?editar=${session.user.clinicaId}`);
-    setModuleMode("list");
   };
 
   const handleClinicSelected = (
@@ -298,8 +297,11 @@ function AppSessionContent({ auth, loginFlow }: {
     if (!session) return;
     queryClient.clear();
     appChrome.resetAppChrome();
+    // Same reset as endSession: no list, form or record of the previous clinic survives the switch.
+    usersDomain.resetUsersState();
+    patientsDomain.resetPatientsState();
+    medicalGroupsDomain.resetMedicalGroupsState();
     persistSession(buildSessionForSelectedClinic(session, result));
-    setModuleMode("list");
     navigateToViewFromInteraction("dashboard", true);
   };
 
