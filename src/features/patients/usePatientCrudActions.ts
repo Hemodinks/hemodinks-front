@@ -1,3 +1,4 @@
+import type { IsCurrentRoute } from '../../shared/hooks/useFormRouteSync';
 import { type FormEvent, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { createPaciente, createPacienteObservacao, deletePaciente, deletePacienteArquivo, getPaciente, updatePaciente, uploadPacienteArquivo } from '../../services';
@@ -6,7 +7,6 @@ import { queryKeys } from '../../shared/queryKeys';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { getErrorMessage } from '../../shared/utils/formatters';
 import type { AuthSession, Paciente, PacientePayload } from '../../types';
-import type { ModuleMode } from '../../appTypes';
 import { preparePatientPayload } from './patientDomainHelpers';
 import type { usePatientForm } from './usePatientForm';
 import type { usePatientList } from './usePatientList';
@@ -20,8 +20,9 @@ type UsePatientCrudActionsOptions = {
   patientList: ReturnType<typeof usePatientList>;
   patientForm: ReturnType<typeof usePatientForm>;
   patientLookups: ReturnType<typeof usePatientLookups>;
-  setModuleMode: React.Dispatch<React.SetStateAction<ModuleMode>>;
-  navigateToPatients: () => void;
+  navigateToPatientForm: (recordId: number) => void;
+  navigateToPatients: (replace?: boolean) => void;
+  onRecordLoadError: (message: string) => void;
   loadPacientes: (token?: string, forceRefresh?: boolean) => Promise<void>;
   loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
   confirmAction: ConfirmAction;
@@ -29,7 +30,7 @@ type UsePatientCrudActionsOptions = {
 
 export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
   const { session, canCreatePatients, canEditPatients, canDeletePatients, patientList, patientForm, patientLookups,
-    setModuleMode, navigateToPatients, loadPacientes, loadDashboardSummary, confirmAction } = options;
+    navigateToPatientForm, navigateToPatients, onRecordLoadError, loadPacientes, loadDashboardSummary, confirmAction } = options;
   const submitInFlightRef = useRef(false);
   const saveMutation = useMutation({
     mutationFn: ({ id, payload, token }: { id: number | null; payload: PacientePayload; token: string }) =>
@@ -45,21 +46,34 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
       createPacienteObservacao(pacienteId, { texto }, token),
   });
 
-  const handleEditPaciente = async (paciente: Paciente) => {
+  const handleEditPaciente = (paciente: Paciente) => navigateToPatientForm(paciente.id);
+
+  // Opened by the /pacientes/<id> route (click, back/forward, reload or shared link).
+  const loadPacienteForEdit = async (pacienteId: number, isCurrent: IsCurrentRoute) => {
     if (!session) return;
+    const listed = patientList.pacientes.find((paciente) => paciente.id === pacienteId);
+    patientForm.resetPacienteForm();
     patientForm.setPacienteFormError('');
+    onRecordLoadError('');
     patientList.setPacienteSuccessMessage('');
-    navigateToPatients();
     patientForm.setPendingPatientFiles([]);
     patientForm.setPacienteFormLoading(true);
     try {
-      patientForm.applyPacienteToForm(await getPaciente(paciente.id, session.token));
+      const details = await getPaciente(pacienteId, session.token);
+      if (!isCurrent()) return;
+      patientForm.applyPacienteToForm(details);
     } catch (error) {
-      patientForm.applyPacienteToForm(paciente);
-      patientForm.setPacienteFormError(getErrorMessage(error));
+      if (!isCurrent()) return;
+      if (listed) {
+        patientForm.applyPacienteToForm(listed);
+        patientForm.setPacienteFormError(getErrorMessage(error));
+      } else {
+        // Never leave an empty form on an edit URL: it would read as "novo paciente".
+        onRecordLoadError(getErrorMessage(error));
+        navigateToPatients(true);
+      }
     } finally {
-      patientForm.setPacienteFormLoading(false);
-      setModuleMode('form');
+      if (isCurrent()) patientForm.setPacienteFormLoading(false);
     }
   };
 
@@ -104,7 +118,7 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
       ]);
       patientForm.resetPacienteForm();
       patientList.setPacienteCurrentPage(1);
-      setModuleMode('list');
+      navigateToPatients();
       await loadPacientes(session.token, true);
       await loadDashboardSummary(session.token, true);
       if (warningMessage) patientList.setPacientesError(warningMessage);
@@ -150,5 +164,5 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
     } catch (error) { patientList.setPacientesError(getErrorMessage(error)); }
   };
 
-  return { handleEditPaciente, handleSubmitPaciente, handleDeletePaciente, handleDeletePacienteArquivo };
+  return { handleEditPaciente, loadPacienteForEdit, handleSubmitPaciente, handleDeletePaciente, handleDeletePacienteArquivo };
 }

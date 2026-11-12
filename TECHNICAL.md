@@ -114,6 +114,20 @@ A exclusao de pacientes aparece apenas para Administrador e SuperAdministrador (
 
 `useRouteView` sincroniza URL, permissoes e view ativa. Se a rota nao for permitida para o perfil atual, a aplicacao redireciona para uma view valida.
 
+Formularios com rota propria (#202): pacientes, usuarios e grupos medicos usam `<base>/novo` (cadastro) e `<base>/<id>`
+(edicao/visualizacao), por exemplo `/pacientes/novo` e `/pacientes/42`. A URL e a fonte de verdade de `moduleMode` e do
+registro aberto (`parseModuleRoute`/`getFormPath` em `src/routes.ts`); por isso voltar/avancar, recarregar e link compartilhado
+reabrem a mesma tela. Regras:
+
+- a sub-rota herda a permissao do modulo; segmento invalido (`/pacientes/abc`, `/pacientes/0`, `/agenda/novo`) e rota
+  desconhecida e cai no fallback;
+- `<base>/novo` exige tambem permissao de criar (`canCreatePatients`, `canCreateUsers`); sem ela abre a lista do modulo, antes de renderizar o formulario;
+- o formulario e aberto uma vez por rota por `useFormRouteSync`; se o registro da URL nao puder ser carregado, volta para a
+  lista com o erro (nunca deixa um formulario vazio numa URL de edicao);
+- troca de clinica e logout navegam para o painel e limpam o cache; a API continua sendo a barreira de acesso ao registro;
+- `/meu-cadastro` segue sendo o proprio formulario do usuario logado;
+- `public/staticwebapp.config.json` aplica `noindex` e `no-cache` tambem em `/pacientes/*`, `/usuarios/*` e `/grupos-medicos/*`.
+
 ## Autenticacao, reset e sessao
 
 `useAuthSession` controla a sessao do usuario:

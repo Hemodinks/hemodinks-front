@@ -17,7 +17,7 @@ const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider 
 const session = mockSession();
 const render = (activeView: AppView, moduleMode: ModuleMode, canAccessMedicalGroups = true) => renderHook(() => useMedicalGroupsDomain({
   session, activeView, moduleMode, canAccessMedicalGroups,
-  setModuleMode: vi.fn(), navigateToView: vi.fn(), confirmAction: vi.fn(),
+  formRecordId: null, navigateToForm: vi.fn(), navigateToView: vi.fn(), confirmAction: vi.fn(),
 }), { wrapper });
 
 beforeEach(() => {
