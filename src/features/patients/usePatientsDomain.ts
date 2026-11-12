@@ -15,6 +15,7 @@ import { usePatientFileActions } from './usePatientFileActions';
 import { usePatientProcedureActions } from './usePatientProcedureActions';
 import { usePatientPaginationGuards } from './usePatientPaginationGuards';
 import { usePatientCrudActions } from './usePatientCrudActions';
+import { useFormRouteSync, useRecordLoadError } from '../../shared/hooks/useFormRouteSync';
 
 export function usePatientsDomain({
   session,
@@ -29,7 +30,8 @@ export function usePatientsDomain({
   canDeletePatients,
   canConsultCbhpm,
   patientReadOnly,
-  setModuleMode,
+  formRecordId,
+  navigateToForm,
   navigateToView,
   loadDashboardSummary,
   confirmAction,
@@ -39,6 +41,7 @@ export function usePatientsDomain({
   const patientLookups = usePatientLookups();
   const cbhpmLookup = useCbhpmLookup();
   const [selectedPatientInfo, setSelectedPatientInfo] = useState<Paciente | null>(null);
+  const [recordLoadError, setRecordLoadError] = useRecordLoadError(activeView === 'patients');
 
   const {
     pacientes,
@@ -204,8 +207,9 @@ export function usePatientsDomain({
     patientList,
     patientForm,
     patientLookups,
-    setModuleMode,
-    navigateToPatients: () => navigateToView('patients'),
+    navigateToPatientForm: (recordId) => navigateToForm('patients', recordId),
+    navigateToPatients: (replace) => navigateToView('patients', replace),
+    onRecordLoadError: setRecordLoadError,
     loadPacientes,
     loadDashboardSummary,
     confirmAction,
@@ -229,11 +233,19 @@ export function usePatientsDomain({
     }
 
     navigateToView('patients');
-    setModuleMode('list');
   };
 
   const openNewPacienteForm = () => {
     if (!canCreatePatients) {
+      return;
+    }
+    navigateToForm('patients', null);
+  };
+
+  // Opened by the /pacientes/novo route (click, back/forward, reload or shared link).
+  const initNewPacienteForm = () => {
+    if (!canCreatePatients) {
+      navigateToView('patients', true);
       return;
     }
 
@@ -246,8 +258,6 @@ export function usePatientsDomain({
       }));
     }
     setPacienteSuccessMessage('');
-    navigateToView('patients');
-    setModuleMode('form');
 
     if (session) {
       void loadMedicalUsers(session.token);
@@ -264,8 +274,17 @@ export function usePatientsDomain({
 
   const closePacienteForm = () => {
     resetPacienteForm();
-    setModuleMode('list');
+    navigateToView('patients');
   };
+
+  useFormRouteSync({
+    active: Boolean(session && !session.user.precisaTrocarSenha && canAccessPatients)
+      && activeView === 'patients' && moduleMode === 'form',
+    recordId: formRecordId,
+    openNew: initNewPacienteForm,
+    openRecord: patientCrudActions.loadPacienteForEdit,
+    onLeave: () => setPacienteFormLoading(false),
+  });
 
   const clearPacienteFilters = () => {
     setPacienteFilters(emptyPacienteFilters);
@@ -299,6 +318,7 @@ export function usePatientsDomain({
 
   return {
     ...patientList,
+    pacientesError: pacientesError || recordLoadError,
     ...patientForm,
     ...patientLookups,
     ...cbhpmLookup,

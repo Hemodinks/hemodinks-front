@@ -1,4 +1,4 @@
-import { type Dispatch, type FormEvent, type SetStateAction, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   createMedicalGroup,
@@ -12,6 +12,8 @@ import type { AppView, ModuleMode } from '../../appTypes';
 import { queryClient } from '../../queryClient';
 import { queryKeys } from '../../shared/queryKeys';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
+import { useFormRouteSync, useRecordLoadError, type IsCurrentRoute } from '../../shared/hooks/useFormRouteSync';
+import type { FormView } from '../../routes';
 import { getErrorMessage, PAGE_SIZE } from '../../shared/utils/formatters';
 import { getPagedItems, getPagedTotal, getPagedTotalPages, sortUsersByName } from '../../shared/utils/listing';
 import type { AuthSession, MedicalGroup, MedicalGroupFormData, MedicalUserOption } from '../../types';
@@ -37,7 +39,8 @@ type UseMedicalGroupsDomainOptions = {
   activeView: AppView;
   moduleMode: ModuleMode;
   canAccessMedicalGroups: boolean;
-  setModuleMode: Dispatch<SetStateAction<ModuleMode>>;
+  formRecordId: number | null;
+  navigateToForm: (view: FormView, recordId?: number | null, replace?: boolean) => void;
   navigateToView: (view: AppView, replace?: boolean) => void;
   confirmAction: ConfirmAction;
 };
@@ -47,7 +50,8 @@ export function useMedicalGroupsDomain({
   activeView,
   moduleMode,
   canAccessMedicalGroups,
-  setModuleMode,
+  formRecordId,
+  navigateToForm,
   navigateToView,
   confirmAction,
 }: UseMedicalGroupsDomainOptions) {
@@ -66,6 +70,7 @@ export function useMedicalGroupsDomain({
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [availableMedicalUsers, setAvailableMedicalUsers] = useState<MedicalUserOption[]>([]);
+  const [recordLoadError, setRecordLoadError] = useRecordLoadError(activeView === 'medicalGroups');
 
   const sessionReady = Boolean(session && !session.user.precisaTrocarSenha && canAccessMedicalGroups);
   const groupsQueryParams = useMemo(() => ({
@@ -189,33 +194,34 @@ export function useMedicalGroupsDomain({
 
   const openMedicalGroupsList = () => {
     navigateToView('medicalGroups');
-    setModuleMode('list');
     resetForm();
   };
 
-  const openNewMedicalGroupForm = () => {
+  const openNewMedicalGroupForm = () => navigateToForm('medicalGroups', null);
+  const handleEditMedicalGroup = (group: MedicalGroup) => navigateToForm('medicalGroups', group.id);
+
+  const initNewMedicalGroupForm = () => {
     resetForm();
     setSuccessMessage('');
-    navigateToView('medicalGroups');
-    setModuleMode('form');
     if (session) {
       void loadAvailableMedicalUsers(session.token);
     }
   };
 
-  const handleEditMedicalGroup = async (group: MedicalGroup) => {
+  const loadMedicalGroupForEdit = async (groupId: number, isCurrent: IsCurrentRoute) => {
     if (!session) {
       return;
     }
 
+    resetForm();
     setSuccessMessage('');
     setFormError('');
-    navigateToView('medicalGroups');
-    setModuleMode('form');
+    setRecordLoadError('');
     setFormLoading(true);
 
     try {
-      const details = await getMedicalGroup(group.id, session.token);
+      const details = await getMedicalGroup(groupId, session.token);
+      if (!isCurrent()) return;
       setEditingGroupId(details.id);
       setFormData({
         nome: details.nome,
@@ -224,9 +230,12 @@ export function useMedicalGroupsDomain({
       });
       await loadAvailableMedicalUsers(session.token);
     } catch (error) {
-      setFormError(getErrorMessage(error));
+      if (!isCurrent()) return;
+      // Never leave an empty form on an edit URL: saving it would create a new group.
+      setRecordLoadError(getErrorMessage(error));
+      navigateToView('medicalGroups', true);
     } finally {
-      setFormLoading(false);
+      if (isCurrent()) setFormLoading(false);
     }
   };
 
@@ -300,10 +309,18 @@ export function useMedicalGroupsDomain({
     }
   };
 
+  useFormRouteSync({
+    active: sessionReady && activeView === 'medicalGroups' && moduleMode === 'form',
+    recordId: formRecordId,
+    openNew: initNewMedicalGroupForm,
+    openRecord: loadMedicalGroupForEdit,
+    onLeave: () => setFormLoading(false),
+  });
+
   return {
     groups,
     groupsLoading,
-    groupsError,
+    groupsError: groupsError || recordLoadError,
     successMessage,
     searchTerm,
     setSearchTerm,

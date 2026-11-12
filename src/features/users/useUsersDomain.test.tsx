@@ -23,7 +23,7 @@ it.each([
   vi.mocked(getUsers).mockResolvedValue(paged([]));
   const { result } = renderHook(() => useUsersDomain({
     session, activeView: 'users', moduleMode: 'list', canAccessUsers,
-    canEditOwnUser: true, isAdmin: false, setModuleMode: vi.fn(), navigateToView: vi.fn(),
+    canEditOwnUser: true, isAdmin: false, formRecordId: null, navigateToForm: vi.fn(), navigateToView: vi.fn(),
     persistSession: vi.fn(), loadDashboardSummary: vi.fn(), onDeleteCurrentUser: vi.fn(),
     onIdentityChanged: vi.fn(), confirmAction: vi.fn(),
   }), { wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider> });
@@ -40,7 +40,7 @@ it('refreshes the active user list once, invalidates inactive pages and preserve
   vi.mocked(getUsers).mockResolvedValue(paged([]));
   const { result } = renderHook(() => useUsersDomain({
     session, activeView: 'users', moduleMode: 'list', canAccessUsers: true,
-    canEditOwnUser: true, isAdmin: true, setModuleMode: vi.fn(), navigateToView: vi.fn(),
+    canEditOwnUser: true, isAdmin: true, formRecordId: null, navigateToForm: vi.fn(), navigateToView: vi.fn(),
     persistSession: vi.fn(), loadDashboardSummary: vi.fn(), onDeleteCurrentUser: vi.fn(),
     onIdentityChanged: vi.fn(), confirmAction: vi.fn(),
   }), { wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider> });
@@ -68,7 +68,7 @@ it('deleting a user refreshes list and summary once each', async () => {
     const chrome = useAppChrome({ session });
     return useUsersDomain({
       session, activeView: 'users', moduleMode: 'list', canAccessUsers: true,
-      canEditOwnUser: true, isAdmin: true, setModuleMode: vi.fn(), navigateToView: vi.fn(),
+      canEditOwnUser: true, isAdmin: true, formRecordId: null, navigateToForm: vi.fn(), navigateToView: vi.fn(),
       persistSession: vi.fn(), loadDashboardSummary: chrome.loadDashboardSummary,
       onDeleteCurrentUser: vi.fn(), onIdentityChanged: vi.fn(), confirmAction,
     });

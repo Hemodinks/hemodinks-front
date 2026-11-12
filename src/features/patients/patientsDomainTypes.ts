@@ -1,6 +1,6 @@
-import type { Dispatch, SetStateAction } from 'react';
 import type { AppView, ModuleMode } from '../../appTypes';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
+import type { FormView } from '../../routes';
 import type { AuthSession } from '../../types';
 
 export type UsePatientsDomainOptions = {
@@ -16,7 +16,8 @@ export type UsePatientsDomainOptions = {
   canDeletePatients: boolean;
   canConsultCbhpm: boolean;
   patientReadOnly: boolean;
-  setModuleMode: Dispatch<SetStateAction<ModuleMode>>;
+  formRecordId: number | null;
+  navigateToForm: (view: FormView, recordId?: number | null, replace?: boolean) => void;
   navigateToView: (view: AppView, replace?: boolean) => void;
   loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
   confirmAction: ConfirmAction;

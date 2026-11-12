@@ -7,6 +7,19 @@
       }
     },
     {
+      "route": "/sw.js",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Service-Worker-Allowed": "/"
+      }
+    },
+    {
+      "route": "/manifest.webmanifest",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    },
+    {
       "route": "/assets/*",
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable"
@@ -97,6 +110,27 @@
       }
     },
     {
+      "route": "/usuarios/*",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "route": "/pacientes/*",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "route": "/grupos-medicos/*",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
       "route": "/configuracoes",
       "headers": {
         "X-Robots-Tag": "noindex, nofollow",
@@ -108,7 +142,7 @@
     "rewrite": "/index.html",
     "exclude": [
       "/assets/*",
-      "/*.{css,js,mjs,json,png,gif,jpg,jpeg,svg,webp,ico,woff,woff2,ttf,eot,otf,wasm,map}"
+      "/*.{css,js,mjs,json,webmanifest,png,gif,jpg,jpeg,svg,webp,ico,woff,woff2,ttf,eot,otf,wasm,map}"
     ]
   },
   "globalHeaders": {
@@ -118,5 +152,8 @@
     "Strict-Transport-Security": "max-age=31536000",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "SAMEORIGIN"
+  },
+  "mimeTypes": {
+    ".webmanifest": "application/manifest+json"
   }
 }

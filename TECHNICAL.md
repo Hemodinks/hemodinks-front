@@ -91,7 +91,8 @@ Rotas publicas:
 | `/termos-de-uso` | Termos de Uso |
 | `/politica-de-privacidade` | Politica de Privacidade |
 
-Rotas internas (`src/routes.ts`; acesso calculado em `src/app/appAccess.ts`):
+Rotas internas (`src/routes.ts`; acesso calculado em `src/app/appAccess.ts` e distribuído às telas autenticadas por
+`AppAccessProvider`/`useAppAccess()` em `src/app/AppAccessContext.tsx`, sem fallback permissivo fora do provider):
 
 | Path | View interna | Quem ve |
 | --- | --- | --- |
@@ -112,6 +113,20 @@ O SuperAdministrador ignora o plano `Parcial` na interface; os demais perfis so 
 A exclusao de pacientes aparece apenas para Administrador e SuperAdministrador (a API tambem permite ao Medico).
 
 `useRouteView` sincroniza URL, permissoes e view ativa. Se a rota nao for permitida para o perfil atual, a aplicacao redireciona para uma view valida.
+
+Formularios com rota propria (#202): pacientes, usuarios e grupos medicos usam `<base>/novo` (cadastro) e `<base>/<id>`
+(edicao/visualizacao), por exemplo `/pacientes/novo` e `/pacientes/42`. A URL e a fonte de verdade de `moduleMode` e do
+registro aberto (`parseModuleRoute`/`getFormPath` em `src/routes.ts`); por isso voltar/avancar, recarregar e link compartilhado
+reabrem a mesma tela. Regras:
+
+- a sub-rota herda a permissao do modulo; segmento invalido (`/pacientes/abc`, `/pacientes/0`, `/agenda/novo`) e rota
+  desconhecida e cai no fallback;
+- `<base>/novo` exige tambem permissao de criar (`canCreatePatients`, `canCreateUsers`); sem ela abre a lista do modulo, antes de renderizar o formulario;
+- o formulario e aberto uma vez por rota por `useFormRouteSync`; se o registro da URL nao puder ser carregado, volta para a
+  lista com o erro (nunca deixa um formulario vazio numa URL de edicao);
+- troca de clinica e logout navegam para o painel e limpam o cache; a API continua sendo a barreira de acesso ao registro;
+- `/meu-cadastro` segue sendo o proprio formulario do usuario logado;
+- `public/staticwebapp.config.json` aplica `noindex` e `no-cache` tambem em `/pacientes/*`, `/usuarios/*` e `/grupos-medicos/*`.
 
 ## Autenticacao, reset e sessao
 
@@ -330,6 +345,21 @@ Responsabilidades:
 - exibicao de modulo, descricao, timestamp, metodo, linha, usuario, operacao de banco, request ID e fluxo de classes
 - exibicao opcional da query relacionada dentro de `details`
 - atualizacao manual da listagem e limpeza confirmada dos logs atuais; novos erros continuam sendo registrados
+
+## PWA (instalação e service worker)
+
+O front é instalável (#206): `public/manifest.webmanifest` (standalone, `start_url`/`scope` `/`, ícones 192/512 e
+maskable em `public/icons/`) e metas de iOS no `index.html` (`apple-touch-icon`, `apple-mobile-web-app-*`).
+
+`public/sw.js` (sem biblioteca) é registrado por `src/registerServiceWorker.ts` só no build de produção, após o `load`;
+falha de registro não afeta o app. Ele faz cache **apenas** de `/assets/*` (arquivos com hash, imutáveis), do próprio
+origin, GET, sem query string, sem `no-store`/`private` e com `Content-Type` de script, CSS, imagem ou fonte (um HTML
+de fallback do SPA para um asset que sumiu após deploy nunca é guardado). Ficam de fora, sempre pela rede: API
+(qualquer origin ou `/api/*`), HTML e navegações (o `index.html` segue sem cache e o aviso de nova versão continua
+funcionando), ícones (sem hash), tutoriais, `sw.js`, manifest e terceiros (New Relic). Não há dado de paciente, sessão ou clínica no Cache
+Storage; por isso logout e troca de clínica não precisam limpá-lo. Caches antigos do próprio app são removidos ao
+ativar uma nova versão do worker (`CACHE_NAME` em `sw.js`); limite de 80 entradas. Não há modo offline.
+A CSP não mudou (`worker-src 'self' blob:`, `manifest-src 'self'`). Testes: `src/pwa.test.ts`.
 
 ## Observabilidade
 

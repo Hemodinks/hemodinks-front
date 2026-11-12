@@ -25,6 +25,7 @@ import { getTutorialNarration } from '../src/features/tutorials/tutorialNarratio
 import { TUTORIAL_MEDIA } from '../scripts/tutorials/library-config';
 import { registerPatientFormTests } from './patient-form-cases';
 import { registerPatientListTests } from './patient-list-cases';
+import { registerFormRouteCases } from './form-route-cases';
 import { applyThemeForAudit, settleStyleTransitions } from './theme-audit';
 
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
@@ -714,6 +715,7 @@ registerPatientFormTests({ setup: mockApi, login: loginViaUi });
 registerSurgeryTypeCases({ mockApi, loginViaUi });
 registerCalculatorCases({ mockApi, loginViaUi });
 registerPatientListTests({ setup: mockApi, login: loginViaUi });
+registerFormRouteCases({ setup: mockApi, login: loginViaUi });
 registerResponsiveSmokeCases({ setup: mockApi, login: loginViaUi });
 registerAccessibilityAuditCases({ setup: mockApi, login: loginViaUi });
 registerResponsiveA11yRefinementCases({ setup: mockApi, login: loginViaUi, nonAdminSession: patientSession });

@@ -91,6 +91,7 @@ export function getAppAccess(session: AuthSession | null) {
     canAccessMedicalGroups,
     canAccessSettings,
     canCreatePatients: canManagePatients,
+    canCreateUsers: canAccessUsers && isAdmin,
     canEditPatients: canManagePatients,
     canDeletePatients: isAdmin && hasClinicModule(CLINIC_MODULES.patients),
     canManagePatientObservacoes: canManagePatients,
@@ -110,3 +111,5 @@ export function getAppAccess(session: AuthSession | null) {
     canUseClinicsRoute: isAdmin,
   };
 }
+
+export type AppAccess = ReturnType<typeof getAppAccess>;
