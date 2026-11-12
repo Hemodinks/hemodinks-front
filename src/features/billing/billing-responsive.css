@@ -1,0 +1,249 @@
+@media (max-width: 1120px) {
+  .billing-filter-grid,
+  .billing-summary-grid,
+  .billing-detail-kpis,
+  .billing-detail-list,
+  .billing-insights-grid,
+  .billing-results-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .billing-results-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-detail-panel {
+    position: static;
+  }
+
+  .billing-summary-overview,
+  .billing-summary-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .billing-summary-support-card {
+    grid-column: 1 / -1;
+  }
+
+  .billing-history-quarter-grid,
+  .billing-history-month-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .billing-history-charts-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-history-chart-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .billing-checkbox,
+  .billing-filter-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .billing-filter-grid,
+  .billing-summary-grid,
+  .billing-summary-overview,
+  .billing-summary-metrics,
+  .billing-summary-layout,
+  .billing-insights-grid,
+  .billing-detail-kpis,
+  .billing-detail-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-toolbar,
+  .billing-detail-toolbar,
+  .billing-section-heading,
+  .billing-detail-header,
+  .billing-procedure-list li,
+  .billing-ranking-list li {
+    display: grid;
+  }
+
+  .billing-filter-actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .billing-apply-filters,
+  .billing-clear-filters {
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  .billing-detail-toolbar-actions {
+    justify-content: space-between;
+  }
+
+  .billing-inline-note,
+  .billing-ranking-values {
+    text-align: left;
+  }
+
+  .modal-panel.billing-summary-modal {
+    width: min(100%, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    margin-top: 8px;
+    padding: 16px;
+  }
+
+  .billing-summary-main .billing-procedure-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-history-year-toggle,
+  .billing-history-month-toggle {
+    grid-template-columns: minmax(0, 1fr) 20px;
+  }
+
+  .billing-history-section-header,
+  .billing-history-month-summary-heading {
+    display: grid;
+  }
+
+  .alert:has(.billing-history-invalid-toggle) {
+    flex-wrap: wrap;
+  }
+
+  .billing-history-invalid-toggle {
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  .billing-history-quarter-legend {
+    display: grid;
+  }
+
+  .billing-history-year-picker {
+    justify-content: flex-start;
+  }
+
+  .billing-history-quarter-grid,
+  .billing-history-month-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-history-bar-chart {
+    height: 250px;
+    gap: 6px;
+  }
+
+  .billing-history-bar-axis {
+    font-size: 0.6rem;
+  }
+
+  .billing-history-bar-plot {
+    gap: 2px;
+  }
+
+  .billing-history-bar-value {
+    color: transparent;
+    user-select: none;
+  }
+
+  .billing-history-bar-column > strong {
+    font-size: 0.62rem;
+  }
+
+  .billing-history-bar-column:nth-child(-n + 3) .billing-history-chart-tooltip {
+    right: auto;
+    left: 0;
+    transform: translateY(4px);
+  }
+
+  .billing-history-bar-column:nth-child(-n + 3):hover .billing-history-chart-tooltip,
+  .billing-history-bar-column:nth-child(-n + 3):focus .billing-history-chart-tooltip {
+    transform: translateY(0);
+  }
+
+  .billing-history-bar-column:nth-child(-n + 3) .billing-history-chart-tooltip::after {
+    right: auto;
+    left: 14px;
+    transform: translateX(-50%);
+  }
+
+  .billing-history-bar-column:nth-last-child(-n + 5) .billing-history-chart-tooltip {
+    right: 0;
+    left: auto;
+    transform: translateY(4px);
+  }
+
+  .billing-history-bar-column:nth-last-child(-n + 5):hover .billing-history-chart-tooltip,
+  .billing-history-bar-column:nth-last-child(-n + 5):focus .billing-history-chart-tooltip {
+    transform: translateY(0);
+  }
+
+  .billing-history-bar-column:nth-last-child(-n + 5) .billing-history-chart-tooltip::after {
+    right: 14px;
+    left: auto;
+    transform: none;
+  }
+
+  .billing-history-tabs {
+    padding: 0 10px;
+  }
+
+  .billing-history-tabs button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .billing-history-totals,
+  .billing-history-month-value {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+
+  .billing-history-chevron {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .billing-history-months {
+    padding: 0 10px 10px;
+  }
+
+  .billing-history-files-heading,
+  .billing-history-file-list li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .billing-history-upload {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .billing-history-chart-kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-history-bar-chart {
+    height: 225px;
+  }
+
+  .billing-history-chart-help {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .billing-summary-card,
+  .billing-history-quarter-card,
+  .billing-history-month-summary-grid article {
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+
+  .billing-summary-card:hover,
+  .billing-history-quarter-card:hover,
+  .billing-history-month-summary-grid article:hover {
+    transform: none;
+  }
+}
