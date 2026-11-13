@@ -286,7 +286,7 @@ Responsabilidades:
 
 ### Clinicas e equipes
 
-- `src/features/clinics/*`: CRUD de clinicas (SuperAdministrador), dados da propria clinica (Administrador), plano, modulos, identidade visual e equipes (`/api/platform/clinicas/*`)
+- `src/features/clinics/*`: CRUD de clinicas (SuperAdministrador), dados da propria clinica (Administrador), plano, modulos, identidade visual e equipes (`/api/platform/clinicas/*`); painel de usuarios online so para SuperAdministrador (`ActiveSessionsPanel`, `GET /api/platform/sessoes-ativas`, atualiza a cada 60 s)
 
 ### Tutoriais, ajuda e calculadora
 
@@ -475,6 +475,7 @@ Endpoints consumidos (extraidos de `src/services` e `src/features`):
 | Clinicas (plataforma) | `POST` | `/api/platform/clinicas/{id}/equipes/{id}/operadores/{id}/pin` |
 | Clinicas (plataforma) | `GET` | `/api/public/clinicas` |
 | Clinicas (plataforma) | `GET` | `/api/public/clinicas/{slug}/foto` |
+| Sessoes ativas (plataforma, SuperAdministrador) | `GET` | `/api/platform/sessoes-ativas` |
 | Identidade visual | `GET` | `/api/configuracoes-sistema/current` |
 | Identidade visual | `GET` | `/api/configuracoes-sistema/current/foto-empresa` |
 | LGPD | `GET` | `/api/legal-acceptances/current` |
