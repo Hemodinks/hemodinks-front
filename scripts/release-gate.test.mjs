@@ -229,6 +229,10 @@ test('real API E2E builds with the .NET SDK pinned by global.json (#253)', () =>
   const realApi = workflow('real-api-e2e.yml');
   const setup = realApi.jobs['synthetic-integration'].steps.find(step => String(step.uses).startsWith('actions/setup-dotnet@'));
   assert.equal(setup.with['dotnet-version'], '10.0.x');
+  const steps = realApi.jobs['synthetic-integration'].steps;
+  const check = steps.find(step => step.name === 'Require the .NET SDK pinned by global.json');
+  assert.ok(check && steps.indexOf(check) > steps.indexOf(setup));
+  assert.match(check.run, /\[\[ "\$sdk" == 10\.\* \]\]/);
   const host = readFileSync(new URL('../integration/real-api/RealApiHost.csproj', import.meta.url), 'utf8');
   assert.match(host, /<TargetFramework>net10\.0<\/TargetFramework>/);
 });
