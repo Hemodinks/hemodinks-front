@@ -205,3 +205,34 @@ test('pin check rejects tags, branches, short SHAs and missing version comments'
     '  - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n    uses: ./.github/workflows/x.yml',
   ), []);
 });
+
+test('developer sync after a release only fast-forwards, from main, with write access scoped to its job', () => {
+  const sync = workflow('sync-developer.yml');
+  assert.deepEqual(Object.keys(sync.on), ['push']);
+  assert.deepEqual(sync.on.push, { branches: ['main'] });
+  assert.deepEqual(sync.permissions, { contents: 'read' });
+  const job = sync.jobs['fast-forward'];
+  assert.deepEqual(job.permissions, { contents: 'write' });
+  assert.equal(job.if, "${{ github.ref == 'refs/heads/main' }}");
+  const script = job.steps.map(step => step.run ?? '').join('\n');
+  assert.match(script, /git push origin "\$RELEASE_SHA:refs\/heads\/developer"/);
+  assert.doesNotMatch(script, /--force|\s-f\b|\+\$?RELEASE_SHA|\+refs\//);
+  assert.match(script, /merge-base --is-ancestor origin\/developer "\$RELEASE_SHA"/);
+  assert.doesNotMatch(JSON.stringify(sync), /secrets\./);
+});
+
+test('real API E2E builds with the .NET SDK pinned by global.json (#253)', () => {
+  const globalJson = JSON.parse(readFileSync(new URL('../global.json', import.meta.url), 'utf8'));
+  assert.match(globalJson.sdk.version, /^10\.0\.\d+$/);
+  assert.equal(globalJson.sdk.rollForward, 'latestFeature');
+  assert.equal(globalJson.sdk.allowPrerelease, false);
+  const realApi = workflow('real-api-e2e.yml');
+  const setup = realApi.jobs['synthetic-integration'].steps.find(step => String(step.uses).startsWith('actions/setup-dotnet@'));
+  assert.equal(setup.with['dotnet-version'], '10.0.x');
+  const steps = realApi.jobs['synthetic-integration'].steps;
+  const check = steps.find(step => step.name === 'Require the .NET SDK pinned by global.json');
+  assert.ok(check && steps.indexOf(check) > steps.indexOf(setup));
+  assert.match(check.run, /\[\[ "\$sdk" == 10\.\* \]\]/);
+  const host = readFileSync(new URL('../integration/real-api/RealApiHost.csproj', import.meta.url), 'utf8');
+  assert.match(host, /<TargetFramework>net10\.0<\/TargetFramework>/);
+});
