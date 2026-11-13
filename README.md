@@ -147,14 +147,14 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `/grupos-medicos` | grupos de medicos usados em notificacoes da agenda (`/grupos-medicos/novo`, `/grupos-medicos/<id>`) |
 | `/agenda` | agenda e notificacoes internas |
 | `/opcoes` (alias `/configuracoes`) | configurações da conta e monitoramento técnico de erros |
-| `/clinicas` | SuperAdministrador: CRUD, identidade visual e troca de clinica; Administrador: a propria clinica e suas equipes |
+| `/clinicas` | SuperAdministrador: CRUD, identidade visual, troca de clinica e painel de usuarios online (sessoes ativas de todas as clinicas); Administrador: a propria clinica e suas equipes |
 
 ## Perfis e acesso
 
 | Perfil | Acesso principal no menu |
 | --- | --- |
 | Administrador | painel, usuarios, pacientes (inclui exclusao), faturamento/historico/relatorios, grupos medicos, agenda, clinica propria e opcoes |
-| SuperAdministrador | tudo do Administrador, CRUD de clinicas, troca de clinica e modulos nao contratados |
+| SuperAdministrador | tudo do Administrador, CRUD de clinicas, troca de clinica, usuarios online e modulos nao contratados |
 | Medicos | painel, meu cadastro, pacientes, faturamento/historico/relatorios e agenda |
 | Controller | pacientes (licenca), faturamento/historico/relatorios, grupos medicos e agenda |
 | Equipe | usuarios (membros), pacientes, faturamento/historico/relatorios e agenda; sem operador identificado fica somente leitura |
