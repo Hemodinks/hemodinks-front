@@ -66,6 +66,13 @@ jobs:
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           dotnet-version: 10.0.x
+      - name: Require the .NET SDK pinned by global.json
+        shell: bash
+        run: |
+          sdk="$(dotnet --version)"
+          echo "Resolved .NET SDK: $sdk"
+          dotnet --list-sdks
+          [[ "$sdk" == 10.* ]] || { echo "::error::Expected .NET SDK 10.x from global.json, got $sdk."; exit 1; }
       - run: npm ci
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e:real:policy

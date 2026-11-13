@@ -1,0 +1,51 @@
+name: Sync developer with main
+
+# After a release lands on main, fast-forward developer to it. The release merge commit then is an
+# ancestor of the next release's PR head, which lets the main push reuse the PR CI (scripts/ci_scope.py).
+# Never forces: if developer has commits main lacks, nothing is pushed and the next release simply
+# runs the full suite. Pushes made with GITHUB_TOKEN do not start other workflows.
+
+"on":
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-developer
+  cancel-in-progress: false
+
+jobs:
+  fast-forward:
+    name: Fast-forward developer
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Fast-forward developer (never force)
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          git fetch --no-tags origin developer
+          if git merge-base --is-ancestor "$RELEASE_SHA" origin/developer; then
+            echo "developer already contains $RELEASE_SHA."
+            exit 0
+          fi
+          if ! git merge-base --is-ancestor origin/developer "$RELEASE_SHA"; then
+            echo "::warning::developer has commits that are not on main; not syncing. The next release runs the full CI."
+            exit 0
+          fi
+          if ! git push origin "$RELEASE_SHA:refs/heads/developer"; then
+            echo "::warning::developer moved during the sync; not syncing. The next release runs the full CI."
+          fi
