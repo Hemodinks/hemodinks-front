@@ -68,6 +68,9 @@ respostas 5xx observadas no navegador também fazem o teste falhar.
 ## Evidências e limites
 
 O workflow `Web + real API E2E` roda em PRs para developer/main ou manualmente.
+> Atualização (13/11/2026, #253): `global.json` na raiz fixa o SDK .NET 10 (`rollForward: latestFeature`). Sem ele, runners
+> com o SDK 11.0.100 pré-instalado usavam esse SDK no `RealApiHost.csproj` (`net10.0`) e o build falhava de forma
+> intermitente (`scoped css bundles do not have matching endpoints`), antes de exercitar o front.
 > Atualização (12/11/2026): também roda no push da `developer`, com o mesmo job de escopo do CI
 > (`scripts/ci_scope.py`): pula o merge cujo código idêntico já passou neste job no PR e PRs para
 > `developer` só de documentação.

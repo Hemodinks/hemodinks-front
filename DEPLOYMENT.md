@@ -207,6 +207,15 @@ O workflow de CI (`.github/workflows/ci.yml`) continua sendo o gate dos PRs e pu
 
 O arquivo `src/vercel.json` mantém desabilitado o projeto Vercel legado de produção. O `vercel.json` da raiz pertence à homologação e habilita deploy automático somente para a branch `developer`.
 
+### Sincronização da developer após release
+
+O reuso do CI do PR no push da `main` exige que o commit de merge do release anterior esteja na `developer`.
+`.github/workflows/sync-developer.yml` faz isso sozinho: a cada push na `main`, avança a `developer` até o SHA do
+release **somente por fast-forward** (`git push` sem `--force`; permissão `contents: write` só nesse job). Se a
+`developer` tiver commits que a `main` não tem, ou mudar durante a sincronização, nada é enviado: o job emite um aviso
+e o release seguinte apenas roda a suíte completa. Push feito com `GITHUB_TOKEN` não dispara outros workflows
+(a Vercel ainda republica a homologação com o mesmo conteúdo).
+
 ### PWA (#206)
 
 - `/sw.js` vai sempre sem cache HTTP (`no-cache, no-store, must-revalidate`) e com `Service-Worker-Allowed: /`, no
