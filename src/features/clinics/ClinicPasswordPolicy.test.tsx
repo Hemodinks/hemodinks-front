@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../../queryClient';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, expect, it, vi } from 'vitest';
 import { apiClient } from '../../services/api';
@@ -21,7 +23,7 @@ it.each(['create', 'create-team', 'edit', 'edit-team'] as const)('preserva dados
     if (refuse) throw new AxiosError('Failed', undefined, undefined, undefined, response({ code: 'password_compromised' }, 400));
     return response(clinic);
   });
-  render(<MemoryRouter><ClinicsPage session={mockSession({ perfilId: 5 })} onClinicSelected={vi.fn()} /></MemoryRouter>);
+  render(<QueryClientProvider client={queryClient}><MemoryRouter><ClinicsPage session={mockSession({ perfilId: 5 })} onClinicSelected={vi.fn()} /></MemoryRouter></QueryClientProvider>);
   await screen.findByText('Clínica teste');
   fireEvent.click(screen.getByRole('button', { name: editing ? /editar.*teste/i : /nova clinica/i }));
   const change = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });

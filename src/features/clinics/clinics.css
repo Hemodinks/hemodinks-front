@@ -80,3 +80,11 @@
   border-color: var(--danger);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 18%, transparent);
 }
+.active-sessions { display: grid; gap: 12px; }
+.active-sessions-hint, .active-sessions-team { color: var(--muted); }
+.active-sessions-clinics { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.active-sessions-clinics li { display: flex; align-items: baseline; gap: 6px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); }
+.active-sessions-table { min-width: 760px; }
+@media (max-width: 760px) {
+  .clinics-workspace .active-sessions-table { min-width: 0; }
+}
