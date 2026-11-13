@@ -1,4 +1,5 @@
 import type { ClinicPayload, PlatformClinic, PublicClinic, SelectClinicResponse, SessionClinic } from '../types';
+import type { PlatformActiveSessionsResponse } from '../types/activeSessions';
 import { del, get, post, put } from './api';
 
 export function listPublicClinics(busca = '', signal?: AbortSignal) {
@@ -24,6 +25,11 @@ export function updatePlatformClinic(id: number, payload: ClinicPayload, token: 
 
 export function deactivatePlatformClinic(id: number, token: string) {
   return del<void>(`/api/platform/clinicas/${id}`, token);
+}
+
+export function listPlatformActiveSessions(token: string, pagina = 1, tamanhoPagina = 200, signal?: AbortSignal) {
+  return get<PlatformActiveSessionsResponse>(
+    `/api/platform/sessoes-ativas?pagina=${pagina}&tamanhoPagina=${tamanhoPagina}`, token, { signal });
 }
 
 export function selectSessionClinic(clinicaId: number, token: string) {
