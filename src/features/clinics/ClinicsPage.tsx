@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Plus, RefreshCw } from 'lucide-react';
 import type { AuthSession, SelectClinicResponse } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, ToastMessage } from '../../shared/components/ui';
+import { ActiveSessionsPanel } from './ActiveSessionsPanel';
 import { ClinicForm } from './ClinicForm';
 import { ClinicsTable } from './ClinicsTable';
 import { useClinicsPage } from './useClinicsPage';
@@ -53,6 +54,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
           onSwitch={page.switchClinic}
         />
       </DataPanel>
+      {isSuperAdmin && <ActiveSessionsPanel session={session} />}
       {page.formOpen && (
         <ClinicForm
           session={session}
