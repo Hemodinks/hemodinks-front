@@ -25,7 +25,7 @@ test('production has a same-run dependency on the complete CI job', () => {
   const deploy = ci.jobs.deploy;
   assert.equal(deploy.needs, 'test-and-build');
   assert.equal(deploy.uses, './.github/workflows/azure-static-web-apps-production.yml');
-  assert.equal(deploy.if, "${{ needs.test-and-build.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}");
+  assert.equal(deploy.if, "${{ !cancelled() && needs.test-and-build.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}");
   assert.deepEqual(Object.keys(azure.on), ['workflow_call']);
   assert.equal(ci.on.workflow_dispatch !== undefined, true);
   assert.equal(ci.on.workflow_run, undefined);
@@ -45,13 +45,24 @@ for (const result of ['failure', 'cancelled', 'skipped', 'pending', 'in_progress
     test(`gate ${result}, ${event}`, () => {
       const expression = ci.jobs.deploy.if.slice(3, -3)
         .replaceAll('needs.test-and-build.result', 'result');
-      const evaluate = new Function('result', 'github', `return (${expression});`);
-      assert.equal(evaluate(result, { ref: revision.ref, event_name: event }),
+      const evaluate = new Function('result', 'github', 'cancelled', `return (${expression});`);
+      const running = () => false;
+      assert.equal(evaluate(result, { ref: revision.ref, event_name: event }, running),
         result === 'success' && event !== 'pull_request');
-      assert.equal(evaluate(result, { ref: 'refs/heads/developer', event_name: event }), false);
+      assert.equal(evaluate(result, { ref: 'refs/heads/developer', event_name: event }, running), false);
+      assert.equal(evaluate(result, { ref: revision.ref, event_name: event }, () => true), false);
     });
   }
 }
+
+test('deploy runs after a proven reuse: its condition has an explicit status function', () => {
+  // Regression (#254): with skipped test jobs upstream, the implicit success() skipped production.
+  const condition = ci.jobs.deploy.if;
+  assert.match(condition, /^\$\{\{ !cancelled\(\) && /);
+  assert.doesNotMatch(condition, /always\(\)/);
+  assert.equal(ci.jobs['test-and-build'].if, '${{ always() }}');
+  assert.deepEqual(ci.jobs['test-and-build'].needs, ['scope', 'unit', 'e2e', 'responsive']);
+});
 
 test('CI requires gate regression tests, E2E and responsive matrix without failure bypass', () => {
   const required = {
@@ -130,7 +141,7 @@ test('production is serialized, pinned and revalidated immediately before upload
   const job = azure.jobs.build_and_deploy;
   assert.equal(ci.concurrency['cancel-in-progress'], "${{ github.ref != 'refs/heads/main' }}");
   assert.deepEqual(job.concurrency, { group: 'azure-static-web-apps-production', 'cancel-in-progress': false });
-  assert.equal(job.if, ci.jobs.deploy.if.replace("needs.test-and-build.result == 'success' && ", ''));
+  assert.equal(job.if, ci.jobs.deploy.if.replace("!cancelled() && needs.test-and-build.result == 'success' && ", ''));
   assert.deepEqual(azure.permissions, { contents: 'read' });
   assert.equal(job.steps.find(step => step.name === 'Checkout').with.ref, '${{ github.sha }}');
   const upload = job.steps.findIndex(step => step.uses === SWA_DEPLOY);
