@@ -13,3 +13,12 @@ updates:
           - "*"
     commit-message:
       prefix: chore(deps)
+  # npm só para security updates (#261): limite 0 desliga os PRs de versão, mas os de CVE
+  # continuam. O GitHub abre security updates contra a branch padrão (ignora target-branch).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    commit-message:
+      prefix: fix(deps)

@@ -32,7 +32,7 @@ test('production has a same-run dependency on the complete CI job', () => {
   assert.equal(ci.on.pull_request_target, undefined);
   assert.equal(existsSync(new URL('../.github/workflows/azure-static-web-apps-white-grass-0d59a4410.yml', import.meta.url)), false);
   assert.deepEqual(Object.keys(ci.jobs.deploy.secrets).sort(), [
-    'AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410', 'VITE_API_URL',
+    'AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410', 'VITE_API_URL', 'VITE_NEW_RELIC_LICENSE_KEY',
   ]);
   const uploadWorkflows = readdirSync(new URL('../.github/workflows/', import.meta.url))
     .filter(name => /\.ya?ml$/.test(name))
@@ -61,7 +61,7 @@ test('deploy runs after a proven reuse: its condition has an explicit status fun
   assert.match(condition, /^\$\{\{ !cancelled\(\) && /);
   assert.doesNotMatch(condition, /always\(\)/);
   assert.equal(ci.jobs['test-and-build'].if, '${{ always() }}');
-  assert.deepEqual(ci.jobs['test-and-build'].needs, ['scope', 'unit', 'e2e', 'responsive']);
+  assert.deepEqual(ci.jobs['test-and-build'].needs, ['scope', 'audit', 'unit', 'e2e', 'responsive']);
 });
 
 test('CI requires gate regression tests, E2E and responsive matrix without failure bypass', () => {
@@ -92,13 +92,14 @@ test('CI requires gate regression tests, E2E and responsive matrix without failu
 test('Test and build aggregates every test job and fails closed', () => {
   const gate = ci.jobs['test-and-build'];
   assert.equal(gate.name, 'Test and build');
-  assert.deepEqual(gate.needs, ['scope', 'unit', 'e2e', 'responsive']);
+  assert.deepEqual(gate.needs, ['scope', 'audit', 'unit', 'e2e', 'responsive']);
   assert.equal(gate.if, '${{ always() }}');
   assert.equal(gate['continue-on-error'], undefined);
   assert.equal(gate.steps.at(-1).run, 'node scripts/ci-gate.mjs');
   assert.deepEqual(gate.steps.at(-1).env, {
     SCOPE_RESULT: '${{ needs.scope.result }}',
     RUN_TESTS: '${{ needs.scope.outputs.run_tests }}',
+    AUDIT_RESULT: '${{ needs.audit.result }}',
     UNIT_RESULT: '${{ needs.unit.result }}',
     E2E_RESULT: '${{ needs.e2e.result }}',
     RESPONSIVE_RESULT: '${{ needs.responsive.result }}',
@@ -112,8 +113,8 @@ test('scope reuse requires the real test job names of this workflow', () => {
   assert.deepEqual(prefixes, [ci.jobs.unit.name, ci.jobs.e2e.name.split('$')[0], ci.jobs.responsive.name]);
 });
 
-const passed = { scope: 'success', runTests: 'true', unit: 'success', e2e: 'success', responsive: 'success' };
-const reused = { scope: 'success', runTests: 'false', unit: 'skipped', e2e: 'skipped', responsive: 'skipped' };
+const passed = { scope: 'success', runTests: 'true', audit: 'success', unit: 'success', e2e: 'success', responsive: 'success' };
+const reused = { scope: 'success', runTests: 'false', audit: 'success', unit: 'skipped', e2e: 'skipped', responsive: 'skipped' };
 
 test('gate passes when all test jobs pass or a proven tree skipped all of them', () => {
   assert.equal(gateDecision(passed).ok, true);
@@ -135,6 +136,29 @@ test('gate blocks any failed, cancelled, skipped or unknown result', () => {
   for (const runTests of ['', 'yes', undefined]) {
     assert.equal(gateDecision({ ...passed, runTests }).ok, false, String(runTests));
   }
+  for (const audit of ['failure', 'cancelled', 'skipped', '', undefined]) {
+    assert.equal(gateDecision({ ...passed, audit }).ok, false, `audit=${audit}`);
+    assert.equal(gateDecision({ ...reused, audit }).ok, false, `reuse with audit=${audit}`);
+  }
+});
+
+test('dependency audit always runs, blocks high production CVEs and has no bypass (#261)', () => {
+  const job = ci.jobs.audit;
+  assert.equal(job.needs, undefined);
+  assert.equal(job.if, undefined);
+  assert.equal(job['continue-on-error'], undefined);
+  const step = job.steps.find(step => step.run === 'npm audit --omit=dev --audit-level=high');
+  assert.ok(step);
+  assert.equal(step['continue-on-error'], undefined);
+  assert.equal(step.if, undefined);
+  assert.equal(job.steps.find(step => step.name === 'Checkout').with.ref, '${{ github.sha }}');
+});
+
+test('Dependabot covers npm security updates without opening version-update PRs (#261)', () => {
+  const dependabot = load(readFileSync(new URL('../.github/dependabot.yml', import.meta.url), 'utf8'));
+  const npm = dependabot.updates.find(update => update['package-ecosystem'] === 'npm');
+  assert.ok(npm);
+  assert.equal(npm['open-pull-requests-limit'], 0);
 });
 
 test('production is serialized, pinned and revalidated immediately before upload', () => {
@@ -158,6 +182,16 @@ test('production is serialized, pinned and revalidated immediately before upload
   assert.equal(job.env.VITE_API_URL, undefined);
   assert.equal(job.env.VITE_SENTRY_DSN, undefined);
   assert.equal(job.steps.find(step => step.name === 'Build').env.VITE_APP_ENV, 'production');
+});
+test('production build enables New Relic Browser only through the Build step (#262, API #289)', () => {
+  const job = azure.jobs.build_and_deploy;
+  const build = job.steps.find(step => step.name === 'Build');
+  for (const name of ['ACCOUNT_ID', 'AGENT_ID', 'APPLICATION_ID', 'TRUST_KEY']) {
+    assert.equal(build.env[`VITE_NEW_RELIC_${name}`], `\${{ vars.VITE_NEW_RELIC_${name} }}`);
+  }
+  assert.equal(build.env.VITE_NEW_RELIC_LICENSE_KEY, '${{ secrets.VITE_NEW_RELIC_LICENSE_KEY }}');
+  assert.equal(azure.on.workflow_call.secrets.VITE_NEW_RELIC_LICENSE_KEY.required, false);
+  assert.equal(job.env.VITE_NEW_RELIC_LICENSE_KEY, undefined);
 });
 
 test('current SHA allows push and manual execution, including reruns', () => {
