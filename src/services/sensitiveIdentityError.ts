@@ -5,6 +5,7 @@ const messages = {
   email_change_unavailable: 'Não foi possível utilizar este endereço para a alteração.',
   invalid_new_email: 'Informe um endereço de email válido.',
   email_confirmation_unavailable: 'Não foi possível enviar a confirmação. Tente novamente mais tarde. Seu email não foi alterado.',
+  email_confirmation_attempts_exceeded: 'Muitas tentativas com código incorreto. Confirme sua senha novamente para receber um novo código. Seu email não foi alterado.',
   identity_change_conflict: 'A alteração não foi concluída. Confirme novamente antes de tentar outra vez.',
 } as const;
 

@@ -143,7 +143,9 @@ Fluxos suportados:
 - contexto do login por `POST /api/users/login-context` e login por `POST /api/users/authenticate`
 - identificacao do operador da equipe por `POST /api/equipe-auth/identificar` (selecao ou PIN)
 - senha temporaria concluida por `POST /api/users/password/temporary/complete`
-- troca de e-mail com confirmacao (`/api/users/email/change*`)
+- troca de e-mail com confirmacao (`/api/users/email/change*`): codigo de 6 digitos enviado ao novo endereco
+  (valido por 10 min, uso unico); 5 erros invalidam a solicitacao (`409 email_confirmation_attempts_exceeded`) e
+  o fluxo volta para a senha atual (#322)
 - reset por email via `POST /api/users/password/reset`
 - confirmacao por token via `POST /api/users/password/reset/confirm`
 - troca obrigatoria de senha quando `precisaTrocarSenha=true`

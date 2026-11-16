@@ -8,7 +8,7 @@ export function registerSensitiveIdentityCases<TSession extends Session>({ setup
 }) {
   const requestId = '12345678-1234-1234-1234-123456789012';
   const credential = 'private-current-credential';
-  const code = 'c'.repeat(64);
+  const code = '482913';
   const open = async (page: Page) => {
     await page.getByLabel('Novo email de autenticação').fill('new@example.com');
     await page.getByRole('button', { name: 'Continuar alteração de email' }).click();
