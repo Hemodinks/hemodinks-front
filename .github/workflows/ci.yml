@@ -57,6 +57,26 @@ jobs:
           CI_REQUIRED_JOBS: "Unit tests and build,E2E (,Responsive smoke matrix"
         run: python3 -B scripts/ci_scope.py
 
+  # Not tied to the scope reuse: a new CVE can appear for an unchanged tree (#261).
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
   unit:
     name: Unit tests and build
     needs: scope
@@ -127,7 +147,7 @@ jobs:
     name: E2E (${{ matrix.shard }}/3)
     needs: scope
     if: ${{ !cancelled() && needs.scope.outputs.run_tests != 'false' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -188,7 +208,7 @@ jobs:
     name: Responsive smoke matrix
     needs: scope
     if: ${{ !cancelled() && needs.scope.outputs.run_tests != 'false' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       VITE_APP_ENV: ci
@@ -242,11 +262,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  # Required check on main. Passes only when every test job passed, or when the scope
+  # Required check on main. Passes only when the dependency audit and every test job passed, or when the scope
   # proved this exact tree already passed them (see scripts/ci_scope.py). Fails closed.
   test-and-build:
     name: Test and build
-    needs: [scope, unit, e2e, responsive]
+    needs: [scope, audit, unit, e2e, responsive]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -262,6 +282,7 @@ jobs:
         env:
           SCOPE_RESULT: ${{ needs.scope.result }}
           RUN_TESTS: ${{ needs.scope.outputs.run_tests }}
+          AUDIT_RESULT: ${{ needs.audit.result }}
           UNIT_RESULT: ${{ needs.unit.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
           RESPONSIVE_RESULT: ${{ needs.responsive.result }}
@@ -278,3 +299,4 @@ jobs:
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410 }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      VITE_NEW_RELIC_LICENSE_KEY: ${{ secrets.VITE_NEW_RELIC_LICENSE_KEY }}

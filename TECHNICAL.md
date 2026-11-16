@@ -366,6 +366,8 @@ A CSP não mudou (`worker-src 'self' blob:`, `manifest-src 'self'`). Testes: `sr
 Arquivos:
 
 - `src/newRelic.ts`
+- `src/errorReporting.ts` (registro leve de erros, sem importar o agente)
+- `src/telemetryPrivacy.ts` (sanitizacao e regras de `obfuscate`)
 
 Variaveis reconhecidas:
 
@@ -385,6 +387,19 @@ Comportamento:
 
 - `src/main.tsx` tenta subir New Relic antes do bootstrap do React
 - sem as envs completas, as integracoes ficam desativadas sem bloquear o app
+
+Erros JavaScript (#262), so apos consentimento de analise:
+
+- origens: `ErrorBoundary.componentDidCatch`, `createRoot({ onUncaughtError })`, `window` `error` e
+  `unhandledrejection`; o mesmo objeto de erro e enviado uma vez so. `onCaughtError` e `onRecoverableError`
+  tambem sao sobrescritos para o React nao mandar a mensagem crua ao console
+- o envio usa `noticeError` com `sanitizedErrorForTelemetry`: nome reduzido por `privateErrorSummary`, sem
+  mensagem livre (mensagens de API podem trazer dado de paciente) e so os frames da stack, sem origem,
+  query ou hash; atributo `source` indica a origem
+- a captura automatica do agente (mensagem crua) e descartada no `setErrorHandler`; so passa erro sanitizado
+- `obfuscate` (`TELEMETRY_OBFUSCATE_RULES`) remove URL (inclusive `data:`/`blob:`), `Bearer`/JWT, e-mail, GUID e CPF de qualquer payload
+- revogar o consentimento para o envio imediatamente e remove os listeners; o agente sai ao recarregar
+- alerta de taxa de erro JS fica no New Relic (fora do repositorio)
 
 ## UI, acessibilidade e responsividade
 

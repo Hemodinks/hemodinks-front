@@ -36,6 +36,7 @@ export async function stopOptionalAnalytics() {
   }
 
   const newRelic = await import('../../newRelic');
+  newRelic.stopNewRelicErrorReporting();
   const requiresReload = newRelic.hasInitializedNewRelicBrowser();
   analyticsStarted = false;
 
