@@ -1,12 +1,9 @@
 name: Deploy Azure Static Web Apps
 
+# Os secrets de deploy vivem no environment azure-production (restrito a main), nao no repositorio:
+# nenhum outro workflow ou branch consegue le-los.
 "on":
   workflow_call:
-    secrets:
-      AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410:
-        required: true
-      VITE_API_URL:
-        required: true
 
 permissions:
   contents: read
@@ -24,6 +21,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     name: Deploy production
     runs-on: ubuntu-latest
+    environment: azure-production
     timeout-minutes: 30
     concurrency:
       group: azure-static-web-apps-production
@@ -51,7 +49,7 @@ jobs:
           [ -n "$AZURE_STATIC_WEB_APPS_API_TOKEN" ] || missing+=("AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410")
 
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Missing required GitHub secrets: ${missing[*]}"
+            echo "::error::Missing required secrets in environment azure-production: ${missing[*]}"
             exit 1
           fi
 
