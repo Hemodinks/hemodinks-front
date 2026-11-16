@@ -91,13 +91,20 @@ GitHub Actions externas ficam pinadas por SHA completo com a versao em comentari
 (`uses: owner/action@<sha> # vX.Y.Z`); `npm run test:release-gate` bloqueia tag, branch ou SHA curto. O Dependabot
 (`.github/dependabot.yml`) abre um PR semanal agrupado para `developer` atualizando SHA e comentario (#222 da API).
 
+Dependencias npm (#261): Dependabot alerts e security updates ficam habilitados no repositorio
+(Settings > Code security). O ecossistema `npm` do `dependabot.yml` tem `open-pull-requests-limit: 0`,
+entao so abre PRs de correcao de CVE (o GitHub os abre contra a branch padrao, `main`). No CI, o job
+`Dependency audit` roda `npm audit --omit=dev --audit-level=high` em todo run, sem reuso de escopo, e
+`Test and build` exige sucesso dele: CVE alta ou critica em dependencia de producao bloqueia merge e deploy.
+Vulnerabilidades so de devDependencies ou moderadas aparecem nos alertas, mas nao bloqueiam.
+
 ## Azure Static Web Apps: producao
 
 `public/staticwebapp.config.json` define o fallback SPA, os headers de seguranca e as regras de cache. O arquivo e copiado para a raiz de `dist` pelo build do Vite.
 
 O CI chama `.github/workflows/azure-static-web-apps-production.yml` somente depois de
 `Test and build` terminar com sucesso no mesmo run. `Test and build` e o portao que
-agrega tres jobs paralelos: `Unit tests and build` (testes do gate, auditoria de
+agrega `Dependency audit` e tres jobs paralelos de teste: `Unit tests and build` (testes do gate, auditoria de
 arquitetura, Vitest, performance, build e budget), `E2E (n/3)` (Playwright em 3 shards)
 e `Responsive smoke matrix` (matriz responsiva/tenant). A decisao fica em
 `scripts/ci-gate.mjs`: falha, cancelamento, job ignorado sem prova ou saida inesperada
