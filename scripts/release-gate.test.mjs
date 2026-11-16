@@ -184,6 +184,17 @@ test('production is serialized, pinned and revalidated immediately before upload
   assert.equal(job.env.VITE_SENTRY_DSN, undefined);
   assert.equal(job.steps.find(step => step.name === 'Build').env.VITE_APP_ENV, 'production');
 });
+test('production build enables New Relic Browser only through the Build step (#262, API #289)', () => {
+  const job = azure.jobs.build_and_deploy;
+  const build = job.steps.find(step => step.name === 'Build');
+  for (const name of ['ACCOUNT_ID', 'AGENT_ID', 'APPLICATION_ID', 'TRUST_KEY']) {
+    assert.equal(build.env[`VITE_NEW_RELIC_${name}`], `\${{ vars.VITE_NEW_RELIC_${name} }}`);
+  }
+  // A license key do Browser vem do environment azure-production, como os demais secrets de deploy.
+  assert.equal(build.env.VITE_NEW_RELIC_LICENSE_KEY, '${{ secrets.VITE_NEW_RELIC_LICENSE_KEY }}');
+  assert.equal(job.environment, 'azure-production');
+  assert.equal(job.env.VITE_NEW_RELIC_LICENSE_KEY, undefined);
+});
 
 test('current SHA allows push and manual execution, including reruns', () => {
   for (const eventName of ['push', 'workflow_dispatch']) {
