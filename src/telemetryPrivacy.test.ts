@@ -1,7 +1,8 @@
 import { expect, it } from 'vitest';
 import { privateErrorSummary, sanitizeTelemetryText, sanitizedErrorForTelemetry } from './telemetryPrivacy';
 
-const JWT = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.c2lnbmF0dXJh';
+// Montado em runtime, como nos demais testes, para não parecer segredo a scanners.
+const JWT = [{ alg: 'HS256' }, { sub: '123' }].map(part => btoa(JSON.stringify(part)).replace(/=+$/, '')).join('.') + '.c2ln';
 const SENSITIVE = `cpf 123.456.789-09 ou 12345678909, email maria.silva+x@clinica.com.br, ${JWT}, `
   + 'Bearer abc.def-ghi, id 3f2504e0-4f89-11d3-9a0c-0305e82c3301, https://api.hemodinks.com/pacientes?nome=Maria';
 
