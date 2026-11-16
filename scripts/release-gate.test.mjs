@@ -32,7 +32,7 @@ test('production has a same-run dependency on the complete CI job', () => {
   assert.equal(ci.on.pull_request_target, undefined);
   assert.equal(existsSync(new URL('../.github/workflows/azure-static-web-apps-white-grass-0d59a4410.yml', import.meta.url)), false);
   assert.deepEqual(Object.keys(ci.jobs.deploy.secrets).sort(), [
-    'AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410', 'VITE_API_URL',
+    'AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410', 'VITE_API_URL', 'VITE_NEW_RELIC_LICENSE_KEY',
   ]);
   const uploadWorkflows = readdirSync(new URL('../.github/workflows/', import.meta.url))
     .filter(name => /\.ya?ml$/.test(name))
@@ -182,6 +182,16 @@ test('production is serialized, pinned and revalidated immediately before upload
   assert.equal(job.env.VITE_API_URL, undefined);
   assert.equal(job.env.VITE_SENTRY_DSN, undefined);
   assert.equal(job.steps.find(step => step.name === 'Build').env.VITE_APP_ENV, 'production');
+});
+test('production build enables New Relic Browser only through the Build step (#262, API #289)', () => {
+  const job = azure.jobs.build_and_deploy;
+  const build = job.steps.find(step => step.name === 'Build');
+  for (const name of ['ACCOUNT_ID', 'AGENT_ID', 'APPLICATION_ID', 'TRUST_KEY']) {
+    assert.equal(build.env[`VITE_NEW_RELIC_${name}`], `\${{ vars.VITE_NEW_RELIC_${name} }}`);
+  }
+  assert.equal(build.env.VITE_NEW_RELIC_LICENSE_KEY, '${{ secrets.VITE_NEW_RELIC_LICENSE_KEY }}');
+  assert.equal(azure.on.workflow_call.secrets.VITE_NEW_RELIC_LICENSE_KEY.required, false);
+  assert.equal(job.env.VITE_NEW_RELIC_LICENSE_KEY, undefined);
 });
 
 test('current SHA allows push and manual execution, including reruns', () => {
