@@ -43,7 +43,7 @@ jobs:
     name: Web + API + synthetic SQL
     needs: scope
     if: ${{ !cancelled() && needs.scope.outputs.run_tests != 'false' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       HEMODINKS_API_ROOT: ${{ github.workspace }}/.integration/api
