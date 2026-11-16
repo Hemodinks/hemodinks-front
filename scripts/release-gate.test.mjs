@@ -31,9 +31,10 @@ test('production has a same-run dependency on the complete CI job', () => {
   assert.equal(ci.on.workflow_run, undefined);
   assert.equal(ci.on.pull_request_target, undefined);
   assert.equal(existsSync(new URL('../.github/workflows/azure-static-web-apps-white-grass-0d59a4410.yml', import.meta.url)), false);
-  assert.deepEqual(Object.keys(ci.jobs.deploy.secrets).sort(), [
-    'AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_GRASS_0D59A4410', 'VITE_API_URL',
-  ]);
+  // Secrets de deploy so no environment azure-production (restrito a main), nunca repassados pelo CI.
+  assert.equal(ci.jobs.deploy.secrets, undefined);
+  assert.equal(azure.on.workflow_call?.secrets, undefined);
+  assert.equal(azure.jobs.build_and_deploy.environment, 'azure-production');
   const uploadWorkflows = readdirSync(new URL('../.github/workflows/', import.meta.url))
     .filter(name => /\.ya?ml$/.test(name))
     .filter(name => JSON.stringify(workflow(name)).includes('Azure/static-web-apps-deploy@'));
