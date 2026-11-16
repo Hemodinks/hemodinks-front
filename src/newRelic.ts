@@ -1,6 +1,12 @@
 import { BrowserAgent } from '@newrelic/browser-agent/loaders/browser-agent'
+import { setErrorReporter, reportError } from './errorReporting'
+import { TELEMETRY_OBFUSCATE_RULES } from './telemetryPrivacy'
 
 let newRelicEnabled = false
+let errorReportingAllowed = false
+// Só erros que passaram por sanitizedErrorForTelemetry saem; a captura automática
+// do agente (mensagem crua) é descartada no setErrorHandler (#262).
+const sanitizedErrors = new WeakSet<object>()
 
 type NewRelicConfig = {
   accountID: string
@@ -82,7 +88,7 @@ export function initNewRelicBrowser() {
 
   newRelicEnabled = true
 
-  new BrowserAgent({
+  const agent = new BrowserAgent({
     info: {
       applicationID: config.applicationID,
       beacon: config.beacon,
@@ -100,14 +106,14 @@ export function initNewRelicBrowser() {
     init: {
       session_replay: { enabled: false },
       user_actions: { enabled: false },
-      jserrors: { enabled: false },
+      jserrors: { enabled: true },
       page_view_event: { enabled: true },
       page_view_timing: { enabled: true },
       session_trace: { enabled: false },
       soft_navigations: { enabled: false },
       generic_events: { enabled: false },
       logging: { enabled: false },
-      obfuscate: [{ regex: /https?:\/\/[^\s"'<>]+/gi, replacement: "[url]" }],
+      obfuscate: TELEMETRY_OBFUSCATE_RULES.map((rule) => ({ ...rule })),
       ajax: {
         deny_list: ['*'],
       },
@@ -119,6 +125,36 @@ export function initNewRelicBrowser() {
       },
     },
   })
+
+  startErrorReporting(agent)
+}
+
+function startErrorReporting(agent: BrowserAgent) {
+  errorReportingAllowed = true
+  agent.setErrorHandler((error: unknown) =>
+    !errorReportingAllowed || typeof error !== 'object' || error === null || !sanitizedErrors.has(error))
+  setErrorReporter((error, attributes) => {
+    sanitizedErrors.add(error)
+    agent.noticeError(error, attributes)
+  })
+  window.addEventListener('error', onWindowError)
+  window.addEventListener('unhandledrejection', onUnhandledRejection)
+}
+
+function onWindowError(event: ErrorEvent) {
+  reportError(event.error ?? event.message, 'window-error')
+}
+
+function onUnhandledRejection(event: PromiseRejectionEvent) {
+  reportError(event.reason, 'unhandled-rejection')
+}
+
+// Revogação do consentimento: nada mais sai até recarregar a página.
+export function stopNewRelicErrorReporting() {
+  errorReportingAllowed = false
+  setErrorReporter(null)
+  window.removeEventListener('error', onWindowError)
+  window.removeEventListener('unhandledrejection', onUnhandledRejection)
 }
 
 export function hasInitializedNewRelicBrowser() {
