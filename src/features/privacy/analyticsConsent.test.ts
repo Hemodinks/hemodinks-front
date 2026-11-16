@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const telemetry = vi.hoisted(() => ({
   initNewRelicBrowser: vi.fn(),
   hasInitializedNewRelicBrowser: vi.fn(() => false),
+  stopNewRelicErrorReporting: vi.fn(),
 }));
 
 vi.mock('../../newRelic', () => ({
   initNewRelicBrowser: telemetry.initNewRelicBrowser,
   hasInitializedNewRelicBrowser: telemetry.hasInitializedNewRelicBrowser,
+  stopNewRelicErrorReporting: telemetry.stopNewRelicErrorReporting,
 }));
 
 describe('optional analytics consent', () => {
@@ -53,5 +55,6 @@ describe('optional analytics consent', () => {
     const result = await stopOptionalAnalytics();
 
     expect(result.requiresReload).toBe(true);
+    expect(telemetry.stopNewRelicErrorReporting).toHaveBeenCalledOnce();
   });
 });

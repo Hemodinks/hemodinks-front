@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RotateCw } from 'lucide-react';
 import { privateErrorSummary } from '../../telemetryPrivacy';
+import { reportError } from '../../errorReporting';
 
 type ErrorBoundaryProps = {
   children: ReactNode;
@@ -21,6 +22,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, _info: ErrorInfo) {
     if (import.meta.env.DEV) console.error('[ErrorBoundary]', privateErrorSummary(error));
+    reportError(error, 'error-boundary');
   }
 
   private handleReload = () => {
