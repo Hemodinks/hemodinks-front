@@ -77,10 +77,17 @@ jobs:
           done
 
       # Unit, E2E and responsive tests already gate this run through "Test and build".
+      # New Relic Browser (#262, API #289): sem estas variaveis o agente fica desligado no build.
+      # A telemetria so inicia apos o consentimento de analise (src/newRelic.ts).
       - name: Build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_APP_ENV: production
+          VITE_NEW_RELIC_ACCOUNT_ID: ${{ vars.VITE_NEW_RELIC_ACCOUNT_ID }}
+          VITE_NEW_RELIC_AGENT_ID: ${{ vars.VITE_NEW_RELIC_AGENT_ID }}
+          VITE_NEW_RELIC_APPLICATION_ID: ${{ vars.VITE_NEW_RELIC_APPLICATION_ID }}
+          VITE_NEW_RELIC_TRUST_KEY: ${{ vars.VITE_NEW_RELIC_TRUST_KEY }}
+          VITE_NEW_RELIC_LICENSE_KEY: ${{ secrets.VITE_NEW_RELIC_LICENSE_KEY }}
         run: npm run build
 
       - name: Check bundle budget
