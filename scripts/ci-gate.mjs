@@ -3,7 +3,9 @@ import { pathToFileURL } from 'node:url';
 const TEST_JOBS = ['unit', 'e2e', 'responsive'];
 
 // Decides the required "Test and build" check. Anything unexpected fails closed.
-export function gateDecision({ scope, runTests, ...jobs }) {
+// The dependency audit always runs: scope reuse never covers it (#261).
+export function gateDecision({ scope, runTests, audit, ...jobs }) {
+  if (audit !== 'success') return { ok: false, reason: `dependency audit ended as ${audit || 'unknown'}` };
   if (scope !== 'success') return { ok: false, reason: `scope job ended as ${scope || 'unknown'}` };
   if (runTests === 'false') {
     const ran = TEST_JOBS.filter(job => jobs[job] !== 'skipped');
@@ -22,6 +24,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { ok, reason } = gateDecision({
     scope: process.env.SCOPE_RESULT,
     runTests: process.env.RUN_TESTS,
+    audit: process.env.AUDIT_RESULT,
     unit: process.env.UNIT_RESULT,
     e2e: process.env.E2E_RESULT,
     responsive: process.env.RESPONSIVE_RESULT,
