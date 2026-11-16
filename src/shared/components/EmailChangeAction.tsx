@@ -71,7 +71,8 @@ function EmailChangeForm({ session, onChanged }: Props) {
     busyRef.current = true; setBusy(true); setError('');
     try {
       if (pending) {
-        await confirmEmailChange(pending.requestId, code, session.token);
+        // #322: código de 6 dígitos; espaços de quem cola o código são descartados.
+        await confirmEmailChange(pending.requestId, code.replace(/\s/g, ''), session.token);
         if (!active.current || current !== sequence.current) return;
         pendingRef.current = null; setPending(null); setPassword(''); setCode(''); setOpen(false);
         onChanged('Email confirmado e alterado. Entre novamente com o novo email.');
@@ -117,14 +118,15 @@ function EmailChangeForm({ session, onChanged }: Props) {
             <span className="email-change-eyebrow">Alteração de email · Etapa {pending ? 2 : 1} de 2</span>
             <h2 id="email-change-title">{pending ? 'Confirmar novo email' : 'Confirmar identidade'}</h2>
             <p id="email-change-description">{pending
-              ? 'Cole o código recebido no novo endereço. O email ainda não foi alterado.'
+              ? 'Digite o código de 6 dígitos enviado ao novo endereço. O email ainda não foi alterado.'
               : 'Informe a senha atual da sua conta individual para continuar esta alteração de email.'}</p>
           </div>
         </header>
         <form aria-busy={busy} onSubmit={submit} onInvalid={focusFirstInvalidFormField}>
           <div className="email-change-body">
             {pending ? <PasswordInput id="email-change-code" label="Código de confirmação" value={code} onChange={setCode}
-              autoComplete="off" maxLength={64} required errorId={error ? 'email-change-error' : undefined} />
+              autoComplete="one-time-code" inputMode="numeric" maxLength={16} pattern={'[\\s]*(?:[0-9][\\s]*){6}'}
+              title="Informe os 6 dígitos do código." required errorId={error ? 'email-change-error' : undefined} />
               : <PasswordInput id="email-change-password" label="Senha atual da conta individual" value={password} onChange={setPassword}
                 autoComplete="current-password" maxLength={MAX_PASSWORD_LENGTH} required errorId={error ? 'email-change-error' : undefined} />}
             {error && <div id="email-change-error"><AlertMessage type="error">{error}</AlertMessage></div>}

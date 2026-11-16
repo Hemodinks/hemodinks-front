@@ -10,7 +10,7 @@ const fail = (code: string, status = 403) => new AxiosError('failed', undefined,
 const requestId = '12345678-1234-1234-1234-123456789012';
 const started = () => response({ requestId, expiresAt: new Date(Date.now() + 600000).toISOString() });
 const session = mockSession({ clinicaId: 1 });
-const code = 'c'.repeat(64);
+const code = '482913';
 const password = 'sensitive-current-password';
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
 
@@ -128,4 +128,30 @@ it('cancela durante envio e invalida o pedido que chegar tarde sem reabrir modal
   expect(screen.getByLabelText('Novo email de autenticação')).toHaveValue('new@example.com');
   expect(calls.mock.calls[1][0]).toMatchObject({ url: '/api/users/email/change/cancel', data: { requestId } });
   expect(changed).not.toHaveBeenCalled();
+});
+
+it('código curto (#322): teclado numérico, preenchimento automático e espaços descartados no envio', async () => {
+  const calls = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(started()).mockResolvedValueOnce(response({ code: 'identity_changed' }));
+  const changed = vi.fn(); render(<EmailChangeAction session={session} onChanged={changed} />); open(); send();
+  const field = await screen.findByLabelText('Código de confirmação');
+  expect(field).toHaveAttribute('inputmode', 'numeric');
+  expect(field).toHaveAttribute('autocomplete', 'one-time-code');
+  expect(screen.getByText(/código de 6 dígitos/)).toBeInTheDocument();
+  fireEvent.change(field, { target: { value: ' 482 913 ' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar email' }));
+  await waitFor(() => expect(changed).toHaveBeenCalledOnce());
+  expect(calls.mock.calls[1][0]).toMatchObject({ url: '/api/users/email/change/confirm', data: { requestId, code: '482913' } });
+});
+
+it('tentativas esgotadas (#322) voltam à senha com mensagem segura', async () => {
+  vi.spyOn(apiClient, 'request').mockResolvedValueOnce(started()).mockRejectedValueOnce(fail('email_confirmation_attempts_exceeded', 409));
+  const expired = vi.fn(); window.addEventListener(AUTH_EXPIRED_EVENT, expired);
+  const changed = vi.fn(); render(<EmailChangeAction session={session} onChanged={changed} />); open(); send(); await confirm();
+  const alert = await screen.findByRole('alert');
+  expect(alert).toHaveTextContent('Muitas tentativas com código incorreto');
+  expect(alert).not.toHaveTextContent('sensitive-canary');
+  expect(screen.queryByLabelText('Código de confirmação')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Senha atual da conta individual')).toHaveValue('');
+  expect(changed).not.toHaveBeenCalled(); expect(expired).not.toHaveBeenCalled();
+  window.removeEventListener(AUTH_EXPIRED_EVENT, expired);
 });
