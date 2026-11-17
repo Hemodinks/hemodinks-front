@@ -10,6 +10,7 @@ import { registerReportChecklistCases } from './report-checklist-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
 import { registerPasswordPolicyCases } from './password-policy-cases';
 import { registerSecurityObservationCases } from './security-observation-cases';
+import { registerActiveSessionsCases } from './active-sessions-cases';
 import { registerSensitiveIdentityCases } from './sensitive-identity-cases';
 import { registerAgendaAllDayCases } from './agenda-all-day-cases';
 import { registerAgendaViewCases } from './agenda-view-cases';
@@ -710,6 +711,7 @@ registerTenantIsolationCases({ mockApi: page => mockApi(page, superAdminSession)
   login: (page, path) => loginViaUi(page, path, superAdminSession), user: superAdminSession.user, patient: paciente });
 registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });
 registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session });
+registerActiveSessionsCases({ setup: mockApi, login: loginViaUi, session });
 registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
 registerSurgeryTypeCases({ mockApi, loginViaUi });
