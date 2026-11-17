@@ -70,6 +70,22 @@ it('#286: com sessão renovada, avisa que continua conectado e envia a confirma�
   expect(String((confirmCall.headers as Record<string, unknown>)['X-Session-Refresh'])).toBe('1');
 });
 
+it('#289: o código aceita só 6 dígitos, ao digitar e ao colar', async () => {
+  vi.spyOn(apiClient, 'request').mockResolvedValueOnce(started());
+  render(<EmailChangeAction session={session} onChanged={vi.fn()} />);
+  open(); send();
+  const field = await screen.findByLabelText('Código de confirmação');
+  expect(field).toHaveAttribute('maxLength', '6');
+  expect(field).toHaveAttribute('pattern', '[0-9]{6}');
+
+  fireEvent.change(field, { target: { value: '62a10-81444444' } });
+  expect(field).toHaveValue('621081');
+
+  fireEvent.change(field, { target: { value: '' } });
+  fireEvent.paste(field, { clipboardData: { getData: () => ' 482 913 ' } });
+  expect(field).toHaveValue('482913');
+});
+
 it('#286: sem sessão renovada, manda ao login avisando que a senha é a mesma', async () => {
   vi.spyOn(apiClient, 'request').mockResolvedValueOnce(started())
     .mockResolvedValueOnce(response({ code: 'identity_changed', sessionRenewed: false }));
