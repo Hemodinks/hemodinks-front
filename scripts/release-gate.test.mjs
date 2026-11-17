@@ -31,8 +31,9 @@ test('production has a same-run dependency on the complete CI job', () => {
   assert.equal(ci.on.workflow_run, undefined);
   assert.equal(ci.on.pull_request_target, undefined);
   assert.equal(existsSync(new URL('../.github/workflows/azure-static-web-apps-white-grass-0d59a4410.yml', import.meta.url)), false);
-  // Secrets de deploy so no environment azure-production (restrito a main), nunca repassados pelo CI.
-  assert.equal(ci.jobs.deploy.secrets, undefined);
+  // Secrets de deploy so no environment azure-production (restrito a main). O job chamador usa inherit,
+  // sem listar secrets: sem isso, os secrets do environment chegam vazios ao workflow_call.
+  assert.equal(ci.jobs.deploy.secrets, 'inherit');
   assert.equal(azure.on.workflow_call?.secrets, undefined);
   assert.equal(azure.jobs.build_and_deploy.environment, 'azure-production');
   const uploadWorkflows = readdirSync(new URL('../.github/workflows/', import.meta.url))
