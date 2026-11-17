@@ -460,3 +460,17 @@
   display: grid;
   gap: 0.15rem;
 }
+.active-sessions { display: grid; gap: 12px; }
+.active-sessions .data-header small { display: block; }
+.active-sessions-hint, .active-sessions-team { color: var(--muted); }
+.active-sessions-clinics { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.active-sessions-clinics li { display: flex; align-items: baseline; gap: 6px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); }
+/* Cabe na largura disponível (sem área de rolagem horizontal) em tablet e desktop. */
+.active-sessions-table { min-width: 0; }
+@media (min-width: 761px) and (max-width: 1100px) {
+  .active-sessions-table th, .active-sessions-table td { padding-inline: 8px; }
+}
+.session-status { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; white-space: nowrap; }
+.session-status-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.session-status--online .session-status-dot { background: #22c55e; box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 25%, transparent); }
+.session-status--recent .session-status-dot { background: #f97316; box-shadow: 0 0 0 3px color-mix(in srgb, #f97316 25%, transparent); }
