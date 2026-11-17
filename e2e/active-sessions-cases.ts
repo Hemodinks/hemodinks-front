@@ -39,7 +39,14 @@ export function registerActiveSessionsCases<TSession extends Session>({ setup, l
     const table = page.getByRole('table', { name: 'Sessões ativas' });
     await expect(table.getByRole('row', { name: /Ana Online/ })).toContainText('Online');
     await expect(table.getByRole('row', { name: /Bruno Recente/ })).toContainText('Recente');
-    await expect(page.getByText('1 usuário esteve online nas últimas 8 horas')).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Resumo das sessões' })).toContainText('Recente1');
+    // Ordenação pelo cabeçalho, também pelo teclado.
+    await table.getByRole('button', { name: /Usuário/ }).focus();
+    await page.keyboard.press('Enter');
+    await expect(table.getByRole('columnheader', { name: /Usuário/ })).toHaveAttribute('aria-sort', 'ascending');
+    await expect(table.getByRole('row').nth(1)).toContainText('Ana Online');
+    await page.keyboard.press('Enter');
+    await expect(table.getByRole('row').nth(1)).toContainText('Bruno Recente');
     expect(counter.calls).toBeGreaterThanOrEqual(1);
 
     for (const width of [1440, 820, 390]) {
@@ -48,7 +55,8 @@ export function registerActiveSessionsCases<TSession extends Session>({ setup, l
       await expect(table.getByText('Bruno Recente da Clínica Alfa')).toBeVisible();
       const audit = await new AxeBuilder({ page }).include('.options-workspace').withTags(['wcag2a', 'wcag2aa']).analyze();
       await expect.poll(() => table.evaluate(el => el.parentElement!.scrollWidth <= el.parentElement!.clientWidth)).toBe(true);
-      expect(audit.violations).toEqual([]);    }
+      expect(audit.violations).toEqual([]);
+    }
   });
 
   test('sessões ativas: Clínicas não mostra mais os usuários online', async ({ page }) => {
