@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import type { IdentityChangedHandler } from '../shared/identityChange';
 import type { AppView, ModuleMode, Theme } from '../appTypes';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
@@ -66,7 +67,7 @@ type AppMainContentProps = {
   navigation: NavigationActions;
   sortHandlers: SortHandlers;
   onThemeChange: (theme: Theme) => void;
-  onPasswordChanged: (message: string) => void;
+  onPasswordChanged: IdentityChangedHandler;
   onClinicSelected: (result: SelectClinicResponse) => void;
 };
 
