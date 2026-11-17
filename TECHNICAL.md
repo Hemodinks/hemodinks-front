@@ -288,7 +288,7 @@ Responsabilidades:
 
 ### Clinicas e equipes
 
-- `src/features/clinics/*`: CRUD de clinicas (SuperAdministrador), dados da propria clinica (Administrador), plano, modulos, identidade visual e equipes (`/api/platform/clinicas/*`); painel de usuarios online so para SuperAdministrador (`ActiveSessionsPanel`, `GET /api/platform/sessoes-ativas`, atualiza a cada 60 s)
+- `src/features/clinics/*`: CRUD de clinicas (SuperAdministrador), dados da propria clinica (Administrador), plano, modulos, identidade visual e equipes (`/api/platform/clinicas/*`). O painel de usuarios online saiu daqui e foi para Opcoes > Sessoes ativas (#280)
 
 ### Tutoriais, ajuda e calculadora
 
@@ -333,6 +333,7 @@ Arquivos principais:
 - `src/features/settings/OptionsPage.tsx`
 - `src/features/settings/SystemSettingsPage.tsx`
 - `src/features/settings/MonitoringPage.tsx`
+- `src/features/settings/ActiveSessionsPanel.tsx`
 - `src/shared/hooks/useThemePreference.ts`
 - `src/services/monitoringService.ts`
 
@@ -344,6 +345,7 @@ Responsabilidades:
 - troca de senha
 - consulta paginada dos erros tecnicos da clinica, com 25 registros por pagina
 - eventos de seguranca (`/api/monitoramento/seguranca`)
+- aba `Sessoes ativas`, so para SuperAdministrador (`ActiveSessionsPanel`, `GET /api/platform/sessoes-ativas`, atualiza a cada 60 s): status verde para quem esta online e laranja para quem esteve online nas ultimas `janelaRecenteHoras` (8 h, campo `recentes`); sem `recentes` (API anterior ao #331), mostra so os online
 - exibicao de modulo, descricao, timestamp, metodo, linha, usuario, operacao de banco, request ID e fluxo de classes
 - exibicao opcional da query relacionada dentro de `details`
 - atualizacao manual da listagem e limpeza confirmada dos logs atuais; novos erros continuam sendo registrados
@@ -492,7 +494,7 @@ Endpoints consumidos (extraidos de `src/services` e `src/features`):
 | Clinicas (plataforma) | `POST` | `/api/platform/clinicas/{id}/equipes/{id}/operadores/{id}/pin` |
 | Clinicas (plataforma) | `GET` | `/api/public/clinicas` |
 | Clinicas (plataforma) | `GET` | `/api/public/clinicas/{slug}/foto` |
-| Sessoes ativas (plataforma, SuperAdministrador) | `GET` | `/api/platform/sessoes-ativas` |
+| Sessoes ativas e recentes nas ultimas 8 h (plataforma, SuperAdministrador) | `GET` | `/api/platform/sessoes-ativas` |
 | Identidade visual | `GET` | `/api/configuracoes-sistema/current` |
 | Identidade visual | `GET` | `/api/configuracoes-sistema/current/foto-empresa` |
 | LGPD | `GET` | `/api/legal-acceptances/current` |

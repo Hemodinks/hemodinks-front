@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Activity, Shield, SlidersHorizontal } from 'lucide-react';
+import { Activity, Shield, SlidersHorizontal, Users } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import type { AuthSession } from '../../types';
 import { MonitoringPage } from './MonitoringPage';
 import { SystemSettingsPage } from './SystemSettingsPage';
 import { SecurityMonitoringPanel } from './SecurityMonitoringPanel';
+import { ActiveSessionsPanel } from './ActiveSessionsPanel';
 import { ADMIN_PROFILE_ID, SUPER_ADMIN_PROFILE_ID } from '../../shared/utils/formatterConstants';
 import './settings.css';
 
@@ -15,11 +16,12 @@ type OptionsPageProps = {
   onPasswordChanged: (message: string) => void;
 };
 
-type OptionsSection = 'settings' | 'monitoring' | 'security';
+type OptionsSection = 'settings' | 'monitoring' | 'security' | 'sessions';
 
 export function OptionsPage(props: OptionsPageProps) {
   const [section, setSection] = useState<OptionsSection>('settings');
-  const canObserveSecurity = props.session.user.perfilId === ADMIN_PROFILE_ID || props.session.user.perfilId === SUPER_ADMIN_PROFILE_ID;
+  const isSuperAdmin = props.session.user.perfilId === SUPER_ADMIN_PROFILE_ID;
+  const canObserveSecurity = props.session.user.perfilId === ADMIN_PROFILE_ID || isSuperAdmin;
 
   return (
     <section className="workspace options-workspace">
@@ -46,9 +48,14 @@ export function OptionsPage(props: OptionsPageProps) {
           aria-current={section === 'security' ? 'page' : undefined} onClick={() => setSection('security')}>
           <Shield size={18} />Segurança
         </button>}
+        {isSuperAdmin && <button type="button" className={section === 'sessions' ? 'active' : ''}
+          aria-current={section === 'sessions' ? 'page' : undefined} onClick={() => setSection('sessions')}>
+          <Users size={18} />Sessões ativas
+        </button>}
       </nav>
 
-      {section === 'security' ? <SecurityMonitoringPanel session={props.session} />
+      {section === 'sessions' && isSuperAdmin ? <ActiveSessionsPanel session={props.session} />
+        : section === 'security' ? <SecurityMonitoringPanel session={props.session} />
         : section === 'settings' ? <SystemSettingsPage {...props} /> : <MonitoringPage session={props.session} />}
     </section>
   );
