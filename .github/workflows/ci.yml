@@ -296,3 +296,6 @@ jobs:
     needs: test-and-build
     if: ${{ !cancelled() && needs.test-and-build.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     uses: ./.github/workflows/azure-static-web-apps-production.yml
+    # O secrets de um workflow_call so recebe o que o chamador repassa; sem inherit, os secrets do
+    # environment azure-production chegam vazios. Os valores vem do environment (restrito a main).
+    secrets: inherit
