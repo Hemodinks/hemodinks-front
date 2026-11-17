@@ -3,6 +3,11 @@ export const PAGE_SIZE = 10;
 export const PATIENT_EXPORT_PAGE_SIZE = 100;
 export const CBHPM_PAGE_SIZE = 10;
 export const MAX_NAME_LENGTH = 255;
+// Limites alinhados às colunas do banco (#289): Equipe.Nome, Paciente.Procedimento; busca livre; código de email.
+export const MAX_TEAM_NAME_LENGTH = 120;
+export const MAX_PROCEDURE_LENGTH = 1000;
+export const MAX_SEARCH_LENGTH = 100;
+export const EMAIL_CODE_LENGTH = 6;
 export const MAX_DIAGNOSIS_LENGTH = 100;
 export const MAX_TREATMENT_MEDICAL_LENGTH = 100;
 export const MAX_OBSERVATION_LENGTH = 500;

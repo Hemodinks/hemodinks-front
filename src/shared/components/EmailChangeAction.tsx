@@ -7,6 +7,9 @@ import { readSensitiveIdentityError } from '../../services/sensitiveIdentityErro
 import { sessionEpoch } from '../../services/sessionEpoch';
 import { decodeJwtPayload } from '../utils/jwt';
 import { MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from '../utils/formatters';
+import { EMAIL_CODE_LENGTH } from '../utils/formatterConstants';
+
+const onlyCodeDigits = (value: string) => value.replace(/\D/g, '').slice(0, EMAIL_CODE_LENGTH);
 import { Modal } from './Modal';
 import { PasswordInput } from './PasswordInput';
 import { AlertMessage, Button, TextField } from './ui';
@@ -143,8 +146,16 @@ function EmailChangeForm({ session, onChanged, onRenewed, onStart }: FormProps) 
         </header>
         <form aria-busy={busy} onSubmit={submit} onInvalid={focusFirstInvalidFormField}>
           <div className="email-change-body">
-            {pending ? <PasswordInput id="email-change-code" label="Código de confirmação" value={code} onChange={setCode}
-              autoComplete="one-time-code" inputMode="numeric" maxLength={16} pattern={'[\\s]*(?:[0-9][\\s]*){6}'}
+            {/* #289: só os 6 dígitos; ao colar "482 913" ou "482-913", o que não é dígito é descartado. */}
+            {pending ? <PasswordInput id="email-change-code" label="Código de confirmação" value={code}
+              onChange={value => setCode(onlyCodeDigits(value))}
+              onPaste={event => {
+                const pasted = onlyCodeDigits(event.clipboardData.getData('text'));
+                if (!pasted) return;
+                event.preventDefault();
+                setCode(pasted);
+              }}
+              autoComplete="one-time-code" inputMode="numeric" maxLength={EMAIL_CODE_LENGTH} pattern={`[0-9]{${EMAIL_CODE_LENGTH}}`}
               title="Informe os 6 dígitos do código." required errorId={error ? 'email-change-error' : undefined} />
               : <PasswordInput id="email-change-password" label="Senha atual da conta individual" value={password} onChange={setPassword}
                 autoComplete="current-password" maxLength={MAX_PASSWORD_LENGTH} required errorId={error ? 'email-change-error' : undefined} />}
