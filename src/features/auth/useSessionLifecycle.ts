@@ -5,6 +5,7 @@ import { MEDICAL_PROFILE_ID } from '../../shared/utils/formatters';
 import { getJwtExpirationMs, isJwtExpired, decodeJwtPayload } from '../../shared/utils/jwt';
 import { ApiError, registerSessionTokenResolver } from '../../services/api';
 import { renewSession, recordSessionActivity, sessionIdentity } from '../../services/sessionService';
+import { isSessionHandoverActive } from '../../services/sessionHandover';
 import type { AuthSession } from '../../types';
 
 export function useSessionExpiration(session: AuthSession | null, onExpired: (message?: string) => void,
@@ -41,6 +42,8 @@ export function useSessionExpiration(session: AuthSession | null, onExpired: (me
     };
     let inFlight: Promise<string> | null = null;
     const expireSession = (code?: string, broadcast = true) => {
+      // #286: durante a troca para a sessão nova, o 401 do token antigo é esperado e não encerra a sessão.
+      if (isSessionHandoverActive()) return;
       if (!disposed && !expired) {
         expired = true;
         if (code === SESSION_ABSOLUTE_EXPIRED_CODE && broadcast)

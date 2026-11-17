@@ -1,4 +1,5 @@
 import { ApiError, post } from './api';
+import { beginSessionHandover, endSessionHandover } from './sessionHandover';
 
 export type EmailChangeStarted = { requestId: string; expiresAt: string };
 
@@ -10,9 +11,21 @@ export async function requestEmailChange(senhaAtual: string, novoEmail: string, 
   return { requestId: result.requestId, expiresAt: result.expiresAt };
 }
 
+// #286: com credenciais e o cabeçalho de requisição confiável, a API pode gravar o cookie de uma sessão nova
+// (o token nunca vem no corpo; o app o obtém por /api/session/restaurar).
+// Com sessão renovada, a pausa de expiração continua até o app restaurar a sessão nova (AppContent a encerra).
 export async function confirmEmailChange(requestId: string, code: string, token: string) {
-  const result = await post<{ code: string }>('/api/users/email/change/confirm', { requestId, code }, token);
-  if (result?.code !== 'identity_changed') throw new ApiError('Não foi possível confirmar a alteração. Confira sua conta antes de tentar novamente.');
+  beginSessionHandover();
+  let renewed = false;
+  try {
+    const result = await post<{ code: string; sessionRenewed?: boolean }>('/api/users/email/change/confirm', { requestId, code }, token,
+      { withCredentials: true, headers: { 'X-Session-Refresh': '1' } });
+    if (result?.code !== 'identity_changed') throw new ApiError('Não foi possível confirmar a alteração. Confira sua conta antes de tentar novamente.');
+    renewed = result.sessionRenewed === true;
+    return { sessionRenewed: renewed };
+  } finally {
+    if (!renewed) endSessionHandover();
+  }
 }
 
 export function cancelEmailChange(requestId: string, token: string) {

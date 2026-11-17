@@ -11,18 +11,34 @@ import { Modal } from './Modal';
 import { PasswordInput } from './PasswordInput';
 import { AlertMessage, Button, TextField } from './ui';
 import { focusFirstInvalidFormField } from '../utils/focusInvalidFormField';
+import {
+  clearIdentityNotice, EMAIL_CHANGED_RELOGIN_MESSAGE, peekIdentityNotice, setIdentityNotice, type IdentityChangedHandler,
+} from '../identityChange';
 import './styles/email-change.css';
 
-type Props = { session: AuthSession; onChanged: (message: string) => void };
+type Props = { session: AuthSession; onChanged: IdentityChangedHandler };
+type FormProps = Props & { onRenewed: (email: string) => void; onStart: () => void };
 
 export function EmailChangeAction(props: Props) {
   const { session } = props;
+  // O aviso fica fora do formulário: a sessão nova (#286) muda o contexto e remonta o formulário (e a área
+  // autenticada); por isso ele também vive no registro em memória de identityChange.
+  const [notice, setNotice] = useState(() => peekIdentityNotice(session.user.id));
   // A refreshed access token does not discard this action, a context change does.
   const context = `${session.user.id}:${session.user.clinicaId}:${decodeJwtPayload(session.token)?.sid}:${sessionEpoch()}`;
-  return <EmailChangeForm key={context} {...props} />;
+  return <>
+    {notice && <div className="nr-block" data-private="true">
+      <AlertMessage type="success" icon={<MailCheck size={18} aria-hidden="true" />} focusOnDisplay>{notice}</AlertMessage>
+    </div>}
+    <EmailChangeForm key={context} {...props} onStart={() => { clearIdentityNotice(); setNotice(''); }} onRenewed={email => {
+      const text = `Email alterado para ${email}. Você continua conectado; nos próximos acessos, use o novo email e a mesma senha.`;
+      setIdentityNotice(session.user.id, text);
+      setNotice(text);
+    }} />
+  </>;
 }
 
-function EmailChangeForm({ session, onChanged }: Props) {
+function EmailChangeForm({ session, onChanged, onRenewed, onStart }: FormProps) {
   const [email, setEmail] = useState('');
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState('');
@@ -72,10 +88,13 @@ function EmailChangeForm({ session, onChanged }: Props) {
     try {
       if (pending) {
         // #322: código de 6 dígitos; espaços de quem cola o código são descartados.
-        await confirmEmailChange(pending.requestId, code.replace(/\s/g, ''), session.token);
+        const { sessionRenewed } = await confirmEmailChange(pending.requestId, code.replace(/\s/g, ''), session.token);
         if (!active.current || current !== sequence.current) return;
+        const changedTo = email.trim().toLowerCase();
         pendingRef.current = null; setPending(null); setPassword(''); setCode(''); setOpen(false);
-        onChanged('Email confirmado e alterado. Entre novamente com o novo email.');
+        if (sessionRenewed) onRenewed(changedTo);
+        onChanged(sessionRenewed ? 'Email alterado. Você continua conectado.' : EMAIL_CHANGED_RELOGIN_MESSAGE,
+          { sessionRenewed, email: changedTo });
       } else {
         const result = await requestEmailChange(password, email, session.token);
         if (!active.current || current !== sequence.current) {
@@ -101,11 +120,11 @@ function EmailChangeForm({ session, onChanged }: Props) {
       if (open) return;
       // Preserve a connected, focusable opener for Modal, including Enter in the email field.
       event.currentTarget.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus();
-      setError(''); setOpen(true);
+      onStart(); setError(''); setOpen(true);
     }}>
       <TextField label="Novo email de autenticação" type="email" value={email} onValueChange={setEmail}
         maxLength={MAX_EMAIL_LENGTH} autoComplete="off" required disabled={open} />
-      <p>Seu email só será alterado após confirmar o código enviado ao novo endereço. Ao concluir, será necessário entrar novamente.</p>
+      <p>Seu email só será alterado após confirmar o código enviado ao novo endereço. Sua senha continua a mesma e você permanece conectado.</p>
       <Button type="submit" variant="primary" aria-disabled={open}>Continuar alteração de email</Button>
     </form>
     {/* Portal: dentro do card do formulário o modal herdava a largura dele e ganhava rolagem horizontal. */}

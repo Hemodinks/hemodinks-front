@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { IdentityChangedHandler } from '../../shared/identityChange';
 import { Activity, Shield, SlidersHorizontal, Users } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import type { AuthSession } from '../../types';
@@ -13,7 +14,7 @@ type OptionsPageProps = {
   session: AuthSession;
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
-  onPasswordChanged: (message: string) => void;
+  onPasswordChanged: IdentityChangedHandler;
 };
 
 type OptionsSection = 'settings' | 'monitoring' | 'security' | 'sessions';

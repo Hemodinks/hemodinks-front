@@ -1,4 +1,5 @@
 import type { AppView, ModuleMode } from '../../appTypes';
+import type { IdentityChangedHandler } from '../../shared/identityChange';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import type { FormView } from '../../routes';
 import type { AuthSession } from '../../types';
@@ -16,6 +17,6 @@ export type UseUsersDomainOptions = {
   persistSession: (nextSession: AuthSession) => void;
   loadDashboardSummary: (token?: string, forceRefresh?: boolean) => Promise<void>;
   onDeleteCurrentUser: () => void;
-  onIdentityChanged: (message: string) => void;
+  onIdentityChanged: IdentityChangedHandler;
   confirmAction: ConfirmAction;
 };
