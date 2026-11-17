@@ -104,7 +104,10 @@ describe('ActiveSessionsPanel', () => {
     expect(rows[2]).toHaveTextContent('Recente');
     expect(within(rows[2]).getByTitle('Esteve online nas últimas 8 horas')).toBeInTheDocument();
     expect(rows[2].querySelector('.session-status--recent .session-status-dot')).not.toBeNull();
-    expect(screen.getByText('1 usuário esteve online nas últimas 8 horas')).toBeInTheDocument();
+    const summary = screen.getByRole('list', { name: 'Resumo das sessões' });
+    expect(summary).toHaveTextContent('Online2');
+    expect(summary).toHaveTextContent('Recente1');
+    expect(screen.getByText(/Recente: online nas últimas 8 horas/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '2 usuários online' })).toBeInTheDocument();
   });
 
@@ -116,5 +119,48 @@ describe('ActiveSessionsPanel', () => {
     await within(table).findByText('Ana Alfa');
     expect(within(table).queryByText('Recente')).not.toBeInTheDocument();
     expect(screen.queryByText(/nas últimas 8 horas/)).not.toBeInTheDocument();
+  });
+
+  it('exibe no fuso local o horário UTC que a API manda sem fuso', async () => {
+    vi.mocked(listPlatformActiveSessions).mockResolvedValue(response({
+      geradoEm: '2026-11-12T12:00:00',
+      items: [{ usuarioGlobalId: 10, nome: 'Ana Alfa', perfil: 'Administrador', clinicaId: 1, clinica: 'Clínica Alfa', viaEquipe: false,
+        inicio: '2026-11-12T11:00:00', ultimaAtividade: '2026-11-12T11:57:00', navegador: 'Chrome · Windows' }],
+    }));
+    renderPanel(5);
+
+    const row = (await screen.findByText('Ana Alfa')).closest('tr')!;
+    const instant = new Date('2026-11-12T11:57:00Z');
+    const localTime = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(instant);
+    const localDay = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(instant);
+    expect(within(row).getByText(localTime)).toBeInTheDocument();
+    expect(within(row).getByText(`${localDay} · há 3 min`)).toBeInTheDocument();
+  });
+
+  it('ordena pela coluna clicada e alterna a direção', async () => {
+    vi.mocked(listPlatformActiveSessions).mockResolvedValue(response({
+      recentes: [{ usuarioGlobalId: 30, nome: 'Carla Recente', perfil: 'Médicos', clinicaId: 1, clinica: 'Clínica Alfa', viaEquipe: false,
+        inicio: '2026-11-12T06:00:00Z', ultimaAtividade: '2026-11-12T09:30:00Z', navegador: 'Firefox · Linux' }],
+    }));
+    renderPanel(5);
+    const table = await screen.findByRole('table', { name: 'Sessões ativas' });
+    await within(table).findByText('Carla Recente');
+    const names = () => within(table).getAllByRole('row').slice(1).map((row) => row.querySelector('strong')?.textContent);
+
+    // Padrão: online primeiro, atividade mais recente antes.
+    expect(within(table).getByRole('columnheader', { name: /Status/ })).toHaveAttribute('aria-sort', 'ascending');
+    expect(names()).toEqual(['Ana Alfa', 'Bruno Beta', 'Carla Recente']);
+
+    fireEvent.click(within(table).getByRole('button', { name: /Usuário/ }));
+    expect(within(table).getByRole('columnheader', { name: /Usuário/ })).toHaveAttribute('aria-sort', 'ascending');
+    expect(names()).toEqual(['Ana Alfa', 'Bruno Beta', 'Carla Recente']);
+    fireEvent.click(within(table).getByRole('button', { name: /Usuário/ }));
+    expect(names()).toEqual(['Carla Recente', 'Bruno Beta', 'Ana Alfa']);
+
+    fireEvent.click(within(table).getByRole('button', { name: /Início/ }));
+    expect(within(table).getByRole('columnheader', { name: /Início/ })).toHaveAttribute('aria-sort', 'descending');
+    expect(names()).toEqual(['Ana Alfa', 'Bruno Beta', 'Carla Recente']);
+    fireEvent.click(within(table).getByRole('button', { name: /Início/ }));
+    expect(names()).toEqual(['Carla Recente', 'Bruno Beta', 'Ana Alfa']);
   });
 });
