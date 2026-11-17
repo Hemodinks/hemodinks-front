@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { IdentityChangedHandler } from '../../shared/identityChange';
 import { useQuery } from '@tanstack/react-query';
 import { getUsers } from '../../services';
 import { queryClient } from '../../queryClient';
@@ -179,13 +180,13 @@ export function useUsersDomain({
     resetUserForm();
   };
 
-  const handlePasswordChanged = (message: string) => {
+  const handlePasswordChanged: IdentityChangedHandler = (message, outcome) => {
     if (!session) {
       return;
     }
 
     setShowPasswordModal(false);
-    onIdentityChanged(message);
+    onIdentityChanged(message, outcome);
   };
 
   const openUsersList = () => {
