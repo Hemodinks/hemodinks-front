@@ -1,4 +1,4 @@
-import { type HTMLAttributes, useState } from 'react';
+import { type ClipboardEvent, type HTMLAttributes, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 type PasswordInputProps = {
@@ -14,6 +14,7 @@ type PasswordInputProps = {
   inputMode?: HTMLAttributes<HTMLInputElement>['inputMode'];
   pattern?: string;
   title?: string;
+  onPaste?: (event: ClipboardEvent<HTMLInputElement>) => void;
 };
 
 export function PasswordInput({
@@ -29,6 +30,7 @@ export function PasswordInput({
   inputMode,
   pattern,
   title,
+  onPaste,
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
   const toggleLabel = visible ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`;
@@ -42,6 +44,7 @@ export function PasswordInput({
           type={visible ? 'text' : 'password'}
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          onPaste={onPaste}
           autoComplete={autoComplete}
           data-private={autoComplete === 'new-password' ? true : undefined}
           className={autoComplete === 'new-password' ? 'nr-mask' : undefined}

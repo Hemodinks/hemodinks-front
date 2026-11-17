@@ -2,7 +2,8 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { TeamIdentificationMode } from '../../types';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TextField } from '../../shared/components/ui';
-import { formatPhoneInput, MAX_EMAIL_LENGTH, MAX_NAME_LENGTH } from '../../shared/utils/formatters';
+import { formatPhoneInput, MAX_EMAIL_LENGTH } from '../../shared/utils/formatters';
+import { MAX_TEAM_NAME_LENGTH } from '../../shared/utils/formatterConstants';
 import { getTeamIdentificationDescription, TEAM_IDENTIFICATION_OPTIONS } from '../../shared/utils/teamIdentification';
 import { MAX_ADMIN_PASSWORD_LENGTH, MAX_BRAZIL_MOBILE_MASK_LENGTH, type ClinicFormData } from './clinicFormModel';
 
@@ -16,7 +17,7 @@ export function ClinicFormTeamFields({ editing, form, setForm, passwordError }: 
       <small className="file-hint">A equipe usará uma conta coletiva vinculada exclusivamente a esta clínica.</small>
       {form.criarEquipeInicial && <div className="clinic-team-content">
         <div className="clinic-form-grid">
-          <TextField label="Nome da equipe" value={form.equipeNome} onValueChange={(equipeNome) => setForm((current) => ({ ...current, equipeNome: equipeNome.slice(0, MAX_NAME_LENGTH) }))} maxLength={MAX_NAME_LENGTH} required />
+          <TextField label="Nome da equipe" value={form.equipeNome} onValueChange={(equipeNome) => setForm((current) => ({ ...current, equipeNome: equipeNome.slice(0, MAX_TEAM_NAME_LENGTH) }))} maxLength={MAX_TEAM_NAME_LENGTH} required />
           <TextField label="E-mail coletivo" type="email" value={form.equipeEmail} onValueChange={(equipeEmail) => setForm((current) => ({ ...current, equipeEmail: equipeEmail.slice(0, MAX_EMAIL_LENGTH) }))} maxLength={MAX_EMAIL_LENGTH} required />
           <PasswordInput id="clinic-team-password" errorId={passwordError ? 'clinic-password-api-error' : undefined} label="Senha coletiva inicial" value={form.equipeSenha} onChange={(equipeSenha) => setForm((current) => ({ ...current, equipeSenha: equipeSenha.slice(0, MAX_ADMIN_PASSWORD_LENGTH) }))} autoComplete="new-password" minLength={8} maxLength={MAX_ADMIN_PASSWORD_LENGTH} required />
           <TextField label="Telefone da equipe" type="tel" inputMode="tel" autoComplete="tel" value={form.equipeTelefone} onValueChange={(equipeTelefone) => setForm((current) => ({ ...current, equipeTelefone: formatPhoneInput(equipeTelefone) }))} maxLength={MAX_BRAZIL_MOBILE_MASK_LENGTH} placeholder="+55 (DDD) 99999-9999" />
