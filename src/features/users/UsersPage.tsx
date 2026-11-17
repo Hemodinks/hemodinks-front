@@ -1,4 +1,5 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import type { IdentityChangedHandler } from '../../shared/identityChange';
 import type { AuthSession, User, UserFormData } from '../../types';
 import { UserForm } from './UserForm';
 import { UserList } from './UserList';
@@ -6,7 +7,7 @@ import './users.css';
 
 type UsersPageProps = {
   identitySession: AuthSession;
-  onIdentityChanged: (message: string) => void;
+  onIdentityChanged: IdentityChangedHandler;
   moduleMode: 'list' | 'form';
   canAccessUsers: boolean;
   canManageUsers: boolean;

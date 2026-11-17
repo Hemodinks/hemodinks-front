@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { IdentityChangedHandler } from "../../shared/identityChange";
 import { Calculator, CheckCircle2, KeyRound, Moon, Palette, Sun } from "lucide-react";
 import type { Theme } from "../../appTypes";
 import type { AuthSession } from "../../types";
@@ -12,7 +13,7 @@ type SystemSettingsPageProps = {
   session: AuthSession;
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
-  onPasswordChanged: (message: string) => void;
+  onPasswordChanged: IdentityChangedHandler;
 };
 
 export function SystemSettingsPage({
