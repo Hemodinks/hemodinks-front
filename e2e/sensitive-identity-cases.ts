@@ -69,12 +69,12 @@ export function registerSensitiveIdentityCases<TSession extends Session>({ setup
     }
   });
 
-  test('identidade sensível: email confirmado exige novo login somente após sucesso do backend', async ({ page }) => {
+  test('identidade sensível: sem sessão renovada, email confirmado exige novo login somente após sucesso do backend', async ({ page }) => {
     await setup(page); await login(page, '/opcoes');
     await page.route('**/api/users/email/change', route => route.fulfill({ json: { requestId, expiresAt: new Date(Date.now() + 600000).toISOString() } }));
     await page.route('**/api/users/email/change/confirm', route => {
       expect(route.request().postDataJSON()).toEqual({ requestId, code });
-      return route.fulfill({ json: { code: 'identity_changed' } });
+      return route.fulfill({ json: { code: 'identity_changed', sessionRenewed: false } });
     });
     await open(page); await page.getByLabel('Senha atual da conta individual', { exact: true }).fill(credential);
     await page.getByRole('button', { name: 'Enviar confirmação' }).click();
@@ -82,7 +82,37 @@ export function registerSensitiveIdentityCases<TSession extends Session>({ setup
     await expect(page.getByRole('button', { name: 'Menu do usuário' })).toBeVisible();
     await page.getByRole('button', { name: 'Confirmar email', exact: true }).click();
     await expect(page.locator('#login-password')).toBeVisible();
-    await expect(page.getByText('Email confirmado e alterado. Entre novamente com o novo email.')).toBeVisible();
+    await expect(page.getByText('Email alterado. Entre novamente com o novo email e a mesma senha.')).toBeVisible();
+  });
+
+  test('identidade sensível: email confirmado mantém o titular conectado com a sessão renovada (#286)', async ({ page }) => {
+    await setup(page); await login(page, '/opcoes');
+    let confirmHeaders: Record<string, string> = {};
+    await page.route('**/api/users/email/change', route => route.fulfill({ json: { requestId, expiresAt: new Date(Date.now() + 600000).toISOString() } }));
+    await page.route('**/api/users/email/change/confirm', route => {
+      confirmHeaders = route.request().headers();
+      return route.fulfill({ json: { code: 'identity_changed', sessionRenewed: true } });
+    });
+    // A sessão nova vem pelo cookie: o app a obtém por /restaurar, com o email já alterado.
+    await page.route('**/api/session/restaurar', route => route.fulfill({ json: { ...session.user, email: 'new@example.com', token: session.token } }));
+    await open(page); await page.getByLabel('Senha atual da conta individual', { exact: true }).fill(credential);
+    await page.getByRole('button', { name: 'Enviar confirmação' }).click();
+    await page.getByLabel('Código de confirmação', { exact: true }).fill(code);
+    await page.getByRole('button', { name: 'Confirmar email', exact: true }).click();
+
+    const notice = page.getByRole('status').filter({ hasText: 'Email alterado para new@example.com' });
+    await expect(notice).toContainText('Você continua conectado');
+    await expect(notice).toContainText('use o novo email e a mesma senha');
+    await expect(page.locator('#login-password')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Menu do usuário' })).toBeVisible();
+    expect(confirmHeaders['x-session-refresh']).toBe('1');
+    for (const width of [1440, 820, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expect(notice).toBeVisible();
+    }
+    const stored = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
+    expect(stored).not.toContain('new@example.com');
   });
 
   test('identidade sensível: senha atual uma vez, recusa local e sucesso encerra sessão', async ({ page }) => {

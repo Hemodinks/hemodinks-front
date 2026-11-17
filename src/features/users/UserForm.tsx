@@ -1,4 +1,5 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import type { IdentityChangedHandler } from '../../shared/identityChange';
 import { FileText, FileUp, ImagePlus, Plus, Save, Trash2, X } from 'lucide-react';
 import type { AuthSession, User, UserFormData } from '../../types';
 import { EmailChangeAction } from '../../shared/components/EmailChangeAction';
@@ -26,7 +27,7 @@ import { UserAvatar } from './UserAvatar';
 
 type UserFormProps = {
   identitySession: AuthSession;
-  onIdentityChanged: (message: string) => void;
+  onIdentityChanged: IdentityChangedHandler;
   canAccessUsers: boolean;
   canUseUserForm: boolean;
   isSuperAdmin: boolean;
@@ -302,7 +303,11 @@ export function UserForm({
       </form>
       {editingId === identitySession.user.id && <section className="stack">
         <h3>Alterar email de autenticação</h3>
-        <EmailChangeAction session={identitySession} onChanged={onIdentityChanged} />
+        <EmailChangeAction session={identitySession} onChanged={(message, outcome) => {
+          // #286: a sessão continua; o formulário não pode reenviar o email antigo ao salvar.
+          if (outcome?.sessionRenewed) setFormData((current) => ({ ...current, email: outcome.email }));
+          onIdentityChanged(message, outcome);
+        }} />
       </section>}
     </FormPanel>
   );
