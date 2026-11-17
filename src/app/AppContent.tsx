@@ -21,7 +21,10 @@ import { getAppAccess, MEDICAL_ALLOWED_ENTRY_PATHS } from "./appAccess";
 import { AppAccessProvider } from "./AppAccessContext";
 import { AppPublicContent } from "./AppPublicContent";
 import { AppCredentialGate } from "./AppCredentialGate";
-import { buildSessionForSelectedClinic, getResetPasswordCompletedMessage } from "./appSession";
+import { buildSessionForSelectedClinic, buildSessionFromLogin, getResetPasswordCompletedMessage } from "./appSession";
+import { restoreSession } from "../services/sessionService";
+import { endSessionHandover } from "../services/sessionHandover";
+import { clearIdentityNotice, EMAIL_CHANGED_RELOGIN_MESSAGE, type IdentityChangedHandler } from "../shared/identityChange";
 import { createAppSortHandlers } from "./appSortHandlers";
 import { useAppChrome } from "./useAppChrome";
 import { TutorialProvider } from "../features/tutorials/TutorialProvider";
@@ -105,6 +108,7 @@ function AppSessionContent({ auth, loginFlow }: {
     returnToLogin(getResetPasswordCompletedMessage(message));
   };
   function endSession(infoMessage = "") {
+    clearIdentityNotice();
     queryClient.clear();
     clearSession();
     appChrome.resetAppChrome();
@@ -123,6 +127,27 @@ function AppSessionContent({ auth, loginFlow }: {
   function logout() {
     endSession();
   }
+  // #286: a troca de email revoga todas as sessões; com `sessionRenewed`, a API já gravou o cookie de uma
+  // sessão nova só para o titular. Mesmo usuário e clínica: troca o token sem passar pelo login.
+  const handleIdentityChanged: IdentityChangedHandler = (message, outcome) => {
+    if (!outcome?.sessionRenewed) {
+      endSessionHandover();
+      endSession(message);
+      return;
+    }
+    const epoch = sessionEpoch();
+    const previous = session;
+    void restoreSession()
+      .then(restored => {
+        endSessionHandover();
+        if (epoch !== sessionEpoch()) return;
+        // Defensivo: a sessão nova precisa ser do mesmo titular e da mesma clínica (isolamento de dados).
+        if (restored && previous && restored.id === previous.user.id && restored.clinicaId === previous.user.clinicaId)
+          persistSession(buildSessionFromLogin(restored));
+        else endSession(EMAIL_CHANGED_RELOGIN_MESSAGE);
+      })
+      .catch(() => { endSessionHandover(); if (epoch === sessionEpoch()) endSession(EMAIL_CHANGED_RELOGIN_MESSAGE); });
+  };
   const usersDomain = useUsersDomain({
     session: operationalSession,
     activeView,
@@ -136,7 +161,7 @@ function AppSessionContent({ auth, loginFlow }: {
     persistSession,
     loadDashboardSummary: appChrome.loadDashboardSummary,
     onDeleteCurrentUser: logout,
-    onIdentityChanged: endSession,
+    onIdentityChanged: handleIdentityChanged,
     confirmAction,
   });
   const patientsDomain = usePatientsDomain({
@@ -295,6 +320,7 @@ function AppSessionContent({ auth, loginFlow }: {
     result: import("../types").SelectClinicResponse,
   ) => {
     if (!session) return;
+    clearIdentityNotice();
     queryClient.clear();
     appChrome.resetAppChrome();
     // Same reset as endSession: no list, form or record of the previous clinic survives the switch.

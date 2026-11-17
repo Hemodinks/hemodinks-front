@@ -146,6 +146,10 @@ Fluxos suportados:
 - troca de e-mail com confirmacao (`/api/users/email/change*`): codigo de 6 digitos enviado ao novo endereco
   (valido por 10 min, uso unico); 5 erros invalidam a solicitacao (`409 email_confirmation_attempts_exceeded`) e
   o fluxo volta para a senha atual (#322)
+- ao confirmar o codigo, a API revoga todas as sessoes e, em requisicao confiavel (`withCredentials` +
+  `X-Session-Refresh`), grava o cookie de uma sessao nova so para o titular (`sessionRenewed: true`); o front a
+  obtem por `/api/session/restaurar` e o usuario continua conectado, com a mesma senha. Sem renovacao, volta ao
+  login com "novo email e a mesma senha" (#286)
 - reset por email via `POST /api/users/password/reset`
 - confirmacao por token via `POST /api/users/password/reset/confirm`
 - troca obrigatoria de senha quando `precisaTrocarSenha=true`

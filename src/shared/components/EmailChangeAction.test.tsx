@@ -1,9 +1,10 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, expect, it, vi } from 'vitest';
 import { apiClient, AUTH_EXPIRED_EVENT } from '../../services/api';
 import { mockSession } from '../../test/appTestData';
 import { EmailChangeAction } from './EmailChangeAction';
+import { clearIdentityNotice } from '../identityChange';
 
 const response = (data: unknown, status = 200) => ({ data, status, headers: {}, config: { headers: {} }, statusText: '' }) as AxiosResponse;
 const fail = (code: string, status = 403) => new AxiosError('failed', undefined, undefined, undefined, response({ code, message: 'sensitive-canary' }, status));
@@ -12,7 +13,7 @@ const started = () => response({ requestId, expiresAt: new Date(Date.now() + 600
 const session = mockSession({ clinicaId: 1 });
 const code = '482913';
 const password = 'sensitive-current-password';
-afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
+afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); clearIdentityNotice(); });
 
 function open() {
   fireEvent.change(screen.getByLabelText('Novo email de autenticação'), { target: { value: 'new@example.com' } });
@@ -44,6 +45,41 @@ it('continua a operação, confirma posse antes de sucesso e nunca persiste senh
   ]);
   expect(storage).not.toHaveBeenCalled(); expect(log).not.toHaveBeenCalled();
   expect(document.body.innerHTML).not.toContain(code);
+});
+
+it('#286: com sessão renovada, avisa que continua conectado e envia a confirmação com credenciais', async () => {
+  const calls = vi.spyOn(apiClient, 'request').mockResolvedValueOnce(started())
+    .mockResolvedValueOnce(response({ code: 'identity_changed', sessionRenewed: true }));
+  const changed = vi.fn();
+  render(<EmailChangeAction session={session} onChanged={changed} />);
+  fireEvent.change(screen.getByLabelText('Novo email de autenticação'), { target: { value: ' New@Example.com ' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar alteração de email' }));
+  fireEvent.change(screen.getByLabelText('Senha atual da conta individual'), { target: { value: password } });
+  send(); await confirm();
+
+  await waitFor(() => expect(changed).toHaveBeenCalledWith('Email alterado. Você continua conectado.',
+    { sessionRenewed: true, email: 'new@example.com' }));
+  expect(screen.getByRole('status')).toHaveTextContent('Email alterado para new@example.com. Você continua conectado');
+  expect(screen.getByRole('status')).toHaveTextContent('use o novo email e a mesma senha');
+  // A sessão nova remonta a tela: o aviso continua visível após remontar o componente.
+  cleanup();
+  render(<EmailChangeAction session={session} onChanged={changed} />);
+  expect(screen.getByRole('status')).toHaveTextContent('Email alterado para new@example.com');
+  const confirmCall = calls.mock.calls[1][0];
+  expect(confirmCall.withCredentials).toBe(true);
+  expect(String((confirmCall.headers as Record<string, unknown>)['X-Session-Refresh'])).toBe('1');
+});
+
+it('#286: sem sessão renovada, manda ao login avisando que a senha é a mesma', async () => {
+  vi.spyOn(apiClient, 'request').mockResolvedValueOnce(started())
+    .mockResolvedValueOnce(response({ code: 'identity_changed', sessionRenewed: false }));
+  const changed = vi.fn();
+  render(<EmailChangeAction session={session} onChanged={changed} />);
+  open(); send(); await confirm();
+
+  await waitFor(() => expect(changed).toHaveBeenCalledWith('Email alterado. Entre novamente com o novo email e a mesma senha.',
+    { sessionRenewed: false, email: 'new@example.com' }));
+  expect(screen.queryByText(/Você continua conectado/)).not.toBeInTheDocument();
 });
 
 it.each(['identity_revalidation_failed', 'individual_identity_required', 'email_change_unavailable', 'email_confirmation_unavailable', 'identity_change_conflict', 'invalid_new_email'])('trata %s com mensagem segura sem encerrar sessão', async code => {
