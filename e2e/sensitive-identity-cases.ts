@@ -8,7 +8,7 @@ export function registerSensitiveIdentityCases<TSession extends Session>({ setup
 }) {
   const requestId = '12345678-1234-1234-1234-123456789012';
   const credential = 'private-current-credential';
-  const code = 'c'.repeat(64);
+  const code = '482913';
   const open = async (page: Page) => {
     await page.getByLabel('Novo email de autenticação').fill('new@example.com');
     await page.getByRole('button', { name: 'Continuar alteração de email' }).click();
@@ -39,6 +39,11 @@ export function registerSensitiveIdentityCases<TSession extends Session>({ setup
     for (const width of [1440, 1280, 768, 390]) {
       await page.setViewportSize({ width, height: 900 });
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      // O diálogo inteiro cabe na tela, sem rolagem horizontal interna.
+      await expect.poll(() => page.getByRole('dialog').evaluate(dialog => {
+        const box = dialog.getBoundingClientRect();
+        return dialog.scrollWidth <= dialog.clientWidth && box.left >= 0 && box.right <= innerWidth;
+      })).toBe(true);
       const audit = await new AxeBuilder({ page }).include('[role="dialog"]').withTags(['wcag2a', 'wcag2aa']).analyze();
       expect(audit.violations).toEqual([]);
     }

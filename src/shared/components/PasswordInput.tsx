@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type HTMLAttributes, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 type PasswordInputProps = {
@@ -11,6 +11,9 @@ type PasswordInputProps = {
   minLength?: number;
   required?: boolean;
   errorId?: string;
+  inputMode?: HTMLAttributes<HTMLInputElement>['inputMode'];
+  pattern?: string;
+  title?: string;
 };
 
 export function PasswordInput({
@@ -23,6 +26,9 @@ export function PasswordInput({
   minLength,
   required = false,
   errorId,
+  inputMode,
+  pattern,
+  title,
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
   const toggleLabel = visible ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`;
@@ -41,6 +47,9 @@ export function PasswordInput({
           className={autoComplete === 'new-password' ? 'nr-mask' : undefined}
           minLength={minLength}
           maxLength={maxLength}
+          inputMode={inputMode}
+          pattern={pattern}
+          title={title}
           required={required}
           aria-invalid={errorId ? true : undefined}
           aria-describedby={errorId}

@@ -1,4 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { KeyRound, MailCheck } from 'lucide-react';
 import type { AuthSession } from '../../types';
 import { cancelEmailChange, confirmEmailChange, requestEmailChange, type EmailChangeStarted } from '../../services/sensitiveIdentityService';
 import { readSensitiveIdentityError } from '../../services/sensitiveIdentityError';
@@ -9,6 +11,7 @@ import { Modal } from './Modal';
 import { PasswordInput } from './PasswordInput';
 import { AlertMessage, Button, TextField } from './ui';
 import { focusFirstInvalidFormField } from '../utils/focusInvalidFormField';
+import './styles/email-change.css';
 
 type Props = { session: AuthSession; onChanged: (message: string) => void };
 
@@ -68,7 +71,8 @@ function EmailChangeForm({ session, onChanged }: Props) {
     busyRef.current = true; setBusy(true); setError('');
     try {
       if (pending) {
-        await confirmEmailChange(pending.requestId, code, session.token);
+        // #322: código de 6 dígitos; espaços de quem cola o código são descartados.
+        await confirmEmailChange(pending.requestId, code.replace(/\s/g, ''), session.token);
         if (!active.current || current !== sequence.current) return;
         pendingRef.current = null; setPending(null); setPassword(''); setCode(''); setOpen(false);
         onChanged('Email confirmado e alterado. Entre novamente com o novo email.');
@@ -104,24 +108,35 @@ function EmailChangeForm({ session, onChanged }: Props) {
       <p>Seu email só será alterado após confirmar o código enviado ao novo endereço. Ao concluir, será necessário entrar novamente.</p>
       <Button type="submit" variant="primary" aria-disabled={open}>Continuar alteração de email</Button>
     </form>
-    {open && <Modal titleId="email-change-title" descriptionId="email-change-description" onClose={cancel}>
-      <div className="stack nr-block" data-private="true">
-        <h2 id="email-change-title">{pending ? 'Confirmar novo email' : 'Confirmar identidade'}</h2>
-        <p id="email-change-description">{pending
-          ? 'Cole o código recebido no novo endereço. O email ainda não foi alterado.'
-          : 'Informe a senha atual da sua conta individual para continuar esta alteração de email.'}</p>
-        <form className="stack" aria-busy={busy} onSubmit={submit} onInvalid={focusFirstInvalidFormField}>
-          {pending ? <PasswordInput id="email-change-code" label="Código de confirmação" value={code} onChange={setCode}
-            autoComplete="off" maxLength={64} required errorId={error ? 'email-change-error' : undefined} />
-            : <PasswordInput id="email-change-password" label="Senha atual da conta individual" value={password} onChange={setPassword}
-              autoComplete="current-password" maxLength={MAX_PASSWORD_LENGTH} required errorId={error ? 'email-change-error' : undefined} />}
-          {error && <div id="email-change-error"><AlertMessage type="error">{error}</AlertMessage></div>}
-          <div className="button-row">
+    {/* Portal: dentro do card do formulário o modal herdava a largura dele e ganhava rolagem horizontal. */}
+    {open && createPortal(<Modal titleId="email-change-title" descriptionId="email-change-description" onClose={cancel}
+      className="email-change-modal" backdropClassName="email-change-backdrop">
+      <div className="nr-block" data-private="true">
+        <header className="email-change-header">
+          <span className="email-change-emblem" aria-hidden="true">{pending ? <MailCheck size={24} /> : <KeyRound size={24} />}</span>
+          <div>
+            <span className="email-change-eyebrow">Alteração de email · Etapa {pending ? 2 : 1} de 2</span>
+            <h2 id="email-change-title">{pending ? 'Confirmar novo email' : 'Confirmar identidade'}</h2>
+            <p id="email-change-description">{pending
+              ? 'Digite o código de 6 dígitos enviado ao novo endereço. O email ainda não foi alterado.'
+              : 'Informe a senha atual da sua conta individual para continuar esta alteração de email.'}</p>
+          </div>
+        </header>
+        <form aria-busy={busy} onSubmit={submit} onInvalid={focusFirstInvalidFormField}>
+          <div className="email-change-body">
+            {pending ? <PasswordInput id="email-change-code" label="Código de confirmação" value={code} onChange={setCode}
+              autoComplete="one-time-code" inputMode="numeric" maxLength={16} pattern={'[\\s]*(?:[0-9][\\s]*){6}'}
+              title="Informe os 6 dígitos do código." required errorId={error ? 'email-change-error' : undefined} />
+              : <PasswordInput id="email-change-password" label="Senha atual da conta individual" value={password} onChange={setPassword}
+                autoComplete="current-password" maxLength={MAX_PASSWORD_LENGTH} required errorId={error ? 'email-change-error' : undefined} />}
+            {error && <div id="email-change-error"><AlertMessage type="error">{error}</AlertMessage></div>}
+          </div>
+          <div className="email-change-footer">
             <Button onClick={cancel} disabled={busy && Boolean(pending)}>Cancelar alteração de email</Button>
             <Button variant="primary" type="submit" disabled={busy}>{busy ? 'Aguarde...' : pending ? 'Confirmar email' : 'Enviar confirmação'}</Button>
           </div>
         </form>
       </div>
-    </Modal>}
+    </Modal>, document.body)}
   </div>;
 }

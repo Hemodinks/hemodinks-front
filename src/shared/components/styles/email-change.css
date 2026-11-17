@@ -1,0 +1,94 @@
+/* Modal de alteração de email: mesma linguagem do modal de senha temporária. */
+.modal-backdrop.email-change-backdrop {
+  z-index: 1200;
+  place-items: center;
+  padding: 24px;
+  background: rgb(10 22 33 / 64%);
+  backdrop-filter: blur(5px);
+}
+
+.modal-panel.email-change-modal {
+  --email-change-surface: #fff;
+  --email-change-soft: #f3f8f8;
+  width: min(560px, 100%);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--email-change-surface);
+  color: var(--ink);
+  box-shadow: 0 28px 90px rgb(0 0 0 / 28%);
+  text-align: left;
+}
+
+:root[data-theme="dark"] .email-change-modal {
+  --email-change-surface: #152331;
+  --email-change-soft: #1b2e3c;
+}
+
+.email-change-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 26px 28px 22px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(135deg, var(--email-change-soft), var(--email-change-surface));
+}
+
+.email-change-header > div { flex: 1; min-width: 0; }
+
+.email-change-emblem {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--teal) 22%, transparent);
+  border-radius: 14px;
+  color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 10%, var(--email-change-surface));
+}
+
+.email-change-eyebrow {
+  color: var(--teal);
+  font-size: .67rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.email-change-header h2 { margin: 7px 0 8px; font-size: 1.2rem; line-height: 1.35; }
+
+.email-change-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .85rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.email-change-body { display: grid; gap: 16px; padding: 22px 28px; min-width: 0; }
+.email-change-body .password-field,
+.email-change-body .password-input-control { min-width: 0; }
+
+.email-change-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 18px 28px;
+  border-top: 1px solid var(--line);
+  background: var(--email-change-soft);
+}
+
+.email-change-modal .email-change-footer button { width: auto; flex: 0 1 auto; white-space: normal; }
+
+@media (max-width: 520px) {
+  .modal-backdrop.email-change-backdrop { padding: 10px; }
+  .email-change-header { padding: 20px 18px 18px; gap: 12px; }
+  .email-change-emblem { width: 40px; height: 40px; border-radius: 12px; }
+  .email-change-body { padding: 18px; }
+  .email-change-footer { padding: 14px 18px; flex-direction: column-reverse; }
+  .email-change-modal .email-change-footer button { width: 100%; }
+}
