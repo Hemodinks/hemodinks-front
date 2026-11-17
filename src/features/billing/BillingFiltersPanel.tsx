@@ -19,6 +19,7 @@ import {
   BILLING_STATUS_FILTER_OPTIONS,
 } from './billingPageUtils';
 import type { BillingFilters } from './billingTypes';
+import { MAX_PROCEDURE_LENGTH } from '../../shared/utils/formatterConstants';
 
 type BillingFiltersPanelProps = {
   filters: BillingFilters;
@@ -92,7 +93,7 @@ export function BillingFiltersPanel({
             />
             <ComboboxField className="filter-field" label="Convênio" value={filters.convenio} options={convenioOptions} onValueChange={(convenio) => setFilters((current) => ({ ...current, convenio }))} disabled={!conveniosCount && !filters.convenio} placeholder={conveniosCount ? 'Todos os convênios' : 'Nenhum convênio cadastrado'} noOptionsLabel="Nenhum convênio encontrado." />
             <ComboboxField className="filter-field" label="Hospital" value={filters.hospital} options={hospitalOptions} onValueChange={(hospital) => setFilters((current) => ({ ...current, hospital }))} placeholder="Todos os hospitais" noOptionsLabel="Nenhum hospital encontrado." />
-            <ComboboxField className="filter-field" label="Procedimento" value={filters.procedimento} options={procedureOptions} onValueChange={(procedimento) => setFilters((current) => ({ ...current, procedimento }))} placeholder="Principal ou associado" noOptionsLabel="Nenhum procedimento encontrado." />
+            <ComboboxField className="filter-field" label="Procedimento" value={filters.procedimento} options={procedureOptions} maxLength={MAX_PROCEDURE_LENGTH} onValueChange={(procedimento) => setFilters((current) => ({ ...current, procedimento }))} placeholder="Principal ou associado" noOptionsLabel="Nenhum procedimento encontrado." />
             <SurgeryTypeFilter className="filter-field" value={filters.tipoCirurgia} onChange={(tipoCirurgia) => setFilters((current) => ({ ...current, tipoCirurgia }))} />
             <SurgeryStatusFilter className="filter-field" value={filters.statusCirurgia} onChange={(statusCirurgia) => setFilters((current) => ({ ...current, statusCirurgia }))} />
             <SelectField className="filter-field" label="Status" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value as BillingFilters['status'] }))}>

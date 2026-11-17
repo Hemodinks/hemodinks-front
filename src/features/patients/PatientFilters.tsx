@@ -5,6 +5,7 @@ import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
 import { Button, MultiSelectComboboxField, TextField } from '../../shared/components/ui';
 import type { PatientListProps } from './patientListTypes';
 import '../../shared/components/styles/filter-accordion.css';
+import { MAX_PROCEDURE_LENGTH } from '../../shared/utils/formatterConstants';
 
 type PatientFiltersProps = Pick<PatientListProps,
   'pacienteFilters' | 'medicalUsers' | 'convenios' | 'isAdmin' | 'isTeam' | 'onFiltersChange' | 'onClearFilters'
@@ -34,7 +35,7 @@ export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdm
               disabled={!convenios.length} allOptionLabel="Todos os convênios"
               placeholder={convenios.length ? 'Todos os convênios' : 'Nenhum convênio cadastrado'} />
             <TextField className="filter-field" label="Procedimento" type="search" value={pacienteFilters.procedimento}
-              onValueChange={(value) => onFiltersChange((current) => ({ ...current, procedimento: value }))} placeholder="Procedimento" />
+              onValueChange={(value) => onFiltersChange((current) => ({ ...current, procedimento: value.slice(0, MAX_PROCEDURE_LENGTH) }))} placeholder="Procedimento" maxLength={MAX_PROCEDURE_LENGTH} />
           </>}
           <DateInput id="patient-attendance-start-date" className="filter-field" label="Cirurgias Consolidadas - inicial" value={pacienteFilters.dataInicio}
             max={pacienteFilters.dataFinal} onChange={(value) => onFiltersChange((current) => ({ ...current, dataInicio: value }))} />
