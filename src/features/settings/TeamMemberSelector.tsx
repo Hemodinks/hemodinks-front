@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import type { Team } from '../../types';
 import { getTeamUserSelectionKey, type ClinicTeamsState } from './useClinicTeams';
+import { MAX_NAME_LENGTH } from '../../shared/utils/formatterConstants';
 
 type Props = { team: Team; state: ClinicTeamsState };
 
@@ -17,7 +18,8 @@ export function TeamMemberSelector({ team, state }: Props) {
         {(state.newUserDrafts[team.id] ?? []).map((draft) => <span key={draft.id} className="team-member-chip new-user-chip">Novo: {draft.nome}<button type="button" aria-label={`Remover novo funcionário ${draft.nome}`} onClick={() => state.removeDraft(team.id, draft.id)}><X size={14} /></button></span>)}
         <input
           value={query}
-          onChange={(event) => { state.setMemberQuery(team.id, event.target.value); state.setOpenSelector(team.id); }}
+          maxLength={MAX_NAME_LENGTH}
+          onChange={(event) => { state.setMemberQuery(team.id, event.target.value.slice(0, MAX_NAME_LENGTH)); state.setOpenSelector(team.id); }}
           onFocus={() => state.setOpenSelector(team.id)}
           onKeyDown={(event) => { if (event.key === 'Escape') state.setOpenSelector(null); }}
           placeholder={(state.selectedMembers[team.id] ?? []).length === 0 ? 'Digite para buscar médicos, controllers ou equipe...' : 'Adicionar outro...'}

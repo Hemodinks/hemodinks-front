@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { classNames as cx } from './ui/classNames';
+import { MAX_NAME_LENGTH } from '../utils/formatterConstants';
 
 export { Button, IconButton, SearchField, TextField } from './ui/actions';
 export { AlertMessage, ToastMessage, TOAST_DURATION_MS } from './ui/feedback';
@@ -92,6 +93,7 @@ export function ComboboxField({
       <label htmlFor={fieldId}>{label}</label>
       <div className="combobox-control">
         <input
+          maxLength={MAX_NAME_LENGTH}
           {...props}
           id={fieldId}
           ref={inputRef}
@@ -303,6 +305,7 @@ export function MultiSelectComboboxField({
           ) : null;
         })}
         <input
+          maxLength={MAX_NAME_LENGTH}
           {...props}
           id={fieldId}
           ref={inputRef}

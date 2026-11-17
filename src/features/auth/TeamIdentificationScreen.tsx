@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { LogIn, Users } from "lucide-react";
 import type { Theme } from "../../appTypes";
 import type { TeamLoginChallenge } from "../../types";
+import { MAX_SEARCH_LENGTH } from '../../shared/utils/formatterConstants';
 import { LoginLoadingOverlay } from './LoginLoadingOverlay';
 import { AuthWaitMessage } from './AuthWaitMessage';
 import { TechCredit } from "../../shared/components/TechCredit";
@@ -73,7 +74,7 @@ export function TeamIdentificationScreen({
           {challenge.modoIdentificacao === 'Pin' ? ' Em seguida, informe seu PIN individual.' : ' Este acesso não solicita PIN.'}</p>
         <form className="stack" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
           {challenge.operadores.length > 8 && <label>Buscar funcionário
-            <input type="search" value={search} onChange={event => setSearch(event.target.value)} disabled={loading} />
+            <input type="search" value={search} maxLength={MAX_SEARCH_LENGTH} onChange={event => setSearch(event.target.value)} disabled={loading} />
           </label>}
           {search && operators.length === 0 && <p role="status">Nenhum funcionário encontrado para esta busca.</p>}
           <label>

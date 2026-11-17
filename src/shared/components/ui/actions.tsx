@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes, ChangeEvent, InputHTMLAttributes } from 'react';
 import { Search } from 'lucide-react';
 import { classNames } from './classNames';
+import { MAX_SEARCH_LENGTH } from '../../utils/formatterConstants';
 
 type ButtonVariant = 'primary' | 'ghost' | 'danger-ghost';
 
@@ -79,6 +80,7 @@ export function SearchField({
       <Search size={17} aria-hidden="true" />
       <span className="sr-only">{label}</span>
       <input
+        maxLength={MAX_SEARCH_LENGTH}
         {...props}
         type="search"
         value={value}
