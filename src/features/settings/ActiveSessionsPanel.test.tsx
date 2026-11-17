@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { queryClient } from '../../queryClient';
 import { listPlatformActiveSessions } from '../../services';
@@ -84,5 +84,37 @@ describe('ActiveSessionsPanel', () => {
     renderPanel(5);
 
     expect(await screen.findByText('Exibindo as 2 sessões mais recentes de 350.')).toBeInTheDocument();
+  });
+
+  it('marca online em verde e quem esteve online nas últimas 8 horas em laranja', async () => {
+    vi.mocked(listPlatformActiveSessions).mockResolvedValue(response({
+      janelaRecenteHoras: 8,
+      recentes: [{ usuarioGlobalId: 30, nome: 'Carla Recente', perfil: 'Médicos', clinicaId: 1, clinica: 'Clínica Alfa', viaEquipe: false,
+        inicio: '2026-11-12T06:00:00Z', ultimaAtividade: '2026-11-12T09:30:00Z', navegador: 'Firefox · Linux' }],
+    }));
+    renderPanel(5);
+
+    const table = await screen.findByRole('table', { name: 'Sessões ativas' });
+    await within(table).findByText('Carla Recente');
+    const rows = within(table).getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toHaveTextContent('Online');
+    expect(rows[0].querySelector('.session-status--online .session-status-dot')).not.toBeNull();
+    expect(rows[2]).toHaveTextContent('Carla Recente');
+    expect(rows[2]).toHaveTextContent('Recente');
+    expect(within(rows[2]).getByTitle('Esteve online nas últimas 8 horas')).toBeInTheDocument();
+    expect(rows[2].querySelector('.session-status--recent .session-status-dot')).not.toBeNull();
+    expect(screen.getByText('1 usuário esteve online nas últimas 8 horas')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '2 usuários online' })).toBeInTheDocument();
+  });
+
+  it('mostra só os online quando a API ainda não devolve recentes', async () => {
+    vi.mocked(listPlatformActiveSessions).mockResolvedValue(response());
+    renderPanel(5);
+
+    const table = await screen.findByRole('table', { name: 'Sessões ativas' });
+    await within(table).findByText('Ana Alfa');
+    expect(within(table).queryByText('Recente')).not.toBeInTheDocument();
+    expect(screen.queryByText(/nas últimas 8 horas/)).not.toBeInTheDocument();
   });
 });
