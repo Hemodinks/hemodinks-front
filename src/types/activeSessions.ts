@@ -27,4 +27,7 @@ export type PlatformActiveSessionsResponse = {
   pagina: number;
   tamanhoPagina: number;
   items: PlatformActiveSession[];
+  // #331: usuários sem sessão ativa com atividade na janela recente (um por usuário). Ausente em API anterior.
+  janelaRecenteHoras?: number;
+  recentes?: PlatformActiveSession[];
 };
