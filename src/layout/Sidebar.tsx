@@ -42,7 +42,6 @@ type SidebarProps = {
 export function Sidebar({
   session,
   activeView,
-  currentUserProfile,
   clinicName,
   canAccessDashboard,
   canAccessPatients,

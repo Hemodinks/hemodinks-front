@@ -123,6 +123,9 @@ jobs:
       - name: Audit frontend architecture
         run: npm run audit:architecture
 
+      - name: Lint
+        run: npm run lint
+
       - name: Run unit tests
         run: npm test
 

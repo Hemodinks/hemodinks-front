@@ -120,8 +120,9 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `npm run audit:a11y` | roda Playwright com axe nas rotas criticas |
 | `npm run audit:lighthouse` | roda build e LHCI autenticado |
 | `npm test` | roda testes unitarios e de integracao (Vitest) |
-| `npm run verify` | `audit:architecture` + testes + build (obrigatorio quando mexer em mais de um modulo) |
+| `npm run verify` | `audit:architecture` + `lint` + testes + build (obrigatorio quando mexer em mais de um modulo) |
 | `npm run audit:architecture` | limite de 550 linhas e fronteiras `shared/`/`services/` |
+| `npm run lint` | ESLint (hooks, acessibilidade, TypeScript) em `src/`; falha com erro ou aviso novo (`--max-warnings`) |
 | `npm run test:e2e` | roda testes E2E com Playwright |
 | `npm run test:e2e:responsive` | E2E em 390, 820 e 1440 px |
 | `npm run test:e2e:real` | E2E contra a API real e SQL sintetico (ver `docs/real-api-e2e.md`) |
