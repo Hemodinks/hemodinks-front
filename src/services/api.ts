@@ -13,7 +13,7 @@ const SERVICE_UNAVAILABLE_ERROR_MESSAGE = 'Sistema temporariamente indisponível
 const MAINTENANCE_ERROR_MESSAGE = 'Sistema temporariamente indisponível das 00:00 às 06:59 para manutenção dos dados.';
 const SERVICE_UNAVAILABLE_STATUS_CODES = new Set([502, 503, 504]);
 // 503 da API quando o banco serverless está retomando após pausa por inatividade.
-const DATABASE_UNAVAILABLE_CODE = 'database_unavailable';
+export const DATABASE_UNAVAILABLE_CODE = 'database_unavailable';
 const DATABASE_UNAVAILABLE_ERROR_MESSAGE = 'O sistema está retomando após um período sem uso. Aguarde alguns segundos e tente novamente.';
 // A retomada do banco leva até cerca de um minuto; leituras esperam esse tempo sem mostrar erro.
 export const DATABASE_RETRY_BUDGET_MS = 60_000;
@@ -78,7 +78,8 @@ function toApiError(error: unknown, notifyUnauthorized = false, token?: string) 
   }
   const mapped = mapApiError(error, notifyUnauthorized, token);
   return axios.isAxiosError(error)
-    ? new ApiError(mapped.message, error.response?.status, readSensitiveIdentityError(error.response?.data)?.code ?? readPasswordPolicyError(error.response?.data)?.code ?? readSessionFailureCode(error.response?.data) ?? error.code)
+    ? new ApiError(mapped.message, error.response?.status, readSensitiveIdentityError(error.response?.data)?.code ?? readPasswordPolicyError(error.response?.data)?.code ?? readSessionFailureCode(error.response?.data)
+      ?? (isDatabaseUnavailable(error) ? DATABASE_UNAVAILABLE_CODE : error.code))
     : mapped;
 }
 
@@ -165,9 +166,8 @@ function waitForRetry(ms: number, signal?: AxiosRequestConfig['signal']) {
 }
 
 // Leituras aguardam a retomada do banco (Retry-After) dentro de um orçamento fixo; escritas nunca repetem.
-async function requestWithDatabaseRetry<T>(client: AxiosInstance, config: AxiosRequestConfig, beforeRetry: () => void) {
+async function requestWithDatabaseRetry<T>(client: AxiosInstance, config: AxiosRequestConfig, beforeRetry: () => void, deadline: number) {
   const retryable = RETRYABLE_METHODS.has((config.method ?? 'GET').toUpperCase());
-  const deadline = Date.now() + DATABASE_RETRY_BUDGET_MS;
   for (;;) {
     try {
       return await client.request<T>(config);
@@ -194,6 +194,8 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
   const assertCurrentContext = () => {
     if (originalToken && epoch !== sessionEpoch()) throw new ApiError('A sessão foi alterada.', 409);
   };
+  // Um orçamento por chamada, compartilhado com a repetição após refresh de token.
+  const retryDeadline = Date.now() + DATABASE_RETRY_BUDGET_MS;
   const resolver = manageSession && client === apiClient && originalToken ? sessionTokenResolver : null;
   if (resolver && originalToken) {
     headers.set('Authorization', `Bearer ${await resolver(originalToken, false)}`);
@@ -201,7 +203,7 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
   }
   assertCurrentContext();
   try {
-    const response = await requestWithDatabaseRetry<T>(client, config, assertCurrentContext);
+    const response = await requestWithDatabaseRetry<T>(client, config, assertCurrentContext, retryDeadline);
     assertCurrentContext();
 
     if (response.status === 204) {
@@ -223,7 +225,7 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
           409, 'session_write_retry_required');
       headers.set('Authorization', `Bearer ${token}`);
       try {
-        const response = await requestWithDatabaseRetry<T>(client, { ...config, headers }, assertCurrentContext);
+        const response = await requestWithDatabaseRetry<T>(client, { ...config, headers }, assertCurrentContext, retryDeadline);
         assertCurrentContext();
         return response.data;
       } catch (retryError) {

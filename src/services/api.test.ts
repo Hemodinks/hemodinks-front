@@ -1,5 +1,5 @@
 import { advanceSessionEpoch } from './sessionEpoch';
-import { AxiosError, type AxiosResponse } from 'axios';
+import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   authenticate,
@@ -744,6 +744,34 @@ describe('services api client', () => {
       await vi.advanceTimersByTimeAsync(5_000);
       await assertion;
       expect(request).toHaveBeenCalledTimes(1);
+    });
+
+    it('marca o erro com o código para a camada de consultas não repetir de novo', async () => {
+      vi.spyOn(apiClient, 'request').mockRejectedValueOnce(resuming('1'));
+      await expect(post('/api/pacientes', {}, 'jwt-token')).rejects.toMatchObject({
+        status: 503, code: 'database_unavailable',
+      });
+    });
+
+    it('renova o token no meio da espera e reenvia com o token novo dentro do mesmo orçamento', async () => {
+      vi.useFakeTimers();
+      const expired = expiredAccessToken();
+      const unregister = registerSessionTokenResolver(async (token, force) => (force ? 'fresh-token' : token));
+      const request = vi.spyOn(apiClient, 'request')
+        .mockRejectedValueOnce(resuming('10'))
+        .mockRejectedValueOnce(apiError(401))
+        .mockRejectedValue(resuming('10'));
+      try {
+        const pending = get('/api/pacientes', expired);
+        const assertion = expect(pending).rejects.toMatchObject({ code: 'database_unavailable' });
+        await vi.advanceTimersByTimeAsync(120_000);
+        await assertion;
+        const calls = request.mock.calls.map(([config]) =>
+          String(AxiosHeaders.from(config.headers as never).get('Authorization')));
+        expect(calls[2]).toBe('Bearer fresh-token');
+        // Orçamento único de 60 s: 0 s e 10 s (401) com o token velho, depois 10..60 s com o novo.
+        expect(request).toHaveBeenCalledTimes(8);
+      } finally { unregister(); }
     });
   });
 
