@@ -144,7 +144,7 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
           notificationStatus = queued.queuedCount > 0
             ? ` ${queued.queuedCount} destinatário(s) colocado(s) na fila de e-mail; entrega ainda não confirmada.`
             : ' Nenhum novo e-mail foi enfileirado.';
-        } catch (notificationError) {
+        } catch {
           notificationStatus = ' Evento salvo, mas a solicitação de e-mail não foi confirmada. Confira o status antes de tentar reenviar.';
           // Do not retry automatically: the queue may have accepted the request before a network failure.
         }
