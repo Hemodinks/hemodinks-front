@@ -51,6 +51,20 @@ it('ignores server errors and disables checks in development', async () => {
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
 
+it('warns at once when a dynamic import chunk vanished after a deploy', async () => {
+  const fetcher = vi.fn().mockResolvedValue(reply(html('old')));
+  vi.stubGlobal('fetch', fetcher);
+  const { result, unmount } = renderHook(() => useAppUpdate(true, 'old'));
+  await act(async () => {});
+  expect(result.current).toBe(false);
+  act(() => { window.dispatchEvent(new Event('vite:preloadError', { cancelable: true })); });
+  expect(result.current).toBe(true);
+  unmount();
+  const disabled = renderHook(() => useAppUpdate(false, 'old'));
+  act(() => { window.dispatchEvent(new Event('vite:preloadError', { cancelable: true })); });
+  expect(disabled.result.current).toBe(false);
+});
+
 it('aborts pending checks and removes timers on unmount', async () => {
   vi.useFakeTimers();
   const fetcher = vi.fn().mockImplementation(() => new Promise(() => {}));
