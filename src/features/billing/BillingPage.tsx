@@ -51,7 +51,6 @@ export function BillingPage({
   session,
   medicalUsers,
   convenios,
-  isAdmin,
   isMedical,
 }: BillingPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();

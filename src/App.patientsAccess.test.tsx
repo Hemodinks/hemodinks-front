@@ -3,7 +3,6 @@ vi.mock('./services', async () => (await import('./test/appServicesMock')).creat
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as api from './services';
-import type { Paciente } from './types';
 import { basePaciente, buildMedicalLicense } from './test/appTestData';
 import { openPatientsModule, renderAuthenticatedApp } from './test/appTestUi';
 import { resetAppTestState } from './test/appTestSetup';

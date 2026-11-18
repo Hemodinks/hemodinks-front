@@ -1,4 +1,4 @@
-import type { CreateTeamPayload, Team, TeamEligibleUser, TeamIdentificationMode } from "../types";
+import type { Team, TeamEligibleUser, TeamIdentificationMode } from "../types";
 import { del, get, post, put } from "./api";
 
 export function listTeams(token: string) {
