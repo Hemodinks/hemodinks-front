@@ -74,9 +74,11 @@ describe('fonte única de headers de segurança (#266)', () => {
     assert.doesNotMatch(production, /onrender\.com|unsafe-eval|localhost/);
     assert.match(production, /script-src 'self';/);
     for (const [id, target] of Object.entries(canonical.targets)) {
-      const declaresRender = JSON.stringify(target).includes('onrender.com');
-      assert.equal(declaresRender, id === 'vercel-homologation', id);
-      assert.equal(Boolean(target.headers?.['X-Robots-Tag']), id === 'vercel-homologation', id);
+      const homologation = id === 'vercel-homologation';
+      assert.deepEqual(target.cspAppend ?? {}, homologation
+        ? { 'connect-src': ['https://hemodinks-api-1-90nb.onrender.com'] }
+        : {}, id);
+      assert.equal(Boolean(target.headers?.['X-Robots-Tag']), homologation, id);
     }
   });
 });
