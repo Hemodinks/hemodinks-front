@@ -666,6 +666,87 @@ describe('services api client', () => {
     }
   });
 
+  describe('banco retomando (503 database_unavailable)', () => {
+    const resuming = (retryAfter?: string) => {
+      const error = apiError(503, { code: 'database_unavailable', retryAfterSeconds: 5 });
+      if (retryAfter && error.response) error.response.headers = { 'retry-after': retryAfter };
+      return error;
+    };
+
+    it('repete a leitura respeitando o Retry-After até o banco voltar', async () => {
+      vi.useFakeTimers();
+      const request = vi.spyOn(apiClient, 'request')
+        .mockRejectedValueOnce(resuming('3'))
+        .mockRejectedValueOnce(resuming('3'))
+        .mockResolvedValueOnce(axiosResponse({ items: [1] }));
+      const pending = get('/api/pacientes', 'jwt-token');
+      await vi.advanceTimersByTimeAsync(2_999);
+      expect(request).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(request).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(3_000);
+      await expect(pending).resolves.toEqual({ items: [1] });
+      expect(request).toHaveBeenCalledTimes(3);
+    });
+
+    it('desiste quando o orçamento de espera acaba e explica o motivo', async () => {
+      vi.useFakeTimers();
+      const request = vi.spyOn(apiClient, 'request').mockRejectedValue(resuming('10'));
+      const pending = get('/api/pacientes', 'jwt-token');
+      const assertion = expect(pending).rejects.toMatchObject({
+        status: 503,
+        message: 'O sistema está retomando após um período sem uso. Aguarde alguns segundos e tente novamente.',
+      });
+      await vi.advanceTimersByTimeAsync(70_000);
+      await assertion;
+      // 60 s de orçamento com espera de 10 s: tentativas em 0, 10, ..., 60 s.
+      expect(request).toHaveBeenCalledTimes(7);
+    });
+
+    it.each([
+      ['POST', () => post('/api/pacientes', { nome: 'A' }, 'jwt-token')],
+      ['PUT', () => put('/api/pacientes/1', { nome: 'A' }, 'jwt-token')],
+      ['DELETE', () => del('/api/pacientes/1', 'jwt-token')],
+    ])('nunca repete %s: a escrita pode ter sido gravada', async (_method, call) => {
+      const request = vi.spyOn(apiClient, 'request').mockRejectedValueOnce(resuming('1'));
+      await expect(call()).rejects.toThrow('O sistema está retomando');
+      expect(request).toHaveBeenCalledTimes(1);
+    });
+
+    it('não repete outros 503', async () => {
+      const request = vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(503));
+      await expect(get('/api/pacientes', 'jwt-token')).rejects.toMatchObject({ status: 503 });
+      expect(request).toHaveBeenCalledTimes(1);
+    });
+
+    it('interrompe a espera quando a requisição é cancelada', async () => {
+      vi.useFakeTimers();
+      const controller = new AbortController();
+      const request = vi.spyOn(apiClient, 'request').mockRejectedValue(resuming('5'));
+      const pending = get('/api/pacientes', 'jwt-token', { signal: controller.signal });
+      const assertion = expect(pending).rejects.toBeInstanceOf(ApiError);
+      await vi.advanceTimersByTimeAsync(1_000);
+      controller.abort();
+      await assertion;
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(request).toHaveBeenCalledTimes(1);
+    });
+
+    it('não reenvia com o contexto antigo após logout durante a espera', async () => {
+      vi.useFakeTimers();
+      const request = vi.spyOn(apiClient, 'request')
+        .mockRejectedValueOnce(resuming('5'))
+        .mockResolvedValue(axiosResponse({ name: 'private patient' }));
+      const pending = get('/api/pacientes', 'jwt-token');
+      const assertion = expect(pending).rejects.toMatchObject({ status: 409 });
+      await vi.advanceTimersByTimeAsync(1_000);
+      advanceSessionEpoch();
+      await vi.advanceTimersByTimeAsync(5_000);
+      await assertion;
+      expect(request).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('usa mensagem padrao para resposta 401', async () => {
     vi.spyOn(apiClient, 'request').mockRejectedValueOnce(apiError(401));
 
