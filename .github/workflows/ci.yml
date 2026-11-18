@@ -126,6 +126,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check security headers drift
+        run: npm run test:security-headers
+
       - name: Run unit tests
         run: npm test
 

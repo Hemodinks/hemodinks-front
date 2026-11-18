@@ -98,6 +98,27 @@ entao so abre PRs de correcao de CVE (o GitHub os abre contra a branch padrao, `
 `Test and build` exige sucesso dele: CVE alta ou critica em dependencia de producao bloqueia merge e deploy.
 Vulnerabilidades so de devDependencies ou moderadas aparecem nos alertas, mas nao bloqueiam.
 
+## Alvos de hospedagem e headers de seguranca (#266)
+
+| Alvo | Arquivo de headers | Uso | Publicacao |
+| --- | --- | --- | --- |
+| Azure Static Web Apps | `public/staticwebapp.config.json` | producao | CI, push na `main` |
+| Vercel `hemodinks-front-confirmation` | `vercel.json` | homologacao | integracao Git da Vercel, push na `developer` |
+| Imagem Docker (nginx) | `nginx.conf` | execucao local/self-hosted (`docker-compose.yml`) | nenhuma automatica |
+| Imagem Docker com proxy `/api` | `nginx.proxy.conf.template` | idem, quando `API_UPSTREAM` esta definido (`docker/15-api-proxy.sh`) | nenhuma automatica |
+
+O `src/vercel.json` so mantem desabilitado o projeto Vercel legado de producao; nao tem headers.
+
+A CSP e os headers de seguranca globais desses quatro arquivos vem de `security-headers.json`, a fonte unica:
+
+- Para liberar um dominio novo (API, New Relic etc.), edite `contentSecurityPolicy` em `security-headers.json`,
+  rode `npm run security-headers:write` e revise o diff dos quatro destinos.
+- Diferencas por ambiente ficam declaradas em `targets`: so a homologacao acrescenta a API do Render ao `connect-src`
+  (`cspAppend`) e o `X-Robots-Tag`; o HSTS vai para Azure e Vercel; o nginx nao envia HSTS (TLS fica fora dele).
+- `npm run test:security-headers` (`node --test`, passo "Check security headers drift" do CI) falha se algum destino
+  divergir do canonico; `npm run verify` roda a mesma conferencia (`npm run security-headers`).
+- Headers de cache, `X-Robots-Tag` por rota e demais regras continuam editados direto em cada arquivo.
+
 ## Azure Static Web Apps: producao
 
 `public/staticwebapp.config.json` define o fallback SPA, os headers de seguranca e as regras de cache. O arquivo e copiado para a raiz de `dist` pelo build do Vite.
@@ -253,7 +274,8 @@ VITE_APP_VERSION=<versao-ou-sha>
 ```
 
 A API de homologacao atual e o servico Render `hemodinks-api-1`; so ele e liberado no CSP do `vercel.json`. A CSP de
-producao (`staticwebapp.config.json`, `nginx*.conf`) nao libera nenhuma API do Render (issue #220).
+producao (`staticwebapp.config.json`, `nginx*.conf`) nao libera nenhuma API do Render (issue #220). As duas saem de
+`security-headers.json` (ver "Alvos de hospedagem e headers de seguranca").
 `.env.confirmation.example` reproduz esse build localmente.
 
 A homologacao do front e publicada pela integracao Git da Vercel a cada push na `developer`; nenhum workflow deste
