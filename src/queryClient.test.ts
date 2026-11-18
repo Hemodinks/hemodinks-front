@@ -10,4 +10,7 @@ describe('read retry policy', () => {
     expect(retryRead(0, new ApiError('unavailable', status))).toBe(true);
     expect(retryRead(1, new ApiError('unavailable', status))).toBe(false);
   });
+  it('does not repeat a read the HTTP client already retried while the database resumed', () => {
+    expect(retryRead(0, new ApiError('resuming', 503, 'database_unavailable'))).toBe(false);
+  });
 });

@@ -50,7 +50,9 @@ Em ambiente publicado, o front conversa com a base configurada em `VITE_API_URL`
 ## Requisitos
 
 - Node.js 22
-- npm
+- npm 10.9 (o do Node 22 e do CI; fixado em `packageManager`). Com npm 11 o install avisa (`EBADDEVENGINES`) e
+  reescreve o `package-lock.json` de um jeito que o `npm ci` do CI rejeita: ao mexer em dependencias, use
+  `npx npm@10.9.11 install`.
 - Chromium do Playwright para E2E e auditoria de acessibilidade
 
 Bootstrap em maquina nova:
@@ -120,7 +122,8 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `npm run audit:a11y` | roda Playwright com axe nas rotas criticas |
 | `npm run audit:lighthouse` | roda build e LHCI autenticado |
 | `npm test` | roda testes unitarios e de integracao (Vitest) |
-| `npm run verify` | `audit:architecture` + `lint` + testes + build (obrigatorio quando mexer em mais de um modulo) |
+| `npm run verify` | `audit:architecture` + `security-headers` + `lint` + testes + build (obrigatorio quando mexer em mais de um modulo) |
+| `npm run security-headers` / `security-headers:write` | confere / regrava a CSP e os headers dos hosts a partir de `security-headers.json` (ver `DEPLOYMENT.md`) |
 | `npm run audit:architecture` | limite de 550 linhas e fronteiras `shared/`/`services/` |
 | `npm run lint` | ESLint (hooks, acessibilidade, TypeScript) em `src/`; falha com erro ou aviso novo (`--max-warnings`) |
 | `npm run test:e2e` | roda testes E2E com Playwright |
