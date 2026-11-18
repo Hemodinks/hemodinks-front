@@ -12,6 +12,15 @@ const DEFAULT_ERROR_MESSAGE = 'Nao foi possivel concluir a operacao.';
 const SERVICE_UNAVAILABLE_ERROR_MESSAGE = 'Sistema temporariamente indisponível. Tente novamente mais tarde.';
 const MAINTENANCE_ERROR_MESSAGE = 'Sistema temporariamente indisponível das 00:00 às 06:59 para manutenção dos dados.';
 const SERVICE_UNAVAILABLE_STATUS_CODES = new Set([502, 503, 504]);
+// 503 da API quando o banco serverless está retomando após pausa por inatividade.
+const DATABASE_UNAVAILABLE_CODE = 'database_unavailable';
+const DATABASE_UNAVAILABLE_ERROR_MESSAGE = 'O sistema está retomando após um período sem uso. Aguarde alguns segundos e tente novamente.';
+// A retomada do banco leva até cerca de um minuto; leituras esperam esse tempo sem mostrar erro.
+export const DATABASE_RETRY_BUDGET_MS = 60_000;
+const DATABASE_RETRY_DEFAULT_SECONDS = 5;
+const DATABASE_RETRY_MAX_SECONDS = 10;
+// Só métodos sem efeito colateral: o 503 também cobre queda de conexão depois de um commit.
+const RETRYABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const UNAUTHORIZED_ERROR_MESSAGE = 'Credenciais invalidas ou sessao expirada.';
 const FORBIDDEN_ERROR_MESSAGE = 'Operação não permitida.';
 export const AUTH_EXPIRED_EVENT = 'hemodinks:auth-expired';
@@ -86,6 +95,9 @@ function mapApiError(error: unknown, notifyUnauthorized = false, token?: string)
     if (policyError && (error.response?.status === 400 || error.response?.status === 503)) {
       return new Error(policyError.message);
     }
+    if (isDatabaseUnavailable(error)) {
+      return new Error(DATABASE_UNAVAILABLE_ERROR_MESSAGE);
+    }
     // Axios does not expose a response when the API is offline, unreachable or
     // the browser blocks the response at the network layer (for example, CORS).
     if (!error.response || SERVICE_UNAVAILABLE_STATUS_CODES.has(error.response.status)) {
@@ -137,6 +149,42 @@ function mapApiError(error: unknown, notifyUnauthorized = false, token?: string)
   return new Error(DEFAULT_ERROR_MESSAGE);
 }
 
+function isDatabaseUnavailable(error: unknown) {
+  if (!axios.isAxiosError(error) || error.response?.status !== 503) return false;
+  const data: unknown = error.response.data;
+  return typeof data === 'object' && data !== null && 'code' in data && data.code === DATABASE_UNAVAILABLE_CODE;
+}
+
+function waitForRetry(ms: number, signal?: AxiosRequestConfig['signal']) {
+  return new Promise<void>((resolve, reject) => {
+    const cancel = () => { clearTimeout(timer); reject(new axios.CanceledError()); };
+    const timer = setTimeout(() => { signal?.removeEventListener?.('abort', cancel); resolve(); }, ms);
+    if (signal?.aborted) cancel();
+    else signal?.addEventListener?.('abort', cancel);
+  });
+}
+
+// Leituras aguardam a retomada do banco (Retry-After) dentro de um orçamento fixo; escritas nunca repetem.
+async function requestWithDatabaseRetry<T>(client: AxiosInstance, config: AxiosRequestConfig, beforeRetry: () => void) {
+  const retryable = RETRYABLE_METHODS.has((config.method ?? 'GET').toUpperCase());
+  const deadline = Date.now() + DATABASE_RETRY_BUDGET_MS;
+  for (;;) {
+    try {
+      return await client.request<T>(config);
+    } catch (error) {
+      if (!retryable || !isDatabaseUnavailable(error) || !axios.isAxiosError(error)) throw error;
+      const retryAfter = readRetryAfter(
+        axios.AxiosHeaders.from(error.response?.headers as Parameters<typeof axios.AxiosHeaders.from>[0]).get('Retry-After'),
+        error.response?.data) ?? DATABASE_RETRY_DEFAULT_SECONDS;
+      const waitMs = Math.min(Math.max(retryAfter, 1), DATABASE_RETRY_MAX_SECONDS) * 1000;
+      if (Date.now() + waitMs > deadline) throw error;
+      await waitForRetry(waitMs, config.signal);
+      // Logout ou troca de clínica durante a espera: não reenviar com o contexto antigo.
+      beforeRetry();
+    }
+  }
+}
+
 async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConfig, notifyUnauthorized = false, manageSession = true): Promise<T> {
   const headers = axios.AxiosHeaders.from(config.headers as Parameters<typeof axios.AxiosHeaders.from>[0]);
   const authorization = headers.get('Authorization');
@@ -153,7 +201,7 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
   }
   assertCurrentContext();
   try {
-    const response = await client.request<T>(config);
+    const response = await requestWithDatabaseRetry<T>(client, config, assertCurrentContext);
     assertCurrentContext();
 
     if (response.status === 204) {
@@ -175,7 +223,7 @@ async function executeRequest<T>(client: AxiosInstance, config: AxiosRequestConf
           409, 'session_write_retry_required');
       headers.set('Authorization', `Bearer ${token}`);
       try {
-        const response = await client.request<T>({ ...config, headers });
+        const response = await requestWithDatabaseRetry<T>(client, { ...config, headers }, assertCurrentContext);
         assertCurrentContext();
         return response.data;
       } catch (retryError) {
