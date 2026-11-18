@@ -40,16 +40,26 @@ export function useAppUpdate(enabled = import.meta.env.PROD, buildId = __APP_BUI
       }
     };
 
+    // Chunk que sumiu após um deploy (import dinâmico de tela antiga): o build mudou com certeza,
+    // então o aviso aparece na hora, sem esperar a próxima verificação. Não recarrega sozinho.
+    const onStaleChunk = () => {
+      if (disposed || detected) return;
+      detected = true;
+      setAvailable(true);
+    };
+
     void check();
     const onResume = () => { void check(); };
     const interval = window.setInterval(onResume, UPDATE_CHECK_INTERVAL_MS);
     window.addEventListener('focus', onResume);
+    window.addEventListener('vite:preloadError', onStaleChunk);
     document.addEventListener('visibilitychange', onResume);
     return () => {
       disposed = true;
       controller?.abort();
       window.clearInterval(interval);
       window.removeEventListener('focus', onResume);
+      window.removeEventListener('vite:preloadError', onStaleChunk);
       document.removeEventListener('visibilitychange', onResume);
     };
   }, [enabled, buildId]);
