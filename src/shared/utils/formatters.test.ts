@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPersonName, formatProfileName, normalizeDisplayText } from './formatters';
+import { formatPersonName, formatProfileName, getErrorMessage, normalizeDisplayText, STALE_CHUNK_MESSAGE } from './formatters';
 
 describe('normalizeDisplayText', () => {
   it('corrige nomes de convenios recebidos com encoding quebrado', () => {
@@ -35,5 +35,21 @@ describe('formatPersonName', () => {
 
   it('aceita valores ausentes', () => {
     expect(formatPersonName(null)).toBe('');
+  });
+});
+
+describe('getErrorMessage', () => {
+  it.each([
+    'Failed to fetch dynamically imported module: https://hemodinks.gestao-saude.tec.br/assets/jspdf.es.min-BnkMqr2D.js',
+    'error loading dynamically imported module: https://hemodinks.gestao-saude.tec.br/assets/x.js',
+    'Importing a module script failed.',
+  ])('troca o erro de chunk antigo após deploy por instrução ao usuário: %s', (message) => {
+    expect(getErrorMessage(new Error(message))).toBe(STALE_CHUNK_MESSAGE);
+  });
+
+  it('mantém as demais mensagens', () => {
+    expect(getErrorMessage(new Error('Request failed with status code 403'))).toBe('Operação não permitida.');
+    expect(getErrorMessage(new Error('Paciente não encontrado.'))).toBe('Paciente não encontrado.');
+    expect(getErrorMessage('x')).toBe('Erro inesperado.');
   });
 });
