@@ -30,9 +30,20 @@ export {
   toNotificationDate,
 } from './dateFormatters';
 
+// Chrome, Firefox e Safari, quando um chunk de import dinâmico some após um deploy.
+const STALE_CHUNK_ERROR =
+  /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed|Unable to preload CSS/i;
+
+export const STALE_CHUNK_MESSAGE =
+  'O sistema foi atualizado enquanto esta tela estava aberta. Salve seu trabalho e clique em "Atualizar sistema" para continuar.';
+
 export function getErrorMessage(error: unknown) {
   if (error instanceof Error && /\b403\b|forbidden/i.test(error.message)) {
     return "Operação não permitida.";
+  }
+
+  if (error instanceof Error && STALE_CHUNK_ERROR.test(error.message)) {
+    return STALE_CHUNK_MESSAGE;
   }
 
   return error instanceof Error ? error.message : "Erro inesperado.";
