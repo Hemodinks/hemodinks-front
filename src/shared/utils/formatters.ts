@@ -248,6 +248,8 @@ export function resolveProfilePhotoSource(photo?: string | null) {
       return url.href;
     } catch { return ''; }
   }
+  // Rejeitar caracteres de controle na URL da imagem é intencional (segurança).
+  // eslint-disable-next-line no-control-regex
   if (/^[a-z][a-z0-9+.-]*:/i.test(value) || /[\u0000-\u001f\u007f\\]/.test(value)) return '';
 
   const contentType = getBase64ImageContentType(value);

@@ -1,4 +1,4 @@
-import type { ClinicPayload, PlatformClinic, PublicClinic, SelectClinicResponse, SessionClinic } from '../types';
+import type { ClinicPayload, PlatformClinic, PublicClinic, SelectClinicResponse } from '../types';
 import type { PlatformActiveSessionsResponse } from '../types/activeSessions';
 import { del, get, post, put } from './api';
 
