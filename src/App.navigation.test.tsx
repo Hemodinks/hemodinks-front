@@ -4,7 +4,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEmptyForm } from './features/events/AgendaPage';
 import * as api from './services';
-import type { Paciente, User } from './types';
+import type { User } from './types';
 import { baseUser, buildMedicalLicense, paged } from './test/appTestData';
 import { openUsersModule, renderAuthenticatedApp } from './test/appTestUi';
 import { resetAppTestState } from './test/appTestSetup';

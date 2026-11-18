@@ -65,14 +65,6 @@ export const BILLING_REGIME_FILTER_OPTIONS: Array<{ label: string; value: Billin
   { label: 'Particular', value: 'particular' },
 ];
 
-function normalizeFilterOption(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('pt-BR')
-    .trim();
-}
-
 export function parseBillingDetailId(value: string | null) {
   if (!value) {
     return null;
