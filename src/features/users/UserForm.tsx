@@ -24,6 +24,7 @@ import {
   USER_PROFILE_OPTIONS,
 } from '../../shared/utils/formatters';
 import { UserAvatar } from './UserAvatar';
+import { isReadOnlySuperAdmin, SUPER_ADMIN_READ_ONLY_MESSAGE } from './userUtils';
 
 type UserFormProps = {
   identitySession: AuthSession;
@@ -74,7 +75,8 @@ export function UserForm({
   onRemovePendingUserFile,
   onDeleteUserArquivo,
 }: UserFormProps) {
-  const isFormBusy = formLoading;
+  const readOnly = editingId !== null && isReadOnlySuperAdmin(editingUserDetails?.perfilId, isSuperAdmin);
+  const isFormBusy = formLoading || readOnly;
   const assignableProfileOptions = isSuperAdmin
     ? [...USER_PROFILE_OPTIONS, PROFILE_OPTIONS.find((profile) => profile.id === SUPER_ADMIN_PROFILE_ID)!]
     : [...USER_PROFILE_OPTIONS];
@@ -86,8 +88,8 @@ export function UserForm({
     <FormPanel className="module-form-panel" data-tour="users-form">
       <div className="panel-title">
         <div>
-          <span className="eyebrow">{canAccessUsers ? editingId ? 'Edição' : 'Cadastro' : 'Perfil'}</span>
-          <h2>{canAccessUsers ? editingId ? 'Editar usuário' : 'Novo usuário' : 'Meu cadastro'}</h2>
+          <span className="eyebrow">{readOnly ? 'Consulta' : canAccessUsers ? editingId ? 'Edição' : 'Cadastro' : 'Perfil'}</span>
+          <h2>{readOnly ? 'Visualizar usuário' : canAccessUsers ? editingId ? 'Editar usuário' : 'Novo usuário' : 'Meu cadastro'}</h2>
         </div>
         <div className="panel-title-actions">
           <IconButton label="Voltar para lista" tone="muted" onClick={onClose}>
@@ -96,14 +98,14 @@ export function UserForm({
         </div>
       </div>
 
-      <form className="stack module-form-grid" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField} aria-busy={isFormBusy}>
+      <form className="stack module-form-grid" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField} aria-busy={formLoading}>
         <div className="profile-photo-field">
           <label className="field-label" htmlFor="profile-photo-input">
             Foto do perfil
           </label>
           <div className="photo-uploader">
             <UserAvatar userId={editingId ?? undefined} name={formData.nome || 'Usuário'} photo={formData.fotoPerfil} authToken={sessionToken} size="lg" />
-            <div className="photo-actions">
+            {!readOnly && <div className="photo-actions">
               <label className="ghost-button file-action" htmlFor="profile-photo-input">
                 <ImagePlus size={17} />
                 {formData.fotoPerfil ? 'Trocar foto' : 'Adicionar foto'}
@@ -114,7 +116,7 @@ export function UserForm({
                   Remover
                 </Button>
               )}
-            </div>
+            </div>}
           </div>
           <input
             key={photoInputKey}
@@ -296,10 +298,12 @@ export function UserForm({
 
         {formError && <AlertMessage type="error">{formError}</AlertMessage>}
 
-        <Button variant="primary" type="submit" disabled={formLoading} data-tour="users-save">
-          {editingId ? <Save size={18} /> : <Plus size={18} />}
-          {formLoading ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Cadastrar usuário'}
-        </Button>
+        {readOnly ? <AlertMessage type="warning">{SUPER_ADMIN_READ_ONLY_MESSAGE}</AlertMessage> : (
+          <Button variant="primary" type="submit" disabled={formLoading} data-tour="users-save">
+            {editingId ? <Save size={18} /> : <Plus size={18} />}
+            {formLoading ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Cadastrar usuário'}
+          </Button>
+        )}
       </form>
       {editingId === identitySession.user.id && <section className="stack">
         <h3>Alterar email de autenticação</h3>
