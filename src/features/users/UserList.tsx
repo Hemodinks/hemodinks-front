@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Info, Mail, Pencil, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, CircleX, Eye, Info, Mail, Pencil, Phone, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { User } from '../../types';
 import { AlertMessage, Button, DataPanel, IconButton, SearchField, ToastMessage } from '../../shared/components/ui';
 import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
@@ -6,6 +6,7 @@ import { formatPersonName, formatProfileName } from '../../shared/utils/formatte
 import { scrollListCarousel } from '../../shared/utils/carousel';
 import { UserAvatar } from './UserAvatar';
 import { TemporaryPasswordAction } from './TemporaryPasswordAction';
+import { isReadOnlySuperAdmin } from './userUtils';
 
 type UserListProps = {
   users: User[];
@@ -130,12 +131,18 @@ export function UserList({
                     {canManageUsers && (
                       <td data-label="Ações">
                         <div className="row-actions">
-                          <IconButton label={`Editar ${displayName}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
-                            <Pencil size={17} />
-                          </IconButton>
-                          <IconButton label={`Excluir ${displayName}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
-                            <Trash2 size={17} />
-                          </IconButton>
+                          {isReadOnlySuperAdmin(user.perfilId, isSuperAdmin) ? (
+                            <IconButton label={`Visualizar ${displayName}`} tone="muted" onClick={() => void onEditUser(user)} title="Visualizar">
+                              <Eye size={17} />
+                            </IconButton>
+                          ) : <>
+                            <IconButton label={`Editar ${displayName}`} tone="muted" onClick={() => void onEditUser(user)} title="Editar">
+                              <Pencil size={17} />
+                            </IconButton>
+                            <IconButton label={`Excluir ${displayName}`} tone="danger" onClick={() => void onDeleteUser(user)} title="Excluir">
+                              <Trash2 size={17} />
+                            </IconButton>
+                          </>}
                           <TemporaryPasswordAction user={user} token={sessionToken} canManage={canManageUsers} isSuperAdmin={isSuperAdmin} />
                         </div>
                       </td>

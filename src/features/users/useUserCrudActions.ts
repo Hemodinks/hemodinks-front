@@ -7,7 +7,7 @@ import { queryKeys } from '../../shared/queryKeys';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
 import { DEFAULT_PROFILE_ID, formatProfileName, getErrorMessage, MEDICAL_PROFILE_ID, SUPER_ADMIN_PROFILE_ID, TEAM_PROFILE_ID } from '../../shared/utils/formatters';
 import type { AuthSession, User, UserPayload } from '../../types';
-import { toUserPayload, validateUserForm } from './userUtils';
+import { isReadOnlySuperAdmin, SUPER_ADMIN_READ_ONLY_MESSAGE, toUserPayload, validateUserForm } from './userUtils';
 import type { useUserForm } from './useUserForm';
 import type { useUserList } from './useUserList';
 
@@ -103,6 +103,9 @@ export function useUserCrudActions(options: UseUserCrudActionsOptions) {
     event.preventDefault();
     if (!session || submitInFlightRef.current) return;
     if (!canUseUserForm && !isAdmin) { userForm.setFormError('Sem permissao para editar este cadastro.'); return; }
+    if (userForm.editingId && isReadOnlySuperAdmin(userForm.editingUserDetails?.perfilId, session.user.perfilId === SUPER_ADMIN_PROFILE_ID)) {
+      userForm.setFormError(SUPER_ADMIN_READ_ONLY_MESSAGE); return;
+    }
     const validationError = validateUserForm(userForm.formData, userForm.editingUserDetails?.perfilId === TEAM_PROFILE_ID,
       session.user.perfilId === SUPER_ADMIN_PROFILE_ID);
     if (validationError) { userForm.setFormError(validationError); return; }
@@ -137,6 +140,9 @@ export function useUserCrudActions(options: UseUserCrudActionsOptions) {
   const deleteSelectedUser = async (user: User) => {
     if (!session) return;
     userList.setUsersError(''); userList.setSuccessMessage('');
+    if (isReadOnlySuperAdmin(user.perfilId, session.user.perfilId === SUPER_ADMIN_PROFILE_ID)) {
+      userList.setUsersError(SUPER_ADMIN_READ_ONLY_MESSAGE); return;
+    }
     try {
       await deleteMutation.mutateAsync({ id: user.id, token: session.token });
       if (user.id === session.user.id) { onDeleteCurrentUser(); return; }
