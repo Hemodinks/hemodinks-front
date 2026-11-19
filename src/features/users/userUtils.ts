@@ -126,3 +126,11 @@ export function toUserPayload(data: UserFormData): UserPayload {
     perfilId: data.perfilId,
   };
 }
+
+// Cadastro de SuperAdministrador só pode ser alterado, inativado ou excluído por outro SuperAdministrador;
+// perfis inferiores apenas consultam. Só UX: a API recusa com 403 (UpdateUser/DeleteUser/senha temporária).
+export const SUPER_ADMIN_READ_ONLY_MESSAGE = 'Somente um SuperAdministrador pode alterar este cadastro.';
+
+export function isReadOnlySuperAdmin(targetPerfilId: number | null | undefined, viewerIsSuperAdmin: boolean) {
+  return !viewerIsSuperAdmin && targetPerfilId === SUPER_ADMIN_PROFILE_ID;
+}
