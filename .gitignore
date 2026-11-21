@@ -7,7 +7,7 @@ npm-debug.log*
 test-results
 coverage
 playwright-report
-artifacts/tutorials
+artifacts/
 /reports
 integration/real-api/bin/
 integration/real-api/obj/
