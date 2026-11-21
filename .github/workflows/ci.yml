@@ -129,8 +129,13 @@ jobs:
       - name: Check security headers drift
         run: npm run test:security-headers
 
-      - name: Run unit tests
-        run: npm test
+      # Coverage floor only for the auth/session areas; see coverage.thresholds in vite.config.ts (#265).
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Publish coverage summary
+        if: ${{ !cancelled() }}
+        run: npm run coverage:summary
 
       - name: Test performance budgets and audit fixtures
         run: npm run test:performance
