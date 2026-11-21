@@ -80,3 +80,8 @@ A gravação local usa apenas fixtures fictícias e sanitizadas. O Playwright ag
 Áudio não é gerado em build ou deploy. O desenvolvedor altera roteiro, executa dry-run, gera, escuta e versiona MP3 mais manifesto. A primeira chamada gera; a segunda, sem mudanças, precisa resultar em `SKIP` e zero chamada Azure.
 
 Os 12 tutoriais foram migrados. Novos roteiros devem usar o mesmo normalizador ou declarar `narration` e `interaction` diretamente, gerar primeiro o escopo individual e manter qualquer vídeo anterior em `legacy-piper`. Não se deve regravar todos implicitamente; `tutorial:record:all` existe apenas como comando explícito.
+
+Decisão (#267, 2026-11-21): as mídias continuam versionadas em `public/tutorials`, sem Git LFS nem Blob. No mesmo dia o
+histórico foi reescrito (`git filter-repo`) para remover as versões antigas das mídias (~257 MB); as versões atuais ficaram,
+e um clone novo caiu de ~341 MB para ~180 MB. Cada regravação volta a aumentar o clone pelo tamanho total dos vídeos
+refeitos: regrave só o tutorial alterado e reavalie Blob/CDN se houver nova rodada de regravação ampla.

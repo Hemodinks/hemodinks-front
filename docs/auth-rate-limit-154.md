@@ -1,5 +1,8 @@
 # Issue #154 — evidências de revisão
 
+> Movido de `artifacts/issue-154/review.md` (#267). Os resultados brutos citados abaixo (`*.trx`, `*.json`,
+> relatórios Playwright) deixaram de ser versionados; os comandos continuam válidos para regerá-los localmente.
+
 Branch: `developer`. Complexidade moderada; risco alto pela integração com login e sessão.
 Agentes: Security (high), revisão somente leitura; QA (medium), E2E. Implementação e validação final pelo agente principal. Nenhum commit, push, merge ou deploy.
 

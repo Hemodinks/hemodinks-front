@@ -122,6 +122,7 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `npm run audit:a11y` | roda Playwright com axe nas rotas criticas |
 | `npm run audit:lighthouse` | roda build e LHCI autenticado |
 | `npm test` | roda testes unitarios e de integracao (Vitest) |
+| `npm run test:coverage` | mesmos testes com cobertura v8 (usado no CI); falha abaixo do piso de `src/services` e `src/features/auth` definido em `vite.config.ts` |
 | `npm run verify` | `audit:architecture` + `security-headers` + `lint` + testes + build (obrigatorio quando mexer em mais de um modulo) |
 | `npm run security-headers` / `security-headers:write` | confere / regrava a CSP e os headers dos hosts a partir de `security-headers.json` (ver `DEPLOYMENT.md`) |
 | `npm run audit:architecture` | limite de 550 linhas e fronteiras `shared/`/`services/` |

@@ -72,5 +72,20 @@ export default defineConfig(({ mode }) => ({
     // unrelated cases fail nondeterministically without assertion failures.
     testTimeout: 10_000,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Only `npm run test:coverage` (CI) enables this; `npm test` stays fast (#265).
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/test/**', 'src/setupTests.ts', 'src/**/*.d.ts'],
+      reporter: ['text-summary', 'json-summary'],
+      reportsDirectory: 'coverage',
+      reportOnFailure: true,
+      // Floor only for auth/session areas, a few points under the 2026-11-21 baseline
+      // (services 87/87/74/85, auth 85/84/81/76 — lines/statements/functions/branches).
+      thresholds: {
+        'src/services/**': { lines: 85, statements: 85, functions: 70, branches: 80 },
+        'src/features/auth/**': { lines: 80, statements: 80, functions: 75, branches: 70 },
+      },
+    },
   },
 }));
