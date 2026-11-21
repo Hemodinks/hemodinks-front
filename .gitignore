@@ -5,6 +5,7 @@ tsconfig.tsbuildinfo
 .env.local
 npm-debug.log*
 test-results
+coverage
 playwright-report
 artifacts/tutorials
 /reports

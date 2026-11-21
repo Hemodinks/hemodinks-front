@@ -68,7 +68,7 @@ test('deploy runs after a proven reuse: its condition has an explicit status fun
 
 test('CI requires gate regression tests, E2E and responsive matrix without failure bypass', () => {
   const required = {
-    unit: ['npm run test:release-gate', 'npm run audit:architecture', 'npm test', 'npm run build', 'npm run budget'],
+    unit: ['npm run test:release-gate', 'npm run audit:architecture', 'npm run test:coverage', 'npm run build', 'npm run budget'],
     e2e: ['npm run test:e2e -- --shard=${{ matrix.shard }}/3'],
     responsive: ['npm run test:e2e:responsive'],
   };
