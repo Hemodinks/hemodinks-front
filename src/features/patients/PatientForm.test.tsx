@@ -1,4 +1,5 @@
 import { useState, type ComponentProps } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -149,5 +150,22 @@ describe('issue174: opcoes da equipe', () => {
     rerender(<PatientForm {...input} />);
     await userEvent.click(screen.getByRole('combobox', { name: 'Médico auxiliar 2' }));
     expect(screen.queryByRole('option', { name: 'Dra. Ana' })).not.toBeInTheDocument();
+  });
+});
+
+describe('PatientForm: trilha de auditoria (#315)', () => {
+  const withQuery = (ui: React.ReactElement) => render(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
+
+  it('mostra a seção só para quem pode ver a auditoria e só em paciente já cadastrado', () => {
+    const view = withQuery(<PatientForm {...props({ canViewAudit: true })} />);
+    expect(screen.getByRole('heading', { name: 'Trilha de auditoria' })).toBeInTheDocument();
+    view.unmount();
+
+    const notAdmin = withQuery(<PatientForm {...props({ canViewAudit: false })} />);
+    expect(screen.queryByRole('heading', { name: 'Trilha de auditoria' })).not.toBeInTheDocument();
+    notAdmin.unmount();
+
+    withQuery(<PatientForm {...props({ canViewAudit: true, editingPacienteId: null, editingPaciente: null })} />);
+    expect(screen.queryByRole('heading', { name: 'Trilha de auditoria' })).not.toBeInTheDocument();
   });
 });

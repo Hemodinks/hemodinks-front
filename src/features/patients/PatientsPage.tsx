@@ -167,6 +167,7 @@ export function PatientsPage({
           onRemovePendingPatientFile={removePendingPatientFile}
           onDeletePacienteArquivo={handleDeletePacienteArquivo}
           onOpenPacienteObservacoes={editingPaciente ? () => void handleOpenPacienteObservacoes(editingPaciente) : undefined}
+          canViewAudit={isAdmin}
           companyName={companyName}
         />
       ) : (

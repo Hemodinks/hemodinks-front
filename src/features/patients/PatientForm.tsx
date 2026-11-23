@@ -13,6 +13,7 @@ import { PatientProceduresSection } from './form/PatientProceduresSection';
 import { PatientFinancialSection } from './form/PatientFinancialSection';
 import { PatientAdditionalInfoSection } from './form/PatientAdditionalInfoSection';
 import { PatientFormSection } from './form/PatientFormSection';
+import { PatientAuditSection } from './form/PatientAuditSection';
 import { PatientFilesSection } from './form/PatientFilesSection';
 
 type PatientFormProps = {
@@ -44,6 +45,7 @@ type PatientFormProps = {
   onRemovePendingPatientFile: (index: number) => void;
   onDeletePacienteArquivo: (paciente: Paciente, arquivoId: number) => void | Promise<void>;
   onOpenPacienteObservacoes?: () => void;
+  canViewAudit?: boolean;
 };
 
 const medicalTeamFields = {
@@ -80,6 +82,7 @@ export function PatientForm({
   onRemovePendingPatientFile,
   onDeletePacienteArquivo,
   onOpenPacienteObservacoes,
+  canViewAudit = false,
 }: PatientFormProps) {
   // Remonta o toast a cada tentativa de salvar, mesmo com a mesma mensagem.
   const [submitAttempt, setSubmitAttempt] = useState(0);
@@ -178,6 +181,11 @@ export function PatientForm({
           {canSubmitForm && <Button variant="primary" type="submit" disabled={pacienteFormLoading} data-tour="patients-save">{editingPacienteId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}{pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar alterações' : 'Cadastrar paciente'}</Button>}
         </div>
       </form>
+      {canViewAudit && editingPaciente && (
+        <PatientFormSection title="Trilha de auditoria" description="Registro de quem acessou ou alterou este paciente (somente administradores).">
+          <PatientAuditSection pacienteId={editingPaciente.id} sessionToken={sessionToken} />
+        </PatientFormSection>
+      )}
     </FormPanel>
   );
 }

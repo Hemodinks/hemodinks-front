@@ -1,4 +1,5 @@
 import type {
+  AuditoriaClinicaItem,
   Paciente,
   PacienteArquivo,
   PacienteListQuery,
@@ -36,6 +37,12 @@ export function updatePaciente(id: number, payload: PacientePayload, token: stri
 // A API inativa o paciente (prontuario e arquivos preservados); so Administrador.
 export function deletePaciente(id: number, token: string) {
   return del<void>(`/api/pacientes/${id}`, token);
+}
+
+// Trilha de acesso ao paciente; so Administrador/SuperAdministrador, sempre na clinica ativa.
+export function getPacienteAuditoria(id: number, token: string, page: number, pageSize: number) {
+  const params = new URLSearchParams({ recurso: 'paciente', recursoId: String(id), page: String(page), pageSize: String(pageSize) });
+  return get<PagedResult<AuditoriaClinicaItem>>('/api/auditoria-clinica', token, { params });
 }
 
 export function reativarPaciente(id: number, token: string) {

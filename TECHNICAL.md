@@ -520,6 +520,7 @@ Endpoints consumidos (extraidos de `src/services` e `src/features`):
 | Pacientes e cirurgias | `GET` | `/api/pacientes/{id}/observacoes` |
 | Pacientes e cirurgias | `POST` | `/api/pacientes/{id}/observacoes` |
 | Pacientes e cirurgias | `POST` | `/api/pacientes/{id}/observacoes/marcar-lidas` |
+| Pacientes e cirurgias | `GET` | `/api/auditoria-clinica?recurso=paciente&recursoId={id}` (Administrador/SuperAdministrador; secao "Trilha de auditoria" da ficha, carregada so ao abrir) |
 | Faturamento medico | `GET` | `/api/faturamentos-medicos` |
 | Faturamento medico | `GET` | `/api/faturamentos-medicos/historico/arquivos` |
 | Faturamento medico | `DELETE` | `/api/faturamentos-medicos/historico/arquivos/{id}` |
