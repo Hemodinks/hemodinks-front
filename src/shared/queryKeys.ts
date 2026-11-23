@@ -19,6 +19,7 @@ export const queryKeys = {
   platformActiveSessions: (token: string) => ['platformActiveSessions', token] as const,
   pacienteObservacoes: (token: string, pacienteId: number) => ['pacienteObservacoes', token, pacienteId] as const,
   pacienteObservacoesRoot: (token: string) => ['pacienteObservacoes', token] as const,
+  pacienteAuditoria: (token: string, pacienteId: number, page: number) => ['pacienteAuditoria', token, pacienteId, page] as const,
   hospitais: (token: string) => ['hospitais', token] as const,
   convenios: (token: string) => ['convenios', token] as const,
   opmeFornecedores: (token: string) => ['opmeFornecedores', token] as const,

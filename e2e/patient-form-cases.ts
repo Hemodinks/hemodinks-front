@@ -346,5 +346,33 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
         }
       });
     }
+
+    for (const width of [1440, 820, 390]) {
+      test(`issue315: trilha de auditoria do paciente sob demanda em ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        const base = await setup(page);
+        await mockPatientFormApi(page, base.pacientes[0], base.token);
+        const auditRequests: string[] = [];
+        await page.route('http://localhost:5000/api/auditoria-clinica**', (route) => {
+          auditRequests.push(route.request().url());
+          return route.fulfill({ json: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1, items: [{
+            id: 1, dataUtc: '2026-11-23T15:00:00Z', usuarioId: 1, equipeOperadorId: null, usuarioNome: 'George Marcone',
+            equipeOperadorNome: null, acao: 'paciente.ler', recurso: 'paciente', recursoId: String(base.pacientes[0].id),
+            statusCode: 200, sucesso: true, ipTruncado: '203.0.113.0' }] } });
+        });
+        await login(page, '/pacientes');
+        await page.getByRole('button', { name: 'Editar Paciente Hemodinks', exact: true }).click();
+        const toggle = page.getByText('Ver quem acessou ou alterou este paciente', { exact: true });
+        await expect(toggle).toBeVisible();
+        expect(auditRequests).toHaveLength(0);
+        await toggle.click();
+        const table = page.getByRole('table', { name: 'Trilha de auditoria do paciente' });
+        await expect(table.getByText('Visualizou o cadastro')).toBeVisible();
+        await expect(table.getByText('George Marcone')).toBeVisible();
+        expect(auditRequests).toHaveLength(1);
+        expect(new URL(auditRequests[0]).searchParams.get('recursoId')).toBe(String(base.pacientes[0].id));
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      });
+    }
   });
 }
