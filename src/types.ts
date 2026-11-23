@@ -83,6 +83,9 @@ export type ListQuery = {
   sortDirection?: "asc" | "desc";
 };
 
+// Situacao do cadastro na listagem; inativos/todos so tem efeito para Administrador (a API ignora para os demais).
+export type PacienteSituacao = 'ativos' | 'inativos' | 'todos';
+
 export type PacienteListQuery = ListQuery & {
   tipoCirurgia?: TipoCirurgia | '';
   statusCirurgia?: StatusCirurgia | '';
@@ -96,6 +99,7 @@ export type PacienteListQuery = ListQuery & {
   dataSolicitacaoInicio?: string;
   dataSolicitacaoFinal?: string;
   pendenciaDataConsolidacao?: boolean;
+  situacao?: PacienteSituacao;
   competenciaInicio?: string;
   competenciaFinal?: string;
 };

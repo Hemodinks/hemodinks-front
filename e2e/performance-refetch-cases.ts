@@ -5,8 +5,8 @@ type Dependencies = { setup: (page: Page) => Promise<unknown>; login: (page: Pag
 export function registerPerformanceRefetchCases({ setup, login }: Dependencies) {
   for (const width of [390, 1440]) {
     for (const scenario of [
-      { route: '/usuarios', api: '/api/users/', name: 'Ana Hemodinks', refresh: 'Atualizar lista de usuários', deleted: 'Usuário excluído.' },
-      { route: '/pacientes', api: '/api/pacientes/', name: 'Paciente Hemodinks', refresh: 'Atualizar lista de pacientes', deleted: 'Paciente excluído.' },
+      { route: '/usuarios', api: '/api/users/', name: 'Ana Hemodinks', refresh: 'Atualizar lista de usuários', remove: /excluir/i, deleted: 'Usuário excluído.' },
+      { route: '/pacientes', api: '/api/pacientes/', name: 'Paciente Hemodinks', refresh: 'Atualizar lista de pacientes', remove: /inativar/i, deleted: 'Paciente inativado.' },
     ]) {
       test(`performance: refresh e exclusão sem requests duplicados em ${scenario.route} (${width}px)`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
@@ -28,7 +28,7 @@ export function registerPerformanceRefetchCases({ setup, login }: Dependencies) 
         await expect.poll(() => listReads).toBe(beforeRefresh + 1);
         const beforeDelete = listReads;
         const beforeSummary = summaryReads;
-        await row.getByRole('button', { name: /excluir/i }).click();
+        await row.getByRole('button', { name: scenario.remove }).click();
         await page.getByRole('dialog').getByRole('button', { name: 'Sim', exact: true }).click();
         await expect(page.getByText(scenario.deleted, { exact: true })).toBeVisible();
         await expect(row).toHaveCount(0);

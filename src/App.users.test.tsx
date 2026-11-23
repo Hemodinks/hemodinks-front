@@ -275,7 +275,7 @@ describe('App — usuários e meu cadastro', () => {
     expect(await screen.findByText('Paciente Hemodinks')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /novo paciente/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /inativar paciente hemodinks/i })).not.toBeInTheDocument();
 
     await user.click(within(sidebar).getByRole('button', { name: /agenda e notificações/i }));
     expect(await screen.findByRole('heading', { name: 'Agenda e notificações', level: 1 })).toBeInTheDocument();

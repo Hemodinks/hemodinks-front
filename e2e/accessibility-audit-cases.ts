@@ -211,12 +211,12 @@ export function registerAccessibilityAuditCases({ setup, login }: Dependencies) 
         await expectOptionInsideList(page, lastAgreement);
         await agreement.press('Escape');
 
-        const opener = page.getByRole('button', { name: 'Excluir Paciente Hemodinks', exact: true });
+        const opener = page.getByRole('button', { name: 'Inativar Paciente Hemodinks', exact: true });
         await opener.focus();
         await opener.press('Enter');
         const dialog = page.getByRole('dialog');
         await expect(dialog).toBeVisible();
-        await expect(dialog).toHaveAccessibleName(/excluir/i);
+        await expect(dialog).toHaveAccessibleName(/inativar/i);
         const confirm = dialog.getByRole('button', { name: 'Sim', exact: true });
         const cancel = dialog.getByRole('button', { name: 'Não', exact: true });
         await expect(cancel).toBeFocused();

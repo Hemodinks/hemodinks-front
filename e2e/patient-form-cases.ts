@@ -266,14 +266,14 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
       const row = page.locator('.patients-table tbody tr').first();
       await expect(row.locator('td').nth(0)).toHaveText('Paciente Hemodinks');
       await expect(row.locator('td').nth(1).getByTitle('Editar')).toBeVisible();
-      await expect(row.locator('td').nth(1).getByTitle('Excluir', { exact: true })).toBeVisible();
+      await expect(row.locator('td').nth(1).getByTitle('Inativar', { exact: true })).toBeVisible();
       const bytes = await download(page, 'Exportar Planilha', 'xlsx', 'pacientes-');
       expect(bytes.toString()).toContain('Paciente Hemodinks');
       expect(bytes.toString()).not.toContain('Paciente Outro');
       await download(page, 'Exportar PDF', 'pdf', 'pacientes-');
-      await row.getByTitle('Excluir', { exact: true }).click();
+      await row.getByTitle('Inativar', { exact: true }).click();
       await page.getByRole('dialog').getByRole('button', { name: 'Sim', exact: true }).click();
-      await expect(page.getByText('Paciente excluído.', { exact: true })).toBeVisible();
+      await expect(page.getByText('Paciente inativado.', { exact: true })).toBeVisible();
       expect(api.patients.some((p) => p.id === 10)).toBe(false);
     });
 

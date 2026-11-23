@@ -268,6 +268,7 @@ export function AppMainContent({
           companyName={companyName}
           handleEditPaciente={patientsDomain.handleEditPaciente}
           handleDeletePaciente={patientsDomain.handleDeletePaciente}
+          handleReativarPaciente={patientsDomain.handleReativarPaciente}
           handleOpenPacienteFiles={patientsDomain.handleOpenPacienteFiles}
           handleOpenPacienteObservacoes={patientsDomain.handleOpenPacienteObservacoes}
           setSelectedPatientInfo={patientsDomain.setSelectedPatientInfo}

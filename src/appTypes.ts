@@ -1,5 +1,6 @@
 import type { TipoCirurgia } from './shared/surgeryType';
 import type { StatusCirurgia } from './shared/surgeryStatus';
+import type { PacienteSituacao } from './types';
 
 export type Theme = 'light' | 'dark';
 
@@ -29,6 +30,7 @@ export type PacienteFilters = {
   dataSolicitacaoInicio: string;
   dataSolicitacaoFinal: string;
   pendenciaDataConsolidacao?: boolean;
+  situacao?: PacienteSituacao;
 };
 
 export type PacienteExportFormat = 'xlsx' | 'pdf';
