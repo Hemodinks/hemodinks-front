@@ -750,7 +750,7 @@ test('listagem paciente sem permissão de gestão oferece somente visualização
   await mockApi(page, patientSession);
   await loginViaUi(page, '/pacientes', patientSession);
   await expect(page.getByRole('button', { name: 'Visualizar Paciente Hemodinks', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^(Novo paciente|Editar Paciente|Excluir Paciente)/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^(Novo paciente|Editar Paciente|Inativar Paciente|Reativar Paciente)/ })).toHaveCount(0);
 });
 
 async function expectNoGlobalHorizontalOverflow(page: Page) {

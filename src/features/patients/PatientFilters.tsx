@@ -2,7 +2,8 @@ import { AlertTriangle, X } from 'lucide-react';
 import { DateInput } from '../../shared/components/DateInput';
 import { SurgeryStatusFilter } from '../../shared/components/SurgeryStatusFilter';
 import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
-import { Button, MultiSelectComboboxField, TextField } from '../../shared/components/ui';
+import { Button, MultiSelectComboboxField, SelectField, TextField } from '../../shared/components/ui';
+import type { PacienteSituacao } from '../../types';
 import type { PatientListProps } from './patientListTypes';
 import '../../shared/components/styles/filter-accordion.css';
 import { MAX_PROCEDURE_LENGTH } from '../../shared/utils/formatterConstants';
@@ -37,6 +38,12 @@ export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdm
             <TextField className="filter-field" label="Procedimento" type="search" value={pacienteFilters.procedimento}
               onValueChange={(value) => onFiltersChange((current) => ({ ...current, procedimento: value.slice(0, MAX_PROCEDURE_LENGTH) }))} placeholder="Procedimento" maxLength={MAX_PROCEDURE_LENGTH} />
           </>}
+          {isAdmin && <SelectField className="filter-field" label="Situação do cadastro" value={pacienteFilters.situacao ?? 'ativos'}
+            onChange={(event) => { const situacao = event.target.value as PacienteSituacao; onFiltersChange((current) => ({ ...current, situacao })); }}>
+            <option value="ativos">Ativos</option>
+            <option value="inativos">Inativos</option>
+            <option value="todos">Todos</option>
+          </SelectField>}
           <DateInput id="patient-attendance-start-date" className="filter-field" label="Cirurgias Consolidadas - inicial" value={pacienteFilters.dataInicio}
             max={pacienteFilters.dataFinal} onChange={(value) => onFiltersChange((current) => ({ ...current, dataInicio: value }))} />
           <DateInput id="patient-attendance-end-date" className="filter-field" label="Cirurgias Consolidadas - final" value={pacienteFilters.dataFinal}

@@ -64,6 +64,7 @@ export const emptyPacienteFilters: PacienteFilters = {
   dataSolicitacaoInicio: '',
   dataSolicitacaoFinal: '',
   pendenciaDataConsolidacao: false,
+  situacao: 'ativos',
 };
 
 export function getPacienteFilterQuery(filters: PacienteFilters) {
@@ -78,6 +79,7 @@ export function getPacienteFilterQuery(filters: PacienteFilters) {
     ...(toDatePickerValue(filters.dataSolicitacaoInicio) ? { dataSolicitacaoInicio: toDatePickerValue(filters.dataSolicitacaoInicio) } : {}),
     ...(toDatePickerValue(filters.dataSolicitacaoFinal) ? { dataSolicitacaoFinal: toDatePickerValue(filters.dataSolicitacaoFinal) } : {}),
     ...(filters.pendenciaDataConsolidacao ? { pendenciaDataConsolidacao: true } : {}),
+    ...(filters.situacao && filters.situacao !== 'ativos' ? { situacao: filters.situacao } : {}),
   };
 }
 

@@ -247,7 +247,7 @@ describe('App — acesso a pacientes por perfil', () => {
     expect(screen.getByRole('button', { name: /exportar planilha/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar pdf/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /inativar paciente hemodinks/i })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
     expect(await screen.findByRole('heading', { name: 'Novo paciente' })).toBeInTheDocument();

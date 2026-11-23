@@ -110,7 +110,7 @@ Rotas internas (`src/routes.ts`; acesso calculado em `src/app/appAccess.ts` e di
 | `/clinicas` | `clinics` | Administrador (propria clinica) e SuperAdministrador |
 
 O SuperAdministrador ignora o plano `Parcial` na interface; os demais perfis so veem modulos contratados.
-A exclusao de pacientes aparece apenas para Administrador e SuperAdministrador (a API tambem permite ao Medico).
+A acao de inativar pacientes (`DELETE /api/pacientes/{id}`, que na API inativa e preserva o prontuario) aparece apenas para Administrador e SuperAdministrador, alinhada a API. O mesmo perfil ve o filtro "Situacao do cadastro" (`situacao=ativos|inativos|todos`) e a acao "Reativar" em pacientes com `inativado = true`.
 
 `useRouteView` sincroniza URL, permissoes e view ativa. Se a rota nao for permitida para o perfil atual, a aplicacao redireciona para uma view valida.
 
@@ -512,7 +512,8 @@ Endpoints consumidos (extraidos de `src/services` e `src/features`):
 | Pacientes e cirurgias | `POST` | `/api/pacientes` |
 | Pacientes e cirurgias | `GET` | `/api/pacientes/{id}` |
 | Pacientes e cirurgias | `PUT` | `/api/pacientes/{id}` |
-| Pacientes e cirurgias | `DELETE` | `/api/pacientes/{id}` |
+| Pacientes e cirurgias | `DELETE` | `/api/pacientes/{id}` (inativa) |
+| Pacientes e cirurgias | `POST` | `/api/pacientes/{id}/reativacao` |
 | Pacientes e cirurgias | `POST` | `/api/pacientes/{id}/arquivos` |
 | Pacientes e cirurgias | `DELETE` | `/api/pacientes/{id}/arquivos/{id}` |
 | Pacientes e cirurgias | `GET` | `/api/pacientes/{id}/arquivos/{id}/download` |

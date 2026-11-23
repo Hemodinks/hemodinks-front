@@ -33,8 +33,13 @@ export function updatePaciente(id: number, payload: PacientePayload, token: stri
   return put<Paciente>(`/api/pacientes/${id}`, payload, token);
 }
 
+// A API inativa o paciente (prontuario e arquivos preservados); so Administrador.
 export function deletePaciente(id: number, token: string) {
   return del<void>(`/api/pacientes/${id}`, token);
+}
+
+export function reativarPaciente(id: number, token: string) {
+  return post<void>(`/api/pacientes/${id}/reativacao`, undefined, token);
 }
 
 export function uploadPacienteArquivo(id: number, file: File, token: string) {

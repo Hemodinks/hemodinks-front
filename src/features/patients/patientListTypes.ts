@@ -38,6 +38,7 @@ export type PatientListProps = {
   onExportPacientes: (format: PacienteExportFormat) => void | Promise<void>;
   onEditPaciente: (paciente: Paciente) => void | Promise<void>;
   onDeletePaciente: (paciente: Paciente) => void | Promise<void>;
+  onReativarPaciente: (paciente: Paciente) => void | Promise<void>;
   onOpenPacienteFiles: (paciente: Paciente) => void | Promise<void>;
   onOpenPacienteObservacoes: (paciente: Paciente) => void | Promise<void>;
   onSelectPatientInfo: (paciente: Paciente) => void;

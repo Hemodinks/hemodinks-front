@@ -1,6 +1,6 @@
 import { getSurgeryTypeLabel } from '../../shared/surgeryType';
 import { getSurgeryStatus, getSurgeryStatusLabel } from '../../shared/surgeryStatus';
-import { Eye, FileText, Info, MessageSquareText, Pencil, Trash2 } from 'lucide-react';
+import { Eye, FileText, Info, MessageSquareText, Pencil, RotateCcw, UserX } from 'lucide-react';
 import { IconButton } from '../../shared/components/ui';
 import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import { formatPersonName, toDisplayDate } from '../../shared/utils/formatters';
@@ -9,7 +9,7 @@ import type { PatientListProps } from './patientListTypes';
 type PatientTableProps = Pick<PatientListProps,
   | 'pacientes' | 'pacientesLoading' | 'sortBy' | 'sortDirection' | 'sessionToken' | 'canEditPatients'
   | 'canDeletePatients' | 'canManageObservacoes' | 'patientReadOnly' | 'onSortChange' | 'onEditPaciente'
-  | 'onDeletePaciente' | 'onOpenPacienteFiles' | 'onOpenPacienteObservacoes' | 'onSelectPatientInfo'
+  | 'onDeletePaciente' | 'onReativarPaciente' | 'onOpenPacienteFiles' | 'onOpenPacienteObservacoes' | 'onSelectPatientInfo'
 >;
 
 export function PatientTable(props: PatientTableProps) {
@@ -31,11 +31,14 @@ export function PatientTable(props: PatientTableProps) {
           const patientDisplayName = formatPersonName(paciente.nomePaciente);
           const fileCount = paciente.arquivosCount ?? paciente.arquivos.length;
           return <tr key={paciente.id}>
-            <td data-label="Paciente"><div className="name-cell"><span>{patientDisplayName}</span></div></td>
+            <td data-label="Paciente"><div className="name-cell"><span>{patientDisplayName}</span>
+              {paciente.inativado && <span className="status-pill warning">Inativo</span>}</div></td>
             <td data-label="Ações"><div className="row-actions">
               <IconButton label={`${patientActionLabel} ${patientDisplayName}`} tone="muted" onClick={() => void props.onEditPaciente(paciente)} title={patientActionLabel}>
                 {props.patientReadOnly || !props.canEditPatients ? <Eye size={17} /> : <Pencil size={17} />}</IconButton>
-              {props.canDeletePatients && <IconButton label={`Excluir ${patientDisplayName}`} tone="danger" onClick={() => void props.onDeletePaciente(paciente)} title="Excluir"><Trash2 size={17} /></IconButton>}
+              {props.canDeletePatients && (paciente.inativado
+                ? <IconButton label={`Reativar ${patientDisplayName}`} tone="muted" onClick={() => void props.onReativarPaciente(paciente)} title="Reativar"><RotateCcw size={17} /></IconButton>
+                : <IconButton label={`Inativar ${patientDisplayName}`} tone="danger" onClick={() => void props.onDeletePaciente(paciente)} title="Inativar"><UserX size={17} /></IconButton>)}
             </div></td>
             <td data-label="Data da solicitação">{toDisplayDate(paciente.data) || '-'}</td>
             <td data-label="Cirurgias Consolidadas">{toDisplayDate(paciente.dataAtendimento || '') || '-'}</td>
