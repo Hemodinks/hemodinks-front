@@ -68,7 +68,7 @@ npm run tutorial:audio -- reports
 npm run tutorial:record -- reports
 ```
 
-A gravação local usa apenas fixtures fictícias e sanitizadas. O Playwright aguarda o estado `finished`, executa a interação declarada e adiciona a pausa visual central. O compositor gera SRT/ASS, WebM 1920×1080 e MP4 H.264 1920×1080. Os vídeos Piper anteriores estão preservados no subdiretório `legacy-piper` de cada tutorial publicado.
+A gravação local usa apenas fixtures fictícias e sanitizadas. O Playwright aguarda o estado `finished`, executa a interação declarada e adiciona a pausa visual central. O compositor gera SRT/ASS, WebM 1920×1080 (intermediário, não publicado) e MP4 H.264 1920×1080; só o MP4 vai para `public/tutorials` (#308). Os vídeos Piper anteriores (`legacy-piper`) foram removidos do deploy; continuam no histórico do Git.
 
 - `401`: confira a chave; `403`: confira autorização; `429`: aguarde quota/rate limit; `5xx`: tente novamente mais tarde.
 - `400`: valide SSML, voz e dicionário.
@@ -79,7 +79,7 @@ A gravação local usa apenas fixtures fictícias e sanitizadas. O Playwright ag
 
 Áudio não é gerado em build ou deploy. O desenvolvedor altera roteiro, executa dry-run, gera, escuta e versiona MP3 mais manifesto. A primeira chamada gera; a segunda, sem mudanças, precisa resultar em `SKIP` e zero chamada Azure.
 
-Os 12 tutoriais foram migrados. Novos roteiros devem usar o mesmo normalizador ou declarar `narration` e `interaction` diretamente, gerar primeiro o escopo individual e manter qualquer vídeo anterior em `legacy-piper`. Não se deve regravar todos implicitamente; `tutorial:record:all` existe apenas como comando explícito.
+Os 12 tutoriais foram migrados. Novos roteiros devem usar o mesmo normalizador ou declarar `narration` e `interaction` diretamente, gerar primeiro o escopo individual e substituir o MP4 publicado (o anterior fica no histórico do Git, não em `public/`). O `npm run budget` falha se o `dist` passar de `PERF_BUDGET_DIST_MB` (100 MB). Não se deve regravar todos implicitamente; `tutorial:record:all` existe apenas como comando explícito.
 
 Decisão (#267, 2026-11-21): as mídias continuam versionadas em `public/tutorials`, sem Git LFS nem Blob. No mesmo dia o
 histórico foi reescrito (`git filter-repo`) para remover as versões antigas das mídias (~257 MB); as versões atuais ficaram,
