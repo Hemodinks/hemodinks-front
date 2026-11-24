@@ -352,7 +352,7 @@ Responsabilidades:
 - persistencia da escolha explicita do usuario, inclusive do tema claro
 - troca de senha
 - verificacao em duas etapas (`MfaSettingsPanel`, so Administrador e SuperAdministrador, dentro de
-  `Configuracoes`): ativar mostra a chave e o link `otpauth://` (sem QR code, para nao adicionar biblioteca), pede
+  `Configuracoes`): ativar mostra o QR code (`MfaQrCode`, `qrcode-generator` sem dependencias, gerado no navegador), a chave e o link `otpauth://`, pede
   codigo e senha atual e mostra os 10 codigos de recuperacao uma unica vez. Ativar troca a `SecurityVersion`;
   com `sessionRenewed` o app restaura a sessao nova (mesmo handover da troca de e-mail) e os codigos sobrevivem
   ao remount num registro em memoria (`identityChange.ts`, limpo no logout). Sem renovacao, o novo login so e

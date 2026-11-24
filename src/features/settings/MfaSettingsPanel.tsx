@@ -8,6 +8,7 @@ import { PasswordInput } from '../../shared/components/PasswordInput';
 import { AlertMessage, Button, DataPanel, TextField } from '../../shared/components/ui';
 import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import { queryKeys } from '../../shared/queryKeys';
+import { MfaQrCode } from './MfaQrCode';
 import {
   clearPendingMfaRecoveryCodes, peekPendingMfaRecoveryCodes, setPendingMfaRecoveryCodes, type IdentityChangedHandler,
 } from '../../shared/identityChange';
@@ -131,7 +132,8 @@ export function MfaSettingsPanel({ session, onIdentityChanged }: Props) {
 
       {stage === 'setup' && setup && (
         <form className="stack" onSubmit={activate} onInvalid={focusFirstInvalidFormField}>
-          <p>1. No aplicativo autenticador, adicione uma conta com a chave abaixo (ou toque no link pelo celular).</p>
+          <p>1. No aplicativo autenticador, escaneie o QR code. Sem câmera, digite a chave abaixo ou toque no link pelo celular.</p>
+          <MfaQrCode value={setup.otpAuthUri} />
           <code className="nr-block" data-private="true">{setup.segredo.match(/.{1,4}/g)?.join(' ')}</code>
           <a href={setup.otpAuthUri} className="nr-block" data-private="true">Abrir no aplicativo autenticador</a>
           <TextField label="2. Código de 6 dígitos gerado pelo aplicativo" value={code} inputMode="numeric"
