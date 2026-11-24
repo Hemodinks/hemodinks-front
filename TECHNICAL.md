@@ -142,6 +142,10 @@ Fluxos suportados:
 
 - contexto do login por `POST /api/users/login-context` e login por `POST /api/users/authenticate`
 - identificacao do operador da equipe por `POST /api/equipe-auth/identificar` (selecao ou PIN)
+- verificacao em duas etapas (#150): com MFA ativo, `/api/users/authenticate` devolve so `mfaDesafio`
+  (`token`, `expiraEm`, 5 min); `MfaVerificationScreen` pede o codigo de 6 digitos do aplicativo ou um codigo de
+  recuperacao e `POST /api/users/authenticate/mfa` abre a sessao como o login comum. O desafio expira no front
+  junto com o prazo da API; `401` mantem o desafio (ate 5 tentativas na API) e limpa o codigo digitado
 - senha temporaria concluida por `POST /api/users/password/temporary/complete`
 - troca de e-mail com confirmacao (`/api/users/email/change*`): codigo de 6 digitos enviado ao novo endereco
   (valido por 10 min, uso unico); 5 erros invalidam a solicitacao (`409 email_confirmation_attempts_exceeded`) e
@@ -347,6 +351,12 @@ Responsabilidades:
 - tema claro/escuro, com tema escuro como fallback inicial quando ainda nao existe `hemodinks.theme` no `localStorage`
 - persistencia da escolha explicita do usuario, inclusive do tema claro
 - troca de senha
+- verificacao em duas etapas (`MfaSettingsPanel`, so Administrador e SuperAdministrador, dentro de
+  `Configuracoes`): ativar mostra a chave e o link `otpauth://` (sem QR code, para nao adicionar biblioteca), pede
+  codigo e senha atual e mostra os 10 codigos de recuperacao uma unica vez. Ativar troca a `SecurityVersion`;
+  com `sessionRenewed` o app restaura a sessao nova (mesmo handover da troca de e-mail) e os codigos sobrevivem
+  ao remount num registro em memoria (`identityChange.ts`, limpo no logout). Sem renovacao, o novo login so e
+  pedido depois de "Ja guardei os codigos". Desativar exige senha e codigo
 - consulta paginada dos erros tecnicos da clinica, com 25 registros por pagina
 - eventos de seguranca (`/api/monitoramento/seguranca`)
 - aba `Sessoes ativas`, so para SuperAdministrador (`ActiveSessionsPanel`, `GET /api/platform/sessoes-ativas`, atualiza a cada 60 s): status verde para quem esta online e laranja para quem esteve online nas ultimas `janelaRecenteHoras` (8 h, campo `recentes`); sem `recentes` (API anterior ao #331), mostra so os online
@@ -466,10 +476,15 @@ Endpoints consumidos (extraidos de `src/services` e `src/features`):
 | Usuarios e autenticacao | `GET` | `/api/users` |
 | Usuarios e autenticacao | `POST` | `/api/users` |
 | Usuarios e autenticacao | `POST` | `/api/users/authenticate` |
+| Usuarios e autenticacao | `POST` | `/api/users/authenticate/mfa` |
 | Usuarios e autenticacao | `POST` | `/api/users/email/change` |
 | Usuarios e autenticacao | `POST` | `/api/users/email/change/cancel` |
 | Usuarios e autenticacao | `POST` | `/api/users/email/change/confirm` |
 | Usuarios e autenticacao | `POST` | `/api/users/login-context` |
+| Usuarios e autenticacao | `GET` | `/api/users/me/mfa` |
+| Usuarios e autenticacao | `POST` | `/api/users/me/mfa/configuracao` |
+| Usuarios e autenticacao | `POST` | `/api/users/me/mfa/ativacao` |
+| Usuarios e autenticacao | `POST` | `/api/users/me/mfa/desativacao` |
 | Usuarios e autenticacao | `POST` | `/api/users/password/reset` |
 | Usuarios e autenticacao | `POST` | `/api/users/password/reset/confirm` |
 | Usuarios e autenticacao | `POST` | `/api/users/password/temporary/complete` |

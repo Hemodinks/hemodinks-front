@@ -2,15 +2,17 @@ import { isLoginPreparationEnabled, prepareLoginApi } from '../../services/login
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import {
   authenticate,
+  completeMfaLogin,
   identifyTeamOperator,
   listPublicClinics,
   resetPassword,
   resolveLoginClinics,
   type LoginClinicOption,
 } from '../../services';
+import { ApiError } from '../../services/api';
 import { queryClient } from '../../queryClient';
 import { getErrorMessage, isValidEmail } from '../../shared/utils/formatters';
-import type { AuthSession, PublicClinic, TeamLoginChallenge } from '../../types';
+import type { AuthSession, MfaLoginChallenge, PublicClinic, TeamLoginChallenge } from '../../types';
 import { buildSessionFromLogin, shouldOpenDashboardAfterLogin } from '../../app/appSession';
 import { getLoginErrorMessage } from './loginFeedback';
 import { useAuthWait } from './useAuthWait';
@@ -37,6 +39,8 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
   const [teamChallenge, setTeamChallenge] = useState<TeamLoginChallenge | null>(null);
   const [teamOperatorId, updateTeamOperatorId] = useState('');
   const [teamPin, setTeamPin] = useState('');
+  const [mfaChallenge, setMfaChallenge] = useState<MfaLoginChallenge | null>(null);
+  const [mfaCode, updateMfaCode] = useState('');
   const requestVersion = useRef(0);
   const pending = useRef(false);
   const challengeClinic = useRef('');
@@ -45,12 +49,21 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
   const loginWait = useAuthWait(identity);
   const recoveryWait = useAuthWait(identity);
   const teamWait = useAuthWait(`${teamChallenge?.token ?? ''}:${teamOperatorId}`);
+  const mfaWait = useAuthWait(`mfa:${mfaChallenge?.token ?? ''}`);
 
   const clearTeamState = () => {
     setTeamChallenge(null);
     updateTeamOperatorId('');
     setTeamPin('');
+    setMfaChallenge(null);
+    updateMfaCode('');
     challengeClinic.current = '';
+  };
+
+  const setMfaCode = (value: string) => {
+    if (pending.current) return;
+    updateMfaCode(value.replace(/[^0-9A-Za-z-]/g, '').slice(0, 11));
+    setLoginError('');
   };
 
   const clearClinicSelection = () => {
@@ -103,6 +116,18 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
     return () => window.clearTimeout(timer);
   }, [teamChallenge]);
 
+  useEffect(() => {
+    if (!mfaChallenge) return;
+    const remaining = new Date(mfaChallenge.expiraEm).getTime() - Date.now();
+    const timer = window.setTimeout(() => {
+      invalidateRequest();
+      clearTeamState();
+      clearClinicSelection();
+      setLoginError('O prazo para informar o código terminou. Entre novamente.');
+    }, Math.max(0, remaining));
+    return () => window.clearTimeout(timer);
+  }, [mfaChallenge]);
+
   useEffect(() => () => { requestVersion.current++; activeRequest.current?.abort(); }, []);
 
   const completeAuthentication = async (clinic: LoginClinicOption, version: number, signal: AbortSignal) => {
@@ -112,6 +137,13 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
     setActiveLoginClinic(clinic);
     setLoginClinicOptions([]);
     setLoginPassword('');
+
+    if (result.mfaDesafio) {
+      setMfaChallenge(result.mfaDesafio);
+      challengeClinic.current = clinic.slug;
+      updateMfaCode('');
+      return;
+    }
 
     if (result.equipeDesafio) {
       setTeamChallenge(result.equipeDesafio);
@@ -295,6 +327,47 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
     }
   };
 
+  const handleMfaVerification = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (sessionRestoring || session || pending.current || mfaWait.isWaiting() || !mfaChallenge || !challengeClinic.current) return;
+    const code = mfaCode.trim();
+    if (!/^[0-9]{6}$/.test(code) && code.replace(/-/g, '').length !== 10) {
+      setLoginError('Informe o código de 6 dígitos do aplicativo ou um código de recuperação.');
+      return;
+    }
+
+    pending.current = true;
+    const version = ++requestVersion.current;
+    setLoginLoading(true);
+    setLoginError('');
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    try {
+      const result = await completeMfaLogin(mfaChallenge.token, code, challengeClinic.current, controller.signal);
+      if (version !== requestVersion.current) return;
+      const nextSession = buildSessionFromLogin(result);
+      queryClient.clear();
+      setOpenDashboardAfterLogin(shouldOpenDashboardAfterLogin(nextSession.user.perfilId));
+      persistSession(nextSession);
+      clearTeamState();
+      clearClinicSelection();
+    } catch (error) {
+      if (version === requestVersion.current) {
+        mfaWait.record(error);
+        setLoginError(error instanceof ApiError && error.status === 401
+          ? 'Código inválido ou expirado. Confira o aplicativo e tente de novo.'
+          : getLoginErrorMessage(error));
+      }
+    } finally {
+      if (version === requestVersion.current) {
+        activeRequest.current = null;
+        pending.current = false;
+        updateMfaCode('');
+        setLoginLoading(false);
+      }
+    }
+  };
+
   const executePasswordReset = async (clinic: PublicClinic, version: number) => {
     const result = await resetPassword(loginEmail.trim(), clinic.slug);
     if (version !== requestVersion.current) return;
@@ -384,6 +457,12 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
     recoveryWaitMessage: recoveryWait.message,
     teamWaitSeconds: teamWait.seconds,
     teamWaitMessage: teamWait.message,
+    mfaWaitSeconds: mfaWait.seconds,
+    mfaWaitMessage: mfaWait.message,
+    mfaChallenge,
+    mfaCode,
+    setMfaCode,
+    handleMfaVerification,
     loginEmail,
     loginPassword,
     loginClinicOptions,

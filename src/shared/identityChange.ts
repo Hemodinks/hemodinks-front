@@ -22,4 +22,23 @@ export function peekIdentityNotice(userId: number) {
 
 export function clearIdentityNotice() {
   notice = null;
+  mfaRecoveryCodes = null;
+}
+
+// #150: ativar o MFA renova a sessao (remonta a area autenticada); os codigos de recuperacao, mostrados uma
+// unica vez, sobrevivem a isso so aqui, em memoria, presos ao usuario e limpos no logout.
+const MFA_CODES_TTL_MS = 10 * 60_000;
+let mfaRecoveryCodes: { userId: number; codes: string[]; expiresAt: number } | null = null;
+
+export function setPendingMfaRecoveryCodes(userId: number, codes: string[]) {
+  mfaRecoveryCodes = { userId, codes, expiresAt: Date.now() + MFA_CODES_TTL_MS };
+}
+
+export function peekPendingMfaRecoveryCodes(userId: number) {
+  if (!mfaRecoveryCodes || mfaRecoveryCodes.userId !== userId || Date.now() >= mfaRecoveryCodes.expiresAt) return [];
+  return mfaRecoveryCodes.codes;
+}
+
+export function clearPendingMfaRecoveryCodes() {
+  mfaRecoveryCodes = null;
 }

@@ -1,6 +1,7 @@
 import type { Theme } from '../appTypes';
 import { ClinicSelectionScreen } from '../features/auth/ClinicSelectionScreen';
 import { LoginScreen } from '../features/auth/LoginScreen';
+import { MfaVerificationScreen } from '../features/auth/MfaVerificationScreen';
 import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
 import { TeamIdentificationScreen } from '../features/auth/TeamIdentificationScreen';
 import type { LoginFlowState } from '../features/auth/useLoginFlow';
@@ -56,6 +57,24 @@ export function AppPublicContent({
         theme={theme}
         onSelect={(clinicaId) => void loginFlow.selectLoginClinic(clinicaId)}
         onBack={loginFlow.cancelClinicSelection}
+        onCancelLogin={loginFlow.cancelPendingLogin}
+        onThemeToggle={onThemeToggle}
+      />
+    );
+  }
+
+  if (loginFlow.mfaChallenge) {
+    return (
+      <MfaVerificationScreen
+        code={loginFlow.mfaCode}
+        error={loginFlow.loginError}
+        loading={loginFlow.loginLoading}
+        theme={theme}
+        waitSeconds={loginFlow.mfaWaitSeconds}
+        waitMessage={loginFlow.mfaWaitMessage}
+        onCodeChange={loginFlow.setMfaCode}
+        onSubmit={loginFlow.handleMfaVerification}
+        onBack={loginFlow.cancelTeamIdentification}
         onCancelLogin={loginFlow.cancelPendingLogin}
         onThemeToggle={onThemeToggle}
       />
