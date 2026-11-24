@@ -7,7 +7,9 @@ import { TechCredit } from "../../shared/components/TechCredit";
 import { ThemeToggle } from "../../shared/components/ThemeToggle";
 import { AlertMessage } from "../../shared/components/ui";
 import { focusFirstInvalidFormField } from "../../shared/utils/focusInvalidFormField";
+import { MFA_CODE_MAX_LENGTH, MFA_TOTP_LENGTH, isCompleteMfaCode } from "../../shared/utils/mfaCode";
 import "./auth.css";
+import "./mfaVerification.css";
 
 type MfaVerificationScreenProps = {
   code: string;
@@ -46,10 +48,10 @@ export function MfaVerificationScreen({
       <LoginLoadingOverlay active={loading} stage="Confirmando o código…" onCancel={onCancelLogin} />
       <TechCredit />
       <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
-      <section className="auth-panel" aria-busy={loading}>
+      <section className="auth-panel login-panel mfa-verification-panel" aria-busy={loading}>
         <div className="brand-block">
-          <span className="brand-mark">
-            <ShieldCheck size={38} />
+          <span className="brand-mark mfa-verification-icon" aria-hidden="true">
+            <ShieldCheck size={28} />
           </span>
           <div>
             <span className="eyebrow">Verificação em duas etapas</span>
@@ -64,24 +66,29 @@ export function MfaVerificationScreen({
               ref={input}
               id="mfa-code"
               type="text"
-              className="team-pin-input"
+              className="mfa-code-input"
               inputMode="text"
+              placeholder="000000"
+              aria-describedby="mfa-code-hint"
               value={code}
               onChange={(event) => onCodeChange(event.target.value)}
               autoComplete="one-time-code"
-              minLength={6}
-              maxLength={11}
+              minLength={MFA_TOTP_LENGTH}
+              maxLength={MFA_CODE_MAX_LENGTH}
+              spellCheck={false}
+              autoCapitalize="characters"
               required
               disabled={loading}
             />
           </label>
+          <p id="mfa-code-hint" className="mfa-code-hint">6 dígitos do aplicativo ou código de recuperação <span className="mfa-code-format">(XXXXX-XXXXX)</span>.</p>
           {error && <AlertMessage type="error">{error}</AlertMessage>}
           <AuthWaitMessage message={waitMessage} />
           <div className="button-row login-actions">
             <button type="button" className="ghost-button" onClick={onBack}>
               Voltar
             </button>
-            <button className="primary-action" type="submit" disabled={loading || waitSeconds > 0 || code.trim().length < 6}
+            <button className="primary-action" type="submit" disabled={loading || waitSeconds > 0 || !isCompleteMfaCode(code)}
               aria-describedby={waitMessage ? 'auth-wait-status' : undefined}>
               <LogIn size={18} />
               {loading ? 'Entrando...' : 'Entrar'}

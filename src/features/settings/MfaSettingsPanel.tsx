@@ -8,6 +8,7 @@ import { PasswordInput } from '../../shared/components/PasswordInput';
 import { AlertMessage, Button, DataPanel, TextField } from '../../shared/components/ui';
 import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import { queryKeys } from '../../shared/queryKeys';
+import { formatMfaCode, isCompleteMfaCode, MFA_CODE_MAX_LENGTH } from '../../shared/utils/mfaCode';
 import { MfaQrCode } from './MfaQrCode';
 import {
   clearPendingMfaRecoveryCodes, peekPendingMfaRecoveryCodes, setPendingMfaRecoveryCodes, type IdentityChangedHandler,
@@ -19,7 +20,6 @@ export const MFA_ENABLED_RELOGIN_MESSAGE =
   'Verificação em duas etapas ativada. Entre novamente com a senha e o código do aplicativo.';
 
 const onlyDigits = (value: string) => value.replace(/\D/g, '').slice(0, 6);
-const recoveryInput = (value: string) => value.replace(/[^0-9A-Za-z-]/g, '').slice(0, 11);
 
 type Props = { session: AuthSession; onIdentityChanged: IdentityChangedHandler };
 
@@ -153,11 +153,11 @@ export function MfaSettingsPanel({ session, onIdentityChanged }: Props) {
         <form className="stack" onSubmit={deactivate} onInvalid={focusFirstInvalidFormField}>
           <PasswordInput id="mfa-disable-password" label="Senha atual" value={password} onChange={setPassword}
             autoComplete="current-password" maxLength={128} required />
-          <TextField label="Código do aplicativo ou de recuperação" value={code} minLength={6} maxLength={11}
-            autoComplete="one-time-code" required onValueChange={value => setCode(recoveryInput(value))} />
+          <TextField label="Código do aplicativo ou de recuperação" value={code} minLength={6} maxLength={MFA_CODE_MAX_LENGTH}
+            autoComplete="one-time-code" required onValueChange={value => setCode(formatMfaCode(value))} />
           <div className="button-row">
             <Button type="button" disabled={busy} onClick={reset}>Cancelar</Button>
-            <Button type="submit" variant="danger-ghost" disabled={busy || !password || code.trim().length < 6}>Desativar</Button>
+            <Button type="submit" variant="danger-ghost" disabled={busy || !password || !isCompleteMfaCode(code)}>Desativar</Button>
           </div>
         </form>
       )}
