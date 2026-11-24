@@ -68,6 +68,7 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
           onClose={page.closeForm}
         />
       )}
+      {page.confirmationDialog}
     </section>
   );
 }

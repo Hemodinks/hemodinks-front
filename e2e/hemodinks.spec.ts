@@ -9,6 +9,7 @@ import { registerResponsiveA11yRefinementCases } from './responsive-a11y-refinem
 import { registerReportChecklistCases } from './report-checklist-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
 import { registerMfaLoginCases } from './mfa-login-cases';
+import { registerBillingHistoryDeleteCases } from './billing-history-delete-cases';
 import { enforceProductionCsp, expectNoCspViolations } from './csp-guard';
 import { registerPasswordPolicyCases } from './password-policy-cases';
 import { registerSecurityObservationCases } from './security-observation-cases';
@@ -714,6 +715,8 @@ test.beforeEach(async ({ context }, testInfo) => {
 
 registerAuthRateLimitCases({ setup: mockApi, login: loginViaUi, session });
 registerMfaLoginCases({ setup: mockApi, login: loginViaUi });
+registerBillingHistoryDeleteCases({ setup: page => mockApi(page, superAdminSession, { billingAmount: 'R$ 125,45' }),
+  login: (page, path) => loginViaUi(page, path, superAdminSession) });
 registerTenantIsolationCases({ mockApi: page => mockApi(page, superAdminSession),
   login: (page, path) => loginViaUi(page, path, superAdminSession), user: superAdminSession.user, patient: paciente });
 registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });
