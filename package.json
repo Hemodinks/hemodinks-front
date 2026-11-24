@@ -19,7 +19,7 @@
     "audit:architecture": "node scripts/check-frontend-architecture.mjs",
     "security-headers": "node scripts/security-headers.mjs",
     "security-headers:write": "node scripts/security-headers.mjs --write",
-    "lint": "eslint src --max-warnings 79",
+    "lint": "eslint src --max-warnings 37",
     "verify": "npm run audit:architecture && npm run security-headers && npm run lint && npm test && npm run build",
     "audit:a11y": "playwright test --grep acessibilidade",
     "audit:lighthouse": "node scripts/run-lighthouse.mjs",

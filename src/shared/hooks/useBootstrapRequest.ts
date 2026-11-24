@@ -20,7 +20,7 @@ export function bootstrapErrorMessage(error: unknown) {
 export function useBootstrapRequest<T>(
   enabled: boolean,
   request: (signal: AbortSignal) => Promise<T>,
-  stage: 'public_clinics' | 'session_clinic_legal',
+  _stage: 'public_clinics' | 'session_clinic_legal',
 ) {
   const [state, setState] = useState({ data: null as T | null, loading: enabled, slow: false, canRetry: false, error: '' });
   const active = useRef<{ cancel: () => void; retryAllowed: boolean } | null>(null);
@@ -63,7 +63,7 @@ export function useBootstrapRequest<T>(
       active.current = null;
       setState({ data: null, loading: false, slow: false, canRetry: true, error: bootstrapErrorMessage(error) });
     }
-  }, [enabled, request, stage]);
+  }, [enabled, request]);
 
   useEffect(() => {
     if (enabled) void retry();

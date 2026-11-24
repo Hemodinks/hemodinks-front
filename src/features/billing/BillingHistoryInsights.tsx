@@ -148,18 +148,14 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
   const lowestMonth = positiveMonths.reduce<BillingHistoryMonth | null>((current, month) => (
     !current || month.summary.totalGrossAmount < current.summary.totalGrossAmount ? month : current
   ), null);
-  let accumulatedPercentage = 0;
-  const quarterMetrics = quarters.map((quarter, index) => {
-    const start = accumulatedPercentage;
-    const percentage = annualAmount > 0 ? (quarter.totalGrossAmount / annualAmount) * 100 : 0;
-    accumulatedPercentage += percentage;
-    return {
-      quarter,
-      color: QUARTER_COLORS[index],
-      percentage,
-      start,
-    };
-  });
+  const quarterPercentages = quarters.map((quarter) => (annualAmount > 0 ? (quarter.totalGrossAmount / annualAmount) * 100 : 0));
+  const quarterMetrics = quarters.map((quarter, index) => ({
+    quarter,
+    color: QUARTER_COLORS[index],
+    percentage: quarterPercentages[index],
+    // Início da fatia = soma dos trimestres anteriores (sem variável reatribuída durante a renderização).
+    start: quarterPercentages.slice(0, index).reduce((total, value) => total + value, 0),
+  }));
   const largestQuarterAmount = Math.max(...quarters.map((quarter) => quarter.totalGrossAmount), 0);
   const activeQuarter = hoveredQuarter ?? selectedQuarter;
   const activeQuarterMetric = quarterMetrics.find(({ quarter }) => quarter.quarter === activeQuarter) ?? null;
@@ -205,6 +201,8 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
               return (
                 <div
                   className={`billing-history-bar-column${activeQuarter === quarter ? ' is-active' : ''}${activeQuarter !== null && activeQuarter !== quarter ? ' is-muted' : ''}`}
+                  // Ponto do gráfico focável para expor o tooltip pelo teclado (WCAG 2.1.1 e 1.4.13).
+                  // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                   tabIndex={0}
                   aria-describedby={tooltipId}
                   aria-label={`${month.name} de ${year.year}, ${quarter}º trimestre, ${formatCurrency(month.summary.totalGrossAmount)}`}

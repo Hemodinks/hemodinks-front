@@ -91,14 +91,14 @@ function AppSessionContent({ auth, loginFlow }: {
       setOpenDashboardAfterLogin(false);
       navigateToView(view, replace);
     },
-    [navigateToView],
+    [navigateToView, setOpenDashboardAfterLogin],
   );
   const navigateToFormFromInteraction = useCallback(
     (view: FormView, recordId: number | null = null, replace = false) => {
       setOpenDashboardAfterLogin(false);
       navigateToForm(view, recordId, replace);
     },
-    [navigateToForm],
+    [navigateToForm, setOpenDashboardAfterLogin],
   );
   const returnToLogin = (infoMessage = "") => {
     resetLoginState(infoMessage);
@@ -209,7 +209,7 @@ function AppSessionContent({ auth, loginFlow }: {
       return;
     }
     setOpenDashboardAfterLogin(false);
-  }, [normalizedPath, openDashboardAfterLogin]);
+  }, [normalizedPath, openDashboardAfterLogin, setOpenDashboardAfterLogin]);
   const resetProfileRouteState = () => {
     if (activeView === "profile") {
       usersDomain.resetUserFormState({ suppressProfileAutoOpen: true });

@@ -1,5 +1,5 @@
 import { SESSION_ABSOLUTE_EXPIRED_CODE, SESSION_ABSOLUTE_EXPIRED_MESSAGE } from '../../services/sessionExpiration';
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { AUTH_EXPIRED_EVENT, getCurrentLicenca } from '../../services';
 import { MEDICAL_PROFILE_ID } from '../../shared/utils/formatters';
 import { getJwtExpirationMs, isJwtExpired, decodeJwtPayload } from '../../shared/utils/jwt';
@@ -11,15 +11,20 @@ import type { AuthSession } from '../../types';
 export function useSessionExpiration(session: AuthSession | null, onExpired: (message?: string) => void,
   persistSession: (session: AuthSession) => void) {
   const onExpiredRef = useRef(onExpired);
-  onExpiredRef.current = onExpired;
   const current = useRef(session);
-  current.current = session;
   const persist = useRef(persistSession);
-  persist.current = persistSession;
+  // #292: as refs recebem os valores mais recentes no commit (antes de qualquer efeito), não durante a renderização.
+  useLayoutEffect(() => {
+    onExpiredRef.current = onExpired;
+    current.current = session;
+    persist.current = persistSession;
+  });
   const identity = session ? sessionIdentity(session.token) : null;
 
   useEffect(() => {
-    if (!session) return;
+    // Chaveado pela identidade: renovar o token não reinicia o ciclo; a sessão inicial vem da ref já atualizada.
+    const initial = current.current;
+    if (!initial) return;
 
     let disposed = false;
     let expired = false;
@@ -28,7 +33,7 @@ export function useSessionExpiration(session: AuthSession | null, onExpired: (me
     let lastAttempt = 0;
     let idleMs = 30 * 60_000;
     let lastBroadcast = 0;
-    const originalClaims = decodeJwtPayload(session.token);
+    const originalClaims = decodeJwtPayload(initial.token);
     const windowIdentity = JSON.stringify([originalClaims?.sid ?? originalClaims?.auth_time, originalClaims?.usuarioGlobalId]);
     const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('hemodinks-session-activity');
     if (channel) channel.onmessage = event => {
@@ -58,9 +63,9 @@ export function useSessionExpiration(session: AuthSession | null, onExpired: (me
       expireSession(detail?.code);
     };
     window.addEventListener(AUTH_EXPIRED_EVENT, handleExpired);
-    const claims = decodeJwtPayload(session.token);
+    const claims = decodeJwtPayload(initial.token);
     const renewable = Boolean(claims?.sid || claims?.equipeId);
-    if (!renewable && isJwtExpired(session.token)) {
+    if (!renewable && isJwtExpired(initial.token)) {
       expireSession();
       channel?.close();
       return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpired);

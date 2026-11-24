@@ -7,7 +7,8 @@ export function useSecurityObservations(session: AuthSession) {
   const { token, user: { clinicaId, perfilId } } = session;
   const allowed = perfilId === ADMIN_PROFILE_ID || perfilId === SUPER_ADMIN_PROFILE_ID;
   const global = perfilId === SUPER_ADMIN_PROFILE_ID;
-  const context = useMemo(() => ({}), [token, clinicaId, perfilId]);
+  // Identidade nova a cada troca de token, clínica ou perfil (descarta resultados do contexto anterior).
+  const context = useMemo(() => ({ scope: `${token}:${clinicaId}:${perfilId}` }), [token, clinicaId, perfilId]);
   const [page, setPage] = useState(1);
   const [refresh, setRefresh] = useState(0);
   const [state, setState] = useState<{
