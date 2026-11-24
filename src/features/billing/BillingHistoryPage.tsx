@@ -17,6 +17,7 @@ import { loadBillingPatients, sortBillingRecords, type BillingDateSortField } fr
 import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import type { BillingPageProps } from './billingPageTypes';
 import { buildBillingRecords, createEmptyBillingFilters, filterBillingRecords, type BillingRecord } from './billingUtils';
+import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
 import './billing.css';
 
 type BillingHistoryPageProps = BillingPageProps & { canManageFiles: boolean };
@@ -147,8 +148,18 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
     }
   };
 
-  const handleDeleteFile = async (fileId: number) => {
-    if (!window.confirm('Deseja excluir este arquivo do histórico?')) return;
+  // #311: confirmação no Modal do sistema (tema, foco e teclado), não no window.confirm nativo.
+  const { confirmAction, confirmationDialog } = useConfirmationDialog();
+  const handleDeleteFile = (fileId: number, fileName: string) => confirmAction({
+    tone: 'delete',
+    title: 'Excluir arquivo?',
+    message: `Deseja excluir "${fileName}" do histórico? Esta ação não poderá ser desfeita.`,
+    confirmLabel: 'Excluir',
+    cancelLabel: 'Cancelar',
+    onConfirm: () => deleteFile(fileId),
+  });
+
+  const deleteFile = async (fileId: number) => {
     const key = `delete-${fileId}`;
     setBusyFileKey(key);
     setFileMessage(null);
@@ -341,7 +352,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
                                         <span><FileText size={17} /><span><strong>{file.nomeOriginal}</strong><small>{formatFileSize(file.tamanhoBytes)} · {new Date(file.dataUpload).toLocaleString('pt-BR')}</small></span></span>
                                         <span className="billing-history-file-actions">
                                           <IconButton label={`Baixar ${file.nomeOriginal}`} disabled={busyFileKey !== null} onClick={() => void handleDownloadFile(file.id, file.nomeOriginal)}><Download size={17} /></IconButton>
-                                          {canManageFiles && <IconButton label={`Excluir ${file.nomeOriginal}`} disabled={busyFileKey !== null} onClick={() => void handleDeleteFile(file.id)}><Trash2 size={17} /></IconButton>}
+                                          {canManageFiles && <IconButton label={`Excluir ${file.nomeOriginal}`} disabled={busyFileKey !== null} onClick={() => handleDeleteFile(file.id, file.nomeOriginal)}><Trash2 size={17} /></IconButton>}
                                         </span>
                                       </li>
                                     ))}
@@ -388,6 +399,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
       )}
 
       {summaryRecord && <BillingSummaryModal record={summaryRecord} authToken={session.token} onClose={() => setSummaryRecordId(null)} />}
+      {confirmationDialog}
     </section>
   );
 }
