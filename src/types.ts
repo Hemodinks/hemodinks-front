@@ -1,3 +1,5 @@
+import type { MfaLoginChallenge } from './types/mfa';
+export type { MfaLoginChallenge } from './types/mfa';
 import type { TipoCirurgia } from './shared/surgeryType';
 import type { StatusCirurgia } from './shared/surgeryStatus';
 
@@ -318,6 +320,7 @@ export type LoginResponse = {
   modulosLiberados?: string[];
   licenca?: Licenca | null;
   equipeDesafio?: TeamLoginChallenge | null;
+  mfaDesafio?: MfaLoginChallenge | null;
 };
 
 export type TeamLoginOperator = {

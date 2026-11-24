@@ -70,6 +70,26 @@ export function identifyTeamOperator(
   ));
 }
 
+// #150: segundo passo do login com MFA (codigo do aplicativo ou codigo de recuperacao).
+export function completeMfaLogin(
+  desafio: string,
+  codigo: string,
+  clinicaSlug?: string,
+  signal?: AbortSignal,
+) {
+  return withSessionLock(() => post<LoginResponse>(
+    "/api/users/authenticate/mfa",
+    { desafio, codigo },
+    undefined,
+    {
+      timeout: 60_000,
+      withCredentials: true,
+      ...(signal ? { signal } : {}),
+      headers: { "X-Session-Refresh": "1", ...(clinicaSlug ? { "X-Clinica-Slug": clinicaSlug } : {}) },
+    },
+  ));
+}
+
 export function resetPassword(email: string, clinicaSlug?: string) {
   return post<ResetPasswordResponse>(
     "/api/users/password/reset",

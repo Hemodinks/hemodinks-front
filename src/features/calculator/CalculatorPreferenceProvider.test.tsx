@@ -3,6 +3,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { mockSession } from '../../test/appTestData';
 import { SystemSettingsPage } from '../settings/SystemSettingsPage';
 import { CalculatorPreferenceProvider, useCalculatorPreference } from './CalculatorPreferenceProvider';
+// O painel de MFA (#150) busca a API com react-query; aqui so importa a preferencia da calculadora.
+vi.mock('../settings/MfaSettingsPanel', () => ({ MfaSettingsPanel: () => null }));
 
 const privacy = vi.hoisted(() => ({ preferences: true }));
 vi.mock('../privacy/ConsentProvider', () => ({
