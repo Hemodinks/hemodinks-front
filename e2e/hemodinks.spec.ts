@@ -880,7 +880,7 @@ test('abre o módulo de tutoriais interativos e carrega o vídeo de Relatórios'
 
   const video = page.getByLabel('Tutorial: Relatórios — consulta analítica');
   await expect(video).toBeVisible();
-  await expect(video.locator('source[type="video/webm"]')).toHaveAttribute('src', '/tutorials/reports/tutorial-relatorios-narrado.webm');
+  await expect(video.locator('source[type="video/webm"]')).toHaveCount(0);
   await expect(video.locator('source[type="video/mp4"]')).toHaveAttribute('src', '/tutorials/reports/tutorial-relatorios-narrado.mp4');
   await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.duration)).toBeGreaterThan(80);
   await page.getByLabel('Velocidade: Relatórios — consulta analítica').selectOption('1.5');
