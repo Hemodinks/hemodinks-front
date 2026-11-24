@@ -30,6 +30,7 @@
     "test:release-gate": "node --test scripts/release-gate.test.mjs scripts/coverage-summary.test.mjs",
     "test:security-headers": "node --test scripts/security-headers.test.mjs",
     "test:e2e": "playwright test",
+    "test:e2e:csp": "playwright test -c playwright.csp.config.ts",
     "test:e2e:responsive": "playwright test --config=playwright.responsive.config.ts",
     "test:e2e:homologation": "playwright test --config=playwright.homologation.config.ts",
     "test:e2e:real": "node scripts/run-real-api.mjs",

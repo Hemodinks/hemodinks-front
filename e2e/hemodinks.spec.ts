@@ -9,6 +9,7 @@ import { registerResponsiveA11yRefinementCases } from './responsive-a11y-refinem
 import { registerReportChecklistCases } from './report-checklist-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
 import { registerMfaLoginCases } from './mfa-login-cases';
+import { enforceProductionCsp, expectNoCspViolations } from './csp-guard';
 import { registerPasswordPolicyCases } from './password-policy-cases';
 import { registerSecurityObservationCases } from './security-observation-cases';
 import { registerActiveSessionsCases } from './active-sessions-cases';
@@ -34,7 +35,8 @@ const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
 registerPerformanceRefetchCases({ setup: mockApi, login: loginViaUi });
 
-test.beforeEach(async ({ page }, testInfo) => {
+test.beforeEach(async ({ page, baseURL }, testInfo) => {
+  await enforceProductionCsp(page, baseURL);
   page.on('pageerror', (error) => {
     console.error(`[browser pageerror] ${error.stack ?? error.message}`);
   });
@@ -53,6 +55,9 @@ test.beforeEach(async ({ page }, testInfo) => {
     });
   }
 });
+
+// #310: build de produção com a CSP real (playwright.csp.config.ts) não pode ter violação.
+test.afterEach(async ({ page }, testInfo) => expectNoCspViolations(page, testInfo));
 
 function mockSessionToken(id: number) {
   const payload = { sid: `mock-session-${id}`, usuarioGlobalId: id, usuarioClinicaId: id,
@@ -1347,7 +1352,7 @@ async function openReportsTutorial(page: Page) {
 test('privacidade: oferece escolha real, persiste categorias e controla análise opcional', async ({ page }) => {
   await mockApi(page);
   let analyticsModuleRequests = 0;
-  await page.route('**/src/newRelic.ts*', async (route) => {
+  await page.route('**/newRelic*', async (route) => {
     analyticsModuleRequests += 1;
     await route.continue();
   });
@@ -1399,7 +1404,7 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
     privacyPreference: { preferences: true, analytics: true },
   });
   let analyticsModuleRequests = 0;
-  await page.route('**/src/newRelic.ts*', async (route) => {
+  await page.route('**/newRelic*', async (route) => {
     analyticsModuleRequests += 1;
     await route.continue();
   });
@@ -1430,7 +1435,7 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
 test('privacidade: mantém escolha personalizada no reload e pede nova decisão após mudança de versão', async ({ page }) => {
   await mockApi(page);
   let analyticsModuleRequests = 0;
-  await page.route('**/src/newRelic.ts*', async (route) => {
+  await page.route('**/newRelic*', async (route) => {
     analyticsModuleRequests += 1;
     await route.continue();
   });
