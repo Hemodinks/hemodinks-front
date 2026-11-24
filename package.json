@@ -27,7 +27,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "coverage:summary": "node scripts/coverage-summary.mjs",
-    "test:release-gate": "node --test scripts/release-gate.test.mjs scripts/coverage-summary.test.mjs",
+    "test:release-gate": "node --test scripts/release-gate.test.mjs scripts/coverage-summary.test.mjs scripts/newrelic-change-tracking.test.mjs",
     "test:security-headers": "node --test scripts/security-headers.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:csp": "playwright test -c playwright.csp.config.ts",

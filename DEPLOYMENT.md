@@ -163,6 +163,11 @@ do escopo bloqueiam a publicacao.
 - Rerun do job de deploy pode repetir a mesma revisao se ela ainda for a main;
   reutiliza o sucesso do CI daquele run/SHA. Nao ha promessa de upload exactly-once.
 - Previews e homologacao Vercel continuam separados, sem novo trigger de producao.
+- Depois do upload, `scripts/newrelic-change-tracking.mjs` registra o deploy no card
+  **Deployments** do app Browser do New Relic (versao = SHA curto, commit e link do run).
+  Precisa do secret `NEW_RELIC_API_KEY` (User key `NRAK-...`, a mesma da API) no environment
+  `azure-production`, alem de `VITE_NEW_RELIC_ACCOUNT_ID`/`VITE_NEW_RELIC_APPLICATION_ID`.
+  Sem ele, ou se a NerdGraph falhar, o passo so avisa: nunca bloqueia nem desfaz o deploy.
 
 ### Protecao e transicao (#181)
 
