@@ -1,3 +1,5 @@
+import type { MfaLoginChallenge } from './types/mfa';
+export type { MfaLoginChallenge } from './types/mfa';
 import type { TipoCirurgia } from './shared/surgeryType';
 import type { StatusCirurgia } from './shared/surgeryStatus';
 
@@ -318,13 +320,7 @@ export type LoginResponse = {
   modulosLiberados?: string[];
   licenca?: Licenca | null;
   equipeDesafio?: TeamLoginChallenge | null;
-  // #150: com MFA ativo o login devolve so o desafio; a sessao abre em /api/users/authenticate/mfa.
   mfaDesafio?: MfaLoginChallenge | null;
-};
-
-export type MfaLoginChallenge = {
-  token: string;
-  expiraEm: string;
 };
 
 export type TeamLoginOperator = {
