@@ -16,6 +16,7 @@ import type { AuthSession, MfaLoginChallenge, PublicClinic, TeamLoginChallenge }
 import { buildSessionFromLogin, shouldOpenDashboardAfterLogin } from '../../app/appSession';
 import { getLoginErrorMessage } from './loginFeedback';
 import { useAuthWait } from './useAuthWait';
+import { formatMfaCode, isCompleteMfaCode } from '../../shared/utils/mfaCode';
 
 type UseLoginFlowOptions = {
   session: AuthSession | null;
@@ -62,7 +63,7 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
 
   const setMfaCode = (value: string) => {
     if (pending.current) return;
-    updateMfaCode(value.replace(/[^0-9A-Za-z-]/g, '').slice(0, 11));
+    updateMfaCode(formatMfaCode(value));
     setLoginError('');
   };
 
@@ -331,7 +332,7 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
     event.preventDefault();
     if (sessionRestoring || session || pending.current || mfaWait.isWaiting() || !mfaChallenge || !challengeClinic.current) return;
     const code = mfaCode.trim();
-    if (!/^[0-9]{6}$/.test(code) && code.replace(/-/g, '').length !== 10) {
+    if (!isCompleteMfaCode(code)) {
       setLoginError('Informe o código de 6 dígitos do aplicativo ou um código de recuperação.');
       return;
     }

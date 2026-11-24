@@ -8,6 +8,7 @@ import { registerAccessibilityAuditCases } from './accessibility-audit-cases';
 import { registerResponsiveA11yRefinementCases } from './responsive-a11y-refinement-cases';
 import { registerReportChecklistCases } from './report-checklist-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
+import { registerMfaLoginCases } from './mfa-login-cases';
 import { registerPasswordPolicyCases } from './password-policy-cases';
 import { registerSecurityObservationCases } from './security-observation-cases';
 import { registerActiveSessionsCases } from './active-sessions-cases';
@@ -707,6 +708,7 @@ test.beforeEach(async ({ context }, testInfo) => {
 });
 
 registerAuthRateLimitCases({ setup: mockApi, login: loginViaUi, session });
+registerMfaLoginCases({ setup: mockApi, login: loginViaUi });
 registerTenantIsolationCases({ mockApi: page => mockApi(page, superAdminSession),
   login: (page, path) => loginViaUi(page, path, superAdminSession), user: superAdminSession.user, patient: paciente });
 registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });

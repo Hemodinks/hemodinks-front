@@ -47,7 +47,13 @@ describe('login with two-step verification (#150)', () => {
     expect(persistSession).not.toHaveBeenCalled();
 
     act(() => result.current.setMfaCode('12 34-56'));
-    expect(result.current.mfaCode).toBe('1234-56');
+    expect(result.current.mfaCode).toBe('123456');
+    // So digitos: nunca passa de 6, nem colando mais.
+    act(() => result.current.setMfaCode('33333333333'));
+    expect(result.current.mfaCode).toBe('333333');
+    // Com letras: codigo de recuperacao, 10 caracteres com hifen automatico.
+    act(() => result.current.setMfaCode('abcde fghij klm'));
+    expect(result.current.mfaCode).toBe('ABCDE-FGHIJ');
     act(() => result.current.setMfaCode('123456'));
     await act(() => result.current.handleMfaVerification(event));
 
