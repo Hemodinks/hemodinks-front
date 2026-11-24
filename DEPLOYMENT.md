@@ -114,7 +114,13 @@ A CSP e os headers de seguranca globais desses quatro arquivos vem de `security-
 - Para liberar um dominio novo (API, New Relic etc.), edite `contentSecurityPolicy` em `security-headers.json`,
   rode `npm run security-headers:write` e revise o diff dos quatro destinos.
 - Diferencas por ambiente ficam declaradas em `targets`: so a homologacao acrescenta a API do Render ao `connect-src`
-  (`cspAppend`) e o `X-Robots-Tag`; o HSTS vai para Azure e Vercel; o nginx nao envia HSTS (TLS fica fora dele).
+  e ao `img-src` (`cspAppend`) e o `X-Robots-Tag`; o HSTS vai para Azure e Vercel; o nginx nao envia HSTS (TLS fica fora dele).
+- #310: `style-src 'self'` (sem `'unsafe-inline'`: nenhum `<style>` e injetado em tempo de execucao; estilos via
+  props do React usam CSSOM e nao sao afetados) e `img-src 'self' data: blob:` + host da API (fotos sao servidas
+  pela API; sem curinga `https:`). Imagem de outro dominio exige liberar o host aqui.
+- Os 3 shards de E2E do CI rodam contra o build de producao (`vite preview`) com essa CSP
+  (`npm run test:e2e:csp`, `playwright.csp.config.ts`, `e2e/csp-guard.ts`): qualquer `securitypolicyviolation`
+  reprova o teste. O dev server do Vite injeta `<style>` e nao serve para validar CSP.
 - `npm run test:security-headers` (`node --test`, passo "Check security headers drift" do CI) falha se algum destino
   divergir do canonico; `npm run verify` roda a mesma conferencia (`npm run security-headers`).
 - Headers de cache, `X-Robots-Tag` por rota e demais regras continuam editados direto em cada arquivo.
@@ -167,6 +173,13 @@ demais protecoes. Esse check agrega E2E e matriz responsiva. Conferir em
 Settings > Branches > main > Require status checks > Test and build, com branch
 atualizada obrigatoria. Nao exigir o check de deploy em PR: ele e intencionalmente
 ignorado fora da main.
+
+#309 (24/11/2026): `main` exige `Test and build`, `CodeQL`, `Analyze (javascript-typescript)` e
+`Analyze (actions)` (strict); `developer` exige `Test and build`, com `enforce_admins`, sem force push nem
+exclusao. Os jobs de E2E nao sao exigidos um a um: `Test and build` ja falha se E2E desktop ou responsivo
+falharem, e quando a reutilizacao comprovada pula a matriz o check aparece como `E2E (${{ matrix.shard }}/3)`,
+o que travaria o PR. O `sync-developer` passou a rodar ao fim do CI da `main` (`workflow_run`), porque o push
+na `developer` so e aceito com `Test and build` aprovado no commit (vale apos a proxima promocao para a `main`).
 
 O workflow legado `azure-static-web-apps-white-grass-0d59a4410.yml` (ID `310093793`)
 foi desativado via API e relido como `disabled_manually`: reruns historicos usam
