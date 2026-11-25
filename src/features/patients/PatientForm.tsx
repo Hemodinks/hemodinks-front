@@ -1,4 +1,4 @@
-import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useState } from 'react';
+import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useState, type CSSProperties } from 'react';
 import { CalendarX2, ClipboardList, FileDown, History, Plus, Save, X } from 'lucide-react';
 import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
 import { AlertMessage, Button, FormPanel, IconButton, ToastMessage } from '../../shared/components/ui';
@@ -136,11 +136,11 @@ export function PatientForm({
       {showAuditTab && (
         <div className="patient-form-tabs" role="tablist" aria-label="Seções da ficha do paciente">
           <button type="button" role="tab" id="patient-tab-dados" aria-controls="patient-tabpanel-dados"
-            aria-selected={!auditTabActive} className={!auditTabActive ? 'is-active' : ''} onClick={() => setActiveTab('dados')}>
+            aria-selected={!auditTabActive} className={!auditTabActive ? 'is-active' : ''} style={{ '--tab-tint': '#2563eb' } as CSSProperties} onClick={() => setActiveTab('dados')}>
             <ClipboardList size={18} aria-hidden="true" />Dados do paciente
           </button>
           <button type="button" role="tab" id="patient-tab-auditoria" aria-controls="patient-tabpanel-auditoria"
-            aria-selected={auditTabActive} className={auditTabActive ? 'is-active' : ''} onClick={() => setActiveTab('auditoria')}>
+            aria-selected={auditTabActive} className={auditTabActive ? 'is-active' : ''} style={{ '--tab-tint': '#7c3aed' } as CSSProperties} onClick={() => setActiveTab('auditoria')}>
             <History size={18} aria-hidden="true" />Trilha de auditoria
           </button>
         </div>

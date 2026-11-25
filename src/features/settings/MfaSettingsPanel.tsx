@@ -13,6 +13,7 @@ import { MfaQrCode } from './MfaQrCode';
 import {
   clearPendingMfaRecoveryCodes, peekPendingMfaRecoveryCodes, setPendingMfaRecoveryCodes, type IdentityChangedHandler,
 } from '../../shared/identityChange';
+import { SettingsCardHeading } from './SettingsCardHeading';
 
 type Stage = 'idle' | 'setup' | 'disable';
 
@@ -166,13 +167,6 @@ export function MfaSettingsPanel({ session, onIdentityChanged }: Props) {
 }
 
 function MfaHeading() {
-  return (
-    <div className="settings-section-heading">
-      <span className="settings-section-icon" aria-hidden="true"><ShieldCheck size={19} /></span>
-      <div>
-        <span className="eyebrow">Seguranca</span>
-        <h3>Verificação em duas etapas</h3>
-      </div>
-    </div>
-  );
+  return <SettingsCardHeading icon={<ShieldCheck size={19} />} eyebrow="Segurança" title="Verificação em duas etapas"
+    description="Pede um código do aplicativo autenticador depois da senha." />;
 }

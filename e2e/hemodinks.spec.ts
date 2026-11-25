@@ -20,6 +20,7 @@ import { registerAgendaViewCases } from './agenda-view-cases';
 import { registerAgendaRecipientCases } from './agenda-recipient-cases';
 import { registerAgendaMonthCases } from './agenda-month-cases';
 import { registerAgendaResponsiveCases } from './agenda-responsive-cases';
+import { registerSettingsLayoutCases } from './settings-layout-cases';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -721,6 +722,7 @@ registerTenantIsolationCases({ mockApi: page => mockApi(page, superAdminSession)
   login: (page, path) => loginViaUi(page, path, superAdminSession), user: superAdminSession.user, patient: paciente });
 registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });
 registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session });
+registerSettingsLayoutCases({ setup: mockApi, login: loginViaUi });
 registerActiveSessionsCases({ setup: mockApi, login: loginViaUi, session });
 registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });

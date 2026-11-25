@@ -78,11 +78,29 @@ describe('trilha de auditoria do paciente', () => {
       .mockResolvedValueOnce(page([item({ id: 21, acao: 'arquivo.excluir' })], 2, 25));
     renderSection();
     expect(await screen.findByText('Página 1 de 2')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
-    await userEvent.click(screen.getByRole('button', { name: 'Próxima' }));
+    expect(screen.getByText('1-20 de 25')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Página anterior' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Primeira página' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Próxima página' }));
     expect(await screen.findByText('Excluiu arquivo')).toBeInTheDocument();
     expect(getPacienteAuditoria).toHaveBeenLastCalledWith(10, 'admin-token', 2, 20);
-    expect(screen.getByRole('button', { name: 'Próxima' })).toBeDisabled();
+    expect(screen.getByText('21-25 de 25')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Próxima página' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Última página' })).toBeDisabled();
+  });
+
+  it('troca o tamanho da página e volta para a primeira', async () => {
+    vi.mocked(getPacienteAuditoria)
+      .mockResolvedValueOnce(page([item()], 1, 60))
+      .mockResolvedValueOnce(page([item({ id: 2 })], 3, 60))
+      .mockResolvedValue({ ...page([item({ id: 3 })], 1, 60), pageSize: 50, totalPages: 2 });
+    renderSection();
+    expect(await screen.findByText('Página 1 de 3')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Última página' }));
+    expect(getPacienteAuditoria).toHaveBeenLastCalledWith(10, 'admin-token', 3, 20);
+    await userEvent.selectOptions(await screen.findByLabelText('Por página'), '50');
+    expect(getPacienteAuditoria).toHaveBeenLastCalledWith(10, 'admin-token', 1, 50);
+    expect(await screen.findByText('Página 1 de 2')).toBeInTheDocument();
   });
 
   it('informa quando não há registros e quando a consulta falha', async () => {

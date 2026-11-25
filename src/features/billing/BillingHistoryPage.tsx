@@ -2,7 +2,7 @@ import { SurgeryStatusFilter } from '../../shared/components/SurgeryStatusFilter
 import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
 import type { StatusCirurgia } from '../../shared/surgeryStatus';
 import { getSurgeryTypeLabel, type TipoCirurgia } from '../../shared/surgeryType';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { sessionEpoch } from '../../services/sessionEpoch';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, CalendarClock, ChevronDown, Download, FileText, History, ReceiptText, Trash2, TriangleAlert, Upload, Wallet } from 'lucide-react';
@@ -190,10 +190,10 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
           </div>
         </div>
         <div className="billing-history-tabs" role="tablist" aria-label="Visualização do histórico">
-          <button type="button" role="tab" aria-selected={activeTab === 'history'} className={activeTab === 'history' ? 'is-active' : ''} onClick={() => setActiveTab('history')}>
+          <button type="button" role="tab" aria-selected={activeTab === 'history'} className={activeTab === 'history' ? 'is-active' : ''} style={{ '--tab-tint': '#0f766e' } as CSSProperties} onClick={() => setActiveTab('history')}>
             <History size={18} />Histórico
           </button>
-          <button type="button" role="tab" aria-selected={activeTab === 'charts'} className={activeTab === 'charts' ? 'is-active' : ''} onClick={() => setActiveTab('charts')}>
+          <button type="button" role="tab" aria-selected={activeTab === 'charts'} className={activeTab === 'charts' ? 'is-active' : ''} style={{ '--tab-tint': '#1d4ed8' } as CSSProperties} onClick={() => setActiveTab('charts')}>
             <BarChart3 size={18} />Gráficos
           </button>
         </div>
