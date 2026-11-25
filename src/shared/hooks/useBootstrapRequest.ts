@@ -65,9 +65,13 @@ export function useBootstrapRequest<T>(
     }
   }, [enabled, request]);
 
+  // #292: desligado volta ao estado vazio na própria renderização (antes: no efeito).
+  if (!enabled && (state.data !== null || state.loading || state.slow || state.canRetry || state.error)) {
+    setState({ data: null, loading: false, slow: false, canRetry: false, error: '' });
+  }
+
   useEffect(() => {
     if (enabled) void retry();
-    else setState({ data: null, loading: false, slow: false, canRetry: false, error: '' });
     return () => { active.current?.cancel(); active.current = null; };
   }, [enabled, retry]);
 

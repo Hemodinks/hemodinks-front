@@ -46,8 +46,7 @@ export function useFormRouteSync({ active, recordId, openNew, openRecord, onLeav
 // redirect and kept apart from the list error, which the list clears whenever its data arrives.
 export function useRecordLoadError(moduleActive: boolean) {
   const [recordLoadError, setRecordLoadError] = useState('');
-  useEffect(() => {
-    if (!moduleActive) setRecordLoadError('');
-  }, [moduleActive]);
+  // #292: sair do módulo descarta o erro na própria renderização.
+  if (!moduleActive && recordLoadError) setRecordLoadError('');
   return [recordLoadError, setRecordLoadError] as const;
 }

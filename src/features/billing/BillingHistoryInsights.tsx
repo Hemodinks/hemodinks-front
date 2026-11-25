@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { BarChart3, CircleDollarSign, PieChart, ReceiptText, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { DataPanel } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
@@ -130,10 +130,13 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
   const [hoveredQuarter, setHoveredQuarter] = useState<number | null>(null);
   const [selectedQuarter, setSelectedQuarter] = useState<number | null>(null);
 
-  useEffect(() => {
+  // #292: trocar de ano limpa o trimestre destacado na própria renderização.
+  const [quartersYear, setQuartersYear] = useState(year.year);
+  if (quartersYear !== year.year) {
+    setQuartersYear(year.year);
     setHoveredQuarter(null);
     setSelectedQuarter(null);
-  }, [year.year]);
+  }
 
   const quarters = getBillingQuarterHighlights(year);
   const positiveMonths = year.months.filter((month) => month.summary.totalGrossAmount > 0);

@@ -57,14 +57,12 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
     setSortDirection('asc');
   };
 
-  const loadClinics = useCallback(async () => {
-    const requestId = ++loadRequestId.current;
-    setLoading(true);
-    setPasswordError(false);
-    setError('');
+  // #292: a busca só grava estado depois da resposta (o efeito chama esta); recarregar pelo botão ou após
+  // salvar marca "carregando" e limpa erros antes, no próprio clique.
+  const fetchClinics = useCallback(async (requestId: number) => {
     try {
       const result = await listPlatformClinics(session.token);
-      if (requestId === loadRequestId.current) setClinics(result);
+      if (requestId === loadRequestId.current) { setClinics(result); setError(''); }
     } catch (requestError) {
       if (requestId === loadRequestId.current) setError(getErrorMessage(requestError));
     } finally {
@@ -72,10 +70,18 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
     }
   }, [session.token]);
 
+  const loadClinics = useCallback(async () => {
+    const requestId = ++loadRequestId.current;
+    setLoading(true);
+    setPasswordError(false);
+    setError('');
+    await fetchClinics(requestId);
+  }, [fetchClinics]);
+
   useEffect(() => {
-    void loadClinics();
+    void fetchClinics(++loadRequestId.current);
     return () => { loadRequestId.current += 1; photoRequestId.current += 1; };
-  }, [loadClinics]);
+  }, [fetchClinics]);
 
   const clearSensitiveFormState = () => {
     setPasswordError(false);

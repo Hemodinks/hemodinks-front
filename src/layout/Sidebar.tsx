@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { ChevronDown, Mail } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { APP_MODULES } from '../shared/navigation/appModules';
@@ -75,11 +75,12 @@ export function Sidebar({
   const canAccessBillingModule = canAccessBilling;
   const [isBillingMenuOpen, setIsBillingMenuOpen] = useState(isBillingModuleActive);
 
-  useEffect(() => {
-    if (isBillingModuleActive) {
-      setIsBillingMenuOpen(true);
-    }
-  }, [activeView, isBillingModuleActive]);
+  // #292: entrar numa tela do faturamento abre o submenu na própria renderização.
+  const [menuView, setMenuView] = useState(activeView);
+  if (menuView !== activeView) {
+    setMenuView(activeView);
+    if (isBillingModuleActive) setIsBillingMenuOpen(true);
+  }
 
   return (
     <aside className="sidebar-panel" aria-label="Menu da clínica">
