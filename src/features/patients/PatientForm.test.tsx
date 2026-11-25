@@ -8,6 +8,8 @@ import { PatientForm } from './PatientForm';
 import { getPacienteFormData } from './patientUtils';
 import type { PacienteFormData } from '../../types';
 
+// A aba da trilha tem testes próprios; aqui só a troca de abas.
+vi.mock('./form/PatientAuditSection', () => ({ PatientAuditSection: () => <p>Conteúdo da trilha</p> }));
 vi.mock('./usePatientFormExport', () => ({
   usePatientFormExport: () => ({ exportLoading: null, exportError: '', handleExport: vi.fn() }),
 }));
@@ -156,16 +158,29 @@ describe('issue174: opcoes da equipe', () => {
 describe('PatientForm: trilha de auditoria (#315)', () => {
   const withQuery = (ui: React.ReactElement) => render(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
 
-  it('mostra a seção só para quem pode ver a auditoria e só em paciente já cadastrado', () => {
+  it('mostra a aba só para quem pode ver a auditoria e só em paciente já cadastrado', () => {
     const view = withQuery(<PatientForm {...props({ canViewAudit: true })} />);
-    expect(screen.getByRole('heading', { name: 'Trilha de auditoria' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Trilha de auditoria' })).toBeInTheDocument();
     view.unmount();
 
     const notAdmin = withQuery(<PatientForm {...props({ canViewAudit: false })} />);
-    expect(screen.queryByRole('heading', { name: 'Trilha de auditoria' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Trilha de auditoria' })).not.toBeInTheDocument();
     notAdmin.unmount();
 
     withQuery(<PatientForm {...props({ canViewAudit: true, editingPacienteId: null, editingPaciente: null })} />);
-    expect(screen.queryByRole('heading', { name: 'Trilha de auditoria' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Trilha de auditoria' })).not.toBeInTheDocument();
+  });
+
+  it('troca entre dados e trilha sem desmontar o formulário', async () => {
+    withQuery(<PatientForm {...props({ canViewAudit: true })} />);
+    const dataTab = screen.getByRole('tab', { name: 'Dados do paciente' });
+    expect(dataTab).toHaveAttribute('aria-selected', 'true');
+    await userEvent.click(screen.getByRole('tab', { name: 'Trilha de auditoria' }));
+    expect(screen.getByRole('tab', { name: 'Trilha de auditoria' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel', { name: 'Trilha de auditoria' })).toBeInTheDocument();
+    // O formulário continua montado (escondido) para não perder alterações.
+    expect(document.getElementById('patient-tabpanel-dados')).toHaveAttribute('hidden');
+    await userEvent.click(dataTab);
+    expect(document.getElementById('patient-tabpanel-dados')).not.toHaveAttribute('hidden');
   });
 });

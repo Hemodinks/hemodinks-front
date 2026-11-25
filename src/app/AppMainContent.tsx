@@ -10,6 +10,7 @@ import {
   AgendaPage,
   BillingPage,
   BillingHistoryPage,
+  PatientAuditPage,
   ClinicsPage,
   MedicalGroupsPage,
   ModuleFallback,
@@ -285,6 +286,8 @@ export function AppMainContent({
           isAdmin={isAdmin}
           isMedical={isMedical}
         />
+      ) : activeView === 'patientAudit' && isAdmin ? (
+        <PatientAuditPage session={session} medicalUsers={patientsDomain.medicalUsers} convenios={patientsDomain.convenios} />
       ) : activeView === 'billingHistory' ? (
         <BillingHistoryPage
           session={session}

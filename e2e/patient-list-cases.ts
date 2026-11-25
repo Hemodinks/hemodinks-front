@@ -82,6 +82,7 @@ export function registerPatientListTests({ setup, login }: Dependencies) {
       await login(page, '/pacientes');
       await page.getByRole('button', { name: 'Inativar Paciente Hemodinks', exact: true }).click();
       const dialog = page.getByRole('dialog');
+      await dialog.getByLabel('Motivo (obrigatório)').fill('Paciente transferido');
       await dialog.getByRole('button', { name: 'Sim', exact: true }).click();
       await expect(dialog.getByRole('button', { name: 'Aguarde...' })).toBeDisabled();
       await expect(dialog.getByRole('button', { name: 'Não', exact: true })).toBeDisabled();

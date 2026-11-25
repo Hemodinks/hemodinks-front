@@ -1,5 +1,5 @@
 import { type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction, useEffect, useState } from 'react';
-import { CalendarX2, FileDown, Plus, Save, X } from 'lucide-react';
+import { CalendarX2, ClipboardList, FileDown, History, Plus, Save, X } from 'lucide-react';
 import type { Convenio, Hospital, MedicalUserOption, OpmeFornecedor, Paciente, PacienteFormData } from '../../types';
 import { AlertMessage, Button, FormPanel, IconButton, ToastMessage } from '../../shared/components/ui';
 import { isConsolidationClearForbiddenMessage } from '../../shared/utils/consolidationDate';
@@ -86,6 +86,10 @@ export function PatientForm({
 }: PatientFormProps) {
   // Remonta o toast a cada tentativa de salvar, mesmo com a mesma mensagem.
   const [submitAttempt, setSubmitAttempt] = useState(0);
+  // Abas da ficha: a trilha de auditoria só existe para paciente salvo e para Administrador/SuperAdministrador.
+  const [activeTab, setActiveTab] = useState<'dados' | 'auditoria'>('dados');
+  const showAuditTab = canViewAudit && Boolean(editingPaciente);
+  const auditTabActive = showAuditTab && activeTab === 'auditoria';
   const formReadOnly = patientReadOnly || (editingPacienteId ? !canEditPatients : false);
   const canSubmitForm = !formReadOnly && (!editingPacienteId || canEditPatients);
   const { exportLoading, exportError, handleExport } = usePatientFormExport({ editingPacienteId, sessionToken, pacienteFormData, companyName });
@@ -129,6 +133,27 @@ export function PatientForm({
         </div>
       </div>
       {exportError && <AlertMessage type="error">{exportError}</AlertMessage>}
+      {showAuditTab && (
+        <div className="patient-form-tabs" role="tablist" aria-label="Seções da ficha do paciente">
+          <button type="button" role="tab" id="patient-tab-dados" aria-controls="patient-tabpanel-dados"
+            aria-selected={!auditTabActive} className={!auditTabActive ? 'is-active' : ''} onClick={() => setActiveTab('dados')}>
+            <ClipboardList size={18} aria-hidden="true" />Dados do paciente
+          </button>
+          <button type="button" role="tab" id="patient-tab-auditoria" aria-controls="patient-tabpanel-auditoria"
+            aria-selected={auditTabActive} className={auditTabActive ? 'is-active' : ''} onClick={() => setActiveTab('auditoria')}>
+            <History size={18} aria-hidden="true" />Trilha de auditoria
+          </button>
+        </div>
+      )}
+      {auditTabActive && editingPaciente && (
+        <div id="patient-tabpanel-auditoria" role="tabpanel" aria-labelledby="patient-tab-auditoria" className="patient-audit-tabpanel">
+          <p className="patient-form-guidance">Quem acessou ou alterou este paciente, inclusive inativações, reativações e atendimentos (somente administradores).</p>
+          <PatientAuditSection pacienteId={editingPaciente.id} sessionToken={sessionToken} />
+        </div>
+      )}
+      {/* A aba de dados fica montada (escondida) para não perder alterações ainda não salvas. */}
+      <div id="patient-tabpanel-dados" role={showAuditTab ? 'tabpanel' : undefined}
+        aria-labelledby={showAuditTab ? 'patient-tab-dados' : undefined} hidden={auditTabActive}>
       <p className="patient-form-guidance">{formReadOnly ? 'Ficha disponível somente para consulta.' : 'Preencha o paciente, o hospital, pelo menos um médico e um procedimento. Os demais campos são opcionais.'}</p>
       <form className="stack patient-form-layout" onSubmit={(event) => { setSubmitAttempt((value) => value + 1); onSubmit(event); }} onInvalid={focusFirstInvalidFormField} aria-busy={pacienteFormLoading}>
         <fieldset className="form-fieldset patient-form-fields" disabled={formReadOnly || pacienteFormLoading} data-tour="patients-identification">
@@ -181,11 +206,7 @@ export function PatientForm({
           {canSubmitForm && <Button variant="primary" type="submit" disabled={pacienteFormLoading} data-tour="patients-save">{editingPacienteId ? <Save size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}{pacienteFormLoading ? 'Salvando...' : editingPacienteId ? 'Salvar alterações' : 'Cadastrar paciente'}</Button>}
         </div>
       </form>
-      {canViewAudit && editingPaciente && (
-        <PatientFormSection title="Trilha de auditoria" description="Registro de quem acessou ou alterou este paciente (somente administradores).">
-          <PatientAuditSection pacienteId={editingPaciente.id} sessionToken={sessionToken} />
-        </PatientFormSection>
-      )}
+      </div>
     </FormPanel>
   );
 }

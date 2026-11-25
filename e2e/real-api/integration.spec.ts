@@ -68,7 +68,14 @@ async function navigate(page: Page, label: string) {
     const toggle = menu.getByRole('button', { name: /^Faturamento(?: \d+)?$/ });
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
   }
-  await menu.getByRole('button', { name: label === 'Pacientes' ? /^Pacientes - Cirurgias(?: \d+)?$/ : label, exact: true }).click();
+  if (label === 'Pacientes') {
+    // Administrador: accordion (Cadastro de Pacientes, Auditoria); demais perfis: botão direto.
+    const patients = menu.getByRole('button', { name: /^Pacientes - Cirurgias(?: \d+)?$/ });
+    if (await patients.getAttribute('aria-expanded') === null) return patients.click();
+    if (await patients.getAttribute('aria-expanded') !== 'true') await patients.click();
+    return menu.getByRole('button', { name: /^Cadastro de Pacientes(?: \d+)?$/ }).click();
+  }
+  await menu.getByRole('button', { name: label, exact: true }).click();
 }
 
 test('login: credencial inválida e acesso sem token são negados pela API real', async ({ page, request }) => {

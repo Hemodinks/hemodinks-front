@@ -33,6 +33,7 @@ type AppShellProps = {
   currentUserProfile: string;
   canAccessDashboard: boolean;
   canAccessPatients: boolean;
+  canAccessPatientAudit: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
@@ -55,6 +56,7 @@ type AppShellProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
+  onOpenPatientAudit: () => void;
   onOpenBilling: () => void;
   onOpenBillingHistory: () => void;
   onOpenReports: () => void;
@@ -82,6 +84,7 @@ export function AppShell({
   currentUserProfile,
   canAccessDashboard,
   canAccessPatients,
+  canAccessPatientAudit,
   canAccessUsers,
   canEditOwnUser,
   canAccessBilling,
@@ -104,6 +107,7 @@ export function AppShell({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
+  onOpenPatientAudit,
   onOpenBilling,
   onOpenBillingHistory,
   onOpenReports,
@@ -126,6 +130,7 @@ export function AppShell({
           clinicName={companyName}
           canAccessDashboard={canAccessDashboard}
           canAccessPatients={canAccessPatients}
+          canAccessPatientAudit={canAccessPatientAudit}
           canAccessUsers={canAccessUsers}
           canEditOwnUser={canEditOwnUser}
           canAccessBilling={canAccessBilling}
@@ -142,6 +147,7 @@ export function AppShell({
           onOpenUsersList={onOpenUsersList}
           onOpenMyProfile={onOpenMyProfile}
           onOpenPatientsList={onOpenPatientsList}
+          onOpenPatientAudit={onOpenPatientAudit}
           onOpenBilling={onOpenBilling}
           onOpenBillingHistory={onOpenBillingHistory}
           onOpenReports={onOpenReports}

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { DateInput } from '../../shared/components/DateInput';
 import { SurgeryStatusFilter } from '../../shared/components/SurgeryStatusFilter';
@@ -10,9 +11,11 @@ import { MAX_PROCEDURE_LENGTH } from '../../shared/utils/formatterConstants';
 
 type PatientFiltersProps = Pick<PatientListProps,
   'pacienteFilters' | 'medicalUsers' | 'convenios' | 'isAdmin' | 'isTeam' | 'onFiltersChange' | 'onClearFilters'
->;
+> & { showSituacao?: boolean; children?: ReactNode };
 
-export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdmin, isTeam, onFiltersChange, onClearFilters }: PatientFiltersProps) {
+// Também usado na tela de Auditoria (sem "Situação do cadastro" e com filtros extras em children).
+export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdmin, isTeam, onFiltersChange, onClearFilters,
+  showSituacao = true, children }: PatientFiltersProps) {
   const canUseExtendedFilters = isAdmin || isTeam;
   return (
     <>
@@ -38,7 +41,7 @@ export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdm
             <TextField className="filter-field" label="Procedimento" type="search" value={pacienteFilters.procedimento}
               onValueChange={(value) => onFiltersChange((current) => ({ ...current, procedimento: value.slice(0, MAX_PROCEDURE_LENGTH) }))} placeholder="Procedimento" maxLength={MAX_PROCEDURE_LENGTH} />
           </>}
-          {isAdmin && <SelectField className="filter-field" label="Situação do cadastro" value={pacienteFilters.situacao ?? 'ativos'}
+          {isAdmin && showSituacao && <SelectField className="filter-field" label="Situação do cadastro" value={pacienteFilters.situacao ?? 'ativos'}
             onChange={(event) => { const situacao = event.target.value as PacienteSituacao; onFiltersChange((current) => ({ ...current, situacao })); }}>
             <option value="ativos">Ativos</option>
             <option value="inativos">Inativos</option>
@@ -52,6 +55,7 @@ export function PatientFilters({ pacienteFilters, medicalUsers, convenios, isAdm
             max={pacienteFilters.dataSolicitacaoFinal || undefined} onChange={(value) => onFiltersChange((current) => ({ ...current, dataSolicitacaoInicio: value }))} />
           <DateInput id="patient-request-end-date" className="filter-field" label="Data final da solicitação" value={pacienteFilters.dataSolicitacaoFinal}
             min={pacienteFilters.dataSolicitacaoInicio || undefined} onChange={(value) => onFiltersChange((current) => ({ ...current, dataSolicitacaoFinal: value }))} />
+          {children}
           <Button className="patient-clear-filters" onClick={onClearFilters}><X size={17} />Limpar filtros</Button>
         </div>
       </div>

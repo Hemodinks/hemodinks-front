@@ -9,6 +9,7 @@ import { CheckboxField, DataPanel, ToastMessage } from "../../shared/components/
 import { useCalculatorPreference } from "../calculator/CalculatorPreferenceProvider";
 import { ADMIN_PROFILE_ID, SUPER_ADMIN_PROFILE_ID } from "../../shared/utils/formatterConstants";
 import { MfaSettingsPanel } from "./MfaSettingsPanel";
+import { AuditSettingsPanel } from "./AuditSettingsPanel";
 import "./settings.css";
 
 type SystemSettingsPageProps = {
@@ -112,6 +113,8 @@ export function SystemSettingsPage({
         </DataPanel>
         {(session.user.perfilId === ADMIN_PROFILE_ID || session.user.perfilId === SUPER_ADMIN_PROFILE_ID)
           && <MfaSettingsPanel session={session} onIdentityChanged={onPasswordChanged} />}
+        {(session.user.perfilId === ADMIN_PROFILE_ID || session.user.perfilId === SUPER_ADMIN_PROFILE_ID)
+          && <AuditSettingsPanel session={session} />}
         <DataPanel className="system-settings-panel">
           <h3>Alterar email de autenticação</h3>
           <EmailChangeAction session={session} onChanged={onPasswordChanged} />

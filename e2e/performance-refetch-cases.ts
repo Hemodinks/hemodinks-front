@@ -29,6 +29,9 @@ export function registerPerformanceRefetchCases({ setup, login }: Dependencies) 
         const beforeDelete = listReads;
         const beforeSummary = summaryReads;
         await row.getByRole('button', { name: scenario.remove }).click();
+        // Inativar paciente exige motivo; outras exclusões confirmam direto.
+        const reason = page.getByRole('dialog').getByLabel('Motivo (obrigatório)');
+        if (await reason.count()) await reason.fill('Paciente transferido');
         await page.getByRole('dialog').getByRole('button', { name: 'Sim', exact: true }).click();
         await expect(page.getByText(scenario.deleted, { exact: true })).toBeVisible();
         await expect(row).toHaveCount(0);
@@ -54,6 +57,7 @@ export function registerPerformanceRefetchCases({ setup, login }: Dependencies) 
     testInfo.annotations.push({ type: 'login-api-gets', description: JSON.stringify(Object.fromEntries(reads)) });
     for (const path of lookups) expect(reads.get(path) ?? 0, path).toBe(0);
     await page.getByRole('button', { name: /^pacientes/i }).click();
+    await page.getByRole('button', { name: /^Cadastro de Pacientes/ }).click();
     await expect(page).toHaveURL(/\/pacientes$/);
     await expect(page.getByText('Paciente Hemodinks').first()).toBeVisible({ timeout: 15_000 });
     // A tela de pacientes usa os quatro lookups (médicos vêm de /api/grupos-medicos/medicos).

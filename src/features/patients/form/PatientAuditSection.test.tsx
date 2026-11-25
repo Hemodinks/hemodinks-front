@@ -28,10 +28,27 @@ function renderSection() {
 describe('trilha de auditoria do paciente', () => {
   beforeEach(() => vi.mocked(getPacienteAuditoria).mockReset());
 
-  it('não consulta a API antes de abrir a seção', () => {
+  it('mostra o motivo da inativação e as alterações antes → depois, sem conteúdo de texto clínico', async () => {
+    vi.mocked(getPacienteAuditoria).mockResolvedValue(page([
+      item({ id: 5, acao: 'paciente.inativar', detalhe: JSON.stringify({ motivo: 'Paciente transferido' }) }),
+      item({ id: 6, acao: 'paciente.editar', detalhe: JSON.stringify({ alteracoes: [
+        { campo: 'Pago', de: 'Nao', para: 'Sim' },
+        { campo: 'Status da cirurgia', de: 'NaoConsolidada', para: 'Consolidada' },
+        { campo: 'Diagnostico', textoAlterado: true },
+      ] }) }),
+      item({ id: 7, acao: 'atendimento.cancelar', detalhe: '{json invalido' }),
+    ]));
     renderSection();
-    expect(screen.getByText('Ver quem acessou ou alterou este paciente')).toBeInTheDocument();
-    expect(getPacienteAuditoria).not.toHaveBeenCalled();
+    const table = await screen.findByRole('table', { name: 'Trilha de auditoria do paciente' });
+    const rows = within(table).getAllByRole('row').slice(1);
+    expect(within(rows[0]).getByText('Paciente transferido')).toBeInTheDocument();
+    expect(within(rows[1]).getByText('Não')).toBeInTheDocument();
+    expect(within(rows[1]).getByText('Sim')).toBeInTheDocument();
+    expect(within(rows[1]).getByText('Não consolidada')).toBeInTheDocument();
+    expect(within(rows[1]).getByText('Diagnóstico:')).toBeInTheDocument();
+    expect(within(rows[1]).getByText('alterado')).toBeInTheDocument();
+    expect(within(rows[2]).getByText('Cancelou atendimento')).toBeInTheDocument();
+    expect(within(rows[2]).getByText('-', { selector: '.audit-detail-empty' })).toBeInTheDocument();
   });
 
   it('ao abrir mostra quem, ação, resultado e IP com rótulos amigáveis', async () => {
@@ -41,7 +58,6 @@ describe('trilha de auditoria do paciente', () => {
       item({ id: 3, acao: 'arquivo.baixar', equipeOperadorId: 4, equipeOperadorNome: 'Carla', usuarioNome: 'Equipe Centro' }),
     ]));
     renderSection();
-    await userEvent.click(screen.getByText('Ver quem acessou ou alterou este paciente'));
 
     const table = await screen.findByRole('table', { name: 'Trilha de auditoria do paciente' });
     expect(getPacienteAuditoria).toHaveBeenCalledWith(10, 'admin-token', 1, 20);
@@ -61,7 +77,6 @@ describe('trilha de auditoria do paciente', () => {
       .mockResolvedValueOnce(page([item()], 1, 25))
       .mockResolvedValueOnce(page([item({ id: 21, acao: 'arquivo.excluir' })], 2, 25));
     renderSection();
-    await userEvent.click(screen.getByText('Ver quem acessou ou alterou este paciente'));
     expect(await screen.findByText('Página 1 de 2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
     await userEvent.click(screen.getByRole('button', { name: 'Próxima' }));
@@ -73,13 +88,11 @@ describe('trilha de auditoria do paciente', () => {
   it('informa quando não há registros e quando a consulta falha', async () => {
     vi.mocked(getPacienteAuditoria).mockResolvedValueOnce(page([]));
     const view = renderSection();
-    await userEvent.click(screen.getByText('Ver quem acessou ou alterou este paciente'));
     expect(await screen.findByText('Nenhum registro de acesso para este paciente.')).toBeInTheDocument();
     view.unmount();
 
     vi.mocked(getPacienteAuditoria).mockRejectedValueOnce(new Error('Falha ao consultar a trilha'));
     renderSection();
-    await userEvent.click(screen.getByText('Ver quem acessou ou alterou este paciente'));
     expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 

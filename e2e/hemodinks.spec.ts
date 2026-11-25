@@ -863,7 +863,9 @@ test('navega pelos fluxos principais autenticados', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   await expect(page.getByRole('button', { name: /^pacientes/i })).toBeVisible();
 
+  // Administrador: "Pacientes - Cirurgias" abre o accordion (Cadastro de Pacientes, Auditoria).
   await page.getByRole('button', { name: /^pacientes/i }).click();
+  await page.getByRole('button', { name: /^Cadastro de Pacientes/ }).click();
   await expect(page).toHaveURL(/\/pacientes$/);
   await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible();
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
@@ -1017,7 +1019,9 @@ test('navegação pelo menu posiciona a nova tela no topo da aplicação', async
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 
   await page.evaluate(() => {
-    document.querySelector<HTMLButtonElement>('.side-nav-patients')?.click();
+    // Administrador: abre o accordion e escolhe "Cadastro de Pacientes".
+    document.querySelector<HTMLButtonElement>('.side-nav-patients-group .side-nav-billing-toggle')?.click();
+    document.querySelector<HTMLButtonElement>('.side-nav-patients-group .side-nav-billing-subitem')?.click();
   });
   await expect(page).toHaveURL(/\/pacientes$/);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
