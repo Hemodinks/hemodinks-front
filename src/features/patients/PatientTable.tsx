@@ -32,7 +32,7 @@ export function PatientTable(props: PatientTableProps) {
           const fileCount = paciente.arquivosCount ?? paciente.arquivos.length;
           return <tr key={paciente.id}>
             <td data-label="Paciente"><div className="name-cell"><span>{patientDisplayName}</span>
-              {paciente.inativado && <span className="status-pill warning">Inativo</span>}</div></td>
+              {paciente.inativado && <span className="status-pill inactive-soft">Inativo</span>}</div></td>
             <td data-label="Ações"><div className="row-actions">
               <IconButton label={`${patientActionLabel} ${patientDisplayName}`} tone="muted" onClick={() => void props.onEditPaciente(paciente)} title={patientActionLabel}>
                 {props.patientReadOnly || !props.canEditPatients ? <Eye size={17} /> : <Pencil size={17} />}</IconButton>

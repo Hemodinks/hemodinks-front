@@ -114,7 +114,7 @@ export function MedicalGroupList({
                     </td>
                     <td data-label="Médicos">{group.membrosCount}</td>
                     <td data-label="Status">
-                      <span className={`status-pill ${group.ativo ? 'ok' : 'warning'}`}>
+                      <span className={`status-pill ${group.ativo ? 'ok' : 'inactive-soft'}`}>
                         {group.ativo ? <CircleCheck size={14} /> : <CircleX size={14} />}
                         {group.ativo ? 'Ativo' : 'Inativo'}
                       </span>
