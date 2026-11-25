@@ -1,5 +1,5 @@
 import { getSurgeryTypeLabel } from '../../shared/surgeryType';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   CheckCircle2,
@@ -63,18 +63,16 @@ export function BillingPage({
   const [summaryRecordId, setSummaryRecordId] = useState<number | null>(null);
   const detailRecordId = parseBillingDetailId(searchParams.get('detalhe'));
 
-  useEffect(() => {
-    if (!isMedical) {
-      return;
+  // #292: médico vê só o próprio faturamento; o filtro é fixado na própria renderização quando o perfil/nome muda.
+  const doctorScope = isMedical ? session.user.nome : null;
+  const [doctorScopeFor, setDoctorScopeFor] = useState<string | null | undefined>(undefined);
+  if (doctorScopeFor !== doctorScope) {
+    setDoctorScopeFor(doctorScope);
+    if (doctorScope !== null) {
+      setFilters((current) => current.medico === doctorScope ? current : { ...current, medico: doctorScope });
+      setAppliedFilters((current) => current.medico === doctorScope ? current : { ...current, medico: doctorScope });
     }
-
-    setFilters((current) => current.medico === session.user.nome
-      ? current
-      : { ...current, medico: session.user.nome });
-    setAppliedFilters((current) => current.medico === session.user.nome
-      ? current
-      : { ...current, medico: session.user.nome });
-  }, [isMedical, session.user.nome]);
+  }
 
   const billingQuery = useQuery({
     queryKey: [
@@ -133,9 +131,12 @@ export function BillingPage({
     records: visibleBillingRecords,
   } = billingPage;
 
-  useEffect(() => {
+  // #292: página além do total (filtro reduziu a lista) volta para a última, na própria renderização.
+  const [pagesFor, setPagesFor] = useState(totalPages);
+  if (pagesFor !== totalPages) {
+    setPagesFor(totalPages);
     setCurrentPage((page) => Math.min(page, totalPages));
-  }, [totalPages]);
+  }
 
   const doctorFilterOptions = getUniqueSortedOptions([
     ...medicalUsers.map((user) => formatPersonName(user.nome)),
@@ -167,15 +168,10 @@ export function BillingPage({
     ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(billingQuery.dataUpdatedAt))
     : '';
 
-  useEffect(() => {
-    if (summaryRecordId == null) {
-      return;
-    }
-
-    if (!billingRecords.some((record) => record.id === summaryRecordId)) {
-      setSummaryRecordId(null);
-    }
-  }, [billingRecords, summaryRecordId]);
+  // #292: resumo de registro que saiu da lista fecha na própria renderização.
+  if (summaryRecordId != null && !billingRecords.some((record) => record.id === summaryRecordId)) {
+    setSummaryRecordId(null);
+  }
 
   const clearFilters = () => {
     const nextFilters = createEmptyBillingFilters(defaultDoctorFilter);

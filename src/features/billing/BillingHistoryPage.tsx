@@ -88,16 +88,20 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
     ? null
     : records.find((record) => record.id === summaryRecordId) ?? null;
 
-  useEffect(() => {
+  // #292: anos novos (filtro ou carga) reconciliam seleção e expansão na própria renderização.
+  const [yearsFor, setYearsFor] = useState<typeof history.years | null>(null);
+  if (yearsFor !== history.years) {
+    setYearsFor(history.years);
     const newestYear = history.years[0]?.year;
-    if (newestYear == null) return;
-    const availableYears = new Set(history.years.map((year) => year.year));
-    setOpenYears((current) => {
-      const remainingYears = new Set([...current].filter((year) => availableYears.has(year)));
-      return remainingYears.size ? remainingYears : new Set([newestYear]);
-    });
-    setSelectedYear((current) => current != null && availableYears.has(current) ? current : newestYear);
-  }, [history.years]);
+    if (newestYear != null) {
+      const availableYears = new Set(history.years.map((year) => year.year));
+      setOpenYears((current) => {
+        const remainingYears = new Set([...current].filter((year) => availableYears.has(year)));
+        return remainingYears.size ? remainingYears : new Set([newestYear]);
+      });
+      setSelectedYear((current) => current != null && availableYears.has(current) ? current : newestYear);
+    }
+  }
 
   const toggleYear = (year: number) => {
     setSelectedYear(year);

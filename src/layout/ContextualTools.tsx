@@ -20,7 +20,8 @@ export function ContextualTools({ activeView }: { activeView: AppView }) {
   useEffect(() => {
     if (active) root.current?.scrollIntoView?.({ block: 'nearest', behavior: 'instant' });
   }, [active]);
-  useEffect(() => { if (!visible) setOpen(current => current === 'calculator' ? null : current); }, [visible]);
+  // #292: calculadora oculta nas preferências fecha o painel na própria renderização.
+  if (!visible && open === 'calculator') setOpen(null);
   const close = () => {
     (active === 'help' ? helpTrigger : calculatorTrigger).current?.focus();
     setOpen(null);

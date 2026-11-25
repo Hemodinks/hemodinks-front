@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   createMedicalGroup,
@@ -44,6 +44,8 @@ type UseMedicalGroupsDomainOptions = {
   navigateToView: (view: AppView, replace?: boolean) => void;
   confirmAction: ConfirmAction;
 };
+
+const UNSYNCED = Symbol('unsynced');
 
 export function useMedicalGroupsDomain({
   session,
@@ -108,40 +110,32 @@ export function useMedicalGroupsDomain({
     mutationFn: ({ id, token }: { id: number; token: string }) => deleteMedicalGroup(id, token),
   });
 
-  useEffect(() => {
-    setGroupsLoading(groupsQuery.isFetching);
-  }, [groupsQuery.isFetching]);
-
-  useEffect(() => {
-    if (!groupsQuery.data) {
-      return;
+  // #292: o estado local espelha a consulta quando ela muda, na própria renderização (antes: 5 efeitos).
+  // A sentinela faz o primeiro render sincronizar, como os efeitos faziam na montagem. Reset, salvar e
+  // excluir continuam alterando o estado local.
+  const [synced, setSynced] = useState<{ fetching: unknown; data: unknown; error: unknown; users: unknown; usersError: unknown }>(
+    { fetching: UNSYNCED, data: UNSYNCED, error: UNSYNCED, users: UNSYNCED, usersError: UNSYNCED });
+  const current = {
+    fetching: groupsQuery.isFetching, data: groupsQuery.data, error: groupsQuery.error,
+    users: availableMedicalUsersQuery.data, usersError: availableMedicalUsersQuery.error,
+  };
+  if (Object.keys(current).some((key) => synced[key as keyof typeof current] !== current[key as keyof typeof current])) {
+    setSynced(current);
+    if (synced.fetching !== current.fetching) setGroupsLoading(groupsQuery.isFetching);
+    if (synced.data !== current.data && groupsQuery.data) {
+      setGroups(getPagedItems(groupsQuery.data));
+      setTotalItems(getPagedTotal(groupsQuery.data));
+      setTotalPages(getPagedTotalPages(groupsQuery.data));
+      setGroupsError('');
     }
-
-    setGroups(getPagedItems(groupsQuery.data));
-    setTotalItems(getPagedTotal(groupsQuery.data));
-    setTotalPages(getPagedTotalPages(groupsQuery.data));
-    setGroupsError('');
-  }, [groupsQuery.data]);
-
-  useEffect(() => {
-    if (groupsQuery.error) {
-      setGroupsError(getErrorMessage(groupsQuery.error));
+    if (synced.error !== current.error && groupsQuery.error) setGroupsError(getErrorMessage(groupsQuery.error));
+    if (synced.users !== current.users && availableMedicalUsersQuery.data) {
+      setAvailableMedicalUsers(sortUsersByName(availableMedicalUsersQuery.data));
     }
-  }, [groupsQuery.error]);
-
-  useEffect(() => {
-    if (!availableMedicalUsersQuery.data) {
-      return;
-    }
-
-    setAvailableMedicalUsers(sortUsersByName(availableMedicalUsersQuery.data));
-  }, [availableMedicalUsersQuery.data]);
-
-  useEffect(() => {
-    if (availableMedicalUsersQuery.error) {
+    if (synced.usersError !== current.usersError && availableMedicalUsersQuery.error) {
       setGroupsError(getErrorMessage(availableMedicalUsersQuery.error));
     }
-  }, [availableMedicalUsersQuery.error]);
+  }
 
   const visibleStart = totalItems ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
   const visibleEnd = totalItems ? Math.min(totalItems, visibleStart + groups.length - 1) : 0;
