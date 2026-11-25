@@ -297,7 +297,14 @@ producao (`staticwebapp.config.json`, `nginx*.conf`) nao libera nenhuma API do R
 `.env.confirmation.example` reproduz esse build localmente.
 
 A homologacao do front e publicada pela integracao Git da Vercel a cada push na `developer`; nenhum workflow deste
-repositorio publica a homologacao. A API correspondente e publicada pelo workflow `Publish Homologation` do
+repositorio publica a homologacao.
+
+New Relic na homologacao: app Browser **Hemodinks Front HOMOL** (`applicationID` 601695837), separado do de producao.
+As variaveis `VITE_NEW_RELIC_*` desse app ficam no ambiente Production do projeto `hemodinks-front-confirmation` na
+Vercel (o agente so liga se elas existirem e apos o consentimento de analise). A cada deploy concluido da `developer`,
+o workflow `newrelic-homologation-deploy-marker.yml` (evento `deployment_status` da Vercel, so `Production` e
+`vercel[bot]`, commit confirmado na `developer`) registra o marcador no card **Deployments** desse app. Ele usa o
+secret de repositorio `NEW_RELIC_API_KEY` (User key `NRAK-...`); sem ele so avisa, e nunca afeta o deploy. A API correspondente e publicada pelo workflow `Publish Homologation` do
 `hemodinks-api` (ver `hemodinks-api/docs/homologation-migrations.md`).
 
 Não use **Redeploy** em um deployment antigo que ainda contenha redirects ou rewrites inválidos. Crie um deployment a partir da versão mais recente da branch `developer`; a Vercel aplicará o `vercel.json` correspondente ao novo commit.
