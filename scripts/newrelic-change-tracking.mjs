@@ -1,4 +1,6 @@
-// Registra o deploy de producao no Change Tracking do New Relic (marcador "Deployments" do app Browser).
+// Registra o deploy no Change Tracking do New Relic (marcador "Deployments" do app Browser).
+// Producao: depois do upload no Static Web Apps. Homologacao (DEPLOY_ENVIRONMENT=homologation):
+// depois que a Vercel conclui o deploy da developer.
 // Nunca bloqueia o deploy: sem configuracao, ou se a NerdGraph falhar, so avisa e sai com 0.
 // A chave (User key NRAK-...) nunca e impressa.
 import { pathToFileURL } from 'node:url';
@@ -15,15 +17,24 @@ export function browserEntityGuid(accountId, applicationId) {
   return Buffer.from(`${accountId}|BROWSER|APPLICATION|${applicationId}`).toString('base64').replace(/=+$/, '');
 }
 
+const DESCRIPTIONS = {
+  production: () => 'Producao: front publicado no Azure Static Web Apps',
+  homologation: env => env.VERCEL_DEPLOYMENT_URL
+    ? `Homologacao: front publicado na Vercel (${env.VERCEL_DEPLOYMENT_URL})`
+    : 'Homologacao: front publicado na Vercel',
+};
+
 export function deploymentInput(env) {
   const sha = env.GITHUB_SHA ?? '';
   if (!/^[a-f0-9]{40}$/.test(sha)) throw new Error('GITHUB_SHA ausente ou invalido.');
+  const environment = (env.DEPLOY_ENVIRONMENT ?? '').trim() || 'production';
+  if (!Object.hasOwn(DESCRIPTIONS, environment)) throw new Error('DEPLOY_ENVIRONMENT deve ser production ou homologation.');
   const deployment = {
     entityGuid: browserEntityGuid(env.VITE_NEW_RELIC_ACCOUNT_ID, env.VITE_NEW_RELIC_APPLICATION_ID),
     version: sha.slice(0, 7),
     commit: sha,
     deploymentType: 'BASIC',
-    description: 'Producao: front publicado no Azure Static Web Apps',
+    description: DESCRIPTIONS[environment](env),
   };
   if (env.GITHUB_ACTOR) deployment.user = env.GITHUB_ACTOR;
   if (env.GITHUB_SERVER_URL && env.GITHUB_REPOSITORY && env.GITHUB_RUN_ID) {

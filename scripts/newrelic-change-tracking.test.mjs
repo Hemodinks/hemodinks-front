@@ -80,3 +80,33 @@ test('production workflow records the marker only after the upload and never blo
   assert.equal(step.run, 'node scripts/newrelic-change-tracking.mjs');
   assert.equal(step.env.NEW_RELIC_API_KEY, '${{ secrets.NEW_RELIC_API_KEY }}');
 });
+
+test('homologation describes the Vercel deployment and keeps the BASIC type', () => {
+  const env = { ...ENV, DEPLOY_ENVIRONMENT: 'homologation', VERCEL_DEPLOYMENT_URL: 'https://hemodinks-front-confirmation-x.vercel.app' };
+  const deployment = deploymentInput(env);
+  assert.equal(deployment.deploymentType, 'BASIC');
+  assert.equal(deployment.description, 'Homologacao: front publicado na Vercel (https://hemodinks-front-confirmation-x.vercel.app)');
+  assert.equal(deploymentInput({ ...env, VERCEL_DEPLOYMENT_URL: '' }).description, 'Homologacao: front publicado na Vercel');
+  assert.match(deploymentInput(ENV).description, /^Producao/);
+  assert.throws(() => deploymentInput({ ...ENV, DEPLOY_ENVIRONMENT: 'staging' }), /DEPLOY_ENVIRONMENT/);
+});
+
+test('homologation workflow marks only successful Vercel developer deployments and never blocks', () => {
+  const workflow = load(readFileSync(new URL('../.github/workflows/newrelic-homologation-deploy-marker.yml', import.meta.url), 'utf8'));
+  assert.ok('deployment_status' in workflow.on);
+  assert.deepEqual(workflow.permissions, { contents: 'read' });
+  const job = workflow.jobs.record;
+  assert.match(job.if, /deployment_status\.state == 'success'/);
+  assert.match(job.if, /deployment\.environment == 'Production'/);
+  assert.match(job.if, /creator\.login == 'vercel\[bot\]'/);
+  assert.ok(job['timeout-minutes'] <= 5);
+  const marker = job.steps.find(s => s.name === 'Record deployment in New Relic');
+  assert.equal(marker['continue-on-error'], true);
+  assert.equal(marker.if, "steps.branch.outputs.on_developer == 'true'");
+  assert.equal(marker.env.DEPLOY_ENVIRONMENT, 'homologation');
+  assert.equal(marker.env.VITE_NEW_RELIC_APPLICATION_ID, '601695837');
+  assert.equal(marker.env.NEW_RELIC_API_KEY, '${{ secrets.NEW_RELIC_API_KEY }}');
+  const guard = job.steps.find(s => s.id === 'branch');
+  assert.doesNotMatch(guard.run, /\$\{\{/);
+  for (const step of job.steps.filter(s => s.uses)) assert.match(step.uses, /@[0-9a-f]{40}$/);
+});
