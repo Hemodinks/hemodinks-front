@@ -27,6 +27,8 @@ type UseLoginFlowOptions = {
 export function useLoginFlow({ session, persistSession, sessionRestoring = false }: UseLoginFlowOptions) {
   const [loginEmail, updateLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  // Tela de "Recuperar senha" separada do login: só email (e clínica) e o botão "Enviar instruções".
+  const [recoveryMode, setRecoveryMode] = useState(false);
   const [loginClinicOptions, setLoginClinicOptions] = useState<LoginClinicOption[]>([]);
   const [activeLoginClinic, setActiveLoginClinic] = useState<LoginClinicOption | null>(null);
   const [recoveryClinics, setRecoveryClinics] = useState<PublicClinic[]>([]);
@@ -75,6 +77,19 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
   const clearRecoveryState = () => {
     setRecoveryClinics([]);
     setRecoveryClinicValue('');
+  };
+
+  const openPasswordRecovery = () => {
+    setLoginError('');
+    setLoginInfo('');
+    setRecoveryMode(true);
+  };
+
+  // Volta ao login mantendo o email; a confirmação de envio continua visível.
+  const closePasswordRecovery = () => {
+    setLoginError('');
+    clearRecoveryState();
+    setRecoveryMode(false);
   };
 
   const invalidateRequest = () => {
@@ -375,6 +390,8 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
     clearRecoveryState();
     setLoginPassword('');
     if (result.mode === 'default-password') {
+      // Senha temporária: o próximo passo é entrar, então volta para a tela de login.
+      setRecoveryMode(false);
       setLoginInfo('A senha foi redefinida. Use a credencial temporária fornecida pela clínica e altere-a após entrar.');
       return;
     }
@@ -437,6 +454,7 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
     clearTeamState();
     clearClinicSelection();
     clearRecoveryState();
+    setRecoveryMode(false);
     updateLoginEmail('');
     setLoginError('');
     setLoginInfo(infoMessage);
@@ -470,6 +488,9 @@ export function useLoginFlow({ session, persistSession, sessionRestoring = false
     activeLoginClinic,
     recoveryClinics,
     recoveryClinicValue,
+    recoveryMode,
+    openPasswordRecovery,
+    closePasswordRecovery,
     loginError,
     loginInfo,
     loginLoading,

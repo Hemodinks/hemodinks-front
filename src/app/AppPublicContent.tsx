@@ -129,6 +129,9 @@ export function AppPublicContent({
       onRecoveryClinicChange={loginFlow.setRecoveryClinicValue}
       onSubmit={loginFlow.handleLogin}
       onResetPassword={() => void loginFlow.handleResetPassword()}
+      recoveryMode={loginFlow.recoveryMode}
+      onOpenRecovery={loginFlow.openPasswordRecovery}
+      onCloseRecovery={loginFlow.closePasswordRecovery}
       onStartTutorial={() => startTutorial('login-clinic')}
     />
   );
