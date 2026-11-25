@@ -7,7 +7,9 @@
 .audit-detail-new { color: var(--ink); font-weight: 700; }
 .audit-detail-text-changed { color: var(--muted); font-style: italic; }
 .audit-detail-empty { color: var(--muted); }
-.audit-pagination { margin-top: 12px; }
+.audit-pagination { margin-top: 12px; flex-wrap: wrap; gap: 12px; }
+.audit-page-size { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--muted); }
+.audit-page-size select { min-height: 36px; width: auto; }
 .audit-filters-extra { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); align-items: end; }
 .audit-only-changes { display: flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 700; }
 .audit-only-changes input { width: 18px; height: 18px; }

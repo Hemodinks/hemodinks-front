@@ -12,9 +12,8 @@ import { PatientFilters } from '../patients/PatientFilters';
 import { emptyPacienteFilters, getPacienteFilterQuery } from '../patients/patientUtils';
 import { AuditTrailTable } from './AuditTrailTable';
 import { AUDIT_ACTION_OPTIONS } from './auditLabels';
+import { AUDIT_PAGE_SIZES } from './AuditPagination';
 import './audit.css';
-
-const PAGE_SIZE = 20;
 
 type AuditExtraFilters = { search: string; acao: string; periodoInicio: string; periodoFim: string; somenteAlteracoes: boolean };
 const emptyExtraFilters: AuditExtraFilters = { search: '', acao: '', periodoInicio: '', periodoFim: '', somenteAlteracoes: true };
@@ -31,6 +30,7 @@ export function PatientAuditPage({ session, medicalUsers, convenios }: PatientAu
   const [patientFilters, setPatientFilters] = useState<PacienteFilters>(emptyPacienteFilters);
   const [extra, setExtra] = useState<AuditExtraFilters>(emptyExtraFilters);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(AUDIT_PAGE_SIZES[1]);
 
   // Situação e pendência não se aplicam (a auditoria cobre ativos e inativos): com esses valores o builder as omite.
   const filtros = {
@@ -43,13 +43,12 @@ export function PatientAuditPage({ session, medicalUsers, convenios }: PatientAu
   };
   const filtrosKey = JSON.stringify(filtros);
   const auditQuery = useQuery({
-    queryKey: queryKeys.auditoriaGeral(session.token, page, filtrosKey),
-    queryFn: () => listAuditoria(session.token, page, PAGE_SIZE, filtros),
+    queryKey: queryKeys.auditoriaGeral(session.token, page, `${pageSize}|${filtrosKey}`),
+    queryFn: () => listAuditoria(session.token, page, pageSize, filtros),
     placeholderData: keepPreviousData,
     staleTime: 15 * 1000,
   });
   const data = auditQuery.data;
-  const totalPages = data ? Math.max(1, Math.ceil(data.totalItems / data.pageSize)) : 1;
 
   // Filtro novo sempre volta para a primeira página.
   const changePatientFilters: typeof setPatientFilters = (update) => { setPage(1); setPatientFilters(update); };
@@ -93,8 +92,9 @@ export function PatientAuditPage({ session, medicalUsers, convenios }: PatientAu
         {auditQuery.isPending && <p role="status">Carregando auditoria...</p>}
         {data && !data.items.length && <p role="status">Nenhum registro encontrado para os filtros escolhidos.</p>}
         {data && data.items.length > 0 && (
-          <AuditTrailTable items={data.items} label="Auditoria de pacientes" showPatient page={page} totalPages={totalPages}
-            busy={auditQuery.isFetching} onPageChange={setPage} />
+          <AuditTrailTable items={data.items} label="Auditoria de pacientes" showPatient page={page} pageSize={pageSize}
+            totalItems={data.totalItems} busy={auditQuery.isFetching} onPageChange={setPage}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />
         )}
       </DataPanel>
     </section>

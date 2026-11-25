@@ -280,6 +280,7 @@
   grid-column: 1 / -1;
 }
 
+
 .settings-section-heading {
   display: flex;
   align-items: center;
@@ -495,6 +496,3 @@
   height: auto;
   border-radius: 8px;
 }
-
-.audit-settings-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 800; }
-.audit-settings-toggle input { width: 20px; height: 20px; }

@@ -1,5 +1,5 @@
-import { Button } from '../../shared/components/ui';
 import type { AuditoriaClinicaItem } from '../../types';
+import { AuditPagination } from './AuditPagination';
 import {
   describeAuditActor, formatAuditDate, getAuditActionLabel, getAuditFieldLabel, getAuditValueLabel, parseAuditDetail,
 } from './auditLabels';
@@ -33,12 +33,15 @@ type AuditTrailTableProps = {
   label: string;
   showPatient?: boolean;
   page: number;
-  totalPages: number;
+  pageSize: number;
+  totalItems: number;
   busy: boolean;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
 };
 
-export function AuditTrailTable({ items, label, showPatient = false, page, totalPages, busy, onPageChange }: AuditTrailTableProps) {
+export function AuditTrailTable({ items, label, showPatient = false, page, pageSize, totalItems, busy, onPageChange,
+  onPageSizeChange }: AuditTrailTableProps) {
   return (
     <>
       <div className="table-wrap audit-table-wrap">
@@ -73,11 +76,8 @@ export function AuditTrailTable({ items, label, showPatient = false, page, total
           </tbody>
         </table>
       </div>
-      <div className="pagination-bar audit-pagination" role="group" aria-label={`Paginação: ${label}`}>
-        <Button disabled={page <= 1 || busy} onClick={() => onPageChange(Math.max(1, page - 1))}>Anterior</Button>
-        <span>Página {page} de {totalPages}</span>
-        <Button disabled={page >= totalPages || busy} onClick={() => onPageChange(page + 1)}>Próxima</Button>
-      </div>
+      <AuditPagination label={label} page={page} pageSize={pageSize} totalItems={totalItems} busy={busy}
+        onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} />
     </>
   );
 }

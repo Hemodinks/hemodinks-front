@@ -20,7 +20,7 @@ export const queryKeys = {
   mfaStatus: (token: string) => ['mfaStatus', token] as const,
   pacienteObservacoes: (token: string, pacienteId: number) => ['pacienteObservacoes', token, pacienteId] as const,
   pacienteObservacoesRoot: (token: string) => ['pacienteObservacoes', token] as const,
-  pacienteAuditoria: (token: string, pacienteId: number, page: number) => ['pacienteAuditoria', token, pacienteId, page] as const,
+  pacienteAuditoria: (token: string, pacienteId: number, page: number, pageSize = 20) => ['pacienteAuditoria', token, pacienteId, page, pageSize] as const,
   auditoriaGeral: (token: string, page: number, filtros: string) => ['auditoriaGeral', token, page, filtros] as const,
   auditoriaConfiguracao: (token: string) => ['auditoriaConfiguracao', token] as const,
   hospitais: (token: string) => ['hospitais', token] as const,
