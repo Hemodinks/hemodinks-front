@@ -61,6 +61,13 @@
       }
     },
     {
+      "route": "/auditoria-pacientes",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
       "route": "/historico-faturamento",
       "headers": {
         "X-Robots-Tag": "noindex, nofollow",

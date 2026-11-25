@@ -28,11 +28,16 @@ async function navigate(page: Page, label: string) {
   const openMenu = page.getByRole('button', { name: 'Abrir menu', exact: true });
   await expect.poll(async () => await menu.isVisible() || await openMenu.isVisible()).toBe(true);
   if (!await menu.isVisible()) await openMenu.click();
+  // Administrador: Pacientes - Cirurgias e Faturamento são accordions.
+  const patientsToggle = menu.getByRole('button', { name: /^Pacientes - Cirurgias(?: \d+)?$/ });
+  if (label === 'Pacientes' && await patientsToggle.getAttribute('aria-expanded') === 'false') await patientsToggle.click();
   if (label === 'Relatórios' || label === 'Faturamento') {
     const toggle = menu.getByRole('button', { name: /^Faturamento(?: \d+)?$/ });
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
   }
-  const name = label === 'Pacientes' ? /^Pacientes - Cirurgias(?: \d+)?$/ : label === 'Agenda' ? 'Agenda e notificações'
+  const patientsName = label === 'Pacientes' && await patientsToggle.getAttribute('aria-expanded') !== null
+    ? /^Cadastro de Pacientes(?: \d+)?$/ : /^Pacientes - Cirurgias(?: \d+)?$/;
+  const name = label === 'Pacientes' ? patientsName : label === 'Agenda' ? 'Agenda e notificações'
     : label === 'Faturamento' ? 'Gestão de faturamento' : label;
   await page.getByLabel('Menu da clínica').getByRole('button', { name, exact: true }).click();
 }

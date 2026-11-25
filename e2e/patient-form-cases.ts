@@ -272,6 +272,7 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
       expect(bytes.toString()).not.toContain('Paciente Outro');
       await download(page, 'Exportar PDF', 'pdf', 'pacientes-');
       await row.getByTitle('Inativar', { exact: true }).click();
+      await page.getByRole('dialog').getByLabel('Motivo (obrigatório)').fill('Paciente transferido');
       await page.getByRole('dialog').getByRole('button', { name: 'Sim', exact: true }).click();
       await expect(page.getByText('Paciente inativado.', { exact: true })).toBeVisible();
       expect(api.patients.some((p) => p.id === 10)).toBe(false);
@@ -362,15 +363,18 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
         });
         await login(page, '/pacientes');
         await page.getByRole('button', { name: 'Editar Paciente Hemodinks', exact: true }).click();
-        const toggle = page.getByText('Ver quem acessou ou alterou este paciente', { exact: true });
-        await expect(toggle).toBeVisible();
+        // A trilha fica numa aba da ficha e só consulta a API quando a aba é aberta.
+        const tab = page.getByRole('tab', { name: 'Trilha de auditoria' });
+        await expect(tab).toBeVisible();
         expect(auditRequests).toHaveLength(0);
-        await toggle.click();
+        await tab.click();
         const table = page.getByRole('table', { name: 'Trilha de auditoria do paciente' });
         await expect(table.getByText('Visualizou o cadastro')).toBeVisible();
         await expect(table.getByText('George Marcone')).toBeVisible();
         expect(auditRequests).toHaveLength(1);
-        expect(new URL(auditRequests[0]).searchParams.get('recursoId')).toBe(String(base.pacientes[0].id));
+        expect(new URL(auditRequests[0]).searchParams.get('pacienteId')).toBe(String(base.pacientes[0].id));
+        await page.getByRole('tab', { name: 'Dados do paciente' }).click();
+        await expect(page.getByLabel('Paciente', { exact: true })).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
       });
     }

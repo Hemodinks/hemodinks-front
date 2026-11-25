@@ -4,7 +4,7 @@ import type { PacienteSituacao } from './types';
 
 export type Theme = 'light' | 'dark';
 
-export type AppView = 'dashboard' | 'users' | 'profile' | 'patients' | 'billing' | 'billingHistory' | 'reports' | 'tutorials' | 'medicalGroups' | 'agenda' | 'settings' | 'clinics';
+export type AppView = 'dashboard' | 'users' | 'profile' | 'patients' | 'patientAudit' | 'billing' | 'billingHistory' | 'reports' | 'tutorials' | 'medicalGroups' | 'agenda' | 'settings' | 'clinics';
 
 export type ModuleMode = 'list' | 'form';
 

@@ -12,6 +12,10 @@ import type { usePatientForm } from './usePatientForm';
 import type { usePatientList } from './usePatientList';
 import type { usePatientLookups } from './usePatientLookups';
 
+// Inativar/reativar paciente pedem o motivo, que vai para a trilha de auditoria.
+const PATIENT_STATUS_REASON = { label: 'Motivo (obrigatório)', maxLength: 500,
+  hint: 'Fica registrado na auditoria. Não inclua CPF nem informações clínicas.' };
+
 type UsePatientCrudActionsOptions = {
   session: AuthSession | null;
   canCreatePatients: boolean;
@@ -36,8 +40,8 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
     mutationFn: ({ id, payload, token }: { id: number | null; payload: PacientePayload; token: string }) =>
       id ? updatePaciente(id, payload, token) : createPaciente(payload, token),
   });
-  const deleteMutation = useMutation({ mutationFn: ({ id, token }: { id: number; token: string }) => deletePaciente(id, token) });
-  const reactivateMutation = useMutation({ mutationFn: ({ id, token }: { id: number; token: string }) => reativarPaciente(id, token) });
+  const deleteMutation = useMutation({ mutationFn: ({ id, token, motivo }: { id: number; token: string; motivo: string }) => deletePaciente(id, token, motivo) });
+  const reactivateMutation = useMutation({ mutationFn: ({ id, token, motivo }: { id: number; token: string; motivo: string }) => reativarPaciente(id, token, motivo) });
   const deleteFileMutation = useMutation({
     mutationFn: ({ pacienteId, arquivoId, token }: { pacienteId: number; arquivoId: number; token: string }) =>
       deletePacienteArquivo(pacienteId, arquivoId, token),
@@ -131,12 +135,12 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
     }
   };
 
-  const deleteSelectedPaciente = async (paciente: Paciente) => {
+  const deleteSelectedPaciente = async (paciente: Paciente, motivo = '') => {
     if (!session) return;
     if (!canDeletePatients) { patientList.setPacientesError('Apenas administradores podem inativar pacientes.'); return; }
     patientList.setPacientesError(''); patientList.setPacienteSuccessMessage('');
     try {
-      await deleteMutation.mutateAsync({ id: paciente.id, token: session.token });
+      await deleteMutation.mutateAsync({ id: paciente.id, token: session.token, motivo });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesPendenciasDataConsolidacao(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token), refetchType: 'none' }),
@@ -148,14 +152,15 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
   };
   const handleDeletePaciente = (paciente: Paciente) => confirmAction({ tone: 'delete', title: 'Inativar paciente?',
     message: `Deseja inativar "${paciente.nomePaciente}"? O paciente sairá das listas e o acesso dele ao portal será bloqueado. Os dados são mantidos e um administrador pode reativá-lo.`,
-    confirmLabel: 'Sim', cancelLabel: 'Não', onConfirm: () => deleteSelectedPaciente(paciente) });
+    confirmLabel: 'Sim', cancelLabel: 'Não', reason: PATIENT_STATUS_REASON,
+    onConfirm: (motivo) => deleteSelectedPaciente(paciente, motivo) });
 
-  const reactivateSelectedPaciente = async (paciente: Paciente) => {
+  const reactivateSelectedPaciente = async (paciente: Paciente, motivo = '') => {
     if (!session) return;
     if (!canDeletePatients) { patientList.setPacientesError('Apenas administradores podem reativar pacientes.'); return; }
     patientList.setPacientesError('');
     try {
-      await reactivateMutation.mutateAsync({ id: paciente.id, token: session.token });
+      await reactivateMutation.mutateAsync({ id: paciente.id, token: session.token, motivo });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesPendenciasDataConsolidacao(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token), refetchType: 'none' }),
@@ -167,7 +172,8 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
   };
   const handleReativarPaciente = (paciente: Paciente) => confirmAction({ tone: 'update', title: 'Reativar paciente?',
     message: `Deseja reativar "${paciente.nomePaciente}"? O paciente volta para as listas.`,
-    confirmLabel: 'Sim', cancelLabel: 'Não', onConfirm: () => reactivateSelectedPaciente(paciente) });
+    confirmLabel: 'Sim', cancelLabel: 'Não', reason: PATIENT_STATUS_REASON,
+    onConfirm: (motivo) => reactivateSelectedPaciente(paciente, motivo) });
 
   const handleDeletePacienteArquivo = async (paciente: Paciente, arquivoId: number) => {
     if (!session) return;

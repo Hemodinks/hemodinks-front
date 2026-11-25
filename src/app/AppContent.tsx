@@ -258,6 +258,12 @@ function AppSessionContent({ auth, loginFlow }: {
     patientsDomain.openPatientsList();
   };
 
+  const openPatientAudit = () => {
+    resetProfileRouteState();
+    if (!access.canAccessPatientAudit) return openDashboard();
+    navigateToViewFromInteraction('patientAudit');
+  };
+
   const openMedicalGroups = () => {
     resetProfileRouteState();
 
@@ -411,6 +417,7 @@ function AppSessionContent({ auth, loginFlow }: {
         resetProfileRouteState();
         patientsDomain.openPatientsWithConsolidationPending();
       },
+      openPatientAudit,
       openBilling,
       openBillingHistory,
       openReports,

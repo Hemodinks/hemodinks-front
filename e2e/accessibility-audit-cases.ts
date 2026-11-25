@@ -219,11 +219,19 @@ export function registerAccessibilityAuditCases({ setup, login }: Dependencies) 
         await expect(dialog).toHaveAccessibleName(/inativar/i);
         const confirm = dialog.getByRole('button', { name: 'Sim', exact: true });
         const cancel = dialog.getByRole('button', { name: 'Não', exact: true });
+        // O motivo é obrigatório: o foco começa nele e "Sim" fica desabilitado (fora do ciclo) até preenchê-lo.
+        const reason = dialog.getByLabel('Motivo (obrigatório)');
+        await expect(reason).toBeFocused();
+        await expect(confirm).toBeDisabled();
+        await reason.press('Shift+Tab');
         await expect(cancel).toBeFocused();
-        await cancel.press('Shift+Tab');
+        await cancel.press('Tab');
+        await expect(reason).toBeFocused();
+        await reason.fill('Paciente transferido');
+        await reason.press('Tab');
+        await expect(cancel).toBeFocused();
+        await cancel.press('Tab');
         await expect(confirm).toBeFocused();
-        await confirm.press('Tab');
-        await expect(cancel).toBeFocused();
         for (const theme of ['light', 'dark']) {
           await applyThemeForAudit(page, theme);
           await audit(page, info, `modal-${theme}`);

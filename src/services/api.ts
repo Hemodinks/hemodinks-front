@@ -287,10 +287,11 @@ export function put<T>(path: string, data?: unknown, token?: string, config: Req
   }, Boolean(token));
 }
 
-export function del<T>(path: string, token?: string, config: RequestConfig = {}) {
+export function del<T>(path: string, token?: string, config: RequestConfig = {}, data?: unknown) {
   return executeRequest<T>(apiClient, {
     url: path,
     method: 'DELETE',
+    ...(data === undefined ? {} : { data }),
     ...config,
     headers: buildJsonHeaders(token, config.headers),
   }, Boolean(token));
