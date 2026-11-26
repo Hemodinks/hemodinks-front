@@ -23,8 +23,6 @@ export function LegalDocumentPage({ document }: { document: LegalDocument }) {
 
   return (
     <main className="legal-page">
-      {/* Documento longo com rolagem: focável para rolar pelo teclado (WCAG 2.1.1). */}
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
       <article key={document.slug} className="legal-document" tabIndex={0} aria-labelledby="legal-document-title">
         <Link className="legal-back-link" to="/"><ArrowLeft size={17} />Voltar ao acesso</Link>
         <header className="legal-document-header">

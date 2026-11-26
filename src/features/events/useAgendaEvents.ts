@@ -44,11 +44,7 @@ export function useAgendaEvents(session: AuthSession, from: string, to: string, 
       if (id === requestId.current) setState({ key, events: [], loading: false, error: getErrorMessage(error) });
     } finally { if (pending.current === request) pending.current = null; }
   }, [key, scope, from, to, filterKey, session.token]);
-  useEffect(() => {
-    void loadEvents(false);
-    const requests = requestId; // invalida a resposta pendente desta carga
-    return () => { requests.current++; };
-  }, [loadEvents, revision]);
+  useEffect(() => { void loadEvents(false); return () => { requestId.current++; }; }, [loadEvents, revision]);
   return { events: state.key === key ? state.events : [], loading: state.key !== key || state.loading,
     eventsError: state.key === key ? state.error : '', loadEvents, invalidateEvents };
 }

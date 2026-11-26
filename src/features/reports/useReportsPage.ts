@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { AuthSession } from '../../types';
 import { createEmptyBillingFilters, filterBillingRecords, summarizeBillingRecords } from '../billing/billingUtils';
@@ -63,12 +63,7 @@ export function useReportsPage({ session, companyName, isMedical }: Options) {
   const visibleRecords = records.slice(visibleStart ? visibleStart - 1 : 0, visibleEnd);
   const reportExport = useReportExport(records, companyName, session.token, appliedFilters, query.isFetching || query.isError);
 
-  // #292: página além do total volta para a última, na própria renderização.
-  const [pagesFor, setPagesFor] = useState(totalPages);
-  if (pagesFor !== totalPages) {
-    setPagesFor(totalPages);
-    setCurrentPage((page) => Math.min(page, totalPages));
-  }
+  useEffect(() => setCurrentPage((page) => Math.min(page, totalPages)), [totalPages]);
 
   const applyFilters = () => {
     const error = validateReportDateRange(filters);

@@ -20,7 +20,7 @@ export function bootstrapErrorMessage(error: unknown) {
 export function useBootstrapRequest<T>(
   enabled: boolean,
   request: (signal: AbortSignal) => Promise<T>,
-  _stage: 'public_clinics' | 'session_clinic_legal',
+  stage: 'public_clinics' | 'session_clinic_legal',
 ) {
   const [state, setState] = useState({ data: null as T | null, loading: enabled, slow: false, canRetry: false, error: '' });
   const active = useRef<{ cancel: () => void; retryAllowed: boolean } | null>(null);
@@ -63,15 +63,11 @@ export function useBootstrapRequest<T>(
       active.current = null;
       setState({ data: null, loading: false, slow: false, canRetry: true, error: bootstrapErrorMessage(error) });
     }
-  }, [enabled, request]);
-
-  // #292: desligado volta ao estado vazio na própria renderização (antes: no efeito).
-  if (!enabled && (state.data !== null || state.loading || state.slow || state.canRetry || state.error)) {
-    setState({ data: null, loading: false, slow: false, canRetry: false, error: '' });
-  }
+  }, [enabled, request, stage]);
 
   useEffect(() => {
     if (enabled) void retry();
+    else setState({ data: null, loading: false, slow: false, canRetry: false, error: '' });
     return () => { active.current?.cancel(); active.current = null; };
   }, [enabled, retry]);
 

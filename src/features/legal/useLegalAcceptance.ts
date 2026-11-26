@@ -23,17 +23,16 @@ const EMPTY_STATE: AcceptanceState = {
 };
 
 export function useLegalAcceptance(session: AuthSession | null) {
-  const token = session?.token;
   const scopeKey = session ? `${session.user.id}:${session.user.clinicaId ?? 0}:${session.token}` : '';
   const [state, setState] = useState<AcceptanceState>(EMPTY_STATE);
 
   const request = useCallback(async (signal: AbortSignal) => {
-    const status = await getCurrentLegalAcceptance(token!, signal);
+    const status = await getCurrentLegalAcceptance(session!.token, signal);
     if (!status?.termsOfUse || !status.privacyNotice || typeof status.requiresAcceptance !== 'boolean') {
       throw new Error('Invalid legal acceptance response');
     }
     return { scopeKey, status };
-  }, [scopeKey, token]);
+  }, [scopeKey]);
   const bootstrap = useBootstrapRequest(Boolean(session), request, 'session_clinic_legal');
   const load = bootstrap.retry;
 

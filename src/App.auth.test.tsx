@@ -325,18 +325,11 @@ describe('App — login, sessão e troca de clínica', () => {
 
     await user.type(await screen.findByLabelText('Email'), 'multi-clinica@example.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
-    // "Esqueci minha senha" só abre a tela de recuperação; o envio é no botão principal.
-    expect(screen.getByRole('heading', { name: 'Recuperar senha' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Entrar' })).not.toBeInTheDocument();
-    expect(api.resetPassword).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Enviar instruções' }));
 
     await waitFor(() => {
       expect(api.resetPassword).toHaveBeenCalledWith('multi-clinica@example.com', 'hemodinks');
     });
 
-    // Senha temporária: volta sozinho para o login, com a senha vazia.
-    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
     expect(screen.getByLabelText('Senha')).toHaveValue('');
     expect(screen.getByText(/credencial temporária fornecida pela clínica/i)).toBeInTheDocument();
     expect(api.authenticate).not.toHaveBeenCalled();
@@ -353,21 +346,15 @@ describe('App — login, sessão e troca de clínica', () => {
 
     await user.type(await screen.findByLabelText('Email'), 'multi-clinica@example.com');
     await user.click(screen.getByRole('button', { name: /esqueci minha senha/i }));
-    await user.click(screen.getByRole('button', { name: 'Enviar instruções' }));
 
     await waitFor(() => {
       expect(api.resetPassword).toHaveBeenCalledWith('multi-clinica@example.com', 'hemodinks');
     });
 
+    expect(screen.getByLabelText('Senha')).toHaveValue('');
     expect(screen.getByText(
       'Enviamos um email com o link para redefinir sua senha. Use o link recebido para cadastrar uma nova senha.',
     )).toBeInTheDocument();
-    // Enviado: some o "Enviar instruções" e o botão principal passa a ser "Voltar para o login".
-    expect(screen.queryByRole('button', { name: 'Enviar instruções' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Voltar para o login' }));
-    expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Email')).toHaveValue('multi-clinica@example.com');
-    expect(screen.getByLabelText('Senha')).toHaveValue('');
   });
 
   it('mostra a tela publica de nova senha quando o link de reset possui token', async () => {

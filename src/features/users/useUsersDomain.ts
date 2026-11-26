@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { IdentityChangedHandler } from '../../shared/identityChange';
 import { useQuery } from '@tanstack/react-query';
 import { getUsers } from '../../services';
@@ -249,9 +249,6 @@ export function useUsersDomain({
     void refreshUserList(true);
   };
 
-  // #292: openMyProfile muda a cada renderização; como Effect Event não reexecuta o efeito.
-  const openOwnProfile = useEffectEvent(() => openMyProfile());
-  const sessionUserId = session?.user.id;
   useEffect(() => {
     if (activeView !== 'profile') {
       skipProfileAutoOpenRef.current = false;
@@ -259,12 +256,12 @@ export function useUsersDomain({
     }
 
     if (canEditOwnUser
-      && sessionUserId !== undefined
+      && session
       && !skipProfileAutoOpenRef.current
-      && (moduleMode !== 'form' || editingId !== sessionUserId)) {
-      openOwnProfile();
+      && (moduleMode !== 'form' || editingId !== session.user.id)) {
+      openMyProfile();
     }
-  }, [activeView, canEditOwnUser, editingId, moduleMode, sessionUserId]);
+  }, [activeView, canEditOwnUser, editingId, moduleMode, session?.user.id]);
 
   useFormRouteSync({
     active: Boolean(session && !session.user.precisaTrocarSenha && canAccessUsers)
@@ -279,7 +276,7 @@ export function useUsersDomain({
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
-  }, [currentPage, totalPages, setCurrentPage]);
+  }, [currentPage, totalPages]);
 
   return {
     ...userList,

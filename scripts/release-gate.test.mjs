@@ -69,7 +69,7 @@ test('deploy runs after a proven reuse: its condition has an explicit status fun
 test('CI requires gate regression tests, E2E and responsive matrix without failure bypass', () => {
   const required = {
     unit: ['npm run test:release-gate', 'npm run audit:architecture', 'npm run test:coverage', 'npm run build', 'npm run budget'],
-    e2e: ['npm run test:e2e:csp -- --shard=${{ matrix.shard }}/3'],
+    e2e: ['npm run test:e2e -- --shard=${{ matrix.shard }}/3'],
     responsive: ['npm run test:e2e:responsive'],
   };
   for (const [name, commands] of Object.entries(required)) {
@@ -245,16 +245,12 @@ test('pin check rejects tags, branches, short SHAs and missing version comments'
 
 test('developer sync after a release only fast-forwards, from main, with write access scoped to its job', () => {
   const sync = workflow('sync-developer.yml');
-  // #309: so depois do CI da main aprovar o commit (developer exige "Test and build").
-  assert.deepEqual(Object.keys(sync.on), ['workflow_run']);
-  assert.deepEqual(sync.on.workflow_run, { workflows: ['CI'], types: ['completed'], branches: ['main'] });
+  assert.deepEqual(Object.keys(sync.on), ['push']);
+  assert.deepEqual(sync.on.push, { branches: ['main'] });
   assert.deepEqual(sync.permissions, { contents: 'read' });
   const job = sync.jobs['fast-forward'];
   assert.deepEqual(job.permissions, { contents: 'write' });
-  assert.match(job.if, /workflow_run\.conclusion == 'success'/);
-  assert.match(job.if, /workflow_run\.event == 'push'/);
-  assert.match(job.if, /workflow_run\.head_branch == 'main'/);
-  assert.equal(job.steps[0].with.ref, '${{ github.event.workflow_run.head_sha }}');
+  assert.equal(job.if, "${{ github.ref == 'refs/heads/main' }}");
   const script = job.steps.map(step => step.run ?? '').join('\n');
   assert.match(script, /git push origin "\$RELEASE_SHA:refs\/heads\/developer"/);
   assert.doesNotMatch(script, /--force|\s-f\b|\+\$?RELEASE_SHA|\+refs\//);

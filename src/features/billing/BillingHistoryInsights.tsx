@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BarChart3, CircleDollarSign, PieChart, ReceiptText, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { DataPanel } from '../../shared/components/ui';
 import { formatCurrency } from '../../shared/utils/formatters';
@@ -130,13 +130,10 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
   const [hoveredQuarter, setHoveredQuarter] = useState<number | null>(null);
   const [selectedQuarter, setSelectedQuarter] = useState<number | null>(null);
 
-  // #292: trocar de ano limpa o trimestre destacado na própria renderização.
-  const [quartersYear, setQuartersYear] = useState(year.year);
-  if (quartersYear !== year.year) {
-    setQuartersYear(year.year);
+  useEffect(() => {
     setHoveredQuarter(null);
     setSelectedQuarter(null);
-  }
+  }, [year.year]);
 
   const quarters = getBillingQuarterHighlights(year);
   const positiveMonths = year.months.filter((month) => month.summary.totalGrossAmount > 0);
@@ -151,14 +148,18 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
   const lowestMonth = positiveMonths.reduce<BillingHistoryMonth | null>((current, month) => (
     !current || month.summary.totalGrossAmount < current.summary.totalGrossAmount ? month : current
   ), null);
-  const quarterPercentages = quarters.map((quarter) => (annualAmount > 0 ? (quarter.totalGrossAmount / annualAmount) * 100 : 0));
-  const quarterMetrics = quarters.map((quarter, index) => ({
-    quarter,
-    color: QUARTER_COLORS[index],
-    percentage: quarterPercentages[index],
-    // Início da fatia = soma dos trimestres anteriores (sem variável reatribuída durante a renderização).
-    start: quarterPercentages.slice(0, index).reduce((total, value) => total + value, 0),
-  }));
+  let accumulatedPercentage = 0;
+  const quarterMetrics = quarters.map((quarter, index) => {
+    const start = accumulatedPercentage;
+    const percentage = annualAmount > 0 ? (quarter.totalGrossAmount / annualAmount) * 100 : 0;
+    accumulatedPercentage += percentage;
+    return {
+      quarter,
+      color: QUARTER_COLORS[index],
+      percentage,
+      start,
+    };
+  });
   const largestQuarterAmount = Math.max(...quarters.map((quarter) => quarter.totalGrossAmount), 0);
   const activeQuarter = hoveredQuarter ?? selectedQuarter;
   const activeQuarterMetric = quarterMetrics.find(({ quarter }) => quarter.quarter === activeQuarter) ?? null;
@@ -204,8 +205,6 @@ export function BillingHistoryCharts({ year, years, selectedYear, onChange }: Bi
               return (
                 <div
                   className={`billing-history-bar-column${activeQuarter === quarter ? ' is-active' : ''}${activeQuarter !== null && activeQuarter !== quarter ? ' is-muted' : ''}`}
-                  // Ponto do gráfico focável para expor o tooltip pelo teclado (WCAG 2.1.1 e 1.4.13).
-                  // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                   tabIndex={0}
                   aria-describedby={tooltipId}
                   aria-label={`${month.name} de ${year.year}, ${quarter}º trimestre, ${formatCurrency(month.summary.totalGrossAmount)}`}

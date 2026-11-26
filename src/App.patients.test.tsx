@@ -63,7 +63,8 @@ describe('App — pacientes e CBHPM', () => {
 
     const { user } = await renderAuthenticatedApp();
 
-    await openPatientsModule(user);
+    expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^pacientes/i }));
 
     const patientRow = await screen.findByText('Paciente Hemodinks', {}, { timeout: 5_000 });
     const observationButton = within(patientRow.closest('tr')!).getByRole('button', { name: /observações de paciente hemodinks/i });

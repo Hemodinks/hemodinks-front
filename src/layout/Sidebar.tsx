@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { ChevronDown, Mail } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { APP_MODULES } from '../shared/navigation/appModules';
@@ -13,7 +13,6 @@ type SidebarProps = {
   clinicName: string;
   canAccessDashboard: boolean;
   canAccessPatients: boolean;
-  canAccessPatientAudit?: boolean;
   canAccessUsers: boolean;
   canEditOwnUser: boolean;
   canAccessBilling: boolean;
@@ -30,7 +29,6 @@ type SidebarProps = {
   onOpenUsersList: () => void;
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
-  onOpenPatientAudit?: () => void;
   onOpenBilling: () => void;
   onOpenBillingHistory: () => void;
   onOpenReports: () => void;
@@ -47,7 +45,6 @@ export function Sidebar({
   clinicName,
   canAccessDashboard,
   canAccessPatients,
-  canAccessPatientAudit = false,
   canAccessUsers,
   canEditOwnUser,
   canAccessBilling,
@@ -64,7 +61,6 @@ export function Sidebar({
   onOpenUsersList,
   onOpenMyProfile,
   onOpenPatientsList,
-  onOpenPatientAudit,
   onOpenBilling,
   onOpenBillingHistory,
   onOpenReports,
@@ -75,20 +71,15 @@ export function Sidebar({
   onOpenClinics,
 }: SidebarProps) {
   const billingSubmenuId = useId();
-  const patientsSubmenuId = useId();
-  const isPatientsModuleActive = activeView === 'patients' || activeView === 'patientAudit';
-  const [isPatientsMenuOpen, setIsPatientsMenuOpen] = useState(isPatientsModuleActive);
   const isBillingModuleActive = activeView === 'billing' || activeView === 'billingHistory' || activeView === 'reports';
   const canAccessBillingModule = canAccessBilling;
   const [isBillingMenuOpen, setIsBillingMenuOpen] = useState(isBillingModuleActive);
 
-  // #292: entrar numa tela do faturamento abre o submenu na própria renderização.
-  const [menuView, setMenuView] = useState(activeView);
-  if (menuView !== activeView) {
-    setMenuView(activeView);
-    if (isBillingModuleActive) setIsBillingMenuOpen(true);
-    if (isPatientsModuleActive) setIsPatientsMenuOpen(true);
-  }
+  useEffect(() => {
+    if (isBillingModuleActive) {
+      setIsBillingMenuOpen(true);
+    }
+  }, [activeView, isBillingModuleActive]);
 
   return (
     <aside className="sidebar-panel" aria-label="Menu da clínica">
@@ -113,46 +104,7 @@ export function Sidebar({
               <span>{APP_MODULES.dashboard.navLabel}</span>
             </button>
           )}
-          {canAccessPatients && canAccessPatientAudit && (
-            <div className="side-nav-billing-group side-nav-patients-group">
-              <button
-                type="button"
-                className={`side-nav-patients side-nav-billing-toggle ${isPatientsModuleActive ? 'active' : ''}`}
-                style={{ '--side-nav-color': APP_MODULES.patients.color } as CSSProperties}
-                aria-expanded={isPatientsMenuOpen}
-                aria-controls={patientsSubmenuId}
-                onClick={() => setIsPatientsMenuOpen((current) => !current)}
-              >
-                <APP_MODULES.patients.icon size={18} />
-                <span>{APP_MODULES.patients.navLabel}</span>
-                <ChevronDown className={`side-nav-chevron ${isPatientsMenuOpen ? 'is-open' : ''}`} size={17} aria-hidden="true" />
-              </button>
-              <div id={patientsSubmenuId} className="side-nav-billing-submenu" role="group" aria-label="Opções de pacientes" hidden={!isPatientsMenuOpen}>
-                <button
-                  type="button"
-                  className={`side-nav-patients side-nav-billing-subitem ${activeView === 'patients' ? 'active' : ''}`}
-                  style={{ '--side-nav-color': APP_MODULES.patients.color } as CSSProperties}
-                  aria-current={activeView === 'patients' ? 'page' : undefined}
-                  onClick={onOpenPatientsList}
-                >
-                  <APP_MODULES.patients.icon size={16} />
-                  <span>Cadastro de Pacientes</span>
-                  <span className="side-nav-count">{pacientesCount}</span>
-                </button>
-                <button
-                  type="button"
-                  className={`side-nav-patient-audit side-nav-billing-subitem ${activeView === 'patientAudit' ? 'active' : ''}`}
-                  style={{ '--side-nav-color': APP_MODULES.patientAudit.color } as CSSProperties}
-                  aria-current={activeView === 'patientAudit' ? 'page' : undefined}
-                  onClick={onOpenPatientAudit}
-                >
-                  <APP_MODULES.patientAudit.icon size={16} />
-                  <span>{APP_MODULES.patientAudit.navLabel}</span>
-                </button>
-              </div>
-            </div>
-          )}
-          {canAccessPatients && !canAccessPatientAudit && (
+          {canAccessPatients && (
             <button
               type="button"
               className={`side-nav-patients ${activeView === 'patients' ? 'active' : ''}`}

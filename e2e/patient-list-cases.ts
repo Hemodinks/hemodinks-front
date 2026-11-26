@@ -30,7 +30,7 @@ export function registerPatientListTests({ setup, login }: Dependencies) {
         const row = panel.locator('tbody tr').first();
         const actionCell = row.locator('td').nth(1);
         await expect(actionCell.getByTitle('Editar')).toBeVisible();
-        await expect(actionCell.getByTitle('Inativar', { exact: true })).toBeVisible();
+        await expect(actionCell.getByTitle('Excluir', { exact: true })).toBeVisible();
         const bounds = await actionCell.getByTitle('Editar').boundingBox();
         expect(bounds!.width).toBeGreaterThanOrEqual(44);
         expect(bounds!.height).toBeGreaterThanOrEqual(44);
@@ -80,15 +80,14 @@ export function registerPatientListTests({ setup, login }: Dependencies) {
       api.failDelete = true;
       api.deleteDelay = 1000;
       await login(page, '/pacientes');
-      await page.getByRole('button', { name: 'Inativar Paciente Hemodinks', exact: true }).click();
+      await page.getByRole('button', { name: 'Excluir Paciente Hemodinks', exact: true }).click();
       const dialog = page.getByRole('dialog');
-      await dialog.getByLabel('Motivo (obrigatório)').fill('Paciente transferido');
       await dialog.getByRole('button', { name: 'Sim', exact: true }).click();
       await expect(dialog.getByRole('button', { name: 'Aguarde...' })).toBeDisabled();
       await expect(dialog.getByRole('button', { name: 'Não', exact: true })).toBeDisabled();
       await expect(page.getByRole('alert')).toHaveText('Não foi possível excluir o paciente de teste.');
       expect(api.deleteRequests).toBe(1);
-      await expect(page.getByRole('button', { name: 'Inativar Paciente Hemodinks', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Excluir Paciente Hemodinks', exact: true })).toBeVisible();
     });
   });
 }

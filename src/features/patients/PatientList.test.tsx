@@ -16,13 +16,13 @@ function props(overrides: Partial<PatientListProps> = {}): PatientListProps {
     patientReadOnly: false, isAdmin: true, isTeam: false, medicalUsers: [], convenios: [],
     onSearchChange: vi.fn(), onFiltersChange: vi.fn(), onClearFilters: vi.fn(), onExportScopeChange: vi.fn(),
     onPageChange: vi.fn(), onSortChange: vi.fn(), onRefresh: vi.fn(), onOpenNewPacienteForm: vi.fn(),
-    onExportPacientes: vi.fn(), onEditPaciente: vi.fn(), onDeletePaciente: vi.fn(), onReativarPaciente: vi.fn(), onOpenPacienteFiles: vi.fn(),
+    onExportPacientes: vi.fn(), onEditPaciente: vi.fn(), onDeletePaciente: vi.fn(), onOpenPacienteFiles: vi.fn(),
     onOpenPacienteObservacoes: vi.fn(), onSelectPatientInfo: vi.fn(), ...overrides,
   };
 }
 
 describe('listagem de pacientes', () => {
-  it('mantém Editar e Inativar na célula imediatamente após o nome, com tooltip e ações diretas', async () => {
+  it('mantém Editar e Excluir na célula imediatamente após o nome, com tooltip e ações diretas', async () => {
     const state = props();
     render(<PatientList {...state} />);
     const cells = within(screen.getByText('Paciente Hemodinks').closest('tr')!).getAllByRole('cell');
@@ -30,9 +30,7 @@ describe('listagem de pacientes', () => {
     const edit = within(cells[1]).getByRole('button', { name: 'Editar Paciente Hemodinks' });
     expect(edit).toHaveAttribute('title', 'Editar');
     await userEvent.click(edit);
-    const inactivate = within(cells[1]).getByRole('button', { name: 'Inativar Paciente Hemodinks' });
-    expect(inactivate).toHaveAttribute('title', 'Inativar');
-    await userEvent.click(inactivate);
+    await userEvent.click(within(cells[1]).getByRole('button', { name: 'Excluir Paciente Hemodinks' }));
     expect(state.onEditPaciente).toHaveBeenCalledWith(basePaciente);
     expect(state.onDeletePaciente).toHaveBeenCalledWith(basePaciente);
   });
@@ -40,32 +38,7 @@ describe('listagem de pacientes', () => {
   it('preserva visualização sem oferecer criação, edição ou exclusão sem permissão', () => {
     render(<PatientList {...props({ canCreatePatients: false, canEditPatients: false, canDeletePatients: false, patientReadOnly: true })} />);
     expect(screen.getByRole('button', { name: 'Visualizar Paciente Hemodinks' })).toBeEnabled();
-    expect(screen.queryByRole('button', { name: /Editar|Inativar|Reativar|Novo paciente/ })).not.toBeInTheDocument();
-  });
-
-  it('paciente inativado mostra selo e oferece Reativar em vez de Inativar ao administrador', async () => {
-    const inactive = { ...basePaciente, inativado: true, inativadoEm: '2026-11-23T15:00:00Z' };
-    const state = props({ pacientes: [inactive] });
-    render(<PatientList {...state} />);
-    const row = screen.getByText('Paciente Hemodinks').closest('tr')!;
-    expect(within(row).getByText('Inativo')).toBeInTheDocument();
-    expect(within(row).queryByRole('button', { name: 'Inativar Paciente Hemodinks' })).not.toBeInTheDocument();
-    await userEvent.click(within(row).getByRole('button', { name: 'Reativar Paciente Hemodinks' }));
-    expect(state.onReativarPaciente).toHaveBeenCalledWith(inactive);
-    expect(state.onDeletePaciente).not.toHaveBeenCalled();
-  });
-
-  it('filtro de situação do cadastro aparece só para administrador', async () => {
-    const state = props();
-    const { unmount } = render(<PatientList {...state} />);
-    const situacao = screen.getByRole('combobox', { name: 'Situação do cadastro' });
-    expect(situacao).toHaveValue('ativos');
-    await userEvent.selectOptions(situacao, 'inativos');
-    const update = vi.mocked(state.onFiltersChange).mock.calls.at(-1)![0] as (current: typeof emptyPacienteFilters) => typeof emptyPacienteFilters;
-    expect(update(emptyPacienteFilters).situacao).toBe('inativos');
-    unmount();
-    render(<PatientList {...props({ isAdmin: false })} />);
-    expect(screen.queryByRole('combobox', { name: 'Situação do cadastro' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Editar|Excluir|Novo paciente/ })).not.toBeInTheDocument();
   });
 
   it('bloqueia paginação, atualização e exportações enquanto carrega', () => {

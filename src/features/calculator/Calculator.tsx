@@ -30,8 +30,6 @@ export function Calculator({ onClose }: { onClose?: () => void }) {
   }
 
   return (
-    // Atalhos de teclado da calculadora: os controles são <button> nativos; a seção só recebe o keydown delegado.
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <section className="calculator" aria-label="Calculadora" onKeyDown={handleKeyDown}>
       <div className="calculator-heading">
         <h2>Calculadora</h2>
@@ -55,8 +53,6 @@ export function Calculator({ onClose }: { onClose?: () => void }) {
           <button type="button" className="calculator-history-clear" disabled={!state.history.length}
             onClick={() => dispatch('clearHistory')}>Limpar histórico</button>
         </div>
-        {/* Lista com rolagem: focável para rolar pelo teclado (WCAG 2.1.1, axe scrollable-region-focusable). */}
-        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
         {state.history.length ? <ol tabIndex={0} aria-label="Operações realizadas">
           {state.history.map((entry, index) => <li key={state.history.length - index}>
             <span>{entry.expression.replaceAll('.', ',')}</span>

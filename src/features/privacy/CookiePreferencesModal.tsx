@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Modal } from '../../shared/components/Modal';
@@ -13,12 +13,8 @@ type Props = {
 
 export function CookiePreferencesModal({ initialValue, onClose, onSave }: Props) {
   const [value, setValue] = useState(initialValue);
-  // #292: nova escolha vinda de fora substitui a edição na própria renderização.
-  const [valueFor, setValueFor] = useState(initialValue);
-  if (valueFor !== initialValue) {
-    setValueFor(initialValue);
-    setValue(initialValue);
-  }
+
+  useEffect(() => setValue(initialValue), [initialValue]);
 
   return (
     <Modal

@@ -40,8 +40,11 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
   const range = agendaRange(view, visibleMonth, selectedDate);
   const { events, loading, eventsError, loadEvents, invalidateEvents } = useAgendaEvents(session, range.from, range.to, filters);
   const { medicalUsers, notificationRecipientOptions, notificationRecipientsLoading, notificationRecipientsError, recipientSearch } = useAgendaRecipients(session);
+  const [holidays, setHolidays] = useState<PublicHoliday[]>([]);
+  const [holidayLoading, setHolidayLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
+  const [holidayError, setHolidayError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [formData, setFormData] = useState<AgendaFormData>(() => buildEmptyForm(todayKey, isMedical, session.user.id));
@@ -61,23 +64,6 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
   };
 
   const days = useMemo(() => monthGrid(visibleMonth), [visibleMonth]);
-  // #292: feriados guardados com a chave dos anos pedidos; "carregando" e erro saem dela (sem setState síncrono).
-  // Durante a carga continua valendo a lista anterior, como antes.
-  const holidayYears = useMemo(() => Array.from(new Set(days.map((date) => date.getFullYear()))), [days]);
-  const holidayKey = holidayYears.join(',');
-  const [holidayState, setHolidayState] = useState<{ key: string; holidays: PublicHoliday[]; error: string }>({ key: '', holidays: [], error: '' });
-  const holidays = holidayState.holidays;
-  const holidayLoading = holidayState.key !== holidayKey;
-  const holidayError = holidayLoading ? '' : holidayState.error;
-  useEffect(() => {
-    let active = true;
-    void Promise.all(holidayYears.map((year) => getBrazilPublicHolidays(year)))
-      .then((result) => { if (active) setHolidayState({ key: holidayKey, holidays: result.flat(), error: '' }); })
-      .catch((caughtError) => {
-        if (active) setHolidayState((current) => ({ key: holidayKey, holidays: current.holidays, error: getErrorMessage(caughtError) }));
-      });
-    return () => { active = false; };
-  }, [holidayKey, holidayYears]);
   const holidayByDate = useMemo(() => new Map(holidays.filter((holiday) => holiday.global || holiday.types?.includes('Public'))
     .map((holiday) => [holiday.date, holiday])), [holidays]);
   const selectedHoliday = holidayByDate.get(selectedDate);
@@ -85,6 +71,12 @@ export function useAgendaController({ session, isMedical }: UseAgendaControllerO
     .sort((first, second) => new Date(first.start).getTime() - new Date(second.start).getTime()), [events, selectedDate]);
   const pendingEventsCount = events.filter((event) => !event.isCompleted).length;
 
+  useEffect(() => {
+    const years = Array.from(new Set(days.map((date) => date.getFullYear())));
+    setHolidayLoading(true); setHolidayError('');
+    void Promise.all(years.map((year) => getBrazilPublicHolidays(year))).then((result) => setHolidays(result.flat()))
+      .catch((caughtError) => setHolidayError(getErrorMessage(caughtError))).finally(() => setHolidayLoading(false));
+  }, [days]);
   const resetForm = (dateKey = selectedDate) => { manualEnd.current = false; setValidationAttempted(false); setServerFieldErrors({}); setEditingEventId(null); setFormData(buildEmptyForm(dateKey, isMedical, session.user.id)); };
   const openCalendarSection = () => setActiveSection('calendario');
   const openCadastroSection = () => setActiveSection('cadastro');

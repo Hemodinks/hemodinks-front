@@ -56,9 +56,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: Hemodinks/hemodinks-api
-          # Revisao da API deste release (developer em 25/11/2026). Atualizar a cada release, para testar o front
-          # contra a API que vai para producao; o pin continua para so rodar codigo da API ja revisado.
-          ref: 87760c9574a1fac1f6f9ce12df11a8252a1a04d1
+          ref: fa3ef7cddf233807c83379fa804a286e0a6513d9
           path: .integration/api
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

@@ -17,6 +17,7 @@ export const assSubtitlesPath = join(reportsArtifacts, 'tutorial-relatorios.ass'
 export const narratedWebmPath = join(reportsArtifacts, 'tutorial-relatorios-narrado.webm');
 export const narratedMp4Path = join(reportsArtifacts, 'tutorial-relatorios-narrado.mp4');
 export const publishedReportsRoot = join(workspaceRoot, 'public', 'tutorials', 'reports');
+export const publishedWebmPath = join(publishedReportsRoot, 'tutorial-relatorios-narrado.webm');
 export const publishedMp4Path = join(publishedReportsRoot, 'tutorial-relatorios-narrado.mp4');
 
 export const piperExecutable = process.platform === 'win32'

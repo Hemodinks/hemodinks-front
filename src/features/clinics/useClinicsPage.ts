@@ -3,7 +3,6 @@ import { type ChangeEvent, type FormEvent, type SetStateAction, useCallback, use
 import type { AuthSession, ClinicPayload, PlatformClinic, SelectClinicResponse } from '../../types';
 import { createPlatformClinic, deactivatePlatformClinic, listPlatformClinics, selectSessionClinic, updatePlatformClinic } from '../../services';
 import { readProfilePhoto } from '../../shared/utils/files';
-import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
 import {
   ALLOWED_PROFILE_PHOTO_TYPES,
   API_ASSET_BASE_URL,
@@ -57,12 +56,14 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
     setSortDirection('asc');
   };
 
-  // #292: a busca só grava estado depois da resposta (o efeito chama esta); recarregar pelo botão ou após
-  // salvar marca "carregando" e limpa erros antes, no próprio clique.
-  const fetchClinics = useCallback(async (requestId: number) => {
+  const loadClinics = useCallback(async () => {
+    const requestId = ++loadRequestId.current;
+    setLoading(true);
+    setPasswordError(false);
+    setError('');
     try {
       const result = await listPlatformClinics(session.token);
-      if (requestId === loadRequestId.current) { setClinics(result); setError(''); }
+      if (requestId === loadRequestId.current) setClinics(result);
     } catch (requestError) {
       if (requestId === loadRequestId.current) setError(getErrorMessage(requestError));
     } finally {
@@ -70,18 +71,10 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
     }
   }, [session.token]);
 
-  const loadClinics = useCallback(async () => {
-    const requestId = ++loadRequestId.current;
-    setLoading(true);
-    setPasswordError(false);
-    setError('');
-    await fetchClinics(requestId);
-  }, [fetchClinics]);
-
   useEffect(() => {
-    void fetchClinics(++loadRequestId.current);
+    void loadClinics();
     return () => { loadRequestId.current += 1; photoRequestId.current += 1; };
-  }, [fetchClinics]);
+  }, [loadClinics]);
 
   const clearSensitiveFormState = () => {
     setPasswordError(false);
@@ -183,21 +176,13 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
     }
   };
 
-  // #311: confirmação no Modal do sistema, não no window.confirm nativo.
-  const { confirmAction, confirmationDialog } = useConfirmationDialog();
-  const deactivate = (clinic: PlatformClinic) => confirmAction({
-    tone: 'delete',
-    title: 'Desativar clínica?',
-    message: `Desativar a clínica ${clinic.nome}? Os dados serão preservados.`,
-    confirmLabel: 'Desativar',
-    cancelLabel: 'Cancelar',
-    onConfirm: async () => {
-      setPasswordError(false);
-      setError('');
-      try { await deactivatePlatformClinic(clinic.id, session.token); setSuccess('Clinica desativada.'); await loadClinics(); }
-      catch (requestError) { setError(getErrorMessage(requestError)); }
-    },
-  });
+  const deactivate = async (clinic: PlatformClinic) => {
+    if (!window.confirm(`Desativar a clinica ${clinic.nome}? Os dados serao preservados.`)) return;
+    setPasswordError(false);
+    setError('');
+    try { await deactivatePlatformClinic(clinic.id, session.token); setSuccess('Clinica desativada.'); await loadClinics(); }
+    catch (requestError) { setError(getErrorMessage(requestError)); }
+  };
   const switchClinic = async (clinic: PlatformClinic) => {
     setPasswordError(false);
     setError('');
@@ -210,6 +195,6 @@ export function useClinicsPage({ session, onClinicSelected }: Options) {
     setForm: (action: SetStateAction<ClinicFormData>) => {
       setForm(action);
       if (passwordError) { setPasswordError(false); setError(''); }
-    }, setPhotoPreview, changeSort, loadClinics, openNew, openEdit, closeForm, handlePhotoChange, submit, deactivate, switchClinic, confirmationDialog,
+    }, setPhotoPreview, changeSort, loadClinics, openNew, openEdit, closeForm, handlePhotoChange, submit, deactivate, switchClinic,
   };
 }

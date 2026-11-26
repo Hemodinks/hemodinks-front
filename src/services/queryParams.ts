@@ -31,10 +31,6 @@ export function buildListQueryParams(query?: ListQuery | PacienteListQuery | Cbh
     params.set('pendenciaDataConsolidacao', 'true');
   }
 
-  if (query && 'situacao' in query && query.situacao && query.situacao !== 'ativos') {
-    params.set('situacao', query.situacao);
-  }
-
   if (query && 'medicoUserIds' in query && query.medicoUserIds?.trim()) {
     params.set('medicoUserIds', query.medicoUserIds.trim());
   }

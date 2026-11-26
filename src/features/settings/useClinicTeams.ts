@@ -20,24 +20,17 @@ export function useClinicTeams({ session, clinicId }: Options) {
   const [visiblePins, setVisiblePins] = useState<Record<number, boolean>>({});
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(true);
-  // #292: outra clínica ou sessão volta a "carregando" na própria renderização, antes da busca do efeito.
-  const teamsScope = `${clinicId}|${session.token}`;
-  const [loadingFor, setLoadingFor] = useState(teamsScope);
-  if (loadingFor !== teamsScope) {
-    setLoadingFor(teamsScope);
-    setLoading(true);
-    setError('');
-  }
+  const [loading, setLoading] = useState(false);
   const loadRequestId = useRef(0);
   const actionsInFlight = useRef(new Set<string>());
 
-  // #292: a busca só grava estado depois da resposta (o efeito chama esta); recarregar após uma ação marca
-  // "carregando" e limpa o erro antes, no próprio handler.
-  const fetchTeams = useCallback(async (requestId: number) => {
+  const load = useCallback(async () => {
+    const requestId = ++loadRequestId.current;
+    setLoading(true);
+    setError('');
     try {
       const [teamItems, userResult] = await Promise.all([listPlatformClinicTeams(clinicId, session.token), listPlatformClinicTeamUsers(clinicId, session.token)]);
-      if (requestId === loadRequestId.current) { setTeams(teamItems); setUsers(userResult); setError(''); }
+      if (requestId === loadRequestId.current) { setTeams(teamItems); setUsers(userResult); }
     } catch (requestError) {
       if (requestId === loadRequestId.current) setError(getErrorMessage(requestError));
     } finally {
@@ -45,17 +38,10 @@ export function useClinicTeams({ session, clinicId }: Options) {
     }
   }, [clinicId, session.token]);
 
-  const load = useCallback(async () => {
-    const requestId = ++loadRequestId.current;
-    setLoading(true);
-    setError('');
-    await fetchTeams(requestId);
-  }, [fetchTeams]);
-
   useEffect(() => {
-    void fetchTeams(++loadRequestId.current);
+    void load();
     return () => { loadRequestId.current += 1; };
-  }, [fetchTeams]);
+  }, [load]);
 
   const matchingUsers = (team: Team) => {
     const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');

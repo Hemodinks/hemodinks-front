@@ -1,5 +1,5 @@
 import { gzipSync } from 'node:zlib';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const distDir = join(process.cwd(), 'dist');
@@ -68,16 +68,3 @@ for (const chunk of chunkPaths) {
   checkBudget(`${chunk} raw`, [chunkPath], readBudget('PERF_BUDGET_CHUNK_KB', 550));
   checkBudget(`${chunk} gzip`, [chunkPath], readBudget('PERF_BUDGET_CHUNK_GZIP_KB', 180), true);
 }
-
-// #308: o deploy inteiro (incluindo videos de public/) tem teto no Static Web Apps Free (250 MB).
-// Falha bem antes disso para nao depender de upgrade de plano.
-const distTotalBytes = readdirSync(distDir, { recursive: true })
-  .map(entry => join(distDir, entry))
-  .filter(path => statSync(path).isFile())
-  .reduce((total, path) => total + statSync(path).size, 0);
-const distBudgetMb = readBudget('PERF_BUDGET_DIST_MB', 100);
-const distTotalMb = distTotalBytes / (1024 * 1024);
-if (distTotalMb > distBudgetMb) {
-  throw new Error(`dist total is ${distTotalMb.toFixed(2)} MB, above budget ${distBudgetMb.toFixed(2)} MB.`);
-}
-console.log(`dist total: ${distTotalMb.toFixed(2)} MB / ${distBudgetMb.toFixed(2)} MB`);

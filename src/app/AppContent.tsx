@@ -91,14 +91,14 @@ function AppSessionContent({ auth, loginFlow }: {
       setOpenDashboardAfterLogin(false);
       navigateToView(view, replace);
     },
-    [navigateToView, setOpenDashboardAfterLogin],
+    [navigateToView],
   );
   const navigateToFormFromInteraction = useCallback(
     (view: FormView, recordId: number | null = null, replace = false) => {
       setOpenDashboardAfterLogin(false);
       navigateToForm(view, recordId, replace);
     },
-    [navigateToForm, setOpenDashboardAfterLogin],
+    [navigateToForm],
   );
   const returnToLogin = (infoMessage = "") => {
     resetLoginState(infoMessage);
@@ -209,7 +209,7 @@ function AppSessionContent({ auth, loginFlow }: {
       return;
     }
     setOpenDashboardAfterLogin(false);
-  }, [normalizedPath, openDashboardAfterLogin, setOpenDashboardAfterLogin]);
+  }, [normalizedPath, openDashboardAfterLogin]);
   const resetProfileRouteState = () => {
     if (activeView === "profile") {
       usersDomain.resetUserFormState({ suppressProfileAutoOpen: true });
@@ -256,12 +256,6 @@ function AppSessionContent({ auth, loginFlow }: {
   const openPatientsListFromMenu = () => {
     resetProfileRouteState();
     patientsDomain.openPatientsList();
-  };
-
-  const openPatientAudit = () => {
-    resetProfileRouteState();
-    if (!access.canAccessPatientAudit) return openDashboard();
-    navigateToViewFromInteraction('patientAudit');
   };
 
   const openMedicalGroups = () => {
@@ -417,7 +411,6 @@ function AppSessionContent({ auth, loginFlow }: {
         resetProfileRouteState();
         patientsDomain.openPatientsWithConsolidationPending();
       },
-      openPatientAudit,
       openBilling,
       openBillingHistory,
       openReports,

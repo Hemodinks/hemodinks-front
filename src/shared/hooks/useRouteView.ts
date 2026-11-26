@@ -8,7 +8,6 @@ type UseRouteViewOptions = {
   session: AuthSession | null;
   canUseDashboardRoute: boolean;
   canUsePatientsRoute: boolean;
-  canUsePatientAuditRoute: boolean;
   canUseUsersRoute: boolean;
   canUseProfileRoute: boolean;
   canUseBillingRoute: boolean;
@@ -29,7 +28,6 @@ export function useRouteView({
   session,
   canUseDashboardRoute,
   canUsePatientsRoute,
-  canUsePatientAuditRoute,
   canUseUsersRoute,
   canUseProfileRoute,
   canUseBillingRoute,
@@ -52,7 +50,6 @@ export function useRouteView({
   const shouldForceDashboardRoute = forceDashboardRoute && canUseDashboardRoute;
   const routeBlocked = (routeView === 'dashboard' && !canUseDashboardRoute)
     || (routeView === 'patients' && !canUsePatientsRoute)
-    || (routeView === 'patientAudit' && !canUsePatientAuditRoute)
     || (routeView === 'users' && !canUseUsersRoute)
     || (routeView === 'profile' && !canUseProfileRoute)
     || (routeView === 'billing' && !canUseBillingRoute)

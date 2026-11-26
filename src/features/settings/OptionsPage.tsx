@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import type { IdentityChangedHandler } from '../../shared/identityChange';
 import { Activity, Shield, SlidersHorizontal, Users } from 'lucide-react';
 import type { Theme } from '../../appTypes';
@@ -30,7 +30,6 @@ export function OptionsPage(props: OptionsPageProps) {
         <button
           type="button"
           className={section === 'settings' ? 'active' : ''}
-          style={{ '--tab-tint': '#2563eb' } as CSSProperties}
           aria-current={section === 'settings' ? 'page' : undefined}
           onClick={() => setSection('settings')}
         >
@@ -40,18 +39,17 @@ export function OptionsPage(props: OptionsPageProps) {
         <button
           type="button"
           className={section === 'monitoring' ? 'active' : ''}
-          style={{ '--tab-tint': '#0f766e' } as CSSProperties}
           aria-current={section === 'monitoring' ? 'page' : undefined}
           onClick={() => setSection('monitoring')}
         >
           <Activity size={18} />
           Monitoramento
         </button>
-        {canObserveSecurity && <button type="button" className={section === 'security' ? 'active' : ''} style={{ '--tab-tint': '#b45309' } as CSSProperties}
+        {canObserveSecurity && <button type="button" className={section === 'security' ? 'active' : ''}
           aria-current={section === 'security' ? 'page' : undefined} onClick={() => setSection('security')}>
           <Shield size={18} />Segurança
         </button>}
-        {isSuperAdmin && <button type="button" className={section === 'sessions' ? 'active' : ''} style={{ '--tab-tint': '#7c3aed' } as CSSProperties}
+        {isSuperAdmin && <button type="button" className={section === 'sessions' ? 'active' : ''}
           aria-current={section === 'sessions' ? 'page' : undefined} onClick={() => setSection('sessions')}>
           <Users size={18} />Sessões ativas
         </button>}

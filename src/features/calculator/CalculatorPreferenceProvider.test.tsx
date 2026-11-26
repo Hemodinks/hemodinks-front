@@ -3,9 +3,6 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { mockSession } from '../../test/appTestData';
 import { SystemSettingsPage } from '../settings/SystemSettingsPage';
 import { CalculatorPreferenceProvider, useCalculatorPreference } from './CalculatorPreferenceProvider';
-// Os paineis de MFA (#150) e de auditoria buscam a API com react-query; aqui so importa a preferencia da calculadora.
-vi.mock('../settings/MfaSettingsPanel', () => ({ MfaSettingsPanel: () => null }));
-vi.mock('../settings/AuditSettingsPanel', () => ({ AuditSettingsPanel: () => null }));
 
 const privacy = vi.hoisted(() => ({ preferences: true }));
 vi.mock('../privacy/ConsentProvider', () => ({

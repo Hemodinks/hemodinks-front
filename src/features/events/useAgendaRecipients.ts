@@ -29,7 +29,7 @@ export function useAgendaRecipients(session: AuthSession) {
     let active = true;
     if (medicalRequest.current?.scope !== scope)
       medicalRequest.current = { scope, promise: getAgendaMedicalUsers(session.token) };
-    // #292: "carregando" já sai de state.key !== key (abaixo); não há setState síncrono aqui.
+    setState({ key, medicalUsers: [], options: null, loading: true, error: '' });
     void Promise.all([medicalRequest.current.promise, getAgendaNotificationRecipientOptions(session.token, { search, profile, page })])
       .then(([medicalUsers, options]) => {
         if (active) setState({ key, medicalUsers, options, loading: false, error: '' });
