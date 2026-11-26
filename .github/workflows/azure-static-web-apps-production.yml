@@ -109,3 +109,15 @@ jobs:
           app_location: dist
           api_location: ""
           skip_app_build: true
+
+      # Marcador "Deployments" no app Browser do New Relic. Roda depois do upload e nunca bloqueia
+      # o deploy (sem NEW_RELIC_API_KEY so avisa). NEW_RELIC_API_KEY e a User key (NRAK-...).
+      - name: Record deployment in New Relic
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
+          NEW_RELIC_REGION: ${{ vars.NEW_RELIC_REGION }}
+          VITE_NEW_RELIC_ACCOUNT_ID: ${{ vars.VITE_NEW_RELIC_ACCOUNT_ID }}
+          VITE_NEW_RELIC_APPLICATION_ID: ${{ vars.VITE_NEW_RELIC_APPLICATION_ID }}
+        run: node scripts/newrelic-change-tracking.mjs

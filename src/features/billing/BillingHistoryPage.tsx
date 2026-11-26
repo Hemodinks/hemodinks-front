@@ -2,7 +2,7 @@ import { SurgeryStatusFilter } from '../../shared/components/SurgeryStatusFilter
 import { SurgeryTypeFilter } from '../../shared/components/SurgeryTypeField';
 import type { StatusCirurgia } from '../../shared/surgeryStatus';
 import { getSurgeryTypeLabel, type TipoCirurgia } from '../../shared/surgeryType';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { sessionEpoch } from '../../services/sessionEpoch';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, CalendarClock, ChevronDown, Download, FileText, History, ReceiptText, Trash2, TriangleAlert, Upload, Wallet } from 'lucide-react';
@@ -17,6 +17,7 @@ import { loadBillingPatients, sortBillingRecords, type BillingDateSortField } fr
 import { SortableTableHeader } from '../../shared/components/SortableTableHeader';
 import type { BillingPageProps } from './billingPageTypes';
 import { buildBillingRecords, createEmptyBillingFilters, filterBillingRecords, type BillingRecord } from './billingUtils';
+import { useConfirmationDialog } from '../../shared/components/ConfirmationDialog';
 import './billing.css';
 
 type BillingHistoryPageProps = BillingPageProps & { canManageFiles: boolean };
@@ -87,16 +88,20 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
     ? null
     : records.find((record) => record.id === summaryRecordId) ?? null;
 
-  useEffect(() => {
+  // #292: anos novos (filtro ou carga) reconciliam seleção e expansão na própria renderização.
+  const [yearsFor, setYearsFor] = useState<typeof history.years | null>(null);
+  if (yearsFor !== history.years) {
+    setYearsFor(history.years);
     const newestYear = history.years[0]?.year;
-    if (newestYear == null) return;
-    const availableYears = new Set(history.years.map((year) => year.year));
-    setOpenYears((current) => {
-      const remainingYears = new Set([...current].filter((year) => availableYears.has(year)));
-      return remainingYears.size ? remainingYears : new Set([newestYear]);
-    });
-    setSelectedYear((current) => current != null && availableYears.has(current) ? current : newestYear);
-  }, [history.years]);
+    if (newestYear != null) {
+      const availableYears = new Set(history.years.map((year) => year.year));
+      setOpenYears((current) => {
+        const remainingYears = new Set([...current].filter((year) => availableYears.has(year)));
+        return remainingYears.size ? remainingYears : new Set([newestYear]);
+      });
+      setSelectedYear((current) => current != null && availableYears.has(current) ? current : newestYear);
+    }
+  }
 
   const toggleYear = (year: number) => {
     setSelectedYear(year);
@@ -147,8 +152,18 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
     }
   };
 
-  const handleDeleteFile = async (fileId: number) => {
-    if (!window.confirm('Deseja excluir este arquivo do histórico?')) return;
+  // #311: confirmação no Modal do sistema (tema, foco e teclado), não no window.confirm nativo.
+  const { confirmAction, confirmationDialog } = useConfirmationDialog();
+  const handleDeleteFile = (fileId: number, fileName: string) => confirmAction({
+    tone: 'delete',
+    title: 'Excluir arquivo?',
+    message: `Deseja excluir "${fileName}" do histórico? Esta ação não poderá ser desfeita.`,
+    confirmLabel: 'Excluir',
+    cancelLabel: 'Cancelar',
+    onConfirm: () => deleteFile(fileId),
+  });
+
+  const deleteFile = async (fileId: number) => {
     const key = `delete-${fileId}`;
     setBusyFileKey(key);
     setFileMessage(null);
@@ -175,10 +190,10 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
           </div>
         </div>
         <div className="billing-history-tabs" role="tablist" aria-label="Visualização do histórico">
-          <button type="button" role="tab" aria-selected={activeTab === 'history'} className={activeTab === 'history' ? 'is-active' : ''} onClick={() => setActiveTab('history')}>
+          <button type="button" role="tab" aria-selected={activeTab === 'history'} className={activeTab === 'history' ? 'is-active' : ''} style={{ '--tab-tint': '#0f766e' } as CSSProperties} onClick={() => setActiveTab('history')}>
             <History size={18} />Histórico
           </button>
-          <button type="button" role="tab" aria-selected={activeTab === 'charts'} className={activeTab === 'charts' ? 'is-active' : ''} onClick={() => setActiveTab('charts')}>
+          <button type="button" role="tab" aria-selected={activeTab === 'charts'} className={activeTab === 'charts' ? 'is-active' : ''} style={{ '--tab-tint': '#1d4ed8' } as CSSProperties} onClick={() => setActiveTab('charts')}>
             <BarChart3 size={18} />Gráficos
           </button>
         </div>
@@ -341,7 +356,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
                                         <span><FileText size={17} /><span><strong>{file.nomeOriginal}</strong><small>{formatFileSize(file.tamanhoBytes)} · {new Date(file.dataUpload).toLocaleString('pt-BR')}</small></span></span>
                                         <span className="billing-history-file-actions">
                                           <IconButton label={`Baixar ${file.nomeOriginal}`} disabled={busyFileKey !== null} onClick={() => void handleDownloadFile(file.id, file.nomeOriginal)}><Download size={17} /></IconButton>
-                                          {canManageFiles && <IconButton label={`Excluir ${file.nomeOriginal}`} disabled={busyFileKey !== null} onClick={() => void handleDeleteFile(file.id)}><Trash2 size={17} /></IconButton>}
+                                          {canManageFiles && <IconButton label={`Excluir ${file.nomeOriginal}`} disabled={busyFileKey !== null} onClick={() => handleDeleteFile(file.id, file.nomeOriginal)}><Trash2 size={17} /></IconButton>}
                                         </span>
                                       </li>
                                     ))}
@@ -388,6 +403,7 @@ export function BillingHistoryPage({ session, isMedical, canManageFiles }: Billi
       )}
 
       {summaryRecord && <BillingSummaryModal record={summaryRecord} authToken={session.token} onClose={() => setSummaryRecordId(null)} />}
+      {confirmationDialog}
     </section>
   );
 }

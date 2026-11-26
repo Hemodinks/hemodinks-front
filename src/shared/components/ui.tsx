@@ -283,6 +283,8 @@ export function MultiSelectComboboxField({
       }}
     >
       <label htmlFor={fieldId}>{label}</label>
+      {/* Atalho de mouse: clicar na área foca o campo; pelo teclado o próprio <input> recebe o foco. */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div className="multi-combobox-control" onClick={() => inputRef.current?.focus()}>
         {values.map((value) => {
           const option = uniqueOptions.find((candidate) => candidate.value === value);

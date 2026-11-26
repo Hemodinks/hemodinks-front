@@ -36,10 +36,15 @@ export function ToastMessage({
   onClose,
 }: ToastMessageProps) {
   const [visible, setVisible] = useState(true);
+  // #292: mensagem, duração ou callback novos reexibem o aviso na própria renderização.
+  const [shownFor, setShownFor] = useState({ children, durationMs, onClose });
+  if (shownFor.children !== children || shownFor.durationMs !== durationMs || shownFor.onClose !== onClose) {
+    setShownFor({ children, durationMs, onClose });
+    setVisible(true);
+  }
   const feedbackRef = useFocusOnFeedback<HTMLDivElement>(focusOnDisplay && visible, children);
 
   useEffect(() => {
-    setVisible(true);
     const timeoutId = window.setTimeout(() => {
       setVisible(false);
       onClose?.();

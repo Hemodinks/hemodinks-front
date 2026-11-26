@@ -266,14 +266,15 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
       const row = page.locator('.patients-table tbody tr').first();
       await expect(row.locator('td').nth(0)).toHaveText('Paciente Hemodinks');
       await expect(row.locator('td').nth(1).getByTitle('Editar')).toBeVisible();
-      await expect(row.locator('td').nth(1).getByTitle('Excluir', { exact: true })).toBeVisible();
+      await expect(row.locator('td').nth(1).getByTitle('Inativar', { exact: true })).toBeVisible();
       const bytes = await download(page, 'Exportar Planilha', 'xlsx', 'pacientes-');
       expect(bytes.toString()).toContain('Paciente Hemodinks');
       expect(bytes.toString()).not.toContain('Paciente Outro');
       await download(page, 'Exportar PDF', 'pdf', 'pacientes-');
-      await row.getByTitle('Excluir', { exact: true }).click();
+      await row.getByTitle('Inativar', { exact: true }).click();
+      await page.getByRole('dialog').getByLabel('Motivo (obrigatório)').fill('Paciente transferido');
       await page.getByRole('dialog').getByRole('button', { name: 'Sim', exact: true }).click();
-      await expect(page.getByText('Paciente excluído.', { exact: true })).toBeVisible();
+      await expect(page.getByText('Paciente inativado.', { exact: true })).toBeVisible();
       expect(api.patients.some((p) => p.id === 10)).toBe(false);
     });
 
@@ -344,6 +345,37 @@ export function registerPatientFormTests({ setup, login }: Dependencies) {
             await page.screenshot({ path: testInfo.outputPath(`ficha-${width}-${theme}.png`), fullPage: true });
           }
         }
+      });
+    }
+
+    for (const width of [1440, 820, 390]) {
+      test(`issue315: trilha de auditoria do paciente sob demanda em ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        const base = await setup(page);
+        await mockPatientFormApi(page, base.pacientes[0], base.token);
+        const auditRequests: string[] = [];
+        await page.route('http://localhost:5000/api/auditoria-clinica**', (route) => {
+          auditRequests.push(route.request().url());
+          return route.fulfill({ json: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1, items: [{
+            id: 1, dataUtc: '2026-11-23T15:00:00Z', usuarioId: 1, equipeOperadorId: null, usuarioNome: 'George Marcone',
+            equipeOperadorNome: null, acao: 'paciente.ler', recurso: 'paciente', recursoId: String(base.pacientes[0].id),
+            statusCode: 200, sucesso: true, ipTruncado: '203.0.113.0' }] } });
+        });
+        await login(page, '/pacientes');
+        await page.getByRole('button', { name: 'Editar Paciente Hemodinks', exact: true }).click();
+        // A trilha fica numa aba da ficha e só consulta a API quando a aba é aberta.
+        const tab = page.getByRole('tab', { name: 'Trilha de auditoria' });
+        await expect(tab).toBeVisible();
+        expect(auditRequests).toHaveLength(0);
+        await tab.click();
+        const table = page.getByRole('table', { name: 'Trilha de auditoria do paciente' });
+        await expect(table.getByText('Visualizou o cadastro')).toBeVisible();
+        await expect(table.getByText('George Marcone')).toBeVisible();
+        expect(auditRequests).toHaveLength(1);
+        expect(new URL(auditRequests[0]).searchParams.get('pacienteId')).toBe(String(base.pacientes[0].id));
+        await page.getByRole('tab', { name: 'Dados do paciente' }).click();
+        await expect(page.getByLabel('Paciente', { exact: true })).toBeVisible();
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
       });
     }
   });

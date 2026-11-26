@@ -63,6 +63,7 @@ type PatientsPageProps = {
   companyName: string;
   handleEditPaciente: (paciente: Paciente) => void | Promise<void>;
   handleDeletePaciente: (paciente: Paciente) => void | Promise<void>;
+  handleReativarPaciente: (paciente: Paciente) => void | Promise<void>;
   handleOpenPacienteFiles: (paciente: Paciente) => void | Promise<void>;
   handleOpenPacienteObservacoes: (paciente: Paciente) => void | Promise<void>;
   setSelectedPatientInfo: (paciente: Paciente) => void;
@@ -128,6 +129,7 @@ export function PatientsPage({
   companyName,
   handleEditPaciente,
   handleDeletePaciente,
+  handleReativarPaciente,
   handleOpenPacienteFiles,
   handleOpenPacienteObservacoes,
   setSelectedPatientInfo,
@@ -165,6 +167,7 @@ export function PatientsPage({
           onRemovePendingPatientFile={removePendingPatientFile}
           onDeletePacienteArquivo={handleDeletePacienteArquivo}
           onOpenPacienteObservacoes={editingPaciente ? () => void handleOpenPacienteObservacoes(editingPaciente) : undefined}
+          canViewAudit={isAdmin}
           companyName={companyName}
         />
       ) : (
@@ -205,6 +208,7 @@ export function PatientsPage({
           onExportPacientes={handleExportPacientes}
           onEditPaciente={handleEditPaciente}
           onDeletePaciente={handleDeletePaciente}
+          onReativarPaciente={handleReativarPaciente}
           onOpenPacienteFiles={handleOpenPacienteFiles}
           onOpenPacienteObservacoes={handleOpenPacienteObservacoes}
           onSelectPatientInfo={setSelectedPatientInfo}

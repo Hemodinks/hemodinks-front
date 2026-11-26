@@ -1,0 +1,43 @@
+/* #150: tela do segundo fator, no mesmo padrão visual da escolha de clínica. */
+.mfa-verification-panel {
+  width: min(460px, 100%);
+  border-radius: 18px;
+}
+
+.mfa-verification-panel .mfa-verification-icon {
+  display: grid;
+  place-items: center;
+  color: var(--action-primary);
+  background: color-mix(in srgb, var(--action-primary) 9%, var(--panel-strong));
+  border: 1px solid color-mix(in srgb, var(--action-primary) 18%, var(--line));
+  border-radius: 12px;
+}
+
+.mfa-verification-panel .team-login-description {
+  color: var(--muted);
+  margin-top: 22px;
+}
+
+.mfa-code-input {
+  width: 100%;
+  text-align: center;
+  font-size: 1.35rem;
+  letter-spacing: 0.2em;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+
+.mfa-code-input::placeholder {
+  letter-spacing: 0.2em;
+  opacity: 0.35;
+}
+
+.mfa-code-hint {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.mfa-code-format {
+  white-space: nowrap;
+}

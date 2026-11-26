@@ -16,6 +16,7 @@ function handlers() {
     agenda: vi.fn(),
     settings: vi.fn(),
     clinics: vi.fn(),
+    patientAudit: vi.fn(),
   } satisfies Record<AppView, () => void>;
 }
 

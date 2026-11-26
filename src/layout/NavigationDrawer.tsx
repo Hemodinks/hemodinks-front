@@ -23,6 +23,8 @@ export function NavigationDrawer({ children, onClose }: { children: ReactNode; o
       <h2 id={titleId}>Menu do sistema</h2>
       <button type="button" className="ghost-button" aria-label="Fechar menu" onClick={onClose}><X size={22} /></button>
     </div>
+    {/* Delegação: os itens do menu são <button>/<a> nativos (teclado incluso); aqui só fechamos a gaveta. */}
+    {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
     <div onClick={(event) => {
       const item = (event.target as Element).closest('.side-nav button, .side-nav a');
       if (item && !item.hasAttribute('aria-expanded')) onClose();

@@ -1,5 +1,5 @@
 import { CheckCircle2, Trash2 } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 import { Button } from './ui';
 import { Modal } from './Modal';
 
@@ -11,7 +11,9 @@ export type ConfirmationRequest = {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  onConfirm: () => void | Promise<void>;
+  // Motivo obrigatorio (ex.: inativar/reativar paciente); o texto digitado vai para onConfirm.
+  reason?: { label: string; maxLength: number; hint?: string };
+  onConfirm: (reason?: string) => void | Promise<void>;
 };
 
 export type ConfirmAction = (request: ConfirmationRequest) => void;
@@ -35,11 +37,15 @@ function ConfirmationDialog({
   message,
   confirmLabel = 'Sim',
   cancelLabel = 'Não',
+  reason,
   loading,
   onConfirm,
   onCancel,
 }: ConfirmationDialogProps) {
   const titleId = `confirmation-${tone}-title`;
+  const reasonId = useId();
+  const [reasonText, setReasonText] = useState('');
+  const missingReason = Boolean(reason) && !reasonText.trim();
 
   return (
     <Modal titleId={titleId} className={`confirmation-modal ${tone}`} onClose={onCancel}>
@@ -50,6 +56,23 @@ function ConfirmationDialog({
         <span className="eyebrow">{tone === 'delete' ? 'Confirmar exclusão' : 'Confirmar alteração'}</span>
         <h2 id={titleId}>{title}</h2>
         <p>{message}</p>
+        {reason && (
+          <div className="confirmation-reason">
+            <label htmlFor={reasonId}>{reason.label}</label>
+            <textarea
+              id={reasonId}
+              value={reasonText}
+              maxLength={reason.maxLength}
+              rows={4}
+              required
+              disabled={loading}
+              aria-describedby={reason.hint ? `${reasonId}-hint ${reasonId}-count` : `${reasonId}-count`}
+              onChange={(event) => setReasonText(event.target.value.slice(0, reason.maxLength))}
+            />
+            {reason.hint && <small id={`${reasonId}-hint`} className="confirmation-reason-hint">{reason.hint}</small>}
+            <small id={`${reasonId}-count`} aria-live="polite">{reasonText.length}/{reason.maxLength} caracteres</small>
+          </div>
+        )}
       </div>
       <div className="confirmation-actions">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={loading}>
@@ -58,8 +81,8 @@ function ConfirmationDialog({
         <Button
           type="button"
           variant={tone === 'delete' ? 'danger-ghost' : 'primary'}
-          onClick={() => void onConfirm()}
-          disabled={loading}
+          onClick={() => void onConfirm(reason ? reasonText.trim() : undefined)}
+          disabled={loading || missingReason}
         >
           {loading ? 'Aguarde...' : confirmLabel}
         </Button>
@@ -82,7 +105,7 @@ export function useConfirmationDialog() {
     setRequest(nextRequest);
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = async (reason?: string) => {
     if (!request) {
       return;
     }
@@ -90,7 +113,7 @@ export function useConfirmationDialog() {
     setLoading(true);
 
     try {
-      await request.onConfirm();
+      await request.onConfirm(reason);
       setRequest(null);
     } finally {
       setLoading(false);

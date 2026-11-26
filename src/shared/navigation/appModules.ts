@@ -1,4 +1,4 @@
-import { BarChart3, Building2, CalendarClock, CalendarDays, ClipboardList, FileText, LayoutDashboard, PlayCircle, ReceiptText, Settings, ShieldPlus, Users } from 'lucide-react';
+import { BarChart3, Building2, CalendarClock, CalendarDays, ClipboardList, FileText, LayoutDashboard, PlayCircle, ReceiptText, Settings, ShieldCheck, ShieldPlus, Users } from 'lucide-react';
 
 // Presentation only. Access remains derived from getAppAccess and session features.
 export const APP_MODULES = {
@@ -6,6 +6,7 @@ export const APP_MODULES = {
   users: { title: 'Usuários', navLabel: 'Usuários', icon: Users, color: '#0f766e' },
   profile: { title: 'Meu cadastro', navLabel: 'Meu cadastro', icon: FileText, color: '#7c3aed' },
   patients: { title: 'Pacientes', navLabel: 'Pacientes - Cirurgias', icon: ClipboardList, color: '#2563eb' },
+  patientAudit: { title: 'Auditoria', navLabel: 'Auditoria', icon: ShieldCheck, color: '#1e40af' },
   billing: { title: 'Faturamento médico', navLabel: 'Faturamento', icon: ReceiptText, color: '#b45309' },
   billingHistory: { title: 'Histórico', navLabel: 'Histórico', icon: CalendarClock, color: '#0f766e' },
   reports: { title: 'Relatórios', navLabel: 'Relatórios', icon: BarChart3, color: '#1d4ed8' },

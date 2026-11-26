@@ -66,6 +66,14 @@ export const CONTEXTUAL_FLOWS: Record<AppView, ViewFlows> = {
       { id: 'tutorials-watch', title: 'Assistir a um tutorial', steps: ['Escolha o tutorial desejado.', 'Use os controles do player para reproduzir, pausar ou ajustar o volume.', 'Acompanhe a narração e as legendas exibidas no vídeo.'] },
     ],
   },
+  patientAudit: {
+    title: 'Auditoria de pacientes',
+    description: 'Acompanhe quem incluiu, alterou, inativou ou reativou pacientes e atendimentos da clínica.',
+    flows: [
+      { id: 'patient-audit-filter', title: 'Consultar a auditoria', steps: ['Abra os filtros e informe o paciente, o período, a ação ou os mesmos critérios de Pacientes - Cirurgias.', 'Deixe “Somente alterações” marcado para esconder as consultas.', 'Confira na coluna “Detalhes” o motivo informado ou os valores antes e depois.'] },
+      { id: 'patient-audit-settings', title: 'Auditar atendimentos', steps: ['Abra Opções → Configurações.', 'Ligue “Auditar alterações de pacientes e atendimentos”.', 'A partir daí, cada alteração passa a guardar os valores antes e depois (textos clínicos só como “alterado”).'] },
+    ],
+  },
   billingHistory: {
     title: 'Histórico',
     description: 'Analise o faturamento por ano, mês e trimestre, em detalhes ou por meio de gráficos.',

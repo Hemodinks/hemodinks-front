@@ -52,8 +52,10 @@ export function TutorialsPage() {
         </div>
 
         <div className="tutorial-video-frame">
+          {/* Legendas abertas: gravadas no próprio vídeo (ffmpeg subtitles=, scripts/tutorials); não há faixa <track>. */}
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <video controls preload="metadata" playsInline aria-label={`Tutorial: ${tutorial.title}`}>
-            <source src={`${base}.webm`} type="video/webm" />
+            {/* #308: so MP4 (H.264 + AAC), que toca em todos os navegadores atuais; WebM duplicava ~40 MB no deploy. */}
             <source src={`${base}.mp4`} type="video/mp4" />
             Seu navegador não oferece suporte à reprodução deste tutorial.
           </video>

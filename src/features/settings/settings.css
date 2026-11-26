@@ -280,6 +280,7 @@
   grid-column: 1 / -1;
 }
 
+
 .settings-section-heading {
   display: flex;
   align-items: center;
@@ -487,3 +488,11 @@
 .session-status-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
 .session-status--online .session-status-dot { background: #22c55e; box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 25%, transparent); }
 .session-status--recent .session-status-dot { background: #f97316; box-shadow: 0 0 0 3px color-mix(in srgb, #f97316 25%, transparent); }
+
+/* #150: QR code do MFA; borda arredondada e largura máxima para caber no celular. */
+.mfa-qr-code {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}

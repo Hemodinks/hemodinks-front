@@ -73,10 +73,14 @@ describe('fonte única de headers de segurança (#266)', () => {
     const production = buildCsp(canonical.contentSecurityPolicy);
     assert.doesNotMatch(production, /onrender\.com|unsafe-eval|localhost/);
     assert.match(production, /script-src 'self';/);
+    // #310: estilos só de arquivo e imagens só de origens conhecidas (sem curinga https:).
+    assert.deepEqual(canonical.contentSecurityPolicy['style-src'], ["'self'"]);
+    assert.doesNotMatch(production, /unsafe-inline/);
+    assert.ok(!canonical.contentSecurityPolicy['img-src'].includes('https:'));
     for (const [id, target] of Object.entries(canonical.targets)) {
       const homologation = id === 'vercel-homologation';
       assert.deepEqual(target.cspAppend ?? {}, homologation
-        ? { 'connect-src': ['https://hemodinks-api-1-90nb.onrender.com'] }
+        ? { 'connect-src': ['https://hemodinks-api-1-90nb.onrender.com'], 'img-src': ['https://hemodinks-api-1-90nb.onrender.com'] }
         : {}, id);
       assert.equal(Boolean(target.headers?.['X-Robots-Tag']), homologation, id);
     }

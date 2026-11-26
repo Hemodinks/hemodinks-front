@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 // False once the URL has moved on (another record, "novo", the list or another module): a late
 // response must not fill the form, show an error or navigate on behalf of a route the user left.
@@ -20,7 +20,8 @@ export function useFormRouteSync({ active, recordId, openNew, openRecord, onLeav
   const openedRouteRef = useRef<string | null>(null);
   const generationRef = useRef(0);
   const handlersRef = useRef({ openNew, openRecord, onLeave });
-  handlersRef.current = { openNew, openRecord, onLeave };
+  // #292: handlers mais recentes gravados no commit (antes do efeito abaixo), não durante a renderização.
+  useLayoutEffect(() => { handlersRef.current = { openNew, openRecord, onLeave }; });
 
   useEffect(() => {
     const routeKey = active ? (recordId === null ? 'new' : String(recordId)) : null;
@@ -45,8 +46,7 @@ export function useFormRouteSync({ active, recordId, openNew, openRecord, onLeav
 // redirect and kept apart from the list error, which the list clears whenever its data arrives.
 export function useRecordLoadError(moduleActive: boolean) {
   const [recordLoadError, setRecordLoadError] = useState('');
-  useEffect(() => {
-    if (!moduleActive) setRecordLoadError('');
-  }, [moduleActive]);
+  // #292: sair do módulo descarta o erro na própria renderização.
+  if (!moduleActive && recordLoadError) setRecordLoadError('');
   return [recordLoadError, setRecordLoadError] as const;
 }

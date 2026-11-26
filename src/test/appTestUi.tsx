@@ -42,6 +42,9 @@ export async function openUsersModule(user: ReturnType<typeof userEvent.setup>) 
 
 export async function openPatientsModule(user: ReturnType<typeof userEvent.setup>) {
   expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: /^pacientes/i }));
+  const entry = screen.getByRole('button', { name: /^pacientes/i });
+  await user.click(entry);
+  // Administrador: "Pacientes - Cirurgias" é um accordion (Cadastro de Pacientes, Auditoria).
+  if (entry.hasAttribute('aria-expanded')) await user.click(screen.getByRole('button', { name: /^cadastro de pacientes/i }));
   expect(window.location.pathname).toBe('/pacientes');
 }

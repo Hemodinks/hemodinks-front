@@ -20,12 +20,15 @@ export function ContextualTools({ activeView }: { activeView: AppView }) {
   useEffect(() => {
     if (active) root.current?.scrollIntoView?.({ block: 'nearest', behavior: 'instant' });
   }, [active]);
-  useEffect(() => { if (!visible) setOpen(current => current === 'calculator' ? null : current); }, [visible]);
+  // #292: calculadora oculta nas preferências fecha o painel na própria renderização.
+  if (!visible && open === 'calculator') setOpen(null);
   const close = () => {
     (active === 'help' ? helpTrigger : calculatorTrigger).current?.focus();
     setOpen(null);
   };
 
+  // Escape delegado: os gatilhos e painéis internos são controles nativos; a área só fecha o painel aberto.
+  // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
   return <aside ref={root} className={`contextual-tools contextual-flow-drawer view-${activeView}${active ? ' is-open' : ''}`}
     aria-label="Ajuda contextual" onKeyDown={event => {
       if (event.key === 'Escape' && active) { event.preventDefault(); event.stopPropagation(); close(); }
