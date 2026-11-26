@@ -151,18 +151,6 @@ tbody tr:last-child td {
   background: #fff3cf;
 }
 
-/* "Inativo": vermelho transparente e discreto (borda leve), legível nos dois temas. */
-.status-pill.inactive-soft {
-  color: color-mix(in srgb, var(--action-danger) 85%, var(--ink));
-  background: color-mix(in srgb, var(--action-danger) 10%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action-danger) 28%, transparent);
-}
-
-:root[data-theme="dark"] .status-pill.inactive-soft {
-  color: color-mix(in srgb, var(--action-danger) 55%, #ffffff);
-  background: color-mix(in srgb, var(--action-danger) 16%, transparent);
-}
-
 .status-info-button {
   width: 42px;
   height: 38px;

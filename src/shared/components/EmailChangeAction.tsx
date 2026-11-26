@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { KeyRound, MailCheck } from 'lucide-react';
 import type { AuthSession } from '../../types';
@@ -54,15 +54,13 @@ function EmailChangeForm({ session, onChanged, onRenewed, onStart }: FormProps) 
   const sequence = useRef(0);
   const pendingRef = useRef<EmailChangeStarted | null>(null);
   const tokenRef = useRef(session.token);
-  // #292: token mais recente gravado no commit, não durante a renderização.
-  useLayoutEffect(() => { tokenRef.current = session.token; }, [session.token]);
+  tokenRef.current = session.token;
   const discard = (request: EmailChangeStarted | null) => {
     if (request) void cancelEmailChange(request.requestId, tokenRef.current).catch(() => { /* Local cancellation still clears the proof. */ });
   };
   useEffect(() => {
     active.current = true;
-    const requests = sequence; // invalida a confirmação em andamento ao desmontar
-    return () => { active.current = false; requests.current++; pendingRef.current = null; };
+    return () => { active.current = false; sequence.current++; pendingRef.current = null; };
   }, []);
   useEffect(() => {
     if (!pending) return;

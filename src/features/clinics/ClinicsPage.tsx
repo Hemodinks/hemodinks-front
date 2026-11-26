@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent } from 'react';
+import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Plus, RefreshCw } from 'lucide-react';
 import type { AuthSession, SelectClinicResponse } from '../../types';
@@ -20,13 +20,11 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedClinicId = Number(searchParams.get('editar'));
 
-  // #292: openEdit muda a cada renderização; como Effect Event não reexecuta o efeito.
-  const openRequestedClinic = useEffectEvent((clinic: (typeof page.clinics)[number]) => page.openEdit(clinic));
   useEffect(() => {
     if (page.loading || page.formOpen || !requestedClinicId) return;
     const requestedClinic = page.clinics.find((clinic) => clinic.id === requestedClinicId);
     if (!requestedClinic) return;
-    openRequestedClinic(requestedClinic);
+    page.openEdit(requestedClinic);
     setSearchParams({}, { replace: true });
   }, [page.loading, page.formOpen, page.clinics, requestedClinicId, setSearchParams]);
 
@@ -70,7 +68,6 @@ export function ClinicsPage({ session, onClinicSelected }: ClinicsPageProps) {
           onClose={page.closeForm}
         />
       )}
-      {page.confirmationDialog}
     </section>
   );
 }

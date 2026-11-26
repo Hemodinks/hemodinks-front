@@ -52,8 +52,6 @@ export function AgendaEventEmailModal({ event, session, onClose }: Props) {
         <X size={20} aria-hidden="true" />
       </IconButton>
     </header>
-    {/* Região com rolagem: focável para rolar pelo teclado (WCAG 2.1.1, axe scrollable-region-focusable). */}
-    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
     <div className="agenda-email-body" role="region" aria-label="Detalhes do envio por e-mail" tabIndex={0}>
       <p id={descriptionId} className="agenda-email-description">Confira os destinatários de “{event.title}”. Cada pessoa recebe uma mensagem individual, sem alterar os lembretes do evento.</p>
       {email.loading && <p role="status">Carregando destinatários...</p>}

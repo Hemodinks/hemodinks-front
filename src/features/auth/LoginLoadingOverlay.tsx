@@ -6,13 +6,8 @@ type Props = { active: boolean; onCancel: () => void; stage?: string };
 
 export function LoginLoadingOverlay({ active, onCancel, stage = 'Conectando ao serviço de acesso…' }: Props) {
   const [waitStage, setWaitStage] = useState(0);
-  // #292: cada mudança de "active" recomeça a espera na própria renderização, não num efeito.
-  const [stageFor, setStageFor] = useState(active);
-  if (stageFor !== active) {
-    setStageFor(active);
-    setWaitStage(0);
-  }
   useEffect(() => {
+    setWaitStage(0);
     if (!active) return;
     const slow = window.setTimeout(() => setWaitStage(1), 12_000);
     const long = window.setTimeout(() => setWaitStage(2), 35_000);

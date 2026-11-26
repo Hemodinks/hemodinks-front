@@ -4,15 +4,9 @@ name: Sync developer with main
 # ancestor of the next release's PR head, which lets the main push reuse the PR CI (scripts/ci_scope.py).
 # Never forces: if developer has commits main lacks, nothing is pushed and the next release simply
 # runs the full suite. Pushes made with GITHUB_TOKEN do not start other workflows.
-# #309: developer exige "Test and build"; o push so e aceito depois que o CI da main aprovou o mesmo commit,
-# por isso o sync roda ao fim do CI (workflow_run) e so quando ele passou.
 
 "on":
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+  push:
     branches:
       - main
 
@@ -26,7 +20,7 @@ concurrency:
 jobs:
   fast-forward:
     name: Fast-forward developer
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -35,12 +29,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Fast-forward developer (never force)
         env:
-          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RELEASE_SHA: ${{ github.sha }}
         shell: bash
         run: |
           git fetch --no-tags origin developer

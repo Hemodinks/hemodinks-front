@@ -19,28 +19,40 @@ export function CompanyLogo({
   const trimmedPhoto = photo?.trim() || '';
   const directPhoto = /^(data:image\/|blob:|https?:\/\/)/i.test(trimmedPhoto);
   const canLoadFromApi = Boolean(trimmedPhoto && !directPhoto);
-  // #292: resultado assíncrono guardado com a foto pedida; foto direta é calculada na renderização.
-  const [loaded, setLoaded] = useState<{ photo: string; source: string } | null>(null);
-  const [fallbackFor, setFallbackFor] = useState<string | null>(null);
+  const [useFallback, setUseFallback] = useState(false);
+  const [photoSource, setPhotoSource] = useState(() => (canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto)));
 
   useEffect(() => {
-    if (!canLoadFromApi) return undefined;
+    setUseFallback(false);
+
+    if (!trimmedPhoto) {
+      setPhotoSource('');
+      return undefined;
+    }
+
+    if (!canLoadFromApi) {
+      setPhotoSource(resolveProfilePhotoSource(trimmedPhoto));
+      return undefined;
+    }
+
     let objectUrl = '';
     let active = true;
+
+    setPhotoSource('');
 
     void getSystemSettingsCompanyPhoto()
       .then((blob) => {
         objectUrl = URL.createObjectURL(blob);
 
         if (active) {
-          setLoaded({ photo: trimmedPhoto, source: objectUrl });
+          setPhotoSource(objectUrl);
         } else {
           URL.revokeObjectURL(objectUrl);
         }
       })
       .catch(() => {
         if (active) {
-          setLoaded({ photo: trimmedPhoto, source: resolveProfilePhotoSource(trimmedPhoto) });
+          setPhotoSource(resolveProfilePhotoSource(trimmedPhoto));
         }
       });
 
@@ -53,10 +65,6 @@ export function CompanyLogo({
     };
   }, [canLoadFromApi, trimmedPhoto]);
 
-  const photoSource = !trimmedPhoto ? ''
-    : canLoadFromApi ? (loaded?.photo === trimmedPhoto ? loaded.source : '')
-      : resolveProfilePhotoSource(trimmedPhoto);
-  const useFallback = fallbackFor === trimmedPhoto;
   const src = useFallback || !photoSource ? defaultCompanyLogo : photoSource;
 
   return (
@@ -65,7 +73,7 @@ export function CompanyLogo({
       alt={decorative ? '' : companyName}
       aria-hidden={decorative ? true : undefined}
       className={className}
-      onError={() => setFallbackFor(trimmedPhoto)}
+      onError={() => setUseFallback(true)}
     />
   );
 }

@@ -1,5 +1,4 @@
 export * from "./api";
-export * from "./auditService";
 export * from "./authService";
 export * from "./billingService";
 export * from "./cbhpmService";

@@ -42,31 +42,6 @@
   line-height: 1.55;
 }
 
-.confirmation-reason {
-  display: grid;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.confirmation-reason label {
-  color: var(--ink);
-  font-weight: 800;
-}
-
-.confirmation-reason textarea {
-  width: 100%;
-  resize: vertical;
-}
-
-.confirmation-reason small {
-  justify-self: end;
-  color: var(--muted);
-}
-
-.confirmation-reason small.confirmation-reason-hint {
-  justify-self: start;
-}
-
 .confirmation-actions {
   display: flex;
   flex-wrap: wrap;

@@ -130,22 +130,6 @@ a.login-help-link {
 }
 .login-help-link:hover { opacity: 0.8; }
 .login-help-link:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
-
-/* Tela "Recuperar senha": explicação do passo e botão de voltar com ícone. */
-.login-recovery-intro {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin: 0 0 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  color: var(--ink);
-  background: color-mix(in srgb, var(--action-primary) 9%, transparent);
-  border: 1px solid color-mix(in srgb, var(--action-primary) 24%, transparent);
-  line-height: 1.45;
-}
-.login-recovery-intro svg { flex: none; margin-top: 2px; color: var(--action-primary); }
-.ghost-button.login-help-link.login-back-link { align-items: center; gap: 6px; }
 .login-support {
   margin-top: 12px;
   padding: 12px 10px 8px;

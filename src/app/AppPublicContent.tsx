@@ -1,7 +1,6 @@
 import type { Theme } from '../appTypes';
 import { ClinicSelectionScreen } from '../features/auth/ClinicSelectionScreen';
 import { LoginScreen } from '../features/auth/LoginScreen';
-import { MfaVerificationScreen } from '../features/auth/MfaVerificationScreen';
 import { ResetPasswordScreen } from '../features/auth/ResetPasswordScreen';
 import { TeamIdentificationScreen } from '../features/auth/TeamIdentificationScreen';
 import type { LoginFlowState } from '../features/auth/useLoginFlow';
@@ -63,24 +62,6 @@ export function AppPublicContent({
     );
   }
 
-  if (loginFlow.mfaChallenge) {
-    return (
-      <MfaVerificationScreen
-        code={loginFlow.mfaCode}
-        error={loginFlow.loginError}
-        loading={loginFlow.loginLoading}
-        theme={theme}
-        waitSeconds={loginFlow.mfaWaitSeconds}
-        waitMessage={loginFlow.mfaWaitMessage}
-        onCodeChange={loginFlow.setMfaCode}
-        onSubmit={loginFlow.handleMfaVerification}
-        onBack={loginFlow.cancelTeamIdentification}
-        onCancelLogin={loginFlow.cancelPendingLogin}
-        onThemeToggle={onThemeToggle}
-      />
-    );
-  }
-
   if (loginFlow.teamChallenge) {
     return (
       <TeamIdentificationScreen
@@ -129,9 +110,6 @@ export function AppPublicContent({
       onRecoveryClinicChange={loginFlow.setRecoveryClinicValue}
       onSubmit={loginFlow.handleLogin}
       onResetPassword={() => void loginFlow.handleResetPassword()}
-      recoveryMode={loginFlow.recoveryMode}
-      onOpenRecovery={loginFlow.openPasswordRecovery}
-      onCloseRecovery={loginFlow.closePasswordRecovery}
       onStartTutorial={() => startTutorial('login-clinic')}
     />
   );

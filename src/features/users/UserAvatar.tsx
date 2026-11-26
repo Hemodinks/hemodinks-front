@@ -11,29 +11,37 @@ type UserAvatarProps = {
   decorative?: boolean;
 };
 
-// #292: o resultado da carga assíncrona fica guardado com a chave da foto pedida; foto sem API
-// (data:/blob: ou ausente) é calculada na renderização. Nenhum setState síncrono em efeito.
-type LoadedPhoto = { key: string; source: string; failed: boolean };
-
 export function UserAvatar({ userId, name, photo, authToken, size = 'sm', decorative = false }: UserAvatarProps) {
   const displayName = formatPersonName(name);
   const trimmedPhoto = photo?.trim() || '';
   const canLoadFromApi = Boolean(userId && authToken && trimmedPhoto && !/^(data:image\/|blob:)/i.test(trimmedPhoto));
-  const photoKey = `${userId ?? ''}|${authToken ?? ''}|${trimmedPhoto}`;
-  const [loaded, setLoaded] = useState<LoadedPhoto | null>(null);
-  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const [photoSource, setPhotoSource] = useState(() => (canLoadFromApi ? '' : resolveProfilePhotoSource(trimmedPhoto)));
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   useEffect(() => {
-    if (!canLoadFromApi || !userId || !authToken) return undefined;
     let objectUrl = '';
     let active = true;
+
+    setPhotoFailed(false);
+
+    if (!trimmedPhoto) {
+      setPhotoSource('');
+      return undefined;
+    }
+
+    if (!canLoadFromApi || !userId || !authToken) {
+      setPhotoSource(resolveProfilePhotoSource(trimmedPhoto));
+      return undefined;
+    }
+
+    setPhotoSource('');
 
     void getUserProfilePhoto(userId, authToken)
       .then((blob) => {
         objectUrl = URL.createObjectURL(blob);
 
         if (active) {
-          setLoaded({ key: photoKey, source: objectUrl, failed: false });
+          setPhotoSource(objectUrl);
         } else {
           URL.revokeObjectURL(objectUrl);
         }
@@ -41,7 +49,11 @@ export function UserAvatar({ userId, name, photo, authToken, size = 'sm', decora
       .catch(() => {
         if (active) {
           const fallbackSource = resolveProfilePhotoSource(trimmedPhoto);
-          setLoaded({ key: photoKey, source: fallbackSource, failed: !fallbackSource });
+          if (fallbackSource) {
+            setPhotoSource(fallbackSource);
+          } else {
+            setPhotoFailed(true);
+          }
         }
       });
 
@@ -52,11 +64,7 @@ export function UserAvatar({ userId, name, photo, authToken, size = 'sm', decora
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [authToken, canLoadFromApi, photoKey, trimmedPhoto, userId]);
-
-  const current = loaded?.key === photoKey ? loaded : null;
-  const photoSource = !trimmedPhoto ? '' : canLoadFromApi ? current?.source ?? '' : resolveProfilePhotoSource(trimmedPhoto);
-  const photoFailed = failedKey === photoKey || Boolean(current?.failed);
+  }, [authToken, canLoadFromApi, trimmedPhoto, userId]);
 
   if (photoSource && !photoFailed) {
     return (
@@ -65,7 +73,7 @@ export function UserAvatar({ userId, name, photo, authToken, size = 'sm', decora
         src={photoSource}
         alt={decorative ? '' : `Foto de ${displayName}`}
         aria-hidden={decorative ? true : undefined}
-        onError={() => setFailedKey(photoKey)}
+        onError={() => setPhotoFailed(true)}
       />
     );
   }

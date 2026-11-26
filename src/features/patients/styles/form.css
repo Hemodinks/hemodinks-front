@@ -190,20 +190,3 @@
   .patient-form-panel :is(.procedure-select-button, .file-action) { width: 100%; }
 }
 .surgery-status-indicator { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 44px; margin: 0; color: var(--muted); font-size: .84rem; font-weight: 600; }
-
-/* Trilha de auditoria do paciente (#315) */
-.patient-audit-content { display: grid; gap: 12px; margin-top: 8px; }
-.patient-audit-content .table-wrap { max-width: 100%; overflow-x: auto; }
-.patient-audit-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-
-.patient-form-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; border-bottom: 1px solid var(--line); }
-.patient-form-tabs button {
-  min-height: 48px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px;
-  border: 0; border-bottom: 3px solid transparent; color: var(--muted); background: transparent; cursor: pointer; font-weight: 900;
-}
-.patient-form-tabs button:hover, .patient-form-tabs button.is-active { color: var(--action-primary); }
-.patient-form-tabs button.is-active {
-  border-bottom-color: var(--action-primary);
-  background: color-mix(in srgb, var(--action-primary) 7%, transparent);
-}
-.patient-audit-tabpanel { display: grid; gap: 12px; }

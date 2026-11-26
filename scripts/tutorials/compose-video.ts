@@ -10,6 +10,7 @@ import {
   narratedWebmPath,
   publishedMp4Path,
   publishedReportsRoot,
+  publishedWebmPath,
   rawVideoPath,
   reportsArtifacts,
   subtitlesPath,
@@ -154,8 +155,10 @@ for (const output of [narratedWebmPath, narratedMp4Path]) {
 }
 
 await mkdir(publishedReportsRoot, { recursive: true });
-// #308: publica so o MP4; o WebM fica como artefato intermediario fora de public/.
-await copyFile(narratedMp4Path, publishedMp4Path);
+await Promise.all([
+  copyFile(narratedWebmPath, publishedWebmPath),
+  copyFile(narratedMp4Path, publishedMp4Path),
+]);
 
 console.log(`Legendas: ${subtitlesPath}`);
 console.log(`Vídeos publicados no módulo: ${publishedReportsRoot}`);

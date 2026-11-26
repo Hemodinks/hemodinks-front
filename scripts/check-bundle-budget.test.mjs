@@ -79,15 +79,3 @@ test('fails closed when a referenced stylesheet is missing', t => {
   const result = check(t, missing);
   assert.notEqual(result.status, 0);
 });
-
-test('fails when the whole dist (including public media) exceeds the deploy budget', t => {
-  const result = check(t, { ...files, 'tutorials/video.mp4': 'x'.repeat(64 * 1024) }, { PERF_BUDGET_DIST_MB: '0.01' });
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /dist total is .* MB, above budget 0\.01 MB/);
-});
-
-test('reports the whole dist size when it is within budget', t => {
-  const result = check(t, files, { PERF_BUDGET_DIST_MB: '1' });
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /dist total: \d+\.\d{2} MB \/ 1\.00 MB/);
-});

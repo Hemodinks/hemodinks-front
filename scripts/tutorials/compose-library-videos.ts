@@ -81,7 +81,6 @@ for (const timelineFile of timelines) {
     const decoding = await capture(ffmpegPath, ['-v', 'error', '-i', output, '-map', '0:v:0', '-map', '0:a:0', '-f', 'null', '-'], workspaceRoot);
     if (decoding.code !== 0 || decoding.stderr.trim()) throw new Error(`Decodificação integral inválida: ${basename(output)}\n${decoding.stderr.slice(0, 2000)}`);
   }
-  // #308: so o MP4 vai para public/ (o WebM e intermediario e duplicaria o tamanho do deploy).
-  await copyFile(mp4, join(publicRoot, basename(mp4)));
-  console.log(`${timeline.tutorialId}: MP4 publicado.`);
+  await Promise.all([copyFile(webm, join(publicRoot, basename(webm))), copyFile(mp4, join(publicRoot, basename(mp4)))]);
+  console.log(`${timeline.tutorialId}: WebM e MP4 publicados.`);
 }

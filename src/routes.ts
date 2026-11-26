@@ -5,7 +5,6 @@ export const VIEW_PATHS: Record<AppView, string> = {
   users: '/usuarios',
   profile: '/meu-cadastro',
   patients: '/pacientes',
-  patientAudit: '/auditoria-pacientes',
   billing: '/faturamento-medico',
   billingHistory: '/historico-faturamento',
   reports: '/relatorios',

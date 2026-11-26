@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { CBHPM_PAGE_SIZE } from '../../shared/utils/formatters';
 import type { CbhpmGeral } from '../../types';
@@ -26,8 +26,7 @@ export function useCbhpmLookup() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const resetCbhpmPage = useCallback(() => setCbhpmCurrentPage(1), []);
   const latestCbhpmFiltersRef = useRef(cbhpmFilters);
-  // #292: filtros mais recentes gravados no commit; a busca com debounce lê depois.
-  useLayoutEffect(() => { latestCbhpmFiltersRef.current = cbhpmFilters; }, [cbhpmFilters]);
+  latestCbhpmFiltersRef.current = cbhpmFilters;
 
   const commitDebouncedAutoSearch = useCallback(() => {
     resetCbhpmPage();

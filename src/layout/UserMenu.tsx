@@ -15,8 +15,6 @@ export function UserMenu({ session, companyName, onLogout }: { session: AuthSess
     document.addEventListener('pointerdown', dismiss);
     return () => document.removeEventListener('pointerdown', dismiss);
   }, [open]);
-  // Foco saindo do menu e Escape delegados; o acionador é um <button> nativo com aria-expanded.
-  // eslint-disable-next-line jsx-a11y/no-static-element-interactions
   return <div className="user-menu" ref={root} onBlur={(event) => {
     if (!event.currentTarget.contains(event.relatedTarget as Node)) setOpen(false);
   }} onKeyDown={(event) => {

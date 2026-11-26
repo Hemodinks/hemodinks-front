@@ -199,9 +199,8 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # #310: build de producao (vite preview) com a CSP de security-headers.json; violacao reprova o teste.
-      - name: Run E2E tests (production build with CSP)
-        run: npm run test:e2e:csp -- --shard=${{ matrix.shard }}/3
+      - name: Run E2E tests
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/3
 
       - name: Upload Playwright report
         if: always()

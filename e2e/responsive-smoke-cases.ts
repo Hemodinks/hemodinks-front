@@ -71,8 +71,6 @@ export function registerResponsiveSmokeCases({ setup, login }: Dependencies) {
       const patients = page.getByRole('button', { name: /^Pacientes(?:\s|$)/ });
       await expectWithinViewport(page, patients);
       await patients.click();
-      // Administrador: accordion (Cadastro de Pacientes, Auditoria).
-      if (await patients.getAttribute('aria-expanded') !== null) await page.getByRole('button', { name: /^Cadastro de Pacientes/ }).click();
       await expect(page.getByRole('heading', { name: 'Pacientes', exact: true })).toBeVisible();
       await expect(page.locator('.patient-list-panel')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Novo paciente', exact: true })).toBeVisible();

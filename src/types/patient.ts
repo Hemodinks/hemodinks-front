@@ -92,9 +92,6 @@ export type Paciente = {
   fotoPerfil?: string | null;
   dataNascimento?: string | null;
   ativo: boolean;
-  // Cadastro inativado (DELETE na API). `ativo` acima e o login do usuario paciente.
-  inativado?: boolean;
-  inativadoEm?: string | null;
   arquivosCount: number;
   observacoesNaoLidasCount?: number;
   faturamento?: PacienteFaturamento | null;

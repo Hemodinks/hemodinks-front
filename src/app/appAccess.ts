@@ -47,8 +47,6 @@ export function getAppAccess(session: AuthSession | null) {
     (hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesVisualizar) ||
       isMedical) &&
     hasClinicModule(CLINIC_MODULES.patients);
-  // Auditoria de pacientes: só Administrador/SuperAdministrador (a API também exige).
-  const canAccessPatientAudit = isAdmin && canAccessPatients;
   const canManagePatients =
     !anonymousTeam &&
     (hasSessionFeature(session?.user, LICENSE_FEATURES.pacientesGerenciar) ||
@@ -82,7 +80,6 @@ export function getAppAccess(session: AuthSession | null) {
     isPatient,
     canAccessDashboard,
     canAccessPatients,
-    canAccessPatientAudit,
     canManagePatients,
     canConsultCbhpm,
     canAccessAgenda,
@@ -101,7 +98,6 @@ export function getAppAccess(session: AuthSession | null) {
     patientReadOnly: isPatient || anonymousTeam,
     canUseDashboardRoute: canAccessDashboard,
     canUsePatientsRoute: canAccessPatients,
-    canUsePatientAuditRoute: canAccessPatientAudit,
     canUseUsersRoute: canAccessUsers,
     canUseProfileRoute: canEditOwnUser,
     canUseBillingRoute: canAccessBilling,

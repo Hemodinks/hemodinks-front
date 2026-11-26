@@ -1,10 +1,9 @@
 import type { TipoCirurgia } from './shared/surgeryType';
 import type { StatusCirurgia } from './shared/surgeryStatus';
-import type { PacienteSituacao } from './types';
 
 export type Theme = 'light' | 'dark';
 
-export type AppView = 'dashboard' | 'users' | 'profile' | 'patients' | 'patientAudit' | 'billing' | 'billingHistory' | 'reports' | 'tutorials' | 'medicalGroups' | 'agenda' | 'settings' | 'clinics';
+export type AppView = 'dashboard' | 'users' | 'profile' | 'patients' | 'billing' | 'billingHistory' | 'reports' | 'tutorials' | 'medicalGroups' | 'agenda' | 'settings' | 'clinics';
 
 export type ModuleMode = 'list' | 'form';
 
@@ -30,7 +29,6 @@ export type PacienteFilters = {
   dataSolicitacaoInicio: string;
   dataSolicitacaoFinal: string;
   pendenciaDataConsolidacao?: boolean;
-  situacao?: PacienteSituacao;
 };
 
 export type PacienteExportFormat = 'xlsx' | 'pdf';

@@ -65,11 +65,7 @@ export function TutorialProvider({ activeView, allowedTutorialIds, children }: P
     setAudioState(state);
   }, []);
 
-  // #292: o player nasce na montagem (efeito), não durante a renderização. Tutoriais só começam por clique,
-  // depois da montagem; o construtor é barato (o <audio> só é criado no play).
-  useEffect(() => {
-    if (audioPlayerRef.current === null && typeof Audio !== 'undefined') audioPlayerRef.current = new TutorialAudioPlayer(updateAudioState);
-  }, [updateAudioState]);
+  if (!audioPlayerRef.current && typeof Audio !== 'undefined') audioPlayerRef.current = new TutorialAudioPlayer(updateAudioState);
 
   const stop = useCallback(() => {
     audioPlayerRef.current?.stop();

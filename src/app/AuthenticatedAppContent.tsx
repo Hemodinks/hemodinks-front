@@ -20,7 +20,6 @@ import { ConsolidationDatePendingWarning } from '../features/patients/Consolidat
 type Navigation = {
   openDashboard: () => void; openUsersList: () => void; openMyProfile: () => void;
   openPatientsList: () => void; openPatientsListFromMenu: () => void; openPatientsWithConsolidationPending: () => void;
-  openPatientAudit: () => void;
   openBilling: () => void; openBillingHistory: () => void; openReports: () => void; openTutorials: () => void;
   openMedicalGroups: () => void; openAgenda: () => void; openSettings: () => void; openClinics: () => void;
   openCurrentClinic: () => void;
@@ -77,8 +76,7 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
     openDashboard: navigation.openDashboard,
     openModuleByView: {
       dashboard: navigation.openDashboard, users: navigation.openUsersList, profile: navigation.openMyProfile,
-      patients: navigation.openPatientsList, patientAudit: navigation.openPatientAudit,
-      billing: navigation.openBilling, billingHistory: navigation.openBillingHistory,
+      patients: navigation.openPatientsList, billing: navigation.openBilling, billingHistory: navigation.openBillingHistory,
       reports: navigation.openReports, tutorials: navigation.openTutorials, medicalGroups: navigation.openMedicalGroups,
       agenda: navigation.openAgenda, settings: navigation.openSettings, clinics: navigation.openClinics,
     },
@@ -109,7 +107,6 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
         currentUserProfile={formatProfileName(session.user.perfilId, session.user.perfilNome)}
         canAccessDashboard={access.canAccessDashboard}
         canAccessPatients={access.canAccessPatients}
-        canAccessPatientAudit={access.canAccessPatientAudit}
         canAccessUsers={access.canAccessUsers}
         canEditOwnUser={access.canEditOwnUser}
         canAccessBilling={access.canAccessBilling}
@@ -132,7 +129,6 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
         onOpenUsersList={navigation.openUsersList}
         onOpenMyProfile={navigation.openMyProfile}
         onOpenPatientsList={navigation.openPatientsListFromMenu}
-        onOpenPatientAudit={navigation.openPatientAudit}
         onOpenBilling={navigation.openBilling}
         onOpenBillingHistory={navigation.openBillingHistory}
         onOpenReports={navigation.openReports}
