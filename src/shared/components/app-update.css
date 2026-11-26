@@ -1,15 +1,88 @@
 .app-update-notice {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
   gap: 12px;
-  padding: 12px 16px;
-  background: var(--panel);
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--action-primary) 10%, var(--panel));
   color: var(--ink);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid color-mix(in srgb, var(--action-primary) 30%, var(--line));
 }
-.app-update-notice > span { flex: 1 1 240px; overflow-wrap: anywhere; }
-.app-update-notice > button { flex-shrink: 0; }
 
-.app-update-dialog .modal-backdrop { z-index: 1000; }
+.app-update-notice-icon,
+.app-update-modal-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--action-primary);
+  background: color-mix(in srgb, var(--action-primary) 14%, transparent);
+  border-radius: 999px;
+}
+
+.app-update-notice-icon { width: 34px; height: 34px; }
+
+.app-update-notice-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.app-update-notice-copy span { color: var(--muted); }
+
+.app-update-notice .app-update-notice-action {
+  flex: none;
+  width: auto;
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+/* A confirmação fica centralizada e acima de tudo (outros modais abrem no topo). */
+.app-update-backdrop.modal-backdrop {
+  z-index: 1000;
+  place-items: center;
+}
+
+.app-update-modal.modal-panel {
+  width: min(500px, 100%);
+  padding: 28px 24px 24px;
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.app-update-modal-icon { width: 56px; height: 56px; }
+
+.app-update-modal-copy { display: grid; gap: 8px; }
+
+.app-update-modal-copy h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.2rem, 4vw, 1.45rem);
+}
+
+.app-update-modal-copy p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.app-update-modal-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.app-update-modal .app-update-modal-actions > button { width: 100%; min-width: 0; justify-content: center; }
+
+@media (max-width: 520px) {
+  .app-update-notice { flex-wrap: wrap; }
+  .app-update-notice-copy { flex-basis: calc(100% - 46px); }
+  .app-update-notice .app-update-notice-action { width: 100%; justify-content: center; }
+  .app-update-modal-actions { grid-template-columns: minmax(0, 1fr); }
+  /* No celular a ação principal vem primeiro. */
+  .app-update-modal-actions button:last-child { order: -1; }
+}

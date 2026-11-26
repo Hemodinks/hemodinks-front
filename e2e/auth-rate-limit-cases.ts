@@ -212,11 +212,18 @@ export function registerAuthRateLimitCases<TSession extends Session>({ setup, lo
     await page.goto('/');
     await expect(loginButton(page)).toBeEnabled();
     await page.getByLabel('Email', { exact: true }).fill(session.user.email);
-    const recover = page.getByRole('button', { name: 'Esqueci minha senha' });
+    // "Esqueci minha senha" abre a tela de recuperação; o envio é no botão "Enviar instruções".
+    await page.getByRole('button', { name: 'Esqueci minha senha' }).click();
+    await expect(page.getByRole('heading', { name: 'Recuperar senha' })).toBeVisible();
+    expect(calls).toBe(0);
+    const recover = page.getByRole('button', { name: 'Enviar instruções' });
     await recover.click();
     await expect(page.getByRole('alert')).toHaveText(genericMessage);
     await expect(recover).toBeDisabled();
+    // A espera da recuperação não bloqueia o login.
+    await page.getByRole('button', { name: 'Voltar para o login' }).click();
     await expect(loginButton(page)).toBeEnabled();
+    await page.getByRole('button', { name: 'Esqueci minha senha' }).click();
     await page.clock.fastForward(5_000);
     await expect(recover).toBeEnabled();
     expect(calls).toBe(1);

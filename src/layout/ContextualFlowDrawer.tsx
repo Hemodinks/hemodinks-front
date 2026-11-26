@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { CheckCircle2, ChevronDown, CircleHelp, Play, RotateCcw, X } from 'lucide-react';
 import type { AppView } from '../appTypes';
 import { useTutorials } from '../features/tutorials/TutorialProvider';
@@ -23,9 +23,12 @@ export function ContextualFlowDrawer({ activeView, embedded = false, open, onOpe
   const { activeTutorialId, completedTutorials, getTutorialsForView, startTutorial } = useTutorials();
   const tutorials = getTutorialsForView(activeView);
 
-  useEffect(() => {
+  // #292: trocar de tela reabre o primeiro fluxo na própria renderização.
+  const [flowsFor, setFlowsFor] = useState(viewFlows.flows);
+  if (flowsFor !== viewFlows.flows) {
+    setFlowsFor(viewFlows.flows);
     setOpenFlowId(viewFlows.flows[0]?.id ?? null);
-  }, [activeView, viewFlows.flows]);
+  }
 
   const Container = embedded ? 'div' : 'aside';
   return (

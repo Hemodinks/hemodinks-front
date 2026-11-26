@@ -1,7 +1,7 @@
 import type { IsCurrentRoute } from '../../shared/hooks/useFormRouteSync';
 import { type FormEvent, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { createPaciente, createPacienteObservacao, deletePaciente, deletePacienteArquivo, getPaciente, updatePaciente, uploadPacienteArquivo } from '../../services';
+import { createPaciente, createPacienteObservacao, deletePaciente, deletePacienteArquivo, getPaciente, reativarPaciente, updatePaciente, uploadPacienteArquivo } from '../../services';
 import { queryClient } from '../../queryClient';
 import { queryKeys } from '../../shared/queryKeys';
 import type { ConfirmAction } from '../../shared/components/ConfirmationDialog';
@@ -11,6 +11,10 @@ import { preparePatientPayload } from './patientDomainHelpers';
 import type { usePatientForm } from './usePatientForm';
 import type { usePatientList } from './usePatientList';
 import type { usePatientLookups } from './usePatientLookups';
+
+// Inativar/reativar paciente pedem o motivo, que vai para a trilha de auditoria.
+const PATIENT_STATUS_REASON = { label: 'Motivo (obrigatório)', maxLength: 500,
+  hint: 'Fica registrado na auditoria. Não inclua CPF nem informações clínicas.' };
 
 type UsePatientCrudActionsOptions = {
   session: AuthSession | null;
@@ -36,7 +40,8 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
     mutationFn: ({ id, payload, token }: { id: number | null; payload: PacientePayload; token: string }) =>
       id ? updatePaciente(id, payload, token) : createPaciente(payload, token),
   });
-  const deleteMutation = useMutation({ mutationFn: ({ id, token }: { id: number; token: string }) => deletePaciente(id, token) });
+  const deleteMutation = useMutation({ mutationFn: ({ id, token, motivo }: { id: number; token: string; motivo: string }) => deletePaciente(id, token, motivo) });
+  const reactivateMutation = useMutation({ mutationFn: ({ id, token, motivo }: { id: number; token: string; motivo: string }) => reativarPaciente(id, token, motivo) });
   const deleteFileMutation = useMutation({
     mutationFn: ({ pacienteId, arquivoId, token }: { pacienteId: number; arquivoId: number; token: string }) =>
       deletePacienteArquivo(pacienteId, arquivoId, token),
@@ -130,24 +135,45 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
     }
   };
 
-  const deleteSelectedPaciente = async (paciente: Paciente) => {
+  const deleteSelectedPaciente = async (paciente: Paciente, motivo = '') => {
     if (!session) return;
-    if (!canDeletePatients) { patientList.setPacientesError('Apenas administradores podem excluir pacientes.'); return; }
+    if (!canDeletePatients) { patientList.setPacientesError('Apenas administradores podem inativar pacientes.'); return; }
     patientList.setPacientesError(''); patientList.setPacienteSuccessMessage('');
     try {
-      await deleteMutation.mutateAsync({ id: paciente.id, token: session.token });
+      await deleteMutation.mutateAsync({ id: paciente.id, token: session.token, motivo });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesPendenciasDataConsolidacao(session.token) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token), refetchType: 'none' }),
       ]);
-      patientList.setPacienteSuccessMessage('Paciente excluído.');
+      patientList.setPacienteSuccessMessage('Paciente inativado.');
       await loadPacientes(session.token, true); await loadDashboardSummary(session.token, true);
     } catch (error) { patientList.setPacientesError(getErrorMessage(error)); }
   };
-  const handleDeletePaciente = (paciente: Paciente) => confirmAction({ tone: 'delete', title: 'Excluir paciente?',
-    message: `Deseja excluir "${paciente.nomePaciente}"? Esta ação não poderá ser desfeita.`, confirmLabel: 'Sim', cancelLabel: 'Não',
-    onConfirm: () => deleteSelectedPaciente(paciente) });
+  const handleDeletePaciente = (paciente: Paciente) => confirmAction({ tone: 'delete', title: 'Inativar paciente?',
+    message: `Deseja inativar "${paciente.nomePaciente}"? O paciente sairá das listas e o acesso dele ao portal será bloqueado. Os dados são mantidos e um administrador pode reativá-lo.`,
+    confirmLabel: 'Sim', cancelLabel: 'Não', reason: PATIENT_STATUS_REASON,
+    onConfirm: (motivo) => deleteSelectedPaciente(paciente, motivo) });
+
+  const reactivateSelectedPaciente = async (paciente: Paciente, motivo = '') => {
+    if (!session) return;
+    if (!canDeletePatients) { patientList.setPacientesError('Apenas administradores podem reativar pacientes.'); return; }
+    patientList.setPacientesError('');
+    try {
+      await reactivateMutation.mutateAsync({ id: paciente.id, token: session.token, motivo });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesPendenciasDataConsolidacao(session.token) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardSummary(session.token), refetchType: 'none' }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pacientesRoot(session.token), refetchType: 'none' }),
+      ]);
+      patientList.setPacienteSuccessMessage('Paciente reativado.');
+      await loadPacientes(session.token, true); await loadDashboardSummary(session.token, true);
+    } catch (error) { patientList.setPacientesError(getErrorMessage(error)); }
+  };
+  const handleReativarPaciente = (paciente: Paciente) => confirmAction({ tone: 'update', title: 'Reativar paciente?',
+    message: `Deseja reativar "${paciente.nomePaciente}"? O paciente volta para as listas.`,
+    confirmLabel: 'Sim', cancelLabel: 'Não', reason: PATIENT_STATUS_REASON,
+    onConfirm: (motivo) => reactivateSelectedPaciente(paciente, motivo) });
 
   const handleDeletePacienteArquivo = async (paciente: Paciente, arquivoId: number) => {
     if (!session) return;
@@ -164,5 +190,5 @@ export function usePatientCrudActions(options: UsePatientCrudActionsOptions) {
     } catch (error) { patientList.setPacientesError(getErrorMessage(error)); }
   };
 
-  return { handleEditPaciente, loadPacienteForEdit, handleSubmitPaciente, handleDeletePaciente, handleDeletePacienteArquivo };
+  return { handleEditPaciente, loadPacienteForEdit, handleSubmitPaciente, handleDeletePaciente, handleReativarPaciente, handleDeletePacienteArquivo };
 }

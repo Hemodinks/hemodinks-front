@@ -8,6 +8,9 @@ import { registerAccessibilityAuditCases } from './accessibility-audit-cases';
 import { registerResponsiveA11yRefinementCases } from './responsive-a11y-refinement-cases';
 import { registerReportChecklistCases } from './report-checklist-cases';
 import { registerAuthRateLimitCases } from './auth-rate-limit-cases';
+import { registerMfaLoginCases } from './mfa-login-cases';
+import { registerBillingHistoryDeleteCases } from './billing-history-delete-cases';
+import { enforceProductionCsp, expectNoCspViolations } from './csp-guard';
 import { registerPasswordPolicyCases } from './password-policy-cases';
 import { registerSecurityObservationCases } from './security-observation-cases';
 import { registerActiveSessionsCases } from './active-sessions-cases';
@@ -17,6 +20,8 @@ import { registerAgendaViewCases } from './agenda-view-cases';
 import { registerAgendaRecipientCases } from './agenda-recipient-cases';
 import { registerAgendaMonthCases } from './agenda-month-cases';
 import { registerAgendaResponsiveCases } from './agenda-responsive-cases';
+import { registerSettingsLayoutCases } from './settings-layout-cases';
+import { registerLoginRecoveryLayoutCases } from './login-recovery-layout-cases';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -33,7 +38,8 @@ const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
 registerPerformanceRefetchCases({ setup: mockApi, login: loginViaUi });
 
-test.beforeEach(async ({ page }, testInfo) => {
+test.beforeEach(async ({ page, baseURL }, testInfo) => {
+  await enforceProductionCsp(page, baseURL);
   page.on('pageerror', (error) => {
     console.error(`[browser pageerror] ${error.stack ?? error.message}`);
   });
@@ -52,6 +58,9 @@ test.beforeEach(async ({ page }, testInfo) => {
     });
   }
 });
+
+// #310: build de produção com a CSP real (playwright.csp.config.ts) não pode ter violação.
+test.afterEach(async ({ page }, testInfo) => expectNoCspViolations(page, testInfo));
 
 function mockSessionToken(id: number) {
   const payload = { sid: `mock-session-${id}`, usuarioGlobalId: id, usuarioClinicaId: id,
@@ -707,10 +716,15 @@ test.beforeEach(async ({ context }, testInfo) => {
 });
 
 registerAuthRateLimitCases({ setup: mockApi, login: loginViaUi, session });
+registerMfaLoginCases({ setup: mockApi, login: loginViaUi });
+registerBillingHistoryDeleteCases({ setup: page => mockApi(page, superAdminSession, { billingAmount: 'R$ 125,45' }),
+  login: (page, path) => loginViaUi(page, path, superAdminSession) });
 registerTenantIsolationCases({ mockApi: page => mockApi(page, superAdminSession),
   login: (page, path) => loginViaUi(page, path, superAdminSession), user: superAdminSession.user, patient: paciente });
 registerPasswordPolicyCases({ setup: mockApi, login: loginViaUi, session });
 registerSecurityObservationCases({ setup: mockApi, login: loginViaUi, session });
+registerSettingsLayoutCases({ setup: mockApi, login: loginViaUi });
+registerLoginRecoveryLayoutCases({ setup: mockApi });
 registerActiveSessionsCases({ setup: mockApi, login: loginViaUi, session });
 registerSensitiveIdentityCases({ setup: mockApi, login: loginViaUi, session });
 registerPatientFormTests({ setup: mockApi, login: loginViaUi });
@@ -750,7 +764,7 @@ test('listagem paciente sem permissão de gestão oferece somente visualização
   await mockApi(page, patientSession);
   await loginViaUi(page, '/pacientes', patientSession);
   await expect(page.getByRole('button', { name: 'Visualizar Paciente Hemodinks', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^(Novo paciente|Editar Paciente|Excluir Paciente)/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^(Novo paciente|Editar Paciente|Inativar Paciente|Reativar Paciente)/ })).toHaveCount(0);
 });
 
 async function expectNoGlobalHorizontalOverflow(page: Page) {
@@ -853,7 +867,9 @@ test('navega pelos fluxos principais autenticados', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Painel inicial' })).toBeVisible();
   await expect(page.getByRole('button', { name: /^pacientes/i })).toBeVisible();
 
+  // Administrador: "Pacientes - Cirurgias" abre o accordion (Cadastro de Pacientes, Auditoria).
   await page.getByRole('button', { name: /^pacientes/i }).click();
+  await page.getByRole('button', { name: /^Cadastro de Pacientes/ }).click();
   await expect(page).toHaveURL(/\/pacientes$/);
   await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible();
   await expect(page.getByText('Paciente Hemodinks')).toBeVisible();
@@ -880,7 +896,7 @@ test('abre o módulo de tutoriais interativos e carrega o vídeo de Relatórios'
 
   const video = page.getByLabel('Tutorial: Relatórios — consulta analítica');
   await expect(video).toBeVisible();
-  await expect(video.locator('source[type="video/webm"]')).toHaveAttribute('src', '/tutorials/reports/tutorial-relatorios-narrado.webm');
+  await expect(video.locator('source[type="video/webm"]')).toHaveCount(0);
   await expect(video.locator('source[type="video/mp4"]')).toHaveAttribute('src', '/tutorials/reports/tutorial-relatorios-narrado.mp4');
   await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.duration)).toBeGreaterThan(80);
   await page.getByLabel('Velocidade: Relatórios — consulta analítica').selectOption('1.5');
@@ -1007,7 +1023,9 @@ test('navegação pelo menu posiciona a nova tela no topo da aplicação', async
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 
   await page.evaluate(() => {
-    document.querySelector<HTMLButtonElement>('.side-nav-patients')?.click();
+    // Administrador: abre o accordion e escolhe "Cadastro de Pacientes".
+    document.querySelector<HTMLButtonElement>('.side-nav-patients-group .side-nav-billing-toggle')?.click();
+    document.querySelector<HTMLButtonElement>('.side-nav-patients-group .side-nav-billing-subitem')?.click();
   });
   await expect(page).toHaveURL(/\/pacientes$/);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
@@ -1345,7 +1363,7 @@ async function openReportsTutorial(page: Page) {
 test('privacidade: oferece escolha real, persiste categorias e controla análise opcional', async ({ page }) => {
   await mockApi(page);
   let analyticsModuleRequests = 0;
-  await page.route('**/src/newRelic.ts*', async (route) => {
+  await page.route('**/newRelic*', async (route) => {
     analyticsModuleRequests += 1;
     await route.continue();
   });
@@ -1397,7 +1415,7 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
     privacyPreference: { preferences: true, analytics: true },
   });
   let analyticsModuleRequests = 0;
-  await page.route('**/src/newRelic.ts*', async (route) => {
+  await page.route('**/newRelic*', async (route) => {
     analyticsModuleRequests += 1;
     await route.continue();
   });
@@ -1428,7 +1446,7 @@ test('privacidade: sincroniza preferência autenticada com o backend e persiste 
 test('privacidade: mantém escolha personalizada no reload e pede nova decisão após mudança de versão', async ({ page }) => {
   await mockApi(page);
   let analyticsModuleRequests = 0;
-  await page.route('**/src/newRelic.ts*', async (route) => {
+  await page.route('**/newRelic*', async (route) => {
     analyticsModuleRequests += 1;
     await route.continue();
   });

@@ -138,7 +138,7 @@ export function ActiveSessionsPanel({ session }: Props) {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr><td colSpan={7} className="empty-row" role="status">Carregando sessões...</td></tr>
+              {loading ? <tr><td colSpan={7} className="empty-row"><span role="status">Carregando sessões...</span></td></tr>
                 : !data ? <tr><td colSpan={7} className="empty-row">Sessões indisponíveis.</td></tr>
                 : rows.length === 0 ? <tr><td colSpan={7} className="empty-row">Nenhum usuário online agora.</td></tr>
                   : rows.map((item, index) => (

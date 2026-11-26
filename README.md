@@ -126,8 +126,9 @@ O Vite sobe em `http://localhost:5173` com `--host 0.0.0.0`.
 | `npm run verify` | `audit:architecture` + `security-headers` + `lint` + testes + build (obrigatorio quando mexer em mais de um modulo) |
 | `npm run security-headers` / `security-headers:write` | confere / regrava a CSP e os headers dos hosts a partir de `security-headers.json` (ver `DEPLOYMENT.md`) |
 | `npm run audit:architecture` | limite de 550 linhas e fronteiras `shared/`/`services/` |
-| `npm run lint` | ESLint (hooks, acessibilidade, TypeScript) em `src/`; falha com erro ou aviso novo (`--max-warnings`) |
-| `npm run test:e2e` | roda testes E2E com Playwright |
+| `npm run lint` | ESLint (hooks, acessibilidade, TypeScript) em `src/`; falha com qualquer erro ou aviso (`--max-warnings 0`, #292) |
+| `npm run test:e2e` | roda testes E2E com Playwright (dev server) |
+| `npm run test:e2e:csp` | mesma suite + matriz mobile contra o build de producao com a CSP real; violacao de CSP reprova (usado no CI) |
 | `npm run test:e2e:responsive` | E2E em 390, 820 e 1440 px |
 | `npm run test:e2e:real` | E2E contra a API real e SQL sintetico (ver `docs/real-api-e2e.md`) |
 | `npm run tutorial:*` / `record:tutorials*` | producao de audio e videos dos tutoriais (ver `TUTORIALS.md`) |

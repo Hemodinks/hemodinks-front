@@ -8,6 +8,7 @@ import {
   createUser,
   deletePaciente,
   deletePacienteArquivo,
+  reativarPaciente,
   downloadPacienteArquivo,
   deleteUser,
   deleteUserArquivo,
@@ -300,7 +301,7 @@ describe('services api client', () => {
     await updatePaciente(10, payload, 'jwt-token');
     await uploadPacienteArquivo(10, new File(['laudo'], 'laudo.pdf', { type: 'application/pdf' }), 'jwt-token');
     await expect(deletePacienteArquivo(10, 1, 'jwt-token')).resolves.toBeUndefined();
-    await expect(deletePaciente(10, 'jwt-token')).resolves.toBeUndefined();
+    await expect(deletePaciente(10, 'jwt-token', 'Paciente transferido')).resolves.toBeUndefined();
 
     expect(requestSpy).toHaveBeenNthCalledWith(1, {
       url: '/api/pacientes/',
@@ -375,6 +376,7 @@ describe('services api client', () => {
     expect(requestSpy).toHaveBeenNthCalledWith(9, {
       url: '/api/pacientes/10',
       method: 'DELETE',
+      data: { motivo: 'Paciente transferido' },
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer jwt-token',
@@ -423,6 +425,21 @@ describe('services api client', () => {
     expect(requestSpy.mock.calls[0]?.[0].params?.toString()).toBe(
       'medicoUserIds=1%2C2&convenioIds=7%2C8&dataInicio=2026-06-01&dataFinal=2026-06-30&dataSolicitacaoInicio=2026-05-01&dataSolicitacaoFinal=2026-05-31',
     );
+  });
+
+  it('envia a situacao do cadastro so quando difere do padrao e reativa paciente', async () => {
+    const requestSpy = vi.spyOn(apiClient, 'request')
+      .mockResolvedValueOnce(axiosResponse({ items: [], page: 1, pageSize: 10, totalItems: 0, totalPages: 1 }))
+      .mockResolvedValueOnce(axiosResponse({ items: [], page: 1, pageSize: 10, totalItems: 0, totalPages: 1 }))
+      .mockResolvedValueOnce(axiosResponse(undefined, 204));
+
+    await getPacientes('jwt-token', { situacao: 'inativos' });
+    await getPacientes('jwt-token', { situacao: 'ativos' });
+    await expect(reativarPaciente(10, 'jwt-token', 'Retorno do paciente')).resolves.toBeUndefined();
+
+    expect(requestSpy.mock.calls[0]?.[0].params?.toString()).toBe('situacao=inativos');
+    expect(requestSpy.mock.calls[1]?.[0].params?.toString() ?? '').toBe('');
+    expect(requestSpy.mock.calls[2]?.[0]).toMatchObject({ url: '/api/pacientes/10/reativacao', method: 'POST', data: { motivo: 'Retorno do paciente' } });
   });
 
   it('carrega todas as paginas da consulta CBHPM para cache local', async () => {

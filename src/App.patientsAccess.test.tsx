@@ -37,7 +37,8 @@ describe('App — acesso a pacientes por perfil', () => {
     expect(screen.queryByLabelText('Convênio')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Procedimento')).not.toBeInTheDocument();
     expect(api.getPacientes).toHaveBeenCalledWith('jwt-token', { page: 1, pageSize: 10, search: '', sortBy: 'data', sortDirection: 'desc' });
-    expect(api.getScopedMedicalUsers).toHaveBeenCalledWith('jwt-token');
+    // A lista de médicos carrega depois da de pacientes; com cobertura (CI) pode chegar um tick depois.
+    await waitFor(() => expect(api.getScopedMedicalUsers).toHaveBeenCalledWith('jwt-token'));
 
     await user.click(screen.getByRole('button', { name: /editar paciente hemodinks/i }));
 
@@ -247,7 +248,7 @@ describe('App — acesso a pacientes por perfil', () => {
     expect(screen.getByRole('button', { name: /exportar planilha/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar pdf/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /editar paciente hemodinks/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /excluir paciente hemodinks/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /inativar paciente hemodinks/i })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /novo paciente/i }));
     expect(await screen.findByRole('heading', { name: 'Novo paciente' })).toBeInTheDocument();

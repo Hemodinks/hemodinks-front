@@ -1,5 +1,5 @@
 import { type FormEvent } from 'react';
-import { LoaderCircle, LogIn, Mail } from 'lucide-react';
+import { ArrowLeft, KeyRound, LoaderCircle, LogIn, Mail, Send } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import type { PublicClinic } from '../../types';
 import { CompanyLogo } from '../../shared/components/CompanyLogo';
@@ -41,6 +41,10 @@ type LoginScreenProps = {
   onRecoveryClinicChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onResetPassword: () => void;
+  // Tela "Recuperar senha": troca o formulário de login pelo de envio de instruções.
+  recoveryMode?: boolean;
+  onOpenRecovery?: () => void;
+  onCloseRecovery?: () => void;
   onStartTutorial: () => void;
   onCancelLogin: () => void;
 };
@@ -70,9 +74,20 @@ export function LoginScreen({
   onRecoveryClinicChange,
   onSubmit,
   onResetPassword,
+  recoveryMode = false,
+  onOpenRecovery = onResetPassword,
+  onCloseRecovery = () => {},
   onStartTutorial,
   onCancelLogin,
 }: LoginScreenProps) {
+  const waitDescribedBy = loginWaitMessage || recoveryWaitMessage ? 'auth-wait-status' : undefined;
+  const recoverySent = recoveryMode && Boolean(loginInfo);
+  const submitForm = (event: FormEvent<HTMLFormElement>) => {
+    if (!recoveryMode) return onSubmit(event);
+    event.preventDefault();
+    onResetPassword();
+  };
+
   return (
     <main className="auth-screen">
       <LoginLoadingOverlay active={loginLoading} onCancel={onCancelLogin}
@@ -85,11 +100,19 @@ export function LoginScreen({
           <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />
           <div>
             <span className="eyebrow">{companyName}</span>
-            <h1>Acesso ao sistema</h1>
+            <h1>{recoveryMode ? 'Recuperar senha' : 'Acesso ao sistema'}</h1>
           </div>
         </div>
 
-        <form className="stack" onSubmit={onSubmit} onInvalid={focusFirstInvalidFormField}>
+        {recoveryMode && (
+          <p className="login-recovery-intro">
+            <KeyRound size={18} aria-hidden="true" />
+            <span>Informe o email de acesso e clique em <strong>Enviar instruções</strong>. Enviaremos um link para você criar uma nova senha.</span>
+          </p>
+        )}
+
+        <form className="stack" onSubmit={submitForm} onInvalid={focusFirstInvalidFormField}
+          aria-label={recoveryMode ? 'Recuperar senha' : 'Acesso ao sistema'}>
           <label data-tour="login-email">
             Email
             <input
@@ -105,7 +128,7 @@ export function LoginScreen({
             />
           </label>
 
-          <div data-tour="login-password"><PasswordInput
+          {!recoveryMode && <div data-tour="login-password"><PasswordInput
             id="login-password"
             label="Senha"
             value={loginPassword}
@@ -113,12 +136,13 @@ export function LoginScreen({
             autoComplete="current-password"
             maxLength={MAX_PASSWORD_LENGTH}
             required
-          /></div>
+          /></div>}
 
-          {recoveryClinics.length > 1 && (
+          {recoveryMode && recoveryClinics.length > 1 && (
             <label data-tour="password-reset-clinic">
               Clínica para recuperação de senha
               <select
+                required
                 value={recoveryClinicValue}
                 onChange={(event) => onRecoveryClinicChange(event.target.value)}
               >
@@ -133,25 +157,47 @@ export function LoginScreen({
           {loginError && <AlertMessage type="error">{loginError}</AlertMessage>}
           {loginInfo && <ToastMessage type="success">{loginInfo}</ToastMessage>}
 
-          <p id="login-session-status" className="login-session-status" role="status" aria-live="polite" aria-atomic="true">
-            {sessionRestoring
-              ? 'Verificando sessão… O botão Entrar será liberado ao terminar. Você já pode preencher email e senha.'
-              : loginWaitSeconds > 0 ? 'Aguarde antes de entrar novamente.' : 'Você já pode clicar em Entrar.'}
-          </p>
+          {!recoverySent && <p id="login-session-status" className="login-session-status" role="status" aria-live="polite" aria-atomic="true">
+            {recoveryMode
+              ? recoveryClinics.length > 1
+                ? 'Selecione a clínica e clique em Enviar instruções.'
+                : 'Confira o email e clique em Enviar instruções.'
+              : sessionRestoring
+                ? 'Verificando sessão… O botão Entrar será liberado ao terminar. Você já pode preencher email e senha.'
+                : loginWaitSeconds > 0 ? 'Aguarde antes de entrar novamente.' : 'Você já pode clicar em Entrar.'}
+          </p>}
           <AuthWaitMessage message={[
             loginWaitMessage && `Acesso: ${loginWaitMessage}`,
             recoveryWaitMessage && `Recuperação de senha: ${recoveryWaitMessage}`,
           ].filter(Boolean).join(' ')} />
 
-          <div className="login-entry-actions">
-            <button className="primary-action" type="submit" disabled={sessionRestoring || loginLoading || resetPasswordLoading || loginWaitSeconds > 0} aria-describedby={loginWaitMessage || recoveryWaitMessage ? 'login-session-status auth-wait-status' : 'login-session-status'} aria-busy={sessionRestoring || loginLoading} data-tour="login-submit">
-              {sessionRestoring ? <LoaderCircle className="login-session-spinner" size={18} aria-hidden="true" /> : <LogIn size={18} aria-hidden="true" />}
-              {sessionRestoring ? 'Verificando sessão…' : loginLoading ? 'Entrando...' : 'Entrar'}
-            </button>
-            <button type="button" className="ghost-button login-help-link" onClick={onResetPassword} disabled={sessionRestoring || resetPasswordLoading || loginLoading || recoveryWaitSeconds > 0} aria-describedby={loginWaitMessage || recoveryWaitMessage ? 'auth-wait-status' : undefined}>
-              {resetPasswordLoading ? 'Enviando instruções...' : recoveryClinics.length > 1 ? 'Enviar instruções' : 'Esqueci minha senha'}
-            </button>
-          </div>
+          {recoveryMode ? (
+            <div className="login-entry-actions">
+              {!recoverySent && (
+                <button className="primary-action" type="submit"
+                  disabled={sessionRestoring || resetPasswordLoading || loginLoading || recoveryWaitSeconds > 0}
+                  aria-describedby={waitDescribedBy ? 'login-session-status auth-wait-status' : 'login-session-status'}
+                  aria-busy={resetPasswordLoading}>
+                  {resetPasswordLoading ? <LoaderCircle className="login-session-spinner" size={18} aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
+                  {resetPasswordLoading ? 'Enviando instruções...' : 'Enviar instruções'}
+                </button>
+              )}
+              <button type="button" className={recoverySent ? 'primary-action' : 'ghost-button login-help-link login-back-link'}
+                onClick={onCloseRecovery} disabled={resetPasswordLoading}>
+                <ArrowLeft size={18} aria-hidden="true" />Voltar para o login
+              </button>
+            </div>
+          ) : (
+            <div className="login-entry-actions">
+              <button className="primary-action" type="submit" disabled={sessionRestoring || loginLoading || resetPasswordLoading || loginWaitSeconds > 0} aria-describedby={waitDescribedBy ? 'login-session-status auth-wait-status' : 'login-session-status'} aria-busy={sessionRestoring || loginLoading} data-tour="login-submit">
+                {sessionRestoring ? <LoaderCircle className="login-session-spinner" size={18} aria-hidden="true" /> : <LogIn size={18} aria-hidden="true" />}
+                {sessionRestoring ? 'Verificando sessão…' : loginLoading ? 'Entrando...' : 'Entrar'}
+              </button>
+              <button type="button" className="ghost-button login-help-link" onClick={onOpenRecovery} disabled={sessionRestoring || loginLoading} aria-describedby={waitDescribedBy}>
+                Esqueci minha senha
+              </button>
+            </div>
+          )}
         </form>
         <p className="login-help">Primeiro acesso? <button type="button" className="ghost-button login-help-link" onClick={onStartTutorial}>Tutorial de acesso</button></p>
         <p className="login-help login-support">
