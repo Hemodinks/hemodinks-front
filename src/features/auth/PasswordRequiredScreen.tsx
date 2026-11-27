@@ -4,7 +4,7 @@ import type { AuthSession } from '../../types';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordForm } from '../../shared/components/PasswordForm';
 import { TechCredit } from '../../shared/components/TechCredit';
-import { AppearanceMenu } from '../../shared/components/AppearanceMenu';
+import { AppearanceMenu } from '../appearance/AppearanceMenu';
 import './auth.css';
 
 type PasswordRequiredScreenProps = {

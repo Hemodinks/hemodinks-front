@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown, Moon, Palette, Sun, SwatchBook } from 'lucide-react';
 import type { Theme } from '../../appTypes';
-import { useOptionalColorStylePreference } from '../hooks/ColorStylePreferenceProvider';
+import { useOptionalColorStylePreference } from './ColorStylePreferenceProvider';
 
 type AppearanceMenuProps = {
   theme: Theme;

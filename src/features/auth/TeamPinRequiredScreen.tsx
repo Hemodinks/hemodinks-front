@@ -7,7 +7,7 @@ import { getErrorMessage } from "../../shared/utils/formatters";
 import { LoadingOverlay } from "../../shared/components/LoadingOverlay";
 import { PasswordInput } from "../../shared/components/PasswordInput";
 import { TechCredit } from "../../shared/components/TechCredit";
-import { AppearanceMenu } from "../../shared/components/AppearanceMenu";
+import { AppearanceMenu } from "../appearance/AppearanceMenu";
 import { AlertMessage } from "../../shared/components/ui";
 import { focusFirstInvalidFormField } from "../../shared/utils/focusInvalidFormField";
 import "./auth.css";

@@ -34,6 +34,15 @@ import { registerPatientListTests } from './patient-list-cases';
 import { registerFormRouteCases } from './form-route-cases';
 import { applyThemeForAudit, settleStyleTransitions } from './theme-audit';
 
+// Tema pelo menu "Visual do sistema" (substitui o antigo botão de tema). Fecha o menu ao final.
+async function chooseTheme(page: Page, option: 'Claro' | 'Escuro') {
+  const menu = page.getByRole('group', { name: 'Visual do sistema' });
+  if (!(await menu.count())) await page.getByRole('button', { name: 'Visual do sistema', exact: true }).click();
+  await menu.getByRole('button', { name: option, exact: true }).click();
+  if (await menu.count()) await page.keyboard.press('Escape');
+}
+
+
 const LOGIN_PASSWORD = ['acesso', 'teste', 'ci'].join('-');
 
 registerPerformanceRefetchCases({ setup: mockApi, login: loginViaUi });
@@ -2277,7 +2286,7 @@ test('dashboard operacional preserva fundo, tema e navegação nas larguras soli
   await loginViaUi(page, '/dashboard');
   await expect(page.getByRole('heading', { name: 'Olá, George' })).toBeVisible();
   await expect(page.locator('.dashboard-skeleton')).toHaveCount(0);
-  if (await page.getByRole('button', { name: 'Usar tema claro', exact: true }).count()) await page.getByRole('button', { name: 'Usar tema claro', exact: true }).click();
+  if (await page.locator('html').getAttribute('data-theme') === 'dark') await chooseTheme(page, 'Claro');
   const background = await page.locator('.app-shell').evaluate(el => {
     const style = getComputedStyle(el);
     return { image: style.backgroundImage, size: style.backgroundSize, position: style.backgroundPosition, attachment: style.backgroundAttachment };
@@ -2315,7 +2324,7 @@ test('dashboard operacional preserva fundo, tema e navegação nas larguras soli
       await page.keyboard.press('Escape');
     }
     await page.screenshot({ path: testInfo.outputPath(`dashboard-light-${width}.png`), fullPage: true });
-    await page.getByRole('button', { name: 'Usar tema escuro', exact: true }).click();
+    await chooseTheme(page, 'Escuro');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await settleStyleTransitions(page);
     await expectNoGlobalHorizontalOverflow(page);
@@ -2324,7 +2333,7 @@ test('dashboard operacional preserva fundo, tema e navegação nas larguras soli
       const audit = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
       expect(audit.violations.filter(item => item.impact === 'serious' || item.impact === 'critical')).toEqual([]);
     }
-    await page.getByRole('button', { name: 'Usar tema claro', exact: true }).click();
+    await chooseTheme(page, 'Claro');
   }
   await page.getByRole('button', { name: 'Novo paciente', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Novo paciente', exact: true })).toBeVisible();

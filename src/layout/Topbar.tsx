@@ -4,7 +4,7 @@ import type { AuthSession } from '../types';
 import { UserMenu } from './UserMenu';
 import { CompanyLogo } from '../shared/components/CompanyLogo';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
-import { AppearanceMenu } from '../shared/components/AppearanceMenu';
+import { AppearanceMenu } from '../features/appearance/AppearanceMenu';
 import { isAnonymousTeamSession } from '../features/auth/teamSession';
 
 type TopbarProps = {

@@ -4,7 +4,7 @@ import type { Theme } from '../../appTypes';
 import { BootstrapLoading } from '../../shared/components/BootstrapLoading';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { TechCredit } from '../../shared/components/TechCredit';
-import { AppearanceMenu } from '../../shared/components/AppearanceMenu';
+import { AppearanceMenu } from '../appearance/AppearanceMenu';
 import { LegalAcceptanceAction } from './LegalAcceptanceAction';
 import { TERMS_VERSION } from './legalVersions';
 

@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AppContent } from './app/AppContent';
 import { ConsentProvider } from './features/privacy/ConsentProvider';
-import { ColorStylePreferenceProvider } from './shared/hooks/ColorStylePreferenceProvider';
+import { ColorStylePreferenceProvider } from './features/appearance/ColorStylePreferenceProvider';
 import { LegalDocumentPage } from './features/legal/LegalDocumentPage';
 import { LEGAL_DOCUMENTS } from './features/legal/legalDocuments';
 import { PageMetadata } from './app/usePageMetadata';

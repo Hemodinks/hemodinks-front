@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { IdentityChangedHandler } from "../../shared/identityChange";
 import { AtSign, Calculator, CheckCircle2, KeyRound, Moon, Palette, SlidersHorizontal, Sun, SwatchBook } from "lucide-react";
-import { useOptionalColorStylePreference } from "../../shared/hooks/ColorStylePreferenceProvider";
+import { useOptionalColorStylePreference } from "../appearance/ColorStylePreferenceProvider";
 import type { Theme } from "../../appTypes";
 import type { AuthSession } from "../../types";
 import { PasswordForm } from "../../shared/components/PasswordForm";

@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { mockSession } from '../../test/appTestData';
 import { SystemSettingsPage } from '../../features/settings/SystemSettingsPage';
 import { CalculatorPreferenceProvider } from '../../features/calculator/CalculatorPreferenceProvider';
-import { AppearanceMenu } from '../components/AppearanceMenu';
+import { AppearanceMenu } from './AppearanceMenu';
 import { COLOR_STYLE_KEY, ColorStylePreferenceProvider } from './ColorStylePreferenceProvider';
 
 vi.mock('../../features/settings/MfaSettingsPanel', () => ({ MfaSettingsPanel: () => null }));

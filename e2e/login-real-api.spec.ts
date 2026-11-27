@@ -1,6 +1,15 @@
 import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+// Tema pelo menu "Visual do sistema" (substitui o antigo botão de tema). Fecha o menu ao final.
+async function chooseTheme(page: Page, option: 'Claro' | 'Escuro') {
+  const menu = page.getByRole('group', { name: 'Visual do sistema' });
+  if (!(await menu.count())) await page.getByRole('button', { name: 'Visual do sistema', exact: true }).click();
+  await menu.getByRole('button', { name: option, exact: true }).click();
+  if (await menu.count()) await page.keyboard.press('Escape');
+}
+
+
 type Team = { id: number; userId: number; operatorId: number; memberUserId: number; email: string; mode: string; clinicId: number; slug: string };
 type Fixture = { apiUrl: string; selection: Team; pin: Team; anonymous: Team; other: Team; password: string; pinValue: string;
   otherPatientId: number; otherPatientName: string;
@@ -254,7 +263,7 @@ test('case:layout', async ({ page }, testInfo) => {
   await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeEnabled();
   await expect.poll(() => page.locator('.brand-mark').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
   await page.screenshot({ path: testInfo.outputPath('login-desktop-dark.png'), fullPage: true });
-  await page.getByRole('button', { name: 'Usar tema claro', exact: true }).click();
+  await chooseTheme(page, 'Claro');
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('login-mobile-light.png'), fullPage: true });
