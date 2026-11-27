@@ -25,13 +25,13 @@ function mount() {
   </ColorStylePreferenceProvider></CalculatorPreferenceProvider>);
 }
 
-const settingsGroup = () => screen.getByRole('group', { name: 'Estilo de cores' });
+const settingsGroup = () => screen.getByRole('group', { name: 'Cores do Hemodinks' });
 const option = (name: string) => screen.getByRole('button', { name });
 
 beforeEach(() => { privacy.preferences = true; localStorage.clear(); document.documentElement.removeAttribute('data-color-style'); });
 afterEach(() => { cleanup(); });
 
-describe('Estilo de cores', () => {
+describe('Cores do Hemodinks', () => {
   it('começa em "Cores padrão", ao lado do Tema nas configurações, sem atributo neutro', () => {
     mount();
     expect(screen.getByRole('group', { name: 'Tema do sistema' })).toBeInTheDocument();

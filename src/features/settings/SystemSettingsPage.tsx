@@ -68,9 +68,9 @@ export function SystemSettingsPage({
           </DataPanel>
 
           {colorStylePreference && <DataPanel className="system-settings-panel">
-            <SettingsCardHeading icon={<SwatchBook size={19} />} eyebrow="Aparência" title="Estilo de cores"
+            <SettingsCardHeading icon={<SwatchBook size={19} />} eyebrow="Aparência" title="Cores do Hemodinks"
               description="Cores padrão mantêm as cores de cada tela e componente; cores neutras deixam o sistema em tons neutros, com cor só onde ela indica algo." />
-            <div className="theme-choice-grid" role="group" aria-label="Estilo de cores">
+            <div className="theme-choice-grid" role="group" aria-label="Cores do Hemodinks">
               <button type="button" className={`theme-choice ${colorStylePreference.colorStyle === "default" ? "active" : ""}`}
                 aria-pressed={colorStylePreference.colorStyle === "default"} onClick={() => colorStylePreference.setColorStyle("default")}>
                 <Palette size={21} />

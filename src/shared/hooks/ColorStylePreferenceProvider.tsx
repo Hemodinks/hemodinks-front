@@ -2,7 +2,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import type { ColorStyle } from '../../appTypes';
 import { useConsent } from '../../features/privacy/ConsentProvider';
 
-// Preferência de "Estilo de cores", como o tema: vale para este navegador e só é gravada com consentimento.
+// Preferência de "Cores do Hemodinks", como o tema: vale para este navegador e só é gravada com consentimento.
 export const COLOR_STYLE_KEY = 'hemodinks.colorStyle';
 
 type ColorStylePreference = {
