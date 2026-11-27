@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BarChart3 } from 'lucide-react';
 import type { DashboardMonthlyBilling } from '../../types';
 import { formatCurrency } from '../../shared/utils/formatters';
+import './DashboardMonthlyChart.css';
 
 const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 

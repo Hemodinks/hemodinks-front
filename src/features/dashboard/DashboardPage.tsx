@@ -1,13 +1,16 @@
+import { lazy, Suspense } from 'react';
 import { CalendarClock, CheckCircle2, CircleCheck, FileText, Info, Users, UserPlus, CalendarDays, Wallet, UserRound } from 'lucide-react';
 import './dashboard.css';
 import type { DashboardSurgicalBilling } from '../../types';
 import { AlertMessage, ToastMessage } from '../../shared/components/ui';
 import { APP_MODULES } from '../../shared/navigation/appModules';
 import { formatCurrency } from '../../shared/utils/formatters';
-import { DashboardMonthlyChart } from './DashboardMonthlyChart';
 import { DashboardStats } from './DashboardStats';
 import { DashboardPendingItems } from './DashboardPendingItems';
 import { DashboardQuickActions, type DashboardAction } from './DashboardQuickActions';
+
+// Carregado sob demanda: o gráfico (e o CSS dele) fica fora do pacote inicial (orçamento de CSS do CI).
+const DashboardMonthlyChart = lazy(() => import('./DashboardMonthlyChart').then((module) => ({ default: module.DashboardMonthlyChart })));
 
 type DashboardPageProps = {
   companyName: string;
@@ -93,7 +96,9 @@ export function DashboardPage(props: DashboardPageProps) {
       loading={loading} available={available}
       onOpenBilling={props.onOpenBilling} onOpenAgenda={props.onOpenAgenda} onOpenPatientsList={props.onOpenPatientsList}
     />}
-    {surgical && available && !loading && <DashboardMonthlyChart items={surgical.mensal} onOpenHistory={props.onOpenBillingHistory} />}
+    {surgical && available && !loading && <Suspense fallback={null}>
+      <DashboardMonthlyChart items={surgical.mensal} onOpenHistory={props.onOpenBillingHistory} />
+    </Suspense>}
     <DashboardQuickActions actions={actions} />
     <p className="dashboard-help">Precisa de orientação? <button type="button" onClick={props.onOpenTutorials}>Explorar tutoriais interativos</button></p>
   </section>;

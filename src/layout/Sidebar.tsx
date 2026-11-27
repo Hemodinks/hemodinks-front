@@ -5,6 +5,7 @@ import { APP_MODULES } from '../shared/navigation/appModules';
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '../shared/support';
 import type { AppView } from '../appTypes';
 import type { AuthSession } from '../types';
+import './styles/sidebar-modes.css';
 
 type SidebarProps = {
   session: AuthSession;

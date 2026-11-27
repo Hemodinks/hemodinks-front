@@ -187,44 +187,6 @@
 .dashboard-stats { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 .dashboard-stat-detail { margin-top: -6px; color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 
-/* Gráfico mensal: azul = faturado, verde-azulado = recebido (paleta validada nos dois temas). */
-.dashboard-chart-section { --chart-billed: #2563eb; --chart-received: #0d9488; }
-:root[data-theme="dark"] .dashboard-chart-section { --chart-billed: #3b82f6; --chart-received: #0d9488; }
-.dashboard-chart-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
-.dashboard-chart-heading h3 { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; }
-.dashboard-chart-heading h3 svg { flex-shrink: 0; color: var(--teal); }
-.dashboard-chart-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: .8rem; }
-.dashboard-chart-legend li { display: inline-flex; align-items: center; gap: 6px; }
-.dashboard-chart-legend strong { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
-.dashboard-chart-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-.dashboard-chart-swatch.is-billed { background: var(--chart-billed); }
-.dashboard-chart-swatch.is-received { background: var(--chart-received); }
-.dashboard-chart { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 16px 16px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
-.dashboard-chart-axis { display: grid; grid-template-rows: repeat(4, 1fr) 0; height: 180px; color: var(--muted); font-size: .68rem; text-align: right; font-variant-numeric: tabular-nums; }
-.dashboard-chart-axis span { transform: translateY(-50%); white-space: nowrap; }
-.dashboard-chart-plot { position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); height: 180px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
-.dashboard-chart-grid { position: absolute; inset: 0 0 22px; display: grid; grid-template-rows: repeat(4, 1fr); pointer-events: none; }
-.dashboard-chart-grid span { border-top: 1px dashed color-mix(in srgb, var(--line) 70%, transparent); }
-.dashboard-chart-month { position: relative; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 2px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; }
-.dashboard-chart-month.is-active, .dashboard-chart-month:hover { background: color-mix(in srgb, var(--soft) 70%, transparent); }
-.dashboard-chart-month:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
-.dashboard-chart-bars { height: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; }
-.dashboard-chart-bar { width: min(14px, 40%); border-radius: 4px 4px 0 0; }
-.dashboard-chart-bar.is-billed { background: var(--chart-billed); }
-.dashboard-chart-bar.is-received { background: var(--chart-received); }
-.dashboard-chart-label { position: absolute; left: 0; right: 0; bottom: -22px; color: var(--muted); font-size: .68rem; text-align: center; white-space: nowrap; }
-.dashboard-chart-tooltip { position: absolute; top: 4px; z-index: 2; display: grid; gap: 2px; min-width: 170px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-strong); box-shadow: var(--shadow); color: var(--ink); font-size: .75rem; pointer-events: none; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
-.dashboard-chart-tooltip span { display: flex; align-items: center; gap: 6px; color: var(--muted); }
-.dashboard-chart-tooltip .dashboard-chart-swatch { width: 8px; height: 8px; }
-.dashboard-chart-table summary { width: fit-content; min-height: 32px; display: flex; align-items: center; color: var(--teal); font-size: .8rem; cursor: pointer; }
-.dashboard-chart-table table { width: 100%; margin-top: 8px; border-collapse: collapse; font-size: .8rem; font-variant-numeric: tabular-nums; }
-.dashboard-chart-table th, .dashboard-chart-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; }
-.dashboard-chart-table th:first-child, .dashboard-chart-table thead th:first-child { text-align: left; }
-@media (max-width: 720px) {
-  .dashboard-chart-label { font-size: .6rem; }
-  .dashboard-chart-month:nth-child(odd of .dashboard-chart-month) .dashboard-chart-label { visibility: hidden; }
-}
-
 /* Estilo "Cores neutras" (data-color-style="neutral"): cartões, ações e pendências com fundo neutro; a cor do módulo
    fica no ícone e no filete superior/esquerdo. No escuro a cor é clareada (contraste >= 6:1). */
 :root[data-color-style="neutral"] .dashboard-stat { --stat-accent: var(--stat-color); background: var(--panel); border-color: var(--line); border-top: 3px solid var(--stat-accent); }

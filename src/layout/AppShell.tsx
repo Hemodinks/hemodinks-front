@@ -15,6 +15,7 @@ import { NavigationDrawer } from './NavigationDrawer';
 import { Topbar } from './Topbar';
 import { ContextualTools } from './ContextualTools';
 import { LegalFooter } from '../features/legal/LegalFooter';
+import './styles/app-shell-modes.css';
 
 type AppShellProps = {
   children: ReactNode;

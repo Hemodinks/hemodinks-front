@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown, Moon, Palette, Sun, SwatchBook } from 'lucide-react';
 import type { Theme } from '../../appTypes';
 import { useOptionalColorStylePreference } from './ColorStylePreferenceProvider';
+import './appearance-menu.css';
 
 type AppearanceMenuProps = {
   theme: Theme;
