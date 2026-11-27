@@ -4,7 +4,7 @@ import type { Theme } from '../../appTypes';
 import type { LoginClinicOption } from '../../services';
 import { LoginLoadingOverlay } from './LoginLoadingOverlay';
 import { TechCredit } from '../../shared/components/TechCredit';
-import { ThemeToggle } from '../../shared/components/ThemeToggle';
+import { AppearanceMenu } from '../../shared/components/AppearanceMenu';
 import { AlertMessage } from '../../shared/components/ui';
 import { API_ASSET_BASE_URL } from '../../shared/utils/formatters';
 import './auth.css';
@@ -35,7 +35,7 @@ export function ClinicSelectionScreen({
     <main className="auth-screen">
       <LoginLoadingOverlay active={loading} stage="Entrando na clínica selecionada…" onCancel={onCancelLogin} />
       <TechCredit />
-      <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
+      <AppearanceMenu theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel login-panel clinic-selection-panel" aria-busy={loading}>
         <div className="brand-block">
           <div className="brand-mark clinic-selection-icon" aria-hidden="true"><Building2 size={28} /></div>

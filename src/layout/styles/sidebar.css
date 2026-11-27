@@ -54,3 +54,10 @@
 :root[data-color-style="neutral"] .side-nav button.active { background: color-mix(in srgb, var(--nav-accent) 20%, transparent); border-color: transparent; border-left-color: var(--nav-accent); font-weight: 800; }
 :root[data-color-style="neutral"] .side-nav button.active > svg { color: var(--nav-accent); }
 :root[data-color-style="neutral"] .side-nav-count { background: var(--soft); color: var(--ink); }
+
+/* Menu flutuante em telas largas: acompanha a rolagem em páginas longas (ex.: Opções) e,
+   se for mais alto que a janela, rola por conta própria. Abaixo de 981px o menu é a gaveta. */
+@media (min-width: 981px) {
+  .app-navigation-slot { position: sticky; top: 16px; align-self: start; max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .app-navigation-slot .sidebar-card { height: auto; }
+}

@@ -1,5 +1,4 @@
 import { CalculatorPreferenceProvider } from '../features/calculator/CalculatorPreferenceProvider';
-import { ColorStylePreferenceProvider } from '../shared/hooks/ColorStylePreferenceProvider';
 import type { ReactNode } from 'react';
 import type { AppView, ModuleMode, Theme } from '../appTypes';
 import type { AuthSession, SelectClinicResponse } from '../types';
@@ -92,7 +91,6 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
 
   return (
     <CalculatorPreferenceProvider session={session}>
-    <ColorStylePreferenceProvider>
     <TutorialProvider activeView={activeView} allowedTutorialIds={allowedTutorialIds}>
       <AppShell
         banner={<div className="app-banner-stack">
@@ -188,7 +186,6 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
         />
       </AppShell>
     </TutorialProvider>
-    </ColorStylePreferenceProvider>
     </CalculatorPreferenceProvider>
   );
 }

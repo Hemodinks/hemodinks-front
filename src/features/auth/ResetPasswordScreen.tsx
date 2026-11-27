@@ -8,7 +8,7 @@ import { CompanyLogo } from '../../shared/components/CompanyLogo';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
-import { ThemeToggle } from '../../shared/components/ThemeToggle';
+import { AppearanceMenu } from '../../shared/components/AppearanceMenu';
 import { AlertMessage, ToastMessage } from '../../shared/components/ui';
 import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
 import {
@@ -92,7 +92,7 @@ export function ResetPasswordScreen({
     <main className="auth-screen compact">
       <LoadingOverlay active={loading} />
       <TechCredit />
-      <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
+      <AppearanceMenu theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel password-required">
         <div className="brand-block">
           <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />

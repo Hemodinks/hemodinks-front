@@ -1,6 +1,7 @@
 vi.mock('./services/sessionService', async (importOriginal) => ({ ...(await importOriginal<object>()), restoreSession: vi.fn().mockResolvedValue(null) }));
 vi.mock('./services', async () => (await import('./test/appServicesMock')).createServicesMock());
 import { screen, waitFor, within } from '@testing-library/react';
+import type userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEmptyForm } from './features/events/AgendaPage';
 import * as api from './services';
@@ -8,6 +9,18 @@ import type { User } from './types';
 import { baseUser, buildMedicalLicense, paged } from './test/appTestData';
 import { openUsersModule, renderAuthenticatedApp } from './test/appTestUi';
 import { resetAppTestState } from './test/appTestSetup';
+
+
+// O menu "Visual do sistema" fecha se o foco sair dele (ex.: a página termina de carregar e recebe o foco).
+// Abre e escolhe até a opção ficar marcada, sem depender do instante do carregamento.
+async function chooseInAppearanceMenu(user: ReturnType<typeof userEvent.setup>, option: 'Claro' | 'Escuro') {
+  await waitFor(async () => {
+    if (!screen.queryByRole('group', { name: 'Visual do sistema' })) await user.click(screen.getByRole('button', { name: 'Visual do sistema' }));
+    const button = within(screen.getByRole('group', { name: 'Visual do sistema' })).getByRole('button', { name: option });
+    if (button.getAttribute('aria-pressed') !== 'true') await user.click(button);
+    expect(document.documentElement.getAttribute('data-theme')).toBe(option === 'Escuro' ? 'dark' : null);
+  });
+}
 
 describe('App — navegação, permissões, agenda e configurações', () => {
   beforeEach(resetAppTestState);
@@ -241,13 +254,15 @@ describe('App — navegação, permissões, agenda e configurações', () => {
 
     await user.click(screen.getByRole('button', { name: /^opções$/i }));
     expect(await screen.findByRole('heading', { name: 'Opções', level: 1 })).toBeInTheDocument();
+    // A página de Opções carrega sob demanda; espera terminar antes de abrir o menu do topo.
+    expect(await screen.findByRole('group', { name: 'Tema do sistema' })).toBeInTheDocument();
 
-    await user.click(screen.getByTitle('Usar tema claro'));
+    await chooseInAppearanceMenu(user, 'Claro');
 
     expect(document.documentElement).not.toHaveAttribute('data-theme');
     expect(localStorage.getItem('hemodinks.theme')).toBe('light');
 
-    await user.click(screen.getByTitle('Usar tema escuro'));
+    await chooseInAppearanceMenu(user, 'Escuro');
 
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
     expect(localStorage.getItem('hemodinks.theme')).toBe('dark');
@@ -400,10 +415,15 @@ describe('App — navegação, permissões, agenda e configurações', () => {
 
     await user.click(screen.getByRole('button', { name: /^opções$/i }));
     expect(await screen.findByRole('heading', { name: 'Opções', level: 1 })).toBeInTheDocument();
+    // A página de Opções carrega sob demanda; espera terminar antes de abrir o menu do topo.
+    expect(await screen.findByRole('group', { name: 'Tema do sistema' })).toBeInTheDocument();
 
-    await user.click(screen.getByTitle('Usar tema claro'));
+    await chooseInAppearanceMenu(user, 'Claro');
 
     expect(document.documentElement).not.toHaveAttribute('data-theme');
-    expect(screen.getByTitle('Usar tema escuro')).toBeInTheDocument();
+    await waitFor(async () => {
+      if (!screen.queryByRole('group', { name: 'Visual do sistema' })) await user.click(screen.getByRole('button', { name: 'Visual do sistema' }));
+      expect(within(screen.getByRole('group', { name: 'Visual do sistema' })).getByRole('button', { name: 'Escuro' })).toHaveAttribute('aria-pressed', 'false');
+    });
   });
 });

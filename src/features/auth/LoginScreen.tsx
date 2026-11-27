@@ -6,7 +6,7 @@ import { CompanyLogo } from '../../shared/components/CompanyLogo';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordInput } from '../../shared/components/PasswordInput';
 import { TechCredit } from '../../shared/components/TechCredit';
-import { ThemeToggle } from '../../shared/components/ThemeToggle';
+import { AppearanceMenu } from '../../shared/components/AppearanceMenu';
 import { AlertMessage, ToastMessage } from '../../shared/components/ui';
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '../../shared/support';
 import { focusFirstInvalidFormField } from '../../shared/utils/focusInvalidFormField';
@@ -94,7 +94,7 @@ export function LoginScreen({
         stage={loginPreparing ? "Preparando o ambiente…" : undefined} />
       <LoadingOverlay active={isBusy && !loginLoading} />
       <TechCredit />
-      <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
+      <AppearanceMenu theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel login-panel" data-tour="login-overview" inert={isBusy} aria-busy={loginLoading}>
         <div className="brand-block">
           <CompanyLogo companyName={companyName} photo={companyPhoto} className="brand-mark" />

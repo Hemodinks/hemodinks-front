@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { mockSession } from '../../test/appTestData';
 import { SystemSettingsPage } from '../../features/settings/SystemSettingsPage';
 import { CalculatorPreferenceProvider } from '../../features/calculator/CalculatorPreferenceProvider';
-import { ColorStyleToggle } from '../components/ColorStyleToggle';
-import { COLOR_STYLE_KEY, ColorStylePreferenceProvider, useColorStylePreference } from './ColorStylePreferenceProvider';
+import { AppearanceMenu } from '../components/AppearanceMenu';
+import { COLOR_STYLE_KEY, ColorStylePreferenceProvider } from './ColorStylePreferenceProvider';
 
 vi.mock('../../features/settings/MfaSettingsPanel', () => ({ MfaSettingsPanel: () => null }));
 vi.mock('../../features/settings/AuditSettingsPanel', () => ({ AuditSettingsPanel: () => null }));
@@ -13,20 +13,19 @@ vi.mock('../../features/privacy/ConsentProvider', () => ({
   useConsent: () => ({ consent: { preferences: privacy.preferences } }),
 }));
 
-function TopbarToggle() {
-  const { colorStyle, toggleColorStyle } = useColorStylePreference();
-  return <ColorStyleToggle colorStyle={colorStyle} onToggle={toggleColorStyle} />;
-}
 
 function mount() {
   return render(<CalculatorPreferenceProvider session={mockSession()}><ColorStylePreferenceProvider>
     <SystemSettingsPage session={mockSession()} theme="dark" onThemeChange={() => {}} onPasswordChanged={() => {}} />
-    <TopbarToggle />
+    <AppearanceMenu theme="dark" onToggle={() => {}} />
   </ColorStylePreferenceProvider></CalculatorPreferenceProvider>);
 }
 
-const settingsGroup = () => screen.getByRole('group', { name: 'Cores do Hemodinks' });
-const option = (name: string) => screen.getByRole('button', { name });
+// O cartão das configurações vem antes do menu do topo no documento (o menu tem um grupo de mesmo nome).
+const settingsGroup = () => screen.getAllByRole('group', { name: 'Cores do Hemodinks' })[0];
+// Opções do cartão nas configurações (o menu do topo tem botões com os mesmos nomes).
+const option = (name: string) => within(settingsGroup()).getByRole('button', { name });
+const menuOption = (name: string) => within(screen.getByRole('group', { name: 'Visual do sistema' })).getByRole('button', { name });
 
 beforeEach(() => { privacy.preferences = true; localStorage.clear(); document.documentElement.removeAttribute('data-color-style'); });
 afterEach(() => { cleanup(); });
@@ -41,16 +40,17 @@ describe('Cores do Hemodinks', () => {
     expect(document.documentElement).not.toHaveAttribute('data-color-style');
   });
 
-  it('a opção das configurações e o botão do topo alteram o mesmo estado', () => {
+  it('o cartão das configurações e o menu "Visual do sistema" alteram o mesmo estado', () => {
     mount();
     fireEvent.click(option('Cores neutras'));
     expect(document.documentElement).toHaveAttribute('data-color-style', 'neutral');
     expect(option('Cores neutras')).toHaveAttribute('aria-pressed', 'true');
-    // O botão do topo passa a oferecer a volta para as cores padrão.
-    fireEvent.click(screen.getByRole('button', { name: 'Usar cores padrão' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Visual do sistema' }));
+    expect(menuOption('Cores neutras')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(menuOption('Cores padrão'));
     expect(document.documentElement).not.toHaveAttribute('data-color-style');
     expect(option('Cores padrão')).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Usar cores neutras' })).toBeInTheDocument();
+    expect(menuOption('Cores neutras')).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('grava e restaura a preferência quando há consentimento', () => {
