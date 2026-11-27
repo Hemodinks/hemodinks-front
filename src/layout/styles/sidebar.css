@@ -43,3 +43,14 @@
   .side-nav button, .side-nav a { min-height: 34px; padding: 6px 12px; }
   .side-nav .side-nav-billing-subitem { min-height: 30px; padding-block: 4px; }
 }
+
+/* Variante de cores neutras: fundo neutro em todos os itens; a cor do módulo fica no ícone,
+   no filete à esquerda e no preenchimento leve do item ativo. No escuro a cor é clareada (contraste >= 6:1). */
+.side-nav button, .side-nav a { --nav-accent: var(--side-nav-color, var(--teal)); }
+:root[data-theme="dark"] .side-nav button, :root[data-theme="dark"] .side-nav a { --nav-accent: color-mix(in srgb, var(--side-nav-color, var(--teal)) 55%, #ffffff); }
+.side-nav button, .side-nav a { background: transparent; border: 1px solid transparent; border-left: 3px solid transparent; }
+.side-nav button > svg, .side-nav a > svg { color: var(--nav-accent); }
+.side-nav button:hover, .side-nav a:hover { background: var(--soft); border-color: transparent; border-left-color: var(--nav-accent); }
+.side-nav button.active { background: color-mix(in srgb, var(--nav-accent) 20%, transparent); border-color: transparent; border-left-color: var(--nav-accent); font-weight: 800; }
+.side-nav button.active > svg { color: var(--nav-accent); }
+.side-nav-count { background: var(--soft); color: var(--ink); }

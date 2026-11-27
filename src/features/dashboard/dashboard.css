@@ -224,3 +224,16 @@
   .dashboard-chart-label { font-size: .6rem; }
   .dashboard-chart-month:nth-child(odd of .dashboard-chart-month) .dashboard-chart-label { visibility: hidden; }
 }
+
+/* Variante de cores neutras: cartões, ações e pendências com fundo neutro; a cor do módulo
+   fica no ícone e no filete superior/esquerdo. No escuro a cor é clareada (contraste >= 6:1). */
+.dashboard-stat { --stat-accent: var(--stat-color); background: var(--panel); border-color: var(--line); border-top: 3px solid var(--stat-accent); }
+.dashboard-actions button { --action-accent-color: var(--action-color); background: var(--panel); border-color: var(--line); border-left: 3px solid var(--action-accent-color); }
+:root[data-theme="dark"] .dashboard-stat { --stat-accent: color-mix(in srgb, var(--stat-color) 55%, #ffffff); }
+:root[data-theme="dark"] .dashboard-actions button { --action-accent-color: color-mix(in srgb, var(--action-color) 55%, #ffffff); }
+.dashboard-stat > svg { color: var(--stat-accent); }
+.dashboard-actions button svg { color: var(--action-accent-color); }
+.dashboard-actions button:hover { background: var(--soft); }
+.dashboard-pending { background: var(--panel); border-color: var(--line); border-left: 4px solid var(--amber); }
+.dashboard-pending button:hover { background: var(--soft); }
+.dashboard-pending button svg { color: var(--amber); }
