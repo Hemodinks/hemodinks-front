@@ -12,6 +12,7 @@ import { getAllowedTutorialIds } from '../features/tutorials/tutorialAccess';
 import { TutorialProvider } from '../features/tutorials/TutorialProvider';
 import { useAppAccess } from './AppAccessContext';
 import { AppMainContent } from './AppMainContent';
+import { toSurgicalBilling } from '../features/dashboard/surgicalBilling';
 import { AppModals } from './AppModals';
 import { buildBreadcrumbItems, getAppTitle } from './appViewMeta';
 import { ClinicCnpjWarning } from '../features/clinics/ClinicCnpjWarning';
@@ -118,6 +119,7 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
         canAccessAgenda={access.canAccessAgenda}
         canAccessClinics={access.canAccessClinics}
         usersCount={usersCount}
+        activeUsersCount={appChrome.dashboardSummary ? activeUsersCount : undefined}
         pacientesCount={pacientesCount}
         medicalGroupsCount={medicalGroupsDomain.medicalGroupsCount}
         pendingPaymentsCount={pendingPaymentsCount}
@@ -170,10 +172,11 @@ export function AuthenticatedAppContent({ session, activeView, moduleMode, isBus
           dashboardError={appChrome.dashboardError}
           dashboardLoading={appChrome.dashboardLoading}
           dashboardAvailable={Boolean(appChrome.dashboardSummary)}
+          surgicalBilling={toSurgicalBilling(appChrome.dashboardSummary)}
           theme={theme}
           navigation={{
             openUsersList: navigation.openUsersList, openMyProfile: navigation.openMyProfile, openPatientsList: navigation.openPatientsList,
-            openBilling: navigation.openBilling, openReports: navigation.openReports, openTutorials: navigation.openTutorials,
+            openBilling: navigation.openBilling, openBillingHistory: navigation.openBillingHistory, openReports: navigation.openReports, openTutorials: navigation.openTutorials,
             openMedicalGroups: navigation.openMedicalGroups, openAgenda: navigation.openAgenda, openSettings: navigation.openSettings, openClinics: navigation.openClinics,
           }}
           sortHandlers={sortHandlers}

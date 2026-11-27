@@ -22,6 +22,7 @@ type SidebarProps = {
   canAccessAgenda: boolean;
   canAccessClinics: boolean;
   usersCount: number;
+  activeUsersCount?: number;
   pacientesCount: number;
   medicalGroupsCount: number;
   pendingPaymentsCount: number;
@@ -56,6 +57,7 @@ export function Sidebar({
   canAccessAgenda,
   canAccessClinics,
   usersCount,
+  activeUsersCount,
   pacientesCount,
   medicalGroupsCount,
   pendingPaymentsCount,
@@ -267,7 +269,8 @@ export function Sidebar({
             >
               <APP_MODULES.users.icon size={18} />
               <span>{APP_MODULES.users.navLabel}</span>
-              <span className="side-nav-count">{usersCount}</span>
+              {/* O selo conta todos os cadastros; o cartão do painel, só os ativos. A dica explica a diferença. */}
+              <span className="side-nav-count" title={activeUsersCount == null ? undefined : `${usersCount} cadastrados · ${activeUsersCount} ativos`}>{usersCount}</span>
             </button>
           )}
           {canEditOwnUser && (

@@ -5,7 +5,7 @@ import { DashboardPage } from '../features/dashboard/DashboardPage';
 import type { MedicalGroupsDomainState } from '../features/medicalGroups/useMedicalGroupsDomain';
 import type { PatientsDomainState } from '../features/patients/usePatientsDomain';
 import type { UsersDomainState } from '../features/users/useUsersDomain';
-import type { AuthSession, SelectClinicResponse } from '../types';
+import type { AuthSession, DashboardSurgicalBilling, SelectClinicResponse } from '../types';
 import {
   AgendaPage,
   BillingPage,
@@ -38,6 +38,7 @@ type NavigationActions = {
   openMyProfile: () => void;
   openPatientsList: () => void;
   openBilling: () => void;
+  openBillingHistory?: () => void;
   openReports: () => void;
   openTutorials: () => void;
   openMedicalGroups: () => void;
@@ -64,6 +65,7 @@ type AppMainContentProps = {
   dashboardError: string;
   dashboardLoading?: boolean;
   dashboardAvailable?: boolean;
+  surgicalBilling?: DashboardSurgicalBilling | null;
   theme: Theme;
   navigation: NavigationActions;
   sortHandlers: SortHandlers;
@@ -84,6 +86,7 @@ export function AppMainContent({
   dashboardError,
   dashboardLoading,
   dashboardAvailable,
+  surgicalBilling = null,
   theme,
   navigation,
   sortHandlers,
@@ -130,6 +133,7 @@ export function AppMainContent({
           userName={session.user.nome}
           loading={dashboardLoading}
           summaryAvailable={dashboardAvailable}
+          surgicalBilling={surgicalBilling}
           canCreatePatients={canCreatePatients}
           onNewPatient={patientsDomain.openNewPacienteForm}
           companyName={companyName}
@@ -156,6 +160,7 @@ export function AppMainContent({
           onOpenMyProfile={navigation.openMyProfile}
           onOpenPatientsList={navigation.openPatientsList}
           onOpenBilling={navigation.openBilling}
+          onOpenBillingHistory={navigation.openBillingHistory}
           onOpenTutorials={navigation.openTutorials}
           onOpenMedicalGroups={navigation.openMedicalGroups}
           onOpenAgenda={navigation.openAgenda}

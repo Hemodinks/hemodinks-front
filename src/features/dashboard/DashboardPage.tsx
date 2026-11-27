@@ -1,7 +1,10 @@
-import { CheckCircle2, CircleCheck, FileText, Info, Users, UserPlus, CalendarDays, Wallet, UserRound } from 'lucide-react';
+import { CalendarClock, CheckCircle2, CircleCheck, FileText, Info, Users, UserPlus, CalendarDays, Wallet, UserRound } from 'lucide-react';
 import './dashboard.css';
+import type { DashboardSurgicalBilling } from '../../types';
 import { AlertMessage, ToastMessage } from '../../shared/components/ui';
 import { APP_MODULES } from '../../shared/navigation/appModules';
+import { formatCurrency } from '../../shared/utils/formatters';
+import { DashboardMonthlyChart } from './DashboardMonthlyChart';
 import { DashboardStats } from './DashboardStats';
 import { DashboardPendingItems } from './DashboardPendingItems';
 import { DashboardQuickActions, type DashboardAction } from './DashboardQuickActions';
@@ -36,6 +39,8 @@ type DashboardPageProps = {
   onOpenMyProfile: () => void;
   onOpenPatientsList: () => void;
   onOpenBilling: () => void;
+  onOpenBillingHistory?: () => void;
+  surgicalBilling?: DashboardSurgicalBilling | null;
   onOpenTutorials: () => void;
   onOpenMedicalGroups: () => void;
   onOpenAgenda: () => void;
@@ -56,10 +61,18 @@ export function DashboardPage(props: DashboardPageProps) {
   if (canAccessUsers) actions.push({ label: 'Gerenciar usuários', color: APP_MODULES.users.color, icon: Users, onOpen: props.onOpenUsersList });
   else if (props.canEditOwnUser) actions.push({ label: 'Meu cadastro', color: APP_MODULES.profile.color, icon: UserRound, onOpen: props.onOpenMyProfile });
 
+  // Com a API recente, o faturamento mostra o registro de cirurgia; sem ela, mantém o contador anterior.
+  const surgical = canAccessBilling ? props.surgicalBilling ?? null : null;
+  const billingStats = !canAccessBilling ? []
+    : surgical ? [
+      { label: 'Cirurgias a receber', value: surgical.aReceber, detail: formatCurrency(surgical.valorAReceber), color: APP_MODULES.billing.color, icon: Wallet },
+      { label: 'Não consolidadas', value: surgical.naoConsolidadas, color: '#b7791f', icon: CalendarClock },
+    ]
+    : [{ label: 'Pendências financeiras', value: props.pendingPaymentsCount, color: '#b7791f', icon: Info }];
   const stats = [
     ...(canAccessPatients ? [{ label: 'Pacientes ativos', value: props.activePatientsCount, color: APP_MODULES.patients.color, icon: CircleCheck }] : []),
     ...(canAccessUsers ? [{ label: 'Usuários ativos', value: props.activeUsersCount, color: APP_MODULES.users.color, icon: Users }] : []),
-    ...(canAccessBilling ? [{ label: 'Pendências financeiras', value: props.pendingPaymentsCount, color: '#b7791f', icon: Info }] : []),
+    ...billingStats,
     ...(canAccessPatients ? [{ label: 'Arquivos', value: props.patientFilesCount, color: APP_MODULES.settings.color, icon: FileText }] : []),
   ];
 
@@ -76,9 +89,11 @@ export function DashboardPage(props: DashboardPageProps) {
       canAccessBilling={canAccessBilling} canAccessAgenda={canAccessAgenda}
       pendingPaymentsCount={props.pendingPaymentsCount} upcomingEventsCount={props.upcomingEventsCount}
       unreadAgendaNotificationCount={props.unreadAgendaNotificationCount}
+      surgicalBilling={surgical}
       loading={loading} available={available}
-      onOpenBilling={props.onOpenBilling} onOpenAgenda={props.onOpenAgenda}
+      onOpenBilling={props.onOpenBilling} onOpenAgenda={props.onOpenAgenda} onOpenPatientsList={props.onOpenPatientsList}
     />}
+    {surgical && available && !loading && <DashboardMonthlyChart items={surgical.mensal} onOpenHistory={props.onOpenBillingHistory} />}
     <DashboardQuickActions actions={actions} />
     <p className="dashboard-help">Precisa de orientação? <button type="button" onClick={props.onOpenTutorials}>Explorar tutoriais interativos</button></p>
   </section>;

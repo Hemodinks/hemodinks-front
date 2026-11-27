@@ -42,6 +42,7 @@ type AppShellProps = {
   canAccessAgenda: boolean;
   canAccessClinics: boolean;
   usersCount: number;
+  activeUsersCount?: number;
   pacientesCount: number;
   medicalGroupsCount: number;
   pendingPaymentsCount: number;
@@ -93,6 +94,7 @@ export function AppShell({
   canAccessAgenda,
   canAccessClinics,
   usersCount,
+  activeUsersCount,
   pacientesCount,
   medicalGroupsCount,
   pendingPaymentsCount,
@@ -139,6 +141,7 @@ export function AppShell({
           canAccessAgenda={canAccessAgenda}
           canAccessClinics={canAccessClinics}
           usersCount={usersCount}
+          activeUsersCount={activeUsersCount}
           pacientesCount={pacientesCount}
           medicalGroupsCount={medicalGroupsCount}
           pendingPaymentsCount={pendingPaymentsCount}
