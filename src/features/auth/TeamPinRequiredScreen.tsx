@@ -7,7 +7,7 @@ import { getErrorMessage } from "../../shared/utils/formatters";
 import { LoadingOverlay } from "../../shared/components/LoadingOverlay";
 import { PasswordInput } from "../../shared/components/PasswordInput";
 import { TechCredit } from "../../shared/components/TechCredit";
-import { ThemeToggle } from "../../shared/components/ThemeToggle";
+import { AppearanceMenu } from "../appearance/AppearanceMenu";
 import { AlertMessage } from "../../shared/components/ui";
 import { focusFirstInvalidFormField } from "../../shared/utils/focusInvalidFormField";
 import "./auth.css";
@@ -60,7 +60,7 @@ export function TeamPinRequiredScreen({
     <main className="auth-screen compact">
       <LoadingOverlay active={loading} />
       <TechCredit />
-      <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
+      <AppearanceMenu theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel password-required">
         <div className="brand-block">
           <KeyRound size={36} strokeWidth={1.8} />

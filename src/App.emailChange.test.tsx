@@ -11,6 +11,8 @@ import { resetAppTestState } from './test/appTestSetup';
 import { clearIdentityNotice } from './shared/identityChange';
 import { endSessionHandover } from './services/sessionHandover';
 
+// Sob a suíte completa (CI) a renovação de sessão e a troca de tela passam de 1 s; o padrão do testing-library.
+const SLOW = { timeout: 5000 };
 const requestId = '12345678-1234-1234-1234-123456789012';
 const ok = (data: unknown) => ({ data, status: 200, headers: {}, config: { headers: {} }, statusText: '' }) as AxiosResponse;
 
@@ -23,9 +25,9 @@ function mockEmailChangeApi(sessionRenewed: boolean) {
 }
 
 async function changeEmailFromOptions(user: Awaited<ReturnType<typeof renderAuthenticatedApp>>['user']) {
-  expect(await screen.findByRole('heading', { name: 'Painel inicial' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Painel inicial' }, SLOW)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: /^opções/i }));
-  await user.type(await screen.findByLabelText('Novo email de autenticação'), 'novo@hemodinks.com');
+  await user.type(await screen.findByLabelText('Novo email de autenticação', {}, SLOW), 'novo@hemodinks.com');
   await user.click(screen.getByRole('button', { name: 'Continuar alteração de email' }));
   await user.type(screen.getByLabelText('Senha atual da conta individual'), 'SenhaAtual@123');
   await user.click(screen.getByRole('button', { name: 'Enviar confirmação' }));
@@ -44,8 +46,8 @@ describe('App — troca de email de autenticação (#286)', () => {
 
     await changeEmailFromOptions(user);
 
-    await waitFor(() => expect(restoreSession).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(screen.getByText(/Email alterado para novo@hemodinks.com. Você continua conectado/)).toBeInTheDocument());
+    await waitFor(() => expect(restoreSession).toHaveBeenCalledTimes(2), SLOW);
+    await waitFor(() => expect(screen.getByText(/Email alterado para novo@hemodinks.com. Você continua conectado/)).toBeInTheDocument(), SLOW);
     expect(screen.queryByRole('heading', { name: 'Acesso ao sistema' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Configurações' })).toBeInTheDocument();
   });
@@ -57,14 +59,14 @@ describe('App — troca de email de autenticação (#286)', () => {
     vi.mocked(restoreSession).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
 
     await changeEmailFromOptions(user);
-    await waitFor(() => expect(restoreSession).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(restoreSession).toHaveBeenCalledTimes(2), SLOW);
     window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, { detail: { token: session.token } }));
     // O 401 chega antes da sessão nova: se encerrasse a sessão, o login já estaria na tela.
     expect(screen.queryByRole('heading', { name: 'Acesso ao sistema' })).not.toBeInTheDocument();
     await act(async () => finish({ ...toLoginResponse(mockSession({ email: 'novo@hemodinks.com' })), token: 'jwt-token-renovado' }));
 
     // A sessão nova remonta a área autenticada: consulta de novo a cada tentativa.
-    await waitFor(() => expect(screen.getByText(/Você continua conectado/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Você continua conectado/)).toBeInTheDocument(), SLOW);
     expect(screen.queryByRole('heading', { name: 'Acesso ao sistema' })).not.toBeInTheDocument();
   });
 
@@ -75,7 +77,7 @@ describe('App — troca de email de autenticação (#286)', () => {
 
     await changeEmailFromOptions(user);
 
-    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' }, SLOW)).toBeInTheDocument();
     expect(screen.getByText('Email alterado. Entre novamente com o novo email e a mesma senha.')).toBeInTheDocument();
   });
 
@@ -86,7 +88,7 @@ describe('App — troca de email de autenticação (#286)', () => {
 
     await changeEmailFromOptions(user);
 
-    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' }, SLOW)).toBeInTheDocument();
     expect(screen.getByText('Email alterado. Entre novamente com o novo email e a mesma senha.')).toBeInTheDocument();
   });
 
@@ -96,7 +98,7 @@ describe('App — troca de email de autenticação (#286)', () => {
 
     await changeEmailFromOptions(user);
 
-    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Acesso ao sistema' }, SLOW)).toBeInTheDocument();
     expect(screen.getByText('Email alterado. Entre novamente com o novo email e a mesma senha.')).toBeInTheDocument();
     expect(restoreSession).toHaveBeenCalledTimes(1);
   });

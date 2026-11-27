@@ -31,7 +31,8 @@ describe('ações do cabeçalho', () => {
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Menu do usuário' })).toHaveFocus();
-    await userEvent.click(screen.getByTitle('Usar tema escuro'));
+    await userEvent.click(screen.getByRole('button', { name: 'Visual do sistema' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Escuro' }));
     expect(onThemeToggle).toHaveBeenCalledOnce();
   });
 });

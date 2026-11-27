@@ -4,7 +4,7 @@ import type { Theme } from '../../appTypes';
 import { BootstrapLoading } from '../../shared/components/BootstrapLoading';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { TechCredit } from '../../shared/components/TechCredit';
-import { ThemeToggle } from '../../shared/components/ThemeToggle';
+import { AppearanceMenu } from '../appearance/AppearanceMenu';
 import { LegalAcceptanceAction } from './LegalAcceptanceAction';
 import { TERMS_VERSION } from './legalVersions';
 
@@ -38,7 +38,7 @@ export function LegalAcceptanceGate({
       <BootstrapLoading active={loading} slow={slow} canRetry={canRetry} onRetry={onRetry} stage="Validando sua sessão, clínica e Termos de Uso…" />
       <LoadingOverlay active={accepting} message="Registrando seu aceite…" />
       <TechCredit />
-      <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
+      <AppearanceMenu theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel legal-acceptance-panel" aria-labelledby="legal-acceptance-title" inert={loading || accepting}>
         <div className="brand-block">
           <FileCheck2 size={36} strokeWidth={1.8} />

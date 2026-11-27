@@ -181,3 +181,9 @@
     border-radius: 8px;
   }
 }
+
+/* Estilo "Cores neutras" (data-color-style="neutral"): fundos coloridos caem para um leve toque do tom e as
+   cores de ação viram cinza-azulado; perigo, sucesso, alerta e foco não mudam. Contraste: claro #475569 = 7,6:1;
+   escuro #64748b = 4,8:1 com texto branco. A seleção do .app-shell fica em app-shell-modes.css. */
+:root[data-color-style="neutral"] { --control-color-opacity: 8%; --navigation-color-opacity: 8%; --dashboard-color-opacity: 8%; --action-primary: #475569; --action-primary-hover: #334155; --action-secondary: #475569; --action-secondary-hover: #334155; --action-accent: #475569; --action-accent-hover: #334155; --clinics-accent: #475569; }
+:root[data-theme="dark"][data-color-style="neutral"] { --action-primary: #64748b; --action-primary-hover: #475569; --action-secondary: #64748b; --action-secondary-hover: #475569; --action-accent: #64748b; --action-accent-hover: #475569; --clinics-accent: #94a3b8; }

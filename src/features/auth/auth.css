@@ -246,8 +246,10 @@ a.login-help-link {
     transform: none;
   }
 
-  .auth-screen .theme-toggle.floating {
-    position: static;
+  .auth-screen .appearance-menu.floating {
+    position: relative;
+    top: auto;
+    right: auto;
     grid-area: theme;
     justify-self: end;
   }
@@ -323,17 +325,9 @@ a.login-help-link {
     padding: 20px;
   }
 
-  .auth-screen .theme-toggle.floating {
+  .auth-screen .appearance-menu.floating .appearance-menu-trigger {
     min-width: 0;
     padding-inline: 10px;
-  }
-
-  .auth-screen .theme-toggle.floating .theme-label-wide {
-    display: none;
-  }
-
-  .auth-screen .theme-toggle.floating .theme-label-short {
-    display: inline;
   }
 }
 

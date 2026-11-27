@@ -4,6 +4,9 @@ import type { PacienteSituacao } from './types';
 
 export type Theme = 'light' | 'dark';
 
+// "default" = cores padrão dos módulos; "neutral" = cores neutras (cor só no ícone e no filete).
+export type ColorStyle = 'default' | 'neutral';
+
 export type AppView = 'dashboard' | 'users' | 'profile' | 'patients' | 'patientAudit' | 'billing' | 'billingHistory' | 'reports' | 'tutorials' | 'medicalGroups' | 'agenda' | 'settings' | 'clinics';
 
 export type ModuleMode = 'list' | 'form';

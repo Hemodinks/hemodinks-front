@@ -1,0 +1,4 @@
+/* Carregado com o shell autenticado (fora do CSS inicial): a cor de seleção é declarada no .app-shell,
+   então o estilo "Cores neutras" também precisa redefini-la aqui. */
+:root[data-color-style="neutral"] .app-shell { --selection-accent: #475569; --selection-accent-soft: rgba(71, 85, 105, 0.16); --selection-accent-strong: rgba(71, 85, 105, 0.3); }
+:root[data-theme="dark"][data-color-style="neutral"] .app-shell { --selection-accent: #94a3b8; --selection-accent-soft: rgba(148, 163, 184, 0.16); --selection-accent-strong: rgba(148, 163, 184, 0.28); }

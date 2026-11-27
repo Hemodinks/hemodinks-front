@@ -28,7 +28,7 @@ export async function renderAuthenticatedApp(options?: {
   render(<App />);
 
   await user.type(await screen.findByLabelText('Email'), session.user.email);
-  await user.type(screen.getByLabelText('Senha'), options?.password ?? 'SenhaAlterada@123');
+  await user.type(await screen.findByLabelText('Senha'), options?.password ?? 'SenhaAlterada@123');
   await user.click(screen.getByRole('button', { name: /entrar/i }));
 
   return { user, session };

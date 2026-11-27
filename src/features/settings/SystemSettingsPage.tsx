@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { IdentityChangedHandler } from "../../shared/identityChange";
-import { AtSign, Calculator, CheckCircle2, KeyRound, Moon, Palette, SlidersHorizontal, Sun } from "lucide-react";
+import { AtSign, Calculator, CheckCircle2, KeyRound, Moon, Palette, SlidersHorizontal, Sun, SwatchBook } from "lucide-react";
+import { useOptionalColorStylePreference } from "../appearance/ColorStylePreferenceProvider";
 import type { Theme } from "../../appTypes";
 import type { AuthSession } from "../../types";
 import { PasswordForm } from "../../shared/components/PasswordForm";
@@ -28,6 +29,7 @@ export function SystemSettingsPage({
   onPasswordChanged,
 }: SystemSettingsPageProps) {
   const [passwordSuccess, setPasswordSuccess] = useState("");
+  const colorStylePreference = useOptionalColorStylePreference();
   const { visible, setVisible } = useCalculatorPreference();
 
   const isAdmin = session.user.perfilId === ADMIN_PROFILE_ID || session.user.perfilId === SUPER_ADMIN_PROFILE_ID;
@@ -64,6 +66,23 @@ export function SystemSettingsPage({
               </button>
             </div>
           </DataPanel>
+
+          {colorStylePreference && <DataPanel className="system-settings-panel">
+            <SettingsCardHeading icon={<SwatchBook size={19} />} eyebrow="Aparência" title="Cores do Hemodinks"
+              description="Cores padrão mantêm as cores de cada tela e componente; cores neutras deixam o sistema em tons neutros, com cor só onde ela indica algo." />
+            <div className="theme-choice-grid" role="group" aria-label="Cores do Hemodinks">
+              <button type="button" className={`theme-choice ${colorStylePreference.colorStyle === "default" ? "active" : ""}`}
+                aria-pressed={colorStylePreference.colorStyle === "default"} onClick={() => colorStylePreference.setColorStyle("default")}>
+                <Palette size={21} />
+                <strong>Cores padrão</strong>
+              </button>
+              <button type="button" className={`theme-choice ${colorStylePreference.colorStyle === "neutral" ? "active" : ""}`}
+                aria-pressed={colorStylePreference.colorStyle === "neutral"} onClick={() => colorStylePreference.setColorStyle("neutral")}>
+                <SwatchBook size={21} />
+                <strong>Cores neutras</strong>
+              </button>
+            </div>
+          </DataPanel>}
 
           <DataPanel className="system-settings-panel">
             <SettingsCardHeading icon={<Calculator size={19} />} eyebrow="Ferramentas" title="Calculadora"

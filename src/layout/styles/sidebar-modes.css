@@ -1,0 +1,28 @@
+/* Carregado com o menu lateral (fora do CSS inicial do app): modo compacto, flutuante e cores neutras. */
+/* Menu compacto em telas largas com mouse: cabe inteiro sem rolar a página. Toque mantém 44px. */
+@media (min-width: 981px) and (hover: hover) and (pointer: fine) {
+  .sidebar-card { gap: 10px; padding: 12px; }
+  .sidebar-clinic { padding-bottom: 12px; }
+  .side-nav, .side-nav-billing-group, .side-nav-billing-submenu { gap: 2px; }
+  .side-nav-section { padding: 12px 12px 4px; }
+  .side-nav button, .side-nav a { min-height: 34px; padding: 6px 12px; }
+  .side-nav .side-nav-billing-subitem { min-height: 30px; padding-block: 4px; }
+}
+
+/* Estilo "Cores neutras" (data-color-style="neutral"): fundo neutro em todos os itens; a cor do módulo fica no ícone,
+   no filete à esquerda e no preenchimento leve do item ativo. No escuro a cor é clareada (contraste >= 6:1). */
+:root[data-color-style="neutral"] .side-nav button, :root[data-color-style="neutral"] .side-nav a { --nav-accent: var(--side-nav-color, var(--teal)); }
+:root[data-theme="dark"][data-color-style="neutral"] .side-nav button, :root[data-theme="dark"][data-color-style="neutral"] .side-nav a { --nav-accent: color-mix(in srgb, var(--side-nav-color, var(--teal)) 55%, #ffffff); }
+:root[data-color-style="neutral"] .side-nav button, :root[data-color-style="neutral"] .side-nav a { background: transparent; border: 1px solid transparent; border-left: 3px solid transparent; }
+:root[data-color-style="neutral"] .side-nav button > svg, :root[data-color-style="neutral"] .side-nav a > svg { color: var(--nav-accent); }
+:root[data-color-style="neutral"] .side-nav button:hover, :root[data-color-style="neutral"] .side-nav a:hover { background: var(--soft); border-color: transparent; border-left-color: var(--nav-accent); }
+:root[data-color-style="neutral"] .side-nav button.active { background: color-mix(in srgb, var(--nav-accent) 20%, transparent); border-color: transparent; border-left-color: var(--nav-accent); font-weight: 800; }
+:root[data-color-style="neutral"] .side-nav button.active > svg { color: var(--nav-accent); }
+:root[data-color-style="neutral"] .side-nav-count { background: var(--soft); color: var(--ink); }
+
+/* Menu flutuante em telas largas: acompanha a rolagem em páginas longas (ex.: Opções) e,
+   se for mais alto que a janela, rola por conta própria. Abaixo de 981px o menu é a gaveta. */
+@media (min-width: 981px) {
+  .app-navigation-slot { position: sticky; top: 16px; align-self: start; max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .app-navigation-slot .sidebar-card { height: auto; }
+}

@@ -182,3 +182,20 @@
 .dashboard-pending button { font-weight: 600; }
 .dashboard-pending button:hover { background: color-mix(in srgb, var(--amber) var(--dashboard-color-opacity), transparent); }
 .dashboard-pending button svg { color: var(--ink); }
+
+/* Painel com indicadores do registro de cirurgia: até 5 cartões numa linha em telas largas. */
+.dashboard-stats { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.dashboard-stat-detail { margin-top: -6px; color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* Estilo "Cores neutras" (data-color-style="neutral"): cartões, ações e pendências com fundo neutro; a cor do módulo
+   fica no ícone e no filete superior/esquerdo. No escuro a cor é clareada (contraste >= 6:1). */
+:root[data-color-style="neutral"] .dashboard-stat { --stat-accent: var(--stat-color); background: var(--panel); border-color: var(--line); border-top: 3px solid var(--stat-accent); }
+:root[data-color-style="neutral"] .dashboard-actions button { --action-accent-color: var(--action-color); background: var(--panel); border-color: var(--line); border-left: 3px solid var(--action-accent-color); }
+:root[data-theme="dark"][data-color-style="neutral"] .dashboard-stat { --stat-accent: color-mix(in srgb, var(--stat-color) 55%, #ffffff); }
+:root[data-theme="dark"][data-color-style="neutral"] .dashboard-actions button { --action-accent-color: color-mix(in srgb, var(--action-color) 55%, #ffffff); }
+:root[data-color-style="neutral"] .dashboard-stat > svg { color: var(--stat-accent); }
+:root[data-color-style="neutral"] .dashboard-actions button svg { color: var(--action-accent-color); }
+:root[data-color-style="neutral"] .dashboard-actions button:hover { background: var(--soft); }
+:root[data-color-style="neutral"] .dashboard-pending { background: var(--panel); border-color: var(--line); border-left: 4px solid var(--amber); }
+:root[data-color-style="neutral"] .dashboard-pending button:hover { background: var(--soft); }
+:root[data-color-style="neutral"] .dashboard-pending button svg { color: var(--amber); }

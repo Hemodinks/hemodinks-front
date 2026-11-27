@@ -6,7 +6,7 @@ import { MAX_SEARCH_LENGTH } from '../../shared/utils/formatterConstants';
 import { LoginLoadingOverlay } from './LoginLoadingOverlay';
 import { AuthWaitMessage } from './AuthWaitMessage';
 import { TechCredit } from "../../shared/components/TechCredit";
-import { ThemeToggle } from "../../shared/components/ThemeToggle";
+import { AppearanceMenu } from "../appearance/AppearanceMenu";
 import { AlertMessage } from "../../shared/components/ui";
 import { focusFirstInvalidFormField } from "../../shared/utils/focusInvalidFormField";
 import "./auth.css";
@@ -59,7 +59,7 @@ export function TeamIdentificationScreen({
     <main className="auth-screen">
       <LoginLoadingOverlay active={loading} stage="Concluindo o acesso à equipe…" onCancel={onCancelLogin} />
       <TechCredit />
-      <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
+      <AppearanceMenu theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel" aria-busy={loading}>
         <div className="brand-block">
           <span className="brand-mark">

@@ -8,6 +8,26 @@ export type DashboardSummary = {
   upcomingEventsCount: number;
   unreadObservationCount?: number;
   unreadAgendaNotificationCount?: number;
+  // Registro de cirurgia (API recente). Nulos para perfis sem faturamento; ausentes em APIs antigas.
+  cirurgiasNaoConsolidadasCount?: number | null;
+  cirurgiasAReceberCount?: number | null;
+  valorAReceber?: number | null;
+  faturamentoMensal?: DashboardMonthlyBilling[] | null;
+};
+
+export type DashboardMonthlyBilling = {
+  ano: number;
+  mes: number;
+  cirurgias: number;
+  faturado: number;
+  recebido: number;
+};
+
+export type DashboardSurgicalBilling = {
+  naoConsolidadas: number;
+  aReceber: number;
+  valorAReceber: number;
+  mensal: DashboardMonthlyBilling[];
 };
 
 export type DashboardNotification = {

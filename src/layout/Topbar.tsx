@@ -4,7 +4,7 @@ import type { AuthSession } from '../types';
 import { UserMenu } from './UserMenu';
 import { CompanyLogo } from '../shared/components/CompanyLogo';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
-import { ThemeToggle } from '../shared/components/ThemeToggle';
+import { AppearanceMenu } from '../features/appearance/AppearanceMenu';
 import { isAnonymousTeamSession } from '../features/auth/teamSession';
 
 type TopbarProps = {
@@ -69,7 +69,7 @@ export function Topbar({
             <span className="notification-label notification-label-short">Avisos</span>
             <span className="notification-count">{notificationCount}</span>
           </button>
-          <ThemeToggle theme={theme} onToggle={onThemeToggle} />
+          <AppearanceMenu theme={theme} onToggle={onThemeToggle} />
           <UserMenu session={session} companyName={companyName} onLogout={onLogout} />
         </div>
       </div>

@@ -4,7 +4,7 @@ import type { AuthSession } from '../../types';
 import { LoadingOverlay } from '../../shared/components/LoadingOverlay';
 import { PasswordForm } from '../../shared/components/PasswordForm';
 import { TechCredit } from '../../shared/components/TechCredit';
-import { ThemeToggle } from '../../shared/components/ThemeToggle';
+import { AppearanceMenu } from '../appearance/AppearanceMenu';
 import './auth.css';
 
 type PasswordRequiredScreenProps = {
@@ -28,7 +28,7 @@ export function PasswordRequiredScreen({
     <main className="auth-screen compact">
       <LoadingOverlay active={isBusy} />
       <TechCredit />
-      <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
+      <AppearanceMenu theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel password-required">
         <div className="brand-block">
           <KeyRound size={36} strokeWidth={1.8} />

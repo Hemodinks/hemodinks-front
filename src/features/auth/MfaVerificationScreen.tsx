@@ -4,7 +4,7 @@ import type { Theme } from "../../appTypes";
 import { LoginLoadingOverlay } from './LoginLoadingOverlay';
 import { AuthWaitMessage } from './AuthWaitMessage';
 import { TechCredit } from "../../shared/components/TechCredit";
-import { ThemeToggle } from "../../shared/components/ThemeToggle";
+import { AppearanceMenu } from "../appearance/AppearanceMenu";
 import { AlertMessage } from "../../shared/components/ui";
 import { focusFirstInvalidFormField } from "../../shared/utils/focusInvalidFormField";
 import { MFA_CODE_MAX_LENGTH, MFA_TOTP_LENGTH, isCompleteMfaCode } from "../../shared/utils/mfaCode";
@@ -47,7 +47,7 @@ export function MfaVerificationScreen({
     <main className="auth-screen">
       <LoginLoadingOverlay active={loading} stage="Confirmando o código…" onCancel={onCancelLogin} />
       <TechCredit />
-      <ThemeToggle theme={theme} onToggle={onThemeToggle} floating />
+      <AppearanceMenu theme={theme} onToggle={onThemeToggle} floating />
       <section className="auth-panel login-panel mfa-verification-panel" aria-busy={loading}>
         <div className="brand-block">
           <span className="brand-mark mfa-verification-icon" aria-hidden="true">

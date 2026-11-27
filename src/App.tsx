@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AppContent } from './app/AppContent';
 import { ConsentProvider } from './features/privacy/ConsentProvider';
+import { ColorStylePreferenceProvider } from './features/appearance/ColorStylePreferenceProvider';
 import { LegalDocumentPage } from './features/legal/LegalDocumentPage';
 import { LEGAL_DOCUMENTS } from './features/legal/legalDocuments';
 import { PageMetadata } from './app/usePageMetadata';
@@ -15,13 +16,15 @@ export default function App() {
       <ErrorBoundary>
         <BrowserRouter>
           <ConsentProvider>
-            <PageMetadata />
-            <AppUpdateNotice />
-            <Routes>
-              <Route path="/termos-de-uso" element={<LegalDocumentPage document={LEGAL_DOCUMENTS['termos-de-uso']} />} />
-              <Route path="/politica-de-privacidade" element={<LegalDocumentPage document={LEGAL_DOCUMENTS['politica-de-privacidade']} />} />
-              <Route path="*" element={<AppContent />} />
-            </Routes>
+            <ColorStylePreferenceProvider>
+              <PageMetadata />
+              <AppUpdateNotice />
+              <Routes>
+                <Route path="/termos-de-uso" element={<LegalDocumentPage document={LEGAL_DOCUMENTS['termos-de-uso']} />} />
+                <Route path="/politica-de-privacidade" element={<LegalDocumentPage document={LEGAL_DOCUMENTS['politica-de-privacidade']} />} />
+                <Route path="*" element={<AppContent />} />
+              </Routes>
+            </ColorStylePreferenceProvider>
           </ConsentProvider>
         </BrowserRouter>
       </ErrorBoundary>

@@ -1,12 +1,18 @@
-import { ArrowRight, CalendarDays, CircleCheck, Bell, Wallet } from 'lucide-react';
+import { ArrowRight, CalendarClock, CalendarDays, CircleCheck, Bell, Wallet } from 'lucide-react';
+import type { DashboardSurgicalBilling } from '../../types';
+import { formatCurrency } from '../../shared/utils/formatters';
 
 type Props = {
   canAccessBilling: boolean; canAccessAgenda: boolean;
   pendingPaymentsCount: number; upcomingEventsCount: number; unreadAgendaNotificationCount: number;
-  loading: boolean; available: boolean; onOpenBilling: () => void; onOpenAgenda: () => void;
+  surgicalBilling?: DashboardSurgicalBilling | null;
+  loading: boolean; available: boolean; onOpenBilling: () => void; onOpenAgenda: () => void; onOpenPatientsList?: () => void;
 };
 export function DashboardPendingItems(props: Props) {
+  const surgical = props.canAccessBilling ? props.surgicalBilling ?? null : null;
   const items = [
+    ...(surgical && surgical.aReceber > 0 ? [{ label: `${surgical.aReceber.toLocaleString('pt-BR')} cirurgia(s) consolidada(s) a receber · ${formatCurrency(surgical.valorAReceber)}`, icon: Wallet, onOpen: props.onOpenBilling }] : []),
+    ...(surgical && surgical.naoConsolidadas > 0 ? [{ label: `${surgical.naoConsolidadas.toLocaleString('pt-BR')} cirurgia(s) sem data de consolidação`, icon: CalendarClock, onOpen: props.onOpenPatientsList ?? props.onOpenBilling }] : []),
     ...(props.canAccessBilling && props.pendingPaymentsCount > 0 ? [{ label: `${props.pendingPaymentsCount.toLocaleString('pt-BR')} pendência(s) de faturamento`, icon: Wallet, onOpen: props.onOpenBilling }] : []),
     ...(props.canAccessAgenda && props.upcomingEventsCount > 0 ? [{ label: `${props.upcomingEventsCount.toLocaleString('pt-BR')} evento(s) próximo(s)`, icon: CalendarDays, onOpen: props.onOpenAgenda }] : []),
     ...(props.canAccessAgenda && props.unreadAgendaNotificationCount > 0 ? [{ label: `${props.unreadAgendaNotificationCount.toLocaleString('pt-BR')} aviso(s) não lido(s) na agenda`, icon: Bell, onOpen: props.onOpenAgenda }] : []),

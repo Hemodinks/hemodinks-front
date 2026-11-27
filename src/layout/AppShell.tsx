@@ -15,6 +15,7 @@ import { NavigationDrawer } from './NavigationDrawer';
 import { Topbar } from './Topbar';
 import { ContextualTools } from './ContextualTools';
 import { LegalFooter } from '../features/legal/LegalFooter';
+import './styles/app-shell-modes.css';
 
 type AppShellProps = {
   children: ReactNode;
@@ -42,6 +43,7 @@ type AppShellProps = {
   canAccessAgenda: boolean;
   canAccessClinics: boolean;
   usersCount: number;
+  activeUsersCount?: number;
   pacientesCount: number;
   medicalGroupsCount: number;
   pendingPaymentsCount: number;
@@ -93,6 +95,7 @@ export function AppShell({
   canAccessAgenda,
   canAccessClinics,
   usersCount,
+  activeUsersCount,
   pacientesCount,
   medicalGroupsCount,
   pendingPaymentsCount,
@@ -139,6 +142,7 @@ export function AppShell({
           canAccessAgenda={canAccessAgenda}
           canAccessClinics={canAccessClinics}
           usersCount={usersCount}
+          activeUsersCount={activeUsersCount}
           pacientesCount={pacientesCount}
           medicalGroupsCount={medicalGroupsCount}
           pendingPaymentsCount={pendingPaymentsCount}
