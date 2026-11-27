@@ -5,6 +5,8 @@ import { UserMenu } from './UserMenu';
 import { CompanyLogo } from '../shared/components/CompanyLogo';
 import { Breadcrumbs } from '../shared/components/Breadcrumbs';
 import { ThemeToggle } from '../shared/components/ThemeToggle';
+import { ColorStyleToggle } from '../shared/components/ColorStyleToggle';
+import { useOptionalColorStylePreference } from '../shared/hooks/ColorStylePreferenceProvider';
 import { isAnonymousTeamSession } from '../features/auth/teamSession';
 
 type TopbarProps = {
@@ -38,6 +40,7 @@ export function Topbar({
   onThemeToggle,
   onLogout,
 }: TopbarProps) {
+  const colorStylePreference = useOptionalColorStylePreference();
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -70,6 +73,7 @@ export function Topbar({
             <span className="notification-count">{notificationCount}</span>
           </button>
           <ThemeToggle theme={theme} onToggle={onThemeToggle} />
+          {colorStylePreference && <ColorStyleToggle colorStyle={colorStylePreference.colorStyle} onToggle={colorStylePreference.toggleColorStyle} />}
           <UserMenu session={session} companyName={companyName} onLogout={onLogout} />
         </div>
       </div>
